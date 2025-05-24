@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Anchor, Users, AlertTriangle, TrendingUp } from "lucide-react";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { UpcomingOperations } from "@/components/dashboard/UpcomingOperations";
+import { AlertasPanel } from "@/components/dashboard/AlertasPanel";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function Dashboard() {
@@ -34,8 +35,8 @@ export function Dashboard() {
     {
       title: "Alertas Activas",
       value: stats.alertasActivas.toString(),
-      change: { value: "-1", type: "positive" as const },
-      description: "Desde ayer",
+      change: { value: stats.alertasActivas > 0 ? "-1" : "0", type: stats.alertasActivas > 0 ? "positive" as const : "neutral" as const },
+      description: "Requieren atención",
       icon: <AlertTriangle className="w-4 h-4" />,
     },
   ];
@@ -109,6 +110,40 @@ export function Dashboard() {
           <UpcomingOperations operations={upcomingOperations} />
           <QuickActions />
         </div>
+      </div>
+
+      {/* Alertas Panel */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <AlertasPanel />
+        
+        {/* Espacio para futuras funcionalidades */}
+        <Card className="ios-card">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">
+              Próximas Funcionalidades
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+                <h4 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                  Reportes Automáticos
+                </h4>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Generación automática de reportes de seguridad y cumplimiento
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                <h4 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                  Análisis Predictivo
+                </h4>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Predicción de riesgos y optimización de operaciones
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

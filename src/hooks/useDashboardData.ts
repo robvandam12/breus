@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useBitacoras } from './useBitacoras';
 import { useInmersiones } from './useInmersiones';
 import { useOperaciones } from './useOperaciones';
+import { useAlertas } from './useAlertas';
 
 export interface DashboardStats {
   totalBitacoras: number;
@@ -16,13 +17,14 @@ export const useDashboardData = () => {
   const { bitacorasSupervisor, bitacorasBuzo } = useBitacoras();
   const { inmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
+  const { alertasNoLeidas } = useAlertas();
   
   const [stats, setStats] = useState<DashboardStats>({
     totalBitacoras: 0,
     bitacorasFirmadas: 0,
     inmersionesHoy: 0,
     operacionesActivas: 0,
-    alertasActivas: 3
+    alertasActivas: 0
   });
 
   useEffect(() => {
@@ -40,9 +42,9 @@ export const useDashboardData = () => {
       bitacorasFirmadas,
       inmersionesHoy,
       operacionesActivas,
-      alertasActivas: 3 // Static for now
+      alertasActivas: alertasNoLeidas.length
     });
-  }, [bitacorasSupervisor, bitacorasBuzo, inmersiones, operaciones]);
+  }, [bitacorasSupervisor, bitacorasBuzo, inmersiones, operaciones, alertasNoLeidas]);
 
   const upcomingOperations = operaciones
     .filter(op => op.estado === 'activa')
