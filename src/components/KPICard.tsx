@@ -23,31 +23,31 @@ export function KPICard({ title, value, change, description, icon, className }: 
       case 'negative':
         return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
       case 'neutral':
-        return 'bg-air-force-blue/10 text-air-force-blue dark:bg-air-force-blue/20 dark:text-air-force-blue';
+        return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/20 dark:text-zinc-400';
       default:
-        return 'bg-alice-blue text-rich-black-700 dark:bg-rich-black-900/20 dark:text-alice-blue';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800/20 dark:text-gray-400';
     }
   };
 
   return (
     <Card className={cn("relative overflow-hidden border-0 ios-card", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-sm font-medium text-rich-black-600 dark:text-alice-blue">
+        <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
           {title}
         </CardTitle>
         {icon && (
-          <div className="w-8 h-8 rounded-lg bg-air-force-blue/10 dark:bg-air-force-blue/30 flex items-center justify-center text-air-force-blue dark:text-air-force-blue">
+          <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
             {icon}
           </div>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-3xl font-bold text-rich-black dark:text-white">
+        <div className="text-3xl font-bold text-gray-900 dark:text-white">
           {value}
         </div>
         <div className="flex items-center justify-between">
           {description && (
-            <p className="text-xs text-rich-black-500 dark:text-alice-blue/70">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {description}
             </p>
           )}

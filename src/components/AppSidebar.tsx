@@ -76,7 +76,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 ocean-gradient rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">B</span>
           </div>
           <div>
@@ -142,8 +142,8 @@ export function AppSidebar() {
       
       <SidebarFooter className="border-t border-border/40 p-4">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-primary-foreground font-medium text-sm">JS</span>
+          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-medium text-sm">JS</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">Juan Supervisor</p>
