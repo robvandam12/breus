@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ interface AnexoBravoFormProps {
 }
 
 interface Operacion {
-  operacion_id: string;
+  id: string;
   codigo: string;
   nombre: string;
 }
@@ -89,12 +88,18 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
     try {
       const { data, error } = await supabase
         .from('operacion')
-        .select('operacion_id, codigo, nombre')
+        .select('id, codigo, nombre')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setOperaciones(data || []);
+      const formattedData: Operacion[] = (data || []).map((item: any) => ({
+        id: item.id,
+        codigo: item.codigo,
+        nombre: item.nombre
+      }));
+
+      setOperaciones(formattedData);
     } catch (err) {
       console.error('Error loading operaciones:', err);
       toast({
@@ -255,7 +260,7 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                           </SelectTrigger>
                           <SelectContent>
                             {operaciones.map((operacion) => (
-                              <SelectItem key={operacion.operacion_id} value={operacion.operacion_id}>
+                              <SelectItem key={operacion.id} value={operacion.id}>
                                 {operacion.codigo} - {operacion.nombre}
                               </SelectItem>
                             ))}
