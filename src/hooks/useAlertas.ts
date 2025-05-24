@@ -59,7 +59,7 @@ export const useAlertas = () => {
         descripcion: `La inmersión ${inmersion.codigo} requiere validación de documentos`,
         prioridad: 'alta',
         fecha_creacion: new Date().toISOString(),
-        entidad_id: inmersion.inmersion_id,
+        entidad_id: inmersion.id,
         entidad_codigo: inmersion.codigo,
         leida: false
       });
