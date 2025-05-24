@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileCheck, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { FileCheck, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { AnexoBravoForm } from "@/components/anexo-bravo/AnexoBravoForm";
 
 const AnexoBravo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Mock data para Anexos Bravo
   const anexosBravo = [
@@ -17,68 +20,58 @@ const AnexoBravo = () => {
       id: 1,
       codigo: "AB-2024-001",
       operacion: "Mantenimiento Jaulas Sitio Norte",
-      hpt: "HPT-2024-001",
       fechaCreacion: "2024-01-14",
-      fechaVencimiento: "2024-01-21",
+      fechaVerificacion: "2024-01-14",
       jefeCentro: "Carlos Mendoza",
-      supervisorServicio: "Diego Martínez",
-      estado: "Vigente",
+      supervisor: "Diego Martínez",
+      estado: "Aprobado",
       firmado: true,
       checklistCompleto: true,
-      riesgos: "Medio"
+      progreso: 100
     },
     {
       id: 2,
       codigo: "AB-2024-002",
       operacion: "Inspección Redes Centro Los Fiordos",
-      hpt: "HPT-2024-002",
       fechaCreacion: "2024-01-17",
-      fechaVencimiento: "2024-01-24",
+      fechaVerificacion: "2024-01-17",
       jefeCentro: "Ana Morales",
-      supervisorServicio: "Carlos Rojas",
-      estado: "Pendiente",
+      supervisor: "Carlos Rojas",
+      estado: "En Progreso",
       firmado: false,
       checklistCompleto: false,
-      riesgos: "Alto"
+      progreso: 75
     },
     {
       id: 3,
       codigo: "AB-2024-003",
       operacion: "Limpieza Estructuras Piscicultura",
-      hpt: "HPT-2024-003",
       fechaCreacion: "2024-01-09",
-      fechaVencimiento: "2024-01-16",
+      fechaVerificacion: "2024-01-10",
       jefeCentro: "Roberto Silva",
-      supervisorServicio: "Ana López",
-      estado: "Vencido",
+      supervisor: "Ana López",
+      estado: "Completado",
       firmado: true,
       checklistCompleto: true,
-      riesgos: "Bajo"
+      progreso: 100
     }
   ];
 
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "Vigente":
-        return "bg-emerald-100 text-emerald-700";
-      case "Pendiente":
-        return "bg-amber-100 text-amber-700";
-      case "Vencido":
-        return "bg-red-100 text-red-700";
-      case "Anulado":
-        return "bg-gray-100 text-gray-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
+  const handleCreateAnexoBravo = (data: any) => {
+    console.log("Nuevo Anexo Bravo:", data);
+    setIsCreateDialogOpen(false);
+    // Aquí integrarías con la API
   };
 
-  const getRiesgosBadge = (riesgos: string) => {
-    switch (riesgos) {
-      case "Bajo":
-        return "bg-green-100 text-green-700";
-      case "Medio":
-        return "bg-yellow-100 text-yellow-700";
-      case "Alto":
+  const getEstadoBadge = (estado: string) => {
+    switch (estado) {
+      case "Aprobado":
+        return "bg-emerald-100 text-emerald-700";
+      case "En Progreso":
+        return "bg-amber-100 text-amber-700";
+      case "Completado":
+        return "bg-blue-100 text-blue-700";
+      case "Rechazado":
         return "bg-red-100 text-red-700";
       default:
         return "bg-zinc-100 text-zinc-700";
@@ -92,8 +85,8 @@ const AnexoBravo = () => {
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                  <FileCheck className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <FileCheck className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
                   <CardTitle className="text-lg text-zinc-900">{anexo.codigo}</CardTitle>
@@ -121,7 +114,7 @@ const AnexoBravo = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Clock className="w-4 h-4" />
-                <span>Vence: {anexo.fechaVencimiento}</span>
+                <span>Verificado: {anexo.fechaVerificacion}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Users className="w-4 h-4" />
@@ -129,39 +122,26 @@ const AnexoBravo = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Users className="w-4 h-4" />
-                <span>Supervisor: {anexo.supervisorServicio}</span>
+                <span>Supervisor: {anexo.supervisor}</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <Badge variant="outline" className={getRiesgosBadge(anexo.riesgos)}>
-                  Riesgo {anexo.riesgos}
+                <Badge variant="outline" className={anexo.checklistCompleto ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
+                  Checklist {anexo.progreso}%
                 </Badge>
-                <Badge variant="outline">
-                  HPT: {anexo.hpt}
-                </Badge>
-                {anexo.checklistCompleto ? (
-                  <Badge variant="outline" className="bg-green-100 text-green-700">
-                    Checklist OK
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-red-100 text-red-700">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Checklist Pendiente
-                  </Badge>
-                )}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm">
-                Ver Checklist
+                Ver Detalles
               </Button>
               <Button variant="outline" size="sm">
                 Editar
               </Button>
               {!anexo.firmado && (
                 <Button size="sm">
-                  Firmar
+                  Completar
                 </Button>
               )}
             </div>
@@ -178,13 +158,11 @@ const AnexoBravo = () => {
           <TableRow>
             <TableHead>Código</TableHead>
             <TableHead>Operación</TableHead>
-            <TableHead>HPT</TableHead>
             <TableHead>Fecha Creación</TableHead>
-            <TableHead>Vencimiento</TableHead>
+            <TableHead>Fecha Verificación</TableHead>
             <TableHead>Jefe Centro</TableHead>
             <TableHead>Supervisor</TableHead>
-            <TableHead>Checklist</TableHead>
-            <TableHead>Riesgos</TableHead>
+            <TableHead>Progreso</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -194,8 +172,8 @@ const AnexoBravo = () => {
             <TableRow key={anexo.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <FileCheck className="w-4 h-4 text-orange-600" />
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <FileCheck className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
                     <div className="font-medium">{anexo.codigo}</div>
@@ -209,27 +187,13 @@ const AnexoBravo = () => {
                 </div>
               </TableCell>
               <TableCell className="text-zinc-600">{anexo.operacion}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.hpt}</TableCell>
               <TableCell className="text-zinc-600">{anexo.fechaCreacion}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.fechaVencimiento}</TableCell>
+              <TableCell className="text-zinc-600">{anexo.fechaVerificacion}</TableCell>
               <TableCell className="text-zinc-600">{anexo.jefeCentro}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.supervisorServicio}</TableCell>
+              <TableCell className="text-zinc-600">{anexo.supervisor}</TableCell>
               <TableCell>
-                {anexo.checklistCompleto ? (
-                  <Badge variant="outline" className="bg-green-100 text-green-700">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Completo
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-red-100 text-red-700">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Pendiente
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={getRiesgosBadge(anexo.riesgos)}>
-                  {anexo.riesgos}
+                <Badge variant="outline" className={anexo.progreso === 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
+                  {anexo.progreso}%
                 </Badge>
               </TableCell>
               <TableCell>
@@ -247,7 +211,7 @@ const AnexoBravo = () => {
                   </Button>
                   {!anexo.firmado && (
                     <Button size="sm">
-                      Firmar
+                      Completar
                     </Button>
                   )}
                 </div>
@@ -271,7 +235,7 @@ const AnexoBravo = () => {
                 <FileCheck className="w-6 h-6 text-zinc-600" />
                 <div>
                   <h1 className="text-xl font-semibold text-zinc-900">Anexo Bravo</h1>
-                  <p className="text-sm text-zinc-500">Autorización de Trabajo en Alturas</p>
+                  <p className="text-sm text-zinc-500">Checklist de Verificación de Seguridad</p>
                 </div>
               </div>
               <div className="flex-1" />
@@ -294,10 +258,20 @@ const AnexoBravo = () => {
                     <LayoutList className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button className="ios-button">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Anexo Bravo
-                </Button>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="ios-button">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo Anexo Bravo
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+                    <AnexoBravoForm
+                      onSubmit={handleCreateAnexoBravo}
+                      onCancel={() => setIsCreateDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </header>
