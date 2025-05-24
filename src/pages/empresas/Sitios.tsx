@@ -1,12 +1,15 @@
-
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Plus, Building2, Waves, Fish } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MapPin, Plus, Building2, Waves, Fish, LayoutGrid, LayoutList } from "lucide-react";
 
 const Sitios = () => {
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+
   // Mock data para sitios
   const sitios = [
     {
@@ -52,6 +55,123 @@ const Sitios = () => {
     }
   };
 
+  const renderCardsView = () => (
+    <div className="grid gap-6">
+      {sitios.map((sitio) => (
+        <Card key={sitio.id} className="ios-card hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Waves className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg text-zinc-900">{sitio.nombre}</CardTitle>
+                  <p className="text-sm text-zinc-500">{sitio.salmonera}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {sitio.tipo}
+                </Badge>
+                <Badge variant="secondary" className={getEstadoBadge(sitio.estado)}>
+                  {sitio.estado}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <MapPin className="w-4 h-4" />
+                <span>{sitio.coordenadas}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Waves className="w-4 h-4" />
+                <span>Profundidad: {sitio.profundidad}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Fish className="w-4 h-4" />
+                <span>{sitio.especies.join(", ")}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Building2 className="w-4 h-4" />
+                <span>{sitio.salmonera}</span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm">
+                Ver Operaciones
+              </Button>
+              <Button variant="outline" size="sm">
+                Editar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const renderTableView = () => (
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sitio</TableHead>
+            <TableHead>Salmonera</TableHead>
+            <TableHead>Coordenadas</TableHead>
+            <TableHead>Profundidad</TableHead>
+            <TableHead>Especies</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sitios.map((sitio) => (
+            <TableRow key={sitio.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Waves className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{sitio.nombre}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="text-zinc-600">{sitio.salmonera}</TableCell>
+              <TableCell className="text-zinc-600">{sitio.coordenadas}</TableCell>
+              <TableCell className="text-zinc-600">{sitio.profundidad}</TableCell>
+              <TableCell className="text-zinc-600">{sitio.especies.join(", ")}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className="text-xs">
+                  {sitio.tipo}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary" className={getEstadoBadge(sitio.estado)}>
+                  {sitio.estado}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm">
+                    Ver Operaciones
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Editar
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -68,70 +188,36 @@ const Sitios = () => {
                 </div>
               </div>
               <div className="flex-1" />
-              <Button className="ios-button">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Sitio
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button className="ios-button">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Sitio
+                </Button>
+              </div>
             </div>
           </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <div className="grid gap-6">
-                {sitios.map((sitio) => (
-                  <Card key={sitio.id} className="ios-card hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <Waves className="w-6 h-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg text-zinc-900">{sitio.nombre}</CardTitle>
-                            <p className="text-sm text-zinc-500">{sitio.salmonera}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {sitio.tipo}
-                          </Badge>
-                          <Badge variant="secondary" className={getEstadoBadge(sitio.estado)}>
-                            {sitio.estado}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <MapPin className="w-4 h-4" />
-                          <span>{sitio.coordenadas}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Waves className="w-4 h-4" />
-                          <span>Profundidad: {sitio.profundidad}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Fish className="w-4 h-4" />
-                          <span>{sitio.especies.join(", ")}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Building2 className="w-4 h-4" />
-                          <span>{sitio.salmonera}</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" size="sm">
-                          Ver Operaciones
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Editar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {viewMode === 'cards' ? renderCardsView() : renderTableView()}
             </div>
           </div>
         </main>

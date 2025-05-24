@@ -1,12 +1,15 @@
-
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, MapPin, Phone, Mail, HardHat } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Users, Plus, MapPin, Phone, Mail, HardHat, LayoutGrid, LayoutList } from "lucide-react";
 
 const Contratistas = () => {
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+
   // Mock data para empresas contratistas
   const contratistas = [
     {
@@ -55,6 +58,139 @@ const Contratistas = () => {
     }
   };
 
+  const renderCardsView = () => (
+    <div className="grid gap-6">
+      {contratistas.map((contratista) => (
+        <Card key={contratista.id} className="ios-card hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <HardHat className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg text-zinc-900">{contratista.nombre}</CardTitle>
+                  <p className="text-sm text-zinc-500">RUT: {contratista.rut}</p>
+                </div>
+              </div>
+              <Badge variant="secondary" className={getEstadoBadge(contratista.estado)}>
+                {contratista.estado}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <MapPin className="w-4 h-4" />
+                <span>{contratista.direccion}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Phone className="w-4 h-4" />
+                <span>{contratista.telefono}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Mail className="w-4 h-4" />
+                <span>{contratista.email}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Users className="w-4 h-4" />
+                <span>{contratista.buzos} buzos certificados</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-zinc-700">Certificaciones:</p>
+              <div className="flex flex-wrap gap-2">
+                {contratista.certificaciones.map((cert) => (
+                  <Badge key={cert} variant="outline" className="text-xs">
+                    {cert}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm">
+                Ver Equipo
+              </Button>
+              <Button variant="outline" size="sm">
+                Editar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const renderTableView = () => (
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Empresa</TableHead>
+            <TableHead>RUT</TableHead>
+            <TableHead>Dirección</TableHead>
+            <TableHead>Teléfono</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Buzos</TableHead>
+            <TableHead>Certificaciones</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {contratistas.map((contratista) => (
+            <TableRow key={contratista.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <HardHat className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{contratista.nombre}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="text-zinc-600">{contratista.rut}</TableCell>
+              <TableCell className="text-zinc-600">{contratista.direccion}</TableCell>
+              <TableCell className="text-zinc-600">{contratista.telefono}</TableCell>
+              <TableCell className="text-zinc-600">{contratista.email}</TableCell>
+              <TableCell className="text-zinc-600">{contratista.buzos}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {contratista.certificaciones.slice(0, 2).map((cert) => (
+                    <Badge key={cert} variant="outline" className="text-xs">
+                      {cert}
+                    </Badge>
+                  ))}
+                  {contratista.certificaciones.length > 2 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{contratista.certificaciones.length - 2}
+                    </Badge>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary" className={getEstadoBadge(contratista.estado)}>
+                  {contratista.estado}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm">
+                    Ver Equipo
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Editar
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -71,75 +207,36 @@ const Contratistas = () => {
                 </div>
               </div>
               <div className="flex-1" />
-              <Button className="ios-button">
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Empresa
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button className="ios-button">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Empresa
+                </Button>
+              </div>
             </div>
           </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <div className="grid gap-6">
-                {contratistas.map((contratista) => (
-                  <Card key={contratista.id} className="ios-card hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <HardHat className="w-6 h-6 text-orange-600" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg text-zinc-900">{contratista.nombre}</CardTitle>
-                            <p className="text-sm text-zinc-500">RUT: {contratista.rut}</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className={getEstadoBadge(contratista.estado)}>
-                          {contratista.estado}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <MapPin className="w-4 h-4" />
-                          <span>{contratista.direccion}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Phone className="w-4 h-4" />
-                          <span>{contratista.telefono}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Mail className="w-4 h-4" />
-                          <span>{contratista.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-600">
-                          <Users className="w-4 h-4" />
-                          <span>{contratista.buzos} buzos certificados</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-zinc-700">Certificaciones:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {contratista.certificaciones.map((cert) => (
-                            <Badge key={cert} variant="outline" className="text-xs">
-                              {cert}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" size="sm">
-                          Ver Equipo
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Editar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {viewMode === 'cards' ? renderCardsView() : renderTableView()}
             </div>
           </div>
         </main>
