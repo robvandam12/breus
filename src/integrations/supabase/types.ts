@@ -9,137 +9,16 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      anexo_bravo: {
-        Row: {
-          anexo_id: string
-          checklist_completo: boolean | null
-          checklist_items: Json | null
-          codigo: string
-          created_at: string | null
-          estado: string | null
-          fecha_creacion: string | null
-          fecha_verificacion: string | null
-          firmado: boolean | null
-          jefe_centro: string | null
-          jefe_centro_firma: string | null
-          observaciones_generales: string | null
-          operacion_id: string | null
-          progreso: number | null
-          supervisor: string | null
-          supervisor_firma: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          anexo_id?: string
-          checklist_completo?: boolean | null
-          checklist_items?: Json | null
-          codigo: string
-          created_at?: string | null
-          estado?: string | null
-          fecha_creacion?: string | null
-          fecha_verificacion?: string | null
-          firmado?: boolean | null
-          jefe_centro?: string | null
-          jefe_centro_firma?: string | null
-          observaciones_generales?: string | null
-          operacion_id?: string | null
-          progreso?: number | null
-          supervisor?: string | null
-          supervisor_firma?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          anexo_id?: string
-          checklist_completo?: boolean | null
-          checklist_items?: Json | null
-          codigo?: string
-          created_at?: string | null
-          estado?: string | null
-          fecha_creacion?: string | null
-          fecha_verificacion?: string | null
-          firmado?: boolean | null
-          jefe_centro?: string | null
-          jefe_centro_firma?: string | null
-          observaciones_generales?: string | null
-          operacion_id?: string | null
-          progreso?: number | null
-          supervisor?: string | null
-          supervisor_firma?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "anexo_bravo_operacion_id_fkey"
-            columns: ["operacion_id"]
-            isOneToOne: false
-            referencedRelation: "operacion"
-            referencedColumns: ["operacion_id"]
-          },
-        ]
-      }
-      operacion: {
-        Row: {
-          codigo: string
-          created_at: string | null
-          descripcion: string | null
-          estado: string | null
-          fecha_fin: string | null
-          fecha_inicio: string | null
-          nombre: string
-          operacion_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          codigo: string
-          created_at?: string | null
-          descripcion?: string | null
-          estado?: string | null
-          fecha_fin?: string | null
-          fecha_inicio?: string | null
-          nombre: string
-          operacion_id?: string
-          updated_at?: string | null
-        }
-        Update: {
-          codigo?: string
-          created_at?: string | null
-          descripcion?: string | null
-          estado?: string | null
-          fecha_fin?: string | null
-          fecha_inicio?: string | null
-          nombre?: string
-          operacion_id?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      is_super: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      jwt_salmonera: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      jwt_servicio: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
-      centro_tipo: "centro" | "barco"
-      firma_tipo: "supervisor_servicio" | "supervisor_mandante" | "buzo"
-      user_role:
-        | "superuser"
-        | "admin_salmonera"
-        | "admin_servicio"
-        | "supervisor"
-        | "buzo"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -254,16 +133,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      centro_tipo: ["centro", "barco"],
-      firma_tipo: ["supervisor_servicio", "supervisor_mandante", "buzo"],
-      user_role: [
-        "superuser",
-        "admin_salmonera",
-        "admin_servicio",
-        "supervisor",
-        "buzo",
-      ],
-    },
+    Enums: {},
   },
 } as const
