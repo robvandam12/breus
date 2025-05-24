@@ -45,14 +45,14 @@ export const useDashboardData = () => {
   }, [bitacorasSupervisor, bitacorasBuzo, inmersiones, operaciones]);
 
   const upcomingOperations = operaciones
-    .filter(op => op.estado === 'activa' || op.estado === 'programada')
+    .filter(op => op.estado === 'activa')
     .slice(0, 3)
     .map(op => ({
       id: parseInt(op.id.slice(-3)),
       name: op.nombre,
       date: op.fecha_inicio,
       supervisor: "Supervisor Asignado",
-      status: op.estado === 'activa' ? 'en_progreso' : 'programada',
+      status: 'en_progreso',
       divers: Math.floor(Math.random() * 5) + 2 // Random for demo
     }));
 
