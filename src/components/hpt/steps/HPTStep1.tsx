@@ -10,11 +10,11 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 import { Building2, MapPin, Calendar } from "lucide-react";
 
 interface HPTStep1Props {
-  formData: any;
-  updateFormData: (data: any) => void;
+  data: any;
+  onUpdate: (data: any) => void;
 }
 
-export const HPTStep1 = ({ formData, updateFormData }: HPTStep1Props) => {
+export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
   const { operaciones, isLoading } = useOperaciones();
 
   if (isLoading) {
@@ -45,8 +45,8 @@ export const HPTStep1 = ({ formData, updateFormData }: HPTStep1Props) => {
           <div>
             <Label htmlFor="operacion">Operación *</Label>
             <Select
-              value={formData.operacion_id || ''}
-              onValueChange={(value) => updateFormData({ operacion_id: value })}
+              value={data.operacion_id || ''}
+              onValueChange={(value) => onUpdate({ operacion_id: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar operación..." />
@@ -65,8 +65,8 @@ export const HPTStep1 = ({ formData, updateFormData }: HPTStep1Props) => {
             <Label htmlFor="supervisor">Supervisor *</Label>
             <Input
               id="supervisor"
-              value={formData.supervisor || ''}
-              onChange={(e) => updateFormData({ supervisor: e.target.value })}
+              value={data.supervisor || ''}
+              onChange={(e) => onUpdate({ supervisor: e.target.value })}
               placeholder="Nombre del supervisor"
             />
           </div>
@@ -75,8 +75,8 @@ export const HPTStep1 = ({ formData, updateFormData }: HPTStep1Props) => {
             <Label htmlFor="plan_trabajo">Plan de Trabajo *</Label>
             <Textarea
               id="plan_trabajo"
-              value={formData.plan_trabajo || ''}
-              onChange={(e) => updateFormData({ plan_trabajo: e.target.value })}
+              value={data.plan_trabajo || ''}
+              onChange={(e) => onUpdate({ plan_trabajo: e.target.value })}
               placeholder="Describe el plan de trabajo detallado..."
               className="min-h-[120px]"
             />
