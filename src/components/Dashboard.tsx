@@ -65,7 +65,7 @@ export function Dashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "programada":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+        return "bg-zinc-100 text-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-400";
       case "en_progreso":
         return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
       case "completada":
@@ -92,10 +92,10 @@ export function Dashboard() {
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           Dashboard
         </h1>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
           Monitoreo operacional en tiempo real
         </p>
       </div>
@@ -124,18 +124,18 @@ export function Dashboard() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <TrendingUp className="w-5 h-5 text-zinc-600" />
                   Inmersiones Últimos 30 Días
                 </CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-64 md:h-80 flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl">
+              <div className="h-64 md:h-80 flex items-center justify-center bg-gradient-to-br from-zinc-50 to-gray-50 dark:from-zinc-800 dark:to-zinc-900 rounded-xl">
                 <div className="text-center space-y-2">
-                  <div className="w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="w-12 h-12 mx-auto bg-zinc-100 dark:bg-zinc-900/30 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400">Gráfico próximamente</p>
+                  <p className="text-zinc-600 dark:text-zinc-400">Gráfico próximamente</p>
                 </div>
               </div>
             </CardContent>
@@ -147,7 +147,7 @@ export function Dashboard() {
           <Card className="ios-card">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+                <Calendar className="w-5 h-5 text-zinc-600" />
                 Operaciones Próximas
               </CardTitle>
             </CardHeader>
@@ -155,23 +155,25 @@ export function Dashboard() {
               {upcomingOperations.map((operation, index) => (
                 <div
                   key={operation.id}
-                  className="p-4 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all duration-200 cursor-pointer group"
+                  className="p-4 rounded-xl bg-white/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-all duration-200 cursor-pointer group"
                   style={{ animationDelay: `${(index + 4) * 100}ms` }}
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
-                      <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm leading-snug group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+                      <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-400 transition-colors">
                         {operation.name}
                       </h4>
                       <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(operation.status)}`}>
-                        {getStatusText(operation.status)}
+                        {operation.status === "programada" ? "Programada" : 
+                         operation.status === "en_progreso" ? "En Progreso" : 
+                         operation.status === "completada" ? "Completada" : operation.status}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
                       <span>{operation.supervisor}</span>
                       <span>{operation.divers} buzos</span>
                     </div>
-                    <div className="text-xs font-medium text-slate-500 dark:text-slate-500">
+                    <div className="text-xs font-medium text-zinc-500 dark:text-zinc-500">
                       {new Date(operation.date).toLocaleDateString('es-CL', {
                         weekday: 'short',
                         month: 'short',
@@ -190,13 +192,13 @@ export function Dashboard() {
               <CardTitle className="text-xl font-semibold">Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <button className="w-full p-3 text-left rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 ios-button touch-target">
+              <button className="w-full p-3 text-left rounded-xl bg-zinc-600 hover:bg-zinc-700 text-white font-medium transition-all duration-200 ios-button touch-target">
                 Nueva Operación
               </button>
-              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-medium transition-all duration-200 ios-button touch-target">
+              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 font-medium transition-all duration-200 ios-button touch-target">
                 Crear HPT
               </button>
-              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-medium transition-all duration-200 ios-button touch-target">
+              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 font-medium transition-all duration-200 ios-button touch-target">
                 Ver Reportes
               </button>
             </CardContent>

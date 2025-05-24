@@ -6,7 +6,7 @@ import { Dashboard } from "@/components/Dashboard";
 const Index = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-slate-50/50">
+      <div className="min-h-screen flex w-full bg-zinc-50/50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
           <header className="ios-blur border-b border-white/20 sticky top-0 z-50">
@@ -14,7 +14,7 @@ const Index = () => {
               <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-white/10 transition-colors" />
               <div className="flex-1" />
               <div className="flex items-center space-x-4">
-                <div className="text-sm font-medium text-slate-600 hidden md:block">
+                <div className="text-sm font-medium text-zinc-600 hidden md:block">
                   {new Date().toLocaleDateString('es-CL', {
                     weekday: 'long',
                     year: 'numeric',
@@ -22,7 +22,7 @@ const Index = () => {
                     day: 'numeric'
                   })}
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-sm font-semibold ios-shadow">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-white text-sm font-semibold ios-shadow">
                   U
                 </div>
               </div>
