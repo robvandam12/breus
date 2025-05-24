@@ -43,6 +43,19 @@ export interface AnexoBravoFormData {
   supervisor_firma?: string;
 }
 
+// Helper function to safely parse checklist items from Supabase Json
+const parseChecklistItems = (items: any): AnexoBravoItem['checklist_items'] => {
+  if (Array.isArray(items)) {
+    return items.map(item => ({
+      id: item.id || '',
+      item: item.item || '',
+      verificado: Boolean(item.verificado),
+      observaciones: item.observaciones || undefined
+    }));
+  }
+  return [];
+};
+
 export const useAnexoBravo = () => {
   const [anexosBravo, setAnexosBravo] = useState<AnexoBravoItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,7 +110,7 @@ export const useAnexoBravo = () => {
         firmado: item.firmado,
         checklist_completo: item.checklist_completo,
         progreso: item.progreso,
-        checklist_items: item.checklist_items || [],
+        checklist_items: parseChecklistItems(item.checklist_items),
         observaciones_generales: item.observaciones_generales || '',
         jefe_centro_firma: item.jefe_centro_firma,
         supervisor_firma: item.supervisor_firma,
@@ -197,7 +210,7 @@ export const useAnexoBravo = () => {
         firmado: newAnexo.firmado,
         checklist_completo: newAnexo.checklist_completo,
         progreso: newAnexo.progreso,
-        checklist_items: newAnexo.checklist_items || [],
+        checklist_items: parseChecklistItems(newAnexo.checklist_items),
         observaciones_generales: newAnexo.observaciones_generales || '',
         jefe_centro_firma: newAnexo.jefe_centro_firma,
         supervisor_firma: newAnexo.supervisor_firma,
