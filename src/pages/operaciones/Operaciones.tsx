@@ -2,214 +2,103 @@
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Building2, MapPin, Users, LayoutGrid, LayoutList } from "lucide-react";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Building, Plus, LayoutGrid, LayoutList, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
+import { OperacionCard } from "@/components/operaciones/OperacionCard";
+import { ActiveOperationsTable } from "@/components/dashboard/ActiveOperationsTable";
 
 const Operaciones = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Mock data para operaciones
+  // Mock data para Operaciones
   const operaciones = [
     {
       id: 1,
+      codigo: "OP-2024-001",
       nombre: "Mantenimiento Jaulas Sitio Norte",
       salmonera: "AquaChile S.A.",
       sitio: "Sitio Chiloé Norte",
-      contratista: "Servicios Subacuáticos del Sur Ltda.",
-      fechaInicio: "2024-01-15",
-      fechaTermino: "2024-01-20",
+      fechaInicio: "15/01/2024",
+      fechaFin: "25/01/2024",
       supervisor: "Diego Martínez",
       buzos: 4,
-      estado: "En Progreso",
+      estado: "Activa",
+      prioridad: "Alta" as const,
       tipo: "Mantenimiento"
     },
     {
       id: 2,
+      codigo: "OP-2024-002",
       nombre: "Inspección Redes Centro Los Fiordos",
-      salmonera: "Salmones Camanchaca S.A.",
+      salmonera: "Salmones Camanchaca",
       sitio: "Centro Los Fiordos",
-      contratista: "Buzos Profesionales Patagonia S.A.",
-      fechaInicio: "2024-01-18",
-      fechaTermino: "2024-01-22",
-      supervisor: "Carlos Rojas",
+      fechaInicio: "18/01/2024",
+      fechaFin: "28/01/2024",
+      supervisor: "Carlos Mendoza",
       buzos: 3,
-      estado: "Planificada",
+      estado: "En Preparación",
+      prioridad: "Media" as const,
       tipo: "Inspección"
     },
     {
       id: 3,
+      codigo: "OP-2024-003",
       nombre: "Limpieza Estructuras Piscicultura",
-      salmonera: "Multiexport Foods S.A.",
+      salmonera: "Cermaq Chile",
       sitio: "Piscicultura Río Blanco",
-      contratista: "Servicios Marinos Chiloé Ltda.",
-      fechaInicio: "2024-01-10",
-      fechaTermino: "2024-01-14",
+      fechaInicio: "20/01/2024",
+      fechaFin: "30/01/2024",
       supervisor: "Ana López",
       buzos: 2,
-      estado: "Completada",
+      estado: "Activa",
+      prioridad: "Baja" as const,
       tipo: "Limpieza"
+    },
+    {
+      id: 4,
+      codigo: "OP-2024-004",
+      nombre: "Emergencia Escape Salmones",
+      salmonera: "Multiexport Foods",
+      sitio: "Centro Puerto Montt",
+      fechaInicio: "22/01/2024",
+      fechaFin: "25/01/2024",
+      supervisor: "Roberto Silva",
+      buzos: 5,
+      estado: "Completada",
+      prioridad: "Alta" as const,
+      tipo: "Emergencia"
     }
   ];
 
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "En Progreso":
-        return "bg-blue-100 text-blue-700";
-      case "Planificada":
-        return "bg-amber-100 text-amber-700";
-      case "Completada":
-        return "bg-emerald-100 text-emerald-700";
-      case "Cancelada":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
-  };
+  const filteredOperaciones = operaciones.filter(op =>
+    op.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.salmonera.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const getTipoBadge = (tipo: string) => {
-    switch (tipo) {
-      case "Mantenimiento":
-        return "bg-purple-100 text-purple-700";
-      case "Inspección":
-        return "bg-cyan-100 text-cyan-700";
-      case "Limpieza":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
+  const handleCreateOperacion = (data: any) => {
+    console.log("Nueva operación:", data);
+    setIsCreateDialogOpen(false);
+    // Aquí integrarías con la API
   };
 
   const renderCardsView = () => (
     <div className="grid gap-6">
-      {operaciones.map((operacion) => (
-        <Card key={operacion.id} className="ios-card hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-zinc-900">{operacion.nombre}</CardTitle>
-                  <p className="text-sm text-zinc-500">{operacion.salmonera}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline" className={getTipoBadge(operacion.tipo)}>
-                  {operacion.tipo}
-                </Badge>
-                <Badge variant="secondary" className={getEstadoBadge(operacion.estado)}>
-                  {operacion.estado}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <MapPin className="w-4 h-4" />
-                <span>{operacion.sitio}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Building2 className="w-4 h-4" />
-                <span>{operacion.contratista}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Calendar className="w-4 h-4" />
-                <span>{operacion.fechaInicio} - {operacion.fechaTermino}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Users className="w-4 h-4" />
-                <span>{operacion.buzos} buzos • {operacion.supervisor}</span>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm">
-                Ver HPT
-              </Button>
-              <Button variant="outline" size="sm">
-                Ver Inmersiones
-              </Button>
-              <Button variant="outline" size="sm">
-                Editar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {filteredOperaciones.map((operacion) => (
+        <OperacionCard key={operacion.id} operacion={operacion} />
       ))}
     </div>
   );
 
   const renderTableView = () => (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Operación</TableHead>
-            <TableHead>Salmonera</TableHead>
-            <TableHead>Sitio</TableHead>
-            <TableHead>Contratista</TableHead>
-            <TableHead>Fechas</TableHead>
-            <TableHead>Supervisor</TableHead>
-            <TableHead>Buzos</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {operaciones.map((operacion) => (
-            <TableRow key={operacion.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{operacion.nombre}</div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="text-zinc-600">{operacion.salmonera}</TableCell>
-              <TableCell className="text-zinc-600">{operacion.sitio}</TableCell>
-              <TableCell className="text-zinc-600">{operacion.contratista}</TableCell>
-              <TableCell className="text-zinc-600 text-xs">
-                {operacion.fechaInicio}<br/>
-                {operacion.fechaTermino}
-              </TableCell>
-              <TableCell className="text-zinc-600">{operacion.supervisor}</TableCell>
-              <TableCell className="text-zinc-600">{operacion.buzos}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className={getTipoBadge(operacion.tipo)}>
-                  {operacion.tipo}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={getEstadoBadge(operacion.estado)}>
-                  {operacion.estado}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button variant="outline" size="sm">
-                    HPT
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Inmersiones
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Editar
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
+    <ActiveOperationsTable operations={filteredOperaciones} />
   );
 
   return (
@@ -221,14 +110,23 @@ const Operaciones = () => {
             <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
               <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
               <div className="flex items-center gap-3">
-                <Calendar className="w-6 h-6 text-zinc-600" />
+                <Building className="w-6 h-6 text-zinc-600" />
                 <div>
                   <h1 className="text-xl font-semibold text-zinc-900">Operaciones</h1>
                   <p className="text-sm text-zinc-500">Gestión de operaciones de buceo</p>
                 </div>
               </div>
               <div className="flex-1" />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                  <Input
+                    placeholder="Buscar operaciones..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
                 <div className="flex items-center bg-zinc-100 rounded-lg p-1">
                   <Button
                     variant={viewMode === 'cards' ? 'default' : 'ghost'}
@@ -247,16 +145,55 @@ const Operaciones = () => {
                     <LayoutList className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button className="ios-button">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Operación
-                </Button>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="ios-button">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nueva Operación
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <CreateOperacionForm
+                      onSubmit={handleCreateOperacion}
+                      onCancel={() => setIsCreateDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-emerald-600">
+                      {operaciones.filter(op => op.estado === "Activa").length}
+                    </div>
+                    <div className="text-sm text-zinc-500">Activas</div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-amber-600">
+                      {operaciones.filter(op => op.estado === "En Preparación").length}
+                    </div>
+                    <div className="text-sm text-zinc-500">En Preparación</div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {operaciones.filter(op => op.estado === "Completada").length}
+                    </div>
+                    <div className="text-sm text-zinc-500">Completadas</div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-zinc-600">
+                      {operaciones.length}
+                    </div>
+                    <div className="text-sm text-zinc-500">Total</div>
+                  </Card>
+                </div>
+              </div>
+
               {viewMode === 'cards' ? renderCardsView() : renderTableView()}
             </div>
           </div>
