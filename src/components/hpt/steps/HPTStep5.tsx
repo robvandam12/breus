@@ -5,8 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertCircle, Phone, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Phone, Plus, Trash2, MapPin } from "lucide-react";
 
 interface HPTStep5Props {
   data: any;
@@ -15,21 +14,21 @@ interface HPTStep5Props {
 
 export const HPTStep5 = ({ data, onUpdate }: HPTStep5Props) => {
   const [newContacto, setNewContacto] = useState({
-    nombre: "",
-    cargo: "",
-    telefono: ""
+    nombre: '',
+    cargo: '',
+    telefono: ''
   });
 
   const addContacto = () => {
-    if (newContacto.nombre.trim() && newContacto.telefono.trim()) {
-      const updatedContactos = [...(data.contactos_emergencia || []), { ...newContacto, id: Date.now() }];
+    if (newContacto.nombre && newContacto.telefono) {
+      const updatedContactos = [...(data.contactos_emergencia || []), newContacto];
       onUpdate({ contactos_emergencia: updatedContactos });
-      setNewContacto({ nombre: "", cargo: "", telefono: "" });
+      setNewContacto({ nombre: '', cargo: '', telefono: '' });
     }
   };
 
   const removeContacto = (index: number) => {
-    const updatedContactos = data.contactos_emergencia.filter((_: any, i: number) => i !== index);
+    const updatedContactos = (data.contactos_emergencia || []).filter((_: any, i: number) => i !== index);
     onUpdate({ contactos_emergencia: updatedContactos });
   };
 
@@ -38,33 +37,31 @@ export const HPTStep5 = ({ data, onUpdate }: HPTStep5Props) => {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Procedimientos de Emergencia</h2>
         <p className="mt-2 text-gray-600">
-          Define el plan de emergencia y contactos críticos
+          Plan de respuesta ante emergencias y contactos críticos
         </p>
       </div>
 
-      {/* Plan de Emergencia */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
+            <AlertTriangle className="w-5 h-5" />
             Plan de Emergencia
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div>
             <Label htmlFor="plan_emergencia">Descripción del Plan de Emergencia *</Label>
             <Textarea
               id="plan_emergencia"
               value={data.plan_emergencia || ''}
               onChange={(e) => onUpdate({ plan_emergencia: e.target.value })}
-              placeholder="Describe los procedimientos a seguir en caso de emergencia..."
-              className="min-h-[120px]"
+              placeholder="Detalle los procedimientos a seguir en caso de emergencia..."
+              rows={5}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Contactos de Emergencia */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -73,103 +70,95 @@ export const HPTStep5 = ({ data, onUpdate }: HPTStep5Props) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="contacto-nombre">Nombre *</Label>
+              <Label htmlFor="contacto_nombre">Nombre</Label>
               <Input
-                id="contacto-nombre"
+                id="contacto_nombre"
                 value={newContacto.nombre}
-                onChange={(e) => setNewContacto(prev => ({ ...prev, nombre: e.target.value }))}
+                onChange={(e) => setNewContacto({...newContacto, nombre: e.target.value})}
                 placeholder="Nombre completo"
               />
             </div>
             <div>
-              <Label htmlFor="contacto-cargo">Cargo</Label>
+              <Label htmlFor="contacto_cargo">Cargo</Label>
               <Input
-                id="contacto-cargo"
+                id="contacto_cargo"
                 value={newContacto.cargo}
-                onChange={(e) => setNewContacto(prev => ({ ...prev, cargo: e.target.value }))}
+                onChange={(e) => setNewContacto({...newContacto, cargo: e.target.value})}
                 placeholder="Cargo o función"
               />
             </div>
             <div>
-              <Label htmlFor="contacto-telefono">Teléfono *</Label>
+              <Label htmlFor="contacto_telefono">Teléfono</Label>
               <Input
-                id="contacto-telefono"
+                id="contacto_telefono"
                 value={newContacto.telefono}
-                onChange={(e) => setNewContacto(prev => ({ ...prev, telefono: e.target.value }))}
+                onChange={(e) => setNewContacto({...newContacto, telefono: e.target.value})}
                 placeholder="+56 9 1234 5678"
               />
             </div>
-            <div className="flex items-end">
-              <Button onClick={addContacto} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar
-              </Button>
-            </div>
           </div>
+          <Button onClick={addContacto} className="w-full md:w-auto">
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Contacto
+          </Button>
 
           {data.contactos_emergencia && data.contactos_emergencia.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.contactos_emergencia.map((contacto: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{contacto.nombre}</TableCell>
-                    <TableCell>{contacto.cargo}</TableCell>
-                    <TableCell>{contacto.telefono}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeContacto(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-2">
+              <h4 className="font-medium">Contactos Registrados:</h4>
+              {data.contactos_emergencia.map((contacto: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-green-600" />
+                    <div>
+                      <div className="font-medium">{contacto.nombre}</div>
+                      <div className="text-sm text-gray-600">
+                        {contacto.cargo} - {contacto.telefono}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeContacto(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Instalaciones de Emergencia */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            Instalaciones de Emergencia
+            <MapPin className="w-5 h-5" />
+            Centros Médicos de Emergencia
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="hospital_cercano">Hospital más Cercano</Label>
-              <Input
-                id="hospital_cercano"
-                value={data.hospital_cercano || ''}
-                onChange={(e) => onUpdate({ hospital_cercano: e.target.value })}
-                placeholder="Nombre y dirección del hospital"
-              />
-            </div>
-            <div>
-              <Label htmlFor="camara_hiperbarica">Cámara Hiperbárica</Label>
-              <Input
-                id="camara_hiperbarica"
-                value={data.camara_hiperbarica || ''}
-                onChange={(e) => onUpdate({ camara_hiperbarica: e.target.value })}
-                placeholder="Ubicación de la cámara hiperbárica"
-              />
-            </div>
+          <div>
+            <Label htmlFor="hospital_cercano">Hospital o Centro Médico más Cercano</Label>
+            <Input
+              id="hospital_cercano"
+              value={data.hospital_cercano || ''}
+              onChange={(e) => onUpdate({ hospital_cercano: e.target.value })}
+              placeholder="Nombre y dirección del hospital"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="camara_hiperbarica">Cámara Hiperbárica más Cercana</Label>
+            <Input
+              id="camara_hiperbarica"
+              value={data.camara_hiperbarica || ''}
+              onChange={(e) => onUpdate({ camara_hiperbarica: e.target.value })}
+              placeholder="Ubicación de la cámara hiperbárica"
+            />
           </div>
         </CardContent>
       </Card>

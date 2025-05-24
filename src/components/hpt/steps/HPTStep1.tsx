@@ -1,13 +1,9 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { Building2, MapPin, Calendar } from "lucide-react";
+import { Calendar, Clock, User, FileText } from "lucide-react";
 
 interface HPTStep1Props {
   data: any;
@@ -15,59 +11,115 @@ interface HPTStep1Props {
 }
 
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
-  const { operaciones, isLoading } = useOperaciones();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Información General</h2>
         <p className="mt-2 text-gray-600">
-          Selecciona la operación y completa los datos básicos del HPT
+          Datos básicos de la operación y responsables
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
-            Operación
+            <FileText className="w-5 h-5" />
+            Identificación de la Operación
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="operacion_id">ID de Operación *</Label>
+              <Input
+                id="operacion_id"
+                value={data.operacion_id || ''}
+                onChange={(e) => onUpdate({ operacion_id: e.target.value })}
+                placeholder="OP-2024-001"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="fecha_programada">Fecha Programada</Label>
+              <Input
+                id="fecha_programada"
+                type="date"
+                value={data.fecha_programada || ''}
+                onChange={(e) => onUpdate({ fecha_programada: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="hora_inicio">Hora de Inicio</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={data.hora_inicio || ''}
+                onChange={(e) => onUpdate({ hora_inicio: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="hora_fin">Hora de Fin</Label>
+              <Input
+                id="hora_fin"
+                type="time"
+                value={data.hora_fin || ''}
+                onChange={(e) => onUpdate({ hora_fin: e.target.value })}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Responsables
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="supervisor">Supervisor *</Label>
+              <Input
+                id="supervisor"
+                value={data.supervisor || ''}
+                onChange={(e) => onUpdate({ supervisor: e.target.value })}
+                placeholder="Nombre del supervisor"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="jefe_obra">Jefe de Obra</Label>
+              <Input
+                id="jefe_obra"
+                value={data.jefe_obra || ''}
+                onChange={(e) => onUpdate({ jefe_obra: e.target.value })}
+                placeholder="Nombre del jefe de obra"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Descripción del Trabajo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="operacion">Operación *</Label>
-            <Select
-              value={data.operacion_id || ''}
-              onValueChange={(value) => onUpdate({ operacion_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar operación..." />
-              </SelectTrigger>
-              <SelectContent>
-                {operaciones.map((operacion) => (
-                  <SelectItem key={operacion.id} value={operacion.id}>
-                    {operacion.codigo} - {operacion.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="supervisor">Supervisor *</Label>
-            <Input
-              id="supervisor"
-              value={data.supervisor || ''}
-              onChange={(e) => onUpdate({ supervisor: e.target.value })}
-              placeholder="Nombre del supervisor"
+            <Label htmlFor="descripcion_trabajo">Descripción del Trabajo</Label>
+            <Textarea
+              id="descripcion_trabajo"
+              value={data.descripcion_trabajo || ''}
+              onChange={(e) => onUpdate({ descripcion_trabajo: e.target.value })}
+              placeholder="Describa el trabajo a realizar..."
+              rows={3}
             />
           </div>
 
@@ -77,8 +129,8 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
               id="plan_trabajo"
               value={data.plan_trabajo || ''}
               onChange={(e) => onUpdate({ plan_trabajo: e.target.value })}
-              placeholder="Describe el plan de trabajo detallado..."
-              className="min-h-[120px]"
+              placeholder="Detalle el plan específico de trabajo..."
+              rows={4}
             />
           </div>
         </CardContent>
