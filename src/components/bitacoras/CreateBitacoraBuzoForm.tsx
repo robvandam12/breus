@@ -19,7 +19,7 @@ const formSchema = z.object({
   buzo: z.string().min(1, "El buzo es requerido"),
   profundidad_maxima: z.number().min(0, "La profundidad debe ser positiva"),
   trabajos_realizados: z.string().min(10, "Debe describir los trabajos realizados"),
-  observaciones_tecnicas: z.string().optional(),
+  observaciones_tecnicas: z.string().optional().default(""),
   estado_fisico_post: z.string().min(1, "El estado físico post-inmersión es requerido"),
 });
 
@@ -39,13 +39,24 @@ export const CreateBitacoraBuzoForm = ({ onSubmit, onCancel }: CreateBitacoraBuz
     watch,
     formState: { errors }
   } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema)
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      observaciones_tecnicas: ""
+    }
   });
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      const formData: BitacoraBuzoFormData = {
+        inmersion_id: data.inmersion_id,
+        buzo: data.buzo,
+        profundidad_maxima: data.profundidad_maxima,
+        trabajos_realizados: data.trabajos_realizados,
+        observaciones_tecnicas: data.observaciones_tecnicas || "",
+        estado_fisico_post: data.estado_fisico_post
+      };
+      await onSubmit(formData);
     } catch (error) {
       console.error('Error creating bitácora buzo:', error);
     } finally {

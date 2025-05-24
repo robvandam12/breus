@@ -18,7 +18,7 @@ const formSchema = z.object({
   inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
   supervisor: z.string().min(1, "El supervisor es requerido"),
   desarrollo_inmersion: z.string().min(10, "Debe describir el desarrollo de la inmersión"),
-  incidentes: z.string().optional(),
+  incidentes: z.string().optional().default(""),
   evaluacion_general: z.string().min(10, "La evaluación general es requerida"),
 });
 
@@ -38,13 +38,23 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
     watch,
     formState: { errors }
   } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema)
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      incidentes: ""
+    }
   });
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      const formData: BitacoraSupervisorFormData = {
+        inmersion_id: data.inmersion_id,
+        supervisor: data.supervisor,
+        desarrollo_inmersion: data.desarrollo_inmersion,
+        incidentes: data.incidentes || "",
+        evaluacion_general: data.evaluacion_general
+      };
+      await onSubmit(formData);
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
     } finally {
