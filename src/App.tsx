@@ -11,6 +11,8 @@ import Sitios from "./pages/empresas/Sitios";
 import Contratistas from "./pages/empresas/Contratistas";
 import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
+import AnexoBravo from "./pages/operaciones/AnexoBravo";
+import Inmersiones from "./pages/operaciones/Inmersiones";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/empresas/contratistas" element={<Contratistas />} />
           <Route path="/operaciones" element={<Operaciones />} />
           <Route path="/operaciones/hpt" element={<HPT />} />
+          <Route path="/operaciones/anexo-bravo" element={<AnexoBravo />} />
+          <Route path="/operaciones/inmersiones" element={<Inmersiones />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
