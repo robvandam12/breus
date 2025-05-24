@@ -81,14 +81,14 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="font-semibold text-lg">Breus</h2>
-            <p className="text-xs text-muted-foreground">Gestión de Buceo</p>
+            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
           </div>
         </div>
       </SidebarHeader>
       
       <SidebarContent className="p-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-2">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
             Navegación Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -141,13 +141,13 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="border-t border-border/40 p-4">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
             <span className="text-white font-medium text-sm">JS</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">Juan Supervisor</p>
-            <p className="text-xs text-muted-foreground truncate">supervisor@breus.cl</p>
+            <p className="text-xs text-zinc-500 truncate">supervisor@breus.cl</p>
           </div>
         </div>
       </SidebarFooter>
