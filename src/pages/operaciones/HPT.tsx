@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -6,87 +7,46 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { FileText, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList, Loader2 } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
+import { useHPT } from "@/hooks/useHPT";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const HPT = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { hpts, loading, createHPT } = useHPT();
 
-  // Mock data para HPTs
-  const hpts = [
-    {
-      id: 1,
-      codigo: "HPT-2024-001",
-      operacion: "Mantenimiento Jaulas Sitio Norte",
-      fechaCreacion: "2024-01-14",
-      fechaProgramada: "2024-01-15",
-      supervisor: "Diego Martínez",
-      jefeObra: "Carlos Mendoza",
-      estado: "Aprobada",
-      firmado: true,
-      equipoBuceo: 4,
-      riesgos: "Medio"
-    },
-    {
-      id: 2,
-      codigo: "HPT-2024-002",
-      operacion: "Inspección Redes Centro Los Fiordos",
-      fechaCreacion: "2024-01-17",
-      fechaProgramada: "2024-01-18",
-      supervisor: "Carlos Rojas",
-      jefeObra: "Ana Morales",
-      estado: "Pendiente",
-      firmado: false,
-      equipoBuceo: 3,
-      riesgos: "Alto"
-    },
-    {
-      id: 3,
-      codigo: "HPT-2024-003",
-      operacion: "Limpieza Estructuras Piscicultura",
-      fechaCreacion: "2024-01-09",
-      fechaProgramada: "2024-01-10",
-      supervisor: "Ana López",
-      jefeObra: "Roberto Silva",
-      estado: "Completada",
-      firmado: true,
-      equipoBuceo: 2,
-      riesgos: "Bajo"
-    }
-  ];
-
-  const handleCreateHPT = (data: any) => {
-    console.log("Nueva HPT:", data);
-    setIsCreateDialogOpen(false);
-    // Aquí integrarías con la API
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "Aprobada":
-        return "bg-emerald-100 text-emerald-700";
-      case "Pendiente":
-        return "bg-amber-100 text-amber-700";
-      case "Completada":
-        return "bg-blue-100 text-blue-700";
-      case "Rechazada":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
+  const handleCreateHPT = async (data: any) => {
+    try {
+      // Mapear los datos del wizard al formato que espera createHPT
+      const hptData = {
+        operacion_id: data.operacion_id,
+        supervisor: data.supervisor,
+        plan_trabajo: data.descripcion_trabajo || 'Plan de trabajo pendiente',
+        supervisor_firma: data.supervisor_firma,
+        jefe_operaciones_firma: data.jefe_obra_firma,
+      };
+      
+      await createHPT(hptData);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating HPT:', error);
     }
   };
 
-  const getRiesgosBadge = (riesgos: string) => {
-    switch (riesgos) {
-      case "Bajo":
-        return "bg-green-100 text-green-700";
-      case "Medio":
-        return "bg-yellow-100 text-yellow-700";
-      case "Alto":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
+  const getEstadoBadge = (firmado: boolean) => {
+    return firmado 
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-amber-100 text-amber-700";
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy", { locale: es });
+    } catch {
+      return dateString;
     }
   };
 
@@ -102,7 +62,7 @@ const HPT = () => {
                 </div>
                 <div>
                   <CardTitle className="text-lg text-zinc-900">{hpt.codigo}</CardTitle>
-                  <p className="text-sm text-zinc-500">{hpt.operacion}</p>
+                  <p className="text-sm text-zinc-500">{hpt.operacion_nombre}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -112,8 +72,8 @@ const HPT = () => {
                     Firmada
                   </Badge>
                 )}
-                <Badge variant="secondary" className={getEstadoBadge(hpt.estado)}>
-                  {hpt.estado}
+                <Badge variant="secondary" className={getEstadoBadge(hpt.firmado)}>
+                  {hpt.firmado ? "Aprobada" : "Pendiente"}
                 </Badge>
               </div>
             </div>
@@ -122,29 +82,11 @@ const HPT = () => {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Calendar className="w-4 h-4" />
-                <span>Creada: {hpt.fechaCreacion}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Clock className="w-4 h-4" />
-                <span>Programada: {hpt.fechaProgramada}</span>
+                <span>Creada: {formatDate(hpt.fecha_creacion)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Users className="w-4 h-4" />
                 <span>Supervisor: {hpt.supervisor}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Users className="w-4 h-4" />
-                <span>Jefe Obra: {hpt.jefeObra}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <Badge variant="outline" className={getRiesgosBadge(hpt.riesgos)}>
-                  Riesgo {hpt.riesgos}
-                </Badge>
-                <Badge variant="outline">
-                  {hpt.equipoBuceo} buzos
-                </Badge>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -174,11 +116,7 @@ const HPT = () => {
             <TableHead>Código HPT</TableHead>
             <TableHead>Operación</TableHead>
             <TableHead>Fecha Creación</TableHead>
-            <TableHead>Fecha Programada</TableHead>
             <TableHead>Supervisor</TableHead>
-            <TableHead>Jefe Obra</TableHead>
-            <TableHead>Equipo</TableHead>
-            <TableHead>Riesgos</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -202,20 +140,12 @@ const HPT = () => {
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="text-zinc-600">{hpt.operacion}</TableCell>
-              <TableCell className="text-zinc-600">{hpt.fechaCreacion}</TableCell>
-              <TableCell className="text-zinc-600">{hpt.fechaProgramada}</TableCell>
+              <TableCell className="text-zinc-600">{hpt.operacion_nombre}</TableCell>
+              <TableCell className="text-zinc-600">{formatDate(hpt.fecha_creacion)}</TableCell>
               <TableCell className="text-zinc-600">{hpt.supervisor}</TableCell>
-              <TableCell className="text-zinc-600">{hpt.jefeObra}</TableCell>
-              <TableCell className="text-zinc-600">{hpt.equipoBuceo}</TableCell>
               <TableCell>
-                <Badge variant="outline" className={getRiesgosBadge(hpt.riesgos)}>
-                  {hpt.riesgos}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={getEstadoBadge(hpt.estado)}>
-                  {hpt.estado}
+                <Badge variant="secondary" className={getEstadoBadge(hpt.firmado)}>
+                  {hpt.firmado ? "Aprobada" : "Pendiente"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -239,6 +169,36 @@ const HPT = () => {
       </Table>
     </Card>
   );
+
+  if (loading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 flex flex-col">
+            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
+              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
+                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-zinc-600" />
+                  <div>
+                    <h1 className="text-xl font-semibold text-zinc-900">HPT</h1>
+                    <p className="text-sm text-zinc-500">Hoja de Preparación de Trabajo</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Cargando HPTs...</span>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -295,7 +255,21 @@ const HPT = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              {viewMode === 'cards' ? renderCardsView() : renderTableView()}
+              {hpts.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay HPTs creadas</h3>
+                    <p className="text-zinc-500 mb-4">Comienza creando tu primera Hoja de Preparación de Trabajo</p>
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nueva HPT
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                viewMode === 'cards' ? renderCardsView() : renderTableView()
+              )}
             </div>
           </div>
         </main>

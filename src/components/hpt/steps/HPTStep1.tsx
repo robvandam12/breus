@@ -5,25 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface HPTStep1Props {
   data: any;
   onUpdate: (data: any) => void;
 }
 
-interface Operacion {
-  id: string;
-  codigo: string;
-  nombre: string;
-}
-
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
-  const [operaciones, setOperaciones] = useState<Operacion[]>([]);
-  const [loadingOperaciones, setLoadingOperaciones] = useState(false);
-  const { toast } = useToast();
+  const { operaciones, loading: loadingOperaciones } = useOperaciones();
 
   const form = useForm({
     defaultValues: {
@@ -42,40 +33,6 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
   useEffect(() => {
     onUpdate(formData);
   }, [formData, onUpdate]);
-
-  useEffect(() => {
-    loadOperaciones();
-  }, []);
-
-  const loadOperaciones = async () => {
-    setLoadingOperaciones(true);
-    try {
-      const { data, error } = await supabase
-        .from('operacion')
-        .select('id, codigo, nombre')
-        .eq('estado', 'activa')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedData: Operacion[] = (data || []).map((item: any) => ({
-        id: item.id,
-        codigo: item.codigo,
-        nombre: item.nombre
-      }));
-
-      setOperaciones(formattedData);
-    } catch (err) {
-      console.error('Error loading operaciones:', err);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las operaciones",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingOperaciones(false);
-    }
-  };
 
   // Mock data for selects - en producción estos vendrían de la base de datos
   const supervisores = [
