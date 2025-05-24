@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AnexoBravoItem {
   id: string;
@@ -48,64 +49,6 @@ export const useAnexoBravo = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Mock data inicial - posteriormente se conectará con Supabase
-  const mockAnexosBravo: AnexoBravoItem[] = [
-    {
-      id: '1',
-      codigo: 'AB-2024-001',
-      operacion_id: 'OP-001',
-      operacion_nombre: 'Mantenimiento Jaulas Sitio Norte',
-      fecha_creacion: '2024-01-14',
-      fecha_verificacion: '2024-01-14',
-      jefe_centro: 'Carlos Mendoza',
-      supervisor: 'Diego Martínez',
-      estado: 'aprobado',
-      firmado: true,
-      checklist_completo: true,
-      progreso: 100,
-      checklist_items: [],
-      observaciones_generales: '',
-      created_at: '2024-01-14T08:00:00Z',
-      updated_at: '2024-01-14T09:30:00Z'
-    },
-    {
-      id: '2',
-      codigo: 'AB-2024-002',
-      operacion_id: 'OP-002',
-      operacion_nombre: 'Inspección Redes Centro Los Fiordos',
-      fecha_creacion: '2024-01-17',
-      fecha_verificacion: '2024-01-17',
-      jefe_centro: 'Ana Morales',
-      supervisor: 'Carlos Rojas',
-      estado: 'en_progreso',
-      firmado: false,
-      checklist_completo: false,
-      progreso: 75,
-      checklist_items: [],
-      observaciones_generales: '',
-      created_at: '2024-01-17T10:00:00Z',
-      updated_at: '2024-01-17T11:45:00Z'
-    },
-    {
-      id: '3',
-      codigo: 'AB-2024-003',
-      operacion_id: 'OP-003',
-      operacion_nombre: 'Limpieza Estructuras Piscicultura',
-      fecha_creacion: '2024-01-09',
-      fecha_verificacion: '2024-01-10',
-      jefe_centro: 'Roberto Silva',
-      supervisor: 'Ana López',
-      estado: 'completado',
-      firmado: true,
-      checklist_completo: true,
-      progreso: 100,
-      checklist_items: [],
-      observaciones_generales: '',
-      created_at: '2024-01-09T07:00:00Z',
-      updated_at: '2024-01-10T16:30:00Z'
-    }
-  ];
-
   useEffect(() => {
     loadAnexosBravo();
   }, []);
@@ -113,11 +56,59 @@ export const useAnexoBravo = () => {
   const loadAnexosBravo = async () => {
     setLoading(true);
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setAnexosBravo(mockAnexosBravo);
+      const { data, error } = await supabase
+        .from('anexo_bravo')
+        .select(`
+          anexo_id,
+          codigo,
+          operacion_id,
+          fecha_creacion,
+          fecha_verificacion,
+          jefe_centro,
+          supervisor,
+          estado,
+          firmado,
+          checklist_completo,
+          progreso,
+          checklist_items,
+          observaciones_generales,
+          jefe_centro_firma,
+          supervisor_firma,
+          created_at,
+          updated_at,
+          operacion:operacion_id (
+            nombre
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: AnexoBravoItem[] = (data || []).map(item => ({
+        id: item.anexo_id,
+        codigo: item.codigo,
+        operacion_id: item.operacion_id,
+        operacion_nombre: item.operacion?.nombre || 'Operación no encontrada',
+        fecha_creacion: item.fecha_creacion,
+        fecha_verificacion: item.fecha_verificacion || '',
+        jefe_centro: item.jefe_centro || '',
+        supervisor: item.supervisor || '',
+        estado: item.estado as AnexoBravoItem['estado'],
+        firmado: item.firmado,
+        checklist_completo: item.checklist_completo,
+        progreso: item.progreso,
+        checklist_items: item.checklist_items || [],
+        observaciones_generales: item.observaciones_generales || '',
+        jefe_centro_firma: item.jefe_centro_firma,
+        supervisor_firma: item.supervisor_firma,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      setAnexosBravo(formattedData);
       setError(null);
     } catch (err) {
+      console.error('Error loading Anexos Bravo:', err);
       setError('Error al cargar los Anexos Bravo');
       toast({
         title: "Error",
@@ -132,45 +123,104 @@ export const useAnexoBravo = () => {
   const createAnexoBravo = async (data: AnexoBravoFormData) => {
     setLoading(true);
     try {
-      // Simular creación en API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generar código único
+      const { count } = await supabase
+        .from('anexo_bravo')
+        .select('*', { count: 'exact', head: true });
       
-      const newAnexo: AnexoBravoItem = {
-        id: Date.now().toString(),
-        codigo: `AB-2024-${String(anexosBravo.length + 1).padStart(3, '0')}`,
+      const codigo = `AB-2024-${String((count || 0) + 1).padStart(3, '0')}`;
+
+      // Calcular progreso
+      const progreso = data.checklist_items.length > 0 
+        ? Math.round((data.checklist_items.filter(item => item.verificado).length / data.checklist_items.length) * 100)
+        : 0;
+
+      // Determinar estado y si está firmado
+      const firmado = !!(data.jefe_centro_firma && data.supervisor_firma);
+      const estado = firmado ? 'aprobado' : 'borrador';
+
+      const anexoBravoData = {
+        codigo,
         operacion_id: data.operacion_id,
-        operacion_nombre: 'Nueva Operación',
-        fecha_creacion: new Date().toISOString().split('T')[0],
         fecha_verificacion: data.fecha_verificacion,
-        jefe_centro: 'Usuario Actual',
-        supervisor: 'Supervisor Asignado',
-        estado: data.jefe_centro_firma && data.supervisor_firma ? 'aprobado' : 'borrador',
-        firmado: !!(data.jefe_centro_firma && data.supervisor_firma),
-        checklist_completo: data.checklist_items.every(item => item.verificado),
-        progreso: (data.checklist_items.filter(item => item.verificado).length / data.checklist_items.length) * 100,
+        jefe_centro: 'Usuario Actual', // TODO: Obtener del contexto de usuario
+        supervisor: 'Supervisor Asignado', // TODO: Obtener del contexto de usuario
+        estado,
+        firmado,
+        checklist_completo: progreso === 100,
+        progreso,
         checklist_items: data.checklist_items,
         observaciones_generales: data.observaciones_generales,
         jefe_centro_firma: data.jefe_centro_firma,
-        supervisor_firma: data.supervisor_firma,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        supervisor_firma: data.supervisor_firma
       };
 
-      setAnexosBravo(prev => [newAnexo, ...prev]);
+      const { data: newAnexo, error } = await supabase
+        .from('anexo_bravo')
+        .insert([anexoBravoData])
+        .select(`
+          anexo_id,
+          codigo,
+          operacion_id,
+          fecha_creacion,
+          fecha_verificacion,
+          jefe_centro,
+          supervisor,
+          estado,
+          firmado,
+          checklist_completo,
+          progreso,
+          checklist_items,
+          observaciones_generales,
+          jefe_centro_firma,
+          supervisor_firma,
+          created_at,
+          updated_at,
+          operacion:operacion_id (
+            nombre
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      const formattedNewAnexo: AnexoBravoItem = {
+        id: newAnexo.anexo_id,
+        codigo: newAnexo.codigo,
+        operacion_id: newAnexo.operacion_id,
+        operacion_nombre: newAnexo.operacion?.nombre || 'Nueva Operación',
+        fecha_creacion: newAnexo.fecha_creacion,
+        fecha_verificacion: newAnexo.fecha_verificacion || '',
+        jefe_centro: newAnexo.jefe_centro || '',
+        supervisor: newAnexo.supervisor || '',
+        estado: newAnexo.estado as AnexoBravoItem['estado'],
+        firmado: newAnexo.firmado,
+        checklist_completo: newAnexo.checklist_completo,
+        progreso: newAnexo.progreso,
+        checklist_items: newAnexo.checklist_items || [],
+        observaciones_generales: newAnexo.observaciones_generales || '',
+        jefe_centro_firma: newAnexo.jefe_centro_firma,
+        supervisor_firma: newAnexo.supervisor_firma,
+        created_at: newAnexo.created_at,
+        updated_at: newAnexo.updated_at
+      };
+
+      setAnexosBravo(prev => [formattedNewAnexo, ...prev]);
       
       // Emitir evento para dashboard
-      if (newAnexo.firmado) {
-        console.log('ANEXO_BRAVO_DONE event triggered:', newAnexo);
+      if (formattedNewAnexo.firmado) {
+        console.log('ANEXO_BRAVO_DONE event triggered:', formattedNewAnexo);
         // Aquí se integraría con el sistema de webhooks
       }
 
       toast({
         title: "Anexo Bravo Creado",
-        description: `${newAnexo.codigo} ha sido ${newAnexo.firmado ? 'completado' : 'guardado como borrador'}`,
+        description: `${formattedNewAnexo.codigo} ha sido ${formattedNewAnexo.firmado ? 'completado' : 'guardado como borrador'}`,
       });
 
-      return newAnexo;
+      return formattedNewAnexo;
     } catch (err) {
+      console.error('Error creating Anexo Bravo:', err);
       setError('Error al crear el Anexo Bravo');
       toast({
         title: "Error",
@@ -186,17 +236,28 @@ export const useAnexoBravo = () => {
   const updateAnexoBravo = async (id: string, data: Partial<AnexoBravoFormData>) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      // Calcular nuevo progreso si se actualizan los checklist_items
+      let updateData: any = { ...data };
+      if (data.checklist_items) {
+        updateData.progreso = (data.checklist_items.filter(item => item.verificado).length / data.checklist_items.length) * 100;
+        updateData.checklist_completo = updateData.progreso === 100;
+      }
+
+      const { error } = await supabase
+        .from('anexo_bravo')
+        .update(updateData)
+        .eq('anexo_id', id);
+
+      if (error) throw error;
+
       setAnexosBravo(prev => prev.map(anexo => 
         anexo.id === id 
           ? { 
               ...anexo, 
               ...data,
-              updated_at: new Date().toISOString(),
-              progreso: data.checklist_items 
-                ? (data.checklist_items.filter(item => item.verificado).length / data.checklist_items.length) * 100
-                : anexo.progreso
+              progreso: updateData.progreso || anexo.progreso,
+              checklist_completo: updateData.checklist_completo || anexo.checklist_completo,
+              updated_at: new Date().toISOString()
             }
           : anexo
       ));
@@ -206,6 +267,7 @@ export const useAnexoBravo = () => {
         description: "Los cambios han sido guardados",
       });
     } catch (err) {
+      console.error('Error updating Anexo Bravo:', err);
       setError('Error al actualizar el Anexo Bravo');
       toast({
         title: "Error",
@@ -219,7 +281,13 @@ export const useAnexoBravo = () => {
 
   const deleteAnexoBravo = async (id: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const { error } = await supabase
+        .from('anexo_bravo')
+        .delete()
+        .eq('anexo_id', id);
+
+      if (error) throw error;
+
       setAnexosBravo(prev => prev.filter(anexo => anexo.id !== id));
       
       toast({
@@ -227,6 +295,7 @@ export const useAnexoBravo = () => {
         description: "El documento ha sido eliminado",
       });
     } catch (err) {
+      console.error('Error deleting Anexo Bravo:', err);
       toast({
         title: "Error",
         description: "No se pudo eliminar el Anexo Bravo",

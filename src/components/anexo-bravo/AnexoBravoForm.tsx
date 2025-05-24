@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { DigitalSignature } from "./DigitalSignature";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { FileCheck, Shield, CheckCircle, AlertTriangle, Save, Clock } from "lucide-react";
 
 interface AnexoBravoData {
@@ -32,6 +34,12 @@ interface AnexoBravoFormProps {
   initialData?: Partial<AnexoBravoData>;
 }
 
+interface Operacion {
+  operacion_id: string;
+  codigo: string;
+  nombre: string;
+}
+
 const DEFAULT_CHECKLIST_ITEMS = [
   { id: '1', item: 'Verificación de equipos de buceo individuales', verificado: false },
   { id: '2', item: 'Inspección de sistemas de aire comprimido', verificado: false },
@@ -48,6 +56,8 @@ const DEFAULT_CHECKLIST_ITEMS = [
 ];
 
 export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFormProps) => {
+  const [operaciones, setOperaciones] = useState<Operacion[]>([]);
+  const [loadingOperaciones, setLoadingOperaciones] = useState(false);
   const [jefeCentroSigned, setJefeCentroSigned] = useState(!!initialData?.jefe_centro_firma);
   const [supervisorSigned, setSupervisorSigned] = useState(!!initialData?.supervisor_firma);
   const [jefeCentroSignature, setJefeCentroSignature] = useState(initialData?.jefe_centro_firma || "");
@@ -68,6 +78,34 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
   );
 
   const formData = form.watch();
+
+  // Cargar operaciones disponibles
+  useEffect(() => {
+    loadOperaciones();
+  }, []);
+
+  const loadOperaciones = async () => {
+    setLoadingOperaciones(true);
+    try {
+      const { data, error } = await supabase
+        .from('operacion')
+        .select('operacion_id, codigo, nombre')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setOperaciones(data || []);
+    } catch (err) {
+      console.error('Error loading operaciones:', err);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las operaciones",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOperaciones(false);
+    }
+  };
 
   // Auto-save draft every 30 seconds
   useEffect(() => {
@@ -206,16 +244,23 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                 <FormField
                   control={form.control}
                   name="operacion_id"
-                  rules={{ required: "ID de operación es requerido" }}
+                  rules={{ required: "Operación es requerida" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ID de Operación *</FormLabel>
+                      <FormLabel>Operación *</FormLabel>
                       <FormControl>
-                        <input 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          placeholder="Ej: OP-2024-001"
-                          {...field}
-                        />
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={loadingOperaciones ? "Cargando..." : "Seleccionar operación"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {operaciones.map((operacion) => (
+                              <SelectItem key={operacion.operacion_id} value={operacion.operacion_id}>
+                                {operacion.codigo} - {operacion.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -345,7 +390,7 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
                   <span className="font-medium text-amber-700">
                     {!formData.operacion_id.trim() 
-                      ? "Complete el ID de operación para continuar"
+                      ? "Seleccione una operación para continuar"
                       : !isReadyToSign 
                         ? "Complete todos los elementos del checklist para habilitar las firmas"
                         : "Se requieren ambas firmas para completar el Anexo Bravo"
