@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -179,7 +178,7 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                     <SelectItem value="nula">Nula (0-0.5 nudos)</SelectItem>
                     <SelectItem value="leve">Leve (0.5-1 nudo)</SelectItem>
                     <SelectItem value="moderada">Moderada (1-2 nudos)</SelectItem>
-                    <SelectItem value="fuerte">Fuerte (>2 nudos)</SelectItem>
+                    <SelectItem value="fuerte">Fuerte (&gt;2 nudos)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -200,10 +199,10 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="excelente">Excelente (>15m)</SelectItem>
+                    <SelectItem value="excelente">Excelente (&gt;15m)</SelectItem>
                     <SelectItem value="buena">Buena (10-15m)</SelectItem>
                     <SelectItem value="regular">Regular (5-10m)</SelectItem>
-                    <SelectItem value="mala">Mala (<5m)</SelectItem>
+                    <SelectItem value="mala">Mala (&lt;5m)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -241,7 +240,6 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
       </Form>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Riesgos Identificados */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -270,7 +268,6 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
           </CardContent>
         </Card>
 
-        {/* Medidas de Control */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
