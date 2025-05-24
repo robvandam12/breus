@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Trash2, UserCheck } from "lucide-react";
 
 interface HPTStep2Props {
@@ -27,7 +26,7 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
   });
 
   const addBuzo = () => {
-    if (newBuzo.nombre && newBuzo.certificacion) {
+    if (newBuzo.nombre && newBuzo.certificacion && newBuzo.vencimiento && newBuzo.rol) {
       const updatedBuzos = [...(data.buzos || []), newBuzo];
       onUpdate({ buzos: updatedBuzos });
       setNewBuzo({ nombre: '', certificacion: '', vencimiento: '', rol: '' });
@@ -57,7 +56,7 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Equipo de Buceo</h2>
         <p className="mt-2 text-gray-600">
-          Personal involucrado en la operación de buceo
+          Personal certificado y asistentes para la operación
         </p>
       </div>
 
@@ -71,7 +70,7 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="buzo_nombre">Nombre</Label>
+              <Label htmlFor="buzo_nombre">Nombre Completo</Label>
               <Input
                 id="buzo_nombre"
                 value={newBuzo.nombre}
@@ -86,15 +85,16 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
                 onValueChange={(value) => setNewBuzo({...newBuzo, certificacion: value})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tipo..." />
+                  <SelectValue placeholder="Tipo de certificación" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="padi-ow">PADI Open Water</SelectItem>
-                  <SelectItem value="padi-aow">PADI Advanced Open Water</SelectItem>
-                  <SelectItem value="padi-rescue">PADI Rescue Diver</SelectItem>
-                  <SelectItem value="padi-dm">PADI Divemaster</SelectItem>
-                  <SelectItem value="ssi-ow">SSI Open Water</SelectItem>
+                  <SelectItem value="open_water">Open Water</SelectItem>
+                  <SelectItem value="advanced">Advanced Open Water</SelectItem>
+                  <SelectItem value="rescue">Rescue Diver</SelectItem>
+                  <SelectItem value="divemaster">Divemaster</SelectItem>
+                  <SelectItem value="instructor">Instructor</SelectItem>
                   <SelectItem value="comercial">Buceo Comercial</SelectItem>
+                  <SelectItem value="industrial">Buceo Industrial</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -108,18 +108,19 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
               />
             </div>
             <div>
-              <Label htmlFor="buzo_rol">Rol</Label>
+              <Label htmlFor="buzo_rol">Rol en la Operación</Label>
               <Select
                 value={newBuzo.rol}
                 onValueChange={(value) => setNewBuzo({...newBuzo, rol: value})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Rol..." />
+                  <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="principal">Buzo Principal</SelectItem>
-                  <SelectItem value="asistente">Buzo Asistente</SelectItem>
-                  <SelectItem value="standby">Buzo Standby</SelectItem>
+                  <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
+                  <SelectItem value="buzo_seguridad">Buzo de Seguridad</SelectItem>
+                  <SelectItem value="buzo_standby">Buzo Standby</SelectItem>
+                  <SelectItem value="supervisor_buceo">Supervisor de Buceo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -133,13 +134,16 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
             <div className="space-y-2">
               <h4 className="font-medium">Buzos Registrados:</h4>
               {data.buzos.map((buzo: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-3">
-                    <UserCheck className="w-4 h-4 text-green-600" />
+                    <UserCheck className="w-5 h-5 text-blue-600" />
                     <div>
-                      <div className="font-medium">{buzo.nombre}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="font-medium text-blue-900">{buzo.nombre}</div>
+                      <div className="text-sm text-blue-700">
                         {buzo.certificacion} - {buzo.rol}
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        Vence: {new Date(buzo.vencimiento).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -168,7 +172,7 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="asistente_nombre">Nombre</Label>
+              <Label htmlFor="asistente_nombre">Nombre Completo</Label>
               <Input
                 id="asistente_nombre"
                 value={newAsistente.nombre}
@@ -177,20 +181,22 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
               />
             </div>
             <div>
-              <Label htmlFor="asistente_rol">Rol</Label>
+              <Label htmlFor="asistente_rol">Función</Label>
               <Select
                 value={newAsistente.rol}
                 onValueChange={(value) => setNewAsistente({...newAsistente, rol: value})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Rol..." />
+                  <SelectValue placeholder="Seleccionar función" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tender">Tender</SelectItem>
-                  <SelectItem value="operador">Operador de Superficie</SelectItem>
-                  <SelectItem value="seguridad">Oficial de Seguridad</SelectItem>
-                  <SelectItem value="medico">Paramédico</SelectItem>
+                  <SelectItem value="tendero">Tendero</SelectItem>
+                  <SelectItem value="operador_compresor">Operador de Compresor</SelectItem>
+                  <SelectItem value="asistente_superficie">Asistente de Superficie</SelectItem>
+                  <SelectItem value="operador_grua">Operador de Grúa</SelectItem>
+                  <SelectItem value="soldador">Soldador</SelectItem>
                   <SelectItem value="tecnico">Técnico</SelectItem>
+                  <SelectItem value="seguridad">Personal de Seguridad</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -202,11 +208,11 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
 
           {data.asistentes && data.asistentes.length > 0 && (
             <div className="space-y-2">
-              <h4 className="font-medium">Personal de Apoyo:</h4>
+              <h4 className="font-medium">Personal de Apoyo Registrado:</h4>
               {data.asistentes.map((asistente: any, index: number) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4 text-blue-600" />
+                    <Users className="w-4 h-4 text-gray-600" />
                     <div>
                       <div className="font-medium">{asistente.nombre}</div>
                       <div className="text-sm text-gray-600">{asistente.rol}</div>
