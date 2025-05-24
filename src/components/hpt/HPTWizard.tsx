@@ -99,7 +99,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
     hospitalCercano: "",
     camaraHiperbarica: "",
     supervisorFirma: null,
-    jejeObraFirma: null,
+    jefeObraFirma: null,
     observaciones: "",
     ...initialData,
   });

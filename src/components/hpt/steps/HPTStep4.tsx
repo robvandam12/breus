@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useEffect } from "react";
-import { Package, Tool, Shield, Radio } from "lucide-react";
+import { Package, Wrench, Shield, Radio } from "lucide-react";
 
 interface HPTStep4Props {
   data: any;
@@ -165,7 +164,7 @@ export const HPTStep4 = ({ data, onUpdate }: HPTStep4Props) => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Tool className="w-5 h-5 text-orange-600" />
+              <Wrench className="w-5 h-5 text-orange-600" />
               Herramientas
               <Badge variant="outline">
                 {selectedHerramientas.length} seleccionadas
