@@ -21,6 +21,7 @@ interface HPTData {
   supervisor: string;
   jefe_obra: string;
   descripcion_trabajo: string;
+  plan_trabajo: string; // Added this property
   
   // Paso 2: Equipo de Buceo
   buzos: Array<{
@@ -84,7 +85,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
     supervisor: "",
     jefe_obra: "",
     descripcion_trabajo: "",
-    plan_trabajo: "", // Añadido para compatibilidad con HPTStep1
+    plan_trabajo: "",
     buzos: [],
     asistentes: [],
     tipo_trabajo: "",
