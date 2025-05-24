@@ -1,92 +1,44 @@
 
 import { KPICard } from "@/components/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Anchor, Users, FileText, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { FileText, Anchor, Users, AlertTriangle, TrendingUp } from "lucide-react";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { UpcomingOperations } from "@/components/dashboard/UpcomingOperations";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function Dashboard() {
+  const { stats, upcomingOperations } = useDashboardData();
+
   const kpiData = [
     {
-      title: "HPT Pendientes",
-      value: "12",
-      change: { value: "+2", type: "neutral" as const },
-      description: "Desde la semana pasada",
+      title: "Bitácoras Totales",
+      value: stats.totalBitacoras.toString(),
+      change: { value: `${stats.bitacorasFirmadas}/${stats.totalBitacoras}`, type: "neutral" as const },
+      description: "Firmadas/Total",
       icon: <FileText className="w-4 h-4" />,
     },
     {
       title: "Inmersiones Hoy",
-      value: "8",
+      value: stats.inmersionesHoy.toString(),
       change: { value: "+25%", type: "positive" as const },
       description: "Respecto a ayer",
       icon: <Anchor className="w-4 h-4" />,
     },
     {
-      title: "Buzos Activos",
-      value: "24",
+      title: "Operaciones Activas",
+      value: stats.operacionesActivas.toString(),
       change: { value: "100%", type: "positive" as const },
-      description: "Disponibles",
+      description: "En progreso",
       icon: <Users className="w-4 h-4" />,
     },
     {
       title: "Alertas Activas",
-      value: "3",
+      value: stats.alertasActivas.toString(),
       change: { value: "-1", type: "positive" as const },
       description: "Desde ayer",
       icon: <AlertTriangle className="w-4 h-4" />,
     },
   ];
-
-  const upcomingOperations = [
-    {
-      id: 1,
-      name: "Limpieza Redes - Centro Ancud",
-      date: "2024-01-15",
-      supervisor: "Diego Martínez",
-      status: "programada",
-      divers: 4,
-    },
-    {
-      id: 2,
-      name: "Inspección Jaulas - Chiloé Norte",
-      date: "2024-01-16",
-      supervisor: "Carlos Ruiz",
-      status: "en_progreso",
-      divers: 2,
-    },
-    {
-      id: 3,
-      name: "Mantención Fondeo - Castro",
-      date: "2024-01-17",
-      supervisor: "Ana López",
-      status: "programada",
-      divers: 3,
-    },
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "programada":
-        return "bg-zinc-100 text-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-400";
-      case "en_progreso":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "completada":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "programada":
-        return "Programada";
-      case "en_progreso":
-        return "En Progreso";
-      case "completada":
-        return "Completada";
-      default:
-        return status;
-    }
-  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -125,84 +77,37 @@ export function Dashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-zinc-600" />
-                  Inmersiones Últimos 30 Días
+                  Actividad Últimos 30 Días
                 </CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="h-64 md:h-80 flex items-center justify-center bg-gradient-to-br from-zinc-50 to-gray-50 dark:from-zinc-800 dark:to-zinc-900 rounded-xl">
-                <div className="text-center space-y-2">
+                <div className="text-center space-y-4">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{stats.totalBitacoras}</div>
+                      <div className="text-sm text-zinc-600 dark:text-zinc-400">Bitácoras</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{stats.inmersionesHoy}</div>
+                      <div className="text-sm text-zinc-600 dark:text-zinc-400">Inmersiones</div>
+                    </div>
+                  </div>
                   <div className="w-12 h-12 mx-auto bg-zinc-100 dark:bg-zinc-900/30 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
                   </div>
-                  <p className="text-zinc-600 dark:text-zinc-400">Gráfico próximamente</p>
+                  <p className="text-zinc-600 dark:text-zinc-400">Gráfico detallado próximamente</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Operations List */}
+        {/* Operations and Actions */}
         <div className="space-y-6">
-          <Card className="ios-card">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-zinc-600" />
-                Operaciones Próximas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {upcomingOperations.map((operation, index) => (
-                <div
-                  key={operation.id}
-                  className="p-4 rounded-xl bg-white/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-all duration-200 cursor-pointer group"
-                  style={{ animationDelay: `${(index + 4) * 100}ms` }}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-400 transition-colors">
-                        {operation.name}
-                      </h4>
-                      <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(operation.status)}`}>
-                        {operation.status === "programada" ? "Programada" : 
-                         operation.status === "en_progreso" ? "En Progreso" : 
-                         operation.status === "completada" ? "Completada" : operation.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                      <span>{operation.supervisor}</span>
-                      <span>{operation.divers} buzos</span>
-                    </div>
-                    <div className="text-xs font-medium text-zinc-500 dark:text-zinc-500">
-                      {new Date(operation.date).toLocaleDateString('es-CL', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="ios-card">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-semibold">Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <button className="w-full p-3 text-left rounded-xl bg-zinc-600 hover:bg-zinc-700 text-white font-medium transition-all duration-200 ios-button touch-target">
-                Nueva Operación
-              </button>
-              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 font-medium transition-all duration-200 ios-button touch-target">
-                Crear HPT
-              </button>
-              <button className="w-full p-3 text-left rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 font-medium transition-all duration-200 ios-button touch-target">
-                Ver Reportes
-              </button>
-            </CardContent>
-          </Card>
+          <UpcomingOperations operations={upcomingOperations} />
+          <QuickActions />
         </div>
       </div>
     </div>
