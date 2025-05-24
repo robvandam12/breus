@@ -2,25 +2,53 @@
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Plus, Calendar, Users, CheckCircle } from "lucide-react";
+import { FileText, Plus, Users, LayoutGrid, LayoutList } from "lucide-react";
 import { useBitacoras } from "@/hooks/useBitacoras";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { CreateBitacoraBuzoForm } from "@/components/bitacoras/CreateBitacoraBuzoForm";
+import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Bitacoras = () => {
+  const [activeTab, setActiveTab] = useState("supervisor");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { bitacorasSupervisor, bitacorasBuzo, loading } = useBitacoras();
+  const { 
+    bitacorasSupervisor, 
+    bitacorasBuzo, 
+    loading, 
+    createBitacoraSupervisor,
+    createBitacoraBuzo,
+    refreshBitacoras
+  } = useBitacoras();
 
-  const getEstadoBadge = (firmado: boolean) => {
-    return firmado ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700";
+  const handleCreateSupervisor = async (data: any) => {
+    try {
+      await createBitacoraSupervisor(data);
+      setIsCreateDialogOpen(false);
+      await refreshBitacoras();
+    } catch (error) {
+      console.error('Error creating supervisor bitácora:', error);
+    }
   };
 
-  const formatEstado = (firmado: boolean) => {
-    return firmado ? 'Firmada' : 'Pendiente';
+  const handleCreateBuzo = async (data: any) => {
+    try {
+      await createBitacoraBuzo(data);
+      setIsCreateDialogOpen(false);
+      await refreshBitacoras();
+    } catch (error) {
+      console.error('Error creating buzo bitácora:', error);
+    }
+  };
+
+  const handleSignBitacora = async (id: string) => {
+    // TODO: Implementar firma digital
+    console.log('Signing bitácora:', id);
   };
 
   const renderSupervisorTable = () => (
@@ -40,10 +68,7 @@ const Bitacoras = () => {
           {loading ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-8">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  Cargando bitácoras...
-                </div>
+                <LoadingSpinner text="Cargando bitácoras..." />
               </TableCell>
             </TableRow>
           ) : bitacorasSupervisor.length === 0 ? (
@@ -54,42 +79,12 @@ const Bitacoras = () => {
             </TableRow>
           ) : (
             bitacorasSupervisor.map((bitacora) => (
-              <TableRow key={bitacora.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div className="font-medium">{bitacora.codigo}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-zinc-600">{bitacora.inmersion_codigo}</TableCell>
-                <TableCell className="text-zinc-600">{bitacora.supervisor}</TableCell>
-                <TableCell className="text-zinc-600">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {bitacora.fecha}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className={getEstadoBadge(bitacora.firmado)}>
-                    {formatEstado(bitacora.firmado)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="outline" size="sm">
-                      Ver
-                    </Button>
-                    {!bitacora.firmado && (
-                      <Button size="sm">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Firmar
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
+              <BitacoraTableRow 
+                key={bitacora.id} 
+                bitacora={bitacora} 
+                type="supervisor"
+                onSign={handleSignBitacora}
+              />
             ))
           )}
         </TableBody>
@@ -115,10 +110,7 @@ const Bitacoras = () => {
           {loading ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  Cargando bitácoras...
-                </div>
+                <LoadingSpinner text="Cargando bitácoras..." />
               </TableCell>
             </TableRow>
           ) : bitacorasBuzo.length === 0 ? (
@@ -129,43 +121,12 @@ const Bitacoras = () => {
             </TableRow>
           ) : (
             bitacorasBuzo.map((bitacora) => (
-              <TableRow key={bitacora.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-teal-600" />
-                    </div>
-                    <div className="font-medium">{bitacora.codigo}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-zinc-600">{bitacora.inmersion_codigo}</TableCell>
-                <TableCell className="text-zinc-600">{bitacora.buzo}</TableCell>
-                <TableCell className="text-zinc-600">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {bitacora.fecha}
-                  </div>
-                </TableCell>
-                <TableCell className="text-zinc-600">{bitacora.profundidad_maxima}m</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className={getEstadoBadge(bitacora.firmado)}>
-                    {formatEstado(bitacora.firmado)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="outline" size="sm">
-                      Ver
-                    </Button>
-                    {!bitacora.firmado && (
-                      <Button size="sm">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Firmar
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
+              <BitacoraTableRow 
+                key={bitacora.id} 
+                bitacora={bitacora} 
+                type="buzo"
+                onSign={handleSignBitacora}
+              />
             ))
           )}
         </TableBody>
@@ -192,17 +153,23 @@ const Bitacoras = () => {
               <div className="flex items-center gap-2">
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="ios-button">
+                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
                       <Plus className="w-4 h-4 mr-2" />
                       Nueva Bitácora
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-                    {/* TODO: Implementar formulario de bitácora */}
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold mb-4">Crear Nueva Bitácora</h3>
-                      <p className="text-gray-500">Formulario de bitácora pendiente de implementación</p>
-                    </div>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+                    {activeTab === "supervisor" ? (
+                      <CreateBitacoraSupervisorForm
+                        onSubmit={handleCreateSupervisor}
+                        onCancel={() => setIsCreateDialogOpen(false)}
+                      />
+                    ) : (
+                      <CreateBitacoraBuzoForm
+                        onSubmit={handleCreateBuzo}
+                        onCancel={() => setIsCreateDialogOpen(false)}
+                      />
+                    )}
                   </DialogContent>
                 </Dialog>
               </div>
@@ -211,7 +178,35 @@ const Bitacoras = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <Tabs defaultValue="supervisor" className="space-y-6">
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {bitacorasSupervisor.length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Bitácoras Supervisor</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-teal-600">
+                    {bitacorasBuzo.length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Bitácoras Buzo</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {bitacorasSupervisor.filter(b => b.firmado).length + bitacorasBuzo.filter(b => b.firmado).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Firmadas</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {bitacorasSupervisor.filter(b => !b.firmado).length + bitacorasBuzo.filter(b => !b.firmado).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Pendientes</div>
+                </Card>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="supervisor" className="flex items-center gap-2">
                     <Users className="w-4 h-4" />

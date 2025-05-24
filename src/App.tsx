@@ -35,6 +35,7 @@ const App = () => (
           <Route path="/operaciones/anexo-bravo" element={<AnexoBravo />} />
           <Route path="/operaciones/inmersiones" element={<Inmersiones />} />
           <Route path="/operaciones/bitacoras" element={<Bitacoras />} />
+          <Route path="/operaciones/inmersiones/:id" element={<div>Detalle de Inmersión - TODO</div>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

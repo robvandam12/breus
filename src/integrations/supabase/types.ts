@@ -115,6 +115,115 @@ export type Database = {
           },
         ]
       }
+      bitacora_buzo: {
+        Row: {
+          bitacora_id: string
+          buzo: string
+          buzo_firma: string | null
+          codigo: string
+          created_at: string
+          estado_fisico_post: string
+          fecha: string
+          firmado: boolean
+          inmersion_id: string
+          observaciones_tecnicas: string | null
+          profundidad_maxima: number
+          trabajos_realizados: string
+          updated_at: string
+        }
+        Insert: {
+          bitacora_id?: string
+          buzo: string
+          buzo_firma?: string | null
+          codigo: string
+          created_at?: string
+          estado_fisico_post: string
+          fecha: string
+          firmado?: boolean
+          inmersion_id: string
+          observaciones_tecnicas?: string | null
+          profundidad_maxima: number
+          trabajos_realizados: string
+          updated_at?: string
+        }
+        Update: {
+          bitacora_id?: string
+          buzo?: string
+          buzo_firma?: string | null
+          codigo?: string
+          created_at?: string
+          estado_fisico_post?: string
+          fecha?: string
+          firmado?: boolean
+          inmersion_id?: string
+          observaciones_tecnicas?: string | null
+          profundidad_maxima?: number
+          trabajos_realizados?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bitacora_buzo_inmersion_id_fkey"
+            columns: ["inmersion_id"]
+            isOneToOne: false
+            referencedRelation: "inmersion"
+            referencedColumns: ["inmersion_id"]
+          },
+        ]
+      }
+      bitacora_supervisor: {
+        Row: {
+          bitacora_id: string
+          codigo: string
+          created_at: string
+          desarrollo_inmersion: string
+          evaluacion_general: string
+          fecha: string
+          firmado: boolean
+          incidentes: string | null
+          inmersion_id: string
+          supervisor: string
+          supervisor_firma: string | null
+          updated_at: string
+        }
+        Insert: {
+          bitacora_id?: string
+          codigo: string
+          created_at?: string
+          desarrollo_inmersion: string
+          evaluacion_general: string
+          fecha: string
+          firmado?: boolean
+          incidentes?: string | null
+          inmersion_id: string
+          supervisor: string
+          supervisor_firma?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bitacora_id?: string
+          codigo?: string
+          created_at?: string
+          desarrollo_inmersion?: string
+          evaluacion_general?: string
+          fecha?: string
+          firmado?: boolean
+          incidentes?: string | null
+          inmersion_id?: string
+          supervisor?: string
+          supervisor_firma?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bitacora_supervisor_inmersion_id_fkey"
+            columns: ["inmersion_id"]
+            isOneToOne: false
+            referencedRelation: "inmersion"
+            referencedColumns: ["inmersion_id"]
+          },
+        ]
+      }
       hpt: {
         Row: {
           codigo: string
