@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -6,10 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { HPTWizard } from "@/components/hpt/HPTWizard";
 
 const HPT = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Mock data para HPTs
   const hpts = [
@@ -53,6 +55,12 @@ const HPT = () => {
       riesgos: "Bajo"
     }
   ];
+
+  const handleCreateHPT = (data: any) => {
+    console.log("Nueva HPT:", data);
+    setIsCreateDialogOpen(false);
+    // Aquí integrarías con la API
+  };
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -267,10 +275,20 @@ const HPT = () => {
                     <LayoutList className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button className="ios-button">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva HPT
-                </Button>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="ios-button">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nueva HPT
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+                    <HPTWizard
+                      onSubmit={handleCreateHPT}
+                      onCancel={() => setIsCreateDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </header>
