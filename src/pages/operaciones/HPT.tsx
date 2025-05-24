@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList, Loader2 } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
-import { useHPT } from "@/hooks/useHPT";
+import { useHPT, HPTFormData } from "@/hooks/useHPT";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -18,18 +17,9 @@ const HPT = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { hpts, loading, createHPT } = useHPT();
 
-  const handleCreateHPT = async (data: any) => {
+  const handleCreateHPT = async (data: HPTFormData) => {
     try {
-      // Mapear los datos del wizard al formato que espera createHPT
-      const hptData = {
-        operacion_id: data.operacion_id,
-        supervisor: data.supervisor,
-        plan_trabajo: data.descripcion_trabajo || 'Plan de trabajo pendiente',
-        supervisor_firma: data.supervisor_firma,
-        jefe_operaciones_firma: data.jefe_obra_firma,
-      };
-      
-      await createHPT(hptData);
+      await createHPT(data);
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating HPT:', error);

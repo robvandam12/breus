@@ -147,7 +147,7 @@ export const useHPT = () => {
       
       const codigo = `HPT-2024-${String((count || 0) + 1).padStart(3, '0')}`;
 
-      // Preparar datos para la base de datos
+      // Preparar datos para la base de datos - ahora usando las nuevas columnas
       const hptData = {
         codigo,
         operacion_id: data.operacion_id,
@@ -159,31 +159,35 @@ export const useHPT = () => {
         descripcion_trabajo: data.descripcion_trabajo,
         plan_trabajo: data.plan_trabajo,
         
-        // Serializar arrays como JSON
-        buzos: JSON.stringify(data.buzos),
-        asistentes: JSON.stringify(data.asistentes),
-        riesgos_identificados: JSON.stringify(data.riesgos_identificados),
-        medidas_control: JSON.stringify(data.medidas_control),
-        equipo_buceo: JSON.stringify(data.equipo_buceo),
-        herramientas: JSON.stringify(data.herramientas),
-        equipo_seguridad: JSON.stringify(data.equipo_seguridad),
-        equipo_comunicacion: JSON.stringify(data.equipo_comunicacion),
-        contactos_emergencia: JSON.stringify(data.contactos_emergencia),
+        // Datos del equipo
+        buzos: data.buzos,
+        asistentes: data.asistentes,
         
-        // Datos adicionales
+        // Análisis de riesgos
         tipo_trabajo: data.tipo_trabajo,
         profundidad_maxima: data.profundidad_maxima,
         corrientes: data.corrientes,
         visibilidad: data.visibilidad,
         temperatura: data.temperatura,
+        riesgos_identificados: data.riesgos_identificados,
+        medidas_control: data.medidas_control,
+        
+        // Equipos y herramientas
+        equipo_buceo: data.equipo_buceo,
+        herramientas: data.herramientas,
+        equipo_seguridad: data.equipo_seguridad,
+        equipo_comunicacion: data.equipo_comunicacion,
+        
+        // Procedimientos de emergencia
         plan_emergencia: data.plan_emergencia,
+        contactos_emergencia: data.contactos_emergencia,
         hospital_cercano: data.hospital_cercano,
         camara_hiperbarica: data.camara_hiperbarica,
-        observaciones: data.observaciones,
         
-        // Firmas
+        // Autorizaciones
         supervisor_firma: data.supervisor_firma || null,
         jefe_obra_firma: data.jefe_obra_firma || null,
+        observaciones: data.observaciones,
         firmado: !!(data.supervisor_firma && data.jefe_obra_firma),
         
         user_id: '00000000-0000-0000-0000-000000000000' // Placeholder hasta que se implemente auth
@@ -261,18 +265,19 @@ export const useHPT = () => {
 
       if (error) throw error;
 
-      // Deserializar arrays JSON
+      // Los datos ahora vienen directamente de las columnas, no necesitamos deserializar JSON
       const detailData = {
         ...data,
-        buzos: data.buzos ? JSON.parse(data.buzos) : [],
-        asistentes: data.asistentes ? JSON.parse(data.asistentes) : [],
-        riesgos_identificados: data.riesgos_identificados ? JSON.parse(data.riesgos_identificados) : [],
-        medidas_control: data.medidas_control ? JSON.parse(data.medidas_control) : [],
-        equipo_buceo: data.equipo_buceo ? JSON.parse(data.equipo_buceo) : [],
-        herramientas: data.herramientas ? JSON.parse(data.herramientas) : [],
-        equipo_seguridad: data.equipo_seguridad ? JSON.parse(data.equipo_seguridad) : [],
-        equipo_comunicacion: data.equipo_comunicacion ? JSON.parse(data.equipo_comunicacion) : [],
-        contactos_emergencia: data.contactos_emergencia ? JSON.parse(data.contactos_emergencia) : [],
+        // Asegurar que los arrays existan
+        buzos: data.buzos || [],
+        asistentes: data.asistentes || [],
+        riesgos_identificados: data.riesgos_identificados || [],
+        medidas_control: data.medidas_control || [],
+        equipo_buceo: data.equipo_buceo || [],
+        herramientas: data.herramientas || [],
+        equipo_seguridad: data.equipo_seguridad || [],
+        equipo_comunicacion: data.equipo_comunicacion || [],
+        contactos_emergencia: data.contactos_emergencia || [],
       };
 
       return detailData;

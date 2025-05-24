@@ -268,46 +268,118 @@ export type Database = {
       }
       hpt: {
         Row: {
+          asistentes: Json | null
+          buzos: Json | null
+          camara_hiperbarica: string | null
           codigo: string
+          contactos_emergencia: Json | null
+          corrientes: string | null
           created_at: string
+          descripcion_trabajo: string | null
+          equipo_buceo: Json | null
+          equipo_comunicacion: Json | null
+          equipo_seguridad: Json | null
           fecha_creacion: string
+          fecha_programada: string | null
           firmado: boolean
+          herramientas: Json | null
+          hora_fin: string | null
+          hora_inicio: string | null
+          hospital_cercano: string | null
           id: string
+          jefe_obra: string | null
+          jefe_obra_firma: string | null
           jefe_operaciones_firma: string | null
+          medidas_control: Json | null
+          observaciones: string | null
           operacion_id: string
+          plan_emergencia: string | null
           plan_trabajo: string
+          profundidad_maxima: number | null
+          riesgos_identificados: Json | null
           supervisor: string
           supervisor_firma: string | null
+          temperatura: number | null
+          tipo_trabajo: string | null
           updated_at: string
           user_id: string
+          visibilidad: string | null
         }
         Insert: {
+          asistentes?: Json | null
+          buzos?: Json | null
+          camara_hiperbarica?: string | null
           codigo: string
+          contactos_emergencia?: Json | null
+          corrientes?: string | null
           created_at?: string
+          descripcion_trabajo?: string | null
+          equipo_buceo?: Json | null
+          equipo_comunicacion?: Json | null
+          equipo_seguridad?: Json | null
           fecha_creacion?: string
+          fecha_programada?: string | null
           firmado?: boolean
+          herramientas?: Json | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          hospital_cercano?: string | null
           id?: string
+          jefe_obra?: string | null
+          jefe_obra_firma?: string | null
           jefe_operaciones_firma?: string | null
+          medidas_control?: Json | null
+          observaciones?: string | null
           operacion_id: string
+          plan_emergencia?: string | null
           plan_trabajo: string
+          profundidad_maxima?: number | null
+          riesgos_identificados?: Json | null
           supervisor: string
           supervisor_firma?: string | null
+          temperatura?: number | null
+          tipo_trabajo?: string | null
           updated_at?: string
           user_id: string
+          visibilidad?: string | null
         }
         Update: {
+          asistentes?: Json | null
+          buzos?: Json | null
+          camara_hiperbarica?: string | null
           codigo?: string
+          contactos_emergencia?: Json | null
+          corrientes?: string | null
           created_at?: string
+          descripcion_trabajo?: string | null
+          equipo_buceo?: Json | null
+          equipo_comunicacion?: Json | null
+          equipo_seguridad?: Json | null
           fecha_creacion?: string
+          fecha_programada?: string | null
           firmado?: boolean
+          herramientas?: Json | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          hospital_cercano?: string | null
           id?: string
+          jefe_obra?: string | null
+          jefe_obra_firma?: string | null
           jefe_operaciones_firma?: string | null
+          medidas_control?: Json | null
+          observaciones?: string | null
           operacion_id?: string
+          plan_emergencia?: string | null
           plan_trabajo?: string
+          profundidad_maxima?: number | null
+          riesgos_identificados?: Json | null
           supervisor?: string
           supervisor_firma?: string | null
+          temperatura?: number | null
+          tipo_trabajo?: string | null
           updated_at?: string
           user_id?: string
+          visibilidad?: string | null
         }
         Relationships: [
           {
