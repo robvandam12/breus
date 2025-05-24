@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -72,7 +73,7 @@ const AnexoBravo = () => {
                 </div>
                 <div>
                   <CardTitle className="text-lg text-zinc-900">{anexo.codigo}</CardTitle>
-                  <p className="text-sm text-zinc-500">{anexo.operacion}</p>
+                  <p className="text-sm text-zinc-500">{anexo.operacion_nombre}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -92,15 +93,15 @@ const AnexoBravo = () => {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Calendar className="w-4 h-4" />
-                <span>Creado: {anexo.fechaCreacion}</span>
+                <span>Creado: {anexo.fecha_creacion}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Clock className="w-4 h-4" />
-                <span>Verificado: {anexo.fechaVerificacion}</span>
+                <span>Verificado: {anexo.fecha_verificacion}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Users className="w-4 h-4" />
-                <span>Jefe Centro: {anexo.jefeCentro}</span>
+                <span>Jefe Centro: {anexo.jefe_centro}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Users className="w-4 h-4" />
@@ -109,7 +110,7 @@ const AnexoBravo = () => {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <Badge variant="outline" className={anexo.checklistCompleto ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
+                <Badge variant="outline" className={anexo.checklist_completo ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
                   Checklist {anexo.progreso}%
                 </Badge>
               </div>
