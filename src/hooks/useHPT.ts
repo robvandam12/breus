@@ -39,9 +39,44 @@ export const useHPT = () => {
   const loadHPTs = async () => {
     setLoading(true);
     try {
-      // Para HPT, necesitaremos crear la tabla también. Por ahora, devolvemos una lista vacía
-      console.log('HPT table not created yet - returning empty list');
-      setHpts([]);
+      const { data, error } = await supabase
+        .from('hpt')
+        .select(`
+          id,
+          codigo,
+          operacion_id,
+          fecha_creacion,
+          supervisor,
+          plan_trabajo,
+          firmado,
+          supervisor_firma,
+          jefe_operaciones_firma,
+          created_at,
+          updated_at,
+          operacion:operacion_id (
+            nombre
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: HPTItem[] = (data || []).map((item: any) => ({
+        id: item.id,
+        codigo: item.codigo,
+        operacion_id: item.operacion_id,
+        operacion_nombre: item.operacion?.nombre || 'Operación no encontrada',
+        fecha_creacion: item.fecha_creacion,
+        supervisor: item.supervisor,
+        plan_trabajo: item.plan_trabajo,
+        firmado: item.firmado,
+        supervisor_firma: item.supervisor_firma,
+        jefe_operaciones_firma: item.jefe_operaciones_firma,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      setHpts(formattedData);
       setError(null);
     } catch (err) {
       console.error('Error loading HPTs:', err);
@@ -59,13 +94,67 @@ export const useHPT = () => {
   const createHPT = async (data: HPTFormData) => {
     setLoading(true);
     try {
-      console.log('Creating HPT:', data);
-      // TODO: Implement when HPT table is created
+      // Generar código único
+      const { count } = await supabase
+        .from('hpt')
+        .select('*', { count: 'exact', head: true });
+      
+      const codigo = `HPT-2024-${String((count || 0) + 1).padStart(3, '0')}`;
+
+      const hptData = {
+        codigo,
+        operacion_id: data.operacion_id,
+        supervisor: data.supervisor,
+        plan_trabajo: data.plan_trabajo,
+        user_id: '00000000-0000-0000-0000-000000000000' // Placeholder hasta que se implemente auth
+      };
+
+      const { data: newHPT, error } = await supabase
+        .from('hpt')
+        .insert([hptData])
+        .select(`
+          id,
+          codigo,
+          operacion_id,
+          fecha_creacion,
+          supervisor,
+          plan_trabajo,
+          firmado,
+          supervisor_firma,
+          jefe_operaciones_firma,
+          created_at,
+          updated_at,
+          operacion:operacion_id (
+            nombre
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      const formattedNewHPT: HPTItem = {
+        id: newHPT.id,
+        codigo: newHPT.codigo,
+        operacion_id: newHPT.operacion_id,
+        operacion_nombre: newHPT.operacion?.nombre || 'Nueva Operación',
+        fecha_creacion: newHPT.fecha_creacion,
+        supervisor: newHPT.supervisor,
+        plan_trabajo: newHPT.plan_trabajo,
+        firmado: newHPT.firmado,
+        supervisor_firma: newHPT.supervisor_firma,
+        jefe_operaciones_firma: newHPT.jefe_operaciones_firma,
+        created_at: newHPT.created_at,
+        updated_at: newHPT.updated_at
+      };
+
+      setHpts(prev => [formattedNewHPT, ...prev]);
+
       toast({
-        title: "Información",
-        description: "La tabla HPT aún no está implementada",
-        variant: "destructive",
+        title: "HPT Creada",
+        description: `${formattedNewHPT.codigo} ha sido creada exitosamente`,
       });
+
+      return formattedNewHPT;
     } catch (err) {
       console.error('Error creating HPT:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error al crear el HPT';

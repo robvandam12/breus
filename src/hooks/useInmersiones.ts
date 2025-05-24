@@ -56,7 +56,7 @@ export const useInmersiones = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('inmersion' as any)
+        .from('inmersion')
         .select(`
           inmersion_id,
           codigo,
@@ -94,9 +94,9 @@ export const useInmersiones = () => {
         fecha_inmersion: item.fecha_inmersion,
         hora_inicio: item.hora_inicio,
         hora_fin: item.hora_fin,
-        profundidad_max: item.profundidad_max,
-        temperatura_agua: item.temperatura_agua,
-        visibilidad: item.visibilidad,
+        profundidad_max: Number(item.profundidad_max),
+        temperatura_agua: Number(item.temperatura_agua),
+        visibilidad: Number(item.visibilidad),
         corriente: item.corriente,
         supervisor: item.supervisor,
         buzo_principal: item.buzo_principal,
@@ -129,7 +129,7 @@ export const useInmersiones = () => {
     try {
       // Verificar HPT firmado
       const { data: hptData, error: hptError } = await supabase
-        .from('hpt' as any)
+        .from('hpt')
         .select('firmado')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
@@ -166,7 +166,7 @@ export const useInmersiones = () => {
 
       // Generar código único
       const { count } = await supabase
-        .from('inmersion' as any)
+        .from('inmersion')
         .select('*', { count: 'exact', head: true });
       
       const codigo = `IMM-2024-${String((count || 0) + 1).padStart(3, '0')}`;
@@ -191,7 +191,7 @@ export const useInmersiones = () => {
       };
 
       const { data: newInmersion, error } = await supabase
-        .from('inmersion' as any)
+        .from('inmersion')
         .insert([inmersionData])
         .select(`
           inmersion_id,
@@ -230,9 +230,9 @@ export const useInmersiones = () => {
         fecha_inmersion: newInmersion.fecha_inmersion,
         hora_inicio: newInmersion.hora_inicio,
         hora_fin: newInmersion.hora_fin,
-        profundidad_max: newInmersion.profundidad_max,
-        temperatura_agua: newInmersion.temperatura_agua,
-        visibilidad: newInmersion.visibilidad,
+        profundidad_max: Number(newInmersion.profundidad_max),
+        temperatura_agua: Number(newInmersion.temperatura_agua),
+        visibilidad: Number(newInmersion.visibilidad),
         corriente: newInmersion.corriente,
         supervisor: newInmersion.supervisor,
         buzo_principal: newInmersion.buzo_principal,
@@ -278,7 +278,7 @@ export const useInmersiones = () => {
       }
 
       const { error } = await supabase
-        .from('inmersion' as any)
+        .from('inmersion')
         .update(updateData)
         .eq('inmersion_id', id);
 

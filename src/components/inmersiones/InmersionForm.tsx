@@ -33,7 +33,7 @@ interface InmersionFormProps {
 }
 
 interface Operacion {
-  operacion_id: string;
+  id: string;
   codigo: string;
   nombre: string;
 }
@@ -69,11 +69,18 @@ export const InmersionForm = ({ onSubmit, onCancel, initialData }: InmersionForm
     try {
       const { data, error } = await supabase
         .from('operacion')
-        .select('operacion_id, codigo, nombre')
+        .select('id, codigo, nombre')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOperaciones(data || []);
+      
+      const formattedOperaciones: Operacion[] = (data || []).map((item: any) => ({
+        id: item.id,
+        codigo: item.codigo,
+        nombre: item.nombre
+      }));
+      
+      setOperaciones(formattedOperaciones);
     } catch (err) {
       console.error('Error loading operaciones:', err);
       toast({
@@ -129,7 +136,7 @@ export const InmersionForm = ({ onSubmit, onCancel, initialData }: InmersionForm
                           </SelectTrigger>
                           <SelectContent>
                             {operaciones.map((operacion) => (
-                              <SelectItem key={operacion.operacion_id} value={operacion.operacion_id}>
+                              <SelectItem key={operacion.id} value={operacion.id}>
                                 {operacion.codigo} - {operacion.nombre}
                               </SelectItem>
                             ))}

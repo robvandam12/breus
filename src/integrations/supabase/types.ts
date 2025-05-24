@@ -115,6 +115,136 @@ export type Database = {
           },
         ]
       }
+      hpt: {
+        Row: {
+          codigo: string
+          created_at: string
+          fecha_creacion: string
+          firmado: boolean
+          id: string
+          jefe_operaciones_firma: string | null
+          operacion_id: string
+          plan_trabajo: string
+          supervisor: string
+          supervisor_firma: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          fecha_creacion?: string
+          firmado?: boolean
+          id?: string
+          jefe_operaciones_firma?: string | null
+          operacion_id: string
+          plan_trabajo: string
+          supervisor: string
+          supervisor_firma?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          fecha_creacion?: string
+          firmado?: boolean
+          id?: string
+          jefe_operaciones_firma?: string | null
+          operacion_id?: string
+          plan_trabajo?: string
+          supervisor?: string
+          supervisor_firma?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hpt_operacion_id_fkey"
+            columns: ["operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inmersion: {
+        Row: {
+          anexo_bravo_validado: boolean
+          buzo_asistente: string | null
+          buzo_principal: string
+          codigo: string
+          corriente: string
+          created_at: string
+          estado: string
+          fecha_inmersion: string
+          hora_fin: string | null
+          hora_inicio: string
+          hpt_validado: boolean
+          inmersion_id: string
+          objetivo: string
+          observaciones: string | null
+          operacion_id: string
+          profundidad_max: number
+          supervisor: string
+          temperatura_agua: number
+          updated_at: string
+          visibilidad: number
+        }
+        Insert: {
+          anexo_bravo_validado?: boolean
+          buzo_asistente?: string | null
+          buzo_principal: string
+          codigo: string
+          corriente: string
+          created_at?: string
+          estado?: string
+          fecha_inmersion: string
+          hora_fin?: string | null
+          hora_inicio: string
+          hpt_validado?: boolean
+          inmersion_id?: string
+          objetivo: string
+          observaciones?: string | null
+          operacion_id: string
+          profundidad_max: number
+          supervisor: string
+          temperatura_agua: number
+          updated_at?: string
+          visibilidad: number
+        }
+        Update: {
+          anexo_bravo_validado?: boolean
+          buzo_asistente?: string | null
+          buzo_principal?: string
+          codigo?: string
+          corriente?: string
+          created_at?: string
+          estado?: string
+          fecha_inmersion?: string
+          hora_fin?: string | null
+          hora_inicio?: string
+          hpt_validado?: boolean
+          inmersion_id?: string
+          objetivo?: string
+          observaciones?: string | null
+          operacion_id?: string
+          profundidad_max?: number
+          supervisor?: string
+          temperatura_agua?: number
+          updated_at?: string
+          visibilidad?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inmersion_operacion_id_fkey"
+            columns: ["operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operacion: {
         Row: {
           codigo: string
