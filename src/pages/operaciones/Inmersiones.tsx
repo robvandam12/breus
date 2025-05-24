@@ -1,17 +1,20 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Waves, Plus, Calendar, Users, Clock, MapPin, LayoutGrid, LayoutList, Thermometer } from "lucide-react";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Waves, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { ImmersionCard } from "@/components/inmersiones/ImmersionCard";
+import { ImmersionTableRow } from "@/components/inmersiones/ImmersionTableRow";
+import { Immersion } from "@/utils/immersionUtils";
 
 const Inmersiones = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   // Mock data para Inmersiones
-  const inmersiones = [
+  const inmersiones: Immersion[] = [
     {
       id: 1,
       codigo: "IMM-2024-001",
@@ -62,129 +65,10 @@ const Inmersiones = () => {
     }
   ];
 
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "Completada":
-        return "bg-emerald-100 text-emerald-700";
-      case "En Progreso":
-        return "bg-blue-100 text-blue-700";
-      case "Programada":
-        return "bg-amber-100 text-amber-700";
-      case "Cancelada":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
-  };
-
-  const getTipoBadge = (tipo: string) => {
-    switch (tipo) {
-      case "Mantenimiento":
-        return "bg-purple-100 text-purple-700";
-      case "Inspección":
-        return "bg-cyan-100 text-cyan-700";
-      case "Limpieza":
-        return "bg-green-100 text-green-700";
-      case "Emergencia":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
-  };
-
-  const getVisibilidadBadge = (visibilidad: string) => {
-    switch (visibilidad) {
-      case "Excelente":
-        return "bg-green-100 text-green-700";
-      case "Buena":
-        return "bg-blue-100 text-blue-700";
-      case "Regular":
-        return "bg-yellow-100 text-yellow-700";
-      case "Mala":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
-  };
-
   const renderCardsView = () => (
     <div className="grid gap-6">
       {inmersiones.map((inmersion) => (
-        <Card key={inmersion.id} className="ios-card hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
-                  <Waves className="w-6 h-6 text-cyan-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-zinc-900">{inmersion.codigo}</CardTitle>
-                  <p className="text-sm text-zinc-500">{inmersion.operacion}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline" className={getTipoBadge(inmersion.tipo)}>
-                  {inmersion.tipo}
-                </Badge>
-                <Badge variant="secondary" className={getEstadoBadge(inmersion.estado)}>
-                  {inmersion.estado}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Calendar className="w-4 h-4" />
-                <span>{inmersion.fecha} - {inmersion.hora}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <MapPin className="w-4 h-4" />
-                <span>{inmersion.sitio}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Users className="w-4 h-4" />
-                <span>Buzo: {inmersion.buzo}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Users className="w-4 h-4" />
-                <span>Asistente: {inmersion.asistente}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Waves className="w-4 h-4" />
-                <span>Profundidad: {inmersion.profundidad}m</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Clock className="w-4 h-4" />
-                <span>Duración: {inmersion.duracion} min</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <Badge variant="outline" className={getVisibilidadBadge(inmersion.visibilidad)}>
-                  Visibilidad {inmersion.visibilidad}
-                </Badge>
-                <Badge variant="outline">
-                  <Thermometer className="w-3 h-3 mr-1" />
-                  {inmersion.temperatura}°C
-                </Badge>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm">
-                Ver Bitácora
-              </Button>
-              <Button variant="outline" size="sm">
-                Editar
-              </Button>
-              {inmersion.estado === "Programada" && (
-                <Button size="sm">
-                  Iniciar
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ImmersionCard key={inmersion.id} inmersion={inmersion} />
       ))}
     </div>
   );
@@ -210,62 +94,7 @@ const Inmersiones = () => {
         </TableHeader>
         <TableBody>
           {inmersiones.map((inmersion) => (
-            <TableRow key={inmersion.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
-                    <Waves className="w-4 h-4 text-cyan-600" />
-                  </div>
-                  <div className="font-medium">{inmersion.codigo}</div>
-                </div>
-              </TableCell>
-              <TableCell className="text-zinc-600">{inmersion.operacion}</TableCell>
-              <TableCell className="text-zinc-600 text-xs">
-                {inmersion.fecha}<br/>
-                {inmersion.hora}
-              </TableCell>
-              <TableCell className="text-zinc-600">{inmersion.sitio}</TableCell>
-              <TableCell className="text-zinc-600">{inmersion.buzo}</TableCell>
-              <TableCell className="text-zinc-600">{inmersion.asistente}</TableCell>
-              <TableCell className="text-zinc-600">{inmersion.profundidad}m</TableCell>
-              <TableCell className="text-zinc-600">{inmersion.duracion} min</TableCell>
-              <TableCell>
-                <div className="space-y-1">
-                  <Badge variant="outline" className={getVisibilidadBadge(inmersion.visibilidad)}>
-                    {inmersion.visibilidad}
-                  </Badge>
-                  <div className="text-xs text-zinc-500">
-                    <Thermometer className="w-3 h-3 inline mr-1" />
-                    {inmersion.temperatura}°C
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={getTipoBadge(inmersion.tipo)}>
-                  {inmersion.tipo}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={getEstadoBadge(inmersion.estado)}>
-                  {inmersion.estado}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button variant="outline" size="sm">
-                    Ver
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Editar
-                  </Button>
-                  {inmersion.estado === "Programada" && (
-                    <Button size="sm">
-                      Iniciar
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
+            <ImmersionTableRow key={inmersion.id} inmersion={inmersion} />
           ))}
         </TableBody>
       </Table>
