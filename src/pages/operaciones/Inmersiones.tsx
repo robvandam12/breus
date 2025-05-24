@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -232,7 +231,7 @@ const Inmersiones = () => {
               <TableCell className="text-zinc-600">{inmersion.duracion} min</TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  <Badge variant="outline" className={getVisibilidadBadge(inmersion.visibilidad)} size="sm">
+                  <Badge variant="outline" className={getVisibilidadBadge(inmersion.visibilidad)}>
                     {inmersion.visibilidad}
                   </Badge>
                   <div className="text-xs text-zinc-500">
