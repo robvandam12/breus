@@ -1,201 +1,88 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { Building2, MapPin, Calendar } from "lucide-react";
 
 interface HPTStep1Props {
-  data: any;
-  onUpdate: (data: any) => void;
+  formData: any;
+  updateFormData: (data: any) => void;
 }
 
-export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
-  const { operaciones, loading: loadingOperaciones } = useOperaciones();
+export const HPTStep1 = ({ formData, updateFormData }: HPTStep1Props) => {
+  const { operaciones, isLoading } = useOperaciones();
 
-  const form = useForm({
-    defaultValues: {
-      operacion_id: data.operacion_id || "",
-      fecha_programada: data.fecha_programada || "",
-      hora_inicio: data.hora_inicio || "",
-      hora_fin: data.hora_fin || "",
-      supervisor: data.supervisor || "",
-      jefe_obra: data.jefe_obra || "",
-      descripcion_trabajo: data.descripcion_trabajo || "",
-    }
-  });
-
-  const formData = form.watch();
-
-  useEffect(() => {
-    onUpdate(formData);
-  }, [formData, onUpdate]);
-
-  // Mock data for selects - en producción estos vendrían de la base de datos
-  const supervisores = [
-    "Diego Martínez",
-    "Carlos Rojas", 
-    "Ana López",
-    "Roberto Silva"
-  ];
-
-  const jefesObra = [
-    "Carlos Mendoza",
-    "Ana Morales",
-    "Roberto Silva",
-    "Patricia Gonzalez"
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-4">Información General del Trabajo</h3>
-        <p className="text-sm text-zinc-500 mb-6">
-          Complete la información básica de la HPT y los responsables del trabajo.
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Información General</h2>
+        <p className="mt-2 text-gray-600">
+          Selecciona la operación y completa los datos básicos del HPT
         </p>
       </div>
 
-      <Form {...form}>
-        <div className="grid md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="operacion_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Operación *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={loadingOperaciones ? "Cargando..." : "Seleccione una operación"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {operaciones.map((op) => (
-                      <SelectItem key={op.id} value={op.id}>
-                        {op.codigo} - {op.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Operación
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="operacion">Operación *</Label>
+            <Select
+              value={formData.operacion_id || ''}
+              onValueChange={(value) => updateFormData({ operacion_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar operación..." />
+              </SelectTrigger>
+              <SelectContent>
+                {operaciones.map((operacion) => (
+                  <SelectItem key={operacion.id} value={operacion.id}>
+                    {operacion.codigo} - {operacion.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <FormField
-            control={form.control}
-            name="fecha_programada"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fecha Programada *</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div>
+            <Label htmlFor="supervisor">Supervisor *</Label>
+            <Input
+              id="supervisor"
+              value={formData.supervisor || ''}
+              onChange={(e) => updateFormData({ supervisor: e.target.value })}
+              placeholder="Nombre del supervisor"
+            />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="hora_inicio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hora de Inicio</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="hora_fin"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hora de Término</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="supervisor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Supervisor de Servicio *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione supervisor" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {supervisores.map((supervisor) => (
-                      <SelectItem key={supervisor} value={supervisor}>
-                        {supervisor}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="jefe_obra"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Jefe de Obra *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione jefe de obra" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jefesObra.map((jefe) => (
-                      <SelectItem key={jefe} value={jefe}>
-                        {jefe}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="descripcion_trabajo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción del Trabajo</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Describa detalladamente el trabajo a realizar..."
-                  className="min-h-[100px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </Form>
+          <div>
+            <Label htmlFor="plan_trabajo">Plan de Trabajo *</Label>
+            <Textarea
+              id="plan_trabajo"
+              value={formData.plan_trabajo || ''}
+              onChange={(e) => updateFormData({ plan_trabajo: e.target.value })}
+              placeholder="Describe el plan de trabajo detallado..."
+              className="min-h-[120px]"
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
