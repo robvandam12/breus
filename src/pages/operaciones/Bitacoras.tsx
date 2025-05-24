@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -11,8 +10,11 @@ import { FileText, Plus, LayoutGrid, LayoutList, Loader2 } from "lucide-react";
 import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { CreateBitacoraBuzoForm } from "@/components/bitacoras/CreateBitacoraBuzoForm";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
+import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
+import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras, BitacoraSupervisorFormData, BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
+import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 
 const Bitacoras = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -29,6 +31,11 @@ const Bitacoras = () => {
   } = useBitacoras();
   
   const { signBitacoraSupervisor, signBitacoraBuzo } = useBitacoraActions();
+  const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
+
+  // Aplicar filtros
+  const filteredBitacorasSupervisor = filterBitacoras(bitacorasSupervisor);
+  const filteredBitacorasBuzo = filterBitacoras(bitacorasBuzo);
 
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
@@ -152,29 +159,61 @@ const Bitacoras = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              <BitacoraStats 
+                bitacorasSupervisor={bitacorasSupervisor}
+                bitacorasBuzo={bitacorasBuzo}
+                filteredSupervisor={filteredBitacorasSupervisor}
+                filteredBuzo={filteredBitacorasBuzo}
+              />
+
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Filtros y Búsqueda
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BitacoraFilters
+                    activeFilters={filters}
+                    onFiltersChange={setFilters}
+                  />
+                </CardContent>
+              </Card>
+
               <Tabs defaultValue="supervisor" className="space-y-6">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="supervisor" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Bitácoras de Supervisor
+                    Bitácoras de Supervisor ({filteredBitacorasSupervisor.length})
                   </TabsTrigger>
                   <TabsTrigger value="buzo" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Bitácoras de Buzo
+                    Bitácoras de Buzo ({filteredBitacorasBuzo.length})
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="supervisor">
-                  {bitacorasSupervisor.length === 0 ? (
+                  {filteredBitacorasSupervisor.length === 0 ? (
                     <Card className="text-center py-12">
                       <CardContent>
                         <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay bitácoras de supervisor</h3>
-                        <p className="text-zinc-500 mb-4">Comienza creando tu primera bitácora de supervisor</p>
-                        <Button onClick={() => openCreateDialog('supervisor')} className="bg-purple-600 hover:bg-purple-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Nueva Bitácora Supervisor
-                        </Button>
+                        <h3 className="text-lg font-medium text-zinc-900 mb-2">
+                          {bitacorasSupervisor.length === 0 
+                            ? "No hay bitácoras de supervisor" 
+                            : "No se encontraron resultados"}
+                        </h3>
+                        <p className="text-zinc-500 mb-4">
+                          {bitacorasSupervisor.length === 0 
+                            ? "Comienza creando tu primera bitácora de supervisor"
+                            : "Intenta ajustar los filtros de búsqueda"}
+                        </p>
+                        {bitacorasSupervisor.length === 0 && (
+                          <Button onClick={() => openCreateDialog('supervisor')} className="bg-purple-600 hover:bg-purple-700">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Nueva Bitácora Supervisor
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
@@ -191,7 +230,7 @@ const Bitacoras = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {bitacorasSupervisor.map((bitacora) => (
+                          {filteredBitacorasSupervisor.map((bitacora) => (
                             <BitacoraTableRow
                               key={bitacora.id}
                               bitacora={bitacora}
@@ -206,16 +245,26 @@ const Bitacoras = () => {
                 </TabsContent>
 
                 <TabsContent value="buzo">
-                  {bitacorasBuzo.length === 0 ? (
+                  {filteredBitacorasBuzo.length === 0 ? (
                     <Card className="text-center py-12">
                       <CardContent>
                         <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay bitácoras de buzo</h3>
-                        <p className="text-zinc-500 mb-4">Comienza creando tu primera bitácora de buzo</p>
-                        <Button onClick={() => openCreateDialog('buzo')} className="bg-teal-600 hover:bg-teal-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Nueva Bitácora Buzo
-                        </Button>
+                        <h3 className="text-lg font-medium text-zinc-900 mb-2">
+                          {bitacorasBuzo.length === 0 
+                            ? "No hay bitácoras de buzo" 
+                            : "No se encontraron resultados"}
+                        </h3>
+                        <p className="text-zinc-500 mb-4">
+                          {bitacorasBuzo.length === 0 
+                            ? "Comienza creando tu primera bitácora de buzo"
+                            : "Intenta ajustar los filtros de búsqueda"}
+                        </p>
+                        {bitacorasBuzo.length === 0 && (
+                          <Button onClick={() => openCreateDialog('buzo')} className="bg-teal-600 hover:bg-teal-700">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Nueva Bitácora Buzo
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
@@ -233,7 +282,7 @@ const Bitacoras = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {bitacorasBuzo.map((bitacora) => (
+                          {filteredBitacorasBuzo.map((bitacora) => (
                             <BitacoraTableRow
                               key={bitacora.id}
                               bitacora={bitacora}
