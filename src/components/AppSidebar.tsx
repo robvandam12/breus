@@ -1,4 +1,3 @@
-
 import { 
   Calendar, 
   ChevronRight, 
@@ -24,12 +23,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 const menuItems = [
   {
     title: "Dashboard",
     icon: Calendar,
-    url: "/dashboard",
+    url: "/",
     badge: "3"
   },
   {
@@ -109,9 +109,9 @@ export function AppSidebar() {
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild>
-                                <a href={subItem.url}>
+                                <Link to={subItem.url}>
                                   <span>{subItem.title}</span>
-                                </a>
+                                </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           ))}
@@ -120,7 +120,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <a href={item.url} className="flex items-center justify-between w-full">
+                      <Link to={item.url} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>
@@ -130,7 +130,7 @@ export function AppSidebar() {
                             {item.badge}
                           </Badge>
                         )}
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>
