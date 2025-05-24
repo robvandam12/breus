@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -7,75 +6,58 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { FileCheck, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { FileCheck, Plus, Calendar, Users, CheckCircle, Clock, LayoutGrid, LayoutList, Search, Filter, Download } from "lucide-react";
 import { AnexoBravoForm } from "@/components/anexo-bravo/AnexoBravoForm";
+import { useAnexoBravo, type AnexoBravoFormData } from "@/hooks/useAnexoBravo";
+import { useToast } from "@/components/ui/use-toast";
 
 const AnexoBravo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { anexosBravo, loading, createAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
+  const { toast } = useToast();
 
-  // Mock data para Anexos Bravo
-  const anexosBravo = [
-    {
-      id: 1,
-      codigo: "AB-2024-001",
-      operacion: "Mantenimiento Jaulas Sitio Norte",
-      fechaCreacion: "2024-01-14",
-      fechaVerificacion: "2024-01-14",
-      jefeCentro: "Carlos Mendoza",
-      supervisor: "Diego Martínez",
-      estado: "Aprobado",
-      firmado: true,
-      checklistCompleto: true,
-      progreso: 100
-    },
-    {
-      id: 2,
-      codigo: "AB-2024-002",
-      operacion: "Inspección Redes Centro Los Fiordos",
-      fechaCreacion: "2024-01-17",
-      fechaVerificacion: "2024-01-17",
-      jefeCentro: "Ana Morales",
-      supervisor: "Carlos Rojas",
-      estado: "En Progreso",
-      firmado: false,
-      checklistCompleto: false,
-      progreso: 75
-    },
-    {
-      id: 3,
-      codigo: "AB-2024-003",
-      operacion: "Limpieza Estructuras Piscicultura",
-      fechaCreacion: "2024-01-09",
-      fechaVerificacion: "2024-01-10",
-      jefeCentro: "Roberto Silva",
-      supervisor: "Ana López",
-      estado: "Completado",
-      firmado: true,
-      checklistCompleto: true,
-      progreso: 100
+  const handleCreateAnexoBravo = async (data: AnexoBravoFormData) => {
+    try {
+      await createAnexoBravo(data);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating Anexo Bravo:', error);
     }
-  ];
+  };
 
-  const handleCreateAnexoBravo = (data: any) => {
-    console.log("Nuevo Anexo Bravo:", data);
-    setIsCreateDialogOpen(false);
-    // Aquí integrarías con la API
+  const handleDeleteAnexoBravo = async (id: string) => {
+    if (window.confirm('¿Está seguro de que desea eliminar este Anexo Bravo?')) {
+      await deleteAnexoBravo(id);
+    }
   };
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
-      case "Aprobado":
+      case "aprobado":
         return "bg-emerald-100 text-emerald-700";
-      case "En Progreso":
+      case "en_progreso":
         return "bg-amber-100 text-amber-700";
-      case "Completado":
+      case "completado":
         return "bg-blue-100 text-blue-700";
-      case "Rechazado":
+      case "rechazado":
         return "bg-red-100 text-red-700";
+      case "borrador":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-zinc-100 text-zinc-700";
     }
+  };
+
+  const formatEstado = (estado: string) => {
+    const estados = {
+      'aprobado': 'Aprobado',
+      'en_progreso': 'En Progreso',
+      'completado': 'Completado',
+      'rechazado': 'Rechazado',
+      'borrador': 'Borrador'
+    };
+    return estados[estado as keyof typeof estados] || estado;
   };
 
   const renderCardsView = () => (
@@ -153,6 +135,26 @@ const AnexoBravo = () => {
 
   const renderTableView = () => (
     <Card>
+      <div className="p-4 border-b">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Buscar anexos..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-1" />
+            Filtrar
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" />
+            Exportar
+          </Button>
+        </div>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -168,56 +170,75 @@ const AnexoBravo = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {anexosBravo.map((anexo) => (
-            <TableRow key={anexo.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FileCheck className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{anexo.codigo}</div>
-                    {anexo.firmado && (
-                      <div className="flex items-center gap-1 text-xs text-green-600">
-                        <CheckCircle className="w-3 h-3" />
-                        Firmado
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="text-zinc-600">{anexo.operacion}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.fechaCreacion}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.fechaVerificacion}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.jefeCentro}</TableCell>
-              <TableCell className="text-zinc-600">{anexo.supervisor}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className={anexo.progreso === 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
-                  {anexo.progreso}%
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={getEstadoBadge(anexo.estado)}>
-                  {anexo.estado}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button variant="outline" size="sm">
-                    Ver
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Editar
-                  </Button>
-                  {!anexo.firmado && (
-                    <Button size="sm">
-                      Completar
-                    </Button>
-                  )}
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center py-8">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  Cargando anexos...
                 </div>
               </TableCell>
             </TableRow>
-          ))}
+          ) : anexosBravo.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                No hay anexos Bravo registrados
+              </TableCell>
+            </TableRow>
+          ) : (
+            anexosBravo.map((anexo) => (
+              <TableRow key={anexo.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <FileCheck className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{anexo.codigo}</div>
+                      {anexo.firmado && (
+                        <div className="flex items-center gap-1 text-xs text-green-600">
+                          <CheckCircle className="w-3 h-3" />
+                          Firmado
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-zinc-600 max-w-[200px] truncate">
+                  {anexo.operacion_nombre}
+                </TableCell>
+                <TableCell className="text-zinc-600">{anexo.fecha_creacion}</TableCell>
+                <TableCell className="text-zinc-600">{anexo.fecha_verificacion}</TableCell>
+                <TableCell className="text-zinc-600">{anexo.jefe_centro}</TableCell>
+                <TableCell className="text-zinc-600">{anexo.supervisor}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={anexo.progreso === 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}>
+                    {anexo.progreso}%
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className={getEstadoBadge(anexo.estado)}>
+                    {formatEstado(anexo.estado)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button variant="outline" size="sm">
+                      Ver
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      Editar
+                    </Button>
+                    {!anexo.firmado && (
+                      <Button size="sm">
+                        Completar
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </Card>

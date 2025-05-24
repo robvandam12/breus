@@ -8,20 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { PenTool, CheckCircle, AlertTriangle, FileCheck, Shield } from "lucide-react";
+import { DigitalSignature } from "./DigitalSignature";
+import { useToast } from "@/components/ui/use-toast";
+import { FileCheck, Shield, CheckCircle, AlertTriangle, Save, Clock } from "lucide-react";
 
 interface AnexoBravoData {
-  operacionId: string;
-  fechaVerificacion: string;
-  checklistItems: Array<{
+  operacion_id: string;
+  fecha_verificacion: string;
+  checklist_items: Array<{
     id: string;
     item: string;
     verificado: boolean;
     observaciones?: string;
   }>;
-  jefeCentroFirma: string | null;
-  supervisorFirma: string | null;
-  observacionesGenerales: string;
+  jefe_centro_firma: string | null;
+  supervisor_firma: string | null;
+  observaciones_generales: string;
 }
 
 interface AnexoBravoFormProps {
@@ -30,33 +32,39 @@ interface AnexoBravoFormProps {
   initialData?: Partial<AnexoBravoData>;
 }
 
+const DEFAULT_CHECKLIST_ITEMS = [
+  { id: '1', item: 'Verificación de equipos de buceo individuales', verificado: false },
+  { id: '2', item: 'Inspección de sistemas de aire comprimido', verificado: false },
+  { id: '3', item: 'Verificación de equipos de comunicación', verificado: false },
+  { id: '4', item: 'Inspección de equipos de seguridad y rescate', verificado: false },
+  { id: '5', item: 'Verificación de condiciones meteorológicas', verificado: false },
+  { id: '6', item: 'Inspección de embarcación y equipos de superficie', verificado: false },
+  { id: '7', item: 'Verificación de personal certificado', verificado: false },
+  { id: '8', item: 'Revisión del plan de emergencia', verificado: false },
+  { id: '9', item: 'Verificación de contactos de emergencia', verificado: false },
+  { id: '10', item: 'Inspección del área de trabajo subacuático', verificado: false },
+  { id: '11', item: 'Verificación de herramientas y equipos específicos', verificado: false },
+  { id: '12', item: 'Revisión de permisos y autorizaciones', verificado: false },
+];
+
 export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFormProps) => {
-  const [jefeCentroSigned, setJefeCentroSigned] = useState(!!initialData?.jefeCentroFirma);
-  const [supervisorSigned, setSupervisorSigned] = useState(!!initialData?.supervisorFirma);
+  const [jefeCentroSigned, setJefeCentroSigned] = useState(!!initialData?.jefe_centro_firma);
+  const [supervisorSigned, setSupervisorSigned] = useState(!!initialData?.supervisor_firma);
+  const [jefeCentroSignature, setJefeCentroSignature] = useState(initialData?.jefe_centro_firma || "");
+  const [supervisorSignature, setSupervisorSignature] = useState(initialData?.supervisor_firma || "");
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const { toast } = useToast();
 
   const form = useForm({
     defaultValues: {
-      operacionId: initialData?.operacionId || "",
-      fechaVerificacion: initialData?.fechaVerificacion || new Date().toISOString().split('T')[0],
-      observacionesGenerales: initialData?.observacionesGenerales || "",
+      operacion_id: initialData?.operacion_id || "",
+      fecha_verificacion: initialData?.fecha_verificacion || new Date().toISOString().split('T')[0],
+      observaciones_generales: initialData?.observaciones_generales || "",
     }
   });
 
   const [checklistItems, setChecklistItems] = useState(
-    initialData?.checklistItems || [
-      { id: '1', item: 'Verificación de equipos de buceo individuales', verificado: false },
-      { id: '2', item: 'Inspección de sistemas de aire comprimido', verificado: false },
-      { id: '3', item: 'Verificación de equipos de comunicación', verificado: false },
-      { id: '4', item: 'Inspección de equipos de seguridad y rescate', verificado: false },
-      { id: '5', item: 'Verificación de condiciones meteorológicas', verificado: false },
-      { id: '6', item: 'Inspección de embarcación y equipos de superficie', verificado: false },
-      { id: '7', item: 'Verificación de personal certificado', verificado: false },
-      { id: '8', item: 'Revisión del plan de emergencia', verificado: false },
-      { id: '9', item: 'Verificación de contactos de emergencia', verificado: false },
-      { id: '10', item: 'Inspección del área de trabajo subacuático', verificado: false },
-      { id: '11', item: 'Verificación de herramientas y equipos específicos', verificado: false },
-      { id: '12', item: 'Revisión de permisos y autorizaciones', verificado: false },
-    ]
+    initialData?.checklist_items || DEFAULT_CHECKLIST_ITEMS
   );
 
   const formData = form.watch();
@@ -68,17 +76,18 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [formData, checklistItems]);
+  }, [formData, checklistItems, jefeCentroSignature, supervisorSignature]);
 
   const saveDraft = () => {
     const draftData = {
       ...formData,
-      checklistItems,
-      jefeCentroFirma: jefeCentroSigned ? "FIRMADO_DIGITALMENTE" : null,
-      supervisorFirma: supervisorSigned ? "FIRMADO_DIGITALMENTE" : null,
+      checklist_items: checklistItems,
+      jefe_centro_firma: jefeCentroSignature,
+      supervisor_firma: supervisorSignature,
       lastSaved: new Date().toISOString()
     };
     localStorage.setItem('anexo-bravo-draft', JSON.stringify(draftData));
+    setLastSaved(new Date());
     console.log('Anexo Bravo Draft saved automatically');
   };
 
@@ -90,20 +99,32 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
     );
   };
 
-  const handleJefeCentroSign = () => {
+  const handleJefeCentroSign = (signatureData: string) => {
+    setJefeCentroSignature(signatureData);
     setJefeCentroSigned(true);
+    toast({
+      title: "Firma Registrada",
+      description: "Firma del Jefe de Centro registrada exitosamente",
+    });
   };
 
-  const handleSupervisorSign = () => {
+  const handleSupervisorSign = (signatureData: string) => {
+    setSupervisorSignature(signatureData);
     setSupervisorSigned(true);
+    toast({
+      title: "Firma Registrada",
+      description: "Firma del Supervisor registrada exitosamente",
+    });
   };
 
   const resetJefeCentroSign = () => {
     setJefeCentroSigned(false);
+    setJefeCentroSignature("");
   };
 
   const resetSupervisorSign = () => {
     setSupervisorSigned(false);
+    setSupervisorSignature("");
   };
 
   const getCompletionPercentage = () => {
@@ -113,24 +134,28 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
 
   const canSubmit = () => {
     const allItemsChecked = checklistItems.every(item => item.verificado);
-    return allItemsChecked && jefeCentroSigned && supervisorSigned;
+    return allItemsChecked && jefeCentroSigned && supervisorSigned && formData.operacion_id.trim();
   };
 
   const handleSubmit = () => {
     if (canSubmit()) {
       const submitData: AnexoBravoData = {
         ...formData,
-        checklistItems,
-        jefeCentroFirma: jefeCentroSigned ? "FIRMADO_DIGITALMENTE" : null,
-        supervisorFirma: supervisorSigned ? "FIRMADO_DIGITALMENTE" : null,
+        checklist_items: checklistItems,
+        jefe_centro_firma: jefeCentroSignature,
+        supervisor_firma: supervisorSignature,
       };
       onSubmit(submitData);
       localStorage.removeItem('anexo-bravo-draft');
+      toast({
+        title: "Anexo Bravo Completado",
+        description: "El documento ha sido finalizado y firmado correctamente",
+      });
     }
   };
 
   const completionPercentage = getCompletionPercentage();
-  const isReadyToSign = completionPercentage === 100;
+  const isReadyToSign = completionPercentage === 100 && formData.operacion_id.trim();
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -146,9 +171,18 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-100 text-green-700">
-              Draft Auto-guardado
-            </Badge>
+            <div className="flex items-center gap-2">
+              {lastSaved && (
+                <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Guardado {lastSaved.toLocaleTimeString()}
+                </Badge>
+              )}
+              <Badge variant="outline" className="bg-green-100 text-green-700">
+                <Save className="w-3 h-3 mr-1" />
+                Auto-guardado activo
+              </Badge>
+            </div>
           </div>
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm text-zinc-600 mb-2">
@@ -171,14 +205,15 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
               <div className="grid md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="operacionId"
+                  name="operacion_id"
+                  rules={{ required: "ID de operación es requerido" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ID de Operación</FormLabel>
+                      <FormLabel>ID de Operación *</FormLabel>
                       <FormControl>
                         <input 
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          placeholder="ID de la operación"
+                          placeholder="Ej: OP-2024-001"
                           {...field}
                         />
                       </FormControl>
@@ -188,7 +223,7 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                 />
                 <FormField
                   control={form.control}
-                  name="fechaVerificacion"
+                  name="fecha_verificacion"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Fecha de Verificación</FormLabel>
@@ -214,12 +249,15 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
             <CardTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-blue-600" />
               Checklist de Verificación de Seguridad
+              <Badge variant="outline">
+                {checklistItems.filter(item => item.verificado).length}/{checklistItems.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {checklistItems.map((item) => (
-                <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <Checkbox
                     id={item.id}
                     checked={item.verificado}
@@ -227,7 +265,7 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                   />
                   <label
                     htmlFor={item.id}
-                    className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
                     {item.item}
                   </label>
@@ -249,7 +287,7 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
             <Form {...form}>
               <FormField
                 control={form.control}
-                name="observacionesGenerales"
+                name="observaciones_generales"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Observaciones</FormLabel>
@@ -268,127 +306,27 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
           </CardContent>
         </Card>
 
-        {/* Firmas */}
+        {/* Firmas Digitales */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Firma Jefe de Centro */}
-          <Card className={jefeCentroSigned ? "border-green-200 bg-green-50" : "border-gray-200"}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PenTool className="w-5 h-5 text-blue-600" />
-                Firma Jefe de Centro
-                {jefeCentroSigned && (
-                  <Badge className="bg-green-100 text-green-700">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Firmado
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-sm text-zinc-600">
-                  <p><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
-                  <p><strong>Hora:</strong> {new Date().toLocaleTimeString()}</p>
-                </div>
-                
-                {jefeCentroSigned ? (
-                  <div className="p-4 bg-green-100 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-green-700">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Documento Firmado Digitalmente</span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={resetJefeCentroSign}
-                        className="text-gray-600"
-                      >
-                        Anular Firma
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="p-4 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 min-h-[120px] flex items-center justify-center">
-                      <div className="text-center text-gray-500">
-                        <PenTool className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">Área de firma digital</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleJefeCentroSign}
-                      className="w-full"
-                      disabled={!isReadyToSign}
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      Firmar Como Jefe de Centro
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <DigitalSignature
+            title="Firma Jefe de Centro"
+            role="Jefe de Centro"
+            isSigned={jefeCentroSigned}
+            onSign={handleJefeCentroSign}
+            onReset={resetJefeCentroSign}
+            disabled={!isReadyToSign}
+            iconColor="text-blue-600"
+          />
 
-          {/* Firma Supervisor */}
-          <Card className={supervisorSigned ? "border-green-200 bg-green-50" : "border-gray-200"}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PenTool className="w-5 h-5 text-orange-600" />
-                Firma Supervisor de Servicio
-                {supervisorSigned && (
-                  <Badge className="bg-green-100 text-green-700">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Firmado
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-sm text-zinc-600">
-                  <p><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
-                  <p><strong>Hora:</strong> {new Date().toLocaleTimeString()}</p>
-                </div>
-                
-                {supervisorSigned ? (
-                  <div className="p-4 bg-green-100 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-green-700">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Documento Firmado Digitalmente</span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={resetSupervisorSign}
-                        className="text-gray-600"
-                      >
-                        Anular Firma
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="p-4 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 min-h-[120px] flex items-center justify-center">
-                      <div className="text-center text-gray-500">
-                        <PenTool className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">Área de firma digital</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleSupervisorSign}
-                      className="w-full"
-                      disabled={!isReadyToSign}
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      Firmar Como Supervisor
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <DigitalSignature
+            title="Firma Supervisor de Servicio"
+            role="Supervisor de Servicio"
+            isSigned={supervisorSigned}
+            onSign={handleSupervisorSign}
+            onReset={resetSupervisorSign}
+            disabled={!isReadyToSign}
+            iconColor="text-orange-600"
+          />
         </div>
 
         {/* Estado de finalización */}
@@ -406,9 +344,11 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
                 <>
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
                   <span className="font-medium text-amber-700">
-                    {!isReadyToSign 
-                      ? "Complete todos los elementos del checklist para habilitar las firmas"
-                      : "Se requieren ambas firmas para completar el Anexo Bravo"
+                    {!formData.operacion_id.trim() 
+                      ? "Complete el ID de operación para continuar"
+                      : !isReadyToSign 
+                        ? "Complete todos los elementos del checklist para habilitar las firmas"
+                        : "Se requieren ambas firmas para completar el Anexo Bravo"
                     }
                   </span>
                 </>
@@ -433,15 +373,15 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
             onClick={saveDraft}
             className="flex items-center gap-2"
           >
-            <PenTool className="w-4 h-4" />
-            Guardar Draft
+            <Save className="w-4 h-4" />
+            Guardar Ahora
           </Button>
         </div>
 
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit()}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50"
         >
           <FileCheck className="w-4 h-4" />
           Finalizar Anexo Bravo
