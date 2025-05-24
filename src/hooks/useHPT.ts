@@ -40,7 +40,7 @@ export const useHPT = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('hpt')
+        .from('hpt' as any)
         .select(`
           hpt_id,
           codigo,
@@ -61,7 +61,7 @@ export const useHPT = () => {
 
       if (error) throw error;
 
-      const formattedData: HPTItem[] = (data || []).map(item => ({
+      const formattedData: HPTItem[] = (data || []).map((item: any) => ({
         id: item.hpt_id,
         codigo: item.codigo,
         operacion_id: item.operacion_id,
@@ -95,7 +95,7 @@ export const useHPT = () => {
     setLoading(true);
     try {
       const { count } = await supabase
-        .from('hpt')
+        .from('hpt' as any)
         .select('*', { count: 'exact', head: true });
       
       const codigo = `HPT-2024-${String((count || 0) + 1).padStart(3, '0')}`;
@@ -110,7 +110,7 @@ export const useHPT = () => {
       };
 
       const { data: newHPT, error } = await supabase
-        .from('hpt')
+        .from('hpt' as any)
         .insert([hptData])
         .select(`
           hpt_id,

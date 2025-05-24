@@ -56,7 +56,7 @@ export const useInmersiones = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('inmersion')
+        .from('inmersion' as any)
         .select(`
           inmersion_id,
           codigo,
@@ -86,7 +86,7 @@ export const useInmersiones = () => {
 
       if (error) throw error;
 
-      const formattedData: InmersionItem[] = (data || []).map(item => ({
+      const formattedData: InmersionItem[] = (data || []).map((item: any) => ({
         id: item.inmersion_id,
         codigo: item.codigo,
         operacion_id: item.operacion_id,
@@ -129,7 +129,7 @@ export const useInmersiones = () => {
     try {
       // Verificar HPT firmado
       const { data: hptData, error: hptError } = await supabase
-        .from('hpt')
+        .from('hpt' as any)
         .select('firmado')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
@@ -166,7 +166,7 @@ export const useInmersiones = () => {
 
       // Generar código único
       const { count } = await supabase
-        .from('inmersion')
+        .from('inmersion' as any)
         .select('*', { count: 'exact', head: true });
       
       const codigo = `IMM-2024-${String((count || 0) + 1).padStart(3, '0')}`;
@@ -191,7 +191,7 @@ export const useInmersiones = () => {
       };
 
       const { data: newInmersion, error } = await supabase
-        .from('inmersion')
+        .from('inmersion' as any)
         .insert([inmersionData])
         .select(`
           inmersion_id,
@@ -278,7 +278,7 @@ export const useInmersiones = () => {
       }
 
       const { error } = await supabase
-        .from('inmersion')
+        .from('inmersion' as any)
         .update(updateData)
         .eq('inmersion_id', id);
 

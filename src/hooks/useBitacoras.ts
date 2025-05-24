@@ -67,9 +67,9 @@ export const useBitacoras = () => {
   const loadBitacoras = async () => {
     setLoading(true);
     try {
-      // Cargar bitácoras de supervisor
+      // Cargar bitácoras de supervisor usando query directo
       const { data: supervisorData, error: supervisorError } = await supabase
-        .from('bitacora_supervisor')
+        .from('bitacora_supervisor' as any)
         .select(`
           bitacora_id,
           codigo,
@@ -83,7 +83,7 @@ export const useBitacoras = () => {
           supervisor_firma,
           created_at,
           updated_at,
-          inmersion:inmersion_id (
+          inmersion:inmersion_id!inner (
             codigo
           )
         `)
@@ -91,9 +91,9 @@ export const useBitacoras = () => {
 
       if (supervisorError) throw supervisorError;
 
-      // Cargar bitácoras de buzo
+      // Cargar bitácoras de buzo usando query directo
       const { data: buzoData, error: buzoError } = await supabase
-        .from('bitacora_buzo')
+        .from('bitacora_buzo' as any)
         .select(`
           bitacora_id,
           codigo,
@@ -108,7 +108,7 @@ export const useBitacoras = () => {
           buzo_firma,
           created_at,
           updated_at,
-          inmersion:inmersion_id (
+          inmersion:inmersion_id!inner (
             codigo
           )
         `)
@@ -116,7 +116,7 @@ export const useBitacoras = () => {
 
       if (buzoError) throw buzoError;
 
-      const formattedSupervisorData: BitacoraSupervisorItem[] = (supervisorData || []).map(item => ({
+      const formattedSupervisorData: BitacoraSupervisorItem[] = (supervisorData || []).map((item: any) => ({
         id: item.bitacora_id,
         codigo: item.codigo,
         inmersion_id: item.inmersion_id,
@@ -132,7 +132,7 @@ export const useBitacoras = () => {
         updated_at: item.updated_at
       }));
 
-      const formattedBuzoData: BitacoraBuzoItem[] = (buzoData || []).map(item => ({
+      const formattedBuzoData: BitacoraBuzoItem[] = (buzoData || []).map((item: any) => ({
         id: item.bitacora_id,
         codigo: item.codigo,
         inmersion_id: item.inmersion_id,
@@ -169,7 +169,7 @@ export const useBitacoras = () => {
     setLoading(true);
     try {
       const { count } = await supabase
-        .from('bitacora_supervisor')
+        .from('bitacora_supervisor' as any)
         .select('*', { count: 'exact', head: true });
       
       const codigo = `BS-2024-${String((count || 0) + 1).padStart(3, '0')}`;
@@ -185,7 +185,7 @@ export const useBitacoras = () => {
       };
 
       const { error } = await supabase
-        .from('bitacora_supervisor')
+        .from('bitacora_supervisor' as any)
         .insert([bitacoraData]);
 
       if (error) throw error;
@@ -215,7 +215,7 @@ export const useBitacoras = () => {
     setLoading(true);
     try {
       const { count } = await supabase
-        .from('bitacora_buzo')
+        .from('bitacora_buzo' as any)
         .select('*', { count: 'exact', head: true });
       
       const codigo = `BB-2024-${String((count || 0) + 1).padStart(3, '0')}`;
@@ -232,7 +232,7 @@ export const useBitacoras = () => {
       };
 
       const { error } = await supabase
-        .from('bitacora_buzo')
+        .from('bitacora_buzo' as any)
         .insert([bitacoraData]);
 
       if (error) throw error;
