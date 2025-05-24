@@ -224,6 +224,48 @@ export type Database = {
           },
         ]
       }
+      contratistas: {
+        Row: {
+          certificaciones: string[] | null
+          created_at: string
+          direccion: string
+          email: string | null
+          especialidades: string[] | null
+          estado: string
+          id: string
+          nombre: string
+          rut: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          certificaciones?: string[] | null
+          created_at?: string
+          direccion: string
+          email?: string | null
+          especialidades?: string[] | null
+          estado?: string
+          id?: string
+          nombre: string
+          rut: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          certificaciones?: string[] | null
+          created_at?: string
+          direccion?: string
+          email?: string | null
+          especialidades?: string[] | null
+          estado?: string
+          id?: string
+          nombre?: string
+          rut?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hpt: {
         Row: {
           codigo: string
@@ -394,7 +436,124 @@ export type Database = {
           sitio_id?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "fk_operacion_contratista"
+            columns: ["contratista_id"]
+            isOneToOne: false
+            referencedRelation: "contratistas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_operacion_salmonera"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_operacion_sitio"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salmoneras: {
+        Row: {
+          created_at: string
+          direccion: string
+          email: string | null
+          estado: string
+          id: string
+          nombre: string
+          rut: string
+          sitios_activos: number | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direccion: string
+          email?: string | null
+          estado?: string
+          id?: string
+          nombre: string
+          rut: string
+          sitios_activos?: number | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direccion?: string
+          email?: string | null
+          estado?: string
+          id?: string
+          nombre?: string
+          rut?: string
+          sitios_activos?: number | null
+          telefono?: string | null
+          updated_at?: string
+        }
         Relationships: []
+      }
+      sitios: {
+        Row: {
+          capacidad_jaulas: number | null
+          codigo: string
+          coordenadas_lat: number | null
+          coordenadas_lng: number | null
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          observaciones: string | null
+          profundidad_maxima: number | null
+          salmonera_id: string
+          ubicacion: string
+          updated_at: string
+        }
+        Insert: {
+          capacidad_jaulas?: number | null
+          codigo: string
+          coordenadas_lat?: number | null
+          coordenadas_lng?: number | null
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          observaciones?: string | null
+          profundidad_maxima?: number | null
+          salmonera_id: string
+          ubicacion: string
+          updated_at?: string
+        }
+        Update: {
+          capacidad_jaulas?: number | null
+          codigo?: string
+          coordenadas_lat?: number | null
+          coordenadas_lng?: number | null
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          observaciones?: string | null
+          profundidad_maxima?: number | null
+          salmonera_id?: string
+          ubicacion?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitios_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
