@@ -11,16 +11,17 @@ import { HPTStep3 } from "./steps/HPTStep3";
 import { HPTStep4 } from "./steps/HPTStep4";
 import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
+import { useToast } from "@/hooks/use-toast";
 
 interface HPTData {
   // Paso 1: Información General
-  operacionId: string;
-  fechaProgramada: string;
-  horaInicio: string;
-  horaFin: string;
+  operacion_id: string;
+  fecha_programada: string;
+  hora_inicio: string;
+  hora_fin: string;
   supervisor: string;
-  jefeObra: string;
-  descripcionTrabajo: string;
+  jefe_obra: string;
+  descripcion_trabajo: string;
   
   // Paso 2: Equipo de Buceo
   buzos: Array<{
@@ -35,33 +36,33 @@ interface HPTData {
   }>;
   
   // Paso 3: Análisis de Riesgos
-  tipoTrabajo: string;
-  profundidadMaxima: number;
+  tipo_trabajo: string;
+  profundidad_maxima: number;
   corrientes: string;
   visibilidad: string;
   temperatura: number;
-  riesgosIdentificados: string[];
-  medidasControl: string[];
+  riesgos_identificados: string[];
+  medidas_control: string[];
   
   // Paso 4: Equipos y Herramientas
-  equipoBuceo: string[];
+  equipo_buceo: string[];
   herramientas: string[];
-  equipoSeguridad: string[];
-  equipoComunicacion: string[];
+  equipo_seguridad: string[];
+  equipo_comunicacion: string[];
   
   // Paso 5: Procedimientos de Emergencia
-  planEmergencia: string;
-  contactosEmergencia: Array<{
+  plan_emergencia: string;
+  contactos_emergencia: Array<{
     nombre: string;
     cargo: string;
     telefono: string;
   }>;
-  hospitalCercano: string;
-  camaraHiperbarica: string;
+  hospital_cercano: string;
+  camara_hiperbarica: string;
   
   // Paso 6: Autorizaciones
-  supervisorFirma: string | null;
-  jefeObraFirma: string | null;
+  supervisor_firma: string | null;
+  jefe_obra_firma: string | null;
   observaciones: string;
 }
 
@@ -73,33 +74,36 @@ interface HPTWizardProps {
 
 export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  
   const [data, setData] = useState<HPTData>({
-    operacionId: "",
-    fechaProgramada: "",
-    horaInicio: "",
-    horaFin: "",
+    operacion_id: "",
+    fecha_programada: "",
+    hora_inicio: "",
+    hora_fin: "",
     supervisor: "",
-    jefeObra: "",
-    descripcionTrabajo: "",
+    jefe_obra: "",
+    descripcion_trabajo: "",
     buzos: [],
     asistentes: [],
-    tipoTrabajo: "",
-    profundidadMaxima: 0,
+    tipo_trabajo: "",
+    profundidad_maxima: 0,
     corrientes: "",
     visibilidad: "",
     temperatura: 0,
-    riesgosIdentificados: [],
-    medidasControl: [],
-    equipoBuceo: [],
+    riesgos_identificados: [],
+    medidas_control: [],
+    equipo_buceo: [],
     herramientas: [],
-    equipoSeguridad: [],
-    equipoComunicacion: [],
-    planEmergencia: "",
-    contactosEmergencia: [],
-    hospitalCercano: "",
-    camaraHiperbarica: "",
-    supervisorFirma: null,
-    jefeObraFirma: null,
+    equipo_seguridad: [],
+    equipo_comunicacion: [],
+    plan_emergencia: "",
+    contactos_emergencia: [],
+    hospital_cercano: "",
+    camara_hiperbarica: "",
+    supervisor_firma: null,
+    jefe_obra_firma: null,
     observaciones: "",
     ...initialData,
   });
@@ -117,11 +121,15 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
   }, [data]);
 
   const saveDraft = () => {
-    localStorage.setItem('hpt-draft', JSON.stringify({
-      ...data,
-      lastSaved: new Date().toISOString()
-    }));
-    console.log('HPT Draft saved automatically');
+    try {
+      localStorage.setItem('hpt-draft', JSON.stringify({
+        ...data,
+        lastSaved: new Date().toISOString()
+      }));
+      console.log('HPT Draft saved automatically');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
   };
 
   const updateData = (stepData: Partial<HPTData>) => {
@@ -131,17 +139,17 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
   const canProceedToNext = () => {
     switch (currentStep) {
       case 1:
-        return data.operacionId && data.fechaProgramada && data.supervisor && data.jefeObra;
+        return data.operacion_id && data.fecha_programada && data.supervisor && data.jefe_obra;
       case 2:
         return data.buzos.length > 0;
       case 3:
-        return data.tipoTrabajo && data.profundidadMaxima > 0;
+        return data.tipo_trabajo && data.profundidad_maxima > 0;
       case 4:
-        return data.equipoBuceo.length > 0;
+        return data.equipo_buceo.length > 0;
       case 5:
-        return data.planEmergencia && data.contactosEmergencia.length > 0;
+        return data.plan_emergencia && data.contactos_emergencia.length > 0;
       case 6:
-        return data.supervisorFirma && data.jefeObraFirma;
+        return data.supervisor_firma && data.jefe_obra_firma;
       default:
         return true;
     }
@@ -160,10 +168,33 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
     }
   };
 
-  const handleSubmit = () => {
-    if (data.supervisorFirma && data.jefeObraFirma) {
-      onSubmit(data);
+  const handleSubmit = async () => {
+    if (!canProceedToNext()) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos requeridos para finalizar el HPT",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(data);
       localStorage.removeItem('hpt-draft');
+      toast({
+        title: "HPT Finalizada",
+        description: "La Hoja de Preparación de Trabajo ha sido creada exitosamente",
+      });
+    } catch (error) {
+      console.error('Error submitting HPT:', error);
+      toast({
+        title: "Error",
+        description: "Error al finalizar el HPT. Intente nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,6 +262,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           <Button 
             variant="outline" 
             onClick={onCancel}
+            disabled={isSubmitting}
             className="flex items-center gap-2"
           >
             Cancelar
@@ -238,6 +270,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           <Button 
             variant="outline" 
             onClick={saveDraft}
+            disabled={isSubmitting}
             className="flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
@@ -249,7 +282,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           <Button
             variant="outline"
             onClick={handlePrevious}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isSubmitting}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -259,7 +292,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           {currentStep < totalSteps ? (
             <Button
               onClick={handleNext}
-              disabled={!canProceedToNext()}
+              disabled={!canProceedToNext() || isSubmitting}
               className="flex items-center gap-2"
             >
               Siguiente
@@ -268,11 +301,11 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!canProceedToNext()}
+              disabled={!canProceedToNext() || isSubmitting}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             >
               <FileText className="w-4 h-4" />
-              Finalizar HPT
+              {isSubmitting ? 'Finalizando...' : 'Finalizar HPT'}
             </Button>
           )}
         </div>

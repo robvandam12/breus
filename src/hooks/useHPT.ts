@@ -22,8 +22,8 @@ export interface HPTFormData {
   operacion_id: string;
   supervisor: string;
   plan_trabajo: string;
-  equipos_seguridad: string[];
-  procedimientos_emergencia: string;
+  supervisor_firma?: string;
+  jefe_operaciones_firma?: string;
 }
 
 export const useHPT = () => {
@@ -106,6 +106,8 @@ export const useHPT = () => {
         operacion_id: data.operacion_id,
         supervisor: data.supervisor,
         plan_trabajo: data.plan_trabajo,
+        supervisor_firma: data.supervisor_firma || null,
+        jefe_operaciones_firma: data.jefe_operaciones_firma || null,
         user_id: '00000000-0000-0000-0000-000000000000' // Placeholder hasta que se implemente auth
       };
 

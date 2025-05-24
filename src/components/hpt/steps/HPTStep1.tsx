@@ -5,23 +5,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface HPTStep1Props {
   data: any;
   onUpdate: (data: any) => void;
 }
 
+interface Operacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
+  const [operaciones, setOperaciones] = useState<Operacion[]>([]);
+  const [loadingOperaciones, setLoadingOperaciones] = useState(false);
+  const { toast } = useToast();
+
   const form = useForm({
     defaultValues: {
-      operacionId: data.operacionId || "",
-      fechaProgramada: data.fechaProgramada || "",
-      horaInicio: data.horaInicio || "",
-      horaFin: data.horaFin || "",
+      operacion_id: data.operacion_id || "",
+      fecha_programada: data.fecha_programada || "",
+      hora_inicio: data.hora_inicio || "",
+      hora_fin: data.hora_fin || "",
       supervisor: data.supervisor || "",
-      jefeObra: data.jefeObra || "",
-      descripcionTrabajo: data.descripcionTrabajo || "",
+      jefe_obra: data.jefe_obra || "",
+      descripcion_trabajo: data.descripcion_trabajo || "",
     }
   });
 
@@ -31,13 +43,41 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
     onUpdate(formData);
   }, [formData, onUpdate]);
 
-  // Mock data for selects
-  const operaciones = [
-    { id: "OP-2024-001", nombre: "Mantenimiento Jaulas Sitio Norte" },
-    { id: "OP-2024-002", nombre: "Inspección Redes Centro Los Fiordos" },
-    { id: "OP-2024-003", nombre: "Limpieza Estructuras Piscicultura" },
-  ];
+  useEffect(() => {
+    loadOperaciones();
+  }, []);
 
+  const loadOperaciones = async () => {
+    setLoadingOperaciones(true);
+    try {
+      const { data, error } = await supabase
+        .from('operacion')
+        .select('id, codigo, nombre')
+        .eq('estado', 'activa')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: Operacion[] = (data || []).map((item: any) => ({
+        id: item.id,
+        codigo: item.codigo,
+        nombre: item.nombre
+      }));
+
+      setOperaciones(formattedData);
+    } catch (err) {
+      console.error('Error loading operaciones:', err);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las operaciones",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOperaciones(false);
+    }
+  };
+
+  // Mock data for selects - en producción estos vendrían de la base de datos
   const supervisores = [
     "Diego Martínez",
     "Carlos Rojas", 
@@ -65,20 +105,20 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
         <div className="grid md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
-            name="operacionId"
+            name="operacion_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Operación *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione una operación" />
+                      <SelectValue placeholder={loadingOperaciones ? "Cargando..." : "Seleccione una operación"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {operaciones.map((op) => (
                       <SelectItem key={op.id} value={op.id}>
-                        {op.id} - {op.nombre}
+                        {op.codigo} - {op.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -90,7 +130,7 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
 
           <FormField
             control={form.control}
-            name="fechaProgramada"
+            name="fecha_programada"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Fecha Programada *</FormLabel>
@@ -104,7 +144,7 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
 
           <FormField
             control={form.control}
-            name="horaInicio"
+            name="hora_inicio"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Hora de Inicio</FormLabel>
@@ -118,7 +158,7 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
 
           <FormField
             control={form.control}
-            name="horaFin"
+            name="hora_fin"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Hora de Término</FormLabel>
@@ -157,7 +197,7 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
 
           <FormField
             control={form.control}
-            name="jefeObra"
+            name="jefe_obra"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Jefe de Obra *</FormLabel>
@@ -183,7 +223,7 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
 
         <FormField
           control={form.control}
-          name="descripcionTrabajo"
+          name="descripcion_trabajo"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Descripción del Trabajo</FormLabel>
