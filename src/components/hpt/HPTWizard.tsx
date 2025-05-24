@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +84,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
     supervisor: "",
     jefe_obra: "",
     descripcion_trabajo: "",
+    plan_trabajo: "", // Añadido para compatibilidad con HPTStep1
     buzos: [],
     asistentes: [],
     tipo_trabajo: "",
@@ -139,7 +139,7 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
   const canProceedToNext = () => {
     switch (currentStep) {
       case 1:
-        return data.operacion_id && data.fecha_programada && data.supervisor && data.jefe_obra;
+        return data.operacion_id && data.supervisor && data.plan_trabajo;
       case 2:
         return data.buzos.length > 0;
       case 3:

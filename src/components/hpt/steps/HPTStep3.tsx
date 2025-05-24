@@ -1,14 +1,11 @@
-import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { useForm } from "react-hook-form";
-import { useEffect } from "react";
-import { AlertTriangle, Shield } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertTriangle, Waves, Eye, Thermometer } from "lucide-react";
 
 interface HPTStep3Props {
   data: any;
@@ -16,286 +13,201 @@ interface HPTStep3Props {
 }
 
 export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
-  const form = useForm({
-    defaultValues: {
-      tipoTrabajo: data.tipoTrabajo || "",
-      profundidadMaxima: data.profundidadMaxima || 0,
-      corrientes: data.corrientes || "",
-      visibilidad: data.visibilidad || "",
-      temperatura: data.temperatura || 0,
-    }
-  });
-
-  const [selectedRiesgos, setSelectedRiesgos] = useState<string[]>(data.riesgosIdentificados || []);
-  const [selectedMedidas, setSelectedMedidas] = useState<string[]>(data.medidasControl || []);
-
-  const formData = form.watch();
-
-  useEffect(() => {
-    onUpdate({
-      ...formData,
-      riesgosIdentificados: selectedRiesgos,
-      medidasControl: selectedMedidas
-    });
-  }, [formData, selectedRiesgos, selectedMedidas, onUpdate]);
-
-  const tiposTrabajos = [
-    "Mantenimiento de Jaulas",
-    "Inspección Visual",
-    "Limpieza de Redes",
-    "Soldadura Subacuática",
-    "Reparación de Estructuras",
-    "Instalación de Equipos",
-    "Trabajo de Emergencia"
-  ];
-
-  const riesgosDisponibles = [
-    "Enredamiento en líneas",
-    "Corrientes fuertes", 
+  const riesgosComunes = [
+    "Corrientes fuertes",
     "Baja visibilidad",
-    "Fauna marina peligrosa",
-    "Temperatura extrema del agua",
-    "Presencia de embarcaciones",
-    "Condiciones climáticas adversas",
-    "Equipos defectuosos",
-    "Profundidad excesiva",
-    "Tiempo de buceo prolongado",
-    "Trabajos en espacios confinados",
-    "Riesgo de descompresión"
+    "Temperatura extrema",
+    "Enredamiento",
+    "Narcosis por nitrógeno",
+    "Descompresión inadecuada",
+    "Falla de equipo",
+    "Vida marina peligrosa"
   ];
 
-  const medidasDisponibles = [
-    "Revisión completa de equipos",
-    "Establecer comunicación constante",
-    "Usar línea de vida",
-    "Monitoreo de corrientes",
-    "Buddy system obligatorio",
-    "Límites de tiempo estrictos",
-    "Plan de ascenso de emergencia",
-    "Equipo de rescate en superficie",
-    "Verificar condiciones meteorológicas",
-    "Inspección médica previa",
-    "Sistema de señales establecido",
-    "Cámara hiperbárica disponible"
+  const medidasControl = [
+    "Verificación de equipos",
+    "Plan de emergencia definido",
+    "Comunicación constante",
+    "Buddy system",
+    "Tabla de descompresión",
+    "Equipo de respaldo",
+    "Señalización adecuada",
+    "Monitoreo médico"
   ];
 
   const handleRiesgoChange = (riesgo: string, checked: boolean) => {
+    const currentRiesgos = data.riesgos_identificados || [];
+    let updatedRiesgos;
+    
     if (checked) {
-      setSelectedRiesgos([...selectedRiesgos, riesgo]);
+      updatedRiesgos = [...currentRiesgos, riesgo];
     } else {
-      setSelectedRiesgos(selectedRiesgos.filter(r => r !== riesgo));
+      updatedRiesgos = currentRiesgos.filter((r: string) => r !== riesgo);
     }
+    
+    onUpdate({ riesgos_identificados: updatedRiesgos });
   };
 
   const handleMedidaChange = (medida: string, checked: boolean) => {
-    if (checked) {
-      setSelectedMedidas([...selectedMedidas, medida]);
-    } else {
-      setSelectedMedidas(selectedMedidas.filter(m => m !== medida));
-    }
-  };
-
-  const getRiskLevel = () => {
-    const riskFactors = selectedRiesgos.length;
-    const depth = formData.profundidadMaxima;
+    const currentMedidas = data.medidas_control || [];
+    let updatedMedidas;
     
-    if (riskFactors >= 4 || depth > 30) return { level: "Alto", color: "bg-red-100 text-red-700" };
-    if (riskFactors >= 2 || depth > 15) return { level: "Medio", color: "bg-yellow-100 text-yellow-700" };
-    return { level: "Bajo", color: "bg-green-100 text-green-700" };
+    if (checked) {
+      updatedMedidas = [...currentMedidas, medida];
+    } else {
+      updatedMedidas = currentMedidas.filter((m: string) => m !== medida);
+    }
+    
+    onUpdate({ medidas_control: updatedMedidas });
   };
-
-  const riskLevel = getRiskLevel();
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-4">Análisis de Riesgos</h3>
-        <p className="text-sm text-zinc-500 mb-6">
-          Identifique los riesgos asociados al trabajo y defina las medidas de control.
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Análisis de Riesgos</h2>
+        <p className="mt-2 text-gray-600">
+          Evalúa las condiciones y riesgos asociados a la inmersión
         </p>
       </div>
 
-      <Form {...form}>
-        <div className="grid md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="tipoTrabajo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Trabajo *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione tipo de trabajo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {tiposTrabajos.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      {/* Condiciones de Buceo */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Waves className="w-5 h-5" />
+            Condiciones de Buceo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tipo_trabajo">Tipo de Trabajo *</Label>
+              <Select
+                value={data.tipo_trabajo || ''}
+                onValueChange={(value) => onUpdate({ tipo_trabajo: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inspeccion">Inspección</SelectItem>
+                  <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                  <SelectItem value="reparacion">Reparación</SelectItem>
+                  <SelectItem value="soldadura">Soldadura Subacuática</SelectItem>
+                  <SelectItem value="limpieza">Limpieza</SelectItem>
+                  <SelectItem value="instalacion">Instalación</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="profundidadMaxima"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profundidad Máxima (metros) *</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="100"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div>
+              <Label htmlFor="profundidad_maxima">Profundidad Máxima (m) *</Label>
+              <Input
+                id="profundidad_maxima"
+                type="number"
+                value={data.profundidad_maxima || ''}
+                onChange={(e) => onUpdate({ profundidad_maxima: parseFloat(e.target.value) || 0 })}
+                placeholder="Ej: 15"
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="corrientes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Condiciones de Corriente</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione condición" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="nula">Nula (0-0.5 nudos)</SelectItem>
-                    <SelectItem value="leve">Leve (0.5-1 nudo)</SelectItem>
-                    <SelectItem value="moderada">Moderada (1-2 nudos)</SelectItem>
-                    <SelectItem value="fuerte">Fuerte (&gt;2 nudos)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div>
+              <Label htmlFor="corrientes">Corrientes</Label>
+              <Select
+                value={data.corrientes || ''}
+                onValueChange={(value) => onUpdate({ corrientes: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Intensidad..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nula">Nula</SelectItem>
+                  <SelectItem value="ligera">Ligera</SelectItem>
+                  <SelectItem value="moderada">Moderada</SelectItem>
+                  <SelectItem value="fuerte">Fuerte</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="visibilidad"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Visibilidad</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione visibilidad" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="excelente">Excelente (&gt;15m)</SelectItem>
-                    <SelectItem value="buena">Buena (10-15m)</SelectItem>
-                    <SelectItem value="regular">Regular (5-10m)</SelectItem>
-                    <SelectItem value="mala">Mala (&lt;5m)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div>
+              <Label htmlFor="visibilidad">Visibilidad</Label>
+              <Select
+                value={data.visibilidad || ''}
+                onValueChange={(value) => onUpdate({ visibilidad: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Condición..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excelente">Excelente (>20m)</SelectItem>
+                  <SelectItem value="buena">Buena (10-20m)</SelectItem>
+                  <SelectItem value="regular">Regular (5-10m)</SelectItem>
+                  <SelectItem value="mala">Mala (<5m)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="temperatura"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Temperatura del Agua (°C)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="30"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Nivel de Riesgo:</span>
-            <Badge className={riskLevel.color}>
-              {riskLevel.level}
-            </Badge>
+            <div className="md:col-span-2">
+              <Label htmlFor="temperatura">Temperatura del Agua (°C)</Label>
+              <Input
+                id="temperatura"
+                type="number"
+                value={data.temperatura || ''}
+                onChange={(e) => onUpdate({ temperatura: parseFloat(e.target.value) || 0 })}
+                placeholder="Ej: 12"
+              />
+            </div>
           </div>
-        </div>
-      </Form>
+        </CardContent>
+      </Card>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              Riesgos Identificados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {riesgosDisponibles.map((riesgo) => (
-                <div key={riesgo} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={riesgo}
-                    checked={selectedRiesgos.includes(riesgo)}
-                    onCheckedChange={(checked) => handleRiesgoChange(riesgo, checked as boolean)}
-                  />
-                  <label
-                    htmlFor={riesgo}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {riesgo}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Riesgos Identificados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Riesgos Identificados
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {riesgosComunes.map((riesgo) => (
+              <div key={riesgo} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`riesgo-${riesgo}`}
+                  checked={(data.riesgos_identificados || []).includes(riesgo)}
+                  onCheckedChange={(checked) => handleRiesgoChange(riesgo, checked as boolean)}
+                />
+                <Label htmlFor={`riesgo-${riesgo}`}>{riesgo}</Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-green-600" />
-              Medidas de Control
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {medidasDisponibles.map((medida) => (
-                <div key={medida} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={medida}
-                    checked={selectedMedidas.includes(medida)}
-                    onCheckedChange={(checked) => handleMedidaChange(medida, checked as boolean)}
-                  />
-                  <label
-                    htmlFor={medida}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {medida}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Medidas de Control */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Medidas de Control
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {medidasControl.map((medida) => (
+              <div key={medida} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`medida-${medida}`}
+                  checked={(data.medidas_control || []).includes(medida)}
+                  onCheckedChange={(checked) => handleMedidaChange(medida, checked as boolean)}
+                />
+                <Label htmlFor={`medida-${medida}`}>{medida}</Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

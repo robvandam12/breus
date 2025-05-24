@@ -1,11 +1,12 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Users, Plus, Trash2 } from "lucide-react";
 
 interface HPTStep2Props {
   data: any;
@@ -19,14 +20,14 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
     vencimiento: "",
     rol: "buzo"
   });
-  
+
   const [newAsistente, setNewAsistente] = useState({
     nombre: "",
     rol: "asistente"
   });
 
   const addBuzo = () => {
-    if (newBuzo.nombre && newBuzo.certificacion) {
+    if (newBuzo.nombre.trim()) {
       const updatedBuzos = [...(data.buzos || []), { ...newBuzo, id: Date.now() }];
       onUpdate({ buzos: updatedBuzos });
       setNewBuzo({ nombre: "", certificacion: "", vencimiento: "", rol: "buzo" });
@@ -39,7 +40,7 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
   };
 
   const addAsistente = () => {
-    if (newAsistente.nombre) {
+    if (newAsistente.nombre.trim()) {
       const updatedAsistentes = [...(data.asistentes || []), { ...newAsistente, id: Date.now() }];
       onUpdate({ asistentes: updatedAsistentes });
       setNewAsistente({ nombre: "", rol: "asistente" });
@@ -51,33 +52,16 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
     onUpdate({ asistentes: updatedAsistentes });
   };
 
-  const certificaciones = [
-    "PADI Open Water",
-    "PADI Advanced Open Water", 
-    "PADI Rescue Diver",
-    "SSI Open Water Diver",
-    "NAUI Scuba Diver",
-    "Buceo Comercial Nivel 1",
-    "Buceo Comercial Nivel 2"
-  ];
-
-  const roles = [
-    "Buzo Principal",
-    "Buzo de Apoyo", 
-    "Buzo de Reserva",
-    "Tender"
-  ];
-
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-4">Equipo de Buceo</h3>
-        <p className="text-sm text-zinc-500 mb-6">
-          Configure el equipo de buzos y asistentes que participarán en la operación.
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Equipo de Buceo</h2>
+        <p className="mt-2 text-gray-600">
+          Define el equipo de buzos y asistentes para la operación
         </p>
       </div>
 
-      {/* Sección Buzos */}
+      {/* Buzos */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -85,38 +69,41 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
             Buzos
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-4 gap-4 mb-4">
-            <Input
-              placeholder="Nombre del buzo"
-              value={newBuzo.nombre}
-              onChange={(e) => setNewBuzo({ ...newBuzo, nombre: e.target.value })}
-            />
-            <Select
-              value={newBuzo.certificacion}
-              onValueChange={(value) => setNewBuzo({ ...newBuzo, certificacion: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Certificación" />
-              </SelectTrigger>
-              <SelectContent>
-                {certificaciones.map((cert) => (
-                  <SelectItem key={cert} value={cert}>
-                    {cert}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="date"
-              placeholder="Vencimiento"
-              value={newBuzo.vencimiento}
-              onChange={(e) => setNewBuzo({ ...newBuzo, vencimiento: e.target.value })}
-            />
-            <Button onClick={addBuzo} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Agregar Buzo
-            </Button>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="buzo-nombre">Nombre *</Label>
+              <Input
+                id="buzo-nombre"
+                value={newBuzo.nombre}
+                onChange={(e) => setNewBuzo(prev => ({ ...prev, nombre: e.target.value }))}
+                placeholder="Nombre del buzo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="buzo-cert">Certificación</Label>
+              <Input
+                id="buzo-cert"
+                value={newBuzo.certificacion}
+                onChange={(e) => setNewBuzo(prev => ({ ...prev, certificacion: e.target.value }))}
+                placeholder="Tipo de certificación"
+              />
+            </div>
+            <div>
+              <Label htmlFor="buzo-venc">Vencimiento</Label>
+              <Input
+                id="buzo-venc"
+                type="date"
+                value={newBuzo.vencimiento}
+                onChange={(e) => setNewBuzo(prev => ({ ...prev, vencimiento: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={addBuzo} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar
+              </Button>
+            </div>
           </div>
 
           {data.buzos && data.buzos.length > 0 && (
@@ -140,7 +127,6 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
                         variant="outline"
                         size="sm"
                         onClick={() => removeBuzo(index)}
-                        className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -153,40 +139,47 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
         </CardContent>
       </Card>
 
-      {/* Sección Asistentes */}
+      {/* Asistentes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Asistentes de Superficie
+            Asistentes
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <Input
-              placeholder="Nombre del asistente"
-              value={newAsistente.nombre}
-              onChange={(e) => setNewAsistente({ ...newAsistente, nombre: e.target.value })}
-            />
-            <Select
-              value={newAsistente.rol}
-              onValueChange={(value) => setNewAsistente({ ...newAsistente, rol: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((rol) => (
-                  <SelectItem key={rol} value={rol}>
-                    {rol}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={addAsistente} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Agregar Asistente
-            </Button>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="asistente-nombre">Nombre *</Label>
+              <Input
+                id="asistente-nombre"
+                value={newAsistente.nombre}
+                onChange={(e) => setNewAsistente(prev => ({ ...prev, nombre: e.target.value }))}
+                placeholder="Nombre del asistente"
+              />
+            </div>
+            <div>
+              <Label htmlFor="asistente-rol">Rol</Label>
+              <Select
+                value={newAsistente.rol}
+                onValueChange={(value) => setNewAsistente(prev => ({ ...prev, rol: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asistente">Asistente</SelectItem>
+                  <SelectItem value="operador">Operador</SelectItem>
+                  <SelectItem value="supervisor_superficie">Supervisor de Superficie</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button onClick={addAsistente} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar
+              </Button>
+            </div>
           </div>
 
           {data.asistentes && data.asistentes.length > 0 && (
@@ -208,7 +201,6 @@ export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
                         variant="outline"
                         size="sm"
                         onClick={() => removeAsistente(index)}
-                        className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
