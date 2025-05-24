@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +40,14 @@ export interface InmersionFormData {
   visibilidad: number;
   corriente: string;
   observaciones?: string;
+}
+
+export interface ValidationStatus {
+  hasValidHPT: boolean;
+  hasValidAnexoBravo: boolean;
+  canExecute: boolean;
+  hptCode?: string;
+  anexoBravoCode?: string;
 }
 
 export const useInmersiones = () => {
@@ -105,6 +112,136 @@ export const useInmersiones = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
+    try {
+      // Verificar HPT firmado
+      const { data: hptData, error: hptError } = await supabase
+        .from('hpt')
+        .select('codigo, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .maybeSingle();
+
+      if (hptError) throw hptError;
+
+      // Verificar Anexo Bravo firmado
+      const { data: anexoData, error: anexoError } = await supabase
+        .from('anexo_bravo')
+        .select('codigo, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .maybeSingle();
+
+      if (anexoError) throw anexoError;
+
+      const hasValidHPT = !!hptData;
+      const hasValidAnexoBravo = !!anexoData;
+
+      return {
+        hasValidHPT,
+        hasValidAnexoBravo,
+        canExecute: hasValidHPT && hasValidAnexoBravo,
+        hptCode: hptData?.codigo,
+        anexoBravoCode: anexoData?.codigo
+      };
+    } catch (err) {
+      console.error('Error validating documents:', err);
+      return {
+        hasValidHPT: false,
+        hasValidAnexoBravo: false,
+        canExecute: false
+      };
+    }
+  };
+
+  const updateInmersionStatus = async (inmersionId: string, newStatus: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('inmersion')
+        .update({ 
+          estado: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('inmersion_id', inmersionId);
+
+      if (error) throw error;
+
+      // Actualizar el estado local
+      setInmersiones(prev => prev.map(inmersion => 
+        inmersion.id === inmersionId 
+          ? { ...inmersion, estado: newStatus }
+          : inmersion
+      ));
+
+      toast({
+        title: "Estado Actualizado",
+        description: `La inmersión ha sido marcada como ${newStatus}`,
+      });
+
+    } catch (err) {
+      console.error('Error updating inmersion status:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar el estado';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const executeInmersion = async (inmersionId: string) => {
+    const inmersion = inmersiones.find(i => i.id === inmersionId);
+    if (!inmersion) {
+      throw new Error('Inmersión no encontrada');
+    }
+
+    // Validar documentos antes de ejecutar
+    const validation = await validateOperationDocuments(inmersion.operacion_id);
+    
+    if (!validation.canExecute) {
+      const missingDocs = [];
+      if (!validation.hasValidHPT) missingDocs.push('HPT firmado');
+      if (!validation.hasValidAnexoBravo) missingDocs.push('Anexo Bravo firmado');
+      
+      throw new Error(`No se puede ejecutar la inmersión. Faltan: ${missingDocs.join(', ')}`);
+    }
+
+    // Actualizar estado a "en_ejecucion"
+    await updateInmersionStatus(inmersionId, 'en_ejecucion');
+
+    // Actualizar banderas de validación
+    const { error } = await supabase
+      .from('inmersion')
+      .update({
+        hpt_validado: true,
+        anexo_bravo_validado: true
+      })
+      .eq('inmersion_id', inmersionId);
+
+    if (error) throw error;
+
+    // Actualizar estado local
+    setInmersiones(prev => prev.map(inmersion => 
+      inmersion.id === inmersionId 
+        ? { 
+            ...inmersion, 
+            hpt_validado: true, 
+            anexo_bravo_validado: true,
+            estado: 'en_ejecucion'
+          }
+        : inmersion
+    ));
+  };
+
+  const completeInmersion = async (inmersionId: string) => {
+    await updateInmersionStatus(inmersionId, 'completada');
   };
 
   const createInmersion = async (data: InmersionFormData) => {
@@ -200,6 +337,10 @@ export const useInmersiones = () => {
     loading,
     error,
     createInmersion,
+    validateOperationDocuments,
+    updateInmersionStatus,
+    executeInmersion,
+    completeInmersion,
     refreshInmersiones: loadInmersiones
   };
 };
