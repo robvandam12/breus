@@ -14,6 +14,7 @@ import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Inmersiones from "./pages/operaciones/Inmersiones";
+import Bitacoras from "./pages/operaciones/Bitacoras";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/operaciones/hpt" element={<HPT />} />
           <Route path="/operaciones/anexo-bravo" element={<AnexoBravo />} />
           <Route path="/operaciones/inmersiones" element={<Inmersiones />} />
+          <Route path="/operaciones/bitacoras" element={<Bitacoras />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
