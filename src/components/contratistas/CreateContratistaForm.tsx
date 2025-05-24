@@ -18,8 +18,8 @@ const formSchema = z.object({
   direccion: z.string().min(1, "La dirección es requerida"),
   telefono: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  especialidades: z.array(z.string()).optional(),
-  certificaciones: z.array(z.string()).optional(),
+  especialidades: z.array(z.object({ value: z.string() })).optional(),
+  certificaciones: z.array(z.object({ value: z.string() })).optional(),
   estado: z.enum(['activo', 'inactivo', 'suspendido']),
 });
 
@@ -52,8 +52,8 @@ export const CreateContratistaForm = ({
       direccion: initialData?.direccion || "",
       telefono: initialData?.telefono || "",
       email: initialData?.email || "",
-      especialidades: initialData?.especialidades || [],
-      certificaciones: initialData?.certificaciones || [],
+      especialidades: initialData?.especialidades?.map(e => ({ value: e })) || [],
+      certificaciones: initialData?.certificaciones?.map(c => ({ value: c })) || [],
       estado: initialData?.estado || 'activo',
     }
   });
@@ -77,8 +77,8 @@ export const CreateContratistaForm = ({
         direccion: data.direccion,
         telefono: data.telefono || undefined,
         email: data.email || undefined,
-        especialidades: data.especialidades?.filter(e => e.trim() !== "") || [],
-        certificaciones: data.certificaciones?.filter(c => c.trim() !== "") || [],
+        especialidades: data.especialidades?.map(e => e.value).filter(e => e.trim() !== "") || [],
+        certificaciones: data.certificaciones?.map(c => c.value).filter(c => c.trim() !== "") || [],
         estado: data.estado,
       };
       await onSubmit(formData);
@@ -183,7 +183,7 @@ export const CreateContratistaForm = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendEspecialidad("")}
+                onClick={() => appendEspecialidad({ value: "" })}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar
@@ -192,7 +192,7 @@ export const CreateContratistaForm = ({
             {especialidadesFields.map((field, index) => (
               <div key={field.id} className="flex gap-2">
                 <Input
-                  {...register(`especialidades.${index}` as const)}
+                  {...register(`especialidades.${index}.value` as const)}
                   placeholder="Ej: Buceo Comercial"
                 />
                 <Button
@@ -214,7 +214,7 @@ export const CreateContratistaForm = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendCertificacion("")}
+                onClick={() => appendCertificacion({ value: "" })}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar
@@ -223,7 +223,7 @@ export const CreateContratistaForm = ({
             {certificacionesFields.map((field, index) => (
               <div key={field.id} className="flex gap-2">
                 <Input
-                  {...register(`certificaciones.${index}` as const)}
+                  {...register(`certificaciones.${index}.value` as const)}
                   placeholder="Ej: PADI, NAUI, Commercial Diver"
                 />
                 <Button
