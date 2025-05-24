@@ -70,7 +70,6 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
         </p>
       </div>
 
-      {/* Condiciones de Buceo */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -139,10 +138,10 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                   <SelectValue placeholder="Condición..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="excelente">Excelente (>20m)</SelectItem>
+                  <SelectItem value="excelente">Excelente (más de 20m)</SelectItem>
                   <SelectItem value="buena">Buena (10-20m)</SelectItem>
                   <SelectItem value="regular">Regular (5-10m)</SelectItem>
-                  <SelectItem value="mala">Mala (<5m)</SelectItem>
+                  <SelectItem value="mala">Mala (menos de 5m)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -161,7 +160,6 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
         </CardContent>
       </Card>
 
-      {/* Riesgos Identificados */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -185,7 +183,6 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
         </CardContent>
       </Card>
 
-      {/* Medidas de Control */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
