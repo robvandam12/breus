@@ -72,7 +72,7 @@ export const useAnexoBravo = () => {
       const { data, error } = await supabase
         .from('anexo_bravo')
         .select(`
-          anexo_id,
+          id,
           codigo,
           operacion_id,
           fecha_creacion,
@@ -83,7 +83,6 @@ export const useAnexoBravo = () => {
           firmado,
           checklist_completo,
           progreso,
-          checklist_items,
           observaciones_generales,
           jefe_centro_firma,
           supervisor_firma,
@@ -98,7 +97,7 @@ export const useAnexoBravo = () => {
       if (error) throw error;
 
       const formattedData: AnexoBravoItem[] = (data || []).map(item => ({
-        id: item.anexo_id,
+        id: item.id,
         codigo: item.codigo,
         operacion_id: item.operacion_id,
         operacion_nombre: item.operacion?.nombre || 'Operación no encontrada',
@@ -110,7 +109,7 @@ export const useAnexoBravo = () => {
         firmado: item.firmado,
         checklist_completo: item.checklist_completo,
         progreso: item.progreso,
-        checklist_items: parseChecklistItems(item.checklist_items),
+        checklist_items: [], // Will be populated separately if needed
         observaciones_generales: item.observaciones_generales || '',
         jefe_centro_firma: item.jefe_centro_firma,
         supervisor_firma: item.supervisor_firma,
@@ -152,6 +151,9 @@ export const useAnexoBravo = () => {
       const firmado = !!(data.jefe_centro_firma && data.supervisor_firma);
       const estado = firmado ? 'aprobado' : 'borrador';
 
+      // Temporary user_id - in a real app, this would come from auth
+      const userId = '00000000-0000-0000-0000-000000000000';
+
       const anexoBravoData = {
         codigo,
         operacion_id: data.operacion_id,
@@ -162,17 +164,17 @@ export const useAnexoBravo = () => {
         firmado,
         checklist_completo: progreso === 100,
         progreso,
-        checklist_items: data.checklist_items,
         observaciones_generales: data.observaciones_generales,
         jefe_centro_firma: data.jefe_centro_firma,
-        supervisor_firma: data.supervisor_firma
+        supervisor_firma: data.supervisor_firma,
+        user_id: userId
       };
 
       const { data: newAnexo, error } = await supabase
         .from('anexo_bravo')
         .insert([anexoBravoData])
         .select(`
-          anexo_id,
+          id,
           codigo,
           operacion_id,
           fecha_creacion,
@@ -183,7 +185,6 @@ export const useAnexoBravo = () => {
           firmado,
           checklist_completo,
           progreso,
-          checklist_items,
           observaciones_generales,
           jefe_centro_firma,
           supervisor_firma,
@@ -197,8 +198,10 @@ export const useAnexoBravo = () => {
 
       if (error) throw error;
 
+      if (!newAnexo) throw new Error('No se pudo crear el Anexo Bravo');
+
       const formattedNewAnexo: AnexoBravoItem = {
-        id: newAnexo.anexo_id,
+        id: newAnexo.id,
         codigo: newAnexo.codigo,
         operacion_id: newAnexo.operacion_id,
         operacion_nombre: newAnexo.operacion?.nombre || 'Nueva Operación',
@@ -210,7 +213,7 @@ export const useAnexoBravo = () => {
         firmado: newAnexo.firmado,
         checklist_completo: newAnexo.checklist_completo,
         progreso: newAnexo.progreso,
-        checklist_items: parseChecklistItems(newAnexo.checklist_items),
+        checklist_items: data.checklist_items,
         observaciones_generales: newAnexo.observaciones_generales || '',
         jefe_centro_firma: newAnexo.jefe_centro_firma,
         supervisor_firma: newAnexo.supervisor_firma,
@@ -259,7 +262,7 @@ export const useAnexoBravo = () => {
       const { error } = await supabase
         .from('anexo_bravo')
         .update(updateData)
-        .eq('anexo_id', id);
+        .eq('id', id);
 
       if (error) throw error;
 
@@ -297,7 +300,7 @@ export const useAnexoBravo = () => {
       const { error } = await supabase
         .from('anexo_bravo')
         .delete()
-        .eq('anexo_id', id);
+        .eq('id', id);
 
       if (error) throw error;
 

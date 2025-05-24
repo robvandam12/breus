@@ -9,7 +9,154 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      anexo_bravo: {
+        Row: {
+          checklist_completo: boolean
+          codigo: string
+          created_at: string
+          estado: string
+          fecha_creacion: string
+          fecha_verificacion: string
+          firmado: boolean
+          id: string
+          jefe_centro: string
+          jefe_centro_firma: string | null
+          observaciones_generales: string | null
+          operacion_id: string
+          progreso: number
+          supervisor: string
+          supervisor_firma: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checklist_completo?: boolean
+          codigo: string
+          created_at?: string
+          estado?: string
+          fecha_creacion?: string
+          fecha_verificacion: string
+          firmado?: boolean
+          id?: string
+          jefe_centro: string
+          jefe_centro_firma?: string | null
+          observaciones_generales?: string | null
+          operacion_id: string
+          progreso?: number
+          supervisor: string
+          supervisor_firma?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checklist_completo?: boolean
+          codigo?: string
+          created_at?: string
+          estado?: string
+          fecha_creacion?: string
+          fecha_verificacion?: string
+          firmado?: boolean
+          id?: string
+          jefe_centro?: string
+          jefe_centro_firma?: string | null
+          observaciones_generales?: string | null
+          operacion_id?: string
+          progreso?: number
+          supervisor?: string
+          supervisor_firma?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexo_bravo_operacion_id_fkey"
+            columns: ["operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anexo_bravo_checklist: {
+        Row: {
+          anexo_bravo_id: string
+          created_at: string
+          id: string
+          item: string
+          observaciones: string | null
+          orden: number
+          verificado: boolean
+        }
+        Insert: {
+          anexo_bravo_id: string
+          created_at?: string
+          id?: string
+          item: string
+          observaciones?: string | null
+          orden: number
+          verificado?: boolean
+        }
+        Update: {
+          anexo_bravo_id?: string
+          created_at?: string
+          id?: string
+          item?: string
+          observaciones?: string | null
+          orden?: number
+          verificado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexo_bravo_checklist_anexo_bravo_id_fkey"
+            columns: ["anexo_bravo_id"]
+            isOneToOne: false
+            referencedRelation: "anexo_bravo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operacion: {
+        Row: {
+          codigo: string
+          contratista_id: string | null
+          created_at: string
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          nombre: string
+          salmonera_id: string | null
+          sitio_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          contratista_id?: string | null
+          created_at?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio: string
+          id?: string
+          nombre: string
+          salmonera_id?: string | null
+          sitio_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          contratista_id?: string | null
+          created_at?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          nombre?: string
+          salmonera_id?: string | null
+          sitio_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
