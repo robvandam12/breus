@@ -22,7 +22,7 @@ const TIPOS_TRABAJO = [
   { value: "soldadura", label: "Soldadura Subacuática" },
   { value: "corte", label: "Corte Subacuático" },
   { value: "otros", label: "Otros" }
-];
+].filter(tipo => tipo.value && tipo.value.trim() !== ""); // Ensure no empty values
 
 const RIESGOS_PREDEFINIDOS = [
   "Enredamiento en cabos o redes",
@@ -35,7 +35,7 @@ const RIESGOS_PREDEFINIDOS = [
   "Contaminación del agua",
   "Condiciones climáticas adversas",
   "Fallas de equipos"
-];
+].filter(riesgo => riesgo && riesgo.trim() !== ""); // Ensure no empty values
 
 const MEDIDAS_CONTROL = [
   "Uso de cabo de vida",
@@ -48,10 +48,11 @@ const MEDIDAS_CONTROL = [
   "Monitoreo continuo",
   "Señalización de área",
   "Equipo de primeros auxilios"
-];
+].filter(medida => medida && medida.trim() !== ""); // Ensure no empty values
 
 export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
   const addRiesgo = (riesgo: string) => {
+    if (!riesgo || riesgo.trim() === "") return; // Guard against empty values
     const riesgos = data.riesgos_identificados || [];
     if (!riesgos.includes(riesgo)) {
       onUpdate({ riesgos_identificados: [...riesgos, riesgo] });
@@ -64,6 +65,7 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
   };
 
   const addMedida = (medida: string) => {
+    if (!medida || medida.trim() === "") return; // Guard against empty values
     const medidas = data.medidas_control || [];
     if (!medidas.includes(medida)) {
       onUpdate({ medidas_control: [...medidas, medida] });

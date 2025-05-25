@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,8 +74,27 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      console.log('Operaciones fetched:', data);
-      return data as Operacion[];
+      console.log('Raw operaciones data:', data);
+      
+      // Filter and validate the data to ensure no empty or invalid values
+      const validOperaciones = (data || [])
+        .filter(item => 
+          item && 
+          typeof item === 'object' &&
+          item.id && 
+          typeof item.id === 'string' &&
+          item.id.trim() !== "" &&
+          item.nombre &&
+          typeof item.nombre === 'string' &&
+          item.nombre.trim() !== ""
+        )
+        .map(item => ({
+          ...item,
+          codigo: item.codigo || `OP-${item.id.slice(0, 8)}`, // Ensure codigo is never empty
+        })) as Operacion[];
+
+      console.log('Filtered operaciones:', validOperaciones);
+      return validOperaciones;
     },
   });
 

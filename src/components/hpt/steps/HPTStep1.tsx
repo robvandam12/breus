@@ -15,13 +15,19 @@ interface HPTStep1Props {
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
   const { operaciones, isLoading } = useOperaciones();
 
-  // Filter out operations with empty or invalid values
-  const validOperaciones = operaciones.filter(op => 
+  // Filter out operations with empty or invalid values and ensure valid structure
+  const validOperaciones = (operaciones || []).filter(op => 
+    op && 
+    typeof op === 'object' &&
     op.id && 
+    typeof op.id === 'string' &&
     op.id.trim() !== "" && 
     op.nombre && 
+    typeof op.nombre === 'string' &&
     op.nombre.trim() !== ""
   );
+
+  console.log('Valid operaciones:', validOperaciones);
 
   return (
     <div className="space-y-6">
@@ -52,9 +58,9 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
                 </SelectTrigger>
                 <SelectContent>
                   {isLoading ? (
-                    <SelectItem value="loading" disabled>Cargando operaciones...</SelectItem>
+                    <SelectItem value="loading-placeholder" disabled>Cargando operaciones...</SelectItem>
                   ) : validOperaciones.length === 0 ? (
-                    <SelectItem value="no-data" disabled>No hay operaciones disponibles</SelectItem>
+                    <SelectItem value="no-data-placeholder" disabled>No hay operaciones disponibles</SelectItem>
                   ) : (
                     validOperaciones.map((operacion) => (
                       <SelectItem 
