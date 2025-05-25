@@ -34,6 +34,35 @@ export interface BitacoraBuzo {
   updated_at: string;
 }
 
+// Tipos extendidos para la UI que incluyen propiedades calculadas
+export interface BitacoraSupervisorItem extends BitacoraSupervisor {
+  id: string; // Alias para bitacora_id
+  inmersion_codigo: string;
+}
+
+export interface BitacoraBuzoItem extends BitacoraBuzo {
+  id: string; // Alias para bitacora_id
+  inmersion_codigo: string;
+}
+
+// Tipos para formularios
+export interface BitacoraSupervisorFormData {
+  inmersion_id: string;
+  supervisor: string;
+  desarrollo_inmersion: string;
+  evaluacion_general: string;
+  incidentes?: string;
+}
+
+export interface BitacoraBuzoFormData {
+  inmersion_id: string;
+  buzo: string;
+  profundidad_maxima: number;
+  trabajos_realizados: string;
+  estado_fisico_post: string;
+  observaciones_tecnicas?: string;
+}
+
 export interface CreateBitacoraSupervisorData {
   inmersion_id: string;
   supervisor: string;
@@ -56,14 +85,17 @@ export interface CreateBitacoraBuzoData {
 export const useBitacoras = () => {
   const queryClient = useQueryClient();
 
-  // Fetch bitácoras supervisor
+  // Fetch bitácoras supervisor con datos enriquecidos
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery({
     queryKey: ['bitacoras-supervisor'],
     queryFn: async () => {
       console.log('Fetching bitácoras supervisor...');
       const { data, error } = await supabase
         .from('bitacora_supervisor')
-        .select('*')
+        .select(`
+          *,
+          inmersion:inmersion_id (codigo)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -71,18 +103,26 @@ export const useBitacoras = () => {
         throw error;
       }
 
-      return data as BitacoraSupervisor[];
+      // Transformar datos para incluir propiedades esperadas por la UI
+      return (data || []).map((item: any): BitacoraSupervisorItem => ({
+        ...item,
+        id: item.bitacora_id, // Alias para compatibilidad
+        inmersion_codigo: item.inmersion?.codigo || 'N/A'
+      }));
     },
   });
 
-  // Fetch bitácoras buzo
+  // Fetch bitácoras buzo con datos enriquecidos
   const { data: bitacorasBuzo = [], isLoading: loadingBuzo } = useQuery({
     queryKey: ['bitacoras-buzo'],
     queryFn: async () => {
       console.log('Fetching bitácoras buzo...');
       const { data, error } = await supabase
         .from('bitacora_buzo')
-        .select('*')
+        .select(`
+          *,
+          inmersion:inmersion_id (codigo)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -90,22 +130,29 @@ export const useBitacoras = () => {
         throw error;
       }
 
-      return data as BitacoraBuzo[];
+      // Transformar datos para incluir propiedades esperadas por la UI
+      return (data || []).map((item: any): BitacoraBuzoItem => ({
+        ...item,
+        id: item.bitacora_id, // Alias para compatibilidad
+        inmersion_codigo: item.inmersion?.codigo || 'N/A'
+      }));
     },
   });
 
   // Create bitácora supervisor
   const createBitacoraSupervisorMutation = useMutation({
-    mutationFn: async (data: CreateBitacoraSupervisorData) => {
+    mutationFn: async (data: BitacoraSupervisorFormData) => {
       console.log('Creating bitácora supervisor:', data);
       
       const codigo = `BS-${Date.now().toString().slice(-6)}`;
+      const fecha = new Date().toISOString().split('T')[0];
 
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
         .insert([{
           ...data,
           codigo,
+          fecha,
           firmado: false
         }])
         .select()
@@ -137,16 +184,18 @@ export const useBitacoras = () => {
 
   // Create bitácora buzo
   const createBitacoraBuzoMutation = useMutation({
-    mutationFn: async (data: CreateBitacoraBuzoData) => {
+    mutationFn: async (data: BitacoraBuzoFormData) => {
       console.log('Creating bitácora buzo:', data);
       
       const codigo = `BB-${Date.now().toString().slice(-6)}`;
+      const fecha = new Date().toISOString().split('T')[0];
 
       const { data: result, error } = await supabase
         .from('bitacora_buzo')
         .insert([{
           ...data,
           codigo,
+          fecha,
           firmado: false
         }])
         .select()
@@ -254,15 +303,22 @@ export const useBitacoras = () => {
     },
   });
 
+  const refreshBitacoras = () => {
+    queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+    queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
+  };
+
   return {
     bitacorasSupervisor,
     bitacorasBuzo,
     isLoading: loadingSupervisor || loadingBuzo,
+    loading: loadingSupervisor || loadingBuzo, // Alias para compatibilidad
     createBitacoraSupervisor: createBitacoraSupervisorMutation.mutateAsync,
     createBitacoraBuzo: createBitacoraBuzoMutation.mutateAsync,
     signBitacoraSupervisor: signBitacoraSupervisorMutation.mutateAsync,
     signBitacoraBuzo: signBitacoraBuzoMutation.mutateAsync,
     isCreating: createBitacoraSupervisorMutation.isPending || createBitacoraBuzoMutation.isPending,
     isSigning: signBitacoraSupervisorMutation.isPending || signBitacoraBuzoMutation.isPending,
+    refreshBitacoras
   };
 };

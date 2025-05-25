@@ -28,7 +28,16 @@ export const useDomainEvents = () => {
         .limit(50);
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      // Transformar los datos para asegurar que event_data sea Record<string, any>
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        event_data: typeof item.event_data === 'string' 
+          ? JSON.parse(item.event_data) 
+          : item.event_data || {}
+      }));
+      
+      setEvents(transformedData);
     } catch (error) {
       console.error('Error fetching domain events:', error);
     } finally {
@@ -50,14 +59,21 @@ export const useDomainEvents = () => {
           table: 'domain_event'
         },
         (payload) => {
-          const newEvent = payload.new as DomainEvent;
-          setEvents(prev => [newEvent, ...prev]);
+          const newEvent = payload.new as any;
+          const transformedEvent: DomainEvent = {
+            ...newEvent,
+            event_data: typeof newEvent.event_data === 'string' 
+              ? JSON.parse(newEvent.event_data) 
+              : newEvent.event_data || {}
+          };
+          
+          setEvents(prev => [transformedEvent, ...prev]);
 
           // Show toast for important events
-          if (['HPT_DONE', 'ANEXO_DONE', 'IMM_CREATED'].includes(newEvent.event_type)) {
+          if (['HPT_DONE', 'ANEXO_DONE', 'IMM_CREATED'].includes(transformedEvent.event_type)) {
             toast({
-              title: getEventTitle(newEvent.event_type),
-              description: getEventDescription(newEvent),
+              title: getEventTitle(transformedEvent.event_type),
+              description: getEventDescription(transformedEvent),
             });
           }
         }
@@ -84,11 +100,11 @@ export const useDomainEvents = () => {
     const data = event.event_data;
     switch (event.event_type) {
       case 'HPT_DONE':
-        return `HPT ${data.codigo} firmado para la operación`;
+        return `HPT ${data.codigo || ''} firmado para la operación`;
       case 'ANEXO_DONE':
-        return `Anexo Bravo ${data.codigo} firmado para la operación`;
+        return `Anexo Bravo ${data.codigo || ''} firmado para la operación`;
       case 'IMM_CREATED':
-        return `Nueva inmersión ${data.codigo} creada`;
+        return `Nueva inmersión ${data.codigo || ''} creada`;
       default:
         return 'Se ha generado un nuevo evento';
     }

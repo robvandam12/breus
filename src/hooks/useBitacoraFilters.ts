@@ -1,7 +1,13 @@
 
 import { useState, useMemo } from 'react';
 import { BitacoraSupervisorItem, BitacoraBuzoItem } from '@/hooks/useBitacoras';
-import { BitacoraFilters } from '@/components/bitacoras/BitacoraFilters';
+
+export interface BitacoraFilters {
+  search: string;
+  estado: 'all' | 'firmada' | 'pendiente';
+  fechaDesde?: string;
+  fechaHasta?: string;
+}
 
 export const useBitacoraFilters = () => {
   const [filters, setFilters] = useState<BitacoraFilters>({
