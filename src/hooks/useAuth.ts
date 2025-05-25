@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { UsuarioRow } from '@/types/auth';
 
 export interface UserProfile {
   id: string;
@@ -79,12 +80,12 @@ export const useAuthProvider = (): AuthContextType => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Use 'usuario' table instead of 'user_profiles'
+      // Use manual typing for the usuario table query
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
         .eq('usuario_id', userId)
-        .single();
+        .single() as { data: UsuarioRow | null; error: any };
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -98,8 +99,8 @@ export const useAuthProvider = (): AuthContextType => {
           role: data.rol || 'buzo',
           nombre: data.nombre || '',
           apellido: data.apellido || '',
-          salmonera_id: data.salmonera_id,
-          servicio_id: data.servicio_id,
+          salmonera_id: data.salmonera_id || undefined,
+          servicio_id: data.servicio_id || undefined,
           created_at: data.created_at,
           updated_at: data.updated_at
         };
@@ -167,8 +168,8 @@ export const useAuthProvider = (): AuthContextType => {
             nombre: profileData.nombre || '',
             apellido: profileData.apellido || '',
             rol: profileData.role || 'buzo',
-            salmonera_id: profileData.salmonera_id,
-            servicio_id: profileData.servicio_id
+            salmonera_id: profileData.salmonera_id || null,
+            servicio_id: profileData.servicio_id || null
           }]);
 
         if (profileError) throw profileError;

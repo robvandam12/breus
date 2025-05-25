@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { NotificationRow, NotificationSubscriptionRow } from '@/types/auth';
 
 export interface Notification {
   id: string;
@@ -39,7 +40,7 @@ export const useNotifications = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as { data: NotificationRow[] | null; error: any };
 
       if (error) throw error;
 
@@ -166,7 +167,7 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notification_subscriptions')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id) as { data: NotificationSubscriptionRow[] | null; error: any };
 
       if (error) throw error;
       setSubscriptions(data || []);

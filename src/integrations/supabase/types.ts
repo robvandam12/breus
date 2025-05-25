@@ -699,6 +699,69 @@ export type Database = {
           },
         ]
       }
+      notification_subscriptions: {
+        Row: {
+          channel: string
+          created_at: string
+          enabled: boolean
+          event_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       operacion: {
         Row: {
           codigo: string
@@ -851,6 +914,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sitios_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuario: {
+        Row: {
+          apellido: string
+          created_at: string
+          email: string | null
+          nombre: string
+          rol: string
+          salmonera_id: string | null
+          servicio_id: string | null
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          apellido: string
+          created_at?: string
+          email?: string | null
+          nombre: string
+          rol?: string
+          salmonera_id?: string | null
+          servicio_id?: string | null
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          apellido?: string
+          created_at?: string
+          email?: string | null
+          nombre?: string
+          rol?: string
+          salmonera_id?: string | null
+          servicio_id?: string | null
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_salmonera_id_fkey"
             columns: ["salmonera_id"]
             isOneToOne: false
             referencedRelation: "salmoneras"
