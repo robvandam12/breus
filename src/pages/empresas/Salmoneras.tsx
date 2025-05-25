@@ -2,19 +2,21 @@
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, Plus, MapPin, Phone, Mail, LayoutGrid, LayoutList, Edit, Trash2 } from "lucide-react";
+import { Building2, Plus, LayoutGrid, LayoutList, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useSalmoneras, SalmoneraFormData } from "@/hooks/useSalmoneras";
 import { CreateSalmoneraForm } from "@/components/salmoneras/CreateSalmoneraForm";
+import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
+import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 
 const Salmoneras = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSalmonera, setEditingSalmonera] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { 
     salmoneras, 
@@ -26,6 +28,13 @@ const Salmoneras = () => {
     isUpdating,
     isDeleting
   } = useSalmoneras();
+
+  // Filtrar salmoneras por término de búsqueda
+  const filteredSalmoneras = salmoneras.filter(salmonera =>
+    salmonera.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    salmonera.rut.includes(searchTerm) ||
+    salmonera.direccion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCreateSalmonera = async (data: SalmoneraFormData) => {
     await createSalmonera(data);
@@ -40,11 +49,17 @@ const Salmoneras = () => {
   };
 
   const handleDeleteSalmonera = async (id: string) => {
-    if (confirm('¿Está seguro de que desea eliminar esta salmonera?')) {
+    if (confirm('¿Está seguro de que desea eliminar esta salmonera? Esta acción no se puede deshacer.')) {
       await deleteSalmonera(id);
     }
   };
 
+  const handleViewSitios = (id: string) => {
+    console.log('Ver sitios para salmonera:', id);
+    // TODO: Navegar a la página de sitios filtrada por salmonera
+  };
+
+  // Vista de formulario de creación
   if (showCreateForm) {
     return (
       <SidebarProvider>
@@ -65,7 +80,7 @@ const Salmoneras = () => {
             </header>
             
             <div className="flex-1 overflow-auto">
-              <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              <div className="p-4 md:p-8">
                 <CreateSalmoneraForm
                   onSubmit={handleCreateSalmonera}
                   onCancel={() => setShowCreateForm(false)}
@@ -78,6 +93,7 @@ const Salmoneras = () => {
     );
   }
 
+  // Vista de formulario de edición
   if (editingSalmonera) {
     const salmoneraToEdit = salmoneras.find(s => s.id === editingSalmonera);
     
@@ -100,7 +116,7 @@ const Salmoneras = () => {
             </header>
             
             <div className="flex-1 overflow-auto">
-              <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              <div className="p-4 md:p-8">
                 <CreateSalmoneraForm
                   onSubmit={handleUpdateSalmonera}
                   onCancel={() => setEditingSalmonera(null)}
@@ -115,161 +131,7 @@ const Salmoneras = () => {
     );
   }
 
-  const getEstadoBadgeColor = (estado: string) => {
-    switch (estado) {
-      case 'activa':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'inactiva':
-        return 'bg-gray-100 text-gray-700';
-      case 'suspendida':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const renderCardsView = () => (
-    <div className="grid gap-6">
-      {salmoneras.map((salmonera) => (
-        <Card key={salmonera.id} className="ios-card hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-zinc-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg text-zinc-900">{salmonera.nombre}</CardTitle>
-                  <p className="text-sm text-zinc-500">RUT: {salmonera.rut}</p>
-                </div>
-              </div>
-              <Badge variant="secondary" className={getEstadoBadgeColor(salmonera.estado)}>
-                {salmonera.estado.charAt(0).toUpperCase() + salmonera.estado.slice(1)}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <MapPin className="w-4 h-4" />
-                <span>{salmonera.direccion}</span>
-              </div>
-              {salmonera.telefono && (
-                <div className="flex items-center gap-2 text-sm text-zinc-600">
-                  <Phone className="w-4 h-4" />
-                  <span>{salmonera.telefono}</span>
-                </div>
-              )}
-              {salmonera.email && (
-                <div className="flex items-center gap-2 text-sm text-zinc-600">
-                  <Mail className="w-4 h-4" />
-                  <span>{salmonera.email}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Building2 className="w-4 h-4" />
-                <span>{salmonera.sitios_activos} sitios activos</span>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm">
-                Ver Sitios
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setEditingSalmonera(salmonera.id)}
-                disabled={isUpdating}
-              >
-                <Edit className="w-4 h-4 mr-1" />
-                Editar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleDeleteSalmonera(salmonera.id)}
-                disabled={isDeleting}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Eliminar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-
-  const renderTableView = () => (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Empresa</TableHead>
-            <TableHead>RUT</TableHead>
-            <TableHead>Dirección</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Sitios</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {salmoneras.map((salmonera) => (
-            <TableRow key={salmonera.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-zinc-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{salmonera.nombre}</div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="text-zinc-600">{salmonera.rut}</TableCell>
-              <TableCell className="text-zinc-600">{salmonera.direccion}</TableCell>
-              <TableCell className="text-zinc-600">{salmonera.telefono || '-'}</TableCell>
-              <TableCell className="text-zinc-600">{salmonera.email || '-'}</TableCell>
-              <TableCell className="text-zinc-600">{salmonera.sitios_activos}</TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={getEstadoBadgeColor(salmonera.estado)}>
-                  {salmonera.estado.charAt(0).toUpperCase() + salmonera.estado.slice(1)}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm">
-                    Ver Sitios
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setEditingSalmonera(salmonera.id)}
-                    disabled={isUpdating}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDeleteSalmonera(salmonera.id)}
-                    disabled={isDeleting}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
-  );
-
+  // Vista principal de lista
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -286,13 +148,28 @@ const Salmoneras = () => {
                 </div>
               </div>
               <div className="flex-1" />
+              
+              {/* Barra de búsqueda */}
+              <div className="hidden md:flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                  <Input
+                    placeholder="Buscar salmoneras..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-64 touch-target"
+                  />
+                </div>
+              </div>
+
+              {/* Controles de vista y acciones */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                <div className="hidden md:flex items-center bg-zinc-100 rounded-lg p-1">
                   <Button
                     variant={viewMode === 'cards' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('cards')}
-                    className="h-8 px-3"
+                    className="h-8 px-3 touch-target"
                   >
                     <LayoutGrid className="w-4 h-4" />
                   </Button>
@@ -300,13 +177,13 @@ const Salmoneras = () => {
                     variant={viewMode === 'table' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewMode('table')}
-                    className="h-8 px-3"
+                    className="h-8 px-3 touch-target"
                   >
                     <LayoutList className="w-4 h-4" />
                   </Button>
                 </div>
                 <Button 
-                  className="ios-button"
+                  className="ios-button touch-target"
                   onClick={() => setShowCreateForm(true)}
                   disabled={isCreating}
                 >
@@ -318,25 +195,108 @@ const Salmoneras = () => {
           </header>
           
           <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+              {/* Búsqueda móvil */}
+              <div className="md:hidden">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                  <Input
+                    placeholder="Buscar salmoneras..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 touch-target"
+                  />
+                </div>
+              </div>
+
+              {/* Estadísticas */}
+              {!isLoading && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="ios-card">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-zinc-900">{salmoneras.length}</div>
+                      <div className="text-sm text-zinc-500">Total Salmoneras</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="ios-card">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-emerald-600">
+                        {salmoneras.filter(s => s.estado === 'activa').length}
+                      </div>
+                      <div className="text-sm text-zinc-500">Activas</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="ios-card">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {salmoneras.reduce((sum, s) => sum + s.sitios_activos, 0)}
+                      </div>
+                      <div className="text-sm text-zinc-500">Sitios Totales</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="ios-card">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl font-bold text-zinc-600">
+                        {Math.round(salmoneras.reduce((sum, s) => sum + s.sitios_activos, 0) / Math.max(salmoneras.length, 1))}
+                      </div>
+                      <div className="text-sm text-zinc-500">Promedio Sitios</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Contenido principal */}
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <LoadingSpinner size="lg" />
                 </div>
-              ) : salmoneras.length === 0 ? (
-                <Card className="text-center py-12">
-                  <CardContent>
-                    <Building2 className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay salmoneras registradas</h3>
-                    <p className="text-zinc-500 mb-4">Comienza registrando tu primera empresa salmonera</p>
-                    <Button onClick={() => setShowCreateForm(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva Salmonera
-                    </Button>
-                  </CardContent>
-                </Card>
+              ) : filteredSalmoneras.length === 0 ? (
+                searchTerm ? (
+                  <Card className="text-center py-12">
+                    <CardContent>
+                      <Search className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-zinc-900 mb-2">Sin resultados</h3>
+                      <p className="text-zinc-500 mb-4">
+                        No se encontraron salmoneras que coincidan con "{searchTerm}"
+                      </p>
+                      <Button variant="outline" onClick={() => setSearchTerm("")}>
+                        Limpiar búsqueda
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="text-center py-12">
+                    <CardContent>
+                      <Building2 className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay salmoneras registradas</h3>
+                      <p className="text-zinc-500 mb-4">Comienza registrando tu primera empresa salmonera</p>
+                      <Button onClick={() => setShowCreateForm(true)} className="touch-target">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nueva Salmonera
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
               ) : (
-                viewMode === 'cards' ? renderCardsView() : renderTableView()
+                viewMode === 'cards' ? (
+                  <SalmoneraCardView
+                    salmoneras={filteredSalmoneras}
+                    onEdit={setEditingSalmonera}
+                    onDelete={handleDeleteSalmonera}
+                    onViewSitios={handleViewSitios}
+                    isDeleting={isDeleting}
+                    isUpdating={isUpdating}
+                  />
+                ) : (
+                  <SalmoneraTableView
+                    salmoneras={filteredSalmoneras}
+                    onEdit={setEditingSalmonera}
+                    onDelete={handleDeleteSalmonera}
+                    onViewSitios={handleViewSitios}
+                    isDeleting={isDeleting}
+                    isUpdating={isUpdating}
+                  />
+                )
               )}
             </div>
           </div>
