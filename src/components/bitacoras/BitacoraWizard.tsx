@@ -11,7 +11,7 @@ import { BitacoraStep3 } from "./steps/BitacoraStep3";
 import { useToast } from "@/hooks/use-toast";
 
 export interface BitacoraSupervisorData {
-  // Identificación de la Faena
+  // 1. Identificación de la Faena
   fecha_inicio_faena: string;
   hora_inicio_faena: string;
   fecha_termino_faena: string;
@@ -20,7 +20,7 @@ export interface BitacoraSupervisorData {
   tipo_trabajo: string;
   supervisor_nombre_matricula: string;
   
-  // Buzos y Asistentes
+  // 2. Buzos y Asistentes (hasta 6)
   bs_personal: Array<{
     nombre: string;
     matricula: string;
@@ -29,38 +29,52 @@ export interface BitacoraSupervisorData {
     color_profundimetro: string;
   }>;
   
-  // Equipos Usados
+  // 3. Equipos Usados (hasta 3 bloques)
   bs_equipos_usados: Array<{
     equipo: string;
     numero_registro: string;
   }>;
   
-  // Datos específicos
+  // 4. Observaciones condiciones físicas previas
   observaciones_previas: string;
+  
+  // 5. Embarcación de Apoyo
   embarcacion_nombre_matricula: string;
+  
+  // 6. Tiempo de Buceo
   tiempo_total_buceo: string;
+  incluye_descompresion: boolean;
+  
+  // 7. Contratista de Buceo
   contratista_nombre: string;
+  
+  // 8. Datos del Buzo Principal
   buzo_principal_datos: {
     apellido_paterno: string;
     apellido_materno: string;
     nombres: string;
     run: string;
   };
+  
+  // 9. Profundidades
   profundidad_trabajo_mts: number;
   profundidad_maxima_mts: number;
+  requiere_camara_hiperbarica: boolean;
   
-  // Gestión Preventiva
+  // 10. Gestión Preventiva Según Decreto N°44
   gestprev_eval_riesgos_actualizada: boolean;
   gestprev_procedimientos_disponibles_conocidos: boolean;
   gestprev_capacitacion_previa_realizada: boolean;
   gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: boolean;
   gestprev_registro_incidentes_reportados: boolean;
   
-  // Medidas Correctivas y Observaciones
+  // 11. Medidas Correctivas Implementadas
   medidas_correctivas_texto: string;
+  
+  // 12. Observaciones Generales
   observaciones_generales_texto: string;
   
-  // Firma
+  // 13. Firma
   supervisor_buceo_firma: string | null;
   inmersion_id?: string;
 }
@@ -90,6 +104,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
     observaciones_previas: "",
     embarcacion_nombre_matricula: "",
     tiempo_total_buceo: "",
+    incluye_descompresion: false,
     contratista_nombre: "",
     buzo_principal_datos: {
       apellido_paterno: "",
@@ -99,6 +114,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
     },
     profundidad_trabajo_mts: 0,
     profundidad_maxima_mts: 0,
+    requiere_camara_hiperbarica: false,
     gestprev_eval_riesgos_actualizada: false,
     gestprev_procedimientos_disponibles_conocidos: false,
     gestprev_capacitacion_previa_realizada: false,
@@ -187,47 +203,50 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
 
   const getStepTitle = () => {
     const titles = [
-      "Identificación de la Faena",
-      "Personal y Equipos",
+      "Identificación y Personal",
+      "Equipos y Condiciones",
       "Gestión Preventiva y Firmas"
     ];
     return titles[currentStep - 1];
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Card className="mb-6">
-        <CardHeader>
+    <div className="max-w-6xl mx-auto p-4 md:p-6">
+      <Card className="mb-6 shadow-lg">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
               <div>
-                <CardTitle>Bitácora de Supervisor</CardTitle>
+                <CardTitle className="text-xl md:text-2xl">Bitácora de Supervisor</CardTitle>
                 <p className="text-sm text-zinc-500">
                   Paso {currentStep} de {totalSteps}: {getStepTitle()}
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-blue-100 text-blue-700">
+            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
               Auto-guardado
             </Badge>
           </div>
-          <Progress value={progressPercentage} className="mt-4" />
+          <Progress value={progressPercentage} className="mt-4 h-2" />
         </CardHeader>
       </Card>
 
-      <Card>
-        <CardContent className="p-6">
+      <Card className="shadow-lg">
+        <CardContent className="p-6 md:p-8">
           {renderStep()}
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center mt-6">
+      <div className="flex justify-between items-center mt-6 gap-4">
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             onClick={onCancel}
             disabled={isSubmitting}
+            className="min-w-[100px]"
           >
             Cancelar
           </Button>
@@ -238,7 +257,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
             variant="outline"
             onClick={handlePrevious}
             disabled={currentStep === 1 || isSubmitting}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 min-w-[100px]"
           >
             <ArrowLeft className="w-4 h-4" />
             Anterior
@@ -248,7 +267,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
             <Button
               onClick={handleNext}
               disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 min-w-[100px] bg-purple-600 hover:bg-purple-700"
             >
               Siguiente
               <ArrowRight className="w-4 h-4" />
@@ -257,7 +276,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
             <Button
               onClick={handleSubmit}
               disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
               <FileText className="w-4 h-4" />
               {isSubmitting ? 'Finalizando...' : 'Finalizar Bitácora'}

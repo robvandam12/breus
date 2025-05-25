@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Save, FileText, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
 import { HPTStep1 } from "./steps/HPTStep1";
 import { HPTStep2 } from "./steps/HPTStep2";
 import { HPTStep3 } from "./steps/HPTStep3";
@@ -11,200 +12,53 @@ import { HPTStep4 } from "./steps/HPTStep4";
 import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
-
-interface HPTData {
-  // Datos Generales (Paso 1)
-  folio: string;
-  operacion_id: string;
-  fecha: string;
-  hora_inicio: string;
-  hora_termino: string;
-  empresa_servicio_nombre: string;
-  supervisor_nombre: string;
-  centro_trabajo_nombre: string;
-  jefe_mandante_nombre: string;
-  descripcion_tarea: string;
-  es_rutinaria: boolean;
-  lugar_especifico: string;
-  estado_puerto: string;
-  plan_trabajo: string;
-  
-  // EPP y ERC (Paso 2)
-  hpt_epp: Record<string, boolean>;
-  hpt_erc: Record<string, boolean>;
-  
-  // Medidas y Riesgos (Paso 3)
-  hpt_medidas: Record<string, string>;
-  hpt_riesgos_comp: Record<string, any>;
-  
-  // Conocimiento (Paso 4)
-  hpt_conocimiento: {
-    difusion_nombre: string;
-    fecha: string;
-    hora: string;
-    duracion: number;
-    relator_nombre: string;
-    relator_cargo: string;
-  };
-  hpt_conocimiento_asistentes: Array<{
-    nombre: string;
-    rut: string;
-    empresa: string;
-    firma_url?: string;
-  }>;
-  
-  // Emergencia (Paso 5)
-  plan_emergencia: string;
-  contactos_emergencia: Array<{
-    nombre: string;
-    cargo: string;
-    telefono: string;
-  }>;
-  hospital_cercano: string;
-  camara_hiperbarica: string;
-  
-  // Firmas (Paso 6)
-  supervisor_firma: string | null;
-  jefe_obra_firma: string | null;
-  observaciones: string;
-}
+import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 
 interface HPTWizardProps {
-  onSubmit: (data: HPTData) => void;
-  onCancel: () => void;
-  initialData?: Partial<HPTData>;
+  operacionId?: string;
+  hptId?: string;
+  onComplete?: (hptId: string) => void;
+  onCancel?: () => void;
 }
 
-export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
   const { toast } = useToast();
-  
-  const [data, setData] = useState<HPTData>({
-    folio: "",
-    operacion_id: "",
-    fecha: "",
-    hora_inicio: "",
-    hora_termino: "",
-    empresa_servicio_nombre: "",
-    supervisor_nombre: "",
-    centro_trabajo_nombre: "",
-    jefe_mandante_nombre: "",
-    descripcion_tarea: "",
-    es_rutinaria: false,
-    lugar_especifico: "",
-    estado_puerto: "",
-    plan_trabajo: "",
-    hpt_epp: {},
-    hpt_erc: {},
-    hpt_medidas: {},
-    hpt_riesgos_comp: {},
-    hpt_conocimiento: {
-      difusion_nombre: "",
-      fecha: "",
-      hora: "",
-      duracion: 0,
-      relator_nombre: "",
-      relator_cargo: ""
-    },
-    hpt_conocimiento_asistentes: [],
-    plan_emergencia: "",
-    contactos_emergencia: [],
-    hospital_cercano: "",
-    camara_hiperbarica: "",
-    supervisor_firma: null,
-    jefe_obra_firma: null,
-    observaciones: "",
-    ...initialData,
-  });
-
-  const totalSteps = 6;
-  const progressPercentage = (currentStep / totalSteps) * 100;
-
-  // Auto-save draft every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [data]);
-
-  const saveDraft = () => {
-    try {
-      localStorage.setItem('hpt-draft', JSON.stringify({
-        ...data,
-        lastSaved: new Date().toISOString()
-      }));
-      console.log('HPT Draft saved automatically');
-    } catch (error) {
-      console.error('Error saving draft:', error);
-    }
-  };
-
-  const updateData = (stepData: Partial<HPTData>) => {
-    setData(prev => ({ ...prev, ...stepData }));
-  };
-
-  const canProceedToNext = () => {
-    switch (currentStep) {
-      case 1:
-        return data.operacion_id && data.supervisor_nombre && data.plan_trabajo && data.fecha;
-      case 2:
-        return Object.values(data.hpt_epp).some(Boolean) || Object.values(data.hpt_erc).some(Boolean);
-      case 3:
-        return Object.keys(data.hpt_medidas).length > 0;
-      case 4:
-        return data.hpt_conocimiento.difusion_nombre && data.hpt_conocimiento_asistentes.length > 0;
-      case 5:
-        return data.plan_emergencia && data.contactos_emergencia.length > 0;
-      case 6:
-        return data.supervisor_firma && data.jefe_obra_firma;
-      default:
-        return true;
-    }
-  };
+  const {
+    currentStep,
+    data,
+    steps,
+    updateData,
+    nextStep,
+    prevStep,
+    submitHPT,
+    isFormComplete,
+    progress,
+    isLoading,
+    autoSaveEnabled,
+    setAutoSaveEnabled
+  } = useHPTWizard(operacionId, hptId);
 
   const handleNext = () => {
-    if (canProceedToNext() && currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-      saveDraft();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!canProceedToNext()) {
+    const currentStepData = steps[currentStep - 1];
+    if (!currentStepData.isValid) {
       toast({
-        title: "Error",
-        description: "Complete todos los campos requeridos para finalizar el HPT",
+        title: "Paso incompleto",
+        description: "Complete todos los campos requeridos para continuar",
         variant: "destructive",
       });
       return;
     }
+    nextStep();
+  };
 
-    setIsSubmitting(true);
+  const handleSubmit = async () => {
     try {
-      await onSubmit(data);
-      localStorage.removeItem('hpt-draft');
-      toast({
-        title: "HPT Finalizada",
-        description: "La Hoja de Preparación de Trabajo ha sido creada exitosamente",
-      });
+      const finalHptId = await submitHPT();
+      if (finalHptId && onComplete) {
+        onComplete(finalHptId);
+      }
     } catch (error) {
       console.error('Error submitting HPT:', error);
-      toast({
-        title: "Error",
-        description: "Error al finalizar el HPT. Intente nuevamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -227,83 +81,155 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
     }
   };
 
-  const getStepTitle = () => {
-    const titles = [
-      "Datos Generales",
-      "EPP y Estándares de Riesgos Críticos",
-      "Medidas de Control y Riesgos",
-      "Registro de Conocimiento",
-      "Procedimientos de Emergencia",
-      "Autorizaciones y Firmas"
-    ];
-    return titles[currentStep - 1];
+  const getStepIcon = (stepNumber: number) => {
+    switch (stepNumber) {
+      case 1:
+        return <FileText className="w-5 h-5" />;
+      case 2:
+        return <Shield className="w-5 h-5" />;
+      case 3:
+        return <AlertTriangle className="w-5 h-5" />;
+      case 4:
+        return <Shield className="w-5 h-5" />;
+      case 5:
+        return <AlertTriangle className="w-5 h-5" />;
+      case 6:
+        return <FileText className="w-5 h-5" />;
+      default:
+        return <FileText className="w-5 h-5" />;
+    }
   };
 
+  const currentStepData = steps[currentStep - 1];
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-blue-600" />
+    <div className="max-w-7xl mx-auto p-4 md:p-6">
+      {/* Header with Progress */}
+      <Card className="mb-6 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                {getStepIcon(currentStep)}
+              </div>
               <div>
-                <CardTitle>Hoja de Preparación de Trabajo (HPT)</CardTitle>
-                <p className="text-sm text-zinc-500">
-                  Paso {currentStep} de {totalSteps}: {getStepTitle()}
+                <CardTitle className="text-xl md:text-2xl text-gray-900">
+                  Hoja de Planificación de Tarea (HPT)
+                </CardTitle>
+                <p className="text-sm text-gray-500 mt-1">
+                  Paso {currentStep} de {steps.length}: {currentStepData?.title}
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-blue-100 text-blue-700">
-              Draft Auto-guardado
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant={autoSaveEnabled ? "default" : "secondary"}
+                className={autoSaveEnabled ? "bg-green-100 text-green-700" : ""}
+              >
+                {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {progress}% Completado
+              </Badge>
+            </div>
           </div>
-          <Progress value={progressPercentage} className="mt-4" />
+
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <Progress value={progress} className="h-3" />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Progreso General</span>
+              <span>{progress}%</span>
+            </div>
+          </div>
+
+          {/* Step Indicators */}
+          <div className="flex justify-between mt-6">
+            {steps.map((step, index) => (
+              <div 
+                key={step.id}
+                className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
+              >
+                <div className={`h-2 rounded-full ${
+                  step.id < currentStep ? 'bg-green-500' : 
+                  step.id === currentStep ? 'bg-blue-500' : 
+                  'bg-gray-200'
+                }`} />
+                <div className="mt-2 text-xs text-center">
+                  <span className={`${
+                    step.id === currentStep ? 'text-blue-600 font-medium' : 
+                    step.id < currentStep ? 'text-green-600' : 
+                    'text-gray-500'
+                  }`}>
+                    {step.title}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardHeader>
       </Card>
 
-      <Card>
-        <CardContent className="p-6">
+      {/* Main Content */}
+      <Card className="shadow-lg">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-teal-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+              {getStepIcon(currentStep)}
+            </div>
+            <div>
+              <CardTitle className="text-lg text-gray-900">
+                {currentStepData?.title}
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                {currentStepData?.description}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-6 md:p-8">
           {renderStep()}
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center mt-6">
+      {/* Navigation */}
+      <div className="flex justify-between items-center mt-6 gap-4">
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             onClick={onCancel}
-            disabled={isSubmitting}
-            className="flex items-center gap-2"
+            disabled={isLoading}
+            className="min-w-[100px]"
           >
             Cancelar
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={saveDraft}
-            disabled={isSubmitting}
-            className="flex items-center gap-2"
+          <Button
+            variant="outline"
+            onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+            disabled={isLoading}
+            className="min-w-[140px]"
           >
-            <Save className="w-4 h-4" />
-            Guardar Draft
+            {autoSaveEnabled ? "Desactivar" : "Activar"} Auto-guardado
           </Button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1 || isSubmitting}
-            className="flex items-center gap-2"
+            onClick={prevStep}
+            disabled={currentStep === 1 || isLoading}
+            className="flex items-center gap-2 min-w-[100px]"
           >
             <ArrowLeft className="w-4 h-4" />
             Anterior
           </Button>
           
-          {currentStep < totalSteps ? (
+          {currentStep < steps.length ? (
             <Button
               onClick={handleNext}
-              disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2"
+              disabled={!currentStepData?.isValid || isLoading}
+              className="flex items-center gap-2 min-w-[100px] bg-blue-600 hover:bg-blue-700"
             >
               Siguiente
               <ArrowRight className="w-4 h-4" />
@@ -311,26 +237,15 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              disabled={!isFormComplete || isLoading}
+              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
-              <FileText className="w-4 h-4" />
-              {isSubmitting ? 'Finalizando...' : 'Finalizar HPT'}
+              <Save className="w-4 h-4" />
+              {isLoading ? 'Enviando...' : 'Enviar HPT'}
             </Button>
           )}
         </div>
       </div>
-
-      {!canProceedToNext() && (
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-center gap-2 text-amber-700">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm">
-              Complete todos los campos requeridos para continuar
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
