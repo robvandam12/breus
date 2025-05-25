@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Salmoneras from "./pages/empresas/Salmoneras";
 import Sitios from "./pages/empresas/Sitios";
@@ -19,6 +18,7 @@ import Bitacoras from "./pages/operaciones/Bitacoras";
 import Login from "./pages/Login";
 import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
+import AdminRoles from "./pages/admin/AdminRoles";
 
 const queryClient = new QueryClient();
 
@@ -32,19 +32,17 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/empresas/salmoneras" element={<Salmoneras />} />
             <Route path="/empresas/sitios" element={<Sitios />} />
             <Route path="/empresas/contratistas" element={<Contratistas />} />
             <Route path="/operaciones" element={<Operaciones />} />
-            <Route path="/operaciones/hpt" element={<HPT />} />
-            <Route path="/operaciones/anexo-bravo" element={<AnexoBravo />} />
-            <Route path="/operaciones/inmersiones" element={<Inmersiones />} />
-            <Route path="/operaciones/bitacoras" element={<Bitacoras />} />
-            <Route path="/operaciones/inmersiones/:id" element={<div>Detalle de Inmersión - TODO</div>} />
+            <Route path="/formularios/hpt" element={<HPT />} />
+            <Route path="/formularios/anexo-bravo" element={<AnexoBravo />} />
+            <Route path="/inmersiones" element={<Inmersiones />} />
+            <Route path="/bitacoras" element={<Bitacoras />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/configuracion" element={<Configuracion />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/admin/roles" element={<AdminRoles />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

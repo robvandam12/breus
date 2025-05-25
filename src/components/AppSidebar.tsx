@@ -1,9 +1,14 @@
+
 import { 
   Calendar, 
   ChevronRight, 
   FileText, 
   Book,
-  Folder
+  Folder,
+  Anchor,
+  BarChart3,
+  Settings,
+  Shield
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +33,7 @@ import { Link } from "react-router-dom";
 const menuItems = [
   {
     title: "Dashboard",
-    icon: Calendar,
+    icon: BarChart3,
     url: "/",
     badge: "3"
   },
@@ -52,26 +57,48 @@ const menuItems = [
     icon: FileText,
     items: [
       { title: "HPT", url: "/formularios/hpt" },
-      { title: "Anexo Bravo", url: "/formularios/anexo" }
+      { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
     ]
   },
   {
     title: "Inmersiones",
-    icon: Calendar,
+    icon: Anchor,
     url: "/inmersiones",
     badge: "7"
   },
   {
     title: "Bitácoras",
     icon: Book,
+    url: "/bitacoras"
+  },
+  {
+    title: "Reportes",
+    icon: BarChart3,
+    url: "/reportes"
+  },
+  {
+    title: "Configuración",
+    icon: Settings,
+    url: "/configuracion"
+  },
+  {
+    title: "Admin",
+    icon: Shield,
     items: [
-      { title: "Supervisor", url: "/bitacoras/supervisor" },
-      { title: "Buzo", url: "/bitacoras/buzo" }
-    ]
+      { title: "Roles y Permisos", url: "/admin/roles" }
+    ],
+    roleRequired: "superuser"
   }
 ];
 
 export function AppSidebar() {
+  // TODO: Get user role from auth context
+  const userRole = "superuser"; // This should come from auth
+
+  const filteredMenuItems = menuItems.filter(item => 
+    !item.roleRequired || item.roleRequired === userRole
+  );
+
   return (
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="border-b border-border/40 p-4">
@@ -93,7 +120,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">

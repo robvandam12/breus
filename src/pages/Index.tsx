@@ -1,7 +1,10 @@
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Dashboard } from "@/components/Dashboard";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { PWAInstaller } from "@/components/pwa/PWAInstaller";
+import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 
 const Index = () => {
   return (
@@ -35,6 +38,8 @@ const Index = () => {
             </div>
           </div>
         </main>
+        <PWAInstaller />
+        <OfflineIndicator />
       </div>
     </SidebarProvider>
   );
