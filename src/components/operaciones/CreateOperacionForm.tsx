@@ -1,31 +1,41 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOperaciones, OperacionFormData } from "@/hooks/useOperaciones";
+import { useOperaciones, OperacionFormData, Operacion } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useSitios } from "@/hooks/useSitios";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateOperacionFormProps {
+  onSubmit?: (data: OperacionFormData) => Promise<void>;
+  onCancel?: () => void;
   onClose?: () => void;
+  initialData?: Operacion;
+  isEditing?: boolean;
 }
 
-export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
+export const CreateOperacionForm = ({ 
+  onSubmit: externalOnSubmit, 
+  onCancel, 
+  onClose,
+  initialData,
+  isEditing = false
+}: CreateOperacionFormProps) => {
   const [formData, setFormData] = useState<OperacionFormData>({
-    codigo: "",
-    nombre: "",
-    fecha_inicio: "",
-    fecha_fin: "",
-    estado: "activa",
-    salmonera_id: "",
-    sitio_id: "",
-    contratista_id: "",
+    codigo: initialData?.codigo || "",
+    nombre: initialData?.nombre || "",
+    fecha_inicio: initialData?.fecha_inicio || "",
+    fecha_fin: initialData?.fecha_fin || "",
+    estado: initialData?.estado || "activa",
+    salmonera_id: initialData?.salmonera_id || "",
+    sitio_id: initialData?.sitio_id || "",
+    contratista_id: initialData?.contratista_id || "",
   });
 
   const { createOperacion, isCreating } = useOperaciones();
@@ -59,20 +69,32 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
     }
 
     try {
-      await createOperacion(formData);
-      toast({
-        title: "Éxito",
-        description: "Operación creada exitosamente",
-      });
+      if (externalOnSubmit) {
+        await externalOnSubmit(formData);
+      } else {
+        await createOperacion(formData);
+        toast({
+          title: "Éxito",
+          description: "Operación creada exitosamente",
+        });
+      }
+      
+      // Call the appropriate close handler
       onClose?.();
+      onCancel?.();
     } catch (error) {
-      console.error("Error creating operation:", error);
+      console.error("Error with operation:", error);
       toast({
         title: "Error",
-        description: "Error al crear la operación",
+        description: `Error al ${isEditing ? 'actualizar' : 'crear'} la operación`,
         variant: "destructive",
       });
     }
+  };
+
+  const handleCancel = () => {
+    onCancel?.();
+    onClose?.();
   };
 
   const updateFormData = (field: keyof OperacionFormData, value: string) => {
@@ -82,7 +104,7 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Nueva Operación</CardTitle>
+        <CardTitle>{isEditing ? 'Editar Operación' : 'Nueva Operación'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -225,13 +247,13 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            {onClose && (
-              <Button type="button" variant="outline" onClick={onClose}>
+            {(onCancel || onClose) && (
+              <Button type="button" variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
             )}
             <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creando..." : "Crear Operación"}
+              {isCreating ? (isEditing ? "Actualizando..." : "Creando...") : (isEditing ? "Actualizar Operación" : "Crear Operación")}
             </Button>
           </div>
         </form>
