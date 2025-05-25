@@ -1,7 +1,7 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Dashboard } from "@/components/Dashboard";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 const Index = () => {
   return (
@@ -14,6 +14,7 @@ const Index = () => {
               <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
               <div className="flex-1" />
               <div className="flex items-center space-x-4">
+                <NotificationCenter />
                 <div className="text-sm font-medium text-gray-600 hidden md:block">
                   {new Date().toLocaleDateString('es-CL', {
                     weekday: 'long',

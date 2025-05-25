@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,9 @@ import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Inmersiones from "./pages/operaciones/Inmersiones";
 import Bitacoras from "./pages/operaciones/Bitacoras";
+import Login from "./pages/Login";
+import Reportes from "./pages/Reportes";
+import Configuracion from "./pages/Configuracion";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/empresas/salmoneras" element={<Salmoneras />} />
@@ -36,6 +39,8 @@ const App = () => (
           <Route path="/operaciones/inmersiones" element={<Inmersiones />} />
           <Route path="/operaciones/bitacoras" element={<Bitacoras />} />
           <Route path="/operaciones/inmersiones/:id" element={<div>Detalle de Inmersión - TODO</div>} />
+          <Route path="/reportes" element={<Reportes />} />
+          <Route path="/configuracion" element={<Configuracion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
