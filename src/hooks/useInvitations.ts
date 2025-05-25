@@ -29,31 +29,24 @@ export interface InviteContractorData {
 export const useInvitations = () => {
   const queryClient = useQueryClient();
 
-  // Fetch pending invitations using direct SQL query since types aren't updated yet
+  // Fetch pending invitations using direct table query
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ['contractor-invitations'],
     queryFn: async () => {
       console.log('Fetching contractor invitations...');
       
-      // Use rpc or direct query since the table types aren't updated yet
-      const { data, error } = await supabase.rpc('get_contractor_invitations') as any;
-      
-      if (error) {
-        // Fallback to direct query if RPC doesn't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('contractor_invitations' as any)
-          .select('*')
-          .order('invited_at', { ascending: false });
-          
-        if (fallbackError) {
-          console.error('Error fetching invitations:', fallbackError);
-          return [];
-        }
+      // Direct query to contractor_invitations table
+      const { data, error } = await supabase
+        .from('contractor_invitations' as any)
+        .select('*')
+        .order('invited_at', { ascending: false });
         
-        return fallbackData as ContractorInvitation[];
+      if (error) {
+        console.error('Error fetching invitations:', error);
+        return [];
       }
 
-      return data as ContractorInvitation[];
+      return (data || []) as ContractorInvitation[];
     },
   });
 
@@ -144,17 +137,19 @@ export const useInvitations = () => {
     mutationFn: async ({ token, userData }: { token: string; userData: any }) => {
       console.log('Accepting invitation with token:', token);
       
-      // Find invitation using direct query
-      const { data: invitation, error: findError } = await supabase
+      // Find invitation using direct query with proper type casting
+      const { data: invitationData, error: findError } = await supabase
         .from('contractor_invitations' as any)
         .select('*')
         .eq('token', token)
         .eq('status', 'pending')
         .single();
 
-      if (findError || !invitation) {
+      if (findError || !invitationData) {
         throw new Error('Invitación no válida o ya procesada');
       }
+
+      const invitation = invitationData as ContractorInvitation;
 
       // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
