@@ -1,313 +1,231 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Plus, X, Thermometer, Eye, Waves } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 interface HPTStep3Props {
   data: any;
   onUpdate: (data: any) => void;
 }
 
-const TIPOS_TRABAJO = [
-  { value: "inspeccion", label: "Inspección" },
-  { value: "mantenimiento", label: "Mantenimiento" },
-  { value: "reparacion", label: "Reparación" },
-  { value: "instalacion", label: "Instalación" },
-  { value: "limpieza", label: "Limpieza" },
-  { value: "soldadura", label: "Soldadura Subacuática" },
-  { value: "corte", label: "Corte Subacuático" },
-  { value: "otros", label: "Otros" }
-].filter(tipo => {
-  const isValid = tipo.value && tipo.value.trim() !== "";
-  if (!isValid) {
-    console.log('HPTStep3 - Invalid tipo trabajo filtered out:', tipo);
-  }
-  return isValid;
-});
-
-const RIESGOS_PREDEFINIDOS = [
-  "Enredamiento en cabos o redes",
-  "Corrientes fuertes",
-  "Baja visibilidad",
-  "Fauna marina peligrosa",
-  "Objetos cortantes",
-  "Equipos en movimiento",
-  "Espacios confinados",
-  "Contaminación del agua",
-  "Condiciones climáticas adversas",
-  "Fallas de equipos"
-].filter(riesgo => {
-  const isValid = riesgo && riesgo.trim() !== "";
-  if (!isValid) {
-    console.log('HPTStep3 - Invalid riesgo filtered out:', riesgo);
-  }
-  return isValid;
-});
-
-const MEDIDAS_CONTROL = [
-  "Uso de cabo de vida",
-  "Comunicación constante",
-  "Buzo de respaldo",
-  "Iluminación adicional",
-  "Herramientas de corte de emergencia",
-  "Protocolo de emergencia",
-  "Revisión de equipos",
-  "Monitoreo continuo",
-  "Señalización de área",
-  "Equipo de primeros auxilios"
-].filter(medida => {
-  const isValid = medida && medida.trim() !== "";
-  if (!isValid) {
-    console.log('HPTStep3 - Invalid medida filtered out:', medida);
-  }
-  return isValid;
-});
-
 export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
-  const addRiesgo = (riesgo: string) => {
-    if (!riesgo || riesgo.trim() === "") {
-      console.log('HPTStep3 - Attempted to add empty riesgo:', riesgo);
-      return;
-    }
-    const riesgos = data.riesgos_identificados || [];
-    if (!riesgos.includes(riesgo)) {
-      onUpdate({ riesgos_identificados: [...riesgos, riesgo] });
-    }
+  const handleMedidasChange = (key: string, value: string) => {
+    const currentMedidas = data.hpt_medidas || {};
+    onUpdate({
+      hpt_medidas: {
+        ...currentMedidas,
+        [key]: value
+      }
+    });
   };
 
-  const removeRiesgo = (riesgo: string) => {
-    const riesgos = data.riesgos_identificados || [];
-    onUpdate({ riesgos_identificados: riesgos.filter((r: string) => r !== riesgo) });
+  const handleRiesgosChange = (key: string, field: string, value: string) => {
+    const currentRiesgos = data.hpt_riesgos_comp || {};
+    const currentItem = currentRiesgos[key] || {};
+    
+    onUpdate({
+      hpt_riesgos_comp: {
+        ...currentRiesgos,
+        [key]: {
+          ...currentItem,
+          [field]: value
+        }
+      }
+    });
   };
 
-  const addMedida = (medida: string) => {
-    if (!medida || medida.trim() === "") {
-      console.log('HPTStep3 - Attempted to add empty medida:', medida);
-      return;
-    }
-    const medidas = data.medidas_control || [];
-    if (!medidas.includes(medida)) {
-      onUpdate({ medidas_control: [...medidas, medida] });
-    }
-  };
+  const medidasEjecucion = [
+    { key: 'listas_chequeo_erc_disponibles', label: '¿Están disponibles las listas de chequeo de ERC?' },
+    { key: 'procedimientos_trabajo_seguros', label: '¿Se cuenta con procedimientos de trabajo seguros?' },
+    { key: 'personal_capacitado', label: '¿El personal está capacitado para la tarea?' },
+    { key: 'equipos_certificados', label: '¿Los equipos tienen certificación vigente?' },
+    { key: 'permisos_trabajo_vigentes', label: '¿Los permisos de trabajo están vigentes?' },
+    { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación de emergencia?' },
+    { key: 'condiciones_ambientales_evaluadas', label: '¿Se han evaluado las condiciones ambientales?' },
+    { key: 'plan_emergencia_comunicado', label: '¿Se ha comunicado el plan de emergencia?' }
+  ];
 
-  const removeMedida = (medida: string) => {
-    const medidas = data.medidas_control || [];
-    onUpdate({ medidas_control: medidas.filter((m: string) => m !== medida) });
+  const riesgosComplementarios = [
+    { key: 'condiciones_ambientales', label: 'Condiciones Ambientales Adversas' },
+    { key: 'fatiga_personal', label: 'Fatiga del Personal' },
+    { key: 'equipos_defectuosos', label: 'Equipos Defectuosos o Mal Mantenidos' },
+    { key: 'comunicacion_deficiente', label: 'Comunicación Deficiente' },
+    { key: 'procedimientos_inadecuados', label: 'Procedimientos Inadecuados' },
+    { key: 'interferencia_otras_actividades', label: 'Interferencia con Otras Actividades' },
+    { key: 'acceso_restringido', label: 'Acceso Restringido o Difícil' },
+    { key: 'tiempo_limitado', label: 'Tiempo de Ejecución Limitado' }
+  ];
+
+  const renderSelectOption = (value: string) => {
+    const options = [
+      { value: 'si', label: 'Sí', icon: CheckCircle2, color: 'text-green-600' },
+      { value: 'no', label: 'No', icon: X, color: 'text-red-600' },
+      { value: 'na', label: 'N/A', icon: AlertTriangle, color: 'text-gray-600' }
+    ];
+
+    return (
+      <Select value={value || ''} onValueChange={(newValue) => newValue}>
+        <SelectTrigger>
+          <SelectValue placeholder="Seleccionar..." />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => {
+            const IconComponent = option.icon;
+            return (
+              <SelectItem key={option.value} value={option.value}>
+                <div className="flex items-center gap-2">
+                  <IconComponent className={`w-4 h-4 ${option.color}`} />
+                  {option.label}
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    );
   };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Análisis de Riesgos</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Medidas Claves para Ejecución y Riesgos Complementarios</h2>
         <p className="mt-2 text-gray-600">
-          Identifique los riesgos y condiciones ambientales de la operación
+          Verificación de medidas de control y identificación de riesgos adicionales
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Tipo de Trabajo y Condiciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="tipo_trabajo">Tipo de Trabajo *</Label>
-              <Select 
-                value={data.tipo_trabajo || ""} 
-                onValueChange={(value) => {
-                  console.log('HPTStep3 - Selected tipo trabajo:', value);
-                  onUpdate({ tipo_trabajo: value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione el tipo de trabajo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIPOS_TRABAJO.map((tipo) => {
-                    console.log('HPTStep3 - Rendering tipo trabajo SelectItem:', tipo.value, tipo.label);
-                    return (
-                      <SelectItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
+      {/* Medidas Claves para Ejecución */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            Medidas Claves para Ejecución
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {medidasEjecucion.map((medida) => (
+              <div key={medida.key} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 border rounded-lg">
+                <Label className="text-sm font-medium">
+                  {medida.label}
+                </Label>
+                <div className="md:col-span-1">
+                  <Select 
+                    value={data.hpt_medidas?.[medida.key] || ''} 
+                    onValueChange={(value) => handleMedidasChange(medida.key, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="si">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          Sí
+                        </div>
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="profundidad_maxima">Profundidad Máxima (metros) *</Label>
-              <Input
-                id="profundidad_maxima"
-                type="number"
-                min="0"
-                max="100"
-                value={data.profundidad_maxima || ''}
-                onChange={(e) => onUpdate({ profundidad_maxima: parseFloat(e.target.value) || 0 })}
-                placeholder="Ej: 15"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="corrientes" className="flex items-center gap-2">
-                  <Waves className="w-4 h-4" />
-                  Corrientes
-                </Label>
-                <Select 
-                  value={data.corrientes || ""} 
-                  onValueChange={(value) => {
-                    console.log('HPTStep3 - Selected corrientes:', value);
-                    onUpdate({ corrientes: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Intensidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nula">Nula</SelectItem>
-                    <SelectItem value="leve">Leve</SelectItem>
-                    <SelectItem value="moderada">Moderada</SelectItem>
-                    <SelectItem value="fuerte">Fuerte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="visibilidad" className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  Visibilidad
-                </Label>
-                <Select 
-                  value={data.visibilidad || ""} 
-                  onValueChange={(value) => {
-                    console.log('HPTStep3 - Selected visibilidad:', value);
-                    onUpdate({ visibilidad: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Condición" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="excelente">Excelente</SelectItem>
-                    <SelectItem value="buena">Buena</SelectItem>
-                    <SelectItem value="regular">Regular</SelectItem>
-                    <SelectItem value="mala">Mala</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="temperatura" className="flex items-center gap-2">
-                  <Thermometer className="w-4 h-4" />
-                  Temperatura (°C)
-                </Label>
-                <Input
-                  id="temperatura"
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={data.temperatura || ''}
-                  onChange={(e) => onUpdate({ temperatura: parseFloat(e.target.value) || 0 })}
-                  placeholder="Ej: 12"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Riesgos Identificados</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {RIESGOS_PREDEFINIDOS.map((riesgo) => (
-                <Button
-                  key={riesgo}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addRiesgo(riesgo)}
-                  className="text-xs"
-                  disabled={data.riesgos_identificados?.includes(riesgo)}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  {riesgo}
-                </Button>
-              ))}
-            </div>
-
-            {data.riesgos_identificados?.length > 0 && (
-              <div>
-                <Label>Riesgos Seleccionados:</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {data.riesgos_identificados.map((riesgo: string) => (
-                    <Badge
-                      key={riesgo}
-                      variant="destructive"
-                      className="cursor-pointer"
-                      onClick={() => removeRiesgo(riesgo)}
-                    >
-                      {riesgo}
-                      <X className="w-3 h-3 ml-1" />
-                    </Badge>
-                  ))}
+                      <SelectItem value="no">
+                        <div className="flex items-center gap-2">
+                          <X className="w-4 h-4 text-red-600" />
+                          No
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="na">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-gray-600" />
+                          N/A
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Medidas de Control</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {MEDIDAS_CONTROL.map((medida) => (
-                <Button
-                  key={medida}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addMedida(medida)}
-                  className="text-xs"
-                  disabled={data.medidas_control?.includes(medida)}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  {medida}
-                </Button>
-              ))}
-            </div>
-
-            {data.medidas_control?.length > 0 && (
-              <div>
-                <Label>Medidas Seleccionadas:</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {data.medidas_control.map((medida: string) => (
-                    <Badge
-                      key={medida}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => removeMedida(medida)}
+      {/* Identificación de Peligros / Riesgos Complementarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Identificación de Peligros / Riesgos Complementarios
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {riesgosComplementarios.map((riesgo) => (
+              <div key={riesgo.key} className="border rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  <Label className="text-sm font-medium">
+                    {riesgo.label}
+                  </Label>
+                  <div>
+                    <Select 
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.presente || ''} 
+                      onValueChange={(value) => handleRiesgosChange(riesgo.key, 'presente', value)}
                     >
-                      {medida}
-                      <X className="w-3 h-3 ml-1" />
-                    </Badge>
-                  ))}
+                      <SelectTrigger>
+                        <SelectValue placeholder="¿Presente?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="si">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            Sí
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="no">
+                          <div className="flex items-center gap-2">
+                            <X className="w-4 h-4 text-red-600" />
+                            No
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="na">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-gray-600" />
+                            N/A
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                
+                {data.hpt_riesgos_comp?.[riesgo.key]?.presente === 'si' && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Acciones de Control
+                    </Label>
+                    <Textarea
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.acciones_control || ''}
+                      onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones_control', e.target.value)}
+                      placeholder="Describa las acciones de control implementadas..."
+                      rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-sm text-amber-800">
+            <strong>Importante:</strong> Para cualquier medida marcada como "No" o riesgo presente, 
+            se deben implementar acciones correctivas antes de proceder con la tarea. 
+            Documente todas las acciones de control en los campos correspondientes.
+          </div>
+        </div>
       </div>
     </div>
   );

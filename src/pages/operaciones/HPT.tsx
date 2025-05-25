@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -18,6 +17,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 const HPT = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
   const { hpts, isLoading, createHPT, updateHPT, deleteHPT } = useHPT();
@@ -33,6 +33,52 @@ const HPT = () => {
     try {
       await createHPT(data);
       setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating HPT:', error);
+    }
+  };
+
+  const handleWizardSubmit = async (data: any) => {
+    try {
+      // Transformar los datos del wizard al formato esperado por la API
+      const hptData = {
+        codigo: data.folio || `HPT-${Date.now()}`,
+        supervisor: data.supervisor_nombre,
+        operacion_id: data.operacion_id,
+        plan_trabajo: data.plan_trabajo,
+        fecha_programada: data.fecha,
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_termino,
+        descripcion_trabajo: data.descripcion_tarea,
+        observaciones: data.observaciones,
+        // Nuevos campos específicos
+        folio: data.folio,
+        fecha: data.fecha,
+        hora_termino: data.hora_termino,
+        empresa_servicio_nombre: data.empresa_servicio_nombre,
+        supervisor_nombre: data.supervisor_nombre,
+        centro_trabajo_nombre: data.centro_trabajo_nombre,
+        jefe_mandante_nombre: data.jefe_mandante_nombre,
+        descripcion_tarea: data.descripcion_tarea,
+        es_rutinaria: data.es_rutinaria,
+        lugar_especifico: data.lugar_especifico,
+        estado_puerto: data.estado_puerto,
+        hpt_epp: data.hpt_epp,
+        hpt_erc: data.hpt_erc,
+        hpt_medidas: data.hpt_medidas,
+        hpt_riesgos_comp: data.hpt_riesgos_comp,
+        hpt_conocimiento: data.hpt_conocimiento,
+        hpt_conocimiento_asistentes: data.hpt_conocimiento_asistentes,
+        plan_emergencia: data.plan_emergencia,
+        contactos_emergencia: data.contactos_emergencia,
+        hospital_cercano: data.hospital_cercano,
+        camara_hiperbarica: data.camara_hiperbarica,
+        supervisor_firma: data.supervisor_firma,
+        jefe_obra_firma: data.jefe_obra_firma
+      };
+
+      await createHPT(hptData);
+      setIsWizardOpen(false);
     } catch (error) {
       console.error('Error creating HPT:', error);
     }
@@ -165,6 +211,21 @@ const HPT = () => {
                     <CreateHPTForm
                       onSubmit={handleCreateHPT}
                       onCancel={() => setIsCreateDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      HPT Completa
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
+                    <HPTWizard
+                      onSubmit={handleWizardSubmit}
+                      onCancel={() => setIsWizardOpen(false)}
                     />
                   </DialogContent>
                 </Dialog>

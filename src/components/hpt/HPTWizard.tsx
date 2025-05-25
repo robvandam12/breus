@@ -13,44 +13,47 @@ import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 
 interface HPTData {
-  // Paso 1: Información General
+  // Datos Generales (Paso 1)
+  folio: string;
   operacion_id: string;
-  fecha_programada: string;
+  fecha: string;
   hora_inicio: string;
-  hora_fin: string;
-  supervisor: string;
-  jefe_obra: string;
-  descripcion_trabajo: string;
-  plan_trabajo: string; // Added this property
+  hora_termino: string;
+  empresa_servicio_nombre: string;
+  supervisor_nombre: string;
+  centro_trabajo_nombre: string;
+  jefe_mandante_nombre: string;
+  descripcion_tarea: string;
+  es_rutinaria: boolean;
+  lugar_especifico: string;
+  estado_puerto: string;
+  plan_trabajo: string;
   
-  // Paso 2: Equipo de Buceo
-  buzos: Array<{
+  // EPP y ERC (Paso 2)
+  hpt_epp: Record<string, boolean>;
+  hpt_erc: Record<string, boolean>;
+  
+  // Medidas y Riesgos (Paso 3)
+  hpt_medidas: Record<string, string>;
+  hpt_riesgos_comp: Record<string, any>;
+  
+  // Conocimiento (Paso 4)
+  hpt_conocimiento: {
+    difusion_nombre: string;
+    fecha: string;
+    hora: string;
+    duracion: number;
+    relator_nombre: string;
+    relator_cargo: string;
+  };
+  hpt_conocimiento_asistentes: Array<{
     nombre: string;
-    certificacion: string;
-    vencimiento: string;
-    rol: string;
-  }>;
-  asistentes: Array<{
-    nombre: string;
-    rol: string;
+    rut: string;
+    empresa: string;
+    firma_url?: string;
   }>;
   
-  // Paso 3: Análisis de Riesgos
-  tipo_trabajo: string;
-  profundidad_maxima: number;
-  corrientes: string;
-  visibilidad: string;
-  temperatura: number;
-  riesgos_identificados: string[];
-  medidas_control: string[];
-  
-  // Paso 4: Equipos y Herramientas
-  equipo_buceo: string[];
-  herramientas: string[];
-  equipo_seguridad: string[];
-  equipo_comunicacion: string[];
-  
-  // Paso 5: Procedimientos de Emergencia
+  // Emergencia (Paso 5)
   plan_emergencia: string;
   contactos_emergencia: Array<{
     nombre: string;
@@ -60,7 +63,7 @@ interface HPTData {
   hospital_cercano: string;
   camara_hiperbarica: string;
   
-  // Paso 6: Autorizaciones
+  // Firmas (Paso 6)
   supervisor_firma: string | null;
   jefe_obra_firma: string | null;
   observaciones: string;
@@ -78,27 +81,33 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
   const { toast } = useToast();
   
   const [data, setData] = useState<HPTData>({
+    folio: "",
     operacion_id: "",
-    fecha_programada: "",
+    fecha: "",
     hora_inicio: "",
-    hora_fin: "",
-    supervisor: "",
-    jefe_obra: "",
-    descripcion_trabajo: "",
+    hora_termino: "",
+    empresa_servicio_nombre: "",
+    supervisor_nombre: "",
+    centro_trabajo_nombre: "",
+    jefe_mandante_nombre: "",
+    descripcion_tarea: "",
+    es_rutinaria: false,
+    lugar_especifico: "",
+    estado_puerto: "",
     plan_trabajo: "",
-    buzos: [],
-    asistentes: [],
-    tipo_trabajo: "",
-    profundidad_maxima: 0,
-    corrientes: "",
-    visibilidad: "",
-    temperatura: 0,
-    riesgos_identificados: [],
-    medidas_control: [],
-    equipo_buceo: [],
-    herramientas: [],
-    equipo_seguridad: [],
-    equipo_comunicacion: [],
+    hpt_epp: {},
+    hpt_erc: {},
+    hpt_medidas: {},
+    hpt_riesgos_comp: {},
+    hpt_conocimiento: {
+      difusion_nombre: "",
+      fecha: "",
+      hora: "",
+      duracion: 0,
+      relator_nombre: "",
+      relator_cargo: ""
+    },
+    hpt_conocimiento_asistentes: [],
     plan_emergencia: "",
     contactos_emergencia: [],
     hospital_cercano: "",
@@ -140,13 +149,13 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
   const canProceedToNext = () => {
     switch (currentStep) {
       case 1:
-        return data.operacion_id && data.supervisor && data.plan_trabajo;
+        return data.operacion_id && data.supervisor_nombre && data.plan_trabajo && data.fecha;
       case 2:
-        return data.buzos.length > 0;
+        return Object.values(data.hpt_epp).some(Boolean) || Object.values(data.hpt_erc).some(Boolean);
       case 3:
-        return data.tipo_trabajo && data.profundidad_maxima > 0;
+        return Object.keys(data.hpt_medidas).length > 0;
       case 4:
-        return data.equipo_buceo.length > 0;
+        return data.hpt_conocimiento.difusion_nombre && data.hpt_conocimiento_asistentes.length > 0;
       case 5:
         return data.plan_emergencia && data.contactos_emergencia.length > 0;
       case 6:
@@ -220,10 +229,10 @@ export const HPTWizard = ({ onSubmit, onCancel, initialData }: HPTWizardProps) =
 
   const getStepTitle = () => {
     const titles = [
-      "Información General",
-      "Equipo de Buceo",
-      "Análisis de Riesgos",
-      "Equipos y Herramientas",
+      "Datos Generales",
+      "EPP y Estándares de Riesgos Críticos",
+      "Medidas de Control y Riesgos",
+      "Registro de Conocimiento",
       "Procedimientos de Emergencia",
       "Autorizaciones y Firmas"
     ];

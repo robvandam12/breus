@@ -4,8 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar, Clock, MapPin, User } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { Calendar, Clock, User, FileText } from "lucide-react";
 
 interface HPTStep1Props {
   data: any;
@@ -13,192 +14,259 @@ interface HPTStep1Props {
 }
 
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
-  const { operaciones, isLoading } = useOperaciones();
+  const { operaciones } = useOperaciones();
 
-  console.log('HPTStep1 - Raw operaciones:', operaciones);
-  console.log('HPTStep1 - isLoading:', isLoading);
-
-  // Filter out operations with empty or invalid values and ensure valid structure
-  const validOperaciones = (operaciones || []).filter(op => {
-    const isValid = op && 
-      typeof op === 'object' &&
-      op.id && 
-      typeof op.id === 'string' &&
-      op.id.trim() !== "" && 
-      op.nombre && 
-      typeof op.nombre === 'string' &&
-      op.nombre.trim() !== "";
-    
-    if (!isValid) {
-      console.log('HPTStep1 - Invalid operation filtered out:', op);
-    }
-    
-    return isValid;
-  });
-
-  console.log('HPTStep1 - Valid operaciones after filtering:', validOperaciones);
+  const handleInputChange = (field: string, value: any) => {
+    onUpdate({ [field]: value });
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Información General</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Datos Generales de la Tarea</h2>
         <p className="mt-2 text-gray-600">
-          Complete los datos básicos de la operación de buceo
+          Información básica sobre la planificación de la tarea de buceo
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Folio */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Operación
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="operacion">Seleccionar Operación *</Label>
-              <Select 
-                value={data.operacion_id || ""} 
-                onValueChange={(value) => {
-                  console.log('HPTStep1 - Selected operation value:', value);
-                  onUpdate({ operacion_id: value });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione una operación" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoading ? (
-                    <SelectItem value="__loading_state__" disabled>Cargando operaciones...</SelectItem>
-                  ) : validOperaciones.length === 0 ? (
-                    <SelectItem value="__no_data_state__" disabled>No hay operaciones disponibles</SelectItem>
-                  ) : (
-                    validOperaciones.map((operacion) => {
-                      const itemValue = operacion.id;
-                      const itemLabel = `${operacion.nombre} (${operacion.codigo || operacion.id.slice(0, 8)})`;
-                      
-                      console.log('HPTStep1 - Rendering SelectItem with value:', itemValue, 'label:', itemLabel);
-                      
-                      return (
-                        <SelectItem 
-                          key={operacion.id} 
-                          value={itemValue}
-                        >
-                          {itemLabel}
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="plan_trabajo">Plan de Trabajo *</Label>
-              <Textarea
-                id="plan_trabajo"
-                value={data.plan_trabajo || ''}
-                onChange={(e) => onUpdate({ plan_trabajo: e.target.value })}
-                placeholder="Describa el plan detallado de trabajo..."
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Programación
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="fecha_programada">Fecha Programada *</Label>
-              <Input
-                id="fecha_programada"
-                type="date"
-                value={data.fecha_programada || ''}
-                onChange={(e) => onUpdate({ fecha_programada: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="hora_inicio">Hora Inicio *</Label>
-                <Input
-                  id="hora_inicio"
-                  type="time"
-                  value={data.hora_inicio || ''}
-                  onChange={(e) => onUpdate({ hora_inicio: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="hora_fin">Hora Fin</Label>
-                <Input
-                  id="hora_fin"
-                  type="time"
-                  value={data.hora_fin || ''}
-                  onChange={(e) => onUpdate({ hora_fin: e.target.value })}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Responsables
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="supervisor">Supervisor *</Label>
-              <Input
-                id="supervisor"
-                value={data.supervisor || ''}
-                onChange={(e) => onUpdate({ supervisor: e.target.value })}
-                placeholder="Nombre del supervisor de buceo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="jefe_obra">Jefe de Obra</Label>
-              <Input
-                id="jefe_obra"
-                value={data.jefe_obra || ''}
-                onChange={(e) => onUpdate({ jefe_obra: e.target.value })}
-                placeholder="Nombre del jefe de obra o mandante"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Descripción del Trabajo
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Folio
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div>
-              <Label htmlFor="descripcion_trabajo">Descripción *</Label>
-              <Textarea
-                id="descripcion_trabajo"
-                value={data.descripcion_trabajo || ''}
-                onChange={(e) => onUpdate({ descripcion_trabajo: e.target.value })}
-                placeholder="Describa detalladamente el trabajo a realizar..."
-                rows={6}
+            <Input
+              value={data.folio || ''}
+              onChange={(e) => handleInputChange('folio', e.target.value)}
+              placeholder="Ej: HPT-2024-001"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Operación */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Operación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select 
+              value={data.operacion_id || ''} 
+              onValueChange={(value) => handleInputChange('operacion_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar operación..." />
+              </SelectTrigger>
+              <SelectContent>
+                {operaciones.map((operacion) => (
+                  <SelectItem key={operacion.id} value={operacion.id}>
+                    {operacion.codigo} - {operacion.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Fecha */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Fecha</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              type="date"
+              value={data.fecha || ''}
+              onChange={(e) => handleInputChange('fecha', e.target.value)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Hora Inicio */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Hora Inicio Tarea
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              type="time"
+              value={data.hora_inicio || ''}
+              onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Hora Término */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Hora Término Tarea
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              type="time"
+              value={data.hora_termino || ''}
+              onChange={(e) => handleInputChange('hora_termino', e.target.value)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Empresa Servicio */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Empresa Servicio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={data.empresa_servicio_nombre || ''}
+              onChange={(e) => handleInputChange('empresa_servicio_nombre', e.target.value)}
+              placeholder="Nombre de la empresa de servicios"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Supervisor */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Supervisor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={data.supervisor_nombre || ''}
+              onChange={(e) => handleInputChange('supervisor_nombre', e.target.value)}
+              placeholder="Nombre del supervisor"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Centro de Trabajo */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Centro de Trabajo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={data.centro_trabajo_nombre || ''}
+              onChange={(e) => handleInputChange('centro_trabajo_nombre', e.target.value)}
+              placeholder="Nombre del centro de trabajo"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Jefe Mandante */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Jefe Mandante</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={data.jefe_mandante_nombre || ''}
+              onChange={(e) => handleInputChange('jefe_mandante_nombre', e.target.value)}
+              placeholder="Nombre del jefe mandante"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Lugar Específico */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Lugar Específico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={data.lugar_especifico || ''}
+              onChange={(e) => handleInputChange('lugar_especifico', e.target.value)}
+              placeholder="Ubicación específica del trabajo"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Estado del Puerto */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Estado del Puerto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select 
+              value={data.estado_puerto || ''} 
+              onValueChange={(value) => handleInputChange('estado_puerto', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar estado..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="abierto">Abierto</SelectItem>
+                <SelectItem value="cerrado">Cerrado</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Tarea Rutinaria */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">¿Tarea Rutinaria?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="es_rutinaria"
+                checked={data.es_rutinaria || false}
+                onCheckedChange={(checked) => handleInputChange('es_rutinaria', checked)}
               />
+              <Label htmlFor="es_rutinaria">Sí, es una tarea rutinaria</Label>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Descripción de la Tarea */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Identificación/Descripción del Trabajo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={data.descripcion_tarea || ''}
+            onChange={(e) => handleInputChange('descripcion_tarea', e.target.value)}
+            placeholder="Describa detalladamente el trabajo a realizar..."
+            rows={4}
+            maxLength={300}
+          />
+          <div className="text-sm text-gray-500 mt-1">
+            {(data.descripcion_tarea || '').length}/300 caracteres
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Plan de Trabajo */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plan de Trabajo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={data.plan_trabajo || ''}
+            onChange={(e) => handleInputChange('plan_trabajo', e.target.value)}
+            placeholder="Detalle el plan de trabajo completo..."
+            rows={6}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
