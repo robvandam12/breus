@@ -1075,6 +1075,22 @@ export type Database = {
         }
         Returns: string
       }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_super: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      jwt_salmonera: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      jwt_servicio: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
