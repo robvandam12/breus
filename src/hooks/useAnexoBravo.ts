@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,7 +19,7 @@ export interface AnexoBravo {
   user_id: string;
   created_at: string;
   updated_at: string;
-  // Nuevos campos según especificación
+  // Campos del wizard completo
   empresa_nombre?: string;
   lugar_faena?: string;
   fecha?: string;
@@ -36,33 +35,53 @@ export interface AnexoBravo {
   bitacora_fecha?: string;
   bitacora_relator?: string;
   anexo_bravo_trabajadores?: any[];
-  anexo_bravo_firmas?: any;
-  supervisor_servicio_id?: string;
-  supervisor_mandante_id?: string;
+  supervisor_servicio_firma?: string;
+  supervisor_mandante_firma?: string;
+  supervisor_servicio_nombre?: string;
+  supervisor_mandante_nombre?: string;
+  supervisor_servicio_timestamp?: string;
+  supervisor_mandante_timestamp?: string;
   form_version?: number;
 }
 
-export interface AnexoBravoFormData {
-  codigo: string;
-  supervisor: string;
-  jefe_centro: string;
-  operacion_id: string;
-  fecha_verificacion: string;
-  observaciones_generales?: string;
-  // Nuevos campos para el formulario completo
-  empresa_nombre?: string;
-  lugar_faena?: string;
-  fecha?: string;
-  jefe_centro_nombre?: string;
-  buzo_o_empresa_nombre?: string;
-  buzo_matricula?: string;
-  autorizacion_armada?: boolean;
-  asistente_buzo_nombre?: string;
-  asistente_buzo_matricula?: string;
-  bitacora_hora_inicio?: string;
-  bitacora_hora_termino?: string;
-  bitacora_fecha?: string;
-  bitacora_relator?: string;
+export interface AnexoBravoWizardData {
+  // Paso 1: Información General
+  empresa_nombre: string;
+  lugar_faena: string;
+  fecha: string;
+  jefe_centro_nombre: string;
+  
+  // Paso 2: Identificación del Buzo
+  buzo_o_empresa_nombre: string;
+  buzo_matricula: string;
+  autorizacion_armada: boolean;
+  asistente_buzo_nombre: string;
+  asistente_buzo_matricula: string;
+  
+  // Paso 3: Chequeo de Equipos
+  anexo_bravo_checklist: Record<string, any>;
+  
+  // Paso 4: Bitácora de Buceo
+  bitacora_hora_inicio: string;
+  bitacora_hora_termino: string;
+  bitacora_fecha: string;
+  bitacora_relator: string;
+  anexo_bravo_trabajadores: Array<{
+    nombre: string;
+    rut: string;
+  }>;
+  
+  // Paso 5: Firmas
+  supervisor_servicio_firma: string | null;
+  supervisor_mandante_firma: string | null;
+  supervisor_servicio_nombre?: string;
+  supervisor_mandante_nombre?: string;
+  supervisor_servicio_timestamp?: string;
+  supervisor_mandante_timestamp?: string;
+  observaciones_generales: string;
+  
+  // Campos adicionales para el sistema
+  operacion_id?: string;
 }
 
 export const useAnexoBravo = () => {
@@ -88,19 +107,92 @@ export const useAnexoBravo = () => {
   });
 
   const createAnexoBravoMutation = useMutation({
-    mutationFn: async (anexoBravoData: AnexoBravoFormData) => {
+    mutationFn: async (anexoBravoData: AnexoBravoWizardData) => {
       console.log('Creating Anexo Bravo:', anexoBravoData);
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
 
+      // Calcular progreso basado en datos completados
+      const calcularProgreso = (data: AnexoBravoWizardData): number => {
+        let completados = 0;
+        let total = 0;
+
+        // Paso 1: Información General (4 campos)
+        total += 4;
+        if (data.empresa_nombre) completados++;
+        if (data.lugar_faena) completados++;
+        if (data.fecha) completados++;
+        if (data.jefe_centro_nombre) completados++;
+
+        // Paso 2: Identificación del Buzo (5 campos)
+        total += 5;
+        if (data.buzo_o_empresa_nombre) completados++;
+        if (data.buzo_matricula) completados++;
+        if (data.autorizacion_armada !== undefined) completados++;
+        if (data.asistente_buzo_nombre) completados++;
+        if (data.asistente_buzo_matricula) completados++;
+
+        // Paso 3: Checklist (1 campo)
+        total += 1;
+        if (data.anexo_bravo_checklist && Object.keys(data.anexo_bravo_checklist).length > 0) completados++;
+
+        // Paso 4: Bitácora (4 campos)
+        total += 4;
+        if (data.bitacora_hora_inicio) completados++;
+        if (data.bitacora_hora_termino) completados++;
+        if (data.bitacora_fecha) completados++;
+        if (data.bitacora_relator) completados++;
+
+        // Paso 5: Firmas (2 campos)
+        total += 2;
+        if (data.supervisor_servicio_firma) completados++;
+        if (data.supervisor_mandante_firma) completados++;
+
+        return Math.round((completados / total) * 100);
+      };
+
+      const progreso = calcularProgreso(anexoBravoData);
+      const firmado = !!(anexoBravoData.supervisor_servicio_firma && anexoBravoData.supervisor_mandante_firma);
+      const estado = firmado ? 'firmado' : (progreso > 50 ? 'pendiente' : 'borrador');
+
+      // Generar código único
+      const codigo = `AB-${Date.now().toString().slice(-6)}`;
+
       const { data, error } = await supabase
         .from('anexo_bravo')
         .insert([{
-          ...anexoBravoData,
+          codigo,
+          supervisor: anexoBravoData.supervisor_servicio_nombre || 'Sin asignar',
+          jefe_centro: anexoBravoData.jefe_centro_nombre || 'Sin asignar',
+          operacion_id: anexoBravoData.operacion_id || crypto.randomUUID(),
+          fecha_verificacion: anexoBravoData.fecha || new Date().toISOString().split('T')[0],
+          estado,
+          firmado,
+          checklist_completo: Object.keys(anexoBravoData.anexo_bravo_checklist || {}).length > 0,
+          progreso,
           user_id: user.id,
-          fecha_creacion: new Date().toISOString().split('T')[0]
+          // Campos específicos del wizard
+          empresa_nombre: anexoBravoData.empresa_nombre,
+          lugar_faena: anexoBravoData.lugar_faena,
+          fecha: anexoBravoData.fecha,
+          jefe_centro_nombre: anexoBravoData.jefe_centro_nombre,
+          buzo_o_empresa_nombre: anexoBravoData.buzo_o_empresa_nombre,
+          buzo_matricula: anexoBravoData.buzo_matricula,
+          autorizacion_armada: anexoBravoData.autorizacion_armada,
+          asistente_buzo_nombre: anexoBravoData.asistente_buzo_nombre,
+          asistente_buzo_matricula: anexoBravoData.asistente_buzo_matricula,
+          anexo_bravo_checklist: anexoBravoData.anexo_bravo_checklist,
+          bitacora_hora_inicio: anexoBravoData.bitacora_hora_inicio,
+          bitacora_hora_termino: anexoBravoData.bitacora_hora_termino,
+          bitacora_fecha: anexoBravoData.bitacora_fecha,
+          bitacora_relator: anexoBravoData.bitacora_relator,
+          anexo_bravo_trabajadores: anexoBravoData.anexo_bravo_trabajadores,
+          observaciones_generales: anexoBravoData.observaciones_generales,
+          supervisor_firma: anexoBravoData.supervisor_servicio_firma,
+          jefe_centro_firma: anexoBravoData.supervisor_mandante_firma,
+          form_version: 1
         }])
         .select()
         .single();
@@ -131,7 +223,7 @@ export const useAnexoBravo = () => {
   });
 
   const updateAnexoBravoMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<AnexoBravoFormData> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<AnexoBravoWizardData> }) => {
       console.log('Updating Anexo Bravo:', id, data);
       const { data: updatedData, error } = await supabase
         .from('anexo_bravo')
