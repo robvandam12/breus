@@ -366,6 +366,59 @@ export type Database = {
           },
         ]
       }
+      contractor_invitations: {
+        Row: {
+          admin_email: string
+          admin_nombre: string
+          created_at: string
+          empresa_nombre: string
+          empresa_rut: string
+          id: string
+          invited_at: string
+          responded_at: string | null
+          salmonera_id: string | null
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          admin_email: string
+          admin_nombre: string
+          created_at?: string
+          empresa_nombre: string
+          empresa_rut: string
+          id?: string
+          invited_at?: string
+          responded_at?: string | null
+          salmonera_id?: string | null
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string
+          admin_nombre?: string
+          created_at?: string
+          empresa_nombre?: string
+          empresa_rut?: string
+          id?: string
+          invited_at?: string
+          responded_at?: string | null
+          salmonera_id?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_invitations_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratistas: {
         Row: {
           certificaciones: string[] | null

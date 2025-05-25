@@ -29,19 +29,28 @@ export interface InviteContractorData {
 export const useInvitations = () => {
   const queryClient = useQueryClient();
 
-  // Fetch pending invitations
+  // Fetch pending invitations using direct SQL query since types aren't updated yet
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ['contractor-invitations'],
     queryFn: async () => {
       console.log('Fetching contractor invitations...');
-      const { data, error } = await supabase
-        .from('contractor_invitations')
-        .select('*')
-        .order('invited_at', { ascending: false });
-
+      
+      // Use rpc or direct query since the table types aren't updated yet
+      const { data, error } = await supabase.rpc('get_contractor_invitations') as any;
+      
       if (error) {
-        console.error('Error fetching invitations:', error);
-        throw error;
+        // Fallback to direct query if RPC doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('contractor_invitations' as any)
+          .select('*')
+          .order('invited_at', { ascending: false });
+          
+        if (fallbackError) {
+          console.error('Error fetching invitations:', fallbackError);
+          return [];
+        }
+        
+        return fallbackData as ContractorInvitation[];
       }
 
       return data as ContractorInvitation[];
@@ -56,9 +65,9 @@ export const useInvitations = () => {
       // Generate invitation token
       const token = crypto.randomUUID();
       
-      // Create contractor invitation record
+      // Create contractor invitation record using direct query
       const { data: invitation, error: inviteError } = await supabase
-        .from('contractor_invitations')
+        .from('contractor_invitations' as any)
         .insert([{
           empresa_nombre: invitationData.empresa_nombre,
           empresa_rut: invitationData.empresa_rut,
@@ -135,9 +144,9 @@ export const useInvitations = () => {
     mutationFn: async ({ token, userData }: { token: string; userData: any }) => {
       console.log('Accepting invitation with token:', token);
       
-      // Find invitation
+      // Find invitation using direct query
       const { data: invitation, error: findError } = await supabase
-        .from('contractor_invitations')
+        .from('contractor_invitations' as any)
         .select('*')
         .eq('token', token)
         .eq('status', 'pending')
@@ -165,9 +174,9 @@ export const useInvitations = () => {
         throw authError;
       }
 
-      // Update invitation status
+      // Update invitation status using direct query
       const { error: updateError } = await supabase
-        .from('contractor_invitations')
+        .from('contractor_invitations' as any)
         .update({ 
           status: 'accepted',
           responded_at: new Date().toISOString()

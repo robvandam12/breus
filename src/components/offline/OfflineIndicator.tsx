@@ -13,12 +13,7 @@ export const OfflineIndicator = () => {
       setIsOnline(true);
       setShowIndicator(true);
       toast({
-        title: (
-          <div className="flex items-center gap-2">
-            <Cloud className="w-4 h-4 text-green-600" />
-            <span>Conexión restaurada</span>
-          </div>
-        ),
+        title: "Conexión restaurada",
         description: "Ya puedes sincronizar tus datos.",
       });
       
@@ -30,12 +25,7 @@ export const OfflineIndicator = () => {
       setIsOnline(false);
       setShowIndicator(true);
       toast({
-        title: (
-          <div className="flex items-center gap-2">
-            <CloudOff className="w-4 h-4 text-red-600" />
-            <span>Sin conexión</span>
-          </div>
-        ),
+        title: "Sin conexión",
         description: "Trabajando en modo offline. Los datos se sincronizarán cuando vuelvas a conectarte.",
         variant: "destructive",
       });
