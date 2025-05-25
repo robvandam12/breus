@@ -7,6 +7,8 @@ import { AlertasPanel } from "@/components/dashboard/AlertasPanel";
 import { StatsChart } from "@/components/dashboard/StatsChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { NotificationToasts } from "@/components/dashboard/NotificationToasts";
+import { PerformanceMetrics } from "@/components/dashboard/PerformanceMetrics";
+import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function Dashboard() {
@@ -74,6 +76,9 @@ export function Dashboard() {
         ))}
       </div>
 
+      {/* Performance Metrics */}
+      <PerformanceMetrics />
+
       {/* Charts Section */}
       <StatsChart />
 
@@ -91,9 +96,14 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Alertas Panel */}
-      <div className="grid grid-cols-1 xl:grid-cols-1 gap-8">
-        <AlertasPanel />
+      {/* Sistema Status y Alertas */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-1">
+          <SystemStatus />
+        </div>
+        <div className="xl:col-span-2">
+          <AlertasPanel />
+        </div>
       </div>
     </div>
   );
