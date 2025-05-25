@@ -35,10 +35,10 @@ export const RealTimeMetrics = () => {
       const today = now.toISOString().split('T')[0];
       const thisHour = now.getHours();
 
-      // Métricas de inmersiones hoy
+      // Métricas de inmersiones hoy - usando la columna correcta fecha_inmersion
       const { data: inmersionesHoy, error: inmError } = await supabase
         .from('inmersion')
-        .select('id, estado, created_at')
+        .select('inmersion_id, estado, created_at, fecha_inmersion')
         .eq('fecha_inmersion', today);
 
       if (inmError) throw inmError;

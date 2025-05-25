@@ -14,12 +14,12 @@ import { toast } from '@/hooks/use-toast';
 
 interface User {
   usuario_id: string;
-  email: string;
+  email: string | null;
   nombre: string;
   apellido: string;
   rol: 'superuser' | 'admin_salmonera' | 'admin_servicio' | 'supervisor' | 'buzo';
-  salmonera_id?: string;
-  servicio_id?: string;
+  salmonera_id?: string | null;
+  servicio_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +49,14 @@ export const UserManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Asegurar el tipado correcto de los datos de la base de datos
+      const typedUsers: User[] = (data || []).map(user => ({
+        ...user,
+        rol: user.rol as 'superuser' | 'admin_salmonera' | 'admin_servicio' | 'supervisor' | 'buzo'
+      }));
+      
+      setUsers(typedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -70,7 +77,7 @@ export const UserManagement = () => {
     const matchesSearch = 
       user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesRole = selectedRole === 'all' || user.rol === selectedRole;
     
@@ -86,15 +93,22 @@ export const UserManagement = () => {
     );
   };
 
-  const handleCreateUser = async (userData: Partial<User>) => {
+  const handleCreateUser = async (userData: Omit<User, 'usuario_id' | 'created_at' | 'updated_at'>) => {
     try {
-      // En un sistema real, esto requeriría crear el usuario en Auth también
+      // Asegurar que los campos requeridos estén presentes
+      const userToCreate = {
+        usuario_id: crypto.randomUUID(), // En producción, esto vendría de Auth
+        nombre: userData.nombre || 'Sin nombre',
+        apellido: userData.apellido || 'Sin apellido',
+        email: userData.email,
+        rol: userData.rol,
+        salmonera_id: userData.salmonera_id,
+        servicio_id: userData.servicio_id
+      };
+
       const { data, error } = await supabase
         .from('usuario')
-        .insert([{
-          usuario_id: crypto.randomUUID(), // En producción, esto vendría de Auth
-          ...userData
-        }])
+        .insert([userToCreate])
         .select()
         .single();
 
@@ -259,7 +273,7 @@ export const UserManagement = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-600">{user.email}</TableCell>
+                    <TableCell className="text-gray-600">{user.email || 'Sin email'}</TableCell>
                     <TableCell>
                       {getRoleBadge(user.rol)}
                     </TableCell>
@@ -339,7 +353,7 @@ export const UserManagement = () => {
 // Componente de formulario para crear/editar usuarios
 interface UserFormProps {
   initialData?: Partial<User>;
-  onSubmit: (data: Partial<User>) => void;
+  onSubmit: (data: Omit<User, 'usuario_id' | 'created_at' | 'updated_at'>) => void;
   onCancel: () => void;
   isEditing?: boolean;
 }
@@ -349,7 +363,9 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, onSubmit, onCancel, is
     nombre: initialData?.nombre || '',
     apellido: initialData?.apellido || '',
     email: initialData?.email || '',
-    rol: initialData?.rol || 'buzo'
+    rol: (initialData?.rol || 'buzo') as 'superuser' | 'admin_salmonera' | 'admin_servicio' | 'supervisor' | 'buzo',
+    salmonera_id: initialData?.salmonera_id || null,
+    servicio_id: initialData?.servicio_id || null
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -386,7 +402,6 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, onSubmit, onCancel, is
           type="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
           disabled={isEditing}
         />
       </div>
