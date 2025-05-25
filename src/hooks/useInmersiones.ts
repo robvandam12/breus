@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface Inmersion {
-  id: string;
-  codigo: string;
+  inmersion_id: string;
   operacion_id: string;
-  operacion_nombre: string;
   fecha_inmersion: string;
   hora_inicio: string;
   hora_fin?: string;
+  codigo: string;
   buzo_principal: string;
   buzo_asistente?: string;
   supervisor: string;
@@ -18,15 +18,15 @@ export interface Inmersion {
   temperatura_agua: number;
   visibilidad: number;
   corriente: string;
-  estado: string;
+  estado: 'planificada' | 'en_curso' | 'completada' | 'cancelada';
+  observaciones?: string;
   hpt_validado: boolean;
   anexo_bravo_validado: boolean;
-  observaciones?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface InmersionFormData {
+export interface CreateInmersionData {
   operacion_id: string;
   fecha_inmersion: string;
   hora_inicio: string;
@@ -42,305 +42,196 @@ export interface InmersionFormData {
   observaciones?: string;
 }
 
-export interface ValidationStatus {
-  hasValidHPT: boolean;
-  hasValidAnexoBravo: boolean;
-  canExecute: boolean;
-  hptCode?: string;
-  anexoBravoCode?: string;
-}
-
 export const useInmersiones = () => {
-  const [inmersiones, setInmersiones] = useState<Inmersion[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadInmersiones();
-  }, []);
-
-  const loadInmersiones = async () => {
-    setLoading(true);
-    try {
+  const { data: inmersiones = [], isLoading, error } = useQuery({
+    queryKey: ['inmersiones'],
+    queryFn: async () => {
+      console.log('useInmersiones - Fetching Inmersiones...');
       const { data, error } = await supabase
         .from('inmersion')
-        .select(`
-          *,
-          operacion:operacion_id (
-            nombre
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .select('*')
+        .order('fecha_inmersion', { ascending: false });
+
+      if (error) {
+        console.error('useInmersiones - Error fetching Inmersiones:', error);
+        throw error;
+      }
+
+      console.log('useInmersiones - Inmersiones data:', data);
+      return data as Inmersion[];
+    },
+  });
+
+  // Obtener operaciones disponibles para validación
+  const { data: operaciones = [] } = useQuery({
+    queryKey: ['operaciones-for-inmersion'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('operacion')
+        .select('id, nombre, codigo')
+        .eq('estado', 'activa');
 
       if (error) throw error;
+      return data;
+    },
+  });
 
-      const formattedData: Inmersion[] = (data || []).map((item: any) => ({
-        id: item.inmersion_id,
-        codigo: item.codigo,
-        operacion_id: item.operacion_id,
-        operacion_nombre: item.operacion?.nombre || 'Operación no encontrada',
-        fecha_inmersion: item.fecha_inmersion,
-        hora_inicio: item.hora_inicio,
-        hora_fin: item.hora_fin,
-        buzo_principal: item.buzo_principal,
-        buzo_asistente: item.buzo_asistente,
-        supervisor: item.supervisor,
-        objetivo: item.objetivo,
-        profundidad_max: Number(item.profundidad_max),
-        temperatura_agua: Number(item.temperatura_agua),
-        visibilidad: Number(item.visibilidad),
-        corriente: item.corriente,
-        estado: item.estado,
-        hpt_validado: item.hpt_validado,
-        anexo_bravo_validado: item.anexo_bravo_validado,
-        observaciones: item.observaciones,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      setInmersiones(formattedData);
-      setError(null);
-    } catch (err) {
-      console.error('Error loading inmersiones:', err);
-      setError('Error al cargar las inmersiones');
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las inmersiones",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
-    try {
-      // Verificar HPT firmado
-      const { data: hptData, error: hptError } = await supabase
-        .from('hpt')
-        .select('codigo, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .maybeSingle();
-
-      if (hptError) throw hptError;
-
-      // Verificar Anexo Bravo firmado
-      const { data: anexoData, error: anexoError } = await supabase
-        .from('anexo_bravo')
-        .select('codigo, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .maybeSingle();
-
-      if (anexoError) throw anexoError;
-
-      const hasValidHPT = !!hptData;
-      const hasValidAnexoBravo = !!anexoData;
-
-      return {
-        hasValidHPT,
-        hasValidAnexoBravo,
-        canExecute: hasValidHPT && hasValidAnexoBravo,
-        hptCode: hptData?.codigo,
-        anexoBravoCode: anexoData?.codigo
-      };
-    } catch (err) {
-      console.error('Error validating documents:', err);
-      return {
-        hasValidHPT: false,
-        hasValidAnexoBravo: false,
-        canExecute: false
-      };
-    }
-  };
-
-  const updateInmersionStatus = async (inmersionId: string, newStatus: string) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('inmersion')
-        .update({ 
-          estado: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('inmersion_id', inmersionId);
-
-      if (error) throw error;
-
-      // Actualizar el estado local
-      setInmersiones(prev => prev.map(inmersion => 
-        inmersion.id === inmersionId 
-          ? { ...inmersion, estado: newStatus }
-          : inmersion
-      ));
-
-      toast({
-        title: "Estado Actualizado",
-        description: `La inmersión ha sido marcada como ${newStatus}`,
-      });
-
-    } catch (err) {
-      console.error('Error updating inmersion status:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar el estado';
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const executeInmersion = async (inmersionId: string) => {
-    const inmersion = inmersiones.find(i => i.id === inmersionId);
-    if (!inmersion) {
-      throw new Error('Inmersión no encontrada');
-    }
-
-    // Validar documentos antes de ejecutar
-    const validation = await validateOperationDocuments(inmersion.operacion_id);
+  const validatePreInmersion = async (operacionId: string) => {
+    console.log('Validating pre-inmersion requirements for operation:', operacionId);
     
-    if (!validation.canExecute) {
-      const missingDocs = [];
-      if (!validation.hasValidHPT) missingDocs.push('HPT firmado');
-      if (!validation.hasValidAnexoBravo) missingDocs.push('Anexo Bravo firmado');
-      
-      throw new Error(`No se puede ejecutar la inmersión. Faltan: ${missingDocs.join(', ')}`);
+    // Verificar HPT firmado
+    const { data: hptData, error: hptError } = await supabase
+      .from('hpt')
+      .select('id, firmado')
+      .eq('operacion_id', operacionId)
+      .eq('firmado', true)
+      .single();
+
+    if (hptError || !hptData) {
+      throw new Error('No existe HPT firmado para esta operación');
     }
 
-    // Actualizar estado a "en_ejecucion"
-    await updateInmersionStatus(inmersionId, 'en_ejecucion');
+    // Verificar Anexo Bravo firmado
+    const { data: anexoData, error: anexoError } = await supabase
+      .from('anexo_bravo')
+      .select('id, firmado')
+      .eq('operacion_id', operacionId)
+      .eq('firmado', true)
+      .single();
 
-    // Actualizar banderas de validación
-    const { error } = await supabase
-      .from('inmersion')
-      .update({
-        hpt_validado: true,
-        anexo_bravo_validado: true
-      })
-      .eq('inmersion_id', inmersionId);
+    if (anexoError || !anexoData) {
+      throw new Error('No existe Anexo Bravo firmado para esta operación');
+    }
 
-    if (error) throw error;
-
-    // Actualizar estado local
-    setInmersiones(prev => prev.map(inmersion => 
-      inmersion.id === inmersionId 
-        ? { 
-            ...inmersion, 
-            hpt_validado: true, 
-            anexo_bravo_validado: true,
-            estado: 'en_ejecucion'
-          }
-        : inmersion
-    ));
+    return { hpt_validado: true, anexo_bravo_validado: true };
   };
 
-  const completeInmersion = async (inmersionId: string) => {
-    await updateInmersionStatus(inmersionId, 'completada');
-  };
-
-  const createInmersion = async (data: InmersionFormData) => {
-    setLoading(true);
-    try {
-      // Generar código único
-      const { count } = await supabase
-        .from('inmersion')
-        .select('*', { count: 'exact', head: true });
+  const createInmersionMutation = useMutation({
+    mutationFn: async (inmersionData: CreateInmersionData) => {
+      console.log('Creating Inmersion:', inmersionData);
       
-      const codigo = `INM-2024-${String((count || 0) + 1).padStart(3, '0')}`;
+      // Validar requisitos previos
+      const validation = await validatePreInmersion(inmersionData.operacion_id);
 
-      const inmersionData = {
-        codigo,
-        operacion_id: data.operacion_id,
-        fecha_inmersion: data.fecha_inmersion,
-        hora_inicio: data.hora_inicio,
-        hora_fin: data.hora_fin || null,
-        buzo_principal: data.buzo_principal,
-        buzo_asistente: data.buzo_asistente || null,
-        supervisor: data.supervisor,
-        objetivo: data.objetivo,
-        profundidad_max: data.profundidad_max,
-        temperatura_agua: data.temperatura_agua,
-        visibilidad: data.visibilidad,
-        corriente: data.corriente,
-        observaciones: data.observaciones || null,
-        estado: 'planificada'
-      };
+      // Generar código único
+      const codigo = `IMM-${Date.now().toString().slice(-6)}`;
 
-      const { data: newInmersion, error } = await supabase
+      const { data, error } = await supabase
         .from('inmersion')
-        .insert([inmersionData])
-        .select(`
-          *,
-          operacion:operacion_id (
-            nombre
-          )
-        `)
+        .insert([{
+          ...inmersionData,
+          codigo,
+          estado: 'planificada',
+          hpt_validado: validation.hpt_validado,
+          anexo_bravo_validado: validation.anexo_bravo_validado,
+        }])
+        .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating Inmersion:', error);
+        throw error;
+      }
 
-      const formattedNewInmersion: Inmersion = {
-        id: newInmersion.inmersion_id,
-        codigo: newInmersion.codigo,
-        operacion_id: newInmersion.operacion_id,
-        operacion_nombre: newInmersion.operacion?.nombre || 'Nueva Operación',
-        fecha_inmersion: newInmersion.fecha_inmersion,
-        hora_inicio: newInmersion.hora_inicio,
-        hora_fin: newInmersion.hora_fin,
-        buzo_principal: newInmersion.buzo_principal,
-        buzo_asistente: newInmersion.buzo_asistente,
-        supervisor: newInmersion.supervisor,
-        objetivo: newInmersion.objetivo,
-        profundidad_max: Number(newInmersion.profundidad_max),
-        temperatura_agua: Number(newInmersion.temperatura_agua),
-        visibilidad: Number(newInmersion.visibilidad),
-        corriente: newInmersion.corriente,
-        estado: newInmersion.estado,
-        hpt_validado: newInmersion.hpt_validado,
-        anexo_bravo_validado: newInmersion.anexo_bravo_validado,
-        observaciones: newInmersion.observaciones,
-        created_at: newInmersion.created_at,
-        updated_at: newInmersion.updated_at
-      };
-
-      setInmersiones(prev => [formattedNewInmersion, ...prev]);
-
+      console.log('Inmersion created:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
-        title: "Inmersión Creada",
-        description: `${formattedNewInmersion.codigo} ha sido creada exitosamente`,
+        title: "Inmersión creada",
+        description: "La inmersión ha sido creada exitosamente y está validada.",
       });
-
-      return formattedNewInmersion;
-    } catch (err) {
-      console.error('Error creating inmersion:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear la inmersión';
-      setError(errorMessage);
+    },
+    onError: (error: any) => {
+      console.error('Error creating Inmersion:', error);
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Error de validación",
+        description: error.message || "No se pudo crear la inmersión. Verifique que existan HPT y Anexo Bravo firmados.",
         variant: "destructive",
       });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
+
+  const updateInmersionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateInmersionData> }) => {
+      console.log('Updating Inmersion:', id, data);
+      const { data: updatedData, error } = await supabase
+        .from('inmersion')
+        .update(data)
+        .eq('inmersion_id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating Inmersion:', error);
+        throw error;
+      }
+
+      console.log('Inmersion updated:', updatedData);
+      return updatedData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      toast({
+        title: "Inmersión actualizada",
+        description: "La inmersión ha sido actualizada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating Inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la inmersión. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteInmersionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting Inmersion:', id);
+      const { error } = await supabase
+        .from('inmersion')
+        .delete()
+        .eq('inmersion_id', id);
+
+      if (error) {
+        console.error('Error deleting Inmersion:', error);
+        throw error;
+      }
+
+      console.log('Inmersion deleted:', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      toast({
+        title: "Inmersión eliminada",
+        description: "La inmersión ha sido eliminada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting Inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la inmersión. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
     inmersiones,
-    loading,
+    operaciones,
+    isLoading,
     error,
-    createInmersion,
-    validateOperationDocuments,
-    updateInmersionStatus,
-    executeInmersion,
-    completeInmersion,
-    refreshInmersiones: loadInmersiones
+    createInmersion: createInmersionMutation.mutateAsync,
+    updateInmersion: updateInmersionMutation.mutateAsync,
+    deleteInmersion: deleteInmersionMutation.mutateAsync,
+    isCreating: createInmersionMutation.isPending,
+    isUpdating: updateInmersionMutation.isPending,
+    isDeleting: deleteInmersionMutation.isPending,
   };
 };
