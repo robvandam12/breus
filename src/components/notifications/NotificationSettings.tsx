@@ -21,9 +21,9 @@ const eventTypes = [
 ];
 
 const channels = [
-  { id: 'app', name: 'Aplicación', icon: Bell, description: 'Notificaciones dentro de la app' },
-  { id: 'email', name: 'Email', icon: Mail, description: 'Notificaciones por correo electrónico' },
-  { id: 'webhook', name: 'Webhook', icon: Webhook, description: 'Notificaciones vía webhook' },
+  { id: 'app' as const, name: 'Aplicación', icon: Bell, description: 'Notificaciones dentro de la app' },
+  { id: 'email' as const, name: 'Email', icon: Mail, description: 'Notificaciones por correo electrónico' },
+  { id: 'webhook' as const, name: 'Webhook', icon: Webhook, description: 'Notificaciones vía webhook' },
 ];
 
 export const NotificationSettings = ({ onClose }: NotificationSettingsProps) => {
