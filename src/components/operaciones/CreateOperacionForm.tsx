@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOperaciones, OperacionFormData, Operacion } from "@/hooks/useOperaciones";
+import { OperacionFormData, Operacion } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useSitios } from "@/hooks/useSitios";
 import { useContratistas } from "@/hooks/useContratistas";
@@ -38,7 +38,6 @@ export const CreateOperacionForm = ({
     contratista_id: initialData?.contratista_id || "",
   });
 
-  const { createOperacion, isCreating } = useOperaciones();
   const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
   const { sitios, isLoading: loadingSitios } = useSitios();
   const { contratistas, isLoading: loadingContratistas } = useContratistas();
@@ -71,12 +70,6 @@ export const CreateOperacionForm = ({
     try {
       if (externalOnSubmit) {
         await externalOnSubmit(formData);
-      } else {
-        await createOperacion(formData);
-        toast({
-          title: "Éxito",
-          description: "Operación creada exitosamente",
-        });
       }
       
       // Call the appropriate close handler
@@ -252,8 +245,8 @@ export const CreateOperacionForm = ({
                 Cancelar
               </Button>
             )}
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? (isEditing ? "Actualizando..." : "Creando...") : (isEditing ? "Actualizar Operación" : "Crear Operación")}
+            <Button type="submit">
+              {isEditing ? "Actualizar Operación" : "Crear Operación"}
             </Button>
           </div>
         </form>
