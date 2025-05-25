@@ -1,115 +1,73 @@
 
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export interface AnexoBravoFormData {
-  operacion_id: string;
-  fecha_verificacion: string;
-  checklist_items: Array<{
-    id: string;
-    item: string;
-    verificado: boolean;
-    observaciones?: string;
-  }>;
-  jefe_centro_firma: string | null;
-  supervisor_firma: string | null;
-  observaciones_generales: string;
-}
-
 export interface AnexoBravo {
   id: string;
   codigo: string;
-  operacion_id: string;
-  operacion_nombre: string;
-  fecha_creacion: string;
-  fecha_verificacion: string;
-  jefe_centro: string;
   supervisor: string;
-  progreso: number;
-  checklist_completo: boolean;
+  jefe_centro: string;
+  operacion_id: string;
+  fecha_verificacion: string;
   estado: string;
   firmado: boolean;
+  checklist_completo: boolean;
+  progreso: number;
+  observaciones_generales?: string;
+  supervisor_firma?: string;
+  jefe_centro_firma?: string;
+  user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AnexoBravoFormData {
+  codigo: string;
+  supervisor: string;
+  jefe_centro: string;
+  operacion_id: string;
+  fecha_verificacion: string;
+  observaciones_generales?: string;
 }
 
 export const useAnexoBravo = () => {
   const queryClient = useQueryClient();
 
-  const { data: anexosBravo = [], isLoading: loading, error } = useQuery({
+  const { data: anexosBravo = [], isLoading, error } = useQuery({
     queryKey: ['anexos-bravo'],
     queryFn: async () => {
-      console.log('Fetching Anexos Bravo...');
+      console.log('useAnexoBravo - Fetching Anexos Bravo...');
       const { data, error } = await supabase
         .from('anexo_bravo')
-        .select(`
-          *,
-          operacion:operacion_id (
-            nombre,
-            codigo
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching Anexos Bravo:', error);
+        console.error('useAnexoBravo - Error fetching Anexos Bravo:', error);
         throw error;
       }
 
-      console.log('Anexos Bravo fetched:', data);
-      return (data || []).map((item: any) => {
-        const checklistItems = item.checklist_items || [];
-        const completedItems = checklistItems.filter((i: any) => i.verificado).length;
-        const progreso = checklistItems.length > 0 ? Math.round((completedItems / checklistItems.length) * 100) : 0;
-        
-        return {
-          id: item.id,
-          codigo: item.codigo || `AB-${item.id.slice(0, 8)}`,
-          operacion_id: item.operacion_id,
-          operacion_nombre: item.operacion?.nombre || 'Sin operación',
-          fecha_creacion: new Date(item.created_at).toLocaleDateString(),
-          fecha_verificacion: item.fecha_verificacion ? new Date(item.fecha_verificacion).toLocaleDateString() : 'Pendiente',
-          jefe_centro: item.jefe_centro || 'Sin asignar',
-          supervisor: item.supervisor || 'Sin asignar',
-          progreso,
-          checklist_completo: progreso === 100,
-          estado: item.estado || 'borrador',
-          firmado: !!(item.jefe_centro_firma && item.supervisor_firma),
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-        };
-      }) as AnexoBravo[];
+      console.log('useAnexoBravo - Anexos Bravo data:', data);
+      return data as AnexoBravo[];
     },
   });
 
   const createAnexoBravoMutation = useMutation({
-    mutationFn: async (anexoData: AnexoBravoFormData) => {
-      console.log('Creating Anexo Bravo:', anexoData);
+    mutationFn: async (anexoBravoData: AnexoBravoFormData) => {
+      console.log('Creating Anexo Bravo:', anexoBravoData);
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-      
-      const anexoRecord = {
-        operacion_id: anexoData.operacion_id,
-        codigo: `AB-${Date.now()}`,
-        fecha_verificacion: anexoData.fecha_verificacion,
-        jefe_centro_firma: anexoData.jefe_centro_firma,
-        supervisor_firma: anexoData.supervisor_firma,
-        observaciones_generales: anexoData.observaciones_generales,
-        estado: 'completado',
-        jefe_centro: 'Jefe Centro', // Add required field with default value
-        supervisor: 'Supervisor', // Add required field with default value
-        user_id: user.id, // Add required user_id field
-      };
+      if (!user) throw new Error('Usuario no autenticado');
 
       const { data, error } = await supabase
         .from('anexo_bravo')
-        .insert(anexoRecord) // Remove array wrapping
+        .insert([{
+          ...anexoBravoData,
+          user_id: user.id,
+          fecha_creacion: new Date().toISOString().split('T')[0]
+        }])
         .select()
         .single();
 
@@ -133,6 +91,41 @@ export const useAnexoBravo = () => {
       toast({
         title: "Error",
         description: "No se pudo crear el Anexo Bravo. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateAnexoBravoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<AnexoBravoFormData> }) => {
+      console.log('Updating Anexo Bravo:', id, data);
+      const { data: updatedData, error } = await supabase
+        .from('anexo_bravo')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating Anexo Bravo:', error);
+        throw error;
+      }
+
+      console.log('Anexo Bravo updated:', updatedData);
+      return updatedData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['anexos-bravo'] });
+      toast({
+        title: "Anexo Bravo actualizado",
+        description: "El Anexo Bravo ha sido actualizado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating Anexo Bravo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el Anexo Bravo. Intente nuevamente.",
         variant: "destructive",
       });
     },
@@ -172,11 +165,13 @@ export const useAnexoBravo = () => {
 
   return {
     anexosBravo,
-    loading,
+    isLoading,
     error,
     createAnexoBravo: createAnexoBravoMutation.mutateAsync,
+    updateAnexoBravo: updateAnexoBravoMutation.mutateAsync,
     deleteAnexoBravo: deleteAnexoBravoMutation.mutateAsync,
     isCreating: createAnexoBravoMutation.isPending,
+    isUpdating: updateAnexoBravoMutation.isPending,
     isDeleting: deleteAnexoBravoMutation.isPending,
   };
 };
