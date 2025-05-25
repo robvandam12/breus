@@ -116,6 +116,12 @@ export const useHPT = () => {
     mutationFn: async (hptData: HPTFormData) => {
       console.log('Creating HPT:', hptData);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
       const hptRecord = {
         operacion_id: hptData.operacion_id,
         supervisor: hptData.supervisor,
@@ -127,15 +133,25 @@ export const useHPT = () => {
         plan_trabajo: hptData.plan_trabajo,
         tipo_trabajo: hptData.tipo_trabajo,
         profundidad_maxima: hptData.profundidad_maxima,
+        corrientes: hptData.corrientes,
+        visibilidad: hptData.visibilidad,
+        temperatura: hptData.temperatura,
         plan_emergencia: hptData.plan_emergencia,
+        hospital_cercano: hptData.hospital_cercano,
+        camara_hiperbarica: hptData.camara_hiperbarica,
         supervisor_firma: hptData.supervisor_firma,
         jefe_obra_firma: hptData.jefe_obra_firma,
         observaciones: hptData.observaciones,
         buzos: hptData.buzos,
+        asistentes: hptData.asistentes,
         riesgos_identificados: hptData.riesgos_identificados,
         medidas_control: hptData.medidas_control,
         equipo_buceo: hptData.equipo_buceo,
+        herramientas: hptData.herramientas,
+        equipo_seguridad: hptData.equipo_seguridad,
+        equipo_comunicacion: hptData.equipo_comunicacion,
         contactos_emergencia: hptData.contactos_emergencia,
+        user_id: user.id, // Add required user_id field
       };
 
       const { data, error } = await supabase

@@ -88,20 +88,28 @@ export const useAnexoBravo = () => {
     mutationFn: async (anexoData: AnexoBravoFormData) => {
       console.log('Creating Anexo Bravo:', anexoData);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
       const anexoRecord = {
         operacion_id: anexoData.operacion_id,
         codigo: `AB-${Date.now()}`,
         fecha_verificacion: anexoData.fecha_verificacion,
-        checklist_items: anexoData.checklist_items,
         jefe_centro_firma: anexoData.jefe_centro_firma,
         supervisor_firma: anexoData.supervisor_firma,
         observaciones_generales: anexoData.observaciones_generales,
         estado: 'completado',
+        jefe_centro: 'Jefe Centro', // Add required field with default value
+        supervisor: 'Supervisor', // Add required field with default value
+        user_id: user.id, // Add required user_id field
       };
 
       const { data, error } = await supabase
         .from('anexo_bravo')
-        .insert([anexoRecord])
+        .insert(anexoRecord) // Remove array wrapping
         .select()
         .single();
 
