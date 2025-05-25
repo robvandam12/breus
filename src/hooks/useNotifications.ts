@@ -1,262 +1,179 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  read: boolean;
-  metadata: any;
-  created_at: string;
-  expires_at?: string;
-}
-
-export interface NotificationSubscription {
+interface NotificationSubscription {
   id: string;
   event_type: string;
   channel: 'app' | 'email' | 'webhook';
   enabled: boolean;
+  user_id: string;
+  created_at: string;
+}
+
+interface CreateNotificationData {
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  metadata?: any;
+  expires_at?: string;
 }
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [subscriptions, setSubscriptions] = useState<NotificationSubscription[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const { profile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!profile?.id) return;
-
+  const fetchSubscriptions = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
-        .from('notifications')
+        .from('notification_subscriptions')
         .select('*')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('event_type');
 
       if (error) throw error;
-
-      const typedData: Notification[] = (data || []).map(item => ({
-        ...item,
-        type: ['info', 'success', 'warning', 'error'].includes(item.type) 
-          ? item.type as 'info' | 'success' | 'warning' | 'error'
-          : 'info'
-      }));
-
-      setNotifications(typedData);
-      setUnreadCount(typedData.filter(n => !n.read).length);
+      
+      // Validar que los datos coincidan con nuestros tipos
+      const validatedData = (data || []).filter(item => 
+        ['app', 'email', 'webhook'].includes(item.channel)
+      ) as NotificationSubscription[];
+      
+      setSubscriptions(validatedData);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('Error fetching subscriptions:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [profile?.id]);
+  };
 
-  const fetchSubscriptions = useCallback(async () => {
-    if (!profile?.id) return;
-
+  const createNotification = async (notificationData: CreateNotificationData) => {
     try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Usuario no autenticado');
+
       const { data, error } = await supabase
-        .from('notification_subscriptions')
-        .select('*')
-        .eq('user_id', profile.id);
+        .from('notifications')
+        .insert([{
+          ...notificationData,
+          user_id: user.user.id,
+          read: false
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
-
-      // Type-safe mapping with validation
-      const typedData: NotificationSubscription[] = (data || []).map(item => ({
-        id: item.id,
-        event_type: item.event_type,
-        channel: ['app', 'email', 'webhook'].includes(item.channel) 
-          ? item.channel as 'app' | 'email' | 'webhook'
-          : 'app',
-        enabled: item.enabled
-      }));
-
-      setSubscriptions(typedData);
+      return data;
     } catch (error) {
-      console.error('Error fetching subscriptions:', error);
+      console.error('Error creating notification:', error);
+      throw error;
     }
-  }, [profile?.id]);
+  };
 
-  const updateSubscription = useCallback(async (eventType: string, channel: string, enabled: boolean) => {
-    if (!profile?.id) return;
-
+  const updateSubscription = async (subscriptionId: string, enabled: boolean) => {
     try {
       const { error } = await supabase
         .from('notification_subscriptions')
-        .upsert({
-          user_id: profile.id,
-          event_type: eventType,
-          channel,
-          enabled
-        }, {
-          onConflict: 'user_id,event_type,channel'
-        });
+        .update({ enabled })
+        .eq('id', subscriptionId);
 
       if (error) throw error;
 
-      setSubscriptions(prev => {
-        const existing = prev.find(s => s.event_type === eventType && s.channel === channel);
-        if (existing) {
-          return prev.map(s => 
-            s.event_type === eventType && s.channel === channel
-              ? { ...s, enabled }
-              : s
-          );
-        } else {
-          return [...prev, {
-            id: `${eventType}-${channel}`,
-            event_type: eventType,
-            channel: channel as 'app' | 'email' | 'webhook',
-            enabled
-          }];
-        }
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.id === subscriptionId ? { ...sub, enabled } : sub
+        )
+      );
+
+      toast({
+        title: "Configuración actualizada",
+        description: `Notificación ${enabled ? 'activada' : 'desactivada'}`
       });
     } catch (error) {
       console.error('Error updating subscription:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive"
+      });
     }
-  }, [profile?.id]);
+  };
 
-  const markAsRead = useCallback(async (notificationId: string) => {
+  const createSubscription = async (eventType: string, channel: 'app' | 'email' | 'webhook') => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Usuario no autenticado');
+
+      const { data, error } = await supabase
+        .from('notification_subscriptions')
+        .insert([{
+          event_type: eventType,
+          channel,
+          enabled: true,
+          user_id: user.user.id
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        )
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setSubscriptions(prev => [...prev, data]);
+      toast({
+        title: "Suscripción creada",
+        description: "Nueva configuración de notificación agregada"
+      });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error creating subscription:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la suscripción",
+        variant: "destructive"
+      });
     }
-  }, []);
+  };
 
-  const markAllAsRead = useCallback(async () => {
-    if (!profile?.id) return;
+  // Emitir notificación para eventos críticos
+  const emitSecurityAlert = async (operationId: string, alertType: string, message: string) => {
+    await createNotification({
+      title: `Alerta de Seguridad: ${alertType}`,
+      message: `Operación ${operationId}: ${message}`,
+      type: 'error',
+      metadata: { operationId, alertType },
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
+    });
+  };
 
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', profile.id)
-        .eq('read', false);
+  const emitValidationWarning = async (operationId: string, missingDocuments: string[]) => {
+    await createNotification({
+      title: 'Documentos Pendientes',
+      message: `Operación ${operationId} requiere: ${missingDocuments.join(', ')}`,
+      type: 'warning',
+      metadata: { operationId, missingDocuments }
+    });
+  };
 
-      if (error) throw error;
-
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  }, [profile?.id]);
-
-  const deleteNotification = useCallback(async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  }, []);
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    const channel = supabase
-      .channel(`user-notifications-${profile.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${profile.id}`
-        },
-        (payload) => {
-          const newNotification = {
-            ...payload.new,
-            type: ['info', 'success', 'warning', 'error'].includes(payload.new.type) 
-              ? payload.new.type as 'info' | 'success' | 'warning' | 'error'
-              : 'info'
-          } as Notification;
-          
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          
-          // Show toast for new notification
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-            variant: newNotification.type === 'error' ? 'destructive' : 'default'
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${profile.id}`
-        },
-        (payload) => {
-          const updatedNotification = {
-            ...payload.new,
-            type: ['info', 'success', 'warning', 'error'].includes(payload.new.type) 
-              ? payload.new.type as 'info' | 'success' | 'warning' | 'error'
-              : 'info'
-          } as Notification;
-          
-          setNotifications(prev => 
-            prev.map(n => 
-              n.id === updatedNotification.id ? updatedNotification : n
-            )
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile?.id]);
+  const emitSuccessNotification = async (title: string, message: string, metadata?: any) => {
+    await createNotification({
+      title,
+      message,
+      type: 'success',
+      metadata
+    });
+  };
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    fetchSubscriptions();
+  }, []);
 
   return {
-    notifications,
     subscriptions,
-    unreadCount,
     isLoading,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    fetchSubscriptions,
+    createNotification,
     updateSubscription,
-    refetch: fetchNotifications
+    createSubscription,
+    emitSecurityAlert,
+    emitValidationWarning,
+    emitSuccessNotification,
+    refreshSubscriptions: fetchSubscriptions
   };
 };
