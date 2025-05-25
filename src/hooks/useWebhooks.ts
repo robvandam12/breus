@@ -4,6 +4,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+// Manual types until Supabase regenerates
+interface WebhookRow {
+  id: string;
+  name: string;
+  url: string;
+  secret_token: string;
+  events: string[];
+  active: boolean;
+  success_count: number;
+  error_count: number;
+  last_triggered: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Webhook {
   id: string;
   name: string;
@@ -43,8 +58,23 @@ export const useWebhooks = () => {
         throw error;
       }
 
-      console.log('useWebhooks - Webhooks data:', data);
-      return data as Webhook[];
+      // Transform data to match interface
+      const transformedData = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        url: item.url,
+        secret_token: item.secret_token,
+        events: item.events || [],
+        active: item.active,
+        success_count: item.success_count,
+        error_count: item.error_count,
+        last_triggered: item.last_triggered,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      console.log('useWebhooks - Webhooks data:', transformedData);
+      return transformedData as Webhook[];
     },
   });
 
@@ -55,7 +85,11 @@ export const useWebhooks = () => {
       const { data, error } = await supabase
         .from('webhooks')
         .insert([{
-          ...webhookData,
+          name: webhookData.name,
+          url: webhookData.url,
+          secret_token: webhookData.secret_token,
+          events: webhookData.events,
+          active: webhookData.active,
           success_count: 0,
           error_count: 0
         }])
@@ -92,7 +126,13 @@ export const useWebhooks = () => {
       console.log('Updating webhook:', id, data);
       const { data: updatedData, error } = await supabase
         .from('webhooks')
-        .update(data)
+        .update({
+          name: data.name,
+          url: data.url,
+          secret_token: data.secret_token,
+          events: data.events,
+          active: data.active
+        })
         .eq('id', id)
         .select()
         .single();

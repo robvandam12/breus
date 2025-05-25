@@ -2,7 +2,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { NotificationRow, NotificationSubscriptionRow } from '@/types/auth';
+
+// Manual types until Supabase regenerates the types
+interface NotificationRow {
+  id: string;
+  user_id: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  title: string;
+  message: string;
+  read: boolean;
+  metadata: Record<string, any> | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+interface NotificationSubscriptionRow {
+  id: string;
+  user_id: string;
+  event_type: string;
+  channel: 'app' | 'webhook' | 'email';
+  enabled: boolean;
+  created_at: string;
+}
 
 export interface Notification {
   id: string;
@@ -40,12 +61,24 @@ export const useNotifications = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50) as { data: NotificationRow[] | null; error: any };
+        .limit(50);
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      const transformedData = (data || []).map((item: any) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        message: item.message,
+        read: item.read,
+        user_id: item.user_id,
+        metadata: item.metadata || {},
+        created_at: item.created_at,
+        expires_at: item.expires_at
+      }));
+
+      setNotifications(transformedData);
+      setUnreadCount(transformedData.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -121,19 +154,22 @@ export const useNotifications = () => {
 
   // Subscribe to real-time notifications
   useEffect(() => {
-    const { data: { user } } = supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
+    let cleanup: (() => void) | undefined;
+
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
       // Subscribe to new notifications
       const channel = supabase
-        .channel(`notifications-${data.user.id}`)
+        .channel(`notifications-${user.id}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
-            filter: `user_id=eq.${data.user.id}`
+            filter: `user_id=eq.${user.id}`
           },
           (payload) => {
             const newNotification = payload.new as Notification;
@@ -144,18 +180,20 @@ export const useNotifications = () => {
             toast({
               title: newNotification.title,
               description: newNotification.message,
-              duration: 5000,
             });
           }
         )
         .subscribe();
 
-      return () => {
+      cleanup = () => {
         supabase.removeChannel(channel);
       };
-    });
+    };
 
+    setupRealtime();
     fetchNotifications();
+
+    return cleanup;
   }, [fetchNotifications]);
 
   // Fetch notification subscriptions
@@ -167,17 +205,24 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notification_subscriptions')
         .select('*')
-        .eq('user_id', user.id) as { data: NotificationSubscriptionRow[] | null; error: any };
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setSubscriptions(data || []);
+      
+      const transformedData = (data || []).map((item: any) => ({
+        event_type: item.event_type,
+        channel: item.channel as 'app' | 'webhook' | 'email',
+        enabled: item.enabled
+      }));
+      
+      setSubscriptions(transformedData);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
     }
   };
 
   // Update subscription
-  const updateSubscription = async (eventType: string, channel: string, enabled: boolean) => {
+  const updateSubscription = async (eventType: string, channel: 'app' | 'webhook' | 'email', enabled: boolean) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

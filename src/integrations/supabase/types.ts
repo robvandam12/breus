@@ -965,6 +965,48 @@ export type Database = {
           },
         ]
       }
+      webhooks: {
+        Row: {
+          active: boolean
+          created_at: string
+          error_count: number
+          events: string[]
+          id: string
+          last_triggered: string | null
+          name: string
+          secret_token: string
+          success_count: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          error_count?: number
+          events?: string[]
+          id?: string
+          last_triggered?: string | null
+          name: string
+          secret_token: string
+          success_count?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          error_count?: number
+          events?: string[]
+          id?: string
+          last_triggered?: string | null
+          name?: string
+          secret_token?: string
+          success_count?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
