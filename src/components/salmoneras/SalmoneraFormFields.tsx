@@ -4,13 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Use the same type as the Zod schema infers (with optional fields)
 interface FormData {
-  nombre: string;
-  rut: string;
-  direccion: string;
+  nombre?: string;
+  rut?: string;
+  direccion?: string;
   telefono?: string;
   email?: string;
-  estado: 'activa' | 'inactiva' | 'suspendida';
+  estado?: 'activa' | 'inactiva' | 'suspendida';
 }
 
 interface SalmoneraFormFieldsProps {
