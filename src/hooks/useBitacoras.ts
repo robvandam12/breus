@@ -1,270 +1,268 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-export interface BitacoraSupervisorItem {
-  id: string;
+export interface BitacoraSupervisor {
+  bitacora_id: string;
   codigo: string;
   inmersion_id: string;
-  inmersion_codigo: string;
   supervisor: string;
   fecha: string;
   desarrollo_inmersion: string;
-  incidentes: string;
   evaluacion_general: string;
+  incidentes?: string;
   firmado: boolean;
   supervisor_firma?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface BitacoraBuzoItem {
-  id: string;
+export interface BitacoraBuzo {
+  bitacora_id: string;
   codigo: string;
   inmersion_id: string;
-  inmersion_codigo: string;
   buzo: string;
   fecha: string;
   profundidad_maxima: number;
   trabajos_realizados: string;
-  observaciones_tecnicas: string;
   estado_fisico_post: string;
+  observaciones_tecnicas?: string;
   firmado: boolean;
   buzo_firma?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface BitacoraSupervisorFormData {
+export interface CreateBitacoraSupervisorData {
   inmersion_id: string;
   supervisor: string;
+  fecha: string;
   desarrollo_inmersion: string;
-  incidentes: string;
   evaluacion_general: string;
+  incidentes?: string;
 }
 
-export interface BitacoraBuzoFormData {
+export interface CreateBitacoraBuzoData {
   inmersion_id: string;
   buzo: string;
+  fecha: string;
   profundidad_maxima: number;
   trabajos_realizados: string;
-  observaciones_tecnicas: string;
   estado_fisico_post: string;
+  observaciones_tecnicas?: string;
 }
 
 export const useBitacoras = () => {
-  const [bitacorasSupervisor, setBitacorasSupervisor] = useState<BitacoraSupervisorItem[]>([]);
-  const [bitacorasBuzo, setBitacorasBuzo] = useState<BitacoraBuzoItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadBitacoras();
-  }, []);
-
-  const loadBitacoras = async () => {
-    setLoading(true);
-    try {
-      // Cargar bitácoras de supervisor usando query directo
-      const { data: supervisorData, error: supervisorError } = await supabase
-        .from('bitacora_supervisor' as any)
-        .select(`
-          bitacora_id,
-          codigo,
-          inmersion_id,
-          supervisor,
-          fecha,
-          desarrollo_inmersion,
-          incidentes,
-          evaluacion_general,
-          firmado,
-          supervisor_firma,
-          created_at,
-          updated_at,
-          inmersion:inmersion_id!inner (
-            codigo
-          )
-        `)
+  // Fetch bitácoras supervisor
+  const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery({
+    queryKey: ['bitacoras-supervisor'],
+    queryFn: async () => {
+      console.log('Fetching bitácoras supervisor...');
+      const { data, error } = await supabase
+        .from('bitacora_supervisor')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (supervisorError) throw supervisorError;
+      if (error) {
+        console.error('Error fetching bitácoras supervisor:', error);
+        throw error;
+      }
 
-      // Cargar bitácoras de buzo usando query directo
-      const { data: buzoData, error: buzoError } = await supabase
-        .from('bitacora_buzo' as any)
-        .select(`
-          bitacora_id,
-          codigo,
-          inmersion_id,
-          buzo,
-          fecha,
-          profundidad_maxima,
-          trabajos_realizados,
-          observaciones_tecnicas,
-          estado_fisico_post,
-          firmado,
-          buzo_firma,
-          created_at,
-          updated_at,
-          inmersion:inmersion_id!inner (
-            codigo
-          )
-        `)
+      return data as BitacoraSupervisor[];
+    },
+  });
+
+  // Fetch bitácoras buzo
+  const { data: bitacorasBuzo = [], isLoading: loadingBuzo } = useQuery({
+    queryKey: ['bitacoras-buzo'],
+    queryFn: async () => {
+      console.log('Fetching bitácoras buzo...');
+      const { data, error } = await supabase
+        .from('bitacora_buzo')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (buzoError) throw buzoError;
+      if (error) {
+        console.error('Error fetching bitácoras buzo:', error);
+        throw error;
+      }
 
-      const formattedSupervisorData: BitacoraSupervisorItem[] = (supervisorData || []).map((item: any) => ({
-        id: item.bitacora_id,
-        codigo: item.codigo,
-        inmersion_id: item.inmersion_id,
-        inmersion_codigo: item.inmersion?.codigo || 'Inmersión no encontrada',
-        supervisor: item.supervisor,
-        fecha: item.fecha,
-        desarrollo_inmersion: item.desarrollo_inmersion || '',
-        incidentes: item.incidentes || '',
-        evaluacion_general: item.evaluacion_general || '',
-        firmado: item.firmado || false,
-        supervisor_firma: item.supervisor_firma,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+      return data as BitacoraBuzo[];
+    },
+  });
 
-      const formattedBuzoData: BitacoraBuzoItem[] = (buzoData || []).map((item: any) => ({
-        id: item.bitacora_id,
-        codigo: item.codigo,
-        inmersion_id: item.inmersion_id,
-        inmersion_codigo: item.inmersion?.codigo || 'Inmersión no encontrada',
-        buzo: item.buzo,
-        fecha: item.fecha,
-        profundidad_maxima: item.profundidad_maxima || 0,
-        trabajos_realizados: item.trabajos_realizados || '',
-        observaciones_tecnicas: item.observaciones_tecnicas || '',
-        estado_fisico_post: item.estado_fisico_post || '',
-        firmado: item.firmado || false,
-        buzo_firma: item.buzo_firma,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      setBitacorasSupervisor(formattedSupervisorData);
-      setBitacorasBuzo(formattedBuzoData);
-      setError(null);
-    } catch (err) {
-      console.error('Error loading Bitácoras:', err);
-      setError('Error al cargar las Bitácoras');
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las Bitácoras",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createBitacoraSupervisor = async (data: BitacoraSupervisorFormData) => {
-    setLoading(true);
-    try {
-      const { count } = await supabase
-        .from('bitacora_supervisor' as any)
-        .select('*', { count: 'exact', head: true });
+  // Create bitácora supervisor
+  const createBitacoraSupervisorMutation = useMutation({
+    mutationFn: async (data: CreateBitacoraSupervisorData) => {
+      console.log('Creating bitácora supervisor:', data);
       
-      const codigo = `BS-2024-${String((count || 0) + 1).padStart(3, '0')}`;
+      const codigo = `BS-${Date.now().toString().slice(-6)}`;
 
-      const bitacoraData = {
-        codigo,
-        inmersion_id: data.inmersion_id,
-        supervisor: data.supervisor,
-        fecha: new Date().toISOString().split('T')[0],
-        desarrollo_inmersion: data.desarrollo_inmersion,
-        incidentes: data.incidentes,
-        evaluacion_general: data.evaluacion_general
-      };
+      const { data: result, error } = await supabase
+        .from('bitacora_supervisor')
+        .insert([{
+          ...data,
+          codigo,
+          firmado: false
+        }])
+        .select()
+        .single();
 
-      const { error } = await supabase
-        .from('bitacora_supervisor' as any)
-        .insert([bitacoraData]);
+      if (error) {
+        console.error('Error creating bitácora supervisor:', error);
+        throw error;
+      }
 
-      if (error) throw error;
-
-      await loadBitacoras();
-
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
       toast({
-        title: "Bitácora de Supervisor Creada",
-        description: `${codigo} ha sido creada exitosamente`,
+        title: "Bitácora Supervisor creada",
+        description: "La bitácora ha sido creada exitosamente.",
       });
-    } catch (err) {
-      console.error('Error creating Bitácora Supervisor:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear la Bitácora de Supervisor';
-      setError(errorMessage);
+    },
+    onError: (error) => {
+      console.error('Error creating bitácora supervisor:', error);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "No se pudo crear la bitácora supervisor.",
         variant: "destructive",
       });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
-  const createBitacoraBuzo = async (data: BitacoraBuzoFormData) => {
-    setLoading(true);
-    try {
-      const { count } = await supabase
-        .from('bitacora_buzo' as any)
-        .select('*', { count: 'exact', head: true });
+  // Create bitácora buzo
+  const createBitacoraBuzoMutation = useMutation({
+    mutationFn: async (data: CreateBitacoraBuzoData) => {
+      console.log('Creating bitácora buzo:', data);
       
-      const codigo = `BB-2024-${String((count || 0) + 1).padStart(3, '0')}`;
+      const codigo = `BB-${Date.now().toString().slice(-6)}`;
 
-      const bitacoraData = {
-        codigo,
-        inmersion_id: data.inmersion_id,
-        buzo: data.buzo,
-        fecha: new Date().toISOString().split('T')[0],
-        profundidad_maxima: data.profundidad_maxima,
-        trabajos_realizados: data.trabajos_realizados,
-        observaciones_tecnicas: data.observaciones_tecnicas,
-        estado_fisico_post: data.estado_fisico_post
-      };
+      const { data: result, error } = await supabase
+        .from('bitacora_buzo')
+        .insert([{
+          ...data,
+          codigo,
+          firmado: false
+        }])
+        .select()
+        .single();
 
-      const { error } = await supabase
-        .from('bitacora_buzo' as any)
-        .insert([bitacoraData]);
+      if (error) {
+        console.error('Error creating bitácora buzo:', error);
+        throw error;
+      }
 
-      if (error) throw error;
-
-      await loadBitacoras();
-
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
       toast({
-        title: "Bitácora de Buzo Creada",
-        description: `${codigo} ha sido creada exitosamente`,
+        title: "Bitácora Buzo creada",
+        description: "La bitácora ha sido creada exitosamente.",
       });
-    } catch (err) {
-      console.error('Error creating Bitácora Buzo:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear la Bitácora de Buzo';
-      setError(errorMessage);
+    },
+    onError: (error) => {
+      console.error('Error creating bitácora buzo:', error);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "No se pudo crear la bitácora buzo.",
         variant: "destructive",
       });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
+
+  // Sign bitácora supervisor
+  const signBitacoraSupervisorMutation = useMutation({
+    mutationFn: async ({ id, signature }: { id: string; signature: string }) => {
+      console.log('Signing bitácora supervisor:', id);
+      
+      const { data, error } = await supabase
+        .from('bitacora_supervisor')
+        .update({
+          firmado: true,
+          supervisor_firma: signature
+        })
+        .eq('bitacora_id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error signing bitácora supervisor:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+      toast({
+        title: "Bitácora firmada",
+        description: "La bitácora supervisor ha sido firmada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error signing bitácora supervisor:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar la bitácora supervisor.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Sign bitácora buzo
+  const signBitacoraBuzoMutation = useMutation({
+    mutationFn: async ({ id, signature }: { id: string; signature: string }) => {
+      console.log('Signing bitácora buzo:', id);
+      
+      const { data, error } = await supabase
+        .from('bitacora_buzo')
+        .update({
+          firmado: true,
+          buzo_firma: signature
+        })
+        .eq('bitacora_id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error signing bitácora buzo:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
+      toast({
+        title: "Bitácora firmada",
+        description: "La bitácora buzo ha sido firmada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error signing bitácora buzo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar la bitácora buzo.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
     bitacorasSupervisor,
     bitacorasBuzo,
-    loading,
-    error,
-    createBitacoraSupervisor,
-    createBitacoraBuzo,
-    refreshBitacoras: loadBitacoras
+    isLoading: loadingSupervisor || loadingBuzo,
+    createBitacoraSupervisor: createBitacoraSupervisorMutation.mutateAsync,
+    createBitacoraBuzo: createBitacoraBuzoMutation.mutateAsync,
+    signBitacoraSupervisor: signBitacoraSupervisorMutation.mutateAsync,
+    signBitacoraBuzo: signBitacoraBuzoMutation.mutateAsync,
+    isCreating: createBitacoraSupervisorMutation.isPending || createBitacoraBuzoMutation.isPending,
+    isSigning: signBitacoraSupervisorMutation.isPending || signBitacoraBuzoMutation.isPending,
   };
 };

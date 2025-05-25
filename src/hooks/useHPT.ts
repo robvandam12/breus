@@ -17,7 +17,8 @@ export interface HPT {
   temperatura?: number;
   observaciones?: string;
   firmado: boolean;
-  estado?: string;
+  estado: string;
+  progreso: number;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -69,6 +70,12 @@ export interface HPTFormData {
   es_rutinaria?: boolean;
   lugar_especifico?: string;
   estado_puerto?: string;
+  hpt_epp?: any;
+  hpt_erc?: any;
+  hpt_medidas?: any;
+  hpt_riesgos_comp?: any;
+  hpt_conocimiento?: any;
+  hpt_conocimiento_asistentes?: any[];
 }
 
 export const useHPT = () => {
@@ -106,7 +113,10 @@ export const useHPT = () => {
         .insert([{
           ...hptData,
           user_id: user.id,
-          fecha_creacion: new Date().toISOString().split('T')[0]
+          fecha_creacion: new Date().toISOString().split('T')[0],
+          estado: 'borrador',
+          progreso: 0,
+          firmado: false
         }])
         .select()
         .single();
@@ -121,6 +131,7 @@ export const useHPT = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
         title: "HPT creada",
         description: "La Hoja de Planificación de Tarea ha sido creada exitosamente.",
@@ -156,6 +167,7 @@ export const useHPT = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
         title: "HPT actualizada",
         description: "La HPT ha sido actualizada exitosamente.",
@@ -166,6 +178,47 @@ export const useHPT = () => {
       toast({
         title: "Error",
         description: "No se pudo actualizar la HPT. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const signHPTMutation = useMutation({
+    mutationFn: async ({ id, signatures }: { id: string; signatures: any }) => {
+      console.log('Signing HPT:', id, signatures);
+      const { data, error } = await supabase
+        .from('hpt')
+        .update({
+          firmado: true,
+          estado: 'firmado',
+          progreso: 100,
+          hpt_firmas: signatures
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error signing HPT:', error);
+        throw error;
+      }
+
+      console.log('HPT signed:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
+      toast({
+        title: "HPT firmada",
+        description: "La HPT ha sido firmada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error signing HPT:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar la HPT. Intente nuevamente.",
         variant: "destructive",
       });
     },
@@ -188,6 +241,7 @@ export const useHPT = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
         title: "HPT eliminada",
         description: "La HPT ha sido eliminada exitosamente.",
@@ -209,9 +263,11 @@ export const useHPT = () => {
     error,
     createHPT: createHPTMutation.mutateAsync,
     updateHPT: updateHPTMutation.mutateAsync,
+    signHPT: signHPTMutation.mutateAsync,
     deleteHPT: deleteHPTMutation.mutateAsync,
     isCreating: createHPTMutation.isPending,
     isUpdating: updateHPTMutation.isPending,
+    isSigning: signHPTMutation.isPending,
     isDeleting: deleteHPTMutation.isPending,
   };
 };

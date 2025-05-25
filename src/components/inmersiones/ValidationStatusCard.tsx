@@ -140,7 +140,7 @@ export const ValidationStatusCard = ({
             </Button>
           )}
 
-          {currentStatus === 'en_ejecucion' && (
+          {currentStatus === 'en_curso' && (
             <Button 
               onClick={handleCompleteInmersion}
               disabled={loading}

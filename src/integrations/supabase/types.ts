@@ -44,7 +44,11 @@ export type Database = {
           supervisor: string
           supervisor_firma: string | null
           supervisor_mandante_id: string | null
+          supervisor_mandante_nombre: string | null
+          supervisor_mandante_timestamp: string | null
           supervisor_servicio_id: string | null
+          supervisor_servicio_nombre: string | null
+          supervisor_servicio_timestamp: string | null
           updated_at: string
           user_id: string
         }
@@ -82,7 +86,11 @@ export type Database = {
           supervisor: string
           supervisor_firma?: string | null
           supervisor_mandante_id?: string | null
+          supervisor_mandante_nombre?: string | null
+          supervisor_mandante_timestamp?: string | null
           supervisor_servicio_id?: string | null
+          supervisor_servicio_nombre?: string | null
+          supervisor_servicio_timestamp?: string | null
           updated_at?: string
           user_id: string
         }
@@ -120,7 +128,11 @@ export type Database = {
           supervisor?: string
           supervisor_firma?: string | null
           supervisor_mandante_id?: string | null
+          supervisor_mandante_nombre?: string | null
+          supervisor_mandante_timestamp?: string | null
           supervisor_servicio_id?: string | null
+          supervisor_servicio_nombre?: string | null
+          supervisor_servicio_timestamp?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -396,6 +408,36 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_event: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          created_at: string
+          event_data: Json
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          created_at?: string
+          event_data?: Json
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          created_at?: string
+          event_data?: Json
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hpt: {
         Row: {
           asistentes: Json | null
@@ -413,6 +455,7 @@ export type Database = {
           equipo_comunicacion: Json | null
           equipo_seguridad: Json | null
           es_rutinaria: boolean | null
+          estado: string | null
           estado_puerto: string | null
           fecha: string | null
           fecha_creacion: string
@@ -444,6 +487,7 @@ export type Database = {
           plan_emergencia: string | null
           plan_trabajo: string
           profundidad_maxima: number | null
+          progreso: number | null
           riesgos_identificados: Json | null
           supervisor: string
           supervisor_firma: string | null
@@ -472,6 +516,7 @@ export type Database = {
           equipo_comunicacion?: Json | null
           equipo_seguridad?: Json | null
           es_rutinaria?: boolean | null
+          estado?: string | null
           estado_puerto?: string | null
           fecha?: string | null
           fecha_creacion?: string
@@ -503,6 +548,7 @@ export type Database = {
           plan_emergencia?: string | null
           plan_trabajo: string
           profundidad_maxima?: number | null
+          progreso?: number | null
           riesgos_identificados?: Json | null
           supervisor: string
           supervisor_firma?: string | null
@@ -531,6 +577,7 @@ export type Database = {
           equipo_comunicacion?: Json | null
           equipo_seguridad?: Json | null
           es_rutinaria?: boolean | null
+          estado?: string | null
           estado_puerto?: string | null
           fecha?: string | null
           fecha_creacion?: string
@@ -562,6 +609,7 @@ export type Database = {
           plan_emergencia?: string | null
           plan_trabajo?: string
           profundidad_maxima?: number | null
+          progreso?: number | null
           riesgos_identificados?: Json | null
           supervisor?: string
           supervisor_firma?: string | null
@@ -773,7 +821,9 @@ export type Database = {
           id: string
           nombre: string
           salmonera_id: string | null
+          servicio_id: string | null
           sitio_id: string | null
+          tareas: string | null
           updated_at: string
         }
         Insert: {
@@ -786,7 +836,9 @@ export type Database = {
           id?: string
           nombre: string
           salmonera_id?: string | null
+          servicio_id?: string | null
           sitio_id?: string | null
+          tareas?: string | null
           updated_at?: string
         }
         Update: {
@@ -799,7 +851,9 @@ export type Database = {
           id?: string
           nombre?: string
           salmonera_id?: string | null
+          servicio_id?: string | null
           sitio_id?: string | null
+          tareas?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1012,7 +1066,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      emit_domain_event: {
+        Args: {
+          p_event_type: string
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_event_data?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
