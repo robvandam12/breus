@@ -12,12 +12,12 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 export const InmersionDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { inmersiones, loading, refreshInmersiones } = useInmersiones();
+  const { inmersiones, isLoading, refreshInmersiones } = useInmersiones();
   const [inmersion, setInmersion] = useState<Inmersion | null>(null);
 
   useEffect(() => {
     if (inmersiones.length > 0 && id) {
-      const foundInmersion = inmersiones.find(i => i.id === id);
+      const foundInmersion = inmersiones.find(i => i.inmersion_id === id);
       setInmersion(foundInmersion || null);
     }
   }, [inmersiones, id]);
@@ -30,7 +30,7 @@ export const InmersionDetails = () => {
     switch (estado) {
       case "planificada":
         return "bg-blue-100 text-blue-700";
-      case "en_ejecucion":
+      case "en_curso":
         return "bg-amber-100 text-amber-700";
       case "completada":
         return "bg-emerald-100 text-emerald-700";
@@ -44,14 +44,14 @@ export const InmersionDetails = () => {
   const formatEstado = (estado: string) => {
     const estados = {
       'planificada': 'Planificada',
-      'en_ejecucion': 'En Ejecución',
+      'en_curso': 'En Ejecución',
       'completada': 'Completada',
       'cancelada': 'Cancelada'
     };
     return estados[estado as keyof typeof estados] || estado;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto p-6">
         <LoadingSpinner text="Cargando detalles de inmersión..." />
@@ -226,7 +226,7 @@ export const InmersionDetails = () => {
         <div className="space-y-6">
           <ValidationStatusCard
             operacionId={inmersion.operacion_id}
-            inmersionId={inmersion.id}
+            inmersionId={inmersion.inmersion_id}
             currentStatus={inmersion.estado}
             onStatusChange={handleStatusChange}
           />

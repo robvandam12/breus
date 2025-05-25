@@ -105,7 +105,7 @@ export const CreateBitacoraBuzoForm = ({ onSubmit, onCancel }: CreateBitacoraBuz
                 </SelectTrigger>
                 <SelectContent>
                   {inmersionesCompletadas.map((inmersion) => (
-                    <SelectItem key={inmersion.id} value={inmersion.id}>
+                    <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
                       {inmersion.codigo} - {inmersion.operacion_nombre}
                     </SelectItem>
                   ))}

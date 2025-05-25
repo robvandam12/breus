@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -95,7 +94,7 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
                 </SelectTrigger>
                 <SelectContent>
                   {inmersionesCompletadas.map((inmersion) => (
-                    <SelectItem key={inmersion.id} value={inmersion.id}>
+                    <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
                       {inmersion.codigo} - {inmersion.operacion_nombre}
                     </SelectItem>
                   ))}

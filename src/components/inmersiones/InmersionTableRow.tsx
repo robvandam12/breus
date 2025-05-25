@@ -22,7 +22,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
     switch (estado) {
       case "planificada":
         return "bg-blue-100 text-blue-700";
-      case "en_ejecucion":
+      case "en_curso":
         return "bg-amber-100 text-amber-700";
       case "completada":
         return "bg-emerald-100 text-emerald-700";
@@ -36,7 +36,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
   const formatEstado = (estado: string) => {
     const estados = {
       'planificada': 'Planificada',
-      'en_ejecucion': 'En Ejecución',
+      'en_curso': 'En Ejecución',
       'completada': 'Completada',
       'cancelada': 'Cancelada'
     };
@@ -46,7 +46,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
   const handleExecute = async () => {
     setLoading(true);
     try {
-      await executeInmersion(inmersion.id);
+      await executeInmersion(inmersion.inmersion_id);
       onRefresh();
     } catch (error) {
       console.error('Error executing inmersion:', error);
@@ -58,7 +58,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
   const handleComplete = async () => {
     setLoading(true);
     try {
-      await completeInmersion(inmersion.id);
+      await completeInmersion(inmersion.inmersion_id);
       onRefresh();
     } catch (error) {
       console.error('Error completing inmersion:', error);
@@ -68,7 +68,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
   };
 
   const canExecute = inmersion.estado === 'planificada' && inmersion.hpt_validado && inmersion.anexo_bravo_validado;
-  const canComplete = inmersion.estado === 'en_ejecucion';
+  const canComplete = inmersion.estado === 'en_curso';
 
   return (
     <TableRow>
@@ -121,7 +121,7 @@ export const InmersionTableRow = ({ inmersion, onRefresh }: InmersionTableRowPro
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate(`/operaciones/inmersiones/${inmersion.id}`)}
+            onClick={() => navigate(`/operaciones/inmersiones/${inmersion.inmersion_id}`)}
           >
             <Eye className="w-4 h-4" />
           </Button>
