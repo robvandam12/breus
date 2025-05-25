@@ -8,6 +8,8 @@ export interface UsuarioRow {
   rol: 'superuser' | 'admin_salmonera' | 'admin_servicio' | 'supervisor' | 'buzo';
   salmonera_id: string | null;
   servicio_id: string | null;
+  perfil_buzo: Record<string, any> | null;
+  perfil_completado: boolean | null;
   created_at: string;
   updated_at: string;
 }

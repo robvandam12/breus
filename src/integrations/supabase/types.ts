@@ -1034,6 +1034,8 @@ export type Database = {
           created_at: string
           email: string | null
           nombre: string
+          perfil_buzo: Json | null
+          perfil_completado: boolean | null
           rol: string
           salmonera_id: string | null
           servicio_id: string | null
@@ -1045,6 +1047,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           nombre: string
+          perfil_buzo?: Json | null
+          perfil_completado?: boolean | null
           rol?: string
           salmonera_id?: string | null
           servicio_id?: string | null
@@ -1056,6 +1060,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           nombre?: string
+          perfil_buzo?: Json | null
+          perfil_completado?: boolean | null
           rol?: string
           salmonera_id?: string | null
           servicio_id?: string | null
