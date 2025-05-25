@@ -15,33 +15,104 @@ export interface Notification {
   expires_at?: string;
 }
 
+export interface NotificationSubscription {
+  id: string;
+  event_type: string;
+  channel: 'app' | 'email' | 'webhook';
+  enabled: boolean;
+}
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [subscriptions, setSubscriptions] = useState<NotificationSubscription[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useAuth();
 
   const fetchNotifications = useCallback(async () => {
-    if (!profile?.usuario_id) return;
+    if (!profile?.id) return;
 
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', profile.usuario_id)
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      const typedData: Notification[] = (data || []).map(item => ({
+        ...item,
+        type: ['info', 'success', 'warning', 'error'].includes(item.type) 
+          ? item.type as 'info' | 'success' | 'warning' | 'error'
+          : 'info'
+      }));
+
+      setNotifications(typedData);
+      setUnreadCount(typedData.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [profile?.usuario_id]);
+  }, [profile?.id]);
+
+  const fetchSubscriptions = useCallback(async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('notification_subscriptions')
+        .select('*')
+        .eq('user_id', profile.id);
+
+      if (error) throw error;
+
+      setSubscriptions(data || []);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+    }
+  }, [profile?.id]);
+
+  const updateSubscription = useCallback(async (eventType: string, channel: string, enabled: boolean) => {
+    if (!profile?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('notification_subscriptions')
+        .upsert({
+          user_id: profile.id,
+          event_type: eventType,
+          channel,
+          enabled
+        }, {
+          onConflict: 'user_id,event_type,channel'
+        });
+
+      if (error) throw error;
+
+      setSubscriptions(prev => {
+        const existing = prev.find(s => s.event_type === eventType && s.channel === channel);
+        if (existing) {
+          return prev.map(s => 
+            s.event_type === eventType && s.channel === channel
+              ? { ...s, enabled }
+              : s
+          );
+        } else {
+          return [...prev, {
+            id: `${eventType}-${channel}`,
+            event_type: eventType,
+            channel: channel as 'app' | 'email' | 'webhook',
+            enabled
+          }];
+        }
+      });
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+    }
+  }, [profile?.id]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
@@ -64,13 +135,13 @@ export const useNotifications = () => {
   }, []);
 
   const markAllAsRead = useCallback(async () => {
-    if (!profile?.usuario_id) return;
+    if (!profile?.id) return;
 
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', profile.usuario_id)
+        .eq('user_id', profile.id)
         .eq('read', false);
 
       if (error) throw error;
@@ -82,7 +153,7 @@ export const useNotifications = () => {
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
-  }, [profile?.usuario_id]);
+  }, [profile?.id]);
 
   const deleteNotification = useCallback(async (notificationId: string) => {
     try {
@@ -101,20 +172,26 @@ export const useNotifications = () => {
 
   // Realtime subscription
   useEffect(() => {
-    if (!profile?.usuario_id) return;
+    if (!profile?.id) return;
 
     const channel = supabase
-      .channel(`user-notifications-${profile.usuario_id}`)
+      .channel(`user-notifications-${profile.id}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${profile.usuario_id}`
+          filter: `user_id=eq.${profile.id}`
         },
         (payload) => {
-          const newNotification = payload.new as Notification;
+          const newNotification = {
+            ...payload.new,
+            type: ['info', 'success', 'warning', 'error'].includes(payload.new.type) 
+              ? payload.new.type as 'info' | 'success' | 'warning' | 'error'
+              : 'info'
+          } as Notification;
+          
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
@@ -132,10 +209,16 @@ export const useNotifications = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${profile.usuario_id}`
+          filter: `user_id=eq.${profile.id}`
         },
         (payload) => {
-          const updatedNotification = payload.new as Notification;
+          const updatedNotification = {
+            ...payload.new,
+            type: ['info', 'success', 'warning', 'error'].includes(payload.new.type) 
+              ? payload.new.type as 'info' | 'success' | 'warning' | 'error'
+              : 'info'
+          } as Notification;
+          
           setNotifications(prev => 
             prev.map(n => 
               n.id === updatedNotification.id ? updatedNotification : n
@@ -148,7 +231,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.usuario_id]);
+  }, [profile?.id]);
 
   useEffect(() => {
     fetchNotifications();
@@ -156,11 +239,14 @@ export const useNotifications = () => {
 
   return {
     notifications,
+    subscriptions,
     unreadCount,
     isLoading,
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    fetchSubscriptions,
+    updateSubscription,
     refetch: fetchNotifications
   };
 };

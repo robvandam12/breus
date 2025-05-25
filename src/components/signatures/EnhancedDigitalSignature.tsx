@@ -16,6 +16,7 @@ interface EnhancedDigitalSignatureProps {
   onReset: () => void;
   iconColor?: string;
   requireSignerName?: boolean;
+  disabled?: boolean;
 }
 
 export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> = ({
@@ -26,7 +27,8 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
   onSign,
   onReset,
   iconColor = 'text-blue-600',
-  requireSignerName = true
+  requireSignerName = true,
+  disabled = false
 }) => {
   const [currentSignerName, setCurrentSignerName] = useState(signerName);
   const [showSignature, setShowSignature] = useState(false);
@@ -69,6 +71,7 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
               size="sm"
               onClick={onReset}
               className="mt-2"
+              disabled={disabled}
             >
               Firmar Nuevamente
             </Button>
@@ -79,7 +82,7 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
   }
 
   return (
-    <Card>
+    <Card className={disabled ? "opacity-50" : ""}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className={`w-5 h-5 ${iconColor}`} />
@@ -97,6 +100,7 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
                   value={currentSignerName}
                   onChange={(e) => setCurrentSignerName(e.target.value)}
                   placeholder={`Ingrese nombre del ${role.toLowerCase()}`}
+                  disabled={disabled}
                 />
               </div>
             )}
@@ -107,7 +111,7 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
             
             <Button
               onClick={() => setShowSignature(true)}
-              disabled={requireSignerName && !currentSignerName.trim()}
+              disabled={disabled || (requireSignerName && !currentSignerName.trim())}
               className="w-full"
             >
               Proceder a Firmar
@@ -134,6 +138,7 @@ export const EnhancedDigitalSignature: React.FC<EnhancedDigitalSignatureProps> =
               variant="outline"
               onClick={() => setShowSignature(false)}
               className="w-full"
+              disabled={disabled}
             >
               Cancelar
             </Button>
