@@ -35,18 +35,18 @@ export const useInvitations = () => {
     queryFn: async () => {
       console.log('Fetching contractor invitations...');
       
-      // Direct query to contractor_invitations table
+      // Direct query to contractor_invitations table with proper type casting
       const { data, error } = await supabase
         .from('contractor_invitations' as any)
         .select('*')
-        .order('invited_at', { ascending: false });
+        .order('invited_at', { ascending: false }) as any;
         
       if (error) {
         console.error('Error fetching invitations:', error);
         return [];
       }
 
-      return (data || []) as ContractorInvitation[];
+      return (data || []) as unknown as ContractorInvitation[];
     },
   });
 
@@ -70,7 +70,7 @@ export const useInvitations = () => {
           status: 'pending'
         }])
         .select()
-        .single();
+        .single() as any;
 
       if (inviteError) {
         console.error('Error creating invitation:', inviteError);
@@ -143,13 +143,13 @@ export const useInvitations = () => {
         .select('*')
         .eq('token', token)
         .eq('status', 'pending')
-        .single();
+        .single() as any;
 
       if (findError || !invitationData) {
         throw new Error('Invitación no válida o ya procesada');
       }
 
-      const invitation = invitationData as ContractorInvitation;
+      const invitation = invitationData as unknown as ContractorInvitation;
 
       // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -176,7 +176,7 @@ export const useInvitations = () => {
           status: 'accepted',
           responded_at: new Date().toISOString()
         })
-        .eq('id', invitation.id);
+        .eq('id', invitation.id) as any;
 
       if (updateError) {
         console.error('Error updating invitation:', updateError);
