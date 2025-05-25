@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
-import { DigitalSignature } from "./DigitalSignature";
+import { EnhancedDigitalSignature } from "@/components/signatures/EnhancedDigitalSignature";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { FileCheck, Shield, CheckCircle, AlertTriangle, Save, Clock } from "lucide-react";
@@ -25,6 +25,8 @@ interface AnexoBravoData {
   jefe_centro_firma: string | null;
   supervisor_firma: string | null;
   observaciones_generales: string;
+  jefe_centro_nombre?: string;
+  supervisor_nombre?: string;
 }
 
 interface AnexoBravoFormProps {
@@ -61,6 +63,8 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
   const [supervisorSigned, setSupervisorSigned] = useState(!!initialData?.supervisor_firma);
   const [jefeCentroSignature, setJefeCentroSignature] = useState(initialData?.jefe_centro_firma || "");
   const [supervisorSignature, setSupervisorSignature] = useState(initialData?.supervisor_firma || "");
+  const [jefeCentroNombre, setJefeCentroNombre] = useState(initialData?.jefe_centro_nombre || "");
+  const [supervisorNombre, setSupervisorNombre] = useState(initialData?.supervisor_nombre || "");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { toast } = useToast();
 
@@ -142,8 +146,9 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
     );
   };
 
-  const handleJefeCentroSign = (signatureData: string) => {
-    setJefeCentroSignature(signatureData);
+  const handleJefeCentroSign = (signatureData: { signature: string; signerName: string; timestamp: string }) => {
+    setJefeCentroSignature(signatureData.signature);
+    setJefeCentroNombre(signatureData.signerName);
     setJefeCentroSigned(true);
     toast({
       title: "Firma Registrada",
@@ -151,8 +156,9 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
     });
   };
 
-  const handleSupervisorSign = (signatureData: string) => {
-    setSupervisorSignature(signatureData);
+  const handleSupervisorSign = (signatureData: { signature: string; signerName: string; timestamp: string }) => {
+    setSupervisorSignature(signatureData.signature);
+    setSupervisorNombre(signatureData.signerName);
     setSupervisorSigned(true);
     toast({
       title: "Firma Registrada",
@@ -163,11 +169,13 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
   const resetJefeCentroSign = () => {
     setJefeCentroSigned(false);
     setJefeCentroSignature("");
+    setJefeCentroNombre("");
   };
 
   const resetSupervisorSign = () => {
     setSupervisorSigned(false);
     setSupervisorSignature("");
+    setSupervisorNombre("");
   };
 
   const getCompletionPercentage = () => {
@@ -187,6 +195,8 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
         checklist_items: checklistItems,
         jefe_centro_firma: jefeCentroSignature,
         supervisor_firma: supervisorSignature,
+        jefe_centro_nombre: jefeCentroNombre,
+        supervisor_nombre: supervisorNombre,
       };
       onSubmit(submitData);
       localStorage.removeItem('anexo-bravo-draft');
@@ -358,24 +368,28 @@ export const AnexoBravoForm = ({ onSubmit, onCancel, initialData }: AnexoBravoFo
 
         {/* Firmas Digitales */}
         <div className="grid md:grid-cols-2 gap-6">
-          <DigitalSignature
+          <EnhancedDigitalSignature
             title="Firma Jefe de Centro"
             role="Jefe de Centro"
+            signerName={jefeCentroNombre}
             isSigned={jefeCentroSigned}
             onSign={handleJefeCentroSign}
             onReset={resetJefeCentroSign}
             disabled={!isReadyToSign}
             iconColor="text-blue-600"
+            requireSignerName={true}
           />
 
-          <DigitalSignature
+          <EnhancedDigitalSignature
             title="Firma Supervisor de Servicio"
             role="Supervisor de Servicio"
+            signerName={supervisorNombre}
             isSigned={supervisorSigned}
             onSign={handleSupervisorSign}
             onReset={resetSupervisorSign}
             disabled={!isReadyToSign}
             iconColor="text-orange-600"
+            requireSignerName={true}
           />
         </div>
 
