@@ -69,7 +69,17 @@ export const useNotifications = () => {
 
       if (error) throw error;
 
-      setSubscriptions(data || []);
+      // Type-safe mapping with validation
+      const typedData: NotificationSubscription[] = (data || []).map(item => ({
+        id: item.id,
+        event_type: item.event_type,
+        channel: ['app', 'email', 'webhook'].includes(item.channel) 
+          ? item.channel as 'app' | 'email' | 'webhook'
+          : 'app',
+        enabled: item.enabled
+      }));
+
+      setSubscriptions(typedData);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
     }
