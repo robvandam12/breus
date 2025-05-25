@@ -21,6 +21,28 @@ export interface HPT {
   user_id: string;
   created_at: string;
   updated_at: string;
+  // Nuevos campos según especificación
+  folio?: string;
+  fecha?: string;
+  hora_termino?: string;
+  empresa_servicio_nombre?: string;
+  supervisor_nombre?: string;
+  centro_trabajo_nombre?: string;
+  jefe_mandante_nombre?: string;
+  descripcion_tarea?: string;
+  es_rutinaria?: boolean;
+  lugar_especifico?: string;
+  estado_puerto?: string;
+  hpt_epp?: any;
+  hpt_erc?: any;
+  hpt_medidas?: any;
+  hpt_riesgos_comp?: any;
+  hpt_conocimiento?: any;
+  hpt_conocimiento_asistentes?: any[];
+  hpt_firmas?: any;
+  supervisor_servicio_id?: string;
+  supervisor_mandante_id?: string;
+  form_version?: number;
 }
 
 export interface HPTFormData {
@@ -35,6 +57,18 @@ export interface HPTFormData {
   profundidad_maxima?: number;
   temperatura?: number;
   observaciones?: string;
+  // Nuevos campos para el formulario completo
+  folio?: string;
+  fecha?: string;
+  hora_termino?: string;
+  empresa_servicio_nombre?: string;
+  supervisor_nombre?: string;
+  centro_trabajo_nombre?: string;
+  jefe_mandante_nombre?: string;
+  descripcion_tarea?: string;
+  es_rutinaria?: boolean;
+  lugar_especifico?: string;
+  estado_puerto?: string;
 }
 
 export const useHPT = () => {

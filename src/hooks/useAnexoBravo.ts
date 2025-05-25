@@ -20,6 +20,26 @@ export interface AnexoBravo {
   user_id: string;
   created_at: string;
   updated_at: string;
+  // Nuevos campos según especificación
+  empresa_nombre?: string;
+  lugar_faena?: string;
+  fecha?: string;
+  jefe_centro_nombre?: string;
+  buzo_o_empresa_nombre?: string;
+  buzo_matricula?: string;
+  autorizacion_armada?: boolean;
+  asistente_buzo_nombre?: string;
+  asistente_buzo_matricula?: string;
+  anexo_bravo_checklist?: any;
+  bitacora_hora_inicio?: string;
+  bitacora_hora_termino?: string;
+  bitacora_fecha?: string;
+  bitacora_relator?: string;
+  anexo_bravo_trabajadores?: any[];
+  anexo_bravo_firmas?: any;
+  supervisor_servicio_id?: string;
+  supervisor_mandante_id?: string;
+  form_version?: number;
 }
 
 export interface AnexoBravoFormData {
@@ -29,6 +49,20 @@ export interface AnexoBravoFormData {
   operacion_id: string;
   fecha_verificacion: string;
   observaciones_generales?: string;
+  // Nuevos campos para el formulario completo
+  empresa_nombre?: string;
+  lugar_faena?: string;
+  fecha?: string;
+  jefe_centro_nombre?: string;
+  buzo_o_empresa_nombre?: string;
+  buzo_matricula?: string;
+  autorizacion_armada?: boolean;
+  asistente_buzo_nombre?: string;
+  asistente_buzo_matricula?: string;
+  bitacora_hora_inicio?: string;
+  bitacora_hora_termino?: string;
+  bitacora_fecha?: string;
+  bitacora_relator?: string;
 }
 
 export const useAnexoBravo = () => {

@@ -11,59 +11,116 @@ export type Database = {
     Tables: {
       anexo_bravo: {
         Row: {
+          anexo_bravo_checklist: Json | null
+          anexo_bravo_firmas: Json | null
+          anexo_bravo_trabajadores: Json | null
+          asistente_buzo_matricula: string | null
+          asistente_buzo_nombre: string | null
+          autorizacion_armada: boolean | null
+          bitacora_fecha: string | null
+          bitacora_hora_inicio: string | null
+          bitacora_hora_termino: string | null
+          bitacora_relator: string | null
+          buzo_matricula: string | null
+          buzo_o_empresa_nombre: string | null
           checklist_completo: boolean
           codigo: string
           created_at: string
+          empresa_nombre: string | null
           estado: string
+          fecha: string | null
           fecha_creacion: string
           fecha_verificacion: string
           firmado: boolean
+          form_version: number | null
           id: string
           jefe_centro: string
           jefe_centro_firma: string | null
+          jefe_centro_nombre: string | null
+          lugar_faena: string | null
           observaciones_generales: string | null
           operacion_id: string
           progreso: number
           supervisor: string
           supervisor_firma: string | null
+          supervisor_mandante_id: string | null
+          supervisor_servicio_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anexo_bravo_checklist?: Json | null
+          anexo_bravo_firmas?: Json | null
+          anexo_bravo_trabajadores?: Json | null
+          asistente_buzo_matricula?: string | null
+          asistente_buzo_nombre?: string | null
+          autorizacion_armada?: boolean | null
+          bitacora_fecha?: string | null
+          bitacora_hora_inicio?: string | null
+          bitacora_hora_termino?: string | null
+          bitacora_relator?: string | null
+          buzo_matricula?: string | null
+          buzo_o_empresa_nombre?: string | null
           checklist_completo?: boolean
           codigo: string
           created_at?: string
+          empresa_nombre?: string | null
           estado?: string
+          fecha?: string | null
           fecha_creacion?: string
           fecha_verificacion: string
           firmado?: boolean
+          form_version?: number | null
           id?: string
           jefe_centro: string
           jefe_centro_firma?: string | null
+          jefe_centro_nombre?: string | null
+          lugar_faena?: string | null
           observaciones_generales?: string | null
           operacion_id: string
           progreso?: number
           supervisor: string
           supervisor_firma?: string | null
+          supervisor_mandante_id?: string | null
+          supervisor_servicio_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anexo_bravo_checklist?: Json | null
+          anexo_bravo_firmas?: Json | null
+          anexo_bravo_trabajadores?: Json | null
+          asistente_buzo_matricula?: string | null
+          asistente_buzo_nombre?: string | null
+          autorizacion_armada?: boolean | null
+          bitacora_fecha?: string | null
+          bitacora_hora_inicio?: string | null
+          bitacora_hora_termino?: string | null
+          bitacora_relator?: string | null
+          buzo_matricula?: string | null
+          buzo_o_empresa_nombre?: string | null
           checklist_completo?: boolean
           codigo?: string
           created_at?: string
+          empresa_nombre?: string | null
           estado?: string
+          fecha?: string | null
           fecha_creacion?: string
           fecha_verificacion?: string
           firmado?: boolean
+          form_version?: number | null
           id?: string
           jefe_centro?: string
           jefe_centro_firma?: string | null
+          jefe_centro_nombre?: string | null
+          lugar_faena?: string | null
           observaciones_generales?: string | null
           operacion_id?: string
           progreso?: number
           supervisor?: string
           supervisor_firma?: string | null
+          supervisor_mandante_id?: string | null
+          supervisor_servicio_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -108,6 +165,79 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "anexo_bravo_checklist_anexo_bravo_id_fkey"
+            columns: ["anexo_bravo_id"]
+            isOneToOne: false
+            referencedRelation: "anexo_bravo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anexo_bravo_equipos: {
+        Row: {
+          anexo_bravo_id: string
+          created_at: string | null
+          equipo_nombre: string
+          id: string
+          observaciones: string | null
+          orden: number
+          verificado: boolean | null
+        }
+        Insert: {
+          anexo_bravo_id: string
+          created_at?: string | null
+          equipo_nombre: string
+          id?: string
+          observaciones?: string | null
+          orden: number
+          verificado?: boolean | null
+        }
+        Update: {
+          anexo_bravo_id?: string
+          created_at?: string | null
+          equipo_nombre?: string
+          id?: string
+          observaciones?: string | null
+          orden?: number
+          verificado?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexo_bravo_equipos_anexo_bravo_id_fkey"
+            columns: ["anexo_bravo_id"]
+            isOneToOne: false
+            referencedRelation: "anexo_bravo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anexo_bravo_participantes: {
+        Row: {
+          anexo_bravo_id: string
+          created_at: string | null
+          id: string
+          nombre: string
+          orden: number
+          rut: string
+        }
+        Insert: {
+          anexo_bravo_id: string
+          created_at?: string | null
+          id?: string
+          nombre: string
+          orden: number
+          rut: string
+        }
+        Update: {
+          anexo_bravo_id?: string
+          created_at?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          rut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anexo_bravo_participantes_anexo_bravo_id_fkey"
             columns: ["anexo_bravo_id"]
             isOneToOne: false
             referencedRelation: "anexo_bravo"
@@ -271,25 +401,43 @@ export type Database = {
           asistentes: Json | null
           buzos: Json | null
           camara_hiperbarica: string | null
+          centro_trabajo_nombre: string | null
           codigo: string
           contactos_emergencia: Json | null
           corrientes: string | null
           created_at: string
+          descripcion_tarea: string | null
           descripcion_trabajo: string | null
+          empresa_servicio_nombre: string | null
           equipo_buceo: Json | null
           equipo_comunicacion: Json | null
           equipo_seguridad: Json | null
+          es_rutinaria: boolean | null
+          estado_puerto: string | null
+          fecha: string | null
           fecha_creacion: string
           fecha_programada: string | null
           firmado: boolean
+          folio: string | null
+          form_version: number | null
           herramientas: Json | null
           hora_fin: string | null
           hora_inicio: string | null
+          hora_termino: string | null
           hospital_cercano: string | null
+          hpt_conocimiento: Json | null
+          hpt_conocimiento_asistentes: Json | null
+          hpt_epp: Json | null
+          hpt_erc: Json | null
+          hpt_firmas: Json | null
+          hpt_medidas: Json | null
+          hpt_riesgos_comp: Json | null
           id: string
+          jefe_mandante_nombre: string | null
           jefe_obra: string | null
           jefe_obra_firma: string | null
           jefe_operaciones_firma: string | null
+          lugar_especifico: string | null
           medidas_control: Json | null
           observaciones: string | null
           operacion_id: string
@@ -299,6 +447,9 @@ export type Database = {
           riesgos_identificados: Json | null
           supervisor: string
           supervisor_firma: string | null
+          supervisor_mandante_id: string | null
+          supervisor_nombre: string | null
+          supervisor_servicio_id: string | null
           temperatura: number | null
           tipo_trabajo: string | null
           updated_at: string
@@ -309,25 +460,43 @@ export type Database = {
           asistentes?: Json | null
           buzos?: Json | null
           camara_hiperbarica?: string | null
+          centro_trabajo_nombre?: string | null
           codigo: string
           contactos_emergencia?: Json | null
           corrientes?: string | null
           created_at?: string
+          descripcion_tarea?: string | null
           descripcion_trabajo?: string | null
+          empresa_servicio_nombre?: string | null
           equipo_buceo?: Json | null
           equipo_comunicacion?: Json | null
           equipo_seguridad?: Json | null
+          es_rutinaria?: boolean | null
+          estado_puerto?: string | null
+          fecha?: string | null
           fecha_creacion?: string
           fecha_programada?: string | null
           firmado?: boolean
+          folio?: string | null
+          form_version?: number | null
           herramientas?: Json | null
           hora_fin?: string | null
           hora_inicio?: string | null
+          hora_termino?: string | null
           hospital_cercano?: string | null
+          hpt_conocimiento?: Json | null
+          hpt_conocimiento_asistentes?: Json | null
+          hpt_epp?: Json | null
+          hpt_erc?: Json | null
+          hpt_firmas?: Json | null
+          hpt_medidas?: Json | null
+          hpt_riesgos_comp?: Json | null
           id?: string
+          jefe_mandante_nombre?: string | null
           jefe_obra?: string | null
           jefe_obra_firma?: string | null
           jefe_operaciones_firma?: string | null
+          lugar_especifico?: string | null
           medidas_control?: Json | null
           observaciones?: string | null
           operacion_id: string
@@ -337,6 +506,9 @@ export type Database = {
           riesgos_identificados?: Json | null
           supervisor: string
           supervisor_firma?: string | null
+          supervisor_mandante_id?: string | null
+          supervisor_nombre?: string | null
+          supervisor_servicio_id?: string | null
           temperatura?: number | null
           tipo_trabajo?: string | null
           updated_at?: string
@@ -347,25 +519,43 @@ export type Database = {
           asistentes?: Json | null
           buzos?: Json | null
           camara_hiperbarica?: string | null
+          centro_trabajo_nombre?: string | null
           codigo?: string
           contactos_emergencia?: Json | null
           corrientes?: string | null
           created_at?: string
+          descripcion_tarea?: string | null
           descripcion_trabajo?: string | null
+          empresa_servicio_nombre?: string | null
           equipo_buceo?: Json | null
           equipo_comunicacion?: Json | null
           equipo_seguridad?: Json | null
+          es_rutinaria?: boolean | null
+          estado_puerto?: string | null
+          fecha?: string | null
           fecha_creacion?: string
           fecha_programada?: string | null
           firmado?: boolean
+          folio?: string | null
+          form_version?: number | null
           herramientas?: Json | null
           hora_fin?: string | null
           hora_inicio?: string | null
+          hora_termino?: string | null
           hospital_cercano?: string | null
+          hpt_conocimiento?: Json | null
+          hpt_conocimiento_asistentes?: Json | null
+          hpt_epp?: Json | null
+          hpt_erc?: Json | null
+          hpt_firmas?: Json | null
+          hpt_medidas?: Json | null
+          hpt_riesgos_comp?: Json | null
           id?: string
+          jefe_mandante_nombre?: string | null
           jefe_obra?: string | null
           jefe_obra_firma?: string | null
           jefe_operaciones_firma?: string | null
+          lugar_especifico?: string | null
           medidas_control?: Json | null
           observaciones?: string | null
           operacion_id?: string
@@ -375,6 +565,9 @@ export type Database = {
           riesgos_identificados?: Json | null
           supervisor?: string
           supervisor_firma?: string | null
+          supervisor_mandante_id?: string | null
+          supervisor_nombre?: string | null
+          supervisor_servicio_id?: string | null
           temperatura?: number | null
           tipo_trabajo?: string | null
           updated_at?: string
@@ -387,6 +580,44 @@ export type Database = {
             columns: ["operacion_id"]
             isOneToOne: false
             referencedRelation: "operacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hpt_asistentes: {
+        Row: {
+          created_at: string | null
+          empresa: string
+          firma_url: string | null
+          hpt_id: string
+          id: string
+          nombre: string
+          rut: string
+        }
+        Insert: {
+          created_at?: string | null
+          empresa: string
+          firma_url?: string | null
+          hpt_id: string
+          id?: string
+          nombre: string
+          rut: string
+        }
+        Update: {
+          created_at?: string | null
+          empresa?: string
+          firma_url?: string | null
+          hpt_id?: string
+          id?: string
+          nombre?: string
+          rut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hpt_asistentes_hpt_id_fkey"
+            columns: ["hpt_id"]
+            isOneToOne: false
+            referencedRelation: "hpt"
             referencedColumns: ["id"]
           },
         ]
