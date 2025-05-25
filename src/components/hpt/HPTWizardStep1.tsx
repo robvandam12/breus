@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FileText, Clock, MapPin } from 'lucide-react';
 import { HPTWizardData } from '@/hooks/useHPTWizard';
 
 interface HPTWizardStep1Props {
@@ -16,49 +17,55 @@ interface HPTWizardStep1Props {
 export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData }) => {
   return (
     <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Datos Generales de la Tarea</h2>
+        <p className="mt-2 text-gray-600">
+          Información básica y detalles de la operación de buceo
+        </p>
+      </div>
+
+      {/* Información Básica */}
       <Card>
         <CardHeader>
-          <CardTitle>Datos Generales de la Tarea</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            Información Básica
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="folio">Folio *</Label>
               <Input
                 id="folio"
                 value={data.folio}
                 onChange={(e) => updateData({ folio: e.target.value })}
-                placeholder="Ingrese el folio"
-                required
+                placeholder="Ej: HPT-2024-001"
               />
             </div>
-            
-            <div className="space-y-2">
+
+            <div>
               <Label htmlFor="fecha">Fecha *</Label>
               <Input
                 id="fecha"
                 type="date"
                 value={data.fecha}
                 onChange={(e) => updateData({ fecha: e.target.value })}
-                required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="hora_inicio">Hora Inicio Tarea *</Label>
+            <div>
+              <Label htmlFor="hora_inicio">Hora de Inicio *</Label>
               <Input
                 id="hora_inicio"
                 type="time"
                 value={data.hora_inicio}
                 onChange={(e) => updateData({ hora_inicio: e.target.value })}
-                required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="hora_termino">Hora Término Tarea</Label>
+
+            <div>
+              <Label htmlFor="hora_termino">Hora de Término</Label>
               <Input
                 id="hora_termino"
                 type="time"
@@ -67,86 +74,98 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
+      {/* Información de Personal */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-green-600" />
+            Personal y Ubicación
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="empresa_servicio">Nombre Empresa Servicio</Label>
+            <div>
+              <Label htmlFor="empresa_servicio_nombre">Empresa de Servicio</Label>
               <Input
-                id="empresa_servicio"
+                id="empresa_servicio_nombre"
                 value={data.empresa_servicio_nombre}
                 onChange={(e) => updateData({ empresa_servicio_nombre: e.target.value })}
-                placeholder="Nombre de la empresa de servicio"
+                placeholder="Nombre de la empresa de buceo"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="supervisor">Nombre Supervisor</Label>
+
+            <div>
+              <Label htmlFor="supervisor_nombre">Supervisor</Label>
               <Input
-                id="supervisor"
+                id="supervisor_nombre"
                 value={data.supervisor_nombre}
                 onChange={(e) => updateData({ supervisor_nombre: e.target.value })}
                 placeholder="Nombre del supervisor"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="centro_trabajo">Nombre Centro Trabajo</Label>
+            <div>
+              <Label htmlFor="centro_trabajo_nombre">Centro de Trabajo</Label>
               <Input
-                id="centro_trabajo"
+                id="centro_trabajo_nombre"
                 value={data.centro_trabajo_nombre}
                 onChange={(e) => updateData({ centro_trabajo_nombre: e.target.value })}
-                placeholder="Nombre del centro de trabajo"
+                placeholder="Nombre del centro"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="jefe_mandante">Nombre Jefe Mandante</Label>
+
+            <div>
+              <Label htmlFor="jefe_mandante_nombre">Jefe Mandante</Label>
               <Input
-                id="jefe_mandante"
+                id="jefe_mandante_nombre"
                 value={data.jefe_mandante_nombre}
                 onChange={(e) => updateData({ jefe_mandante_nombre: e.target.value })}
                 placeholder="Nombre del jefe mandante"
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="descripcion_tarea">Identificación/Descripción del Trabajo *</Label>
+      {/* Descripción de la Tarea */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-orange-600" />
+            Descripción de la Tarea
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="descripcion_tarea">Descripción del Trabajo *</Label>
             <Textarea
               id="descripcion_tarea"
               value={data.descripcion_tarea}
               onChange={(e) => updateData({ descripcion_tarea: e.target.value })}
-              placeholder="Describa detalladamente el trabajo a realizar"
-              rows={3}
-              maxLength={300}
-              required
+              placeholder="Describa detalladamente el trabajo a realizar..."
+              rows={4}
             />
-            <p className="text-sm text-gray-500">
-              {data.descripcion_tarea.length}/300 caracteres
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="lugar_especifico">Lugar Específico</Label>
               <Input
                 id="lugar_especifico"
                 value={data.lugar_especifico}
                 onChange={(e) => updateData({ lugar_especifico: e.target.value })}
-                placeholder="Ubicación específica del trabajo"
+                placeholder="Ubicación exacta del trabajo"
               />
             </div>
-            
-            <div className="space-y-2">
+
+            <div>
               <Label htmlFor="estado_puerto">Estado del Puerto</Label>
-              <Select 
-                value={data.estado_puerto} 
-                onValueChange={(value: 'abierto' | 'cerrado') => updateData({ estado_puerto: value })}
-              >
+              <Select value={data.estado_puerto} onValueChange={(value) => updateData({ estado_puerto: value as 'abierto' | 'cerrado' })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione estado" />
+                  <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="abierto">Abierto</SelectItem>
@@ -157,15 +176,27 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
+            <Checkbox
               id="es_rutinaria"
               checked={data.es_rutinaria}
-              onCheckedChange={(checked) => updateData({ es_rutinaria: checked })}
+              onCheckedChange={(checked) => updateData({ es_rutinaria: checked as boolean })}
             />
             <Label htmlFor="es_rutinaria">¿Es una tarea rutinaria?</Label>
           </div>
         </CardContent>
       </Card>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <FileText className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-sm text-blue-800">
+            <strong>Información:</strong> Los campos marcados con (*) son obligatorios. 
+            Complete toda la información antes de continuar al siguiente paso.
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

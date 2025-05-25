@@ -6,6 +6,10 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useHPTWizard } from '@/hooks/useHPTWizard';
 import { HPTWizardStep1 } from './HPTWizardStep1';
+import { HPTWizardStep2 } from './HPTWizardStep2';
+import { HPTWizardStep3 } from './HPTWizardStep3';
+import { HPTWizardStep4 } from './HPTWizardStep4';
+import { HPTWizardStep5 } from './HPTWizardStep5';
 import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
 
@@ -56,15 +60,15 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
       case 1:
         return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <div>Paso 2: EPP - Por implementar</div>;
+        return <HPTWizardStep2 data={data} updateData={updateData} />;
       case 3:
-        return <div>Paso 3: ERC - Por implementar</div>;
+        return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
-        return <div>Paso 4: Medidas Clave - Por implementar</div>;
+        return <HPTWizardStep4 data={data} updateData={updateData} />;
       case 5:
-        return <div>Paso 5: Riesgos Complementarios - Por implementar</div>;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       case 6:
-        return <div>Paso 6: Difusión y Firmas - Por implementar</div>;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       default:
         return <div>Paso no encontrado</div>;
     }
