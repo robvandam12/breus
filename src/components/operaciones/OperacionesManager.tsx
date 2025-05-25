@@ -12,8 +12,6 @@ import { Plus, Search, Filter, MapPin, Calendar, Users, Settings, FileText, Acti
 import { CreateOperacionForm } from './CreateOperacionForm';
 import { OperacionDetails } from './OperacionDetails';
 import { useOperaciones } from '@/hooks/useOperaciones';
-import { useSitios } from '@/hooks/useSitios';
-import { useContratistas } from '@/hooks/useContratistas';
 
 export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,8 +21,6 @@ export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState('lista');
 
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
-  const { sitios } = useSitios();
-  const { contratistas } = useContratistas();
 
   const filteredOperaciones = operaciones.filter(op => {
     const matchesSearch = op.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,8 +126,6 @@ export const OperacionesManager = () => {
                     setIsCreateDialogOpen(false);
                   }}
                   onCancel={() => setIsCreateDialogOpen(false)}
-                  sitios={sitios}
-                  contratistas={contratistas}
                 />
               </DialogContent>
             </Dialog>
@@ -205,13 +199,13 @@ export const OperacionesManager = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-gray-400" />
-                            <span>{operacion.sitio_nombre || 'Sin asignar'}</span>
+                            <span>{operacion.sitios?.nombre || 'Sin asignar'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-gray-400" />
-                            <span>{operacion.contratista_nombre || 'Sin asignar'}</span>
+                            <span>{operacion.contratistas?.nombre || 'Sin asignar'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
