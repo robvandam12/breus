@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { CreateHPTForm } from "@/components/hpt/CreateHPTForm";
+import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { useHPT } from "@/hooks/useHPT";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
