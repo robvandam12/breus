@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +49,7 @@ export const useOperaciones = () => {
   const { data: operaciones = [], isLoading, error } = useQuery({
     queryKey: ['operaciones'],
     queryFn: async () => {
-      console.log('Fetching operaciones...');
+      console.log('useOperaciones - Fetching operaciones...');
       const { data, error } = await supabase
         .from('operacion')
         .select(`
@@ -70,30 +71,42 @@ export const useOperaciones = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching operaciones:', error);
+        console.error('useOperaciones - Error fetching operaciones:', error);
         throw error;
       }
 
-      console.log('Raw operaciones data:', data);
+      console.log('useOperaciones - Raw operaciones data:', data);
       
       // Filter and validate the data to ensure no empty or invalid values
       const validOperaciones = (data || [])
-        .filter(item => 
-          item && 
-          typeof item === 'object' &&
-          item.id && 
-          typeof item.id === 'string' &&
-          item.id.trim() !== "" &&
-          item.nombre &&
-          typeof item.nombre === 'string' &&
-          item.nombre.trim() !== ""
-        )
-        .map(item => ({
-          ...item,
-          codigo: item.codigo || `OP-${item.id.slice(0, 8)}`, // Ensure codigo is never empty
-        })) as Operacion[];
+        .filter(item => {
+          const isValid = item && 
+            typeof item === 'object' &&
+            item.id && 
+            typeof item.id === 'string' &&
+            item.id.trim() !== "" &&
+            item.nombre &&
+            typeof item.nombre === 'string' &&
+            item.nombre.trim() !== "";
+          
+          if (!isValid) {
+            console.log('useOperaciones - Invalid operation filtered out:', item);
+          }
+          
+          return isValid;
+        })
+        .map(item => {
+          const processedItem = {
+            ...item,
+            codigo: item.codigo || `OP-${item.id.slice(0, 8)}`, // Ensure codigo is never empty
+          };
+          
+          console.log('useOperaciones - Processed operation:', processedItem.id, processedItem.nombre, processedItem.codigo);
+          
+          return processedItem;
+        }) as Operacion[];
 
-      console.log('Filtered operaciones:', validOperaciones);
+      console.log('useOperaciones - Final filtered operaciones:', validOperaciones);
       return validOperaciones;
     },
   });

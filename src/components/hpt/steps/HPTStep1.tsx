@@ -15,19 +15,28 @@ interface HPTStep1Props {
 export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
   const { operaciones, isLoading } = useOperaciones();
 
-  // Filter out operations with empty or invalid values and ensure valid structure
-  const validOperaciones = (operaciones || []).filter(op => 
-    op && 
-    typeof op === 'object' &&
-    op.id && 
-    typeof op.id === 'string' &&
-    op.id.trim() !== "" && 
-    op.nombre && 
-    typeof op.nombre === 'string' &&
-    op.nombre.trim() !== ""
-  );
+  console.log('HPTStep1 - Raw operaciones:', operaciones);
+  console.log('HPTStep1 - isLoading:', isLoading);
 
-  console.log('Valid operaciones:', validOperaciones);
+  // Filter out operations with empty or invalid values and ensure valid structure
+  const validOperaciones = (operaciones || []).filter(op => {
+    const isValid = op && 
+      typeof op === 'object' &&
+      op.id && 
+      typeof op.id === 'string' &&
+      op.id.trim() !== "" && 
+      op.nombre && 
+      typeof op.nombre === 'string' &&
+      op.nombre.trim() !== "";
+    
+    if (!isValid) {
+      console.log('HPTStep1 - Invalid operation filtered out:', op);
+    }
+    
+    return isValid;
+  });
+
+  console.log('HPTStep1 - Valid operaciones after filtering:', validOperaciones);
 
   return (
     <div className="space-y-6">
@@ -51,25 +60,35 @@ export const HPTStep1 = ({ data, onUpdate }: HPTStep1Props) => {
               <Label htmlFor="operacion">Seleccionar Operación *</Label>
               <Select 
                 value={data.operacion_id || ""} 
-                onValueChange={(value) => onUpdate({ operacion_id: value })}
+                onValueChange={(value) => {
+                  console.log('HPTStep1 - Selected operation value:', value);
+                  onUpdate({ operacion_id: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione una operación" />
                 </SelectTrigger>
                 <SelectContent>
                   {isLoading ? (
-                    <SelectItem value="loading-placeholder" disabled>Cargando operaciones...</SelectItem>
+                    <SelectItem value="__loading_state__" disabled>Cargando operaciones...</SelectItem>
                   ) : validOperaciones.length === 0 ? (
-                    <SelectItem value="no-data-placeholder" disabled>No hay operaciones disponibles</SelectItem>
+                    <SelectItem value="__no_data_state__" disabled>No hay operaciones disponibles</SelectItem>
                   ) : (
-                    validOperaciones.map((operacion) => (
-                      <SelectItem 
-                        key={operacion.id} 
-                        value={operacion.id}
-                      >
-                        {operacion.nombre} ({operacion.codigo || operacion.id.slice(0, 8)})
-                      </SelectItem>
-                    ))
+                    validOperaciones.map((operacion) => {
+                      const itemValue = operacion.id;
+                      const itemLabel = `${operacion.nombre} (${operacion.codigo || operacion.id.slice(0, 8)})`;
+                      
+                      console.log('HPTStep1 - Rendering SelectItem with value:', itemValue, 'label:', itemLabel);
+                      
+                      return (
+                        <SelectItem 
+                          key={operacion.id} 
+                          value={itemValue}
+                        >
+                          {itemLabel}
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>

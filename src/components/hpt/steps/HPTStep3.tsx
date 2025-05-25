@@ -22,7 +22,13 @@ const TIPOS_TRABAJO = [
   { value: "soldadura", label: "Soldadura Subacuática" },
   { value: "corte", label: "Corte Subacuático" },
   { value: "otros", label: "Otros" }
-].filter(tipo => tipo.value && tipo.value.trim() !== ""); // Ensure no empty values
+].filter(tipo => {
+  const isValid = tipo.value && tipo.value.trim() !== "";
+  if (!isValid) {
+    console.log('HPTStep3 - Invalid tipo trabajo filtered out:', tipo);
+  }
+  return isValid;
+});
 
 const RIESGOS_PREDEFINIDOS = [
   "Enredamiento en cabos o redes",
@@ -35,7 +41,13 @@ const RIESGOS_PREDEFINIDOS = [
   "Contaminación del agua",
   "Condiciones climáticas adversas",
   "Fallas de equipos"
-].filter(riesgo => riesgo && riesgo.trim() !== ""); // Ensure no empty values
+].filter(riesgo => {
+  const isValid = riesgo && riesgo.trim() !== "";
+  if (!isValid) {
+    console.log('HPTStep3 - Invalid riesgo filtered out:', riesgo);
+  }
+  return isValid;
+});
 
 const MEDIDAS_CONTROL = [
   "Uso de cabo de vida",
@@ -48,11 +60,20 @@ const MEDIDAS_CONTROL = [
   "Monitoreo continuo",
   "Señalización de área",
   "Equipo de primeros auxilios"
-].filter(medida => medida && medida.trim() !== ""); // Ensure no empty values
+].filter(medida => {
+  const isValid = medida && medida.trim() !== "";
+  if (!isValid) {
+    console.log('HPTStep3 - Invalid medida filtered out:', medida);
+  }
+  return isValid;
+});
 
 export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
   const addRiesgo = (riesgo: string) => {
-    if (!riesgo || riesgo.trim() === "") return; // Guard against empty values
+    if (!riesgo || riesgo.trim() === "") {
+      console.log('HPTStep3 - Attempted to add empty riesgo:', riesgo);
+      return;
+    }
     const riesgos = data.riesgos_identificados || [];
     if (!riesgos.includes(riesgo)) {
       onUpdate({ riesgos_identificados: [...riesgos, riesgo] });
@@ -65,7 +86,10 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
   };
 
   const addMedida = (medida: string) => {
-    if (!medida || medida.trim() === "") return; // Guard against empty values
+    if (!medida || medida.trim() === "") {
+      console.log('HPTStep3 - Attempted to add empty medida:', medida);
+      return;
+    }
     const medidas = data.medidas_control || [];
     if (!medidas.includes(medida)) {
       onUpdate({ medidas_control: [...medidas, medida] });
@@ -99,17 +123,23 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
               <Label htmlFor="tipo_trabajo">Tipo de Trabajo *</Label>
               <Select 
                 value={data.tipo_trabajo || ""} 
-                onValueChange={(value) => onUpdate({ tipo_trabajo: value })}
+                onValueChange={(value) => {
+                  console.log('HPTStep3 - Selected tipo trabajo:', value);
+                  onUpdate({ tipo_trabajo: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione el tipo de trabajo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_TRABAJO.map((tipo) => (
-                    <SelectItem key={tipo.value} value={tipo.value}>
-                      {tipo.label}
-                    </SelectItem>
-                  ))}
+                  {TIPOS_TRABAJO.map((tipo) => {
+                    console.log('HPTStep3 - Rendering tipo trabajo SelectItem:', tipo.value, tipo.label);
+                    return (
+                      <SelectItem key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -135,7 +165,10 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                 </Label>
                 <Select 
                   value={data.corrientes || ""} 
-                  onValueChange={(value) => onUpdate({ corrientes: value })}
+                  onValueChange={(value) => {
+                    console.log('HPTStep3 - Selected corrientes:', value);
+                    onUpdate({ corrientes: value });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Intensidad" />
@@ -156,7 +189,10 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                 </Label>
                 <Select 
                   value={data.visibilidad || ""} 
-                  onValueChange={(value) => onUpdate({ visibilidad: value })}
+                  onValueChange={(value) => {
+                    console.log('HPTStep3 - Selected visibilidad:', value);
+                    onUpdate({ visibilidad: value });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Condición" />
