@@ -1,114 +1,61 @@
 
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export interface HPTFormData {
-  // Paso 1: Información General
-  operacion_id: string;
-  fecha_programada: string;
-  hora_inicio: string;
-  hora_fin: string;
-  supervisor: string;
-  jefe_obra: string;
-  descripcion_trabajo: string;
-  plan_trabajo: string;
-  
-  // Paso 2: Equipo de Buceo
-  buzos: Array<{
-    nombre: string;
-    certificacion: string;
-    vencimiento: string;
-    rol: string;
-  }>;
-  asistentes: Array<{
-    nombre: string;
-    rol: string;
-  }>;
-  
-  // Paso 3: Análisis de Riesgos
-  tipo_trabajo: string;
-  profundidad_maxima: number;
-  corrientes: string;
-  visibilidad: string;
-  temperatura: number;
-  riesgos_identificados: string[];
-  medidas_control: string[];
-  
-  // Paso 4: Equipos y Herramientas
-  equipo_buceo: string[];
-  herramientas: string[];
-  equipo_seguridad: string[];
-  equipo_comunicacion: string[];
-  
-  // Paso 5: Procedimientos de Emergencia
-  plan_emergencia: string;
-  contactos_emergencia: Array<{
-    nombre: string;
-    cargo: string;
-    telefono: string;
-  }>;
-  hospital_cercano: string;
-  camara_hiperbarica: string;
-  
-  // Paso 6: Autorizaciones
-  supervisor_firma: string | null;
-  jefe_obra_firma: string | null;
-  observaciones: string;
-}
-
 export interface HPT {
   id: string;
   codigo: string;
-  operacion_id: string;
-  operacion_nombre: string;
   supervisor: string;
-  fecha_creacion: string;
+  plan_trabajo: string;
+  operacion_id: string;
+  fecha_programada?: string;
+  hora_inicio?: string;
+  hora_fin?: string;
+  descripcion_trabajo?: string;
+  profundidad_maxima?: number;
+  temperatura?: number;
+  observaciones?: string;
   firmado: boolean;
-  supervisor_firma?: string;
-  jefe_obra_firma?: string;
+  estado?: string;
+  user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface HPTFormData {
+  codigo: string;
+  supervisor: string;
+  operacion_id: string;
+  plan_trabajo: string;
+  fecha_programada?: string;
+  hora_inicio?: string;
+  hora_fin?: string;
+  descripcion_trabajo?: string;
+  profundidad_maxima?: number;
+  temperatura?: number;
+  observaciones?: string;
 }
 
 export const useHPT = () => {
   const queryClient = useQueryClient();
 
-  const { data: hpts = [], isLoading: loading, error } = useQuery({
+  const { data: hpts = [], isLoading, error } = useQuery({
     queryKey: ['hpts'],
     queryFn: async () => {
-      console.log('Fetching HPTs...');
+      console.log('useHPT - Fetching HPTs...');
       const { data, error } = await supabase
         .from('hpt')
-        .select(`
-          *,
-          operacion:operacion_id (
-            nombre,
-            codigo
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching HPTs:', error);
+        console.error('useHPT - Error fetching HPTs:', error);
         throw error;
       }
 
-      console.log('HPTs fetched:', data);
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        codigo: item.codigo || `HPT-${item.id.slice(0, 8)}`,
-        operacion_id: item.operacion_id,
-        operacion_nombre: item.operacion?.nombre || 'Sin operación',
-        supervisor: item.supervisor || 'Sin supervisor',
-        fecha_creacion: new Date(item.created_at).toLocaleDateString(),
-        firmado: !!(item.supervisor_firma && item.jefe_obra_firma),
-        supervisor_firma: item.supervisor_firma,
-        jefe_obra_firma: item.jefe_obra_firma,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      })) as HPT[];
+      console.log('useHPT - HPTs data:', data);
+      return data as HPT[];
     },
   });
 
@@ -118,45 +65,15 @@ export const useHPT = () => {
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-      
-      const hptRecord = {
-        operacion_id: hptData.operacion_id,
-        supervisor: hptData.supervisor,
-        codigo: `HPT-${Date.now()}`,
-        fecha_programada: hptData.fecha_programada,
-        hora_inicio: hptData.hora_inicio,
-        hora_fin: hptData.hora_fin,
-        descripcion_trabajo: hptData.descripcion_trabajo,
-        plan_trabajo: hptData.plan_trabajo,
-        tipo_trabajo: hptData.tipo_trabajo,
-        profundidad_maxima: hptData.profundidad_maxima,
-        corrientes: hptData.corrientes,
-        visibilidad: hptData.visibilidad,
-        temperatura: hptData.temperatura,
-        plan_emergencia: hptData.plan_emergencia,
-        hospital_cercano: hptData.hospital_cercano,
-        camara_hiperbarica: hptData.camara_hiperbarica,
-        supervisor_firma: hptData.supervisor_firma,
-        jefe_obra_firma: hptData.jefe_obra_firma,
-        observaciones: hptData.observaciones,
-        buzos: hptData.buzos,
-        asistentes: hptData.asistentes,
-        riesgos_identificados: hptData.riesgos_identificados,
-        medidas_control: hptData.medidas_control,
-        equipo_buceo: hptData.equipo_buceo,
-        herramientas: hptData.herramientas,
-        equipo_seguridad: hptData.equipo_seguridad,
-        equipo_comunicacion: hptData.equipo_comunicacion,
-        contactos_emergencia: hptData.contactos_emergencia,
-        user_id: user.id, // Add required user_id field
-      };
+      if (!user) throw new Error('Usuario no autenticado');
 
       const { data, error } = await supabase
         .from('hpt')
-        .insert([hptRecord])
+        .insert([{
+          ...hptData,
+          user_id: user.id,
+          fecha_creacion: new Date().toISOString().split('T')[0]
+        }])
         .select()
         .single();
 
@@ -172,7 +89,7 @@ export const useHPT = () => {
       queryClient.invalidateQueries({ queryKey: ['hpts'] });
       toast({
         title: "HPT creada",
-        description: "La Hoja de Preparación de Trabajo ha sido creada exitosamente.",
+        description: "La Hoja de Planificación de Tarea ha sido creada exitosamente.",
       });
     },
     onError: (error) => {
@@ -185,11 +102,82 @@ export const useHPT = () => {
     },
   });
 
+  const updateHPTMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<HPTFormData> }) => {
+      console.log('Updating HPT:', id, data);
+      const { data: updatedData, error } = await supabase
+        .from('hpt')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating HPT:', error);
+        throw error;
+      }
+
+      console.log('HPT updated:', updatedData);
+      return updatedData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      toast({
+        title: "HPT actualizada",
+        description: "La HPT ha sido actualizada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating HPT:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la HPT. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteHPTMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting HPT:', id);
+      const { error } = await supabase
+        .from('hpt')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting HPT:', error);
+        throw error;
+      }
+
+      console.log('HPT deleted:', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      toast({
+        title: "HPT eliminada",
+        description: "La HPT ha sido eliminada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting HPT:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la HPT. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     hpts,
-    loading,
+    isLoading,
     error,
     createHPT: createHPTMutation.mutateAsync,
+    updateHPT: updateHPTMutation.mutateAsync,
+    deleteHPT: deleteHPTMutation.mutateAsync,
     isCreating: createHPTMutation.isPending,
+    isUpdating: updateHPTMutation.isPending,
+    isDeleting: deleteHPTMutation.isPending,
   };
 };
