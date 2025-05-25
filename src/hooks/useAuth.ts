@@ -29,7 +29,7 @@ export interface AuthContextType {
   isRole: (role: string) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -64,7 +64,9 @@ export const useAuthProvider = (): AuthContextType => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
         } else {
           setProfile(null);
           setLoading(false);
@@ -77,17 +79,32 @@ export const useAuthProvider = (): AuthContextType => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Use 'usuario' table instead of 'user_profiles'
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('usuario')
         .select('*')
-        .eq('id', userId)
+        .eq('usuario_id', userId)
         .single();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
 
-      setProfile(data);
+      // Transform data to match UserProfile interface
+      if (data) {
+        const userProfile: UserProfile = {
+          id: data.usuario_id,
+          email: data.email || user?.email || '',
+          role: data.rol || 'buzo',
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          salmonera_id: data.salmonera_id,
+          servicio_id: data.servicio_id,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+        setProfile(userProfile);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       toast({
@@ -140,14 +157,18 @@ export const useAuthProvider = (): AuthContextType => {
 
       if (error) throw error;
 
-      // Create user profile
+      // Create user profile in usuario table
       if (data.user) {
         const { error: profileError } = await supabase
-          .from('user_profiles')
+          .from('usuario')
           .insert([{
-            id: data.user.id,
+            usuario_id: data.user.id,
             email,
-            ...profileData
+            nombre: profileData.nombre || '',
+            apellido: profileData.apellido || '',
+            rol: profileData.role || 'buzo',
+            salmonera_id: profileData.salmonera_id,
+            servicio_id: profileData.servicio_id
           }]);
 
         if (profileError) throw profileError;
