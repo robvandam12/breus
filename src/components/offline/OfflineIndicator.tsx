@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Wifi, WifiOff, CloudOff, Cloud } from 'lucide-react';
+import { CloudOff, Cloud } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export const OfflineIndicator = () => {
@@ -13,7 +13,12 @@ export const OfflineIndicator = () => {
       setIsOnline(true);
       setShowIndicator(true);
       toast({
-        title: "Conexión restaurada",
+        title: (
+          <div className="flex items-center gap-2">
+            <Cloud className="w-4 h-4 text-green-600" />
+            <span>Conexión restaurada</span>
+          </div>
+        ),
         description: "Ya puedes sincronizar tus datos.",
       });
       
@@ -25,7 +30,12 @@ export const OfflineIndicator = () => {
       setIsOnline(false);
       setShowIndicator(true);
       toast({
-        title: "Sin conexión",
+        title: (
+          <div className="flex items-center gap-2">
+            <CloudOff className="w-4 h-4 text-red-600" />
+            <span>Sin conexión</span>
+          </div>
+        ),
         description: "Trabajando en modo offline. Los datos se sincronizarán cuando vuelvas a conectarte.",
         variant: "destructive",
       });
@@ -50,7 +60,7 @@ export const OfflineIndicator = () => {
   return (
     <Badge
       variant={isOnline ? "default" : "destructive"}
-      className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
+      className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ios-card ${
         isOnline ? 'bg-green-600' : 'bg-red-600'
       }`}
     >
