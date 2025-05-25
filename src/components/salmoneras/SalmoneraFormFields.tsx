@@ -3,10 +3,18 @@ import { UseFormReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SalmoneraFormData } from "@/hooks/useSalmoneras";
+
+interface FormData {
+  nombre: string;
+  rut: string;
+  direccion: string;
+  telefono?: string;
+  email?: string;
+  estado: 'activa' | 'inactiva' | 'suspendida';
+}
 
 interface SalmoneraFormFieldsProps {
-  form: UseFormReturn<SalmoneraFormData>;
+  form: UseFormReturn<FormData>;
 }
 
 export const SalmoneraFormFields = ({ form }: SalmoneraFormFieldsProps) => {

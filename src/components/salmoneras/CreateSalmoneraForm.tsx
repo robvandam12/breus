@@ -22,6 +22,8 @@ const formSchema = z.object({
   estado: z.enum(['activa', 'inactiva', 'suspendida']),
 });
 
+type FormSchema = z.infer<typeof formSchema>;
+
 interface CreateSalmoneraFormProps {
   onSubmit: (data: SalmoneraFormData) => Promise<void>;
   onCancel: () => void;
@@ -37,7 +39,7 @@ export const CreateSalmoneraForm = ({
 }: CreateSalmoneraFormProps) => {
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nombre: initialData?.nombre || "",
@@ -49,7 +51,7 @@ export const CreateSalmoneraForm = ({
     }
   });
 
-  const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
+  const handleFormSubmit = async (data: FormSchema) => {
     setLoading(true);
     try {
       const formData: SalmoneraFormData = {
