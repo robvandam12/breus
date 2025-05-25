@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,7 +55,7 @@ export const ConfiguracionAvanzada = () => {
             </TabsContent>
 
             <TabsContent value="notificaciones" className="mt-6">
-              <NotificationSettings />
+              <NotificationSettings onClose={() => setActiveTab('webhooks')} />
             </TabsContent>
 
             <TabsContent value="catalogos" className="mt-6">

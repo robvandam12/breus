@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -12,6 +11,18 @@ interface NotificationSubscription {
   created_at: string;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  read: boolean;
+  created_at: string;
+  metadata?: any;
+  expires_at?: string;
+  user_id: string;
+}
+
 interface CreateNotificationData {
   title: string;
   message: string;
@@ -22,6 +33,7 @@ interface CreateNotificationData {
 
 export const useNotifications = () => {
   const [subscriptions, setSubscriptions] = useState<NotificationSubscription[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchSubscriptions = async () => {
@@ -34,7 +46,6 @@ export const useNotifications = () => {
 
       if (error) throw error;
       
-      // Validar que los datos coincidan con nuestros tipos
       const validatedData = (data || []).filter(item => 
         ['app', 'email', 'webhook'].includes(item.channel)
       ) as NotificationSubscription[];
@@ -42,6 +53,32 @@ export const useNotifications = () => {
       setSubscriptions(validatedData);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      
+      const validatedData = (data || []).filter(item => 
+        ['info', 'warning', 'error', 'success'].includes(item.type)
+      ).map(item => ({
+        ...item,
+        type: item.type as 'info' | 'warning' | 'error' | 'success'
+      })) as Notification[];
+      
+      setNotifications(validatedData);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +104,38 @@ export const useNotifications = () => {
     } catch (error) {
       console.error('Error creating notification:', error);
       throw error;
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
     }
   };
 
@@ -117,7 +186,7 @@ export const useNotifications = () => {
 
       if (error) throw error;
 
-      setSubscriptions(prev => [...prev, data]);
+      setSubscriptions(prev => [...prev, data as NotificationSubscription]);
       toast({
         title: "Suscripción creada",
         description: "Nueva configuración de notificación agregada"
@@ -139,7 +208,7 @@ export const useNotifications = () => {
       message: `Operación ${operationId}: ${message}`,
       type: 'error',
       metadata: { operationId, alertType },
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
   };
 
@@ -163,17 +232,23 @@ export const useNotifications = () => {
 
   useEffect(() => {
     fetchSubscriptions();
+    fetchNotifications();
   }, []);
 
   return {
     subscriptions,
+    notifications,
     isLoading,
     createNotification,
+    markAsRead,
+    deleteNotification,
     updateSubscription,
     createSubscription,
     emitSecurityAlert,
     emitValidationWarning,
     emitSuccessNotification,
-    refreshSubscriptions: fetchSubscriptions
+    fetchSubscriptions,
+    refreshSubscriptions: fetchSubscriptions,
+    refreshNotifications: fetchNotifications
   };
 };

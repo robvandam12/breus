@@ -7,57 +7,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, X, Check, AlertTriangle, Info, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  read: boolean;
-  created_at: string;
-  metadata?: any;
-  expires_at?: string;
-}
+import { useNotifications, type Notification } from '@/hooks/useNotifications';
 
 export const NotificationCenter = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchNotifications = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
+  const { 
+    notifications, 
+    isLoading, 
+    markAsRead, 
+    deleteNotification,
+    refreshNotifications 
+  } = useNotifications();
 
   const markAllAsRead = async () => {
     try {
@@ -71,7 +31,7 @@ export const NotificationCenter = () => {
 
       if (error) throw error;
 
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      await refreshNotifications();
       toast({
         title: "Notificaciones marcadas",
         description: "Todas las notificaciones han sido marcadas como leídas"
@@ -81,24 +41,7 @@ export const NotificationCenter = () => {
     }
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
-
     // Suscripción en tiempo real para nuevas notificaciones
     const channel = supabase
       .channel('notifications-realtime')
@@ -107,7 +50,6 @@ export const NotificationCenter = () => {
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
           const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
           
           // Mostrar toast para notificaciones críticas
           if (newNotification.type === 'error' || newNotification.type === 'warning') {
@@ -117,6 +59,8 @@ export const NotificationCenter = () => {
               variant: newNotification.type === 'error' ? 'destructive' : 'default'
             });
           }
+          
+          refreshNotifications();
         }
       )
       .subscribe();
@@ -124,7 +68,7 @@ export const NotificationCenter = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [refreshNotifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

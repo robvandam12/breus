@@ -27,7 +27,7 @@ const channels = [
 ];
 
 export const NotificationSettings = ({ onClose }: NotificationSettingsProps) => {
-  const { subscriptions, fetchSubscriptions, updateSubscription } = useNotifications();
+  const { subscriptions, fetchSubscriptions, updateSubscription, createSubscription } = useNotifications();
 
   useEffect(() => {
     fetchSubscriptions();
@@ -37,6 +37,18 @@ export const NotificationSettings = ({ onClose }: NotificationSettingsProps) => 
     return subscriptions.find(
       s => s.event_type === eventType && s.channel === channel
     )?.enabled || false;
+  };
+
+  const handleSubscriptionChange = async (eventType: string, channel: 'app' | 'email' | 'webhook', enabled: boolean) => {
+    const existingSubscription = subscriptions.find(
+      s => s.event_type === eventType && s.channel === channel
+    );
+
+    if (existingSubscription) {
+      await updateSubscription(existingSubscription.id, enabled);
+    } else if (enabled) {
+      await createSubscription(eventType, channel);
+    }
   };
 
   return (
@@ -71,7 +83,7 @@ export const NotificationSettings = ({ onClose }: NotificationSettingsProps) => 
                       id={`${eventType.id}-${channel.id}`}
                       checked={isSubscribed(eventType.id, channel.id)}
                       onCheckedChange={(checked) => 
-                        updateSubscription(eventType.id, channel.id, checked)
+                        handleSubscriptionChange(eventType.id, channel.id, checked)
                       }
                     />
                   </div>
