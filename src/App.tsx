@@ -16,6 +16,9 @@ import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Inmersiones from "./pages/operaciones/Inmersiones";
 import Bitacoras from "./pages/operaciones/Bitacoras";
 import Login from "./pages/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ProfileSetup from "./pages/auth/ProfileSetup";
 import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
@@ -31,6 +34,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/" element={<Index />} />
             <Route path="/empresas/salmoneras" element={<Salmoneras />} />
             <Route path="/empresas/sitios" element={<Sitios />} />

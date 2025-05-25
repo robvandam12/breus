@@ -4,9 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthLayout } from '@/pages/auth/AuthLayout';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -31,86 +31,90 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
-            <LogIn className="w-6 h-6 text-white" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            Iniciar Sesión
-          </CardTitle>
-          <CardDescription>
-            Accede a la plataforma Breus
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout 
+      title="Iniciar Sesión" 
+      subtitle="Accede a tu cuenta en la plataforma Breus"
+    >
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="ejemplo@empresa.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isLoading}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="ejemplo@empresa.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
+        <div>
+          <Label htmlFor="password">Contraseña</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
               disabled={isLoading}
             >
-              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
             </Button>
+          </div>
+        </div>
 
-            <div className="text-center text-sm text-gray-600">
-              <Link 
-                to="/reset-password" 
-                className="text-blue-600 hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm">
+            <Link 
+              to="/forgot-password" 
+              className="text-blue-600 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isLoading || !email || !password}
+        >
+          {isLoading ? (
+            "Iniciando sesión..."
+          ) : (
+            <>
+              <LogIn className="w-4 h-4 mr-2" />
+              Iniciar Sesión
+            </>
+          )}
+        </Button>
+
+        <div className="text-center text-sm text-gray-600">
+          ¿No tienes cuenta?{' '}
+          <Link 
+            to="/register" 
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Registrarse
+          </Link>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };

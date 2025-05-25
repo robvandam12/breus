@@ -97,13 +97,16 @@ export const useInvitations = () => {
         throw contractorError;
       }
 
-      // Send invitation email (through edge function)
-      const { error: emailError } = await supabase.functions.invoke('send-contractor-invitation', {
+      // Send invitation email using SendGrid
+      const { error: emailError } = await supabase.functions.invoke('send-email-confirmation', {
         body: {
-          email: invitationData.admin_email,
-          admin_nombre: invitationData.admin_nombre,
-          empresa_nombre: invitationData.empresa_nombre,
-          token
+          to: invitationData.admin_email,
+          template_type: 'contractor_invitation',
+          data: {
+            admin_nombre: invitationData.admin_nombre,
+            empresa_nombre: invitationData.empresa_nombre,
+            invitation_url: `${window.location.origin}/accept-invitation?token=${token}`
+          }
         }
       });
 
