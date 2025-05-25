@@ -55,7 +55,7 @@ const AdminRoles = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
-  const [rolePermissions, setRolePermissions] = useState({});
+  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
 
   const handleCreateRole = () => {
     if (!newRoleName.trim()) return;
@@ -74,7 +74,7 @@ const AdminRoles = () => {
     setIsCreateDialogOpen(false);
   };
 
-  const groupedPermissions = permissions.reduce((acc, permission) => {
+  const groupedPermissions = permissions.reduce((acc: Record<string, typeof permissions>, permission) => {
     if (!acc[permission.module]) {
       acc[permission.module] = [];
     }

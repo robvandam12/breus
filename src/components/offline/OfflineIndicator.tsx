@@ -15,7 +15,6 @@ export const OfflineIndicator = () => {
       toast({
         title: "Conexión restaurada",
         description: "Ya puedes sincronizar tus datos.",
-        duration: 3000,
       });
       
       // Hide indicator after 3 seconds when online
@@ -29,7 +28,6 @@ export const OfflineIndicator = () => {
         title: "Sin conexión",
         description: "Trabajando en modo offline. Los datos se sincronizarán cuando vuelvas a conectarte.",
         variant: "destructive",
-        duration: 5000,
       });
     };
 
