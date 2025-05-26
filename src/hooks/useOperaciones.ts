@@ -5,24 +5,34 @@ import { toast } from "@/hooks/use-toast";
 
 export interface Operacion {
   id: string;
+  codigo: string;
   nombre: string;
   sitio_id: string;
   servicio_id: string;
+  salmonera_id: string;
+  contratista_id: string;
   fecha_inicio: string;
   fecha_fin?: string;
   tareas?: string;
-  estado: 'activa' | 'completada' | 'cancelada';
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
   created_at: string;
   updated_at: string;
+  salmoneras?: { nombre: string };
+  sitios?: { nombre: string };
+  contratistas?: { nombre: string };
 }
 
-export interface CreateOperacionData {
+export interface OperacionFormData {
+  codigo: string;
   nombre: string;
   sitio_id: string;
   servicio_id: string;
+  salmonera_id: string;
+  contratista_id: string;
   fecha_inicio: string;
   fecha_fin?: string;
   tareas?: string;
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
 }
 
 export const useOperaciones = () => {
@@ -35,7 +45,12 @@ export const useOperaciones = () => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
         .from('operacion')
-        .select('*')
+        .select(`
+          *,
+          salmoneras:salmonera_id (nombre),
+          sitios:sitio_id (nombre),
+          contratistas:contratista_id (nombre)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -49,15 +64,12 @@ export const useOperaciones = () => {
 
   // Create operacion
   const createOperacionMutation = useMutation({
-    mutationFn: async (data: CreateOperacionData) => {
+    mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
       const { data: result, error } = await supabase
         .from('operacion')
-        .insert([{
-          ...data,
-          estado: 'activa'
-        }])
+        .insert([data])
         .select()
         .single();
 
@@ -85,10 +97,57 @@ export const useOperaciones = () => {
     },
   });
 
+  // Update operacion
+  const updateOperacionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
+      console.log('Updating operacion:', id, data);
+      
+      const { data: result, error } = await supabase
+        .from('operacion')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Operación actualizada",
+        description: "La operación ha sido actualizada exitosamente.",
+      });
+    },
+  });
+
+  // Delete operacion
+  const deleteOperacionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting operacion:', id);
+      
+      const { error } = await supabase
+        .from('operacion')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Operación eliminada",
+        description: "La operación ha sido eliminada exitosamente.",
+      });
+    },
+  });
+
   return {
     operaciones,
     isLoading,
     createOperacion: createOperacionMutation.mutateAsync,
     isCreating: createOperacionMutation.isPending,
+    updateOperacion: updateOperacionMutation.mutateAsync,
+    deleteOperacion: deleteOperacionMutation.mutateAsync,
   };
 };

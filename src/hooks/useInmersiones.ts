@@ -44,6 +44,14 @@ export interface CreateInmersionData {
   observaciones?: string;
 }
 
+export interface ValidationStatus {
+  hasValidHPT: boolean;
+  hasValidAnexoBravo: boolean;
+  canExecute: boolean;
+  hptCode?: string;
+  anexoBravoCode?: string;
+}
+
 export const useInmersiones = () => {
   const queryClient = useQueryClient();
 
@@ -121,6 +129,51 @@ export const useInmersiones = () => {
     },
   });
 
+  // Update inmersion
+  const updateInmersionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateInmersionData> }) => {
+      console.log('Updating inmersion:', id, data);
+      
+      const { data: result, error } = await supabase
+        .from('inmersion')
+        .update(data)
+        .eq('inmersion_id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      toast({
+        title: "Inmersión actualizada",
+        description: "La inmersión ha sido actualizada exitosamente.",
+      });
+    },
+  });
+
+  // Delete inmersion
+  const deleteInmersionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting inmersion:', id);
+      
+      const { error } = await supabase
+        .from('inmersion')
+        .delete()
+        .eq('inmersion_id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      toast({
+        title: "Inmersión eliminada",
+        description: "La inmersión ha sido eliminada exitosamente.",
+      });
+    },
+  });
+
   // Execute inmersion
   const executeInmersionMutation = useMutation({
     mutationFn: async (inmersionId: string) => {
@@ -169,6 +222,40 @@ export const useInmersiones = () => {
     },
   });
 
+  // Validate operation documents
+  const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
+    console.log('Validating operation documents for:', operacionId);
+    
+    // Check for valid HPT
+    const { data: hptData } = await supabase
+      .from('hpt')
+      .select('codigo')
+      .eq('operacion_id', operacionId)
+      .eq('firmado', true)
+      .eq('estado', 'firmado')
+      .single();
+
+    // Check for valid Anexo Bravo
+    const { data: anexoData } = await supabase
+      .from('anexo_bravo')
+      .select('codigo')
+      .eq('operacion_id', operacionId)
+      .eq('firmado', true)
+      .eq('estado', 'firmado')
+      .single();
+
+    const hasValidHPT = !!hptData;
+    const hasValidAnexoBravo = !!anexoData;
+
+    return {
+      hasValidHPT,
+      hasValidAnexoBravo,
+      canExecute: hasValidHPT && hasValidAnexoBravo,
+      hptCode: hptData?.codigo,
+      anexoBravoCode: anexoData?.codigo,
+    };
+  };
+
   const refreshInmersiones = () => {
     queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
   };
@@ -178,8 +265,11 @@ export const useInmersiones = () => {
     isLoading,
     createInmersion: createInmersionMutation.mutateAsync,
     isCreating: createInmersionMutation.isPending,
+    updateInmersion: updateInmersionMutation.mutateAsync,
+    deleteInmersion: deleteInmersionMutation.mutateAsync,
     executeInmersion: executeInmersionMutation.mutateAsync,
     completeInmersion: completeInmersionMutation.mutateAsync,
+    validateOperationDocuments,
     refreshInmersiones,
   };
 };

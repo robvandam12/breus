@@ -1,292 +1,280 @@
-
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Waves, User, Clock, Target, Thermometer, Eye, Wind } from "lucide-react";
-import { useInmersiones } from "@/hooks/useInmersiones";
-import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Waves, X } from "lucide-react";
+import { useInmersiones, CreateInmersionData } from "@/hooks/useInmersiones";
+import { useOperaciones } from "@/hooks/useOperaciones";
+
+const formSchema = z.object({
+  operacion_id: z.string().min(1, "Debe seleccionar una operación"),
+  fecha_inmersion: z.string().min(1, "La fecha es requerida"),
+  hora_inicio: z.string().min(1, "La hora de inicio es requerida"),
+  hora_fin: z.string().optional(),
+  profundidad_maxima: z.number().min(0, "La profundidad debe ser positiva").optional(),
+  buzo_principal: z.string().min(1, "El buzo principal es requerido"),
+  buzo_asistente: z.string().optional(),
+  supervisor: z.string().min(1, "El supervisor es requerido"),
+  objetivo: z.string().min(10, "Debe describir el objetivo de la inmersión"),
+  temperatura_agua: z.number().min(0, "La temperatura debe ser positiva"),
+  visibilidad: z.number().min(0, "La visibilidad debe ser positiva"),
+  corriente: z.string().min(1, "Debe describir las condiciones de corriente"),
+  observaciones: z.string().optional(),
+});
 
 interface CreateInmersionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CreateInmersionData) => Promise<void>;
   onCancel: () => void;
 }
 
 export const CreateInmersionForm = ({ onSubmit, onCancel }: CreateInmersionFormProps) => {
-  const { operaciones } = useInmersiones();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    operacion_id: "",
-    fecha_inmersion: "",
-    hora_inicio: "",
-    hora_fin: "",
-    buzo_principal: "",
-    buzo_asistente: "",
-    supervisor: "",
-    objetivo: "",
-    profundidad_max: "",
-    temperatura_agua: "",
-    visibilidad: "",
-    corriente: "",
-    observaciones: "",
+  const [loading, setLoading] = useState(false);
+  const { operaciones } = useOperaciones();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors }
+  } = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.operacion_id || !formData.fecha_inmersion || !formData.hora_inicio || 
-        !formData.buzo_principal || !formData.supervisor || !formData.objetivo) {
-      toast({
-        title: "Campos requeridos",
-        description: "Complete todos los campos obligatorios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
     try {
-      const submitData = {
-        ...formData,
-        profundidad_max: parseFloat(formData.profundidad_max) || 0,
-        temperatura_agua: parseFloat(formData.temperatura_agua) || 0,
-        visibilidad: parseFloat(formData.visibilidad) || 0,
-      };
-      
-      await onSubmit(submitData);
+      await onSubmit(data);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error creating inmersion:', error);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Waves className="w-5 h-5 text-blue-600" />
-            Nueva Inmersión de Buceo
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Complete la información para programar una nueva inmersión
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Operación */}
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Waves className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Nueva Inmersión</CardTitle>
+              <p className="text-sm text-zinc-500">Planificar una nueva inmersión</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="operacion">Operación *</Label>
-              <Select 
-                value={formData.operacion_id} 
-                onValueChange={(value) => handleInputChange('operacion_id', value)}
-              >
+              <Label htmlFor="operacion_id">Operación</Label>
+              <Select onValueChange={(value) => setValue('operacion_id', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione una operación activa" />
+                  <SelectValue placeholder="Seleccionar operación..." />
                 </SelectTrigger>
                 <SelectContent>
                   {operaciones.map((operacion) => (
                     <SelectItem key={operacion.id} value={operacion.id}>
-                      {operacion.nombre} ({operacion.codigo})
+                      {operacion.codigo} - {operacion.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {errors.operacion_id && (
+                <p className="text-sm text-red-600">{errors.operacion_id.message}</p>
+              )}
             </div>
 
-            {/* Fecha y Hora */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fecha_inmersion">Fecha de Inmersión *</Label>
-                <Input
-                  id="fecha_inmersion"
-                  type="date"
-                  value={formData.fecha_inmersion}
-                  onChange={(e) => handleInputChange('fecha_inmersion', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hora_inicio">Hora de Inicio *</Label>
-                <Input
-                  id="hora_inicio"
-                  type="time"
-                  value={formData.hora_inicio}
-                  onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hora_fin">Hora de Fin (Estimada)</Label>
-                <Input
-                  id="hora_fin"
-                  type="time"
-                  value={formData.hora_fin}
-                  onChange={(e) => handleInputChange('hora_fin', e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Personal */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="buzo_principal">Buzo Principal *</Label>
-                <Input
-                  id="buzo_principal"
-                  value={formData.buzo_principal}
-                  onChange={(e) => handleInputChange('buzo_principal', e.target.value)}
-                  placeholder="Nombre del buzo principal"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="buzo_asistente">Buzo Asistente</Label>
-                <Input
-                  id="buzo_asistente"
-                  value={formData.buzo_asistente}
-                  onChange={(e) => handleInputChange('buzo_asistente', e.target.value)}
-                  placeholder="Nombre del asistente"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="supervisor">Supervisor *</Label>
-                <Input
-                  id="supervisor"
-                  value={formData.supervisor}
-                  onChange={(e) => handleInputChange('supervisor', e.target.value)}
-                  placeholder="Nombre del supervisor"
-                />
-              </div>
-            </div>
-
-            {/* Objetivo */}
             <div className="space-y-2">
-              <Label htmlFor="objetivo">Objetivo de la Inmersión *</Label>
+              <Label htmlFor="fecha_inmersion">Fecha de Inmersión</Label>
               <Input
-                id="objetivo"
-                value={formData.objetivo}
-                onChange={(e) => handleInputChange('objetivo', e.target.value)}
-                placeholder="Descripción del objetivo de buceo"
+                id="fecha_inmersion"
+                type="date"
+                {...register('fecha_inmersion')}
               />
+              {errors.fecha_inmersion && (
+                <p className="text-sm text-red-600">{errors.fecha_inmersion.message}</p>
+              )}
             </div>
+          </div>
 
-            {/* Condiciones */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profundidad_max">Profundidad Máx. (m) *</Label>
-                <Input
-                  id="profundidad_max"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.profundidad_max}
-                  onChange={(e) => handleInputChange('profundidad_max', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="temperatura_agua">Temp. Agua (°C)</Label>
-                <Input
-                  id="temperatura_agua"
-                  type="number"
-                  step="0.1"
-                  value={formData.temperatura_agua}
-                  onChange={(e) => handleInputChange('temperatura_agua', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="visibilidad">Visibilidad (m)</Label>
-                <Input
-                  id="visibilidad"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.visibilidad}
-                  onChange={(e) => handleInputChange('visibilidad', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="corriente">Corriente</Label>
-                <Select 
-                  value={formData.corriente} 
-                  onValueChange={(value) => handleInputChange('corriente', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nula">Nula</SelectItem>
-                    <SelectItem value="ligera">Ligera</SelectItem>
-                    <SelectItem value="moderada">Moderada</SelectItem>
-                    <SelectItem value="fuerte">Fuerte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Observaciones */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="observaciones">Observaciones</Label>
-              <Textarea
-                id="observaciones"
-                value={formData.observaciones}
-                onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                placeholder="Observaciones adicionales..."
-                rows={3}
+              <Label htmlFor="hora_inicio">Hora de Inicio</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                {...register('hora_inicio')}
               />
+              {errors.hora_inicio && (
+                <p className="text-sm text-red-600">{errors.hora_inicio.message}</p>
+              )}
             </div>
 
-            {/* Warning sobre validación */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Waves className="w-4 h-4 text-amber-600" />
-                </div>
-                <div className="text-sm text-amber-800">
-                  <strong>Validación Automática:</strong> El sistema verificará automáticamente que 
-                  existan HPT y Anexo Bravo firmados para la operación seleccionada antes de 
-                  permitir la creación de la inmersión.
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="hora_fin">Hora de Fin (Opcional)</Label>
+              <Input
+                id="hora_fin"
+                type="time"
+                {...register('hora_fin')}
+              />
+              {errors.hora_fin && (
+                <p className="text-sm text-red-600">{errors.hora_fin.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="profundidad_maxima">Profundidad Máxima (metros)</Label>
+              <Input
+                id="profundidad_maxima"
+                type="number"
+                step="0.1"
+                {...register('profundidad_maxima', { valueAsNumber: true })}
+                placeholder="0.0"
+              />
+              {errors.profundidad_maxima && (
+                <p className="text-sm text-red-600">{errors.profundidad_maxima.message}</p>
+              )}
             </div>
 
-            {/* Botones */}
-            <div className="flex justify-between">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onCancel}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting ? 'Creando...' : 'Crear Inmersión'}
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="temperatura_agua">Temperatura del Agua (°C)</Label>
+              <Input
+                id="temperatura_agua"
+                type="number"
+                step="0.1"
+                {...register('temperatura_agua', { valueAsNumber: true })}
+                placeholder="0.0"
+              />
+              {errors.temperatura_agua && (
+                <p className="text-sm text-red-600">{errors.temperatura_agua.message}</p>
+              )}
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="visibilidad">Visibilidad (metros)</Label>
+              <Input
+                id="visibilidad"
+                type="number"
+                step="0.1"
+                {...register('visibilidad', { valueAsNumber: true })}
+                placeholder="0.0"
+              />
+              {errors.visibilidad && (
+                <p className="text-sm text-red-600">{errors.visibilidad.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="corriente">Corriente</Label>
+              <Input
+                id="corriente"
+                {...register('corriente')}
+                placeholder="Condiciones de corriente..."
+              />
+              {errors.corriente && (
+                <p className="text-sm text-red-600">{errors.corriente.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="buzo_principal">Buzo Principal</Label>
+              <Input
+                id="buzo_principal"
+                {...register('buzo_principal')}
+                placeholder="Nombre del buzo principal"
+              />
+              {errors.buzo_principal && (
+                <p className="text-sm text-red-600">{errors.buzo_principal.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="buzo_asistente">Buzo Asistente (Opcional)</Label>
+              <Input
+                id="buzo_asistente"
+                {...register('buzo_asistente')}
+                placeholder="Nombre del buzo asistente"
+              />
+              {errors.buzo_asistente && (
+                <p className="text-sm text-red-600">{errors.buzo_asistente.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="supervisor">Supervisor</Label>
+            <Input
+              id="supervisor"
+              {...register('supervisor')}
+              placeholder="Nombre del supervisor"
+            />
+            {errors.supervisor && (
+              <p className="text-sm text-red-600">{errors.supervisor.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="objetivo">Objetivo de la Inmersión</Label>
+            <Textarea
+              id="objetivo"
+              {...register('objetivo')}
+              placeholder="Describa el objetivo de la inmersión..."
+              className="min-h-[100px]"
+            />
+            {errors.objetivo && (
+              <p className="text-sm text-red-600">{errors.objetivo.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="observaciones">Observaciones (Opcional)</Label>
+            <Textarea
+              id="observaciones"
+              {...register('observaciones')}
+              placeholder="Observaciones adicionales..."
+              className="min-h-[80px]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Creando...
+                </>
+              ) : (
+                "Crear Inmersión"
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

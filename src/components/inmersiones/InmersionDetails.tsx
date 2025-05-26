@@ -30,7 +30,7 @@ export const InmersionDetails = () => {
     switch (estado) {
       case "planificada":
         return "bg-blue-100 text-blue-700";
-      case "en_curso":
+      case "en_progreso":
         return "bg-amber-100 text-amber-700";
       case "completada":
         return "bg-emerald-100 text-emerald-700";
@@ -44,7 +44,7 @@ export const InmersionDetails = () => {
   const formatEstado = (estado: string) => {
     const estados = {
       'planificada': 'Planificada',
-      'en_curso': 'En Ejecución',
+      'en_progreso': 'En Ejecución',
       'completada': 'Completada',
       'cancelada': 'Cancelada'
     };
@@ -177,7 +177,7 @@ export const InmersionDetails = () => {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-500">Profundidad</p>
-                    <p className="font-medium">{inmersion.profundidad_max} m</p>
+                    <p className="font-medium">{inmersion.profundidad_maxima} m</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

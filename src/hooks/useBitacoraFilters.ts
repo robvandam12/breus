@@ -3,9 +3,11 @@ import { useState } from 'react';
 
 export interface BitacoraFilters {
   searchTerm: string;
+  search: string;
   dateFrom: Date | null;
   dateTo: Date | null;
   status: string;
+  estado: string;
   firmado: boolean | null;
   tipo: string;
 }
@@ -13,18 +15,25 @@ export interface BitacoraFilters {
 export const useBitacoraFilters = () => {
   const [filters, setFilters] = useState<BitacoraFilters>({
     searchTerm: '',
+    search: '',
     dateFrom: null,
     dateTo: null,
     status: '',
+    estado: '',
     firmado: null,
     tipo: ''
   });
 
+  const updateFilters = (newFilters: Partial<BitacoraFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
   const filterBitacoras = (bitacoras: any[]) => {
     return bitacoras.filter(bitacora => {
       // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
+      if (filters.searchTerm || filters.search) {
+        const searchTerm = filters.searchTerm || filters.search;
+        const searchLower = searchTerm.toLowerCase();
         const matchesSearch = 
           bitacora.codigo?.toLowerCase().includes(searchLower) ||
           bitacora.supervisor?.toLowerCase().includes(searchLower) ||
@@ -47,9 +56,10 @@ export const useBitacoraFilters = () => {
       }
 
       // Status filter
-      if (filters.status) {
-        if (filters.status === 'firmado' && !bitacora.firmado) return false;
-        if (filters.status === 'pendiente' && bitacora.firmado) return false;
+      if (filters.status || filters.estado) {
+        const status = filters.status || filters.estado;
+        if (status === 'firmado' && !bitacora.firmado) return false;
+        if (status === 'pendiente' && bitacora.firmado) return false;
       }
 
       // Firmado filter
@@ -63,7 +73,7 @@ export const useBitacoraFilters = () => {
 
   return {
     filters,
-    setFilters,
+    setFilters: updateFilters,
     filterBitacoras
   };
 };

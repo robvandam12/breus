@@ -36,6 +36,8 @@ export const CreateOperacionForm = ({
     salmonera_id: initialData?.salmonera_id || "",
     sitio_id: initialData?.sitio_id || "",
     contratista_id: initialData?.contratista_id || "",
+    servicio_id: initialData?.servicio_id || "",
+    tareas: initialData?.tareas || "",
   });
 
   const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
