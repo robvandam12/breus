@@ -12,7 +12,7 @@ import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function Dashboard() {
-  const { stats, upcomingOperations } = useDashboardData();
+  const { stats, operations } = useDashboardData();
 
   const kpiData = [
     {
@@ -86,7 +86,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Operations and Actions */}
         <div className="space-y-6">
-          <UpcomingOperations operations={upcomingOperations} />
+          <UpcomingOperations operations={operations} />
           <QuickActions />
         </div>
 

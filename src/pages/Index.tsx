@@ -9,7 +9,7 @@ import { StatsChart } from "@/components/dashboard/StatsChart";
 import { AlertasPanel } from "@/components/dashboard/AlertasPanel";
 import { NotificationToasts } from "@/components/dashboard/NotificationToasts";
 import { CollapsibleFilters } from "@/components/dashboard/CollapsibleFilters";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, FileText, Anchor, Users, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -60,6 +60,13 @@ const Index = () => {
     );
   }
 
+  const iconMap = {
+    "Bitácoras Totales": FileText,
+    "Inmersiones Hoy": Anchor,
+    "Operaciones Activas": Users,
+    "Alertas Activas": AlertTriangle
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -82,9 +89,22 @@ const Index = () => {
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {kpis.map((kpi, index) => (
-                  <KPICard key={index} {...kpi} />
-                ))}
+                {kpis.map((kpi, index) => {
+                  const IconComponent = iconMap[kpi.title as keyof typeof iconMap];
+                  return (
+                    <KPICard 
+                      key={index} 
+                      title={kpi.title}
+                      value={kpi.value}
+                      description={kpi.description}
+                      icon={IconComponent}
+                      trend={kpi.change ? {
+                        value: parseFloat(kpi.change.value.replace('%', '').replace('+', '')) || 0,
+                        isPositive: kpi.change.type === 'positive'
+                      } : undefined}
+                    />
+                  );
+                })}
               </div>
 
               {/* Filtros Colapsables */}
@@ -96,7 +116,7 @@ const Index = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Charts and Data */}
                 <div className="lg:col-span-2 space-y-6">
-                  <StatsChart data={chartData} />
+                  <StatsChart />
                   <UpcomingOperations operations={operations} />
                 </div>
 
@@ -104,7 +124,7 @@ const Index = () => {
                 <div className="space-y-6">
                   <QuickActions />
                   <AlertasPanel />
-                  <RecentActivity activities={activities} />
+                  <RecentActivity />
                 </div>
               </div>
             </div>
