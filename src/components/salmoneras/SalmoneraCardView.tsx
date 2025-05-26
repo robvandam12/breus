@@ -22,7 +22,9 @@ export const SalmoneraCardView = ({
   isDeleting = false, 
   isUpdating = false 
 }: SalmoneraCardViewProps) => {
-  const getEstadoBadgeColor = (estado: string) => {
+  const getEstadoBadgeColor = (estado: string | undefined | null) => {
+    if (!estado) return 'bg-gray-100 text-gray-700 border-gray-200';
+    
     switch (estado) {
       case 'activa':
         return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -33,6 +35,11 @@ export const SalmoneraCardView = ({
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
+  };
+
+  const formatEstado = (estado: string | undefined | null) => {
+    if (!estado) return 'Sin estado';
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
   };
 
   return (
@@ -47,16 +54,16 @@ export const SalmoneraCardView = ({
                 </div>
                 <div>
                   <CardTitle className="text-lg text-zinc-900 dark:text-zinc-100">
-                    {salmonera.nombre}
+                    {salmonera.nombre || 'Sin nombre'}
                   </CardTitle>
-                  <p className="text-sm text-zinc-500 font-mono">RUT: {salmonera.rut}</p>
+                  <p className="text-sm text-zinc-500 font-mono">RUT: {salmonera.rut || 'Sin RUT'}</p>
                 </div>
               </div>
               <Badge 
                 variant="outline" 
                 className={`${getEstadoBadgeColor(salmonera.estado)} font-medium`}
               >
-                {salmonera.estado.charAt(0).toUpperCase() + salmonera.estado.slice(1)}
+                {formatEstado(salmonera.estado)}
               </Badge>
             </div>
           </CardHeader>
@@ -64,7 +71,7 @@ export const SalmoneraCardView = ({
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <MapPin className="w-4 h-4" />
-                <span className="truncate">{salmonera.direccion}</span>
+                <span className="truncate">{salmonera.direccion || 'Sin dirección'}</span>
               </div>
               {salmonera.telefono && (
                 <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -80,7 +87,7 @@ export const SalmoneraCardView = ({
               )}
               <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <Building2 className="w-4 h-4" />
-                <span>{salmonera.sitios_activos} sitios activos</span>
+                <span>{salmonera.sitios_activos || 0} sitios activos</span>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">

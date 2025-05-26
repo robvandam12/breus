@@ -22,7 +22,9 @@ export const SalmoneraTableView = ({
   isDeleting = false, 
   isUpdating = false 
 }: SalmoneraTableViewProps) => {
-  const getEstadoBadgeColor = (estado: string) => {
+  const getEstadoBadgeColor = (estado: string | undefined | null) => {
+    if (!estado) return 'bg-gray-100 text-gray-700 border-gray-200';
+    
     switch (estado) {
       case 'activa':
         return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -33,6 +35,11 @@ export const SalmoneraTableView = ({
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
+  };
+
+  const formatEstado = (estado: string | undefined | null) => {
+    if (!estado) return 'Sin estado';
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
   };
 
   return (
@@ -57,32 +64,33 @@ export const SalmoneraTableView = ({
                 </div>
                 <div>
                   <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {salmonera.nombre}
+                    {salmonera.nombre || 'Sin nombre'}
                   </div>
                   <div className="text-sm text-zinc-500 flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    {salmonera.direccion}
+                    {salmonera.direccion || 'Sin dirección'}
                   </div>
                 </div>
               </div>
             </TableCell>
             <TableCell className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
-              {salmonera.rut}
+              {salmonera.rut || 'Sin RUT'}
             </TableCell>
             <TableCell>
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
                 {salmonera.telefono && <div>{salmonera.telefono}</div>}
                 {salmonera.email && <div className="truncate max-w-[200px]">{salmonera.email}</div>}
+                {!salmonera.telefono && !salmonera.email && <div className="text-zinc-400">Sin contacto</div>}
               </div>
             </TableCell>
             <TableCell>
               <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                {salmonera.sitios_activos} sitios
+                {salmonera.sitios_activos || 0} sitios
               </Badge>
             </TableCell>
             <TableCell>
               <Badge variant="outline" className={getEstadoBadgeColor(salmonera.estado)}>
-                {salmonera.estado.charAt(0).toUpperCase() + salmonera.estado.slice(1)}
+                {formatEstado(salmonera.estado)}
               </Badge>
             </TableCell>
             <TableCell className="text-right">
