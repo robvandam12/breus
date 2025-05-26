@@ -18,13 +18,13 @@ export const QuickActions = () => {
       label: "HPT Completa",
       icon: FileText,
       color: "bg-blue-600 hover:bg-blue-700",
-      onClick: () => navigate("/formularios/hpt/nueva")
+      onClick: () => navigate("/operaciones/hpt")
     },
     {
       label: "Nueva Inmersión",
       icon: Anchor,
       color: "bg-cyan-600 hover:bg-cyan-700",
-      onClick: () => navigate("/inmersiones")
+      onClick: () => navigate("/operaciones/inmersiones")
     }
   ];
 

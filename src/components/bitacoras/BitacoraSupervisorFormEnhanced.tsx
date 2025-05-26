@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,106 +7,201 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Save } from 'lucide-react';
-import { BitacoraSupervisorData } from '@/types/auth';
+import { Plus, Trash2, Save, X } from 'lucide-react';
+import { useInmersiones } from "@/hooks/useInmersiones";
+import { useAuth } from "@/hooks/useAuth";
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
 
 interface BitacoraSupervisorFormEnhancedProps {
-  initialData?: Partial<BitacoraSupervisorData>;
-  onSubmit: (data: BitacoraSupervisorData) => void;
+  onSubmit: (data: BitacoraSupervisorFormData) => void;
   onCancel: () => void;
 }
 
+interface PersonalItem {
+  nombre: string;
+  matricula_cargo: string;
+  serie_profundimetro: string;
+  color_profundimetro: string;
+}
+
+interface EquipoItem {
+  equipo: string;
+  numero_registro: string;
+}
+
+interface BuzoPrincipalData {
+  apellido_paterno: string;
+  apellido_materno: string;
+  nombres: string;
+  run: string;
+}
+
 export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnhancedProps> = ({
-  initialData,
   onSubmit,
   onCancel
 }) => {
-  const [formData, setFormData] = useState<Partial<BitacoraSupervisorData>>({
-    fecha_inicio_faena: '',
-    hora_inicio_faena: '',
-    fecha_termino_faena: '',
-    hora_termino_faena: '',
+  const { inmersiones } = useInmersiones();
+  const { user } = useAuth();
+
+  const [formData, setFormData] = useState({
+    inmersion_id: '',
+    supervisor: user?.email || '',
+    fecha_inicio: '',
+    hora_inicio: '',
+    fecha_termino: '',
+    hora_termino: '',
     lugar_trabajo: '',
     tipo_trabajo: '',
-    supervisor_nombre_matricula: '',
-    bs_personal: [],
-    bs_equipos_usados: [],
+    supervisor_matricula: '',
+    personal: [] as PersonalItem[],
+    equipos: [] as EquipoItem[],
     observaciones_previas: '',
     embarcacion_nombre_matricula: '',
     tiempo_total_buceo: '',
     incluye_descompresion: false,
     contratista_nombre: '',
-    buzo_principal_datos: {
+    buzo_principal: {
       apellido_paterno: '',
       apellido_materno: '',
       nombres: '',
       run: ''
-    },
-    profundidad_trabajo_mts: 0,
-    profundidad_maxima_mts: 0,
+    } as BuzoPrincipalData,
+    profundidad_trabajo: 0,
+    profundidad_maxima: 0,
     requiere_camara_hiperbarica: false,
-    gestprev_eval_riesgos_actualizada: false,
-    gestprev_procedimientos_disponibles_conocidos: false,
-    gestprev_capacitacion_previa_realizada: false,
-    gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: false,
-    gestprev_registro_incidentes_reportados: false,
-    medidas_correctivas_texto: '',
-    observaciones_generales_texto: '',
-    supervisor_buceo_firma: null,
-    ...initialData
+    gestion_preventiva: {
+      eval_riesgos_actualizada: false,
+      procedimientos_disponibles: false,
+      capacitacion_previa: false,
+      identif_peligros_realizados: false,
+      registro_incidentes: false
+    },
+    medidas_correctivas: '',
+    observaciones_generales: ''
   });
 
+  // Filter completed immersions
+  const inmersionesCompletadas = inmersiones.filter(i => i.estado === 'completada');
+
   const addPersonal = () => {
-    const newPersonal = [...(formData.bs_personal || []), {
-      nombre: '',
-      matricula: '',
-      cargo: '',
-      serie_profundimetro: '',
-      color_profundimetro: ''
-    }];
-    setFormData({ ...formData, bs_personal: newPersonal });
+    if (formData.personal.length < 6) {
+      setFormData({
+        ...formData,
+        personal: [...formData.personal, {
+          nombre: '',
+          matricula_cargo: '',
+          serie_profundimetro: '',
+          color_profundimetro: ''
+        }]
+      });
+    }
   };
 
   const removePersonal = (index: number) => {
-    const newPersonal = (formData.bs_personal || []).filter((_, i) => i !== index);
-    setFormData({ ...formData, bs_personal: newPersonal });
+    const newPersonal = formData.personal.filter((_, i) => i !== index);
+    setFormData({ ...formData, personal: newPersonal });
   };
 
   const updatePersonal = (index: number, field: string, value: string) => {
-    const newPersonal = [...(formData.bs_personal || [])];
+    const newPersonal = [...formData.personal];
     newPersonal[index] = { ...newPersonal[index], [field]: value };
-    setFormData({ ...formData, bs_personal: newPersonal });
+    setFormData({ ...formData, personal: newPersonal });
   };
 
   const addEquipo = () => {
-    const newEquipos = [...(formData.bs_equipos_usados || []), {
-      equipo: '',
-      numero_registro: ''
-    }];
-    setFormData({ ...formData, bs_equipos_usados: newEquipos });
+    if (formData.equipos.length < 3) {
+      setFormData({
+        ...formData,
+        equipos: [...formData.equipos, { equipo: '', numero_registro: '' }]
+      });
+    }
   };
 
   const removeEquipo = (index: number) => {
-    const newEquipos = (formData.bs_equipos_usados || []).filter((_, i) => i !== index);
-    setFormData({ ...formData, bs_equipos_usados: newEquipos });
+    const newEquipos = formData.equipos.filter((_, i) => i !== index);
+    setFormData({ ...formData, equipos: newEquipos });
   };
 
   const updateEquipo = (index: number, field: string, value: string) => {
-    const newEquipos = [...(formData.bs_equipos_usados || [])];
+    const newEquipos = [...formData.equipos];
     newEquipos[index] = { ...newEquipos[index], [field]: value };
-    setFormData({ ...formData, bs_equipos_usados: newEquipos });
+    setFormData({ ...formData, equipos: newEquipos });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData as BitacoraSupervisorData);
+    
+    // Create the development description from all the fields
+    const desarrollo_inmersion = `
+IDENTIFICACIÓN:
+Lugar: ${formData.lugar_trabajo}
+Tipo: ${formData.tipo_trabajo}
+Fechas: ${formData.fecha_inicio} ${formData.hora_inicio} - ${formData.fecha_termino} ${formData.hora_termino}
+
+PERSONAL (${formData.personal.length}):
+${formData.personal.map(p => `- ${p.nombre} (${p.matricula_cargo})`).join('\n')}
+
+EQUIPOS:
+${formData.equipos.map(e => `- ${e.equipo} (${e.numero_registro})`).join('\n')}
+
+EMBARCACIÓN: ${formData.embarcacion_nombre_matricula}
+TIEMPO TOTAL: ${formData.tiempo_total_buceo}
+PROFUNDIDADES: Trabajo ${formData.profundidad_trabajo}m, Máxima ${formData.profundidad_maxima}m
+`.trim();
+
+    const evaluacion_general = `
+GESTIÓN PREVENTIVA:
+- Evaluación riesgos: ${formData.gestion_preventiva.eval_riesgos_actualizada ? 'SÍ' : 'NO'}
+- Procedimientos: ${formData.gestion_preventiva.procedimientos_disponibles ? 'SÍ' : 'NO'}
+- Capacitación: ${formData.gestion_preventiva.capacitacion_previa ? 'SÍ' : 'NO'}
+- Control riesgos: ${formData.gestion_preventiva.identif_peligros_realizados ? 'SÍ' : 'NO'}
+- Registro incidentes: ${formData.gestion_preventiva.registro_incidentes ? 'SÍ' : 'NO'}
+
+MEDIDAS CORRECTIVAS:
+${formData.medidas_correctivas}
+
+OBSERVACIONES GENERALES:
+${formData.observaciones_generales}
+`.trim();
+
+    const bitacoraData: BitacoraSupervisorFormData = {
+      inmersion_id: formData.inmersion_id,
+      supervisor: formData.supervisor,
+      desarrollo_inmersion,
+      evaluacion_general,
+      incidentes: formData.observaciones_previas
+    };
+
+    onSubmit(bitacoraData);
   };
 
+  // Check if profundidad_maxima > 40 to show hyperbaric chamber warning
+  useEffect(() => {
+    if (formData.profundidad_maxima > 40) {
+      setFormData(prev => ({ ...prev, requiere_camara_hiperbarica: true }));
+    } else {
+      setFormData(prev => ({ ...prev, requiere_camara_hiperbarica: false }));
+    }
+  }, [formData.profundidad_maxima]);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Bitácora del Supervisor de Buceo</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Save className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Bitácora del Supervisor de Buceo</CardTitle>
+                <p className="text-sm text-zinc-500">Registro completo según normativa</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -115,12 +210,37 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               <h3 className="text-lg font-semibold border-b pb-2">1. Identificación de la Faena</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <Label htmlFor="inmersion_id">Inmersión</Label>
+                  <Select onValueChange={(value) => setFormData({...formData, inmersion_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar inmersión..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inmersionesCompletadas.map((inmersion) => (
+                        <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
+                          {inmersion.codigo} - {inmersion.objetivo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="supervisor_matricula">Supervisor y Matrícula</Label>
+                  <Input
+                    id="supervisor_matricula"
+                    value={formData.supervisor_matricula}
+                    onChange={(e) => setFormData({...formData, supervisor_matricula: e.target.value})}
+                    placeholder="Nombre completo - Matrícula"
+                    required
+                  />
+                </div>
+                <div>
                   <Label htmlFor="fecha_inicio">Fecha Inicio</Label>
                   <Input
                     id="fecha_inicio"
                     type="date"
-                    value={formData.fecha_inicio_faena}
-                    onChange={(e) => setFormData({...formData, fecha_inicio_faena: e.target.value})}
+                    value={formData.fecha_inicio}
+                    onChange={(e) => setFormData({...formData, fecha_inicio: e.target.value})}
                     required
                   />
                 </div>
@@ -129,8 +249,8 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Input
                     id="hora_inicio"
                     type="time"
-                    value={formData.hora_inicio_faena}
-                    onChange={(e) => setFormData({...formData, hora_inicio_faena: e.target.value})}
+                    value={formData.hora_inicio}
+                    onChange={(e) => setFormData({...formData, hora_inicio: e.target.value})}
                     required
                   />
                 </div>
@@ -139,8 +259,8 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Input
                     id="fecha_termino"
                     type="date"
-                    value={formData.fecha_termino_faena}
-                    onChange={(e) => setFormData({...formData, fecha_termino_faena: e.target.value})}
+                    value={formData.fecha_termino}
+                    onChange={(e) => setFormData({...formData, fecha_termino: e.target.value})}
                     required
                   />
                 </div>
@@ -149,8 +269,8 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Input
                     id="hora_termino"
                     type="time"
-                    value={formData.hora_termino_faena}
-                    onChange={(e) => setFormData({...formData, hora_termino_faena: e.target.value})}
+                    value={formData.hora_termino}
+                    onChange={(e) => setFormData({...formData, hora_termino: e.target.value})}
                     required
                   />
                 </div>
@@ -174,16 +294,6 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                     required
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="supervisor_matricula">Nombre y N° de Matrícula del Supervisor</Label>
-                  <Input
-                    id="supervisor_matricula"
-                    value={formData.supervisor_nombre_matricula}
-                    onChange={(e) => setFormData({...formData, supervisor_nombre_matricula: e.target.value})}
-                    placeholder="Nombre completo - Matrícula"
-                    required
-                  />
-                </div>
               </div>
             </div>
 
@@ -191,14 +301,14 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold border-b pb-2">2. Buzos y Asistentes (hasta 6)</h3>
-                <Button type="button" onClick={addPersonal} variant="outline" size="sm">
+                <Button type="button" onClick={addPersonal} variant="outline" size="sm" disabled={formData.personal.length >= 6}>
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar Personal
                 </Button>
               </div>
-              {formData.bs_personal?.map((persona, index) => (
+              {formData.personal.map((persona, index) => (
                 <Card key={index} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                       <Label>Nombre</Label>
                       <Input
@@ -210,20 +320,22 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                     <div>
                       <Label>Matrícula y Cargo</Label>
                       <Input
-                        value={persona.matricula}
-                        onChange={(e) => updatePersonal(index, 'matricula', e.target.value)}
+                        value={persona.matricula_cargo}
+                        onChange={(e) => updatePersonal(index, 'matricula_cargo', e.target.value)}
                         placeholder="Matrícula - Cargo"
                       />
                     </div>
                     <div>
-                      <Label>Serie/Color Profundímetro</Label>
+                      <Label>Serie Profundímetro</Label>
+                      <Input
+                        value={persona.serie_profundimetro}
+                        onChange={(e) => updatePersonal(index, 'serie_profundimetro', e.target.value)}
+                        placeholder="N° Serie"
+                      />
+                    </div>
+                    <div>
+                      <Label>Color/Acc.</Label>
                       <div className="flex gap-2">
-                        <Input
-                          value={persona.serie_profundimetro}
-                          onChange={(e) => updatePersonal(index, 'serie_profundimetro', e.target.value)}
-                          placeholder="Serie"
-                          className="flex-1"
-                        />
                         <Input
                           value={persona.color_profundimetro}
                           onChange={(e) => updatePersonal(index, 'color_profundimetro', e.target.value)}
@@ -248,13 +360,13 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
             {/* 3. Equipos Usados */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold border-b pb-2">3. Equipos Usados</h3>
-                <Button type="button" onClick={addEquipo} variant="outline" size="sm">
+                <h3 className="text-lg font-semibold border-b pb-2">3. Equipos Usados (hasta 3)</h3>
+                <Button type="button" onClick={addEquipo} variant="outline" size="sm" disabled={formData.equipos.length >= 3}>
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar Equipo
                 </Button>
               </div>
-              {formData.bs_equipos_usados?.map((equipo, index) => (
+              {formData.equipos.map((equipo, index) => (
                 <Card key={index} className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -356,7 +468,7 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               </div>
             </div>
 
-            {/* 8. Datos del Buzo */}
+            {/* 8. Datos del Buzo Principal */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b pb-2">8. Datos del Buzo Principal</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -364,11 +476,11 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Label htmlFor="apellido_paterno">Apellido Paterno</Label>
                   <Input
                     id="apellido_paterno"
-                    value={formData.buzo_principal_datos?.apellido_paterno}
+                    value={formData.buzo_principal.apellido_paterno}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      buzo_principal_datos: { 
-                        ...formData.buzo_principal_datos, 
+                      buzo_principal: { 
+                        ...formData.buzo_principal, 
                         apellido_paterno: e.target.value 
                       }
                     })}
@@ -378,11 +490,11 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Label htmlFor="apellido_materno">Apellido Materno</Label>
                   <Input
                     id="apellido_materno"
-                    value={formData.buzo_principal_datos?.apellido_materno}
+                    value={formData.buzo_principal.apellido_materno}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      buzo_principal_datos: { 
-                        ...formData.buzo_principal_datos, 
+                      buzo_principal: { 
+                        ...formData.buzo_principal, 
                         apellido_materno: e.target.value 
                       }
                     })}
@@ -392,11 +504,11 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Label htmlFor="nombres">Nombres</Label>
                   <Input
                     id="nombres"
-                    value={formData.buzo_principal_datos?.nombres}
+                    value={formData.buzo_principal.nombres}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      buzo_principal_datos: { 
-                        ...formData.buzo_principal_datos, 
+                      buzo_principal: { 
+                        ...formData.buzo_principal, 
                         nombres: e.target.value 
                       }
                     })}
@@ -406,11 +518,11 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                   <Label htmlFor="run">RUN</Label>
                   <Input
                     id="run"
-                    value={formData.buzo_principal_datos?.run}
+                    value={formData.buzo_principal.run}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      buzo_principal_datos: { 
-                        ...formData.buzo_principal_datos, 
+                      buzo_principal: { 
+                        ...formData.buzo_principal, 
                         run: e.target.value 
                       }
                     })}
@@ -429,8 +541,8 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                     id="profundidad_trabajo"
                     type="number"
                     step="0.1"
-                    value={formData.profundidad_trabajo_mts}
-                    onChange={(e) => setFormData({...formData, profundidad_trabajo_mts: parseFloat(e.target.value) || 0})}
+                    value={formData.profundidad_trabajo}
+                    onChange={(e) => setFormData({...formData, profundidad_trabajo: parseFloat(e.target.value) || 0})}
                   />
                 </div>
                 <div>
@@ -439,18 +551,17 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
                     id="profundidad_maxima"
                     type="number"
                     step="0.1"
-                    value={formData.profundidad_maxima_mts}
-                    onChange={(e) => setFormData({...formData, profundidad_maxima_mts: parseFloat(e.target.value) || 0})}
+                    value={formData.profundidad_maxima}
+                    onChange={(e) => setFormData({...formData, profundidad_maxima: parseFloat(e.target.value) || 0})}
                   />
                 </div>
-                <div className="md:col-span-2 flex items-center space-x-2">
-                  <Checkbox
-                    id="requiere_camara"
-                    checked={formData.requiere_camara_hiperbarica}
-                    onCheckedChange={(checked) => setFormData({...formData, requiere_camara_hiperbarica: !!checked})}
-                  />
-                  <Label htmlFor="requiere_camara">Requiere cámara hiperbárica (sobre 40 metros - adjuntar documentos)</Label>
-                </div>
+                {formData.requiere_camara_hiperbarica && (
+                  <div className="md:col-span-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-700 text-sm font-medium">
+                      ⚠️ Profundidad sobre 40 metros: Se requiere cámara hiperbárica disponible (adjuntar documentos)
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -459,17 +570,23 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               <h3 className="text-lg font-semibold border-b pb-2">10. Gestión Preventiva Según Decreto N°44</h3>
               <div className="space-y-3">
                 {[
-                  { key: 'gestprev_eval_riesgos_actualizada', label: 'Evaluación de riesgos específica del buceo actualizada' },
-                  { key: 'gestprev_procedimientos_disponibles_conocidos', label: 'Procedimientos escritos disponibles y conocidos' },
-                  { key: 'gestprev_capacitacion_previa_realizada', label: 'Capacitación previa al buceo realizada' },
-                  { key: 'gestprev_identif_peligros_control_riesgos_subacuaticos_realizados', label: 'Identificación de peligros y control de riesgos del entorno subacuático realizados' },
-                  { key: 'gestprev_registro_incidentes_reportados', label: 'Registro de incidentes, cuasi accidentes o condiciones inseguras reportadas' }
+                  { key: 'eval_riesgos_actualizada', label: 'Evaluación de riesgos específica del buceo actualizada' },
+                  { key: 'procedimientos_disponibles', label: 'Procedimientos escritos disponibles y conocidos' },
+                  { key: 'capacitacion_previa', label: 'Capacitación previa al buceo realizada' },
+                  { key: 'identif_peligros_realizados', label: 'Identificación de peligros y control de riesgos del entorno subacuático realizados' },
+                  { key: 'registro_incidentes', label: 'Registro de incidentes, cuasi accidentes o condiciones inseguras reportadas' }
                 ].map((item) => (
                   <div key={item.key} className="flex items-center space-x-2">
                     <Checkbox
                       id={item.key}
-                      checked={formData[item.key as keyof typeof formData] as boolean}
-                      onCheckedChange={(checked) => setFormData({...formData, [item.key]: !!checked})}
+                      checked={formData.gestion_preventiva[item.key as keyof typeof formData.gestion_preventiva]}
+                      onCheckedChange={(checked) => setFormData({
+                        ...formData, 
+                        gestion_preventiva: {
+                          ...formData.gestion_preventiva,
+                          [item.key]: !!checked
+                        }
+                      })}
                     />
                     <Label htmlFor={item.key} className="text-sm">{item.label}</Label>
                   </div>
@@ -482,8 +599,8 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               <h3 className="text-lg font-semibold border-b pb-2">11. Medidas Correctivas Implementadas</h3>
               <div>
                 <Textarea
-                  value={formData.medidas_correctivas_texto}
-                  onChange={(e) => setFormData({...formData, medidas_correctivas_texto: e.target.value})}
+                  value={formData.medidas_correctivas}
+                  onChange={(e) => setFormData({...formData, medidas_correctivas: e.target.value})}
                   placeholder="Describir medidas correctivas implementadas..."
                   rows={4}
                 />
@@ -495,11 +612,22 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               <h3 className="text-lg font-semibold border-b pb-2">12. Observaciones Generales</h3>
               <div>
                 <Textarea
-                  value={formData.observaciones_generales_texto}
-                  onChange={(e) => setFormData({...formData, observaciones_generales_texto: e.target.value})}
+                  value={formData.observaciones_generales}
+                  onChange={(e) => setFormData({...formData, observaciones_generales: e.target.value})}
                   placeholder="Observaciones generales..."
                   rows={4}
                 />
+              </div>
+            </div>
+
+            {/* 13. Firma */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold border-b pb-2">13. Firma del Supervisor de Buceo</h3>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-700 text-sm">
+                  Al enviar este formulario, confirmo que toda la información proporcionada es correcta y completa.
+                  La firma digital se aplicará automáticamente al crear la bitácora.
+                </p>
               </div>
             </div>
 
@@ -508,9 +636,9 @@ export const BitacoraSupervisorFormEnhanced: React.FC<BitacoraSupervisorFormEnha
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancelar
               </Button>
-              <Button type="submit">
+              <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
                 <Save className="w-4 h-4 mr-2" />
-                Guardar Bitácora
+                Crear Bitácora Supervisor
               </Button>
             </div>
           </form>
