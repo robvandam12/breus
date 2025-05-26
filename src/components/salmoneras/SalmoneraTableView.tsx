@@ -36,6 +36,11 @@ export const SalmoneraTableView = ({
     }
   };
 
+  const formatEstado = (estado: string | undefined) => {
+    if (!estado) return 'Sin estado';
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
+  };
+
   return (
     <Card className="ios-card">
       <Table>
@@ -90,9 +95,9 @@ export const SalmoneraTableView = ({
               <TableCell>
                 <Badge 
                   variant="outline" 
-                  className={`${getEstadoBadgeColor(salmonera.estado)} font-medium`}
+                  className={`${getEstadoBadgeColor(salmonera.estado || 'inactiva')} font-medium`}
                 >
-                  {salmonera.estado.charAt(0).toUpperCase() + salmonera.estado.slice(1)}
+                  {formatEstado(salmonera.estado)}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
