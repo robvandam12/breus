@@ -1,227 +1,195 @@
 
 import { useState } from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Building, MapPin, Settings, Activity, Bell } from 'lucide-react';
-import { UserPoolManager } from '@/components/admin/UserPoolManager';
-import { TeamBuilder } from '@/components/admin/TeamBuilder';
-import { useAuth } from '@/hooks/useAuth';
-import { useWorkflowNotifications } from '@/hooks/useWorkflowNotifications';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PoolUsuarios } from '@/components/admin/PoolUsuarios';
+import { GestionEquipos } from '@/components/admin/GestionEquipos';
+import { CentroNotificaciones } from '@/components/admin/CentroNotificaciones';
 import { Badge } from '@/components/ui/badge';
+import { Users, UserCheck, Bell, BarChart3, Building, MapPin, Waves } from 'lucide-react';
+import { useWorkflowNotifications } from '@/hooks/useWorkflowNotifications';
+import { useUserPool } from '@/hooks/useUserPool';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+import { useAuth } from '@/hooks/useAuth';
 
 const AdminSalmoneraPage = () => {
   const { profile } = useAuth();
-  const { notifications, unreadCount } = useWorkflowNotifications();
-  const [activeTab, setActiveTab] = useState('pool');
+  const { unreadCount } = useWorkflowNotifications();
+  const { poolUsers, invitaciones } = useUserPool(profile?.salmonera_id);
+  const { operaciones } = useOperaciones();
+  const { salmoneras } = useSalmoneras();
+
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Estadísticas del dashboard
+  const stats = {
+    totalUsuarios: poolUsers.length,
+    usuariosDisponibles: poolUsers.filter(u => u.disponible).length,
+    invitacionesPendientes: invitaciones.filter(i => i.estado === 'pendiente').length,
+    operacionesActivas: operaciones.filter(o => o.estado === 'activa').length,
+    totalSalmoneras: salmoneras.length,
+    notificacionesPendientes: unreadCount
+  };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <Building className="w-6 h-6 text-blue-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Panel Administrador Salmonera</h1>
-                  <p className="text-sm text-zinc-500">Gestión completa de operaciones de buceo</p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Panel de Administración</h1>
+          <p className="text-gray-600">Gestión integral de usuarios, equipos y operaciones</p>
+        </div>
+        <Badge variant="outline" className="text-sm">
+          Admin Salmonera
+        </Badge>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="usuarios" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Pool Usuarios
+            {stats.invitacionesPendientes > 0 && (
+              <Badge variant="destructive" className="text-xs rounded-full h-5 w-5 p-0 flex items-center justify-center">
+                {stats.invitacionesPendientes}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="equipos" className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4" />
+            Equipos
+          </TabsTrigger>
+          <TabsTrigger value="notificaciones" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notificaciones
+            {unreadCount > 0 && (
+              <Badge variant="destructive" className="text-xs rounded-full h-5 w-5 p-0 flex items-center justify-center">
+                {unreadCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalUsuarios}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats.usuariosDisponibles} disponibles
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Invitaciones Pendientes</CardTitle>
+                <Bell className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.invitacionesPendientes}</div>
+                <p className="text-xs text-muted-foreground">
+                  Por confirmar
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Operaciones Activas</CardTitle>
+                <Waves className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.operacionesActivas}</div>
+                <p className="text-xs text-muted-foreground">
+                  En ejecución
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Salmoneras</CardTitle>
+                <Building className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalSalmoneras}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total registradas
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Notificaciones</CardTitle>
+                <Bell className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.notificacionesPendientes}</div>
+                <p className="text-xs text-muted-foreground">
+                  Sin leer
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumen del Workflow</CardTitle>
+              <CardDescription>
+                Estado actual del proceso de buceo profesional
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span>Pool de Usuarios Configurado</span>
+                  </div>
+                  <Badge variant="default">Activo</Badge>
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span>Sistema de Notificaciones</span>
+                  </div>
+                  <Badge variant="default">Funcionando</Badge>
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span>Gestión de Equipos</span>
+                  </div>
+                  <Badge variant="secondary">En desarrollo</Badge>
                 </div>
               </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-3">
-                {unreadCount > 0 && (
-                  <div className="relative">
-                    <Bell className="w-5 h-5 text-gray-600" />
-                    <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 min-w-[20px] h-5 flex items-center justify-center rounded-full">
-                      {unreadCount}
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <div className="text-2xl font-bold">12</div>
-                        <div className="text-sm text-gray-500">Usuarios Activos</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Building className="w-8 h-8 text-green-600" />
-                      <div>
-                        <div className="text-2xl font-bold">5</div>
-                        <div className="text-sm text-gray-500">Contratistas</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-8 h-8 text-purple-600" />
-                      <div>
-                        <div className="text-2xl font-bold">8</div>
-                        <div className="text-sm text-gray-500">Sitios Activos</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-8 h-8 text-orange-600" />
-                      <div>
-                        <div className="text-2xl font-bold">3</div>
-                        <div className="text-sm text-gray-500">Operaciones Activas</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Main Content Tabs */}
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-6">
-                  <TabsTrigger value="pool" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Pool Usuarios
-                  </TabsTrigger>
-                  <TabsTrigger value="teams" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Equipos
-                  </TabsTrigger>
-                  <TabsTrigger value="contractors" className="flex items-center gap-2">
-                    <Building className="w-4 h-4" />
-                    Contratistas
-                  </TabsTrigger>
-                  <TabsTrigger value="sites" className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Sitios
-                  </TabsTrigger>
-                  <TabsTrigger value="operations" className="flex items-center gap-2">
-                    <Activity className="w-4 h-4" />
-                    Operaciones
-                  </TabsTrigger>
-                  <TabsTrigger value="notifications" className="flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    Notificaciones
-                    {unreadCount > 0 && (
-                      <Badge className="ml-1 bg-red-500 text-white text-xs px-1 min-w-[16px] h-4 flex items-center justify-center rounded-full">
-                        {unreadCount}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                </TabsList>
+        <TabsContent value="usuarios">
+          <PoolUsuarios salmoneraId={profile?.salmonera_id} />
+        </TabsContent>
 
-                <TabsContent value="pool" className="space-y-6">
-                  <UserPoolManager />
-                </TabsContent>
+        <TabsContent value="equipos">
+          <GestionEquipos />
+        </TabsContent>
 
-                <TabsContent value="teams" className="space-y-6">
-                  <TeamBuilder />
-                </TabsContent>
-
-                <TabsContent value="contractors" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gestión de Contratistas</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>Componente de gestión de contratistas</p>
-                        <p className="text-sm">Funcionalidad en desarrollo</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="sites" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gestión de Sitios</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>Componente de gestión de sitios</p>
-                        <p className="text-sm">Funcionalidad en desarrollo</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="operations" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Gestión de Operaciones</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>Componente de gestión de operaciones</p>
-                        <p className="text-sm">Funcionalidad en desarrollo</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="notifications" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Centro de Notificaciones</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {notifications.length > 0 ? (
-                        <div className="space-y-4">
-                          {notifications.map((notif) => (
-                            <div key={notif.id} className="p-4 border rounded-lg">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h4 className="font-medium">{notif.titulo}</h4>
-                                  <p className="text-sm text-gray-600 mt-1">{notif.mensaje}</p>
-                                  <p className="text-xs text-gray-400 mt-2">
-                                    {new Date(notif.created_at).toLocaleString()}
-                                  </p>
-                                </div>
-                                <Badge className={`${notif.tipo === 'aprobacion_requerida' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                                  {notif.tipo.replace(/_/g, ' ')}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <Bell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                          <p>No hay notificaciones pendientes</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+        <TabsContent value="notificaciones">
+          <CentroNotificaciones />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

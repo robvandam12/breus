@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Settings,
@@ -9,19 +10,37 @@ import {
   User,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  ChevronRight
 } from "lucide-react";
 
-import { NavItem } from "@/types/nav";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useAuthRoles } from '@/hooks/useAuthRoles';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
-import { useAuthRoles } from '@/hooks/useAuthRoles';
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export const AppSidebar = () => {
+export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { permissions, currentRole } = useAuthRoles();
+  const location = useLocation();
   
   const handleSignOut = async () => {
     try {
@@ -31,164 +50,195 @@ export const AppSidebar = () => {
     }
   };
 
-  const navigationItems: NavItem[] = [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-      visible: true,
-    },
-    // Nuevo item para admin salmonera
-    {
-      title: "Panel Administrador",
-      url: "/admin/salmonera",
-      icon: Building,
-      visible: currentRole === 'admin_salmonera',
-    },
-    {
-      title: "Empresas",
-      icon: Building,
-      visible: permissions.manage_salmoneras || permissions.manage_sitios || permissions.manage_contratistas,
-      children: [
-        {
-          title: "Salmoneras",
-          url: "/empresas/salmoneras",
-          icon: Building,
-          visible: permissions.manage_salmoneras,
-        },
-        {
-          title: "Sitios",
-          url: "/empresas/sitios", 
-          icon: MapPin,
-          visible: permissions.manage_sitios,
-        },
-        {
-          title: "Contratistas",
-          url: "/empresas/contratistas",
-          icon: Users,
-          visible: permissions.manage_contratistas,
-        },
-      ],
-    },
-    {
-      title: "Operaciones",
-      url: "/operaciones",
-      icon: Settings,
-      visible: permissions.view_all_operaciones,
-    },
-    {
-      title: "Inmersiones",
-      url: "/operaciones/inmersiones",
-      icon: Waves,
-      visible: permissions.create_inmersion,
-    },
-    {
-      title: "Bitácoras",
-      icon: FileText,
-      visible: permissions.create_bitacora_supervisor || permissions.create_bitacora_buzo,
-      children: [
-        {
-          title: "Supervisor",
-          url: "/operaciones/bitacoras-supervisor",
-          icon: AlertTriangle,
-          visible: permissions.create_bitacora_supervisor,
-        },
-        {
-          title: "Buzo",
-          url: "/operaciones/bitacoras-buzo",
-          icon: CheckCircle,
-          visible: permissions.create_bitacora_buzo,
-        },
-      ],
-    },
-    {
-      title: "Reportes",
-      url: "/reportes",
-      icon: Clock,
-      visible: true,
-    },
-  ];
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   return (
-    <aside className="bg-white border-r border-border/20 w-64 flex flex-col">
-      <div className="h-16 flex items-center justify-between px-4 border-b border-border/20">
-        <Link to="/" className="flex items-center gap-2 font-semibold">
+    <Sidebar>
+      <SidebarHeader>
+        <Link to="/" className="flex items-center gap-2 font-semibold px-2 py-1">
           <Waves className="w-6 h-6 text-blue-600" />
-          <span>BuceoApp</span>
+          <span>Breus</span>
         </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-8 h-8 rounded-full overflow-hidden border border-border/20">
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" alt="Imagen de perfil" />
-                <AvatarFallback>{profile?.nombre[0]}{profile?.apellido[0]}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled>
-              {profile?.nombre} {profile?.apellido}
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              {profile?.email}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link to="/perfil" className="w-full h-full block">
-                <User className="w-4 h-4 mr-2" />
-                Mi Perfil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              Cerrar Sesión
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navegación Principal</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActiveRoute('/dashboard')}>
+                  <Link to="/dashboard">
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-      <nav className="flex-1 py-4">
-        {navigationItems.map((item, index) => {
-          if (!item.visible) {
-            return null;
-          }
+              {currentRole === 'admin_salmonera' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActiveRoute('/admin/salmonera')}>
+                    <Link to="/admin/salmonera">
+                      <Building className="w-4 h-4" />
+                      <span>Panel Administrador</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-          if (item.children) {
-            return (
-              <details key={index} className="group [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex items-center px-4 py-2 text-sm text-zinc-500 hover:bg-gray-50 hover:text-zinc-700 cursor-pointer">
-                  <item.icon className="w-4 h-4 mr-2 text-zinc-400 group-hover:text-zinc-600" />
-                  {item.title}
-                </summary>
-                <div className="pl-8 space-y-1">
-                  {item.children.map((child, childIndex) =>
-                    child.visible ? (
-                      <Link
-                        key={childIndex}
-                        to={child.url}
-                        className="block px-4 py-2 text-sm text-zinc-500 hover:bg-gray-50 hover:text-zinc-700"
-                      >
-                        {child.title}
-                      </Link>
-                    ) : null
-                  )}
-                </div>
-              </details>
-            );
-          }
+              {(permissions.manage_salmoneras || permissions.manage_sitios || permissions.manage_contratistas) && (
+                <Collapsible>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton>
+                        <Building className="w-4 h-4" />
+                        <span>Empresas</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {permissions.manage_salmoneras && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActiveRoute('/empresas/salmoneras')}>
+                              <Link to="/empresas/salmoneras">Salmoneras</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
+                        {permissions.manage_sitios && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActiveRoute('/empresas/sitios')}>
+                              <Link to="/empresas/sitios">Sitios</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
+                        {permissions.manage_contratistas && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActiveRoute('/empresas/contratistas')}>
+                              <Link to="/empresas/contratistas">Contratistas</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
 
-          return (
-            <Link
-              key={index}
-              to={item.url}
-              className="flex items-center px-4 py-2 text-sm text-zinc-500 hover:bg-gray-50 hover:text-zinc-700"
-            >
-              <item.icon className="w-4 h-4 mr-2 text-zinc-400" />
-              {item.title}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+              {permissions.view_all_operaciones && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActiveRoute('/operaciones/operaciones')}>
+                    <Link to="/operaciones/operaciones">
+                      <Settings className="w-4 h-4" />
+                      <span>Operaciones</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {permissions.create_inmersion && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActiveRoute('/operaciones/inmersiones')}>
+                    <Link to="/operaciones/inmersiones">
+                      <Waves className="w-4 h-4" />
+                      <span>Inmersiones</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {(permissions.create_bitacora_supervisor || permissions.create_bitacora_buzo) && (
+                <Collapsible>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton>
+                        <FileText className="w-4 h-4" />
+                        <span>Bitácoras</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {permissions.create_bitacora_supervisor && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActiveRoute('/operaciones/bitacoras-supervisor')}>
+                              <Link to="/operaciones/bitacoras-supervisor">Supervisor</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
+                        {permissions.create_bitacora_buzo && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={isActiveRoute('/operaciones/bitacoras-buzo')}>
+                              <Link to="/operaciones/bitacoras-buzo">Buzo</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActiveRoute('/reportes')}>
+                  <Link to="/reportes">
+                    <Clock className="w-4 h-4" />
+                    <span>Reportes</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActiveRoute('/configuracion')}>
+                  <Link to="/configuracion">
+                    <Settings className="w-4 h-4" />
+                    <span>Configuración</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://github.com/shadcn.png" alt="Imagen de perfil" />
+                    <AvatarFallback>
+                      {profile?.nombre?.[0]}{profile?.apellido?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      {profile?.nombre} {profile?.apellido}
+                    </span>
+                    <span className="truncate text-xs">{profile?.email}</span>
+                  </div>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" align="start" side="top">
+                <DropdownMenuItem>
+                  <Link to="/profile" className="w-full flex items-center">
+                    <User className="w-4 h-4 mr-2" />
+                    Mi Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   );
-};
+}
