@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -9,7 +8,7 @@ const corsHeaders = {
 
 interface EmailRequest {
   to: string;
-  template_type: 'welcome' | 'password_reset' | 'contractor_invitation';
+  template_type: 'welcome' | 'password_reset' | 'contractor_invitation' | 'email_confirmation';
   data: Record<string, any>;
 }
 
@@ -32,6 +31,47 @@ const handler = async (req: Request): Promise<Response> => {
     let html = "";
 
     switch (template_type) {
+      case 'email_confirmation':
+        subject = "Breus - Confirma tu cuenta";
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">¡Bienvenido a Breus!</h1>
+              <p style="color: #e1e7f5; margin: 10px 0 0 0; font-size: 16px;">Plataforma de gestión profesional de buceo</p>
+            </div>
+            <div style="padding: 40px 20px; background: #ffffff;">
+              <h2 style="color: #1f2937; margin-bottom: 20px;">Hola ${data.nombre || 'Usuario'},</h2>
+              <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
+                Gracias por registrarte en Breus. Para completar tu registro y acceder a todas las funcionalidades de la plataforma, necesitas confirmar tu dirección de email.
+              </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.confirmation_url}" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                  Confirmar Email
+                </a>
+              </div>
+              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #374151; margin-top: 0; font-size: 16px;">¿Qué puedes hacer en Breus?</h3>
+                <ul style="color: #4b5563; line-height: 1.6; margin: 10px 0;">
+                  <li>Gestionar formularios HPT y Anexo Bravo digitalmente</li>
+                  <li>Registrar y supervisar inmersiones</li>
+                  <li>Crear bitácoras de supervisor y buzo</li>
+                  <li>Acceder a reportes y métricas en tiempo real</li>
+                  <li>Cumplir con normativas de seguridad</li>
+                </ul>
+              </div>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                Si no creaste esta cuenta, puedes ignorar este email de forma segura.
+              </p>
+            </div>
+            <div style="background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 12px;">
+              © 2024 Breus. Todos los derechos reservados.
+              <br>
+              Plataforma de gestión profesional de buceo para la industria salmonicultora.
+            </div>
+          </div>
+        `;
+        break;
+
       case 'welcome':
         subject = "Bienvenido a Breus - Confirma tu cuenta";
         html = `

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -139,7 +138,7 @@ export const useBitacoras = () => {
     },
   });
 
-  // Create bitácora supervisor
+  // Create bitácora supervisor - ahora activa las bitácoras de buzo
   const createBitacoraSupervisorMutation = useMutation({
     mutationFn: async (data: BitacoraSupervisorFormData) => {
       console.log('Creating bitácora supervisor:', data);
@@ -163,13 +162,53 @@ export const useBitacoras = () => {
         throw error;
       }
 
+      // Obtener la información de la inmersión para crear bitácoras de buzo
+      const { data: inmersionData, error: inmersionError } = await supabase
+        .from('inmersion')
+        .select('buzo_principal, buzo_asistente')
+        .eq('inmersion_id', data.inmersion_id)
+        .single();
+
+      if (inmersionError) {
+        console.error('Error fetching inmersion data:', inmersionError);
+        // No lanzamos error aquí para no bloquear la creación de la bitácora supervisor
+      } else if (inmersionData) {
+        // Crear bitácoras de buzo automáticamente para el equipo
+        const buzos = [inmersionData.buzo_principal];
+        if (inmersionData.buzo_asistente) {
+          buzos.push(inmersionData.buzo_asistente);
+        }
+
+        for (const buzo of buzos) {
+          if (buzo && buzo.trim()) {
+            const buzoCodigo = `BB-${Date.now().toString().slice(-6)}-${buzo.substring(0, 3).toUpperCase()}`;
+            
+            await supabase
+              .from('bitacora_buzo')
+              .insert([{
+                inmersion_id: data.inmersion_id,
+                buzo: buzo,
+                codigo: buzoCodigo,
+                fecha: fecha,
+                profundidad_maxima: 0, // Se llenará después
+                trabajos_realizados: '', // Se llenará después
+                estado_fisico_post: '', // Se llenará después
+                firmado: false
+              }]);
+          }
+        }
+
+        console.log(`Bitácoras de buzo creadas automáticamente para: ${buzos.join(', ')}`);
+      }
+
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
       toast({
         title: "Bitácora Supervisor creada",
-        description: "La bitácora ha sido creada exitosamente.",
+        description: "La bitácora ha sido creada y se habilitaron las bitácoras de buzo correspondientes.",
       });
     },
     onError: (error) => {
@@ -182,10 +221,21 @@ export const useBitacoras = () => {
     },
   });
 
-  // Create bitácora buzo
+  // Create bitácora buzo - solo permitir si existe una bitácora supervisor
   const createBitacoraBuzoMutation = useMutation({
     mutationFn: async (data: BitacoraBuzoFormData) => {
       console.log('Creating bitácora buzo:', data);
+      
+      // Verificar que existe una bitácora supervisor para esta inmersión
+      const { data: supervisorBitacora, error: supervisorError } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('inmersion_id', data.inmersion_id)
+        .single();
+
+      if (supervisorError || !supervisorBitacora) {
+        throw new Error('No se puede crear una bitácora de buzo sin una bitácora de supervisor previa.');
+      }
       
       const codigo = `BB-${Date.now().toString().slice(-6)}`;
       const fecha = new Date().toISOString().split('T')[0];
@@ -219,7 +269,7 @@ export const useBitacoras = () => {
       console.error('Error creating bitácora buzo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la bitácora buzo.",
+        description: error.message || "No se pudo crear la bitácora buzo.",
         variant: "destructive",
       });
     },
