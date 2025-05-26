@@ -21,7 +21,7 @@ import Salmoneras from "./pages/empresas/Salmoneras";
 import Contratistas from "./pages/empresas/Contratistas";
 import Sitios from "./pages/empresas/Sitios";
 import EquipoBuceo from "./pages/EquipoBuceo";
-import Admin from "./pages/Admin";
+import Admin from "./pages/admin/UserManagement";
 
 const queryClient = new QueryClient();
 
