@@ -9,7 +9,8 @@ import {
   BarChart3,
   Settings,
   Shield,
-  LogOut
+  LogOut,
+  Users
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,7 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 const menuItems = [
@@ -45,10 +46,15 @@ const menuItems = [
     title: "Empresas",
     icon: Folder,
     items: [
-      { title: "Salmoneras", url: "/empresas/salmoneras" },
+      { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
       { title: "Sitios", url: "/empresas/sitios" },
       { title: "Contratistas", url: "/empresas/contratistas" }
     ]
+  },
+  {
+    title: "Equipo de Buceo",
+    icon: Users,
+    url: "/personal-pool"
   },
   {
     title: "Operaciones",
@@ -92,23 +98,29 @@ const menuItems = [
     title: "Admin",
     icon: Shield,
     items: [
-      { title: "Roles y Permisos", url: "/admin/roles" }
-    ],
-    roleRequired: "superuser"
+      { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
+      { title: "Gestión Salmonera", url: "/admin/salmonera", roleRequired: "admin_salmonera" }
+    ]
   }
 ];
 
 export function AppSidebar() {
-  // TODO: Get user role from auth context
-  const userRole = "superuser"; // This should come from auth
+  const { profile, signOut } = useAuth();
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.roleRequired || item.roleRequired === userRole
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roleRequired) return true;
+    return profile?.role === item.roleRequired;
+  }).map(item => ({
+    ...item,
+    items: item.items?.filter(subItem => {
+      if (!subItem.roleRequired) return true;
+      return profile?.role === subItem.roleRequired;
+    })
+  }));
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión exitosamente.",
@@ -123,8 +135,32 @@ export function AppSidebar() {
     }
   };
 
+  const getUserDisplayName = () => {
+    if (profile) {
+      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
+    }
+    return 'Usuario';
+  };
+
+  const getRoleDisplayName = (role?: string) => {
+    switch (role) {
+      case 'superuser':
+        return 'Super Usuario';
+      case 'admin_salmonera':
+        return 'Admin Salmonera';
+      case 'admin_servicio':
+        return 'Admin Servicio';
+      case 'supervisor':
+        return 'Supervisor';
+      case 'buzo':
+        return 'Buzo';
+      default:
+        return 'Usuario';
+    }
+  };
+
   return (
-    <Sidebar className="border-r border-border/40">
+    <Sidebar className="border-r border-border/40 font-sans">
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
@@ -194,11 +230,13 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-border/40 p-4">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-medium text-sm">JS</span>
+            <span className="text-white font-medium text-sm">
+              {getUserDisplayName().charAt(0).toUpperCase()}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Juan Supervisor</p>
-            <p className="text-xs text-zinc-500 truncate">supervisor@breus.cl</p>
+            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+            <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
           </div>
           <Button
             variant="ghost"

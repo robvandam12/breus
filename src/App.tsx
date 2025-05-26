@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import Salmoneras from "./pages/empresas/Salmoneras";
 import Sitios from "./pages/empresas/Sitios";
 import Contratistas from "./pages/empresas/Contratistas";
+import PersonalPool from "./pages/PersonalPool";
 import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
@@ -68,6 +69,12 @@ const App: React.FC = () => (
             <Route path="/empresas/contratistas" element={
               <ProtectedRoute>
                 <Contratistas />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/personal-pool" element={
+              <ProtectedRoute>
+                <PersonalPool />
               </ProtectedRoute>
             } />
             

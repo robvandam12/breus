@@ -4,9 +4,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Webhook, Bell, User, Zap } from "lucide-react";
-import { ConfiguracionAvanzada } from "@/components/configuracion/ConfiguracionAvanzada";
-import { WebhookTester } from "@/components/integrations/WebhookTester";
+import { Settings, Webhook, Bell, User, Shield } from "lucide-react";
+import { WebhookManagement } from "@/components/configuration/WebhookManagement";
+import { NotificationSettings } from "@/components/configuration/NotificationSettings";
 
 const Configuracion = () => {
   return (
@@ -29,75 +29,52 @@ const Configuracion = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <Tabs defaultValue="general" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-5">
-                  <TabsTrigger value="general" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    General
+              <Tabs defaultValue="webhooks" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="webhooks" className="flex items-center gap-2">
+                    <Webhook className="w-4 h-4" />
+                    Webhooks
                   </TabsTrigger>
                   <TabsTrigger value="notifications" className="flex items-center gap-2">
                     <Bell className="w-4 h-4" />
                     Notificaciones
                   </TabsTrigger>
-                  <TabsTrigger value="webhooks" className="flex items-center gap-2">
-                    <Webhook className="w-4 h-4" />
-                    Webhooks
+                  <TabsTrigger value="security" className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Seguridad
                   </TabsTrigger>
-                  <TabsTrigger value="integrations" className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    Integraciones
-                  </TabsTrigger>
-                  <TabsTrigger value="advanced" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Avanzado
+                  <TabsTrigger value="profile" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Perfil
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="general">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Configuración General</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Configuración general del perfil y preferencias básicas.</p>
-                    </CardContent>
-                  </Card>
+                <TabsContent value="webhooks">
+                  <WebhookManagement />
                 </TabsContent>
 
                 <TabsContent value="notifications">
-                  <ConfiguracionAvanzada />
+                  <NotificationSettings />
                 </TabsContent>
 
-                <TabsContent value="webhooks">
+                <TabsContent value="security">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Gestión de Webhooks</CardTitle>
+                      <CardTitle>Configuración de Seguridad</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 mb-4">Configura endpoints para recibir notificaciones automáticas.</p>
-                      {/* Webhook configuration would go here */}
+                      <p className="text-gray-600">Configuraciones de seguridad y acceso del sistema.</p>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="integrations">
+                <TabsContent value="profile">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Probador de Integraciones</CardTitle>
+                      <CardTitle>Perfil de Usuario</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <WebhookTester />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="advanced">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Configuración Avanzada</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Configuraciones avanzadas del sistema y herramientas de diagnóstico.</p>
+                      <p className="text-gray-600">Gestión del perfil personal y preferencias de cuenta.</p>
                     </CardContent>
                   </Card>
                 </TabsContent>
