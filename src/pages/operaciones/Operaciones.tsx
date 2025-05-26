@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Settings, Plus, Search, Edit, Trash2, Eye, FileText, Clock, CheckCircle, Users, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Plus, Search, Edit, Trash2, Eye, FileText, Clock, CheckCircle, Users, X, Waves, ClipboardCheck } from "lucide-react";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperacionTeamManager } from "@/components/operaciones/OperacionTeamManager";
 import { WorkflowCard } from "@/components/workflow/WorkflowCard";
@@ -22,7 +22,7 @@ const Operaciones = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
-  const [showTeamManager, setShowTeamManager] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
   
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
   const { workflowStatus, refetch: refetchWorkflow } = useWorkflow(selectedOperacion || undefined);
@@ -31,6 +31,8 @@ const Operaciones = () => {
     operacion.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     operacion.codigo.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const selectedOp = operaciones.find(op => op.id === selectedOperacion);
 
   const handleCreateOperacion = async (data: any) => {
     try {
@@ -57,6 +59,18 @@ const Operaciones = () => {
     } catch {
       return dateString;
     }
+  };
+
+  const getWorkflowStepInfo = (step: string) => {
+    const stepMap: Record<string, { label: string; icon: any; color: string }> = {
+      operacion: { label: "Operación Creada", icon: FileText, color: "blue" },
+      hpt: { label: "HPT Pendiente", icon: ClipboardCheck, color: "orange" },
+      anexo_bravo: { label: "Anexo Bravo Pendiente", icon: FileText, color: "purple" },
+      inmersion: { label: "Inmersión Pendiente", icon: Waves, color: "teal" },
+      bitacora: { label: "Bitácoras Pendientes", icon: FileText, color: "green" },
+      completado: { label: "Completado", icon: CheckCircle, color: "green" }
+    };
+    return stepMap[step] || stepMap.operacion;
   };
 
   if (isLoading) {
@@ -133,9 +147,125 @@ const Operaciones = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Lista de Operaciones */}
-                <div className="lg:col-span-2">
+              {selectedOperacion ? (
+                // Vista detalle para iPad
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedOperacion(null)}
+                      className="ios-button"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Volver
+                    </Button>
+                    {selectedOp && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold">{selectedOp.codigo}</h2>
+                          <p className="text-zinc-600">{selectedOp.nombre}</p>
+                        </div>
+                        {workflowStatus && (
+                          <Badge variant="outline" className="ml-auto">
+                            {getWorkflowStepInfo(workflowStatus.workflow_step).label}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="details" className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Detalles
+                      </TabsTrigger>
+                      <TabsTrigger value="workflow" className="flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4" />
+                        Flujo de Trabajo
+                      </TabsTrigger>
+                      <TabsTrigger value="team" className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Equipo
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="details">
+                      <Card className="ios-card">
+                        <CardHeader>
+                          <CardTitle>Información de la Operación</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {selectedOp && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="text-sm font-medium text-zinc-700">Fecha Inicio</label>
+                                <p className="text-lg">{formatDate(selectedOp.fecha_inicio)}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-zinc-700">Estado</label>
+                                <div className="mt-1">
+                                  {(() => {
+                                    const estadoInfo = getEstadoBadge(selectedOp.estado);
+                                    const IconComponent = estadoInfo.icon;
+                                    return (
+                                      <Badge variant="secondary" className={estadoInfo.className}>
+                                        <IconComponent className="w-3 h-3 mr-1" />
+                                        {estadoInfo.label}
+                                      </Badge>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                              {selectedOp.fecha_fin && (
+                                <div>
+                                  <label className="text-sm font-medium text-zinc-700">Fecha Fin</label>
+                                  <p className="text-lg">{formatDate(selectedOp.fecha_fin)}</p>
+                                </div>
+                              )}
+                              {selectedOp.tareas && (
+                                <div className="md:col-span-2">
+                                  <label className="text-sm font-medium text-zinc-700">Tareas</label>
+                                  <p className="text-zinc-600 mt-1">{selectedOp.tareas}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="workflow">
+                      {workflowStatus ? (
+                        <WorkflowCard 
+                          status={workflowStatus} 
+                          onRefresh={refetchWorkflow}
+                        />
+                      ) : (
+                        <Card className="ios-card">
+                          <CardContent className="p-12 text-center">
+                            <ClipboardCheck className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                            <h3 className="font-medium text-zinc-900 mb-2">Cargando flujo de trabajo</h3>
+                            <p className="text-sm text-zinc-500">Obteniendo estado de la operación...</p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="team">
+                      <OperacionTeamManager 
+                        operacionId={selectedOperacion}
+                        salmoneraId={selectedOp?.salmonera_id || ""} 
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              ) : (
+                // Vista lista
+                <div className="space-y-6">
                   {filteredOperaciones.length === 0 ? (
                     <Card className="text-center py-12">
                       <CardContent>
@@ -149,133 +279,80 @@ const Operaciones = () => {
                       </CardContent>
                     </Card>
                   ) : (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Lista de Operaciones</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Código</TableHead>
-                              <TableHead>Nombre</TableHead>
-                              <TableHead>Fecha Inicio</TableHead>
-                              <TableHead>Estado</TableHead>
-                              <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredOperaciones.map((operacion) => {
-                              const estadoInfo = getEstadoBadge(operacion.estado);
-                              const IconComponent = estadoInfo.icon;
-                              
-                              return (
-                                <TableRow 
-                                  key={operacion.id}
-                                  className={selectedOperacion === operacion.id ? "bg-blue-50" : "cursor-pointer hover:bg-gray-50"}
-                                  onClick={() => setSelectedOperacion(operacion.id)}
-                                >
-                                  <TableCell>
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <FileText className="w-4 h-4 text-blue-600" />
-                                      </div>
-                                      <div>
-                                        <div className="font-medium">{operacion.codigo}</div>
-                                        <div className="text-xs text-zinc-500">{formatDate(operacion.created_at)}</div>
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="font-medium">{operacion.nombre}</TableCell>
-                                  <TableCell className="text-zinc-600">{formatDate(operacion.fecha_inicio)}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="secondary" className={estadoInfo.className}>
-                                      <IconComponent className="w-3 h-3 mr-1" />
-                                      {estadoInfo.label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end gap-1">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedOperacion(operacion.id);
-                                          setShowTeamManager(true);
-                                        }}
-                                      >
-                                        <Users className="w-4 h-4" />
-                                      </Button>
-                                      <Button variant="outline" size="sm">
-                                        <Eye className="w-4 h-4" />
-                                      </Button>
-                                      <Button variant="outline" size="sm">
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          deleteOperacion(operacion.id);
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                {/* Panel de Workflow o Team Manager */}
-                <div className="lg:col-span-1">
-                  {selectedOperacion && showTeamManager ? (
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle>Gestión de Equipo</CardTitle>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setShowTeamManager(false)}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredOperaciones.map((operacion) => {
+                        const estadoInfo = getEstadoBadge(operacion.estado);
+                        const IconComponent = estadoInfo.icon;
+                        
+                        return (
+                          <Card 
+                            key={operacion.id}
+                            className="ios-card cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                            onClick={() => setSelectedOperacion(operacion.id)}
                           >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <OperacionTeamManager 
-                          operacionId={selectedOperacion}
-                          salmoneraId="placeholder-salmonera-id" // This should come from the operation
-                        />
-                      </CardContent>
-                    </Card>
-                  ) : selectedOperacion && workflowStatus ? (
-                    <WorkflowCard 
-                      status={workflowStatus} 
-                      onRefresh={refetchWorkflow}
-                    />
-                  ) : (
-                    <Card>
-                      <CardContent className="p-6 text-center">
-                        <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <h3 className="font-medium text-zinc-900 mb-2">Seleccione una operación</h3>
-                        <p className="text-sm text-zinc-500">
-                          Haga clic en una operación para ver su flujo de trabajo o gestionar el equipo
-                        </p>
-                      </CardContent>
-                    </Card>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <FileText className="w-5 h-5 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold text-zinc-900">{operacion.codigo}</h3>
+                                    <p className="text-sm text-zinc-500">{formatDate(operacion.created_at)}</p>
+                                  </div>
+                                </div>
+                                <Badge variant="secondary" className={estadoInfo.className}>
+                                  <IconComponent className="w-3 h-3 mr-1" />
+                                  {estadoInfo.label}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <h4 className="font-medium text-zinc-900 mb-2">{operacion.nombre}</h4>
+                              <div className="space-y-2 text-sm text-zinc-600">
+                                <div>
+                                  <span className="font-medium">Inicio:</span> {formatDate(operacion.fecha_inicio)}
+                                </div>
+                                {operacion.fecha_fin && (
+                                  <div>
+                                    <span className="font-medium">Fin:</span> {formatDate(operacion.fecha_fin)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-2 mt-4">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedOperacion(operacion.id);
+                                    setActiveTab("team");
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <Users className="w-4 h-4 mr-1" />
+                                  Equipo
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteOperacion(operacion.id);
+                                  }}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </main>

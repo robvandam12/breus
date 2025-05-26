@@ -1,139 +1,251 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, HardHat, Eye, Hand } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Users, UserPlus, X } from "lucide-react";
+import { useUsersByCompany } from "@/hooks/useUsersByCompany";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
 interface HPTStep2Props {
   data: any;
   onUpdate: (data: any) => void;
+  operacionId: string;
 }
 
-export const HPTStep2 = ({ data, onUpdate }: HPTStep2Props) => {
-  const handleEPPChange = (item: string, checked: boolean) => {
-    const currentEPP = data.hpt_epp || {};
-    onUpdate({
-      hpt_epp: {
-        ...currentEPP,
-        [item]: checked
-      }
-    });
+export const HPTStep2 = ({ data, onUpdate, operacionId }: HPTStep2Props) => {
+  const { usuarios: allUsers } = useUsersByCompany();
+  const { equipos } = useEquiposBuceoEnhanced();
+
+  // Filter users for supervisors and buzos
+  const supervisores = allUsers.filter(u => u.rol === 'supervisor');
+  const buzos = allUsers.filter(u => u.rol === 'buzo');
+
+  const handleAddBuzo = (buzoId: string) => {
+    const buzo = buzos.find(b => b.usuario_id === buzoId);
+    if (buzo) {
+      const newBuzo = {
+        id: buzo.usuario_id,
+        nombre: `${buzo.nombre} ${buzo.apellido}`,
+        matricula: buzo.perfil_buzo?.matricula || '',
+        empresa: buzo.empresa_nombre || '',
+      };
+      
+      const currentBuzos = Array.isArray(data.buzos) ? data.buzos : [];
+      const updatedBuzos = [...currentBuzos, newBuzo];
+      onUpdate({ buzos: updatedBuzos });
+    }
   };
 
-  const handleERCChange = (item: string, checked: boolean) => {
-    const currentERC = data.hpt_erc || {};
-    onUpdate({
-      hpt_erc: {
-        ...currentERC,
-        [item]: checked
-      }
-    });
+  const handleRemoveBuzo = (buzoId: string) => {
+    const currentBuzos = Array.isArray(data.buzos) ? data.buzos : [];
+    const updatedBuzos = currentBuzos.filter((b: any) => b.id !== buzoId);
+    onUpdate({ buzos: updatedBuzos });
   };
 
-  const eppItems = [
-    { key: 'casco', label: 'Casco de Seguridad', icon: HardHat },
-    { key: 'lentes', label: 'Lentes de Seguridad', icon: Eye },
-    { key: 'guantes', label: 'Guantes de Protección', icon: Hand },
-    { key: 'chaleco', label: 'Chaleco Salvavidas' },
-    { key: 'botas', label: 'Botas de Seguridad' },
-    { key: 'traje_buceo', label: 'Traje de Buceo' },
-    { key: 'mascara', label: 'Máscara de Buceo' },
-    { key: 'aletas', label: 'Aletas' },
-    { key: 'cinturon_lastre', label: 'Cinturón de Lastre' },
-    { key: 'regulador', label: 'Regulador' },
-    { key: 'manometro', label: 'Manómetro' },
-    { key: 'profundimetro', label: 'Profundímetro' }
-  ];
+  const handleAddAsistente = (asistenteId: string) => {
+    const asistente = allUsers.find(u => u.usuario_id === asistenteId);
+    if (asistente) {
+      const newAsistente = {
+        id: asistente.usuario_id,
+        nombre: `${asistente.nombre} ${asistente.apellido}`,
+        rol: asistente.rol,
+        empresa: asistente.empresa_nombre || '',
+      };
+      
+      const currentAsistentes = Array.isArray(data.asistentes) ? data.asistentes : [];
+      const updatedAsistentes = [...currentAsistentes, newAsistente];
+      onUpdate({ asistentes: updatedAsistentes });
+    }
+  };
 
-  const ercItems = [
-    { key: 'izaje', label: 'Izaje y Grúas' },
-    { key: 'buceo', label: 'Buceo y Trabajo Subacuático' },
-    { key: 'navegacion', label: 'Navegación Marítima' },
-    { key: 'energia_electrica', label: 'Energía Eléctrica' },
-    { key: 'espacios_confinados', label: 'Espacios Confinados' },
-    { key: 'trabajo_altura', label: 'Trabajo en Altura' },
-    { key: 'sustancias_peligrosas', label: 'Sustancias Peligrosas' },
-    { key: 'soldadura', label: 'Soldadura y Corte' },
-    { key: 'herramientas_poder', label: 'Herramientas de Poder' },
-    { key: 'manejo_manual', label: 'Manejo Manual de Materiales' }
-  ];
+  const handleRemoveAsistente = (asistenteId: string) => {
+    const currentAsistentes = Array.isArray(data.asistentes) ? data.asistentes : [];
+    const updatedAsistentes = currentAsistentes.filter((a: any) => a.id !== asistenteId);
+    onUpdate({ asistentes: updatedAsistentes });
+  };
+
+  const currentBuzos = Array.isArray(data.buzos) ? data.buzos : [];
+  const currentAsistentes = Array.isArray(data.asistentes) ? data.asistentes : [];
+  const addedBuzoIds = currentBuzos.map((b: any) => b.id);
+  const addedAsistenteIds = currentAsistentes.map((a: any) => a.id);
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Equipo de Protección Personal y Estándares de Riesgos Críticos</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Personal Asignado</h2>
         <p className="mt-2 text-gray-600">
-          Verificación de EPP y identificación de ERC aplicables
+          Seleccione el personal que participará en esta operación
         </p>
       </div>
 
-      {/* Equipo de Protección Personal (EPP) */}
+      {/* Supervisor Responsable */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" />
-            Equipo de Protección Personal (EPP)
+            <Users className="w-5 h-5" />
+            Supervisor Responsable
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {eppItems.map((item) => {
-              const IconComponent = item.icon;
-              return (
-                <div key={item.key} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                  {IconComponent && <IconComponent className="w-5 h-5 text-gray-600" />}
-                  <Checkbox
-                    id={`epp_${item.key}`}
-                    checked={data.hpt_epp?.[item.key] || false}
-                    onCheckedChange={(checked) => handleEPPChange(item.key, checked as boolean)}
-                  />
-                  <Label htmlFor={`epp_${item.key}`} className="text-sm font-medium cursor-pointer flex-1">
-                    {item.label}
-                  </Label>
+          <div>
+            <Label htmlFor="supervisor_id">Supervisor</Label>
+            <Select 
+              value={data.supervisor_id || ''} 
+              onValueChange={(value) => {
+                const supervisor = supervisores.find(s => s.usuario_id === value);
+                onUpdate({ 
+                  supervisor_id: value,
+                  supervisor_nombre: supervisor ? `${supervisor.nombre} ${supervisor.apellido}` : ''
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar supervisor..." />
+              </SelectTrigger>
+              <SelectContent>
+                {supervisores.map((supervisor) => (
+                  <SelectItem key={supervisor.usuario_id} value={supervisor.usuario_id}>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="font-medium">{supervisor.nombre} {supervisor.apellido}</div>
+                        <div className="text-sm text-zinc-500">{supervisor.empresa_nombre}</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Buzos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Buzos Asignados
+            <Badge variant="outline" className="ml-auto">
+              {currentBuzos.length} buzos
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Agregar Buzo</Label>
+            <Select onValueChange={handleAddBuzo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar buzo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {buzos
+                  .filter(buzo => !addedBuzoIds.includes(buzo.usuario_id))
+                  .map((buzo) => (
+                    <SelectItem key={buzo.usuario_id} value={buzo.usuario_id}>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium">{buzo.nombre} {buzo.apellido}</div>
+                          <div className="text-sm text-zinc-500">
+                            {buzo.perfil_buzo?.matricula && `Matrícula: ${buzo.perfil_buzo.matricula} • `}
+                            {buzo.empresa_nombre}
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {currentBuzos.length > 0 && (
+            <div className="space-y-2">
+              <Label>Buzos Seleccionados</Label>
+              {currentBuzos.map((buzo: any) => (
+                <div key={buzo.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">{buzo.nombre}</div>
+                    <div className="text-sm text-blue-700">
+                      {buzo.matricula && `Matrícula: ${buzo.matricula} • `}
+                      {buzo.empresa}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleRemoveBuzo(buzo.id)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Estándares de Riesgos Críticos (ERC) */}
+      {/* Asistentes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-red-600" />
-            Estándares de Riesgos Críticos (ERC)
+            <UserPlus className="w-5 h-5" />
+            Personal Asistente
+            <Badge variant="outline" className="ml-auto">
+              {currentAsistentes.length} asistentes
+            </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ercItems.map((item) => (
-              <div key={item.key} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                <Checkbox
-                  id={`erc_${item.key}`}
-                  checked={data.hpt_erc?.[item.key] || false}
-                  onCheckedChange={(checked) => handleERCChange(item.key, checked as boolean)}
-                />
-                <Label htmlFor={`erc_${item.key}`} className="text-sm font-medium cursor-pointer flex-1">
-                  {item.label}
-                </Label>
-              </div>
-            ))}
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Agregar Asistente</Label>
+            <Select onValueChange={handleAddAsistente}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar personal asistente..." />
+              </SelectTrigger>
+              <SelectContent>
+                {allUsers
+                  .filter(user => !addedAsistenteIds.includes(user.usuario_id))
+                  .map((user) => (
+                    <SelectItem key={user.usuario_id} value={user.usuario_id}>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium">{user.nombre} {user.apellido}</div>
+                          <div className="text-sm text-zinc-500">
+                            {user.rol} • {user.empresa_nombre}
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {currentAsistentes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Asistentes Seleccionados</Label>
+              {currentAsistentes.map((asistente: any) => (
+                <div key={asistente.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">{asistente.nombre}</div>
+                    <div className="text-sm text-green-700">
+                      {asistente.rol} • {asistente.empresa}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleRemoveAsistente(asistente.id)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Shield className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-sm text-blue-800">
-            <strong>Importante:</strong> Seleccione todos los elementos de EPP requeridos y los ERC aplicables para esta tarea específica. 
-            Esta información es crítica para la evaluación de riesgos y planificación de medidas de control.
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

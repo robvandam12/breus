@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useUsersByCompany } from '@/hooks/useUsersByCompany';
 
 export interface BitacoraUser {
   id: string;
   nombre: string;
   apellido: string;
   rol: 'supervisor' | 'buzo';
+  empresa_nombre?: string;
 }
 
 export interface BitacoraSupervisorFormData {
@@ -32,32 +34,24 @@ export interface BitacoraBuzoFormData {
 
 export const useBitacoraEnhanced = () => {
   const queryClient = useQueryClient();
+  const { usuarios } = useUsersByCompany();
 
-  // Get available users for bitácoras
-  const { data: usuarios = [], isLoading: loadingUsuarios } = useQuery({
-    queryKey: ['bitacora-usuarios'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('usuario')
-        .select('usuario_id, nombre, apellido, rol')
-        .in('rol', ['supervisor', 'buzo'])
-        .order('nombre');
+  // Filter users for bitácoras
+  const supervisores = usuarios.filter(u => u.rol === 'supervisor');
+  const buzos = usuarios.filter(u => u.rol === 'buzo');
 
-      if (error) throw error;
-      
-      return data.map(user => ({
-        id: user.usuario_id,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        rol: user.rol as 'supervisor' | 'buzo'
-      })) as BitacoraUser[];
-    },
-  });
+  const bitacoraUsers: BitacoraUser[] = usuarios.map(user => ({
+    id: user.usuario_id,
+    nombre: user.nombre,
+    apellido: user.apellido,
+    rol: user.rol as 'supervisor' | 'buzo',
+    empresa_nombre: user.empresa_nombre
+  }));
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (data: BitacoraSupervisorFormData) => {
-      // Get supervisor name
-      const supervisor = usuarios.find(u => u.id === data.supervisor_id);
+      // Get supervisor name from users
+      const supervisor = supervisores.find(u => u.usuario_id === data.supervisor_id);
       const supervisorName = supervisor ? `${supervisor.nombre} ${supervisor.apellido}` : '';
       
       const codigo = `SUP-${Date.now()}`;
@@ -91,8 +85,8 @@ export const useBitacoraEnhanced = () => {
 
   const createBitacoraBuzo = useMutation({
     mutationFn: async (data: BitacoraBuzoFormData) => {
-      // Get buzo name
-      const buzo = usuarios.find(u => u.id === data.buzo_id);
+      // Get buzo name from users
+      const buzo = buzos.find(u => u.usuario_id === data.buzo_id);
       const buzoName = buzo ? `${buzo.nombre} ${buzo.apellido}` : '';
       
       const codigo = `BUZ-${Date.now()}`;
@@ -157,8 +151,10 @@ export const useBitacoraEnhanced = () => {
   });
 
   return {
-    usuarios,
-    loadingUsuarios,
+    usuarios: bitacoraUsers,
+    supervisores,
+    buzos,
+    loadingUsuarios: false,
     createBitacoraSupervisor: createBitacoraSupervisor.mutate,
     createBitacoraBuzo: createBitacoraBuzo.mutate,
     signBitacora: signBitacora.mutate,
