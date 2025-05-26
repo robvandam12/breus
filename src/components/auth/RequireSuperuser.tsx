@@ -1,15 +1,15 @@
 
 import { ReactNode } from 'react';
-import { useAuthRoles } from '@/hooks/useAuthRoles';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RequireSuperuserProps {
   children: ReactNode;
 }
 
 const RequireSuperuser = ({ children }: RequireSuperuserProps) => {
-  const { currentRole, isLoading } = useAuthRoles();
+  const { profile, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
@@ -17,7 +17,7 @@ const RequireSuperuser = ({ children }: RequireSuperuserProps) => {
     );
   }
 
-  if (currentRole !== 'superuser') {
+  if (profile?.role !== 'superuser') {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">

@@ -25,7 +25,7 @@ const Profile = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Rol</label>
-              <p className="text-lg capitalize">{profile?.rol}</p>
+              <p className="text-lg capitalize">{profile?.role}</p>
             </div>
           </div>
         </CardContent>
