@@ -63,10 +63,10 @@ export const usePersonalPool = () => {
         let tipoEmpresa: 'salmonera' | 'contratista' = 'salmonera';
 
         if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
-          empresaAsociada = user.salmonera.nombre;
+          empresaAsociada = String(user.salmonera.nombre);
           tipoEmpresa = 'salmonera';
         } else if (user.servicio && typeof user.servicio === 'object' && 'nombre' in user.servicio) {
-          empresaAsociada = user.servicio.nombre;
+          empresaAsociada = String(user.servicio.nombre);
           tipoEmpresa = 'contratista';
         }
 
