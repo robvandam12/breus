@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 export default function Operaciones() {
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
+  const [selectedOperacionId, setSelectedOperacionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
 
   const handleCreateOperacion = async (data: any) => {
@@ -26,7 +25,7 @@ export default function Operaciones() {
   };
 
   const handleSelectOperacion = (operacion: any) => {
-    setSelectedOperacion(operacion);
+    setSelectedOperacionId(operacion.id);
   };
 
   if (isLoading) {
@@ -66,16 +65,15 @@ export default function Operaciones() {
     );
   }
 
-  if (selectedOperacion) {
+  if (selectedOperacionId) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <main className="flex-1 p-6">
             <OperacionDetails
-              operacion={selectedOperacion}
-              onBack={() => setSelectedOperacion(null)}
-              onUpdate={updateOperacion}
+              operacionId={selectedOperacionId}
+              onClose={() => setSelectedOperacionId(null)}
             />
           </main>
         </div>
