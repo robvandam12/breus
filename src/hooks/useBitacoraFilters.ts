@@ -2,26 +2,28 @@
 import { useState } from 'react';
 
 export interface BitacoraFilters {
-  searchTerm: string;
   search: string;
+  searchTerm: string;
   dateFrom: Date | null;
   dateTo: Date | null;
-  status: string;
-  estado: string;
+  estado: 'all' | 'firmada' | 'pendiente';
   firmado: boolean | null;
   tipo: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
 }
 
 export const useBitacoraFilters = () => {
   const [filters, setFilters] = useState<BitacoraFilters>({
-    searchTerm: '',
     search: '',
+    searchTerm: '',
     dateFrom: null,
     dateTo: null,
-    status: '',
-    estado: '',
+    estado: 'all',
     firmado: null,
-    tipo: ''
+    tipo: '',
+    fechaDesde: undefined,
+    fechaHasta: undefined
   });
 
   const updateFilters = (newFilters: Partial<BitacoraFilters>) => {
@@ -55,11 +57,23 @@ export const useBitacoraFilters = () => {
         if (bitacoraDate > filters.dateTo) return false;
       }
 
-      // Status filter
-      if (filters.status || filters.estado) {
-        const status = filters.status || filters.estado;
-        if (status === 'firmado' && !bitacora.firmado) return false;
-        if (status === 'pendiente' && bitacora.firmado) return false;
+      // Estado filter
+      if (filters.estado !== 'all') {
+        if (filters.estado === 'firmada' && !bitacora.firmado) return false;
+        if (filters.estado === 'pendiente' && bitacora.firmado) return false;
+      }
+
+      // Date range filters
+      if (filters.fechaDesde && bitacora.fecha) {
+        const bitacoraDate = new Date(bitacora.fecha);
+        const fromDate = new Date(filters.fechaDesde);
+        if (bitacoraDate < fromDate) return false;
+      }
+
+      if (filters.fechaHasta && bitacora.fecha) {
+        const bitacoraDate = new Date(bitacora.fecha);
+        const toDate = new Date(filters.fechaHasta);
+        if (bitacoraDate > toDate) return false;
       }
 
       // Firmado filter

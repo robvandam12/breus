@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Waves, X } from "lucide-react";
-import { useInmersiones, CreateInmersionData } from "@/hooks/useInmersiones";
+import { CreateInmersionData } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
 const formSchema = z.object({
@@ -51,7 +52,24 @@ export const CreateInmersionForm = ({ onSubmit, onCancel }: CreateInmersionFormP
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      // Ensure all required fields are present
+      const inmersionData: CreateInmersionData = {
+        operacion_id: data.operacion_id,
+        fecha_inmersion: data.fecha_inmersion,
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_fin,
+        profundidad_maxima: data.profundidad_maxima,
+        buzo_principal: data.buzo_principal,
+        buzo_asistente: data.buzo_asistente,
+        supervisor: data.supervisor,
+        objetivo: data.objetivo,
+        temperatura_agua: data.temperatura_agua,
+        visibilidad: data.visibilidad,
+        corriente: data.corriente,
+        observaciones: data.observaciones,
+      };
+      
+      await onSubmit(inmersionData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
     } finally {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -18,7 +17,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 const Inmersiones = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'planificada' | 'en_curso' | 'completada' | 'cancelada'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'planificada' | 'en_progreso' | 'completada' | 'cancelada'>('all');
   
   const { inmersiones, isLoading, createInmersion, updateInmersion, deleteInmersion } = useInmersiones();
 
@@ -43,7 +42,7 @@ const Inmersiones = () => {
   const getEstadoBadge = (estado: string) => {
     const estadoMap: Record<string, { className: string; label: string; icon: any }> = {
       planificada: { className: "bg-blue-100 text-blue-700", label: "Planificada", icon: Clock },
-      en_curso: { className: "bg-yellow-100 text-yellow-700", label: "En Curso", icon: Activity },
+      en_progreso: { className: "bg-yellow-100 text-yellow-700", label: "En Progreso", icon: Activity },
       completada: { className: "bg-green-100 text-green-700", label: "Completada", icon: CheckCircle },
       cancelada: { className: "bg-red-100 text-red-700", label: "Cancelada", icon: AlertTriangle }
     };
@@ -133,11 +132,11 @@ const Inmersiones = () => {
                     Planificadas
                   </Button>
                   <Button 
-                    variant={filterStatus === 'en_curso' ? 'default' : 'outline'} 
+                    variant={filterStatus === 'en_progreso' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setFilterStatus('en_curso')}
+                    onClick={() => setFilterStatus('en_progreso')}
                   >
-                    En Curso
+                    En Progreso
                   </Button>
                   <Button 
                     variant={filterStatus === 'completada' ? 'default' : 'outline'} 
@@ -184,9 +183,9 @@ const Inmersiones = () => {
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {inmersiones.filter(i => i.estado === 'en_curso').length}
+                    {inmersiones.filter(i => i.estado === 'en_progreso').length}
                   </div>
-                  <div className="text-sm text-zinc-500">En Curso</div>
+                  <div className="text-sm text-zinc-500">En Progreso</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-blue-600">
@@ -252,7 +251,7 @@ const Inmersiones = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-zinc-600">
-                              {inmersion.profundidad_max}m
+                              {inmersion.profundidad_maxima}m
                             </TableCell>
                             <TableCell>
                               <Badge variant="secondary" className={estadoInfo.className}>
