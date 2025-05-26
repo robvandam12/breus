@@ -10,8 +10,7 @@ import {
   Settings,
   Shield,
   LogOut,
-  Users,
-  UserCog
+  Users
 } from "lucide-react";
 import {
   Sidebar,
@@ -68,9 +67,9 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    title: "Equipos de Buceo",
+    title: "Equipo de Buceo",
     icon: Users,
-    url: "/equipos-buceo"
+    url: "/personal-pool"
   },
   {
     title: "Operaciones",
@@ -114,7 +113,6 @@ const menuItems: MenuItem[] = [
     title: "Admin",
     icon: Shield,
     items: [
-      { title: "Gestión de Usuarios", url: "/admin/usuarios", roleRequired: "superuser" },
       { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
       { title: "Gestión Salmonera", url: "/admin/salmonera", roleRequired: "admin_salmonera" }
     ]
