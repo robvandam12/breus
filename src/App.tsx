@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,7 +12,7 @@ import NotFound from "./pages/NotFound";
 import Salmoneras from "./pages/empresas/Salmoneras";
 import Sitios from "./pages/empresas/Sitios";
 import Contratistas from "./pages/empresas/Contratistas";
-import PersonalPool from "./pages/PersonalPool";
+import EquipoBuceo from "./pages/EquipoBuceo";
 import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
@@ -72,9 +73,9 @@ const App: React.FC = () => (
               </ProtectedRoute>
             } />
             
-            <Route path="/personal-pool" element={
+            <Route path="/equipo-de-buceo" element={
               <ProtectedRoute>
-                <PersonalPool />
+                <EquipoBuceo />
               </ProtectedRoute>
             } />
             

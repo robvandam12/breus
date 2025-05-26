@@ -69,7 +69,7 @@ const menuItems: MenuItem[] = [
   {
     title: "Equipo de Buceo",
     icon: Users,
-    url: "/personal-pool"
+    url: "/equipo-de-buceo"
   },
   {
     title: "Operaciones",
