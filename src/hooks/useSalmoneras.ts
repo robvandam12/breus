@@ -11,6 +11,7 @@ export interface Salmonera {
   direccion: string;
   telefono?: string;
   email?: string;
+  logo_url?: string;
   sitios_activos: number;
   estado: 'activa' | 'inactiva' | 'suspendida';
   created_at: string;
@@ -23,6 +24,7 @@ export interface SalmoneraFormData {
   direccion: string;
   telefono?: string;
   email?: string;
+  logo_url?: string;
   estado: 'activa' | 'inactiva' | 'suspendida';
 }
 

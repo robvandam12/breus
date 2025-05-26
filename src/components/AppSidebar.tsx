@@ -8,7 +8,8 @@ import {
   Anchor,
   BarChart3,
   Settings,
-  Shield
+  Shield,
+  LogOut
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +29,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const menuItems = [
   {
@@ -69,7 +73,10 @@ const menuItems = [
   {
     title: "Bitácoras",
     icon: Book,
-    url: "/bitacoras"
+    items: [
+      { title: "Supervisor", url: "/bitacoras/supervisor" },
+      { title: "Buzo", url: "/bitacoras/buzo" }
+    ]
   },
   {
     title: "Reportes",
@@ -98,6 +105,23 @@ export function AppSidebar() {
   const filteredMenuItems = menuItems.filter(item => 
     !item.roleRequired || item.roleRequired === userRole
   );
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Sidebar className="border-r border-border/40">
@@ -176,6 +200,14 @@ export function AppSidebar() {
             <p className="text-sm font-medium truncate">Juan Supervisor</p>
             <p className="text-xs text-zinc-500 truncate">supervisor@breus.cl</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="h-8 w-8 p-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
