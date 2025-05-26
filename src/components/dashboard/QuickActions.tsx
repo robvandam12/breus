@@ -24,7 +24,7 @@ export const QuickActions = () => {
       label: "Nueva Inmersión",
       icon: Anchor,
       color: "bg-cyan-600 hover:bg-cyan-700",
-      onClick: () => navigate("/operaciones/inmersiones")
+      onClick: () => navigate("/inmersiones")
     }
   ];
 
