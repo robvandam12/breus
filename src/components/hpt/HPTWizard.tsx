@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +66,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
       case 1:
         return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} />;
+        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
       case 3:
         return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:

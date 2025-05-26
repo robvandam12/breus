@@ -66,7 +66,7 @@ export const BitacoraSignatureModal = ({
             role={role}
             signerName={userName}
             isSigned={signatureCompleted}
-            onSign={(data) => handleSignature(data.signature)}
+            onSign={handleSignature}
             onReset={() => {
               setSignatureCompleted(false);
               setSignatureData('');
