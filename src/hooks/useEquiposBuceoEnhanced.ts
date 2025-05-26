@@ -28,7 +28,8 @@ export interface EquipoBuceo {
   id: string;
   nombre: string;
   descripcion?: string;
-  salmonera_id: string;
+  empresa_id: string;
+  tipo_empresa: string;
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -48,12 +49,13 @@ export const useEquiposBuceoEnhanced = () => {
         .from('equipos_buceo')
         .select(`
           *,
-          salmonera:salmoneras(nombre),
+          salmonera:salmoneras!equipos_buceo_empresa_id_fkey(nombre),
           miembros:equipo_buceo_miembros(
             *,
             usuario:usuario(nombre, apellido, email, rol)
           )
         `)
+        .eq('tipo_empresa', 'salmonera')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -65,7 +67,7 @@ export const useEquiposBuceoEnhanced = () => {
     mutationFn: async (equipoData: {
       nombre: string;
       descripcion?: string;
-      salmonera_id: string;
+      empresa_id: string;
     }) => {
       const { data, error } = await supabase
         .from('equipos_buceo')
