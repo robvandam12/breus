@@ -38,11 +38,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuthRoles } from "@/hooks/useAuthRoles";
 
+interface MenuItem {
+  title: string;
+  icon: any;
+  url?: string;
+  badge?: string;
+  items?: { title: string; url: string }[];
+}
+
 export function AppSidebar() {
   const { currentRole, permissions, canAccessPage } = useAuthRoles();
 
-  const getMenuItemsForRole = () => {
-    const baseItems = [
+  const getMenuItemsForRole = (): MenuItem[] => {
+    const baseItems: MenuItem[] = [
       {
         title: "Dashboard",
         icon: BarChart3,
@@ -334,7 +342,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <Link to={item.url} className="flex items-center justify-between w-full">
+                      <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>

@@ -14,12 +14,12 @@ import PoolUsuarios from '@/pages/PoolUsuarios';
 import Salmoneras from '@/pages/empresas/Salmoneras';
 import Sitios from '@/pages/empresas/Sitios';
 import Contratistas from '@/pages/empresas/Contratistas';
-import Operaciones from '@/pages/Operaciones';
-import Inmersiones from '@/pages/Inmersiones';
-import BitacorasSupervisor from '@/pages/bitacoras/BitacorasSupervisor';
-import BitacorasBuzo from '@/pages/bitacoras/BitacorasBuzo';
-import FormulariosHPT from '@/pages/formularios/HPT';
-import FormulariosAnexoBravo from '@/pages/formularios/AnexoBravo';
+import Operaciones from '@/pages/operaciones/Operaciones';
+import Inmersiones from '@/pages/operaciones/Inmersiones';
+import BitacorasSupervisor from '@/pages/operaciones/BitacorasSupervisor';
+import BitacorasBuzo from '@/pages/operaciones/BitacorasBuzo';
+import FormulariosHPT from '@/pages/operaciones/HPT';
+import FormulariosAnexoBravo from '@/pages/operaciones/AnexoBravo';
 import Reportes from '@/pages/Reportes';
 import Configuracion from '@/pages/Configuracion';
 
