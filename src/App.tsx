@@ -12,14 +12,15 @@ import Sitios from "./pages/empresas/Sitios";
 import Contratistas from "./pages/empresas/Contratistas";
 import EquiposBuceo from "./pages/equipos-buceo/EquiposBuceo";
 import Operaciones from "./pages/operaciones/Operaciones";
-import HPT from "./pages/formularios/HPT";
-import AnexoBravo from "./pages/formularios/AnexoBravo";
-import Inmersiones from "./pages/inmersiones/Inmersiones";
+import HPT from "./pages/operaciones/HPT";
+import AnexoBravo from "./pages/operaciones/AnexoBravo";
+import Inmersiones from "./pages/operaciones/Inmersiones";
 import BitacorasSupervisor from "./pages/operaciones/BitacorasSupervisor";
 import BitacorasBuzo from "./pages/operaciones/BitacorasBuzo";
-import Reportes from "./pages/reportes/Reportes";
+import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/configuracion/Configuracion";
 import AdminUsuarios from "./pages/admin/Usuarios";
+import PersonalPool from "./pages/PersonalPool";
 import Login from "./pages/auth/Login";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Contratistas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pool-personal"
+              element={
+                <ProtectedRoute>
+                  <PersonalPool />
                 </ProtectedRoute>
               }
             />
