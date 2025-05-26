@@ -25,7 +25,7 @@ export const useWorkflowNotifications = () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
-        .from('notification')
+        .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -51,7 +51,7 @@ export const useWorkflowNotifications = () => {
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
-        .from('notification')
+        .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
       
@@ -65,7 +65,7 @@ export const useWorkflowNotifications = () => {
   const createNotification = useMutation({
     mutationFn: async (notification: Omit<WorkflowNotification, 'id' | 'created_at'>) => {
       const { error } = await supabase
-        .from('notification')
+        .from('notifications')
         .insert([{
           type: notification.tipo,
           title: notification.titulo,

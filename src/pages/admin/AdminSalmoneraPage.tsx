@@ -13,10 +13,8 @@ import { Badge } from '@/components/ui/badge';
 
 const AdminSalmoneraPage = () => {
   const { profile } = useAuth();
-  const { notificaciones } = useWorkflowNotifications(profile?.id);
+  const { notifications, unreadCount } = useWorkflowNotifications();
   const [activeTab, setActiveTab] = useState('pool');
-
-  const notificacionesNoLeidas = notificaciones.filter(n => !n.leida).length;
 
   return (
     <SidebarProvider>
@@ -35,11 +33,11 @@ const AdminSalmoneraPage = () => {
               </div>
               <div className="flex-1" />
               <div className="flex items-center gap-3">
-                {notificacionesNoLeidas > 0 && (
+                {unreadCount > 0 && (
                   <div className="relative">
                     <Bell className="w-5 h-5 text-gray-600" />
                     <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 min-w-[20px] h-5 flex items-center justify-center rounded-full">
-                      {notificacionesNoLeidas}
+                      {unreadCount}
                     </Badge>
                   </div>
                 )}
@@ -123,9 +121,9 @@ const AdminSalmoneraPage = () => {
                   <TabsTrigger value="notifications" className="flex items-center gap-2">
                     <Bell className="w-4 h-4" />
                     Notificaciones
-                    {notificacionesNoLeidas > 0 && (
+                    {unreadCount > 0 && (
                       <Badge className="ml-1 bg-red-500 text-white text-xs px-1 min-w-[16px] h-4 flex items-center justify-center rounded-full">
-                        {notificacionesNoLeidas}
+                        {unreadCount}
                       </Badge>
                     )}
                   </TabsTrigger>
@@ -190,16 +188,16 @@ const AdminSalmoneraPage = () => {
                       <CardTitle>Centro de Notificaciones</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {notificaciones.length > 0 ? (
+                      {notifications.length > 0 ? (
                         <div className="space-y-4">
-                          {notificaciones.map((notif) => (
+                          {notifications.map((notif) => (
                             <div key={notif.id} className="p-4 border rounded-lg">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <h4 className="font-medium">{notif.titulo}</h4>
                                   <p className="text-sm text-gray-600 mt-1">{notif.mensaje}</p>
                                   <p className="text-xs text-gray-400 mt-2">
-                                    {new Date(notif.fecha_creacion).toLocaleString()}
+                                    {new Date(notif.created_at).toLocaleString()}
                                   </p>
                                 </div>
                                 <Badge className={`${notif.tipo === 'aprobacion_requerida' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
