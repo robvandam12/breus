@@ -14,7 +14,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Operaciones from "./pages/operaciones/Operaciones";
 import Inmersiones from "./pages/operaciones/Inmersiones";
-import Documentos from "./pages/documentos/Documentos";
+import Documentos from "./pages/Documentos";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Salmoneras from "./pages/empresas/Salmoneras";

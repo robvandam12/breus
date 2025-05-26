@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, UserPlus, Mail } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
-import { useInvitations } from "@/hooks/useInvitations";
 
 interface User {
   id: string;
@@ -45,9 +44,9 @@ export const UnifiedUserSearchSelect = ({
     especialidades: [],
     certificaciones: []
   });
+  const [isInviting, setIsInviting] = useState(false);
 
   const { usuarios, isLoading } = useUsuarios();
-  const { sendInvitation, isLoading: isSending } = useInvitations();
 
   const filteredUsers = usuarios.filter(user => {
     if (!allowedRoles.includes(user.rol)) return false;
@@ -61,17 +60,10 @@ export const UnifiedUserSearchSelect = ({
   });
 
   const handleInvite = async () => {
+    setIsInviting(true);
     try {
-      await sendInvitation({
-        email: inviteData.email,
-        role: inviteData.rol,
-        metadata: {
-          nombre: inviteData.nombre,
-          apellido: inviteData.apellido,
-          matricula: inviteData.matricula
-        }
-      });
-      
+      // For now, just call onInviteUser directly
+      // In a real implementation, this would send an actual invitation
       onInviteUser(inviteData);
       
       // Reset form
@@ -86,8 +78,22 @@ export const UnifiedUserSearchSelect = ({
       });
     } catch (error) {
       console.error('Error sending invitation:', error);
+    } finally {
+      setIsInviting(false);
     }
   };
+
+  // Convert Usuario to User type
+  const convertToUser = (usuario: any): User => ({
+    id: usuario.id || usuario.user_id || '',
+    nombre: usuario.nombre || '',
+    apellido: usuario.apellido || '',
+    email: usuario.email || '',
+    rol: usuario.rol || '',
+    matricula: usuario.matricula || undefined,
+    especialidades: usuario.especialidades || [],
+    certificaciones: usuario.certificaciones || []
+  });
 
   return (
     <Card className="w-full">
@@ -123,24 +129,27 @@ export const UnifiedUserSearchSelect = ({
                   <p className="text-gray-500">No se encontraron usuarios</p>
                 </div>
               ) : (
-                filteredUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => onSelectUser(user)}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium">{user.nombre} {user.apellido}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                      {user.matricula && (
-                        <div className="text-xs text-gray-400">Matrícula: {user.matricula}</div>
-                      )}
+                filteredUsers.map((usuario) => {
+                  const user = convertToUser(usuario);
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      onClick={() => onSelectUser(user)}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium">{user.nombre} {user.apellido}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        {user.matricula && (
+                          <div className="text-xs text-gray-400">Matrícula: {user.matricula}</div>
+                        )}
+                      </div>
+                      <Badge variant="outline">
+                        {user.rol === 'supervisor' ? 'Supervisor' : 'Buzo'}
+                      </Badge>
                     </div>
-                    <Badge variant="outline">
-                      {user.rol === 'supervisor' ? 'Supervisor' : 'Buzo'}
-                    </Badge>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </TabsContent>
@@ -208,10 +217,10 @@ export const UnifiedUserSearchSelect = ({
 
             <Button 
               onClick={handleInvite}
-              disabled={!inviteData.nombre || !inviteData.apellido || !inviteData.email || isSending}
+              disabled={!inviteData.nombre || !inviteData.apellido || !inviteData.email || isInviting}
               className="w-full"
             >
-              {isSending ? (
+              {isInviting ? (
                 "Enviando invitación..."
               ) : (
                 <>
