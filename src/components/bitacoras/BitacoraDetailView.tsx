@@ -81,8 +81,8 @@ export const BitacoraDetailView = ({ bitacora, type, onSign, onClose }: Bitacora
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-zinc-600">Código de Inmersión</label>
-              <p className="text-zinc-900">{bitacora.inmersion_codigo}</p>
+              <label className="text-sm font-medium text-zinc-600">ID de Inmersión</label>
+              <p className="text-zinc-900">{bitacora.inmersion_id}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-zinc-600">
@@ -132,7 +132,7 @@ export const BitacoraDetailView = ({ bitacora, type, onSign, onClose }: Bitacora
                     <span className="text-sm font-medium">Documento Firmado</span>
                   </div>
                   <p className="text-xs text-green-600 mt-1">
-                    {isSupervisor ? supervisorBitacora.supervisor_firma : buzoBitacora.buzo_firma}
+                    {isSupervisor ? supervisorBitacora.supervisor_firma || 'Firmado digitalmente' : buzoBitacora.buzo_firma || 'Firmado digitalmente'}
                   </p>
                 </div>
               </div>

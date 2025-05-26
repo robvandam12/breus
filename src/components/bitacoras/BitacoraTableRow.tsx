@@ -53,7 +53,7 @@ export const BitacoraTableRow = ({ bitacora, type, onSign }: BitacoraTableRowPro
             <div className="font-medium">{bitacora.codigo}</div>
           </div>
         </TableCell>
-        <TableCell className="text-zinc-600">{bitacora.inmersion_codigo}</TableCell>
+        <TableCell className="text-zinc-600">{bitacora.inmersion_id}</TableCell>
         <TableCell className="text-zinc-600">
           {type === 'supervisor' ? (bitacora as BitacoraSupervisor).supervisor : (bitacora as BitacoraBuzo).buzo}
         </TableCell>

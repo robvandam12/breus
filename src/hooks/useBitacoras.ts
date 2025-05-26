@@ -18,9 +18,56 @@ export interface BitacoraBuzoFormData {
   estado_fisico_post: string;
   profundidad_maxima: number;
   fecha: string;
+  // Additional fields for complete form
+  folio: string;
+  codigo_verificacion: string;
+  empresa_nombre: string;
+  centro_nombre: string;
+  buzo_rut: string;
+  supervisor_nombre: string;
+  supervisor_rut: string;
+  supervisor_correo: string;
+  jefe_centro_correo: string;
+  contratista_nombre: string;
+  contratista_rut: string;
+  // Condiciones ambientales
+  condamb_estado_puerto: string;
+  condamb_estado_mar: string;
+  condamb_temp_aire_c: number;
+  condamb_temp_agua_c: number;
+  condamb_visibilidad_fondo_mts: number;
+  condamb_corriente_fondo_nudos: number;
+  // Datos técnicos del buceo
+  datostec_equipo_usado: string;
+  datostec_traje: string;
+  datostec_hora_dejo_superficie: string;
+  datostec_hora_llegada_fondo: string;
+  datostec_hora_salida_fondo: string;
+  datostec_hora_llegada_superficie: string;
+  // Tiempos y tabulación
+  tiempos_total_fondo: string;
+  tiempos_total_descompresion: string;
+  tiempos_total_buceo: string;
+  tiempos_tabulacion_usada: string;
+  tiempos_intervalo_superficie: string;
+  tiempos_nitrogeno_residual: string;
+  tiempos_grupo_repetitivo_anterior: string;
+  tiempos_nuevo_grupo_repetitivo: string;
+  // Objetivo del buceo
+  objetivo_proposito: string;
+  objetivo_tipo_area: string;
+  objetivo_caracteristicas_dimensiones: string;
+  // Condiciones y certificaciones
+  condcert_buceo_altitud: boolean;
+  condcert_certificados_equipos_usados: boolean;
+  condcert_buceo_areas_confinadas: boolean;
+  condcert_observaciones: string;
+  // Firma final
+  validador_nombre: string;
 }
 
 export interface BitacoraSupervisor {
+  id: string;
   bitacora_id: string;
   inmersion_id: string;
   supervisor: string;
@@ -32,9 +79,11 @@ export interface BitacoraSupervisor {
   codigo: string;
   created_at: string;
   updated_at: string;
+  supervisor_firma?: string;
 }
 
 export interface BitacoraBuzo {
+  id: string;
   bitacora_id: string;
   inmersion_id: string;
   buzo: string;
@@ -47,6 +96,7 @@ export interface BitacoraBuzo {
   codigo: string;
   created_at: string;
   updated_at: string;
+  buzo_firma?: string;
 }
 
 export const useBitacoras = () => {
@@ -64,6 +114,7 @@ export const useBitacoras = () => {
       // Mock data for demonstration
       setBitacorasSupervisor([
         {
+          id: '1',
           bitacora_id: '1',
           inmersion_id: 'imm-001',
           supervisor: 'Carlos Rodríguez',
@@ -80,6 +131,7 @@ export const useBitacoras = () => {
 
       setBitacorasBuzo([
         {
+          id: '1',
           bitacora_id: '1',
           inmersion_id: 'imm-001',
           buzo: 'Juan Pérez',
@@ -101,10 +153,15 @@ export const useBitacoras = () => {
     }
   };
 
+  const refreshBitacoras = async () => {
+    await loadBitacoras();
+  };
+
   const createBitacoraSupervisor = async (data: BitacoraSupervisorFormData) => {
     setLoading(true);
     try {
       const newBitacora: BitacoraSupervisor = {
+        id: Date.now().toString(),
         bitacora_id: Date.now().toString(),
         inmersion_id: data.inmersion_id,
         supervisor: data.supervisor,
@@ -132,6 +189,7 @@ export const useBitacoras = () => {
     setLoading(true);
     try {
       const newBitacora: BitacoraBuzo = {
+        id: Date.now().toString(),
         bitacora_id: Date.now().toString(),
         inmersion_id: data.inmersion_id,
         buzo: data.buzo,
@@ -162,6 +220,7 @@ export const useBitacoras = () => {
     loading,
     createBitacoraSupervisor,
     createBitacoraBuzo,
-    loadBitacoras
+    loadBitacoras,
+    refreshBitacoras
   };
 };

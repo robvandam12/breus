@@ -82,7 +82,7 @@ export const BitacoraCard = ({ bitacora, type, onView, onEdit, onSign }: Bitacor
 
         <div className="text-sm">
           <p className="text-zinc-500 mb-1">Inmersión:</p>
-          <p className="text-zinc-700 font-medium">{bitacora.inmersion_codigo}</p>
+          <p className="text-zinc-700 font-medium">{bitacora.inmersion_id}</p>
         </div>
 
         <div className="flex justify-between items-center pt-2 border-t">
