@@ -18,18 +18,21 @@ export const EnhancedSelect = ({
   options,
   disabled 
 }: EnhancedSelectProps) => {
+  // Filter out any options with empty string values
+  const validOptions = options.filter(option => option.value && option.value.trim() !== '');
+
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {options.length === 0 ? (
+        {validOptions.length === 0 ? (
           <div className="py-6 text-center text-sm text-muted-foreground">
             {emptyMessage}
           </div>
         ) : (
-          options.map((option) => (
+          validOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
