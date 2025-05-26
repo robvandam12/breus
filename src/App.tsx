@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient } from '@tanstack/react-query';
-import { AuthProvider } from '@/hooks/useAuth';
-import Dashboard from '@/pages/Dashboard';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/components/auth/AuthProvider';
+import { Dashboard } from '@/components/Dashboard';
 import Salmoneras from '@/pages/empresas/Salmoneras';
 import Sitios from '@/pages/empresas/Sitios';
 import Contratistas from '@/pages/empresas/Contratistas';
@@ -13,21 +14,23 @@ import BitacorasBuzo from '@/pages/operaciones/BitacorasBuzo';
 import Profile from '@/pages/Profile';
 import Configuracion from '@/pages/Configuracion';
 import Reportes from '@/pages/Reportes';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
+import ResetPassword from '@/pages/auth/ResetPassword';
 import RequireAuth from '@/components/auth/RequireAuth';
 import RequireSuperuser from '@/components/auth/RequireSuperuser';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Toast } from '@/components/ui/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 import WebhooksPage from '@/pages/WebhooksPage';
 import AdminSalmoneraPage from "@/pages/admin/AdminSalmoneraPage";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <BrowserRouter>
-      <QueryClient>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -158,9 +161,9 @@ function App() {
               }
             />
           </Routes>
-          <Toast />
+          <Toaster />
         </AuthProvider>
-      </QueryClient>
+      </QueryClientProvider>
     </BrowserRouter>
   );
 }

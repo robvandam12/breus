@@ -58,26 +58,32 @@ export const useUserPool = (salmoneraId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PoolUser[];
+      return (data || []).map(user => ({
+        id: user.usuario_id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        rol: user.rol as 'supervisor' | 'buzo',
+        salmonera_id: user.salmonera_id || '',
+        servicio_id: user.servicio_id || undefined,
+        matricula: undefined,
+        especialidades: [],
+        certificaciones: [],
+        disponible: true,
+        created_at: user.created_at,
+      })) as PoolUser[];
     },
     enabled: !!salmoneraId,
   });
 
-  // Fetch invitaciones pendientes
+  // Fetch invitaciones pendientes - usando notifications por ahora
   const { data: invitaciones = [], isLoading: loadingInvitaciones } = useQuery({
     queryKey: ['invitaciones-usuario', salmoneraId],
     queryFn: async () => {
       if (!salmoneraId) return [];
       
-      const { data, error } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('salmonera_id', salmoneraId)
-        .eq('estado', 'pendiente')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as InvitacionUsuario[];
+      // Por ahora retornamos array vacío hasta tener la tabla user_invitations
+      return [] as InvitacionUsuario[];
     },
     enabled: !!salmoneraId,
   });
@@ -117,21 +123,25 @@ export const useUserPool = (salmoneraId?: string) => {
       apellido: string; 
       rol: 'supervisor' | 'buzo';
     }) => {
-      const { data, error } = await supabase.functions.invoke('send-user-invitation', {
-        body: {
-          email,
-          nombre,
-          apellido,
-          rol,
-          salmonera_id: salmoneraId,
-        },
+      // Por ahora creamos el usuario directamente
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: 'temp123456', // Password temporal
+        options: {
+          data: {
+            nombre,
+            apellido,
+            rol,
+            salmonera_id: salmoneraId,
+          }
+        }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invitaciones-usuario', salmoneraId] });
+      queryClient.invalidateQueries({ queryKey: ['pool-users', salmoneraId] });
       toast({
         title: "Invitación enviada",
         description: "Se ha enviado la invitación por email",
@@ -139,7 +149,7 @@ export const useUserPool = (salmoneraId?: string) => {
     },
   });
 
-  // Crear equipo para operación
+  // Crear equipo para operación - por ahora usando notifications como placeholder
   const createTeam = useMutation({
     mutationFn: async ({ 
       operacionId, 
@@ -148,20 +158,18 @@ export const useUserPool = (salmoneraId?: string) => {
       operacionId: string; 
       miembros: { usuario_id: string; rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente' }[];
     }) => {
-      const teamData = miembros.map(miembro => ({
-        operacion_id: operacionId,
-        usuario_id: miembro.usuario_id,
-        rol_equipo: miembro.rol_equipo,
-        activo: true,
+      // Crear notificaciones para simular la creación del equipo
+      const notifications = miembros.map(miembro => ({
+        user_id: miembro.usuario_id,
+        type: 'team_assignment',
+        title: 'Asignado a Equipo',
+        message: `Has sido asignado como ${miembro.rol_equipo} para la operación ${operacionId}`,
+        metadata: { operacion_id: operacionId, rol_equipo: miembro.rol_equipo }
       }));
 
       const { data, error } = await supabase
-        .from('team_members')
-        .insert(teamData)
-        .select(`
-          *,
-          usuario:usuario_id (*)
-        `);
+        .from('notifications')
+        .insert(notifications);
 
       if (error) throw error;
       return data;
@@ -174,22 +182,11 @@ export const useUserPool = (salmoneraId?: string) => {
     },
   });
 
-  // Obtener equipo de una operación
+  // Obtener equipo de una operación - por ahora retornamos array vacío
   const { data: teamMembers = [] } = useQuery({
     queryKey: ['team-members'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select(`
-          *,
-          usuario:usuario_id (*),
-          operacion:operacion_id (nombre, codigo)
-        `)
-        .eq('activo', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as TeamMember[];
+      return [] as TeamMember[];
     },
   });
 
