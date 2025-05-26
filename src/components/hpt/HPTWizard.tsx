@@ -103,98 +103,98 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
   const currentStepData = steps[currentStep - 1];
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6">
+    <div className="h-full max-h-[90vh] flex flex-col">
       {/* Header with Progress */}
-      <Card className="mb-6 shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-                {getStepIcon(currentStep)}
-              </div>
-              <div>
-                <CardTitle className="text-xl md:text-2xl text-gray-900">
-                  Hoja de Planificación de Tarea (HPT)
-                </CardTitle>
-                <p className="text-sm text-gray-500 mt-1">
-                  Paso {currentStep} de {steps.length}: {currentStepData?.title}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge 
-                variant={autoSaveEnabled ? "default" : "secondary"}
-                className={autoSaveEnabled ? "bg-green-100 text-green-700" : ""}
-              >
-                {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
-              </Badge>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                {progress}% Completado
-              </Badge>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <Progress value={progress} className="h-3" />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Progreso General</span>
-              <span>{progress}%</span>
-            </div>
-          </div>
-
-          {/* Step Indicators */}
-          <div className="flex justify-between mt-6">
-            {steps.map((step, index) => (
-              <div 
-                key={step.id}
-                className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
-              >
-                <div className={`h-2 rounded-full ${
-                  step.id < currentStep ? 'bg-green-500' : 
-                  step.id === currentStep ? 'bg-blue-500' : 
-                  'bg-gray-200'
-                }`} />
-                <div className="mt-2 text-xs text-center">
-                  <span className={`${
-                    step.id === currentStep ? 'text-blue-600 font-medium' : 
-                    step.id < currentStep ? 'text-green-600' : 
-                    'text-gray-500'
-                  }`}>
-                    {step.title}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Main Content */}
-      <Card className="shadow-lg">
-        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-teal-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+      <div className="flex-shrink-0 p-4 md:p-6 border-b">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
               {getStepIcon(currentStep)}
             </div>
             <div>
-              <CardTitle className="text-lg text-gray-900">
-                {currentStepData?.title}
+              <CardTitle className="text-xl md:text-2xl text-gray-900">
+                Hoja de Planificación de Tarea (HPT)
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                {currentStepData?.description}
+              <p className="text-sm text-gray-500 mt-1">
+                Paso {currentStep} de {steps.length}: {currentStepData?.title}
               </p>
             </div>
           </div>
-        </CardHeader>
-        
-        <CardContent className="p-6 md:p-8">
-          {renderStep()}
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-3">
+            <Badge 
+              variant={autoSaveEnabled ? "default" : "secondary"}
+              className={autoSaveEnabled ? "bg-green-100 text-green-700" : ""}
+            >
+              {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
+            </Badge>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {progress}% Completado
+            </Badge>
+          </div>
+        </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center mt-6 gap-4">
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <Progress value={progress} className="h-3" />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Progreso General</span>
+            <span>{progress}%</span>
+          </div>
+        </div>
+
+        {/* Step Indicators */}
+        <div className="flex justify-between mt-6">
+          {steps.map((step, index) => (
+            <div 
+              key={step.id}
+              className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
+            >
+              <div className={`h-2 rounded-full ${
+                step.id < currentStep ? 'bg-green-500' : 
+                step.id === currentStep ? 'bg-blue-500' : 
+                'bg-gray-200'
+              }`} />
+              <div className="mt-2 text-xs text-center">
+                <span className={`${
+                  step.id === currentStep ? 'text-blue-600 font-medium' : 
+                  step.id < currentStep ? 'text-green-600' : 
+                  'text-gray-500'
+                }`}>
+                  {step.title}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto">
+        <Card className="border-0 shadow-none">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-teal-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                {getStepIcon(currentStep)}
+              </div>
+              <div>
+                <CardTitle className="text-lg text-gray-900">
+                  {currentStepData?.title}
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  {currentStepData?.description}
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-6 md:p-8">
+            {renderStep()}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navigation - Fixed at bottom */}
+      <div className="flex-shrink-0 flex justify-between items-center p-4 md:p-6 gap-4 border-t bg-white">
         <div className="flex gap-2">
           <Button 
             variant="outline" 

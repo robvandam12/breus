@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -217,7 +218,7 @@ const HPT = () => {
                       Nueva HPT
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+                  <DialogContent className="p-0">
                     <CreateHPTForm
                       onSubmit={handleCreateHPT}
                       onCancel={() => setIsCreateDialogOpen(false)}
@@ -232,7 +233,7 @@ const HPT = () => {
                       HPT Completa
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
+                  <DialogContent className="p-0">
                     <HPTWizard
                       onComplete={handleWizardComplete}
                       onCancel={() => setIsWizardOpen(false)}
