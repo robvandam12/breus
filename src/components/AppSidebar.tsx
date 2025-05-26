@@ -9,10 +9,7 @@ import {
   BarChart3,
   Settings,
   Shield,
-  LogOut,
-  Users,
-  Building2,
-  MapPin
+  LogOut
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,246 +33,78 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuthRoles } from "@/hooks/useAuthRoles";
 
-interface MenuItem {
-  title: string;
-  icon: any;
-  url?: string;
-  badge?: string;
-  items?: { title: string; url: string }[];
-}
+const menuItems = [
+  {
+    title: "Dashboard",
+    icon: BarChart3,
+    url: "/",
+    badge: "3"
+  },
+  {
+    title: "Empresas",
+    icon: Folder,
+    items: [
+      { title: "Salmoneras", url: "/empresas/salmoneras" },
+      { title: "Sitios", url: "/empresas/sitios" },
+      { title: "Contratistas", url: "/empresas/contratistas" }
+    ]
+  },
+  {
+    title: "Operaciones",
+    icon: Calendar,
+    url: "/operaciones",
+    badge: "12"
+  },
+  {
+    title: "Formularios",
+    icon: FileText,
+    items: [
+      { title: "HPT", url: "/formularios/hpt" },
+      { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+    ]
+  },
+  {
+    title: "Inmersiones",
+    icon: Anchor,
+    url: "/inmersiones",
+    badge: "7"
+  },
+  {
+    title: "Bitácoras",
+    icon: Book,
+    items: [
+      { title: "Supervisor", url: "/bitacoras/supervisor" },
+      { title: "Buzo", url: "/bitacoras/buzo" }
+    ]
+  },
+  {
+    title: "Reportes",
+    icon: BarChart3,
+    url: "/reportes"
+  },
+  {
+    title: "Configuración",
+    icon: Settings,
+    url: "/configuracion"
+  },
+  {
+    title: "Admin",
+    icon: Shield,
+    items: [
+      { title: "Roles y Permisos", url: "/admin/roles" }
+    ],
+    roleRequired: "superuser"
+  }
+];
 
 export function AppSidebar() {
-  const { currentRole, permissions, canAccessPage } = useAuthRoles();
+  // TODO: Get user role from auth context
+  const userRole = "superuser"; // This should come from auth
 
-  const getMenuItemsForRole = (): MenuItem[] => {
-    const baseItems: MenuItem[] = [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      }
-    ];
-
-    // Items específicos por rol
-    if (currentRole === 'superuser') {
-      return [
-        ...baseItems,
-        {
-          title: "Administración",
-          icon: Shield,
-          items: [
-            { title: "Salmoneras", url: "/admin/salmoneras" },
-            { title: "Contratistas", url: "/admin/contratistas" },
-            { title: "Usuarios", url: "/admin/usuarios" },
-            { title: "Sistema", url: "/admin/sistema" }
-          ]
-        },
-        {
-          title: "Empresas",
-          icon: Building2,
-          items: [
-            { title: "Salmoneras", url: "/empresas/salmoneras" },
-            { title: "Sitios", url: "/empresas/sitios" },
-            { title: "Contratistas", url: "/empresas/contratistas" }
-          ]
-        },
-        {
-          title: "Pool de Usuarios",
-          icon: Users,
-          url: "/pool-usuarios",
-          badge: "12"
-        },
-        {
-          title: "Operaciones",
-          icon: Calendar,
-          url: "/operaciones",
-          badge: "7"
-        },
-        {
-          title: "Formularios",
-          icon: FileText,
-          items: [
-            { title: "HPT", url: "/formularios/hpt" },
-            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-          ]
-        },
-        {
-          title: "Inmersiones",
-          icon: Anchor,
-          url: "/inmersiones",
-          badge: "5"
-        },
-        {
-          title: "Bitácoras",
-          icon: Book,
-          items: [
-            { title: "Supervisor", url: "/bitacoras/supervisor" },
-            { title: "Buzo", url: "/bitacoras/buzo" }
-          ]
-        },
-        {
-          title: "Reportes",
-          icon: BarChart3,
-          url: "/reportes"
-        },
-        {
-          title: "Configuración",
-          icon: Settings,
-          url: "/configuracion"
-        }
-      ];
-    }
-
-    if (currentRole === 'admin_salmonera') {
-      return [
-        ...baseItems,
-        {
-          title: "Mi Salmonera",
-          icon: Building2,
-          items: [
-            { title: "Sitios", url: "/empresas/sitios" },
-            { title: "Contratistas", url: "/empresas/contratistas" }
-          ]
-        },
-        {
-          title: "Pool de Usuarios",
-          icon: Users,
-          url: "/pool-usuarios",
-          badge: "12"
-        },
-        {
-          title: "Operaciones",
-          icon: Calendar,
-          url: "/operaciones",
-          badge: "7"
-        },
-        {
-          title: "Formularios",
-          icon: FileText,
-          items: [
-            { title: "HPT", url: "/formularios/hpt" },
-            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-          ]
-        },
-        {
-          title: "Inmersiones",
-          icon: Anchor,
-          url: "/inmersiones",
-          badge: "5"
-        },
-        {
-          title: "Bitácoras",
-          icon: Book,
-          items: [
-            { title: "Supervisor", url: "/bitacoras/supervisor" },
-            { title: "Buzo", url: "/bitacoras/buzo" }
-          ]
-        },
-        {
-          title: "Reportes",
-          icon: BarChart3,
-          url: "/reportes"
-        }
-      ];
-    }
-
-    if (currentRole === 'admin_servicio') {
-      return [
-        ...baseItems,
-        {
-          title: "Mi Empresa",
-          icon: Building2,
-          items: [
-            { title: "Equipos", url: "/empresa/equipos" },
-            { title: "Usuarios", url: "/empresa/usuarios" }
-          ]
-        },
-        {
-          title: "Operaciones",
-          icon: Calendar,
-          url: "/operaciones"
-        },
-        {
-          title: "Formularios",
-          icon: FileText,
-          items: [
-            { title: "HPT", url: "/formularios/hpt" },
-            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-          ]
-        },
-        {
-          title: "Inmersiones",
-          icon: Anchor,
-          url: "/inmersiones"
-        },
-        {
-          title: "Bitácoras",
-          icon: Book,
-          items: [
-            { title: "Supervisor", url: "/bitacoras/supervisor" },
-            { title: "Buzo", url: "/bitacoras/buzo" }
-          ]
-        },
-        {
-          title: "Reportes",
-          icon: BarChart3,
-          url: "/reportes"
-        }
-      ];
-    }
-
-    if (currentRole === 'supervisor') {
-      return [
-        ...baseItems,
-        {
-          title: "Mis Operaciones",
-          icon: Calendar,
-          url: "/operaciones"
-        },
-        {
-          title: "Formularios",
-          icon: FileText,
-          items: [
-            { title: "HPT", url: "/formularios/hpt" },
-            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-          ]
-        },
-        {
-          title: "Inmersiones",
-          icon: Anchor,
-          url: "/inmersiones"
-        },
-        {
-          title: "Mi Bitácora",
-          icon: Book,
-          url: "/bitacoras/supervisor"
-        }
-      ];
-    }
-
-    if (currentRole === 'buzo') {
-      return [
-        ...baseItems,
-        {
-          title: "Mis Inmersiones",
-          icon: Anchor,
-          url: "/inmersiones"
-        },
-        {
-          title: "Mi Bitácora",
-          icon: Book,
-          url: "/bitacoras/buzo"
-        }
-      ];
-    }
-
-    return baseItems;
-  };
-
-  const menuItems = getMenuItemsForRole();
+  const filteredMenuItems = menuItems.filter(item => 
+    !item.roleRequired || item.roleRequired === userRole
+  );
 
   const handleLogout = async () => {
     try {
@@ -315,7 +144,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
@@ -342,7 +171,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <Link to={item.url!} className="flex items-center justify-between w-full">
+                      <Link to={item.url} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>
@@ -365,16 +194,11 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-border/40 p-4">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-medium text-sm">
-              {currentRole === 'superuser' ? 'SU' : 
-               currentRole === 'admin_salmonera' ? 'AS' :
-               currentRole === 'admin_servicio' ? 'AE' :
-               currentRole === 'supervisor' ? 'SV' : 'BU'}
-            </span>
+            <span className="text-white font-medium text-sm">JS</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Usuario {currentRole}</p>
-            <p className="text-xs text-zinc-500 truncate">{currentRole}@breus.cl</p>
+            <p className="text-sm font-medium truncate">Juan Supervisor</p>
+            <p className="text-xs text-zinc-500 truncate">supervisor@breus.cl</p>
           </div>
           <Button
             variant="ghost"
