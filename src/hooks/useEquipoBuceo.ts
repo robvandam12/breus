@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
+import { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-// Using the actual database types instead of custom interfaces
+// Using the actual database types
 type EquipoBuceo = Tables<'operacion'> & {
   miembros?: EquipoBuceoMiembro[];
 };
@@ -75,9 +75,23 @@ export const useEquipoBuceo = () => {
 
   const createEquipo = async (equipoData: Partial<Tables<'operacion'>>) => {
     try {
+      // Ensure required fields are present
+      const operacionData: TablesInsert<'operacion'> = {
+        codigo: equipoData.codigo || `OP-${Date.now()}`,
+        nombre: equipoData.nombre || 'Nueva Operación',
+        fecha_inicio: equipoData.fecha_inicio || new Date().toISOString().split('T')[0],
+        estado: equipoData.estado || 'planificada',
+        salmonera_id: equipoData.salmonera_id || null,
+        sitio_id: equipoData.sitio_id || null,
+        servicio_id: equipoData.servicio_id || null,
+        tareas: equipoData.tareas || null,
+        fecha_fin: equipoData.fecha_fin || null,
+        contratista_id: equipoData.contratista_id || null
+      };
+
       const { data, error } = await supabase
         .from('operacion')
-        .insert([equipoData])
+        .insert([operacionData])
         .select()
         .single();
 
@@ -123,17 +137,17 @@ export const useEquipoBuceo = () => {
     }
   };
 
-  const inviteMiembro = async (equipoId: string, email: string, rol: string, nombreCompleto: string) => {
+  const inviteMiembro = async (equipoId: string, email: string, rol: 'supervisor' | 'buzo' | 'asistente', nombreCompleto: string) => {
     try {
       const token = crypto.randomUUID();
       
-      const miembroData = {
+      const miembroData: Partial<EquipoBuceoMiembro> = {
         equipo_id: equipoId,
         email,
         rol,
         nombre_completo: nombreCompleto,
         invitado: true,
-        estado_invitacion: 'pendiente' as const,
+        estado_invitacion: 'pendiente',
         token_invitacion: token
       };
 

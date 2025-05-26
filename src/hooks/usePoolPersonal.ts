@@ -2,7 +2,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
+import { Tables, TablesInsert } from '@/integrations/supabase/types';
+
+// Define proper types for perfil_buzo
+interface PerfilBuzo {
+  matricula?: string;
+  especialidades?: string[];
+  certificaciones?: string[];
+  experiencia_anos?: number;
+  disponible?: boolean;
+}
 
 // Using the usuario table as the base for personal pool
 type PoolPersonal = Tables<'usuario'> & {
@@ -38,18 +47,23 @@ export const usePoolPersonal = () => {
       if (error) throw error;
       
       // Map the usuario data to our PoolPersonal structure
-      const mappedData = data?.map(user => ({
-        ...user,
-        empresa_id: tipoEmpresa === 'salmonera' ? user.salmonera_id : user.servicio_id,
-        tipo_empresa: tipoEmpresa,
-        matricula: user.perfil_buzo?.matricula,
-        especialidades: user.perfil_buzo?.especialidades || [],
-        certificaciones: user.perfil_buzo?.certificaciones || [],
-        experiencia_anos: user.perfil_buzo?.experiencia_anos || 0,
-        disponible: true,
-        invitado: false,
-        estado_invitacion: 'aceptada' as const
-      })) || [];
+      const mappedData = data?.map(user => {
+        // Safely parse perfil_buzo JSON
+        const perfilBuzo = user.perfil_buzo as PerfilBuzo | null;
+        
+        return {
+          ...user,
+          empresa_id: tipoEmpresa === 'salmonera' ? user.salmonera_id : user.servicio_id,
+          tipo_empresa: tipoEmpresa,
+          matricula: perfilBuzo?.matricula,
+          especialidades: perfilBuzo?.especialidades || [],
+          certificaciones: perfilBuzo?.certificaciones || [],
+          experiencia_anos: perfilBuzo?.experiencia_anos || 0,
+          disponible: perfilBuzo?.disponible || true,
+          invitado: false,
+          estado_invitacion: 'aceptada' as const
+        };
+      }) || [];
       
       setPersonal(mappedData);
     } catch (error) {
@@ -64,20 +78,26 @@ export const usePoolPersonal = () => {
 
   const addPersonal = async (personalData: Partial<PoolPersonal>) => {
     try {
+      // Generate a unique user ID for new personal
+      const userId = crypto.randomUUID();
+      
       // Convert to usuario format
-      const usuarioData = {
+      const usuarioData: TablesInsert<'usuario'> = {
+        usuario_id: userId,
         nombre: personalData.nombre || '',
         apellido: personalData.apellido || '',
         email: personalData.email || '',
         rol: personalData.rol || 'buzo',
-        salmonera_id: personalData.tipo_empresa === 'salmonera' ? personalData.empresa_id : null,
-        servicio_id: personalData.tipo_empresa === 'servicio' ? personalData.empresa_id : null,
+        salmonera_id: personalData.tipo_empresa === 'salmonera' ? personalData.empresa_id || null : null,
+        servicio_id: personalData.tipo_empresa === 'servicio' ? personalData.empresa_id || null : null,
         perfil_buzo: {
           matricula: personalData.matricula,
           especialidades: personalData.especialidades || [],
           certificaciones: personalData.certificaciones || [],
-          experiencia_anos: personalData.experiencia_anos || 0
-        }
+          experiencia_anos: personalData.experiencia_anos || 0,
+          disponible: personalData.disponible !== false
+        },
+        perfil_completado: true
       };
 
       const { data, error } = await supabase
@@ -132,15 +152,19 @@ export const usePoolPersonal = () => {
 
   const updateDisponibilidad = async (personalId: string, disponible: boolean) => {
     try {
-      // For now, we'll update the usuario's perfil_buzo with availability
-      const { data: usuario } = await supabase
+      // Get current user data
+      const { data: usuario, error: fetchError } = await supabase
         .from('usuario')
         .select('perfil_buzo')
         .eq('usuario_id', personalId)
         .single();
 
+      if (fetchError) throw fetchError;
+
+      // Safely parse and update perfil_buzo
+      const currentPerfil = (usuario?.perfil_buzo as PerfilBuzo) || {};
       const updatedPerfil = {
-        ...usuario?.perfil_buzo,
+        ...currentPerfil,
         disponible
       };
 
