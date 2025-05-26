@@ -7,9 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Users, Plus, X } from "lucide-react";
+import { Users, Plus, X, UserPlus } from "lucide-react";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface OperacionTeamManagerProps {
   operacionId: string;
@@ -18,27 +21,89 @@ interface OperacionTeamManagerProps {
 
 export const OperacionTeamManager = ({ operacionId, salmoneraId }: OperacionTeamManagerProps) => {
   const { equipos } = useEquiposBuceoEnhanced();
+  const { operaciones } = useOperaciones();
+  const queryClient = useQueryClient();
+  
   const [selectedEquipoId, setSelectedEquipoId] = useState('');
-  const [assignedMembers, setAssignedMembers] = useState<any[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-
+  
+  const operacion = operaciones.find(op => op.id === operacionId);
   const availableEquipos = equipos.filter(e => e.empresa_id === salmoneraId);
   const selectedEquipo = equipos.find(e => e.id === selectedEquipoId);
+  
+  // Get current assigned team from operacion
+  const assignedTeam = operacion?.equipo_buceo_id 
+    ? equipos.find(e => e.id === operacion.equipo_buceo_id)
+    : null;
+
+  const updateOperacionTeam = useMutation({
+    mutationFn: async (equipoId: string) => {
+      const { data, error } = await supabase
+        .from('operacion')
+        .update({ equipo_buceo_id: equipoId })
+        .eq('id', operacionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: 'Equipo asignado',
+        description: 'El equipo de buceo ha sido asignado a la operación.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error assigning team:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo asignar el equipo a la operación.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const removeOperacionTeam = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from('operacion')
+        .update({ equipo_buceo_id: null })
+        .eq('id', operacionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: 'Equipo removido',
+        description: 'El equipo de buceo ha sido removido de la operación.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error removing team:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo remover el equipo de la operación.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleAssignTeam = () => {
-    if (selectedEquipo && selectedEquipo.miembros) {
-      // Assign the entire team to the operation
-      setAssignedMembers(selectedEquipo.miembros.map(m => ({
-        ...m,
-        operacion_id: operacionId,
-        asignado_en: new Date().toISOString()
-      })));
+    if (selectedEquipoId) {
+      updateOperacionTeam.mutate(selectedEquipoId);
       setIsAssignDialogOpen(false);
+      setSelectedEquipoId('');
     }
   };
 
-  const handleRemoveMember = (memberId: string) => {
-    setAssignedMembers(prev => prev.filter(m => m.id !== memberId));
+  const handleRemoveTeam = () => {
+    removeOperacionTeam.mutate();
   };
 
   const getRolBadgeColor = (rol: string) => {
@@ -58,129 +123,160 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId }: OperacionTeam
             <Users className="w-5 h-5 text-blue-600" />
             Equipo Asignado
             <Badge variant="outline">
-              {assignedMembers.length} miembros
+              {assignedTeam?.miembros?.length || 0} miembros
             </Badge>
           </CardTitle>
-          <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Asignar Equipo
+          <div className="flex gap-2">
+            {assignedTeam && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveTeam}
+                disabled={removeOperacionTeam.isPending}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Remover Equipo
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Asignar Equipo de Buceo</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Equipo de Buceo</Label>
-                  <Select value={selectedEquipoId} onValueChange={setSelectedEquipoId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar equipo..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableEquipos.map((equipo) => (
-                        <SelectItem key={equipo.id} value={equipo.id}>
-                          {equipo.nombre} ({equipo.miembros?.length || 0} miembros)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedEquipo && selectedEquipo.miembros && (
-                  <div className="space-y-2">
-                    <Label>Miembros del Equipo:</Label>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {selectedEquipo.miembros.map((miembro) => (
-                        <div key={miembro.id} className="flex items-center justify-between p-2 bg-zinc-50 rounded">
-                          <div>
-                            <span className="font-medium">{miembro.nombre_completo}</span>
-                            <Badge variant="outline" className={`ml-2 ${getRolBadgeColor(miembro.rol)}`}>
-                              {miembro.rol.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+            )}
+            <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {assignedTeam ? 'Cambiar Equipo' : 'Asignar Equipo'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Asignar Equipo de Buceo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Equipo de Buceo</Label>
+                    <Select value={selectedEquipoId} onValueChange={setSelectedEquipoId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar equipo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableEquipos.map((equipo) => (
+                          <SelectItem key={equipo.id} value={equipo.id}>
+                            {equipo.nombre} ({equipo.miembros?.length || 0} miembros)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleAssignTeam}
-                    disabled={!selectedEquipoId}
-                    className="flex-1"
-                  >
-                    Asignar Equipo Completo
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
-                    Cancelar
-                  </Button>
+                  {selectedEquipo && selectedEquipo.miembros && (
+                    <div className="space-y-2">
+                      <Label>Miembros del Equipo:</Label>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {selectedEquipo.miembros.map((miembro) => (
+                          <div key={miembro.id} className="flex items-center justify-between p-2 bg-zinc-50 rounded">
+                            <div>
+                              <span className="font-medium">{miembro.nombre_completo}</span>
+                              <Badge variant="outline" className={`ml-2 ${getRolBadgeColor(miembro.rol)}`}>
+                                {miembro.rol.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      onClick={handleAssignTeam}
+                      disabled={!selectedEquipoId || updateOperacionTeam.isPending}
+                      className="flex-1"
+                    >
+                      {updateOperacionTeam.isPending ? 'Asignando...' : 'Asignar Equipo'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        {assignedMembers.length === 0 ? (
+        {!assignedTeam ? (
           <div className="text-center py-8 text-zinc-500">
-            No hay equipo asignado a esta operación
+            <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+            <h3 className="font-medium text-zinc-900 mb-2">No hay equipo asignado</h3>
+            <p className="text-sm text-zinc-500 mb-4">
+              Asigne un equipo de buceo para esta operación
+            </p>
+            <Button onClick={() => setIsAssignDialogOpen(true)} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Asignar Equipo
+            </Button>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Miembro</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Contacto</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignedMembers.map((miembro) => (
-                <TableRow key={miembro.id}>
-                  <TableCell>
-                    <div className="font-medium">{miembro.nombre_completo}</div>
-                    {miembro.matricula && (
-                      <div className="text-sm text-zinc-500">Matrícula: {miembro.matricula}</div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getRolBadgeColor(miembro.rol)}>
-                      {miembro.rol.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-green-100 text-green-700">
-                      Asignado
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {miembro.email && (
-                      <div className="text-sm text-zinc-600">{miembro.email}</div>
-                    )}
-                    {miembro.telefono && (
-                      <div className="text-sm text-zinc-600">{miembro.telefono}</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleRemoveMember(miembro.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-blue-900">{assignedTeam.nombre}</h4>
+                {assignedTeam.descripcion && (
+                  <p className="text-sm text-blue-700">{assignedTeam.descripcion}</p>
+                )}
+              </div>
+              <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                Equipo Asignado
+              </Badge>
+            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Miembro</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Contacto</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {assignedTeam.miembros?.map((miembro) => (
+                  <TableRow key={miembro.id}>
+                    <TableCell>
+                      <div className="font-medium">{miembro.nombre_completo}</div>
+                      {miembro.matricula && (
+                        <div className="text-sm text-zinc-500">Matrícula: {miembro.matricula}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getRolBadgeColor(miembro.rol)}>
+                        {miembro.rol.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-green-100 text-green-700">
+                        Disponible
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {miembro.email && (
+                        <div className="text-sm text-zinc-600">{miembro.email}</div>
+                      )}
+                      {miembro.telefono && (
+                        <div className="text-sm text-zinc-600">{miembro.telefono}</div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )) || (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-zinc-500">
+                      No hay miembros en este equipo
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

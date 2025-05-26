@@ -48,6 +48,8 @@ export const useEquiposBuceoEnhanced = () => {
   const { data: equipos = [], isLoading } = useQuery({
     queryKey: ['equipos-buceo-enhanced'],
     queryFn: async () => {
+      console.log('Fetching equipos de buceo...');
+      
       const { data, error } = await supabase
         .from('equipos_buceo')
         .select(`
@@ -61,10 +63,15 @@ export const useEquiposBuceoEnhanced = () => {
         .eq('tipo_empresa', 'salmonera')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching equipos:', error);
+        throw error;
+      }
+      
+      console.log('Raw equipos data:', data);
       
       // Transform the data to match our interface
-      return (data || []).map((equipo: any) => ({
+      const transformedData = (data || []).map((equipo: any) => ({
         ...equipo,
         miembros: (equipo.miembros || []).map((miembro: any) => ({
           ...miembro,
@@ -79,7 +86,12 @@ export const useEquiposBuceoEnhanced = () => {
           estado_invitacion: 'aceptada' as const
         }))
       })) as EquipoBuceo[];
+
+      console.log('Transformed equipos data:', transformedData);
+      return transformedData;
     },
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   const createEquipo = useMutation({
@@ -88,16 +100,25 @@ export const useEquiposBuceoEnhanced = () => {
       descripcion?: string;
       empresa_id: string;
     }) => {
+      console.log('Creating equipo with data:', equipoData);
+      
       const { data, error } = await supabase
         .from('equipos_buceo')
         .insert({
-          ...equipoData,
+          nombre: equipoData.nombre,
+          descripcion: equipoData.descripcion,
+          empresa_id: equipoData.empresa_id,
           tipo_empresa: 'salmonera'
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating equipo:', error);
+        throw error;
+      }
+      
+      console.log('Created equipo:', data);
       return data;
     },
     onSuccess: () => {
@@ -105,6 +126,14 @@ export const useEquiposBuceoEnhanced = () => {
       toast({
         title: 'Equipo creado',
         description: 'El equipo de buceo ha sido creado exitosamente.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in createEquipo mutation:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo crear el equipo de buceo.',
+        variant: 'destructive',
       });
     },
   });
@@ -129,6 +158,8 @@ export const useEquiposBuceoEnhanced = () => {
       telefono?: string;
       invitado?: boolean;
     }) => {
+      console.log('Adding member to equipo:', { equipo_id, usuario_id, rol_equipo });
+      
       const { data, error } = await supabase
         .from('equipo_buceo_miembros')
         .insert({ 
@@ -140,7 +171,12 @@ export const useEquiposBuceoEnhanced = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding member:', error);
+        throw error;
+      }
+      
+      console.log('Added member:', data);
       return data;
     },
     onSuccess: () => {
@@ -148,6 +184,14 @@ export const useEquiposBuceoEnhanced = () => {
       toast({
         title: 'Miembro agregado',
         description: 'El miembro ha sido agregado al equipo exitosamente.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in addMiembro mutation:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo agregar el miembro al equipo.',
+        variant: 'destructive',
       });
     },
   });
@@ -164,6 +208,8 @@ export const useEquiposBuceoEnhanced = () => {
       nombre_completo: string;
       rol_equipo: string;
     }) => {
+      console.log('Inviting member:', { equipo_id, email, nombre_completo, rol_equipo });
+      
       // For now, just add as a regular member
       // In the future, this could create user invitations
       const { data, error } = await supabase
@@ -176,7 +222,12 @@ export const useEquiposBuceoEnhanced = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inviting member:', error);
+        throw error;
+      }
+      
+      console.log('Invited member:', data);
       return data;
     },
     onSuccess: () => {
@@ -184,6 +235,14 @@ export const useEquiposBuceoEnhanced = () => {
       toast({
         title: 'Invitación enviada',
         description: 'Se ha enviado una invitación al miembro.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in inviteMember mutation:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo enviar la invitación.',
+        variant: 'destructive',
       });
     },
   });
