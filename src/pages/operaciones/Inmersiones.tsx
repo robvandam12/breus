@@ -19,14 +19,14 @@ export default function Inmersiones() {
     setShowCreateForm(false);
   };
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       planificada: 'default',
       en_progreso: 'secondary', 
       completada: 'destructive',
       cancelada: 'outline'
     };
-    return variants[estado as keyof typeof variants] || 'default';
+    return variants[estado] || 'default';
   };
 
   if (showCreateForm) {
