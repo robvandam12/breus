@@ -13,12 +13,12 @@ import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 import { AsociacionContratistas } from "@/components/salmoneras/AsociacionContratistas";
 import { UserManagement } from "@/components/empresa/UserManagement";
 import { Building, Plus, Table, Grid, Users, Link } from "lucide-react";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useSalmoneras, Salmonera } from "@/hooks/useSalmoneras";
 
 export default function Salmoneras() {
   const { salmoneras, isLoading, createSalmonera, updateSalmonera, deleteSalmonera } = useSalmoneras();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedSalmonera, setSelectedSalmonera] = useState<any>(null);
+  const [selectedSalmonera, setSelectedSalmonera] = useState<Salmonera | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const handleCreateSalmonera = async (data: any) => {
@@ -26,7 +26,7 @@ export default function Salmoneras() {
     setShowCreateForm(false);
   };
 
-  const handleSelectSalmonera = (salmonera: any) => {
+  const handleSelectSalmonera = (salmonera: Salmonera) => {
     setSelectedSalmonera(salmonera);
   };
 

@@ -41,7 +41,14 @@ export const useUsuarios = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Usuario[];
+      
+      // Transform the data to match our Usuario interface
+      return data.map(user => ({
+        ...user,
+        servicio: Array.isArray(user.servicio) && user.servicio.length > 0 
+          ? user.servicio[0] 
+          : user.servicio
+      })) as Usuario[];
     },
   });
 

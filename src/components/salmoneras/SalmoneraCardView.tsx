@@ -9,18 +9,18 @@ interface SalmoneraCardViewProps {
   salmoneras: Salmonera[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onViewSitios: (id: string) => void;
-  isDeleting: boolean;
-  isUpdating: boolean;
+  onSelect?: (salmonera: Salmonera) => void;
+  isDeleting?: boolean;
+  isUpdating?: boolean;
 }
 
 export const SalmoneraCardView = ({ 
   salmoneras, 
   onEdit, 
   onDelete, 
-  onViewSitios,
-  isDeleting, 
-  isUpdating 
+  onSelect,
+  isDeleting = false, 
+  isUpdating = false 
 }: SalmoneraCardViewProps) => {
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado) {
@@ -84,15 +84,17 @@ export const SalmoneraCardView = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onViewSitios(salmonera.id)}
-                className="touch-target"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                Ver Sitios
-              </Button>
+              {onSelect && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onSelect(salmonera)}
+                  className="touch-target"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Ver Detalles
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm"

@@ -30,11 +30,20 @@ export const UserManagement = () => {
     apellido: '',
     rol: 'buzo',
     empresa_id: '',
-    tipo_empresa: '',
+    tipo_empresa: '' as 'salmonera' | 'contratista' | '',
   });
 
   const handleInviteSubmit = () => {
-    inviteUsuario(inviteForm);
+    const formData = {
+      email: inviteForm.email,
+      nombre: inviteForm.nombre,
+      apellido: inviteForm.apellido,
+      rol: inviteForm.rol,
+      ...(inviteForm.empresa_id && { empresa_id: inviteForm.empresa_id }),
+      ...(inviteForm.tipo_empresa && { tipo_empresa: inviteForm.tipo_empresa as 'salmonera' | 'contratista' }),
+    };
+    
+    inviteUsuario(formData);
     setInviteForm({
       email: '',
       nombre: '',
@@ -82,6 +91,11 @@ export const UserManagement = () => {
     value: c.id,
     label: `${c.nombre} (${c.rut})`,
   }));
+
+  const tipoEmpresaOptions = [
+    { value: 'salmonera', label: 'Salmonera' },
+    { value: 'contratista', label: 'Contratista' },
+  ];
 
   if (isLoading) {
     return (
@@ -166,11 +180,8 @@ export const UserManagement = () => {
                     <Label htmlFor="tipo_empresa">Tipo de Empresa</Label>
                     <EnhancedSelect
                       value={inviteForm.tipo_empresa}
-                      onValueChange={(value) => setInviteForm({ ...inviteForm, tipo_empresa: value })}
-                      options={[
-                        { value: 'salmonera', label: 'Salmonera' },
-                        { value: 'contratista', label: 'Contratista' },
-                      ]}
+                      onValueChange={(value) => setInviteForm({ ...inviteForm, tipo_empresa: value as 'salmonera' | 'contratista' | '' })}
+                      options={tipoEmpresaOptions}
                       placeholder="Seleccionar tipo..."
                     />
                   </div>
