@@ -178,13 +178,16 @@ const Index = () => {
                 </div>
               </div>
               <div className="flex-1" />
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="ios-button"
-              >
-                Filtros de búsqueda
-              </Button>
+              <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="ios-button"
+                  >
+                    Filtros de búsqueda
+                  </Button>
+                </CollapsibleTrigger>
+              </Collapsible>
             </div>
           </header>
           

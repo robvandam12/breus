@@ -35,7 +35,22 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
-const menuItems = [
+interface MenuSubItem {
+  title: string;
+  url: string;
+  roleRequired?: string;
+}
+
+interface MenuItem {
+  title: string;
+  icon: React.ElementType;
+  url?: string;
+  badge?: string;
+  items?: MenuSubItem[];
+  roleRequired?: string;
+}
+
+const menuItems: MenuItem[] = [
   {
     title: "Dashboard",
     icon: BarChart3,
@@ -207,7 +222,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <Link to={item.url} className="flex items-center justify-between w-full">
+                      <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>

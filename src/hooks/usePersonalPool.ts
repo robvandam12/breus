@@ -42,9 +42,7 @@ export const usePersonalPool = () => {
       const { data, error } = await supabase
         .from('usuario')
         .select(`
-          *,
-          salmoneras:salmonera_id (nombre),
-          contratistas:servicio_id (nombre)
+          *
         `)
         .in('rol', ['supervisor', 'buzo'])
         .order('created_at', { ascending: false });
@@ -54,22 +52,28 @@ export const usePersonalPool = () => {
         throw error;
       }
 
-      return (data || []).map(user => ({
-        id: user.usuario_id,
-        usuario_id: user.usuario_id,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        email: user.email || '',
-        rol: user.rol as 'supervisor' | 'buzo',
-        empresa_asociada: user.salmoneras?.nombre || user.contratistas?.nombre,
-        tipo_empresa: user.salmonera_id ? 'salmonera' : 'contratista',
-        matricula: user.perfil_buzo?.matricula,
-        especialidades: user.perfil_buzo?.especialidades || [],
-        certificaciones: user.perfil_buzo?.certificaciones || [],
-        disponible: user.perfil_buzo?.disponible !== false,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      })) as PersonalPool[];
+      return (data || []).map(user => {
+        const perfilBuzo = typeof user.perfil_buzo === 'object' && user.perfil_buzo !== null 
+          ? user.perfil_buzo as any 
+          : {};
+
+        return {
+          id: user.usuario_id,
+          usuario_id: user.usuario_id,
+          nombre: user.nombre,
+          apellido: user.apellido,
+          email: user.email || '',
+          rol: user.rol as 'supervisor' | 'buzo',
+          empresa_asociada: 'Por definir', // Will be populated when we fetch related data
+          tipo_empresa: user.salmonera_id ? 'salmonera' as const : 'contratista' as const,
+          matricula: perfilBuzo.matricula || '',
+          especialidades: Array.isArray(perfilBuzo.especialidades) ? perfilBuzo.especialidades : [],
+          certificaciones: Array.isArray(perfilBuzo.certificaciones) ? perfilBuzo.certificaciones : [],
+          disponible: perfilBuzo.disponible !== false,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        };
+      }) as PersonalPool[];
     },
   });
 
