@@ -2,41 +2,31 @@
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileCheck, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { CreateAnexoBravoForm } from "@/components/anexo-bravo/CreateAnexoBravoForm";
+import { Anchor, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const AnexoBravo = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
+  const navigate = useNavigate();
   
-  const { anexosBravo, isLoading, createAnexoBravo, updateAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
+  const { anexos, isLoading, deleteAnexoBravo } = useAnexoBravo();
 
-  const filteredAnexos = anexosBravo.filter(anexo => {
+  const filteredAnexos = anexos.filter(anexo => {
     const matchesSearch = anexo.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          anexo.supervisor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || anexo.estado === filterStatus;
     return matchesSearch && matchesFilter;
   });
-
-  const handleCreateAnexoBravo = async (data: any) => {
-    try {
-      await createAnexoBravo(data);
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating Anexo Bravo:', error);
-    }
-  };
 
   const getEstadoBadge = (estado: string, firmado: boolean) => {
     if (firmado) {
@@ -59,6 +49,46 @@ const AnexoBravo = () => {
     }
   };
 
+  const AnexoBravoSkeleton = () => (
+    <div className="space-y-6">
+      {/* KPIs Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="p-4">
+            <Skeleton className="h-8 w-16 mb-2" />
+            <Skeleton className="h-4 w-24" />
+          </Card>
+        ))}
+      </div>
+
+      {/* Table Skeleton */}
+      <Card>
+        <div className="p-6">
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-4 w-16" />
+                <div className="flex gap-1">
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <SidebarProvider>
@@ -69,16 +99,28 @@ const AnexoBravo = () => {
               <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
                 <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
                 <div className="flex items-center gap-3">
-                  <FileCheck className="w-6 h-6 text-zinc-600" />
+                  <Anchor className="w-6 h-6 text-zinc-600" />
                   <div>
                     <h1 className="text-xl font-semibold text-zinc-900">Anexo Bravo</h1>
-                    <p className="text-sm text-zinc-500">Formularios de Verificación de Equipos</p>
+                    <p className="text-sm text-zinc-500">Formularios de Autorización de Buceo</p>
                   </div>
+                </div>
+                <div className="flex-1" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-64" />
+                  <div className="flex gap-2">
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="h-8 w-20" />
+                    ))}
+                  </div>
+                  <Skeleton className="h-10 w-32" />
                 </div>
               </div>
             </header>
-            <div className="flex-1 flex items-center justify-center">
-              <LoadingSpinner text="Cargando Anexos Bravo..." />
+            <div className="flex-1 overflow-auto">
+              <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                <AnexoBravoSkeleton />
+              </div>
             </div>
           </main>
         </div>
@@ -95,10 +137,10 @@ const AnexoBravo = () => {
             <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
               <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
               <div className="flex items-center gap-3">
-                <FileCheck className="w-6 h-6 text-zinc-600" />
+                <Anchor className="w-6 h-6 text-zinc-600" />
                 <div>
                   <h1 className="text-xl font-semibold text-zinc-900">Anexo Bravo</h1>
-                  <p className="text-sm text-zinc-500">Formularios de Verificación de Equipos</p>
+                  <p className="text-sm text-zinc-500">Formularios de Autorización de Buceo</p>
                 </div>
               </div>
               <div className="flex-1" />
@@ -106,7 +148,7 @@ const AnexoBravo = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
                   <Input
-                    placeholder="Buscar Anexos Bravo..."
+                    placeholder="Buscar Anexos..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
@@ -144,20 +186,13 @@ const AnexoBravo = () => {
                   </Button>
                 </div>
 
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-green-600 hover:bg-green-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Anexo Bravo
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-                    <CreateAnexoBravoForm
-                      onSubmit={handleCreateAnexoBravo}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  className="ios-button bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigate('/formularios/anexo-bravo/nuevo')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Anexo Bravo
+                </Button>
               </div>
             </div>
           </header>
@@ -167,26 +202,26 @@ const AnexoBravo = () => {
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {anexosBravo.length}
+                  <div className="text-2xl font-bold text-blue-600">
+                    {anexos.length}
                   </div>
-                  <div className="text-sm text-zinc-500">Total Anexos Bravo</div>
+                  <div className="text-sm text-zinc-500">Total Anexos</div>
                 </Card>
                 <Card className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {anexosBravo.filter(a => a.firmado).length}
+                  <div className="text-2xl font-bold text-green-600">
+                    {anexos.filter(a => a.firmado).length}
                   </div>
                   <div className="text-sm text-zinc-500">Firmados</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {anexosBravo.filter(a => !a.firmado && a.estado === 'pendiente').length}
+                    {anexos.filter(a => !a.firmado && a.estado === 'pendiente').length}
                   </div>
                   <div className="text-sm text-zinc-500">Pendientes</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-gray-600">
-                    {anexosBravo.filter(a => a.estado === 'borrador').length}
+                    {anexos.filter(a => a.estado === 'borrador').length}
                   </div>
                   <div className="text-sm text-zinc-500">Borradores</div>
                 </Card>
@@ -195,10 +230,13 @@ const AnexoBravo = () => {
               {filteredAnexos.length === 0 ? (
                 <Card className="text-center py-12">
                   <CardContent>
-                    <FileCheck className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <Anchor className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay Anexos Bravo registrados</h3>
-                    <p className="text-zinc-500 mb-4">Comience creando el primer formulario de verificación de equipos</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+                    <p className="text-zinc-500 mb-4">Comience creando el primer Anexo Bravo</p>
+                    <Button 
+                      onClick={() => navigate('/formularios/anexo-bravo/nuevo')} 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Nuevo Anexo Bravo
                     </Button>
@@ -211,10 +249,9 @@ const AnexoBravo = () => {
                       <TableRow>
                         <TableHead>Código</TableHead>
                         <TableHead>Supervisor</TableHead>
-                        <TableHead>Jefe de Centro</TableHead>
-                        <TableHead>Fecha Verificación</TableHead>
+                        <TableHead>Fecha</TableHead>
                         <TableHead>Estado</TableHead>
-                        <TableHead>Progreso</TableHead>
+                        <TableHead>Operación</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -227,8 +264,8 @@ const AnexoBravo = () => {
                           <TableRow key={anexo.id}>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                  <FileCheck className="w-4 h-4 text-green-600" />
+                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                  <Anchor className="w-4 h-4 text-blue-600" />
                                 </div>
                                 <div>
                                   <div className="font-medium">{anexo.codigo}</div>
@@ -237,9 +274,8 @@ const AnexoBravo = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-zinc-600">{anexo.supervisor}</TableCell>
-                            <TableCell className="text-zinc-600">{anexo.jefe_centro}</TableCell>
                             <TableCell className="text-zinc-600">
-                              {anexo.fecha_verificacion ? formatDate(anexo.fecha_verificacion) : "N/A"}
+                              {anexo.fecha ? formatDate(anexo.fecha) : "N/A"}
                             </TableCell>
                             <TableCell>
                               <Badge variant="secondary" className={estadoInfo.className}>
@@ -247,16 +283,8 @@ const AnexoBravo = () => {
                                 {estadoInfo.label}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-green-600 h-2 rounded-full" 
-                                    style={{ width: `${anexo.progreso || 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-zinc-500">{anexo.progreso || 0}%</span>
-                              </div>
+                            <TableCell className="text-zinc-600">
+                              {anexo.operacion_id || "N/A"}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
