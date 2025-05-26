@@ -7,9 +7,14 @@ interface CreateAnexoBravoFormProps {
 }
 
 export const CreateAnexoBravoForm = ({ onSubmit, onCancel }: CreateAnexoBravoFormProps) => {
+  const handleComplete = (anexoId: string) => {
+    // Call the original onSubmit with the anexoId
+    onSubmit({ id: anexoId });
+  };
+
   return (
     <AnexoBravoWizard
-      onSubmit={onSubmit}
+      onComplete={handleComplete}
       onCancel={onCancel}
     />
   );

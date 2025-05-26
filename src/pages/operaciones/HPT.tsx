@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -83,6 +82,15 @@ const HPT = () => {
       setIsWizardOpen(false);
     } catch (error) {
       console.error('Error creating HPT:', error);
+    }
+  };
+
+  const handleWizardComplete = async (hptId: string) => {
+    try {
+      // HPT was already created in the wizard, just close the dialog
+      setIsWizardOpen(false);
+    } catch (error) {
+      console.error('Error completing HPT:', error);
     }
   };
 
@@ -226,7 +234,7 @@ const HPT = () => {
                   </DialogTrigger>
                   <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
                     <HPTWizard
-                      onSubmit={handleWizardSubmit}
+                      onComplete={handleWizardComplete}
                       onCancel={() => setIsWizardOpen(false)}
                     />
                   </DialogContent>
