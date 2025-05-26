@@ -37,9 +37,7 @@ export const Register = () => {
         apellido: formData.apellido,
         role: 'buzo' // Registro por defecto como buzo
       });
-      
-      // Redirigir a la página de confirmación de email
-      navigate(`/email-confirmation?email=${encodeURIComponent(formData.email)}`);
+      navigate('/profile-setup');
     } catch (error) {
       // Error handling is done in the signUp function
     } finally {
