@@ -2,13 +2,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle, Clock, TrendingUp } from "lucide-react";
-import { BitacoraSupervisorItem, BitacoraBuzoItem } from "@/hooks/useBitacoras";
+import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
 
 interface BitacoraStatsProps {
-  bitacorasSupervisor: BitacoraSupervisorItem[];
-  bitacorasBuzo: BitacoraBuzoItem[];
-  filteredSupervisor: BitacoraSupervisorItem[];
-  filteredBuzo: BitacoraBuzoItem[];
+  bitacorasSupervisor: BitacoraSupervisor[];
+  bitacorasBuzo: BitacoraBuzo[];
+  filteredSupervisor: BitacoraSupervisor[];
+  filteredBuzo: BitacoraBuzo[];
 }
 
 export const BitacoraStats = ({ 

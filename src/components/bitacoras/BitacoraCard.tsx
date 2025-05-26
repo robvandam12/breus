@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Eye, Edit, PenTool, Calendar, User } from "lucide-react";
-import { BitacoraSupervisorItem, BitacoraBuzoItem } from "@/hooks/useBitacoras";
+import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface BitacoraCardProps {
-  bitacora: BitacoraSupervisorItem | BitacoraBuzoItem;
+  bitacora: BitacoraSupervisor | BitacoraBuzo;
   type: 'supervisor' | 'buzo';
   onView: (id: string) => void;
   onEdit: (id: string) => void;

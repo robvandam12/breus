@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, CheckCircle, Eye, Edit, PenTool } from "lucide-react";
-import { BitacoraSupervisorItem, BitacoraBuzoItem } from "@/hooks/useBitacoras";
+import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BitacoraDetailView } from "./BitacoraDetailView";
 
 interface BitacoraTableRowProps {
-  bitacora: BitacoraSupervisorItem | BitacoraBuzoItem;
+  bitacora: BitacoraSupervisor | BitacoraBuzo;
   type: 'supervisor' | 'buzo';
   onSign?: (id: string) => Promise<void>;
 }
@@ -55,12 +55,12 @@ export const BitacoraTableRow = ({ bitacora, type, onSign }: BitacoraTableRowPro
         </TableCell>
         <TableCell className="text-zinc-600">{bitacora.inmersion_codigo}</TableCell>
         <TableCell className="text-zinc-600">
-          {type === 'supervisor' ? (bitacora as BitacoraSupervisorItem).supervisor : (bitacora as BitacoraBuzoItem).buzo}
+          {type === 'supervisor' ? (bitacora as BitacoraSupervisor).supervisor : (bitacora as BitacoraBuzo).buzo}
         </TableCell>
         <TableCell className="text-zinc-600">{bitacora.fecha}</TableCell>
         {type === 'buzo' && (
           <TableCell className="text-zinc-600">
-            {(bitacora as BitacoraBuzoItem).profundidad_maxima}m
+            {(bitacora as BitacoraBuzo).profundidad_maxima}m
           </TableCell>
         )}
         <TableCell>

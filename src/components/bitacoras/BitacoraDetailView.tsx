@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, User, Calendar, MapPin, PenTool, CheckCircle, X } from "lucide-react";
-import { BitacoraSupervisorItem, BitacoraBuzoItem } from "@/hooks/useBitacoras";
+import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface BitacoraDetailViewProps {
-  bitacora: BitacoraSupervisorItem | BitacoraBuzoItem;
+  bitacora: BitacoraSupervisor | BitacoraBuzo;
   type: 'supervisor' | 'buzo';
   onSign?: (id: string) => Promise<void>;
   onClose: () => void;
@@ -32,8 +32,8 @@ export const BitacoraDetailView = ({ bitacora, type, onSign, onClose }: Bitacora
   };
 
   const isSupervisor = type === 'supervisor';
-  const supervisorBitacora = bitacora as BitacoraSupervisorItem;
-  const buzoBitacora = bitacora as BitacoraBuzoItem;
+  const supervisorBitacora = bitacora as BitacoraSupervisor;
+  const buzoBitacora = bitacora as BitacoraBuzo;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
