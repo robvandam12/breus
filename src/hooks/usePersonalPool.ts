@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -61,14 +60,14 @@ export const usePersonalPool = () => {
 
         // Determine empresa_asociada based on the user's assignment
         let empresaAsociada = 'Sin asignar';
-        if (user.salmonera && Array.isArray(user.salmonera) && user.salmonera.length > 0) {
-          empresaAsociada = user.salmonera[0].nombre;
-        } else if (user.servicio && Array.isArray(user.servicio) && user.servicio.length > 0) {
-          empresaAsociada = user.servicio[0].nombre;
-        } else if (user.salmonera && !Array.isArray(user.salmonera)) {
+        let tipoEmpresa: 'salmonera' | 'contratista' = 'salmonera';
+
+        if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
           empresaAsociada = user.salmonera.nombre;
-        } else if (user.servicio && !Array.isArray(user.servicio)) {
+          tipoEmpresa = 'salmonera';
+        } else if (user.servicio && typeof user.servicio === 'object' && 'nombre' in user.servicio) {
           empresaAsociada = user.servicio.nombre;
+          tipoEmpresa = 'contratista';
         }
 
         return {
@@ -79,7 +78,7 @@ export const usePersonalPool = () => {
           email: user.email || '',
           rol: user.rol as 'supervisor' | 'buzo',
           empresa_asociada: empresaAsociada,
-          tipo_empresa: user.salmonera_id ? 'salmonera' as const : 'contratista' as const,
+          tipo_empresa: tipoEmpresa,
           matricula: perfilBuzo.matricula || '',
           especialidades: Array.isArray(perfilBuzo.especialidades) ? perfilBuzo.especialidades : [],
           certificaciones: Array.isArray(perfilBuzo.certificaciones) ? perfilBuzo.certificaciones : [],

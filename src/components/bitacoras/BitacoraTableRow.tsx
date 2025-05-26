@@ -1,113 +1,68 @@
 
-import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FileText, CheckCircle, Eye, Edit, PenTool } from "lucide-react";
-import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { BitacoraDetailView } from "./BitacoraDetailView";
+import { Eye, PenTool, CheckCircle } from "lucide-react";
+import { format } from "date-fns";
 
 interface BitacoraTableRowProps {
-  bitacora: BitacoraSupervisor | BitacoraBuzo;
+  bitacora: any;
   type: 'supervisor' | 'buzo';
-  onSign?: (id: string) => Promise<void>;
+  onSign: (id: string) => void;
 }
 
 export const BitacoraTableRow = ({ bitacora, type, onSign }: BitacoraTableRowProps) => {
-  const [loading, setLoading] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
-
   const getEstadoBadge = (firmado: boolean) => {
-    return firmado ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700";
-  };
-
-  const formatEstado = (firmado: boolean) => {
-    return firmado ? 'Firmada' : 'Pendiente';
-  };
-
-  const handleSign = async () => {
-    if (!onSign) return;
-    setLoading(true);
-    try {
-      await onSign(bitacora.id);
-    } catch (error) {
-      console.error('Error signing bitácora:', error);
-    } finally {
-      setLoading(false);
+    if (firmado) {
+      return (
+        <Badge className="bg-green-100 text-green-700">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Firmado
+        </Badge>
+      );
     }
+    return (
+      <Badge variant="outline" className="bg-yellow-100 text-yellow-700">
+        Pendiente
+      </Badge>
+    );
   };
-
-  const iconColor = type === 'supervisor' ? 'text-purple-600' : 'text-teal-600';
-  const bgColor = type === 'supervisor' ? 'bg-purple-100' : 'bg-teal-100';
 
   return (
-    <>
-      <TableRow>
+    <TableRow>
+      <TableCell className="font-medium">{bitacora.codigo}</TableCell>
+      <TableCell>{bitacora.inmersion_id}</TableCell>
+      <TableCell>
+        {type === 'supervisor' ? bitacora.supervisor : bitacora.buzo}
+      </TableCell>
+      <TableCell>
+        {format(new Date(bitacora.fecha), 'dd/MM/yyyy')}
+      </TableCell>
+      {type === 'buzo' && (
         <TableCell>
-          <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center`}>
-              <FileText className={`w-4 h-4 ${iconColor}`} />
-            </div>
-            <div className="font-medium">{bitacora.codigo}</div>
-          </div>
+          {bitacora.profundidad_maxima} mts
         </TableCell>
-        <TableCell className="text-zinc-600">{bitacora.inmersion_id}</TableCell>
-        <TableCell className="text-zinc-600">
-          {type === 'supervisor' ? (bitacora as BitacoraSupervisor).supervisor : (bitacora as BitacoraBuzo).buzo}
-        </TableCell>
-        <TableCell className="text-zinc-600">{bitacora.fecha}</TableCell>
-        {type === 'buzo' && (
-          <TableCell className="text-zinc-600">
-            {(bitacora as BitacoraBuzo).profundidad_maxima}m
-          </TableCell>
-        )}
-        <TableCell>
-          <Badge variant="secondary" className={getEstadoBadge(bitacora.firmado)}>
-            {formatEstado(bitacora.firmado)}
-          </Badge>
-        </TableCell>
-        <TableCell className="text-right">
-          <div className="flex justify-end gap-1">
+      )}
+      <TableCell>
+        {getEstadoBadge(bitacora.firmado)}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center gap-2 justify-end">
+          <Button variant="outline" size="sm">
+            <Eye className="w-4 h-4" />
+          </Button>
+          {!bitacora.firmado && (
             <Button 
-              variant="outline" 
               size="sm"
-              onClick={() => setShowDetail(true)}
+              onClick={() => onSign(bitacora.bitacora_id)}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              <Eye className="w-4 h-4" />
+              <PenTool className="w-4 h-4 mr-1" />
+              Firmar
             </Button>
-            <Button variant="outline" size="sm">
-              <Edit className="w-4 h-4" />
-            </Button>
-            {!bitacora.firmado && onSign && (
-              <Button 
-                size="sm"
-                onClick={handleSign}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {loading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <PenTool className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-6">
-          <BitacoraDetailView
-            bitacora={bitacora}
-            type={type}
-            onSign={onSign}
-            onClose={() => setShowDetail(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
   );
 };

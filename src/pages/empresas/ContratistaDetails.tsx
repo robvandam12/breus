@@ -10,7 +10,7 @@ import { HardHat, Users, Link as LinkIcon, ArrowLeft, UserPlus, Mail } from "luc
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Contratista } from "@/hooks/useContratistas";
 import { AsociacionSalmoneras } from "@/components/contratistas/AsociacionSalmoneras";
-import { UserManagement } from "@/components/empresa/UserManagement";
+import { UserManagement, User } from "@/components/empresa/UserManagement";
 import { useUsuarios } from "@/hooks/useUsuarios";
 import { CreateUserInviteForm } from "@/components/usuarios/CreateUserInviteForm";
 
@@ -23,8 +23,19 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
   const [showInviteForm, setShowInviteForm] = useState(false);
   const { usuarios, inviteUsuario } = useUsuarios();
   
-  // Filter users belonging to this contractor
-  const contratistaUsers = usuarios.filter(user => user.servicio_id === contratista.id);
+  // Filter users belonging to this contractor and convert to User interface
+  const contratistaUsers: User[] = usuarios
+    .filter(user => user.servicio_id === contratista.id)
+    .map(user => ({
+      id: user.usuario_id,
+      usuario_id: user.usuario_id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      rol: user.rol,
+      estado: 'activo' as const, // Default state
+      created_at: user.created_at
+    }));
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -173,28 +184,14 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {contratistaUsers.length === 0 ? (
-                          <div className="text-center py-8">
-                            <Mail className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                            <h3 className="font-medium text-zinc-900 mb-2">No hay personal asignado</h3>
-                            <p className="text-zinc-500 mb-4">
-                              Invite usuarios para que puedan acceder al sistema
-                            </p>
-                            <Button onClick={() => setShowInviteForm(true)} variant="outline">
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Invitar Primer Usuario
-                            </Button>
-                          </div>
-                        ) : (
-                          <UserManagement
-                            empresaType="servicio"
-                            empresaId={contratista.id}
-                            users={contratistaUsers}
-                            onCreateUser={async () => {}}
-                            onUpdateUser={async () => {}}
-                            onDeleteUser={async () => {}}
-                          />
-                        )}
+                        <UserManagement
+                          empresaType="servicio"
+                          empresaId={contratista.id}
+                          users={contratistaUsers}
+                          onCreateUser={handleInviteUser}
+                          onUpdateUser={async () => {}}
+                          onDeleteUser={async () => {}}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>

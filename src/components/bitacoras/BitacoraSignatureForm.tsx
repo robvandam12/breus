@@ -124,8 +124,8 @@ export const BitacoraSignatureForm = ({
               <CardContent className="p-4">
                 <p className="text-sm text-blue-800">
                   <strong>Instrucciones:</strong> 
-                  {userRole === 'supervisor' && !isSupervisorSigned && ' Firme como supervisor para validar la bitácora.'}
-                  {userRole === 'buzo' && !isBuzoSigned && ' Firme como buzo para confirmar la inmersión.'}
+                  {userRole === 'supervisor' && !isSupervisorSigned && ' Use su dedo o mouse para firmar como supervisor y validar la bitácora.'}
+                  {userRole === 'buzo' && !isBuzoSigned && ' Use su dedo o mouse para firmar como buzo y confirmar la inmersión.'}
                   {((userRole === 'supervisor' && isSupervisorSigned) || (userRole === 'buzo' && isBuzoSigned)) && 
                    ' Su firma ha sido registrada. Esperando la firma del otro participante.'}
                 </p>
