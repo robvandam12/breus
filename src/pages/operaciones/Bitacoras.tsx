@@ -4,7 +4,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Plus, LayoutGrid, LayoutList, Loader2 } from "lucide-react";
 import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
@@ -15,6 +14,8 @@ import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras, BitacoraSupervisorFormData, BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Bitacoras = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -90,10 +91,49 @@ const Bitacoras = () => {
                 </div>
               </div>
             </header>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Cargando bitácoras...</span>
+            <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+              {/* Stats Cards Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="p-4">
+                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-4 w-24" />
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Filters Skeleton */}
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Tabs Skeleton */}
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Card>
+                  <div className="p-6 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-lg" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-[200px]" />
+                          <Skeleton className="h-3 w-[100px]" />
+                        </div>
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-8 w-24" />
+                      </div>
+                    ))}
+                  </div>
+                </Card>
               </div>
             </div>
           </main>
@@ -300,7 +340,7 @@ const Bitacoras = () => {
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+            <DialogContent className="max-w-lg p-0">
               {createType === 'supervisor' ? (
                 <CreateBitacoraSupervisorForm
                   onSubmit={handleCreateSupervisor}

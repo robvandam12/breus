@@ -1,28 +1,25 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { CreateHPTForm } from "@/components/hpt/CreateHPTForm";
-import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { useHPT } from "@/hooks/useHPT";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HPT = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
-  const { hpts, isLoading, createHPT, updateHPT, deleteHPT } = useHPT();
+  const { hpts, isLoading, deleteHPT } = useHPT();
 
   const filteredHPTs = hpts.filter(hpt => {
     const matchesSearch = hpt.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,70 +27,6 @@ const HPT = () => {
     const matchesFilter = filterStatus === 'all' || hpt.estado === filterStatus;
     return matchesSearch && matchesFilter;
   });
-
-  const handleCreateHPT = async (data: any) => {
-    try {
-      await createHPT(data);
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
-  };
-
-  const handleWizardSubmit = async (data: any) => {
-    try {
-      // Transformar los datos del wizard al formato esperado por la API
-      const hptData = {
-        codigo: data.folio || `HPT-${Date.now()}`,
-        supervisor: data.supervisor_nombre,
-        operacion_id: data.operacion_id,
-        plan_trabajo: data.plan_trabajo,
-        fecha_programada: data.fecha,
-        hora_inicio: data.hora_inicio,
-        hora_fin: data.hora_termino,
-        descripcion_trabajo: data.descripcion_tarea,
-        observaciones: data.observaciones,
-        // Nuevos campos específicos
-        folio: data.folio,
-        fecha: data.fecha,
-        hora_termino: data.hora_termino,
-        empresa_servicio_nombre: data.empresa_servicio_nombre,
-        supervisor_nombre: data.supervisor_nombre,
-        centro_trabajo_nombre: data.centro_trabajo_nombre,
-        jefe_mandante_nombre: data.jefe_mandante_nombre,
-        descripcion_tarea: data.descripcion_tarea,
-        es_rutinaria: data.es_rutinaria,
-        lugar_especifico: data.lugar_especifico,
-        estado_puerto: data.estado_puerto,
-        hpt_epp: data.hpt_epp,
-        hpt_erc: data.hpt_erc,
-        hpt_medidas: data.hpt_medidas,
-        hpt_riesgos_comp: data.hpt_riesgos_comp,
-        hpt_conocimiento: data.hpt_conocimiento,
-        hpt_conocimiento_asistentes: data.hpt_conocimiento_asistentes,
-        plan_emergencia: data.plan_emergencia,
-        contactos_emergencia: data.contactos_emergencia,
-        hospital_cercano: data.hospital_cercano,
-        camara_hiperbarica: data.camara_hiperbarica,
-        supervisor_firma: data.supervisor_firma,
-        jefe_obra_firma: data.jefe_obra_firma
-      };
-
-      await createHPT(hptData);
-      setIsWizardOpen(false);
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
-  };
-
-  const handleWizardComplete = async (hptId: string) => {
-    try {
-      // HPT was already created in the wizard, just close the dialog
-      setIsWizardOpen(false);
-    } catch (error) {
-      console.error('Error completing HPT:', error);
-    }
-  };
 
   const getEstadoBadge = (estado: string, firmado: boolean) => {
     if (firmado) {
@@ -144,8 +77,33 @@ const HPT = () => {
                 </div>
               </div>
             </header>
-            <div className="flex-1 flex items-center justify-center">
-              <LoadingSpinner text="Cargando HPTs..." />
+            <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+              {/* KPIs Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="p-4">
+                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-4 w-24" />
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Table Skeleton */}
+              <Card>
+                <div className="p-6 space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-[200px]" />
+                        <Skeleton className="h-3 w-[100px]" />
+                      </div>
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           </main>
         </div>
@@ -211,35 +169,13 @@ const HPT = () => {
                   </Button>
                 </div>
 
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva HPT
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="p-0">
-                    <CreateHPTForm
-                      onSubmit={handleCreateHPT}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      HPT Completa
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="p-0">
-                    <HPTWizard
-                      onComplete={handleWizardComplete}
-                      onCancel={() => setIsWizardOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  onClick={() => navigate('/formularios/hpt/nueva')}
+                  className="ios-button bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  HPT Completa
+                </Button>
               </div>
             </div>
           </header>
@@ -280,9 +216,12 @@ const HPT = () => {
                     <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay HPTs registradas</h3>
                     <p className="text-zinc-500 mb-4">Comience creando la primera Hoja de Planificación de Tarea</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button 
+                      onClick={() => navigate('/formularios/hpt/nueva')} 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
-                      Nueva HPT
+                      HPT Completa
                     </Button>
                   </CardContent>
                 </Card>
@@ -342,7 +281,11 @@ const HPT = () => {
                                 <Button variant="outline" size="sm">
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                                <Button variant="outline" size="sm">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => navigate(`/formularios/hpt/${hpt.id}/editar`)}
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <Button 

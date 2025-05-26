@@ -15,16 +15,16 @@ export const QuickActions = () => {
       onClick: () => navigate("/operaciones")
     },
     {
-      label: "Crear HPT",
+      label: "HPT Completa",
       icon: FileText,
       color: "bg-blue-600 hover:bg-blue-700",
-      onClick: () => navigate("/operaciones/hpt")
+      onClick: () => navigate("/formularios/hpt/nueva")
     },
     {
       label: "Nueva Inmersión",
       icon: Anchor,
       color: "bg-cyan-600 hover:bg-cyan-700",
-      onClick: () => navigate("/operaciones/inmersiones")
+      onClick: () => navigate("/inmersiones")
     }
   ];
 
