@@ -68,12 +68,10 @@ const EquipoBuceo = () => {
         email: user.email,
         rol: user.rol,
         matricula: user.matricula || '',
-        telefono: user.telefono || '',
         especialidades: [],
         certificaciones: [],
-        disponible: true,
-        empresa_asociada: user.empresa_asociada || '',
-        observaciones: ''
+        empresa_id: user.empresa_id || '',
+        tipo_empresa: user.tipo_empresa || 'salmonera'
       };
       
       await createPersonal(personalData);
@@ -95,12 +93,10 @@ const EquipoBuceo = () => {
         email: userData.email,
         rol: userData.rol,
         matricula: '',
-        telefono: '',
         especialidades: [],
         certificaciones: [],
-        disponible: true,
-        empresa_asociada: '',
-        observaciones: 'Invitado por email'
+        empresa_id: '',
+        tipo_empresa: 'salmonera'
       };
       
       await createPersonal(personalData);
