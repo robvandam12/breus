@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 export interface BitacoraSupervisorFormData {
@@ -8,6 +7,19 @@ export interface BitacoraSupervisorFormData {
   incidentes: string;
   evaluacion_general: string;
   fecha: string;
+  diving_records?: {
+    id: string;
+    buzo_id: string;
+    buzo_nombre: string;
+    profundidad_maxima: number;
+    hora_dejo_superficie: string;
+    hora_llego_superficie: string;
+    tiempo_fondo: number;
+    tiempo_descompresion: number;
+    tiempo_buceo: number;
+    tabulacion_usada: string;
+    gas_usado: string;
+  }[];
 }
 
 export interface BitacoraBuzoFormData {

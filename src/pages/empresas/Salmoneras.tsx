@@ -12,6 +12,7 @@ import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
 import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 import { AsociacionContratistas } from "@/components/salmoneras/AsociacionContratistas";
 import { UserManagement } from "@/components/empresa/UserManagement";
+import { EquipoBuceoManager } from "@/components/equipos/EquipoBuceoManager";
 import { Building, Plus, Table, Grid, Users, Link } from "lucide-react";
 import { useSalmoneras, Salmonera } from "@/hooks/useSalmoneras";
 
@@ -93,7 +94,7 @@ export default function Salmoneras() {
               </div>
 
               <Tabs defaultValue="asociaciones" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="asociaciones" className="flex items-center gap-2">
                     <Link className="w-4 h-4" />
                     Contratistas
@@ -101,6 +102,10 @@ export default function Salmoneras() {
                   <TabsTrigger value="usuarios" className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
                     Usuarios
+                  </TabsTrigger>
+                  <TabsTrigger value="equipos" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Equipos de Buceo
                   </TabsTrigger>
                 </TabsList>
 
@@ -120,6 +125,10 @@ export default function Salmoneras() {
                     onUpdateUser={async () => {}}
                     onDeleteUser={async () => {}}
                   />
+                </TabsContent>
+
+                <TabsContent value="equipos">
+                  <EquipoBuceoManager salmoneraId={selectedSalmonera.id} />
                 </TabsContent>
               </Tabs>
             </div>

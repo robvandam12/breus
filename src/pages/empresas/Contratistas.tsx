@@ -1,20 +1,23 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { HardHat, Plus, MapPin, Phone, Mail, LayoutGrid, LayoutList, Edit, Trash2 } from "lucide-react";
+import { HardHat, Plus, MapPin, Phone, Mail, LayoutGrid, LayoutList, Edit, Trash2, Users, Link } from "lucide-react";
 import { useContratistas, Contratista } from "@/hooks/useContratistas";
 import { CreateContratistaForm } from "@/components/contratistas/CreateContratistaForm";
+import { AsociacionSalmoneras } from "@/components/contratistas/AsociacionSalmoneras";
+import { UserManagement } from "@/components/empresa/UserManagement";
 
 const Contratistas = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingContratista, setEditingContratista] = useState<Contratista | null>(null);
+  const [selectedContratista, setSelectedContratista] = useState<Contratista | null>(null);
   
   const { 
     contratistas, 
@@ -54,6 +57,10 @@ const Contratistas = () => {
         console.error('Error deleting contratista:', error);
       }
     }
+  };
+
+  const handleSelectContratista = (contratista: Contratista) => {
+    setSelectedContratista(contratista);
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -273,6 +280,13 @@ const Contratistas = () => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleSelectContratista(contratista)}
+                  >
+                    Ver Detalles
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
