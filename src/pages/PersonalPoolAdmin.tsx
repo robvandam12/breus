@@ -25,9 +25,10 @@ const PersonalPoolAdmin = () => {
   const getRolBadge = (rol: string) => {
     const colorMap: Record<string, string> = {
       superuser: 'bg-purple-100 text-purple-700',
-      administrador: 'bg-blue-100 text-blue-700',
-      supervisor: 'bg-green-100 text-green-700',
-      buzo: 'bg-yellow-100 text-yellow-700',
+      admin_salmonera: 'bg-blue-100 text-blue-700',
+      admin_servicio: 'bg-green-100 text-green-700',
+      supervisor: 'bg-yellow-100 text-yellow-700',
+      buzo: 'bg-teal-100 text-teal-700',
     };
     return colorMap[rol] || 'bg-gray-100 text-gray-700';
   };
@@ -109,11 +110,11 @@ const PersonalPoolAdmin = () => {
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+                      <CardTitle className="text-sm font-medium">Admins Salmonera</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {usuarios.filter(u => u.rol === 'administrador').length}
+                        {usuarios.filter(u => u.rol === 'admin_salmonera').length}
                       </div>
                     </CardContent>
                   </Card>

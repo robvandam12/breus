@@ -140,7 +140,7 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
 
                   <TabsContent value="usuarios">
                     <UserManagement
-                      empresaType="contratista"
+                      empresaType="servicio"
                       empresaId={contratista.id}
                       users={[]}
                       onCreateUser={async () => {}}
