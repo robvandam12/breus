@@ -169,7 +169,8 @@ ${formData.observaciones_generales}
       supervisor: formData.supervisor,
       desarrollo_inmersion,
       evaluacion_general,
-      incidentes: formData.observaciones_previas
+      incidentes: formData.observaciones_previas,
+      fecha: formData.fecha_inicio || new Date().toISOString().split('T')[0]
     };
 
     onSubmit(bitacoraData);

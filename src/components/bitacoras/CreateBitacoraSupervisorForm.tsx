@@ -51,7 +51,8 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
         supervisor: data.supervisor,
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
-        evaluacion_general: data.evaluacion_general
+        evaluacion_general: data.evaluacion_general,
+        fecha: new Date().toISOString().split('T')[0]
       };
       await onSubmit(formData);
     } catch (error) {

@@ -77,4 +77,7 @@ export interface BitacoraBuzoData {
   condcert_buceo_areas_confinadas: boolean;
   condcert_observaciones: string;
   validador_nombre: string;
+  buzo_firma?: any;
+  validador_firma?: any;
+  inmersion_id: string;
 }

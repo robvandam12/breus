@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ export const BitacoraBuzoFormEnhanced: React.FC<BitacoraBuzoFormEnhancedProps> =
     condamb_corriente_fondo_nudos: 0,
     datostec_equipo_usado: '',
     datostec_traje: '',
-    datostec_profundidad_maxima: 0,
+    profundidad_maxima: 0,
     datostec_hora_dejo_superficie: '',
     datostec_hora_llegada_fondo: '',
     datostec_hora_salida_fondo: '',
@@ -337,8 +336,8 @@ export const BitacoraBuzoFormEnhanced: React.FC<BitacoraBuzoFormEnhancedProps> =
                     id="profundidad_max"
                     type="number"
                     step="0.1"
-                    value={formData.datostec_profundidad_maxima}
-                    onChange={(e) => setFormData({...formData, datostec_profundidad_maxima: parseFloat(e.target.value) || 0})}
+                    value={formData.profundidad_maxima}
+                    onChange={(e) => setFormData({...formData, profundidad_maxima: parseFloat(e.target.value) || 0})}
                   />
                 </div>
                 <div>
