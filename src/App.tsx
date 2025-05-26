@@ -14,7 +14,8 @@ import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Inmersiones from "./pages/operaciones/Inmersiones";
-import Bitacoras from "./pages/operaciones/Bitacoras";
+import BitacorasSupervisor from "./pages/operaciones/BitacorasSupervisor";
+import BitacorasBuzo from "./pages/operaciones/BitacorasBuzo";
 import Login from "./pages/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -45,7 +46,8 @@ const App = () => (
             <Route path="/formularios/hpt" element={<HPT />} />
             <Route path="/formularios/anexo-bravo" element={<AnexoBravo />} />
             <Route path="/inmersiones" element={<Inmersiones />} />
-            <Route path="/bitacoras" element={<Bitacoras />} />
+            <Route path="/bitacoras/supervisor" element={<BitacorasSupervisor />} />
+            <Route path="/bitacoras/buzo" element={<BitacorasBuzo />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/admin/roles" element={<AdminRoles />} />

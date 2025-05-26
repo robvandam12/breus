@@ -9,16 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { CreateHPTForm } from "@/components/hpt/CreateHPTForm";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { useHPT } from "@/hooks/useHPT";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HPT = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
@@ -30,15 +28,6 @@ const HPT = () => {
     const matchesFilter = filterStatus === 'all' || hpt.estado === filterStatus;
     return matchesSearch && matchesFilter;
   });
-
-  const handleCreateHPT = async (data: any) => {
-    try {
-      await createHPT(data);
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
-  };
 
   const handleWizardSubmit = async (data: any) => {
     try {
@@ -144,8 +133,29 @@ const HPT = () => {
                 </div>
               </div>
             </header>
-            <div className="flex-1 flex items-center justify-center">
-              <LoadingSpinner text="Cargando HPTs..." />
+            <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <Skeleton className="h-8 w-20 mb-2" />
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </main>
         </div>
@@ -211,21 +221,6 @@ const HPT = () => {
                   </Button>
                 </div>
 
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva HPT
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="p-0">
-                    <CreateHPTForm
-                      onSubmit={handleCreateHPT}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-
                 <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
                   <DialogTrigger asChild>
                     <Button className="ios-button bg-blue-600 hover:bg-blue-700">
@@ -280,9 +275,9 @@ const HPT = () => {
                     <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay HPTs registradas</h3>
                     <p className="text-zinc-500 mb-4">Comience creando la primera Hoja de Planificación de Tarea</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setIsWizardOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="w-4 h-4 mr-2" />
-                      Nueva HPT
+                      HPT Completa
                     </Button>
                   </CardContent>
                 </Card>
