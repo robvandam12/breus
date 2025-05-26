@@ -1,12 +1,11 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { User, UserPlus, Edit, Trash2, Mail } from 'lucide-react';
-import { CreateUserInviteForm } from '@/components/usuarios/CreateUserInviteForm';
+import { User, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { UserSearchSelect } from '@/components/usuarios/UserSearchSelect';
 
 // Simplified User interface for company management
 export interface User {
@@ -49,6 +48,19 @@ export const UserManagement = ({
     return colors[rol] || 'bg-gray-100 text-gray-700';
   };
 
+  const handleSelectUser = async (user: any) => {
+    await onCreateUser({
+      usuario_id: user.usuario_id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      rol: user.rol,
+      empresa_id: empresaId,
+      tipo_empresa: empresaType === 'servicio' ? 'contratista' : 'salmonera'
+    });
+    setShowInviteForm(false);
+  };
+
   const handleInviteUser = async (data: {
     email: string;
     nombre: string;
@@ -62,6 +74,10 @@ export const UserManagement = ({
     });
     setShowInviteForm(false);
   };
+
+  const allowedRoles = empresaType === 'salmonera' 
+    ? ['admin_salmonera', 'supervisor', 'buzo']
+    : ['admin_servicio', 'supervisor', 'buzo'];
 
   return (
     <div className="space-y-6">
@@ -77,7 +93,7 @@ export const UserManagement = ({
           className="flex items-center gap-2"
         >
           <UserPlus className="w-4 h-4" />
-          Invitar Usuario
+          Agregar Usuario
         </Button>
       </div>
 
@@ -148,19 +164,21 @@ export const UserManagement = ({
         </Card>
       )}
 
-      {/* Dialog para invitar usuarios */}
       <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5 text-blue-600" />
-              Invitar Usuario
+              <UserPlus className="w-5 h-5 text-blue-600" />
+              Agregar Usuario a la Empresa
             </DialogTitle>
           </DialogHeader>
-          <CreateUserInviteForm
-            onSubmit={handleInviteUser}
-            onCancel={() => setShowInviteForm(false)}
+          <UserSearchSelect
+            onSelectUser={handleSelectUser}
+            onInviteUser={handleInviteUser}
+            allowedRoles={allowedRoles}
             empresaType={empresaType === 'servicio' ? 'contratista' : 'salmonera'}
+            empresaId={empresaId}
+            placeholder="Buscar usuario existente o invitar nuevo..."
           />
         </DialogContent>
       </Dialog>

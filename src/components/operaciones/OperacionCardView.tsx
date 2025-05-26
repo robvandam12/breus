@@ -1,0 +1,130 @@
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, MapPin, Users, Clock, Eye } from "lucide-react";
+import { format } from "date-fns";
+
+interface Operacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  sitio?: { nombre: string };
+  salmonera?: { nombre: string };
+  contratista?: { nombre: string };
+  equipo_buceo?: { nombre: string };
+}
+
+interface OperacionCardViewProps {
+  operaciones: Operacion[];
+  onSelect: (operacion: Operacion) => void;
+  onEdit?: (operacion: Operacion) => void;
+}
+
+export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCardViewProps) => {
+  const getEstadoBadgeColor = (estado: string) => {
+    const colorMap: Record<string, string> = {
+      activa: 'bg-green-100 text-green-700',
+      planificada: 'bg-blue-100 text-blue-700',
+      completada: 'bg-gray-100 text-gray-700',
+      cancelada: 'bg-red-100 text-red-700',
+    };
+    return colorMap[estado] || 'bg-gray-100 text-gray-700';
+  };
+
+  if (operaciones.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay operaciones</h3>
+        <p className="text-zinc-500">No se han encontrado operaciones con los filtros actuales</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {operaciones.map((operacion) => (
+        <Card key={operacion.id} className="ios-card hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold text-zinc-900">
+                  {operacion.nombre}
+                </CardTitle>
+                <p className="text-sm text-zinc-500 mt-1">{operacion.codigo}</p>
+              </div>
+              <Badge variant="outline" className={getEstadoBadgeColor(operacion.estado)}>
+                {operacion.estado.charAt(0).toUpperCase() + operacion.estado.slice(1)}
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-zinc-600">
+              <Calendar className="w-4 h-4" />
+              <span>{format(new Date(operacion.fecha_inicio), 'dd/MM/yyyy')}</span>
+              {operacion.fecha_fin && (
+                <>
+                  <span>-</span>
+                  <span>{format(new Date(operacion.fecha_fin), 'dd/MM/yyyy')}</span>
+                </>
+              )}
+            </div>
+
+            {operacion.sitio && (
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <MapPin className="w-4 h-4" />
+                <span>{operacion.sitio.nombre}</span>
+              </div>
+            )}
+
+            {operacion.equipo_buceo && (
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Users className="w-4 h-4" />
+                <span>{operacion.equipo_buceo.nombre}</span>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              {operacion.salmonera && (
+                <div className="text-xs text-zinc-500">
+                  Salmonera: {operacion.salmonera.nombre}
+                </div>
+              )}
+              {operacion.contratista && (
+                <div className="text-xs text-zinc-500">
+                  Contratista: {operacion.contratista.nombre}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSelect(operacion)}
+                className="flex-1"
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                Ver Detalle
+              </Button>
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(operacion)}
+                >
+                  <Clock className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};

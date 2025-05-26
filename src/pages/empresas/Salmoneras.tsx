@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,15 +11,20 @@ import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
 import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 import { AsociacionContratistas } from "@/components/salmoneras/AsociacionContratistas";
 import { UserManagement } from "@/components/empresa/UserManagement";
-import { EquipoBuceoManager } from "@/components/equipos/EquipoBuceoManager";
 import { Building, Plus, Table, Grid, Users, Link } from "lucide-react";
 import { useSalmoneras, Salmonera } from "@/hooks/useSalmoneras";
+import { useUsersByCompany } from "@/hooks/useUsersByCompany";
 
 export default function Salmoneras() {
   const { salmoneras, isLoading, createSalmonera, updateSalmonera, deleteSalmonera } = useSalmoneras();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedSalmonera, setSelectedSalmonera] = useState<Salmonera | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  const { usuarios, inviteUser, createUser } = useUsersByCompany(
+    selectedSalmonera?.id, 
+    'salmonera'
+  );
 
   const handleCreateSalmonera = async (data: any) => {
     await createSalmonera(data);
@@ -30,6 +34,8 @@ export default function Salmoneras() {
   const handleSelectSalmonera = (salmonera: Salmonera) => {
     setSelectedSalmonera(salmonera);
   };
+
+  const salmoneraUsers = usuarios.filter(u => u.salmonera_id === selectedSalmonera?.id);
 
   if (isLoading) {
     return (
@@ -93,42 +99,51 @@ export default function Salmoneras() {
                 </Badge>
               </div>
 
-              <Tabs defaultValue="asociaciones" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs defaultValue="usuarios" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="usuarios" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Administradores
+                  </TabsTrigger>
                   <TabsTrigger value="asociaciones" className="flex items-center gap-2">
                     <Link className="w-4 h-4" />
                     Contratistas
                   </TabsTrigger>
-                  <TabsTrigger value="usuarios" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Usuarios
-                  </TabsTrigger>
-                  <TabsTrigger value="equipos" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Equipos de Buceo
-                  </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="usuarios">
+                  <UserManagement
+                    empresaType="salmonera"
+                    empresaId={selectedSalmonera.id}
+                    users={salmoneraUsers.map(u => ({
+                      id: u.usuario_id,
+                      usuario_id: u.usuario_id,
+                      nombre: u.nombre,
+                      apellido: u.apellido,
+                      email: u.email,
+                      rol: u.rol,
+                      estado: 'activo' as const,
+                      created_at: u.created_at
+                    }))}
+                    onCreateUser={async (userData) => {
+                      if (userData.usuario_id) {
+                        // Usuario existente
+                        await createUser(userData);
+                      } else {
+                        // Invitar usuario nuevo
+                        await inviteUser(userData);
+                      }
+                    }}
+                    onUpdateUser={async () => {}}
+                    onDeleteUser={async () => {}}
+                  />
+                </TabsContent>
 
                 <TabsContent value="asociaciones">
                   <AsociacionContratistas
                     salmoneraId={selectedSalmonera.id}
                     salmoneraName={selectedSalmonera.nombre}
                   />
-                </TabsContent>
-
-                <TabsContent value="usuarios">
-                  <UserManagement
-                    empresaType="salmonera"
-                    empresaId={selectedSalmonera.id}
-                    users={[]}
-                    onCreateUser={async () => {}}
-                    onUpdateUser={async () => {}}
-                    onDeleteUser={async () => {}}
-                  />
-                </TabsContent>
-
-                <TabsContent value="equipos">
-                  <EquipoBuceoManager salmoneraId={selectedSalmonera.id} />
                 </TabsContent>
               </Tabs>
             </div>

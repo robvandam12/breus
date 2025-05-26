@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,26 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Mail, UserCheck, Clock, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Search, UserCheck, Clock, Edit, Trash2 } from "lucide-react";
 import { usePoolPersonal } from "@/hooks/usePoolPersonal";
+import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { useToast } from "@/hooks/use-toast";
 
 export const PoolPersonalManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [inviteType, setInviteType] = useState<'existing' | 'new'>('new');
-  const [inviteData, setInviteData] = useState({
-    email: '',
-    nombre: '',
-    apellido: '',
-    rol: 'buzo' as 'supervisor' | 'buzo',
-    matricula: '',
-    especialidades: [] as string[],
-    certificaciones: [] as string[]
-  });
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { personal, isLoading, addPersonal, invitePersonal, updateDisponibilidad } = usePoolPersonal();
   const { toast } = useToast();
@@ -40,32 +28,37 @@ export const PoolPersonalManager = () => {
   const supervisores = filteredPersonal.filter(p => p.rol === 'supervisor');
   const buzos = filteredPersonal.filter(p => p.rol === 'buzo');
 
-  const handleInvite = async () => {
+  const handleSelectUser = async (user: any) => {
     try {
-      if (inviteType === 'new') {
-        await invitePersonal({
-          ...inviteData,
-          tipo_empresa: 'salmonera',
-          empresa_id: 'salmonera-id' // This should come from the current user's context
-        });
-      } else {
-        await addPersonal({
-          ...inviteData,
-          tipo_empresa: 'salmonera',
-          empresa_id: 'salmonera-id'
-        });
-      }
-      
-      setIsInviteDialogOpen(false);
-      setInviteData({
-        email: '',
-        nombre: '',
-        apellido: '',
-        rol: 'buzo',
+      await addPersonal({
+        usuario_id: user.usuario_id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        rol: user.rol,
+        matricula: user.matricula || '',
+        especialidades: [],
+        certificaciones: [],
+        tipo_empresa: 'salmonera',
+        empresa_id: 'salmonera-id' // This should come from the current user's context
+      });
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding personal:', error);
+    }
+  };
+
+  const handleInviteUser = async (userData: any) => {
+    try {
+      await invitePersonal({
+        ...userData,
         matricula: '',
         especialidades: [],
-        certificaciones: []
+        certificaciones: [],
+        tipo_empresa: 'salmonera',
+        empresa_id: 'salmonera-id'
       });
+      setIsAddDialogOpen(false);
     } catch (error) {
       console.error('Error inviting personal:', error);
     }
@@ -128,98 +121,24 @@ export const PoolPersonalManager = () => {
           <p className="text-zinc-500">Gestiona supervisores y buzos de tu salmonera</p>
         </div>
         
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Personal
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Agregar al Pool de Personal</DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div>
-                <Label>Tipo de Invitación</Label>
-                <Select value={inviteType} onValueChange={(value: 'existing' | 'new') => setInviteType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">Invitar nuevo usuario por email</SelectItem>
-                    <SelectItem value="existing">Agregar usuario existente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nombre">Nombre</Label>
-                  <Input
-                    id="nombre"
-                    value={inviteData.nombre}
-                    onChange={(e) => setInviteData({...inviteData, nombre: e.target.value})}
-                    placeholder="Juan"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="apellido">Apellido</Label>
-                  <Input
-                    id="apellido"
-                    value={inviteData.apellido}
-                    onChange={(e) => setInviteData({...inviteData, apellido: e.target.value})}
-                    placeholder="Pérez"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={inviteData.email}
-                  onChange={(e) => setInviteData({...inviteData, email: e.target.value})}
-                  placeholder="juan.perez@empresa.cl"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Rol</Label>
-                  <Select value={inviteData.rol} onValueChange={(value: 'supervisor' | 'buzo') => setInviteData({...inviteData, rol: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="buzo">Buzo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="matricula">Matrícula</Label>
-                  <Input
-                    id="matricula"
-                    value={inviteData.matricula}
-                    onChange={(e) => setInviteData({...inviteData, matricula: e.target.value})}
-                    placeholder="BZ-12345"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleInvite}>
-                  <Mail className="w-4 h-4 mr-2" />
-                  {inviteType === 'new' ? 'Enviar Invitación' : 'Agregar'}
-                </Button>
-              </div>
-            </div>
+            <UserSearchSelect
+              onSelectUser={handleSelectUser}
+              onInviteUser={handleInviteUser}
+              allowedRoles={['supervisor', 'buzo']}
+              placeholder="Buscar personal existente o invitar nuevo..."
+            />
           </DialogContent>
         </Dialog>
       </div>
