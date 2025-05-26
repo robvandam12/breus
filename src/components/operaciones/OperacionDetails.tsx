@@ -1,15 +1,28 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle } from "lucide-react";
+import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 
 interface OperacionDetailsProps {
-  operacion: any;
-  onBack: () => void;
-  onUpdate: (operacionId: string, data: any) => Promise<void>;
+  operacionId: string;
+  onClose: () => void;
+}
+
+interface OperacionFull {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  tareas?: string;
+  sitio_nombre?: string;
+  contratista_nombre?: string;
+  created_at: string;
 }
 
 interface DocumentStatus {
@@ -21,21 +34,39 @@ interface DocumentStatus {
   bitacoras: number;
 }
 
-export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacion, onBack, onUpdate }) => {
+export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
+  const [operacion, setOperacion] = useState<OperacionFull | null>(null);
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDocumentStatus = async () => {
-      if (!operacion?.id) return;
-      
+    const fetchOperacionDetails = async () => {
       try {
+        // Obtener datos de la operación
+        const { data: opData, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            sitio:sitio_id (nombre),
+            contratista:contratista_id (nombre)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (opError) throw opError;
+
+        setOperacion({
+          ...opData,
+          sitio_nombre: opData.sitio?.nombre,
+          contratista_nombre: opData.contratista?.nombre
+        });
+
         // Obtener estado de documentos
         const [hptData, anexoData, inmersionData, bitacoraData] = await Promise.all([
-          supabase.from('hpt').select('id, firmado').eq('operacion_id', operacion.id),
-          supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacion.id),
-          supabase.from('inmersion').select('inmersion_id').eq('operacion_id', operacion.id),
-          supabase.from('bitacora_supervisor').select('bitacora_id')
+          supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId),
+          supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId),
+          supabase.from('inmersion').select('inmersion_id').eq('operacion_id', operacionId),
+          supabase.from('bitacora_supervisor').select('bitacora_id').eq('inmersion_id', 'ANY')
         ]);
 
         setDocumentStatus({
@@ -48,14 +79,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacion, o
         });
 
       } catch (error) {
-        console.error('Error fetching document status:', error);
+        console.error('Error fetching operation details:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDocumentStatus();
-  }, [operacion?.id]);
+    fetchOperacionDetails();
+  }, [operacionId]);
 
   if (isLoading) {
     return (
@@ -99,12 +130,8 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacion, o
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Volver
-        </Button>
-        <div className="flex-1">
+      <div className="flex items-center justify-between">
+        <div>
           <h2 className="text-2xl font-bold">{operacion.nombre}</h2>
           <p className="text-gray-600">Código: {operacion.codigo}</p>
         </div>
@@ -131,7 +158,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacion, o
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-medium">{operacion.sitio?.nombre || 'Sin asignar'}</p>
+                <p className="font-medium">{operacion.sitio_nombre || 'Sin asignar'}</p>
               </CardContent>
             </Card>
 
@@ -143,7 +170,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacion, o
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-medium">{operacion.contratista?.nombre || 'Sin asignar'}</p>
+                <p className="font-medium">{operacion.contratista_nombre || 'Sin asignar'}</p>
               </CardContent>
             </Card>
 

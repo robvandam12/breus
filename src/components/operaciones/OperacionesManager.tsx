@@ -17,7 +17,7 @@ export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
+  const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('lista');
 
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
@@ -227,7 +227,7 @@ export const OperacionesManager = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedOperacion(operacion)}
+                            onClick={() => setSelectedOperacion(operacion.id)}
                           >
                             Ver Detalles
                           </Button>
@@ -270,11 +270,8 @@ export const OperacionesManager = () => {
           </DialogHeader>
           {selectedOperacion && (
             <OperacionDetails 
-              operacion={selectedOperacion}
-              onBack={() => setSelectedOperacion(null)}
-              onUpdate={async (operacionId: string, data: any) => {
-                await updateOperacion({ id: operacionId, data });
-              }}
+              operacionId={selectedOperacion}
+              onClose={() => setSelectedOperacion(null)}
             />
           )}
         </DialogContent>
