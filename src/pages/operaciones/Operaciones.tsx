@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Settings, Plus, Search, Edit, Trash2, Eye, FileText, Clock, CheckCircle } from "lucide-react";
+import { Settings, Plus, Search, Edit, Trash2, Eye, FileText, Clock, CheckCircle, Users, X } from "lucide-react";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
+import { OperacionTeamManager } from "@/components/operaciones/OperacionTeamManager";
 import { WorkflowCard } from "@/components/workflow/WorkflowCard";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useWorkflow } from "@/hooks/useWorkflow";
@@ -21,6 +22,7 @@ const Operaciones = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
+  const [showTeamManager, setShowTeamManager] = useState(false);
   
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
   const { workflowStatus, refetch: refetchWorkflow } = useWorkflow(selectedOperacion || undefined);
@@ -194,6 +196,17 @@ const Operaciones = () => {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedOperacion(operacion.id);
+                                          setShowTeamManager(true);
+                                        }}
+                                      >
+                                        <Users className="w-4 h-4" />
+                                      </Button>
                                       <Button variant="outline" size="sm">
                                         <Eye className="w-4 h-4" />
                                       </Button>
@@ -222,9 +235,30 @@ const Operaciones = () => {
                   )}
                 </div>
 
-                {/* Panel de Workflow */}
+                {/* Panel de Workflow o Team Manager */}
                 <div className="lg:col-span-1">
-                  {selectedOperacion && workflowStatus ? (
+                  {selectedOperacion && showTeamManager ? (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>Gestión de Equipo</CardTitle>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setShowTeamManager(false)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <OperacionTeamManager 
+                          operacionId={selectedOperacion}
+                          salmoneraId="placeholder-salmonera-id" // This should come from the operation
+                        />
+                      </CardContent>
+                    </Card>
+                  ) : selectedOperacion && workflowStatus ? (
                     <WorkflowCard 
                       status={workflowStatus} 
                       onRefresh={refetchWorkflow}
@@ -235,7 +269,7 @@ const Operaciones = () => {
                         <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                         <h3 className="font-medium text-zinc-900 mb-2">Seleccione una operación</h3>
                         <p className="text-sm text-zinc-500">
-                          Haga clic en una operación para ver su flujo de trabajo
+                          Haga clic en una operación para ver su flujo de trabajo o gestionar el equipo
                         </p>
                       </CardContent>
                     </Card>

@@ -6,15 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2, UserCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, Plus, Edit, Trash2, UserPlus, Mail } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePersonalPool, PersonalFormData } from "@/hooks/usePersonalPool";
 import { CreatePersonalForm } from "@/components/personal/CreatePersonalForm";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
 
 const PersonalPool = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateEquipoForm, setShowCreateEquipoForm] = useState(false);
   const [editingPersonal, setEditingPersonal] = useState<string | null>(null);
+  const [selectedEquipo, setSelectedEquipo] = useState<string | null>(null);
 
   const { 
     personal, 
@@ -26,6 +30,8 @@ const PersonalPool = () => {
     isUpdating,
     isDeleting
   } = usePersonalPool();
+
+  const { equipos, createEquipo, isCreating: isCreatingEquipo } = useEquiposBuceoEnhanced();
 
   const handleCreatePersonal = async (data: PersonalFormData) => {
     await createPersonal(data);
@@ -43,6 +49,11 @@ const PersonalPool = () => {
     if (confirm('¿Está seguro de que desea eliminar este miembro del personal?')) {
       await deletePersonal(id);
     }
+  };
+
+  const handleCreateEquipo = async (data: { nombre: string; descripcion: string; empresa_id: string }) => {
+    await createEquipo(data);
+    setShowCreateEquipoForm(false);
   };
 
   const getRoleBadgeColor = (rol: string) => {
@@ -68,8 +79,8 @@ const PersonalPool = () => {
                 <div className="flex items-center gap-3">
                   <Users className="w-6 h-6 text-zinc-600" />
                   <div>
-                    <h1 className="text-xl font-semibold text-zinc-900">Equipo de Buceo</h1>
-                    <p className="text-sm text-zinc-500">Gestión del personal de buceo</p>
+                    <h1 className="text-xl font-semibold text-zinc-900">Equipos de Buceo</h1>
+                    <p className="text-sm text-zinc-500">Gestión de equipos y personal de buceo</p>
                   </div>
                 </div>
               </div>
@@ -85,18 +96,6 @@ const PersonalPool = () => {
                   </Card>
                 ))}
               </div>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-40" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </main>
         </div>
@@ -117,26 +116,49 @@ const PersonalPool = () => {
               <div className="flex items-center gap-3">
                 <Users className="w-6 h-6 text-zinc-600" />
                 <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Equipo de Buceo</h1>
-                  <p className="text-sm text-zinc-500">Gestión del personal de buceo</p>
+                  <h1 className="text-xl font-semibold text-zinc-900">Equipos de Buceo</h1>
+                  <p className="text-sm text-zinc-500">Gestión de equipos y personal de buceo</p>
                 </div>
               </div>
               <div className="flex-1" />
-              <Button 
-                className="ios-button"
-                onClick={() => setShowCreateForm(true)}
-                disabled={isCreating}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Personal
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateEquipoForm(true)}
+                  disabled={isCreatingEquipo}
+                  className="ios-button"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Equipo
+                </Button>
+                <Button 
+                  className="ios-button"
+                  onClick={() => setShowCreateForm(true)}
+                  disabled={isCreating}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Agregar Personal
+                </Button>
+              </div>
             </div>
           </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-zinc-600">Equipos Activos</p>
+                        <p className="text-2xl font-bold">{equipos.length}</p>
+                      </div>
+                      <Users className="w-8 h-8 text-zinc-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -158,7 +180,7 @@ const PersonalPool = () => {
                           {personal.filter(p => p.rol === 'supervisor').length}
                         </p>
                       </div>
-                      <UserCheck className="w-8 h-8 text-blue-400" />
+                      <UserPlus className="w-8 h-8 text-blue-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -178,14 +200,79 @@ const PersonalPool = () => {
                 </Card>
               </div>
 
+              {/* Equipos Section */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Equipos de Buceo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {equipos.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                      <h3 className="font-medium text-zinc-900 mb-2">No hay equipos creados</h3>
+                      <p className="text-zinc-500 mb-4">Cree el primer equipo de buceo</p>
+                      <Button onClick={() => setShowCreateEquipoForm(true)} variant="outline">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Crear Equipo
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {equipos.map((equipo) => (
+                        <Card key={equipo.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg">{equipo.nombre}</CardTitle>
+                              <Badge variant="outline">
+                                {equipo.miembros?.length || 0} miembros
+                              </Badge>
+                            </div>
+                            {equipo.descripcion && (
+                              <p className="text-sm text-zinc-600">{equipo.descripcion}</p>
+                            )}
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {equipo.miembros?.slice(0, 3).map((miembro) => (
+                                <div key={miembro.id} className="flex items-center gap-2 text-sm">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span>{miembro.nombre_completo}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {miembro.rol.replace('_', ' ')}
+                                  </Badge>
+                                </div>
+                              ))}
+                              {(equipo.miembros?.length || 0) > 3 && (
+                                <p className="text-xs text-zinc-500">
+                                  +{(equipo.miembros?.length || 0) - 3} más...
+                                </p>
+                              )}
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-3"
+                              onClick={() => setSelectedEquipo(equipo.id)}
+                            >
+                              Gestionar Equipo
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Personal Section */}
               {personal.length === 0 ? (
                 <Card className="text-center py-12">
                   <CardContent>
-                    <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <Mail className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay personal registrado</h3>
-                    <p className="text-zinc-500 mb-4">Comienza agregando miembros a tu equipo de buceo</p>
+                    <p className="text-zinc-500 mb-4">Agregue personal existente o invite nuevos miembros por email</p>
                     <Button onClick={() => setShowCreateForm(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <UserPlus className="w-4 h-4 mr-2" />
                       Agregar Personal
                     </Button>
                   </CardContent>
@@ -193,7 +280,7 @@ const PersonalPool = () => {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Personal de Buceo</CardTitle>
+                    <CardTitle>Personal Disponible</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>
@@ -203,7 +290,6 @@ const PersonalPool = () => {
                           <TableHead>Email</TableHead>
                           <TableHead>Rol</TableHead>
                           <TableHead>Empresa</TableHead>
-                          <TableHead>Matrícula</TableHead>
                           <TableHead>Estado</TableHead>
                           <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -214,6 +300,9 @@ const PersonalPool = () => {
                             <TableCell>
                               <div>
                                 <div className="font-medium">{miembro.nombre} {miembro.apellido}</div>
+                                {miembro.matricula && (
+                                  <div className="text-sm text-zinc-500">Matrícula: {miembro.matricula}</div>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-zinc-600">{miembro.email}</TableCell>
@@ -224,9 +313,6 @@ const PersonalPool = () => {
                             </TableCell>
                             <TableCell className="text-zinc-600">
                               {miembro.empresa_asociada || 'Sin asignar'}
-                            </TableCell>
-                            <TableCell className="text-zinc-600">
-                              {miembro.matricula || '-'}
                             </TableCell>
                             <TableCell>
                               <Badge variant={miembro.disponible ? "default" : "secondary"}>
@@ -264,6 +350,7 @@ const PersonalPool = () => {
             </div>
           </div>
 
+          {/* Dialogs */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent variant="form" className="max-w-2xl">
               <CreatePersonalForm
@@ -273,13 +360,22 @@ const PersonalPool = () => {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={!!editingPersonal} onOpenChange={() => setEditingPersonal(null)}>
+          <Dialog open={editingPersonal !== null} onOpenChange={() => setEditingPersonal(null)}>
             <DialogContent variant="form" className="max-w-2xl">
               <CreatePersonalForm
                 onSubmit={handleUpdatePersonal}
                 onCancel={() => setEditingPersonal(null)}
                 initialData={editingPersonalData}
                 isEditing={true}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showCreateEquipoForm} onOpenChange={setShowCreateEquipoForm}>
+            <DialogContent variant="form" className="max-w-lg">
+              <CreateEquipoForm
+                onSubmit={handleCreateEquipo}
+                onCancel={() => setShowCreateEquipoForm(false)}
               />
             </DialogContent>
           </Dialog>

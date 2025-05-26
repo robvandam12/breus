@@ -42,7 +42,9 @@ export const usePersonalPool = () => {
       const { data, error } = await supabase
         .from('usuario')
         .select(`
-          *
+          *,
+          salmonera:salmoneras(nombre),
+          servicio:contratistas(nombre)
         `)
         .in('rol', ['supervisor', 'buzo'])
         .order('created_at', { ascending: false });
@@ -57,6 +59,18 @@ export const usePersonalPool = () => {
           ? user.perfil_buzo as any 
           : {};
 
+        // Determine empresa_asociada based on the user's assignment
+        let empresaAsociada = 'Sin asignar';
+        if (user.salmonera && Array.isArray(user.salmonera) && user.salmonera.length > 0) {
+          empresaAsociada = user.salmonera[0].nombre;
+        } else if (user.servicio && Array.isArray(user.servicio) && user.servicio.length > 0) {
+          empresaAsociada = user.servicio[0].nombre;
+        } else if (user.salmonera && !Array.isArray(user.salmonera)) {
+          empresaAsociada = user.salmonera.nombre;
+        } else if (user.servicio && !Array.isArray(user.servicio)) {
+          empresaAsociada = user.servicio.nombre;
+        }
+
         return {
           id: user.usuario_id,
           usuario_id: user.usuario_id,
@@ -64,7 +78,7 @@ export const usePersonalPool = () => {
           apellido: user.apellido,
           email: user.email || '',
           rol: user.rol as 'supervisor' | 'buzo',
-          empresa_asociada: 'Por definir', // Will be populated when we fetch related data
+          empresa_asociada: empresaAsociada,
           tipo_empresa: user.salmonera_id ? 'salmonera' as const : 'contratista' as const,
           matricula: perfilBuzo.matricula || '',
           especialidades: Array.isArray(perfilBuzo.especialidades) ? perfilBuzo.especialidades : [],
@@ -112,6 +126,7 @@ export const usePersonalPool = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast({
         title: "Personal agregado",
         description: "El miembro del personal ha sido agregado exitosamente.",
@@ -156,6 +171,7 @@ export const usePersonalPool = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast({
         title: "Personal actualizado",
         description: "Los datos del personal han sido actualizados exitosamente.",
@@ -176,6 +192,7 @@ export const usePersonalPool = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast({
         title: "Personal eliminado",
         description: "El miembro del personal ha sido eliminado exitosamente.",
