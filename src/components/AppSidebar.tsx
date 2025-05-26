@@ -1,4 +1,3 @@
-
 import { 
   Calendar, 
   ChevronRight, 
@@ -34,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 interface MenuSubItem {
   title: string;
@@ -178,14 +178,17 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-border/40 font-sans">
       <SidebarHeader className="border-b border-border/40 p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">B</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">B</span>
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg">Breus</h2>
+              <p className="text-xs text-zinc-500">Gestión de Buceo</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-lg">Breus</h2>
-            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
-          </div>
+          <NotificationCenter />
         </div>
       </SidebarHeader>
       
