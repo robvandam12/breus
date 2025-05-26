@@ -29,7 +29,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
   const [newEquipo, setNewEquipo] = useState({
     nombre: '',
     descripcion: '',
-    salmonera_id: salmoneraId || ''
+    empresa_id: salmoneraId || ''
   });
   const [newMember, setNewMember] = useState({
     tipo: 'existing', // 'existing' or 'invite'
@@ -42,7 +42,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
   });
 
   const filteredEquipos = salmoneraId 
-    ? equipos.filter(e => e.salmonera_id === salmoneraId)
+    ? equipos.filter(e => e.empresa_id === salmoneraId)
     : equipos;
 
   const availableUsers = usuarios.filter(u => 
@@ -50,9 +50,9 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
   );
 
   const handleCreateEquipo = () => {
-    if (newEquipo.nombre && newEquipo.salmonera_id) {
+    if (newEquipo.nombre && newEquipo.empresa_id) {
       createEquipo(newEquipo);
-      setNewEquipo({ nombre: '', descripcion: '', salmonera_id: salmoneraId || '' });
+      setNewEquipo({ nombre: '', descripcion: '', empresa_id: salmoneraId || '' });
       setIsCreateDialogOpen(false);
     }
   };
@@ -150,8 +150,8 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
                 <div>
                   <Label htmlFor="salmonera">Salmonera *</Label>
                   <Select
-                    value={newEquipo.salmonera_id}
-                    onValueChange={(value) => setNewEquipo(prev => ({ ...prev, salmonera_id: value }))}
+                    value={newEquipo.empresa_id}
+                    onValueChange={(value) => setNewEquipo(prev => ({ ...prev, empresa_id: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar salmonera..." />

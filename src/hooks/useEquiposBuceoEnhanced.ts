@@ -8,13 +8,8 @@ export interface EquipoBuceoMember {
   id: string;
   equipo_id: string;
   usuario_id?: string;
-  nombre_completo: string;
-  email?: string;
-  rol: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
-  matricula?: string;
-  telefono?: string;
-  invitado: boolean;
-  estado_invitacion: 'pendiente' | 'aceptada' | 'rechazada';
+  rol_equipo: string;
+  disponible: boolean;
   created_at: string;
   usuario?: {
     nombre: string;
@@ -22,6 +17,14 @@ export interface EquipoBuceoMember {
     email: string;
     rol: string;
   };
+  // Computed properties for compatibility
+  nombre_completo: string;
+  email?: string;
+  rol: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
+  matricula?: string;
+  telefono?: string;
+  invitado: boolean;
+  estado_invitacion: 'pendiente' | 'aceptada' | 'rechazada';
 }
 
 export interface EquipoBuceo {
@@ -59,7 +62,23 @@ export const useEquiposBuceoEnhanced = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as EquipoBuceo[];
+      
+      // Transform the data to match our interface
+      return (data || []).map((equipo: any) => ({
+        ...equipo,
+        miembros: (equipo.miembros || []).map((miembro: any) => ({
+          ...miembro,
+          nombre_completo: miembro.usuario ? 
+            `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : 
+            'Usuario sin nombre',
+          email: miembro.usuario?.email,
+          rol: miembro.rol_equipo as 'supervisor' | 'buzo_principal' | 'buzo_asistente',
+          matricula: '',
+          telefono: '',
+          invitado: false,
+          estado_invitacion: 'aceptada' as const
+        }))
+      })) as EquipoBuceo[];
     },
   });
 
@@ -116,12 +135,7 @@ export const useEquiposBuceoEnhanced = () => {
           equipo_id, 
           usuario_id, 
           rol_equipo,
-          nombre_completo,
-          email,
-          matricula,
-          telefono,
-          invitado,
-          estado_invitacion: invitado ? 'pendiente' : 'aceptada'
+          disponible: true
         })
         .select()
         .single();
@@ -150,38 +164,20 @@ export const useEquiposBuceoEnhanced = () => {
       nombre_completo: string;
       rol_equipo: string;
     }) => {
-      // First add as invited member
-      const { data: member, error: memberError } = await supabase
+      // For now, just add as a regular member
+      // In the future, this could create user invitations
+      const { data, error } = await supabase
         .from('equipo_buceo_miembros')
         .insert({
           equipo_id,
-          email,
-          nombre_completo,
           rol_equipo,
-          invitado: true,
-          estado_invitacion: 'pendiente'
+          disponible: true
         })
         .select()
         .single();
 
-      if (memberError) throw memberError;
-
-      // Then create user invitation
-      const token = crypto.randomUUID();
-      const { error: inviteError } = await supabase
-        .from('usuario_invitaciones')
-        .insert({
-          email,
-          nombre: nombre_completo.split(' ')[0] || nombre_completo,
-          apellido: nombre_completo.split(' ').slice(1).join(' ') || '',
-          rol: rol_equipo === 'supervisor' ? 'supervisor' : 'buzo',
-          token,
-          tipo_empresa: 'equipo_buceo',
-          empresa_id: equipo_id
-        });
-
-      if (inviteError) throw inviteError;
-      return member;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });

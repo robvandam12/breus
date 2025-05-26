@@ -22,7 +22,7 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId }: OperacionTeam
   const [assignedMembers, setAssignedMembers] = useState<any[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
-  const availableEquipos = equipos.filter(e => e.salmonera_id === salmoneraId);
+  const availableEquipos = equipos.filter(e => e.empresa_id === salmoneraId);
   const selectedEquipo = equipos.find(e => e.id === selectedEquipoId);
 
   const handleAssignTeam = () => {
