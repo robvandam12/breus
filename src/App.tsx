@@ -1,86 +1,65 @@
-import React from "react";
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./components/auth/AuthProvider";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Salmoneras from "./pages/empresas/Salmoneras";
-import Sitios from "./pages/empresas/Sitios";
-import Contratistas from "./pages/empresas/Contratistas";
-import PersonalPool from "./pages/PersonalPool";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Dashboard from "./pages/Dashboard";
 import Operaciones from "./pages/operaciones/Operaciones";
-import HPT from "./pages/operaciones/HPT";
-import AnexoBravo from "./pages/operaciones/AnexoBravo";
-import Inmersiones from "./pages/operaciones/Inmersiones";
-import BitacorasSupervisor from "./pages/operaciones/BitacorasSupervisor";
-import BitacorasBuzo from "./pages/operaciones/BitacorasBuzo";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import EmailConfirmation from "./pages/auth/EmailConfirmation";
-import ProfileSetup from "./pages/auth/ProfileSetup";
-import AuthCallback from "./pages/auth/AuthCallback";
-import Reportes from "./pages/Reportes";
-import Configuracion from "./pages/Configuracion";
-import AdminRoles from "./pages/admin/AdminRoles";
-import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
-import UserManagement from "./pages/admin/UserManagement";
+import Inmersiones from "./pages/inmersiones/Inmersiones";
+import Documentos from "./pages/documentos/Documentos";
+import HPT from "./pages/formularios/HPT";
+import AnexoBravo from "./pages/formularios/AnexoBravo";
+import Salmoneras from "./pages/empresas/Salmoneras";
+import Contratistas from "./pages/empresas/Contratistas";
+import Sitios from "./pages/empresas/Sitios";
+import EquipoBuceo from "./pages/EquipoBuceo";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
-const App: React.FC = () => (
+const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
           <Routes>
+            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/email-confirmation" element={<EmailConfirmation />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/profile-setup" element={<ProfileSetup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Protected Routes */}
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/empresas/salmoneras" element={
-              <ProtectedRoute requiredRole="superuser">
-                <Salmoneras />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/empresas/sitios" element={
-              <ProtectedRoute>
-                <Sitios />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/empresas/contratistas" element={
-              <ProtectedRoute>
-                <Contratistas />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/personal-pool" element={
-              <ProtectedRoute>
-                <PersonalPool />
+                <Dashboard />
               </ProtectedRoute>
             } />
             
             <Route path="/operaciones" element={
               <ProtectedRoute>
                 <Operaciones />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/inmersiones" element={
+              <ProtectedRoute>
+                <Inmersiones />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/documentos" element={
+              <ProtectedRoute>
+                <Documentos />
               </ProtectedRoute>
             } />
             
@@ -96,58 +75,41 @@ const App: React.FC = () => (
               </ProtectedRoute>
             } />
             
-            <Route path="/inmersiones" element={
+            <Route path="/empresas/salmoneras" element={
               <ProtectedRoute>
-                <Inmersiones />
+                <Salmoneras />
               </ProtectedRoute>
             } />
             
-            <Route path="/bitacoras/supervisor" element={
+            <Route path="/empresas/contratistas" element={
               <ProtectedRoute>
-                <BitacorasSupervisor />
+                <Contratistas />
               </ProtectedRoute>
             } />
             
-            <Route path="/bitacoras/buzo" element={
+            <Route path="/empresas/sitios" element={
               <ProtectedRoute>
-                <BitacorasBuzo />
+                <Sitios />
               </ProtectedRoute>
             } />
             
-            <Route path="/reportes" element={
+            <Route path="/equipo-de-buceo" element={
               <ProtectedRoute>
-                <Reportes />
+                <EquipoBuceo />
               </ProtectedRoute>
             } />
             
-            <Route path="/configuracion" element={
+            <Route path="/admin" element={
               <ProtectedRoute>
-                <Configuracion />
+                <Admin />
               </ProtectedRoute>
             } />
-            
-            <Route path="/admin/roles" element={
-              <ProtectedRoute requiredRole="superuser">
-                <AdminRoles />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/users" element={
-              <ProtectedRoute requiredRole="superuser">
-                <UserManagement />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/salmonera" element={
-              <ProtectedRoute requiredRole="admin_salmonera">
-                <AdminSalmoneraPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<NotFound />} />
+
+            {/* Redirect old route */}
+            <Route path="/personal-pool" element={<Navigate to="/equipo-de-buceo" replace />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,16 +1,15 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
-import { MapboxPicker } from "@/components/sitios/MapboxPicker";
 import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
-import { MapPin, Plus, Building, Edit, Trash2 } from "lucide-react";
+import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid } from "lucide-react";
 import { useSitios } from "@/hooks/useSitios";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +17,7 @@ export default function Sitios() {
   const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedSitio, setSelectedSitio] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const { toast } = useToast();
 
   const handleCreateSitio = async (data: any) => {
@@ -34,14 +34,16 @@ export default function Sitios() {
   };
 
   const handleDeleteSitio = async (id: string) => {
-    try {
-      await deleteSitio(id);
-      toast({
-        title: "Sitio eliminado",
-        description: "El sitio ha sido eliminado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error deleting sitio:', error);
+    if (confirm('¿Está seguro de que desea eliminar este sitio?')) {
+      try {
+        await deleteSitio(id);
+        toast({
+          title: "Sitio eliminado",
+          description: "El sitio ha sido eliminado exitosamente.",
+        });
+      } catch (error) {
+        console.error('Error deleting sitio:', error);
+      }
     }
   };
 
@@ -82,6 +84,115 @@ export default function Sitios() {
     );
   }
 
+  const SitioCardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {sitios.map((sitio) => (
+        <Card key={sitio.id} className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold">{sitio.nombre}</CardTitle>
+                <p className="text-sm text-zinc-500">{sitio.codigo}</p>
+              </div>
+              <Badge variant="outline" className={
+                sitio.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+              }>
+                {sitio.estado}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-start gap-2 text-sm text-zinc-600">
+              <MapPin className="w-4 h-4 mt-0.5" />
+              <span>{sitio.ubicacion}</span>
+            </div>
+            
+            {sitio.coordenadas_lat && sitio.coordenadas_lng && (
+              <div className="text-xs text-zinc-500">
+                Coordenadas: {sitio.coordenadas_lat.toFixed(6)}, {sitio.coordenadas_lng.toFixed(6)}
+              </div>
+            )}
+
+            {sitio.observaciones && (
+              <p className="text-xs text-zinc-600 line-clamp-2">{sitio.observaciones}</p>
+            )}
+
+            <div className="flex gap-2 pt-3">
+              <Button variant="outline" size="sm" className="flex-1">
+                <Edit className="w-4 h-4 mr-1" />
+                Editar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleDeleteSitio(sitio.id)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const SitioTableView = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Sitio</TableHead>
+          <TableHead>Ubicación</TableHead>
+          <TableHead>Coordenadas</TableHead>
+          <TableHead>Estado</TableHead>
+          <TableHead className="text-right">Acciones</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sitios.map((sitio) => (
+          <TableRow key={sitio.id}>
+            <TableCell>
+              <div>
+                <div className="font-medium">{sitio.nombre}</div>
+                <div className="text-sm text-zinc-500">{sitio.codigo}</div>
+              </div>
+            </TableCell>
+            <TableCell className="text-zinc-600">{sitio.ubicacion}</TableCell>
+            <TableCell className="text-zinc-600">
+              {sitio.coordenadas_lat && sitio.coordenadas_lng ? (
+                <div className="text-xs">
+                  {sitio.coordenadas_lat.toFixed(4)}, {sitio.coordenadas_lng.toFixed(4)}
+                </div>
+              ) : (
+                'Sin coordenadas'
+              )}
+            </TableCell>
+            <TableCell>
+              <Badge variant={sitio.estado === 'activo' ? "default" : "secondary"}>
+                {sitio.estado}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm">
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDeleteSitio(sitio.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -101,10 +212,30 @@ export default function Sitios() {
                   </div>
                 </div>
               </div>
-              <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Sitio
-              </Button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-white rounded-lg border">
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="rounded-r-none"
+                  >
+                    <TableIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="rounded-l-none"
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Sitio
+                </Button>
+              </div>
             </div>
 
             <Card className="ios-card">
@@ -126,62 +257,7 @@ export default function Sitios() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sitios.map((sitio) => (
-                      <Card key={sitio.id} className="hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="text-lg font-semibold">{sitio.nombre}</CardTitle>
-                              <p className="text-sm text-zinc-500">{sitio.codigo}</p>
-                            </div>
-                            <Badge variant="outline" className={
-                              sitio.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                            }>
-                              {sitio.estado}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex items-start gap-2 text-sm text-zinc-600">
-                            <MapPin className="w-4 h-4 mt-0.5" />
-                            <span>{sitio.ubicacion}</span>
-                          </div>
-                          
-                          {sitio.coordenadas_lat && sitio.coordenadas_lng && (
-                            <div className="text-xs text-zinc-500">
-                              Coordenadas: {sitio.coordenadas_lat.toFixed(6)}, {sitio.coordenadas_lng.toFixed(6)}
-                            </div>
-                          )}
-
-                          {sitio.profundidad_maxima && (
-                            <div className="text-xs text-zinc-500">
-                              Profundidad máxima: {sitio.profundidad_maxima}m
-                            </div>
-                          )}
-
-                          {sitio.observaciones && (
-                            <p className="text-xs text-zinc-600 line-clamp-2">{sitio.observaciones}</p>
-                          )}
-
-                          <div className="flex gap-2 pt-3">
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Edit className="w-4 h-4 mr-1" />
-                              Editar
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteSitio(sitio.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  viewMode === 'cards' ? <SitioCardView /> : <SitioTableView />
                 )}
               </CardContent>
             </Card>

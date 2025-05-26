@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,10 @@ export default function Operaciones() {
 
   const handleSelectOperacion = (operacion: any) => {
     setSelectedOperacion(operacion);
+  };
+
+  const handleUpdateOperacion = async (operacionId: string, data: any) => {
+    await updateOperacion({ id: operacionId, data });
   };
 
   if (isLoading) {
@@ -75,7 +78,7 @@ export default function Operaciones() {
             <OperacionDetails
               operacion={selectedOperacion}
               onBack={() => setSelectedOperacion(null)}
-              onUpdate={updateOperacion}
+              onUpdate={handleUpdateOperacion}
             />
           </main>
         </div>
