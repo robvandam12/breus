@@ -2,26 +2,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-interface PoolPersonal {
-  id: string;
-  empresa_id: string;
-  tipo_empresa: 'salmonera' | 'servicio';
-  usuario_id?: string;
-  nombre_completo: string;
-  email?: string;
-  rol: 'supervisor' | 'buzo' | 'asistente';
+// Using the usuario table as the base for personal pool
+type PoolPersonal = Tables<'usuario'> & {
+  empresa_id?: string;
+  tipo_empresa?: 'salmonera' | 'servicio';
   matricula?: string;
   especialidades?: string[];
   certificaciones?: string[];
-  experiencia_anos: number;
-  disponible: boolean;
-  invitado: boolean;
-  estado_invitacion: 'pendiente' | 'aceptada' | 'rechazada';
+  experiencia_anos?: number;
+  disponible?: boolean;
+  invitado?: boolean;
+  estado_invitacion?: 'pendiente' | 'aceptada' | 'rechazada';
   token_invitacion?: string;
-  created_at: string;
-  updated_at: string;
-}
+};
 
 export const usePoolPersonal = () => {
   const [personal, setPersonal] = useState<PoolPersonal[]>([]);
@@ -30,20 +25,33 @@ export const usePoolPersonal = () => {
 
   const fetchPersonal = async (empresaId?: string, tipoEmpresa?: 'salmonera' | 'servicio') => {
     try {
-      let query = supabase.from('pool_personal').select('*');
+      let query = supabase.from('usuario').select('*');
       
-      if (empresaId) {
-        query = query.eq('empresa_id', empresaId);
-      }
-      
-      if (tipoEmpresa) {
-        query = query.eq('tipo_empresa', tipoEmpresa);
+      if (empresaId && tipoEmpresa === 'salmonera') {
+        query = query.eq('salmonera_id', empresaId);
+      } else if (empresaId && tipoEmpresa === 'servicio') {
+        query = query.eq('servicio_id', empresaId);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPersonal(data || []);
+      
+      // Map the usuario data to our PoolPersonal structure
+      const mappedData = data?.map(user => ({
+        ...user,
+        empresa_id: tipoEmpresa === 'salmonera' ? user.salmonera_id : user.servicio_id,
+        tipo_empresa: tipoEmpresa,
+        matricula: user.perfil_buzo?.matricula,
+        especialidades: user.perfil_buzo?.especialidades || [],
+        certificaciones: user.perfil_buzo?.certificaciones || [],
+        experiencia_anos: user.perfil_buzo?.experiencia_anos || 0,
+        disponible: true,
+        invitado: false,
+        estado_invitacion: 'aceptada' as const
+      })) || [];
+      
+      setPersonal(mappedData);
     } catch (error) {
       console.error('Error fetching personal:', error);
       toast({
@@ -56,15 +64,31 @@ export const usePoolPersonal = () => {
 
   const addPersonal = async (personalData: Partial<PoolPersonal>) => {
     try {
+      // Convert to usuario format
+      const usuarioData = {
+        nombre: personalData.nombre || '',
+        apellido: personalData.apellido || '',
+        email: personalData.email || '',
+        rol: personalData.rol || 'buzo',
+        salmonera_id: personalData.tipo_empresa === 'salmonera' ? personalData.empresa_id : null,
+        servicio_id: personalData.tipo_empresa === 'servicio' ? personalData.empresa_id : null,
+        perfil_buzo: {
+          matricula: personalData.matricula,
+          especialidades: personalData.especialidades || [],
+          certificaciones: personalData.certificaciones || [],
+          experiencia_anos: personalData.experiencia_anos || 0
+        }
+      };
+
       const { data, error } = await supabase
-        .from('pool_personal')
-        .insert([personalData])
+        .from('usuario')
+        .insert([usuarioData])
         .select()
         .single();
 
       if (error) throw error;
       
-      await fetchPersonal();
+      await fetchPersonal(personalData.empresa_id, personalData.tipo_empresa);
       toast({
         title: "Éxito",
         description: "Personal agregado correctamente",
@@ -108,10 +132,22 @@ export const usePoolPersonal = () => {
 
   const updateDisponibilidad = async (personalId: string, disponible: boolean) => {
     try {
+      // For now, we'll update the usuario's perfil_buzo with availability
+      const { data: usuario } = await supabase
+        .from('usuario')
+        .select('perfil_buzo')
+        .eq('usuario_id', personalId)
+        .single();
+
+      const updatedPerfil = {
+        ...usuario?.perfil_buzo,
+        disponible
+      };
+
       const { error } = await supabase
-        .from('pool_personal')
-        .update({ disponible })
-        .eq('id', personalId);
+        .from('usuario')
+        .update({ perfil_buzo: updatedPerfil })
+        .eq('usuario_id', personalId);
 
       if (error) throw error;
       
