@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,134 +16,143 @@ export default function PoolUsuarios() {
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pool de Usuarios</h1>
-          <p className="text-zinc-500">
-            Gestiona supervisores, buzos y usuarios del sistema
-          </p>
-        </div>
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Invitar Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Invitar Nuevo Usuario</DialogTitle>
-            </DialogHeader>
-            <InviteUserForm onClose={() => setIsInviteDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Usuarios</p>
-                <p className="text-2xl font-bold">24</p>
-              </div>
+      <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
+        <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
+          <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
+          <div className="flex items-center gap-3">
+            <Users className="w-6 h-6 text-zinc-600" />
+            <div>
+              <h1 className="text-xl font-semibold text-zinc-900">Equipos de Buceo</h1>
+              <p className="text-sm text-zinc-500">Gestiona supervisores, buzos y personal técnico</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Supervisores</p>
-                <p className="text-2xl font-bold">8</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Buzos</p>
-                <p className="text-2xl font-bold">16</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">Invitaciones</p>
-                <p className="text-2xl font-bold">3</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtros y Búsqueda
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar usuarios..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los roles</SelectItem>
-                <SelectItem value="supervisor">Supervisores</SelectItem>
-                <SelectItem value="buzo">Buzos</SelectItem>
-                <SelectItem value="admin_servicio">Admin Servicio</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Activos</SelectItem>
-                <SelectItem value="invited">Invitados</SelectItem>
-                <SelectItem value="inactive">Inactivos</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex-1" />
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Invitar Usuario
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Invitar Nuevo Usuario</DialogTitle>
+              </DialogHeader>
+              <InviteUserForm onClose={() => setIsInviteDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </header>
 
-      {/* User Management Component */}
-      <UserManagement />
-    </div>
+      {/* Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Total Usuarios</p>
+                    <p className="text-2xl font-bold">24</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-green-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Supervisores</p>
+                    <p className="text-2xl font-bold">8</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Buzos</p>
+                    <p className="text-2xl font-bold">16</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Invitaciones</p>
+                    <p className="text-2xl font-bold">3</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Filtros y Búsqueda
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex-1 min-w-64">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar usuarios..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los roles</SelectItem>
+                    <SelectItem value="supervisor">Supervisores</SelectItem>
+                    <SelectItem value="buzo">Buzos</SelectItem>
+                    <SelectItem value="admin_servicio">Admin Servicio</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="active">Activos</SelectItem>
+                    <SelectItem value="invited">Invitados</SelectItem>
+                    <SelectItem value="inactive">Inactivos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* User Management Component */}
+          <UserManagement />
+        </div>
+      </div>
+    </>
   );
 }
 
