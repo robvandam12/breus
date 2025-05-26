@@ -15,7 +15,7 @@ export const QuickActions = () => {
       onClick: () => navigate("/operaciones")
     },
     {
-      label: "HPT Completa",
+      label: "Crear HPT",
       icon: FileText,
       color: "bg-blue-600 hover:bg-blue-700",
       onClick: () => navigate("/operaciones/hpt")
