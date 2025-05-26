@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -29,6 +28,7 @@ import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
 import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
+import UserManagement from "./pages/admin/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -129,6 +129,12 @@ const App: React.FC = () => (
             <Route path="/admin/roles" element={
               <ProtectedRoute requiredRole="superuser">
                 <AdminRoles />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/users" element={
+              <ProtectedRoute requiredRole="superuser">
+                <UserManagement />
               </ProtectedRoute>
             } />
             

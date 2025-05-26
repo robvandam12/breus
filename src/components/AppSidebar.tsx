@@ -113,6 +113,7 @@ const menuItems: MenuItem[] = [
     title: "Admin",
     icon: Shield,
     items: [
+      { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
       { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
       { title: "Gestión Salmonera", url: "/admin/salmonera", roleRequired: "admin_salmonera" }
     ]

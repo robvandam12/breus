@@ -259,13 +259,17 @@ export type Database = {
       }
       bitacora_buzo: {
         Row: {
+          aprobada_por: string | null
           bitacora_id: string
           buzo: string
           buzo_firma: string | null
           codigo: string
+          comentarios_aprobacion: string | null
           created_at: string
+          estado_aprobacion: string | null
           estado_fisico_post: string
           fecha: string
+          fecha_aprobacion: string | null
           firmado: boolean
           inmersion_id: string
           observaciones_tecnicas: string | null
@@ -274,13 +278,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aprobada_por?: string | null
           bitacora_id?: string
           buzo: string
           buzo_firma?: string | null
           codigo: string
+          comentarios_aprobacion?: string | null
           created_at?: string
+          estado_aprobacion?: string | null
           estado_fisico_post: string
           fecha: string
+          fecha_aprobacion?: string | null
           firmado?: boolean
           inmersion_id: string
           observaciones_tecnicas?: string | null
@@ -289,13 +297,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aprobada_por?: string | null
           bitacora_id?: string
           buzo?: string
           buzo_firma?: string | null
           codigo?: string
+          comentarios_aprobacion?: string | null
           created_at?: string
+          estado_aprobacion?: string | null
           estado_fisico_post?: string
           fecha?: string
+          fecha_aprobacion?: string | null
           firmado?: boolean
           inmersion_id?: string
           observaciones_tecnicas?: string | null
@@ -304,6 +316,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bitacora_buzo_aprobada_por_fkey"
+            columns: ["aprobada_por"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
           {
             foreignKeyName: "bitacora_buzo_inmersion_id_fkey"
             columns: ["inmersion_id"]
@@ -315,12 +334,16 @@ export type Database = {
       }
       bitacora_supervisor: {
         Row: {
+          aprobada_por: string | null
           bitacora_id: string
           codigo: string
+          comentarios_aprobacion: string | null
           created_at: string
           desarrollo_inmersion: string
+          estado_aprobacion: string | null
           evaluacion_general: string
           fecha: string
+          fecha_aprobacion: string | null
           firmado: boolean
           incidentes: string | null
           inmersion_id: string
@@ -329,12 +352,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aprobada_por?: string | null
           bitacora_id?: string
           codigo: string
+          comentarios_aprobacion?: string | null
           created_at?: string
           desarrollo_inmersion: string
+          estado_aprobacion?: string | null
           evaluacion_general: string
           fecha: string
+          fecha_aprobacion?: string | null
           firmado?: boolean
           incidentes?: string | null
           inmersion_id: string
@@ -343,12 +370,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aprobada_por?: string | null
           bitacora_id?: string
           codigo?: string
+          comentarios_aprobacion?: string | null
           created_at?: string
           desarrollo_inmersion?: string
+          estado_aprobacion?: string | null
           evaluacion_general?: string
           fecha?: string
+          fecha_aprobacion?: string | null
           firmado?: boolean
           incidentes?: string | null
           inmersion_id?: string
@@ -357,6 +388,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bitacora_supervisor_aprobada_por_fkey"
+            columns: ["aprobada_por"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
           {
             foreignKeyName: "bitacora_supervisor_inmersion_id_fkey"
             columns: ["inmersion_id"]
@@ -488,6 +526,81 @@ export type Database = {
           event_type?: string
           id?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      equipo_buceo_miembros: {
+        Row: {
+          created_at: string
+          disponible: boolean
+          equipo_id: string | null
+          id: string
+          rol_equipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          disponible?: boolean
+          equipo_id?: string | null
+          id?: string
+          rol_equipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          disponible?: boolean
+          equipo_id?: string | null
+          id?: string
+          rol_equipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipo_buceo_miembros_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos_buceo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipo_buceo_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
+      equipos_buceo: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          empresa_id: string
+          id: string
+          nombre: string
+          tipo_empresa: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          empresa_id: string
+          id?: string
+          nombre: string
+          tipo_empresa: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          empresa_id?: string
+          id?: string
+          nombre?: string
+          tipo_empresa?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -727,7 +840,9 @@ export type Database = {
         Row: {
           anexo_bravo_validado: boolean
           buzo_asistente: string | null
+          buzo_asistente_id: string | null
           buzo_principal: string
+          buzo_principal_id: string | null
           codigo: string
           corriente: string
           created_at: string
@@ -742,6 +857,7 @@ export type Database = {
           operacion_id: string
           profundidad_max: number
           supervisor: string
+          supervisor_id: string | null
           temperatura_agua: number
           updated_at: string
           visibilidad: number
@@ -749,7 +865,9 @@ export type Database = {
         Insert: {
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
+          buzo_asistente_id?: string | null
           buzo_principal: string
+          buzo_principal_id?: string | null
           codigo: string
           corriente: string
           created_at?: string
@@ -764,6 +882,7 @@ export type Database = {
           operacion_id: string
           profundidad_max: number
           supervisor: string
+          supervisor_id?: string | null
           temperatura_agua: number
           updated_at?: string
           visibilidad: number
@@ -771,7 +890,9 @@ export type Database = {
         Update: {
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
+          buzo_asistente_id?: string | null
           buzo_principal?: string
+          buzo_principal_id?: string | null
           codigo?: string
           corriente?: string
           created_at?: string
@@ -786,17 +907,39 @@ export type Database = {
           operacion_id?: string
           profundidad_max?: number
           supervisor?: string
+          supervisor_id?: string | null
           temperatura_agua?: number
           updated_at?: string
           visibilidad?: number
         }
         Relationships: [
           {
+            foreignKeyName: "inmersion_buzo_asistente_id_fkey"
+            columns: ["buzo_asistente_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+          {
+            foreignKeyName: "inmersion_buzo_principal_id_fkey"
+            columns: ["buzo_principal_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+          {
             foreignKeyName: "inmersion_operacion_id_fkey"
             columns: ["operacion_id"]
             isOneToOne: false
             referencedRelation: "operacion"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inmersion_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
           },
         ]
       }
@@ -868,7 +1011,9 @@ export type Database = {
           codigo: string
           contratista_id: string | null
           created_at: string
+          equipo_buceo_id: string | null
           estado: string
+          estado_aprobacion: string | null
           fecha_fin: string | null
           fecha_inicio: string
           id: string
@@ -876,6 +1021,7 @@ export type Database = {
           salmonera_id: string | null
           servicio_id: string | null
           sitio_id: string | null
+          supervisor_asignado_id: string | null
           tareas: string | null
           updated_at: string
         }
@@ -883,7 +1029,9 @@ export type Database = {
           codigo: string
           contratista_id?: string | null
           created_at?: string
+          equipo_buceo_id?: string | null
           estado?: string
+          estado_aprobacion?: string | null
           fecha_fin?: string | null
           fecha_inicio: string
           id?: string
@@ -891,6 +1039,7 @@ export type Database = {
           salmonera_id?: string | null
           servicio_id?: string | null
           sitio_id?: string | null
+          supervisor_asignado_id?: string | null
           tareas?: string | null
           updated_at?: string
         }
@@ -898,7 +1047,9 @@ export type Database = {
           codigo?: string
           contratista_id?: string | null
           created_at?: string
+          equipo_buceo_id?: string | null
           estado?: string
+          estado_aprobacion?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string
           id?: string
@@ -906,6 +1057,7 @@ export type Database = {
           salmonera_id?: string | null
           servicio_id?: string | null
           sitio_id?: string | null
+          supervisor_asignado_id?: string | null
           tareas?: string | null
           updated_at?: string
         }
@@ -929,6 +1081,65 @@ export type Database = {
             columns: ["sitio_id"]
             isOneToOne: false
             referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operacion_equipo_buceo_id_fkey"
+            columns: ["equipo_buceo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos_buceo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operacion_supervisor_asignado_id_fkey"
+            columns: ["supervisor_asignado_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
+      salmonera_contratista: {
+        Row: {
+          contratista_id: string | null
+          created_at: string
+          estado: string
+          fecha_asociacion: string
+          id: string
+          salmonera_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          contratista_id?: string | null
+          created_at?: string
+          estado?: string
+          fecha_asociacion?: string
+          id?: string
+          salmonera_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contratista_id?: string | null
+          created_at?: string
+          estado?: string
+          fecha_asociacion?: string
+          id?: string
+          salmonera_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salmonera_contratista_contratista_id_fkey"
+            columns: ["contratista_id"]
+            isOneToOne: false
+            referencedRelation: "contratistas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salmonera_contratista_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
             referencedColumns: ["id"]
           },
         ]
@@ -1075,6 +1286,106 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salmoneras"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuario_actividad: {
+        Row: {
+          accion: string
+          created_at: string
+          detalle: string | null
+          entidad_id: string | null
+          entidad_tipo: string | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          detalle?: string | null
+          entidad_id?: string | null
+          entidad_tipo?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          detalle?: string | null
+          entidad_id?: string | null
+          entidad_tipo?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_actividad_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
+      usuario_invitaciones: {
+        Row: {
+          apellido: string
+          created_at: string
+          email: string
+          empresa_id: string | null
+          estado: string
+          fecha_expiracion: string
+          fecha_invitacion: string
+          id: string
+          invitado_por: string | null
+          nombre: string
+          rol: string
+          tipo_empresa: string | null
+          token: string
+        }
+        Insert: {
+          apellido: string
+          created_at?: string
+          email: string
+          empresa_id?: string | null
+          estado?: string
+          fecha_expiracion?: string
+          fecha_invitacion?: string
+          id?: string
+          invitado_por?: string | null
+          nombre: string
+          rol: string
+          tipo_empresa?: string | null
+          token: string
+        }
+        Update: {
+          apellido?: string
+          created_at?: string
+          email?: string
+          empresa_id?: string | null
+          estado?: string
+          fecha_expiracion?: string
+          fecha_invitacion?: string
+          id?: string
+          invitado_por?: string | null
+          nombre?: string
+          rol?: string
+          tipo_empresa?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_invitaciones_invitado_por_fkey"
+            columns: ["invitado_por"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
           },
         ]
       }
