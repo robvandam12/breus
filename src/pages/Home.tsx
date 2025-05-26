@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,248 +7,408 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { 
   BarChart3, 
-  Users, 
   Calendar, 
-  AlertTriangle,
+  FileText, 
+  Anchor, 
+  Users, 
   TrendingUp,
-  Activity,
-  FileText,
-  Clock,
-  CheckCircle,
-  XCircle,
   Filter,
-  Search
+  Search,
+  Eye,
+  Plus,
+  AlertTriangle,
+  CheckCircle
 } from "lucide-react";
-import { DashboardChart } from "@/components/dashboard/DashboardChart";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
-  const [dateRange, setDateRange] = useState('30');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('30');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Mock data
   const stats = [
     {
       title: "Operaciones Activas",
       value: "12",
-      change: "+2.5%",
-      trend: "up",
+      change: "+2",
       icon: Calendar,
-      color: "text-blue-600"
+      color: "text-blue-600",
+      bgColor: "bg-blue-100"
     },
     {
       title: "Inmersiones del Mes",
-      value: "89",
-      change: "+15.3%",
-      trend: "up",
-      icon: Activity,
-      color: "text-green-600"
+      value: "47",
+      change: "+8",
+      icon: Anchor,
+      color: "text-green-600",
+      bgColor: "bg-green-100"
     },
     {
-      title: "Buzos Disponibles",
-      value: "24",
-      change: "-1",
-      trend: "down",
-      icon: Users,
-      color: "text-purple-600"
-    },
-    {
-      title: "Alertas Pendientes",
+      title: "Bitácoras Pendientes",
       value: "3",
       change: "-2",
-      trend: "down",
-      icon: AlertTriangle,
-      color: "text-orange-600"
+      icon: FileText,
+      color: "text-orange-600",
+      bgColor: "bg-orange-100"
+    },
+    {
+      title: "Usuarios Activos",
+      value: "24",
+      change: "+1",
+      icon: Users,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100"
     }
   ];
 
-  const recentActivity = [
+  const recentActivities = [
     {
-      id: 1,
+      id: "1",
       type: "inmersion",
-      title: "Inmersión completada - Centro Las Rosas",
-      description: "Buzo: Juan Pérez, Profundidad: 25m",
-      time: "Hace 30 min",
+      title: "Nueva inmersión completada",
+      description: "Centro Salmones del Sur - Sitio A",
+      time: "Hace 2 horas",
       status: "completed"
     },
     {
-      id: 2,
-      type: "hpt",
-      title: "HPT firmado - Operación Mantención",
-      description: "Supervisor: María González",
-      time: "Hace 1 hora",
-      status: "approved"
+      id: "2",
+      type: "bitacora",
+      title: "Bitácora supervisor pendiente",
+      description: "Operación OP-2024-003",
+      time: "Hace 4 horas",
+      status: "pending"
     },
     {
-      id: 3,
-      type: "alert",
-      title: "Certificación próxima a vencer",
-      description: "Buzo: Carlos Silva - Vence en 15 días",
-      time: "Hace 2 horas",
-      status: "warning"
+      id: "3",
+      type: "hpt",
+      title: "HPT firmado",
+      description: "Centro Hualaihué - Equipo 2",
+      time: "Hace 6 horas",
+      status: "approved"
     }
   ];
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-700">Completado</Badge>;
+      case 'pending':
+        return <Badge className="bg-orange-100 text-orange-700">Pendiente</Badge>;
+      case 'approved':
+        return <Badge className="bg-blue-100 text-blue-700">Aprobado</Badge>;
+      default:
+        return <Badge variant="secondary">Desconocido</Badge>;
+    }
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'inmersion':
+        return <Anchor className="w-4 h-4 text-blue-600" />;
+      case 'bitacora':
+        return <FileText className="w-4 h-4 text-orange-600" />;
+      case 'hpt':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      default:
+        return <AlertTriangle className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  if (isLoading) {
+    return <HomeSkeleton />;
+  }
+
   return (
-    <>
+    <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-        <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-          <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-          <div className="flex items-center gap-3">
-            <BarChart3 className="w-6 h-6 text-zinc-600" />
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-900">Dashboard</h1>
-              <p className="text-sm text-zinc-500">Resumen general de operaciones</p>
-            </div>
-          </div>
-          <div className="flex-1" />
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
-          >
-            <Filter className="w-4 h-4" />
-            Filtros
-          </Button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-zinc-500">
+            Resumen de actividades y operaciones de buceo
+          </p>
         </div>
-      </header>
+        <Button className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Nueva Operación
+        </Button>
+      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-          {/* Filters Panel */}
-          {showFilters && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Filter className="w-5 h-5" />
-                  Filtros de Dashboard
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex-1 min-w-64">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input
-                        placeholder="Buscar operaciones, inmersiones..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <span className={`text-sm ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                      {stat.change}
+                    </span>
                   </div>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">Últimos 7 días</SelectItem>
-                      <SelectItem value="30">Últimos 30 días</SelectItem>
-                      <SelectItem value="90">Últimos 3 meses</SelectItem>
-                      <SelectItem value="365">Último año</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-zinc-600 mb-1">{stat.title}</p>
-                      <p className="text-3xl font-bold text-zinc-900">{stat.value}</p>
-                      <div className="flex items-center gap-1 mt-2">
-                        <TrendingUp className={`w-4 h-4 ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`} />
-                        <span className={`text-sm ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                          {stat.change}
-                        </span>
-                        <span className="text-sm text-zinc-500">vs mes anterior</span>
-                      </div>
-                    </div>
-                    <div className={`p-3 rounded-lg bg-zinc-50`}>
-                      <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Inmersiones por Día
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DashboardChart />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Actividad Reciente
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border">
-                    <div className="flex-shrink-0">
-                      {activity.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-600" />}
-                      {activity.status === 'approved' && <FileText className="w-5 h-5 text-blue-600" />}
-                      {activity.status === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-600" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900">{activity.title}</p>
-                      <p className="text-sm text-zinc-600">{activity.description}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3 text-zinc-400" />
-                        <span className="text-xs text-zinc-500">{activity.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button className="h-16 flex flex-col items-center justify-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>Nueva Operación</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  <span>Registrar Inmersión</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Crear HPT</span>
-                </Button>
+                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                </div>
               </div>
             </CardContent>
           </Card>
-        </div>
+        ))}
       </div>
-    </>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filtros de Búsqueda
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
+            </Button>
+          </div>
+        </CardHeader>
+        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+          <CollapsibleContent>
+            <CardContent>
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex-1 min-w-64">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar operaciones, inmersiones..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">Últimos 7 días</SelectItem>
+                    <SelectItem value="30">Últimos 30 días</SelectItem>
+                    <SelectItem value="90">Últimos 3 meses</SelectItem>
+                    <SelectItem value="365">Último año</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="active">Activas</SelectItem>
+                    <SelectItem value="completed">Completadas</SelectItem>
+                    <SelectItem value="pending">Pendientes</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button variant="outline">
+                  Limpiar Filtros
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Recent Activities and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activities */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Actividad Reciente
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="space-y-1">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{activity.title}</p>
+                    <p className="text-xs text-gray-500 truncate">{activity.description}</p>
+                    <p className="text-xs text-gray-400">{activity.time}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {getStatusBadge(activity.status)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t">
+              <Button variant="outline" className="w-full">
+                <Eye className="w-4 h-4 mr-2" />
+                Ver Todas las Actividades
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Acciones Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full justify-start" variant="outline">
+              <Calendar className="w-4 h-4 mr-2" />
+              Nueva Operación
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Crear HPT
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <Anchor className="w-4 h-4 mr-2" />
+              Registrar Inmersión
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <Users className="w-4 h-4 mr-2" />
+              Gestionar Usuarios
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Ver Reportes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pending Items Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Elementos Pendientes de Atención</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Asignado a</TableHead>
+                <TableHead>Fecha Límite</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm">Bitácora</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm">Bitácora Supervisor - OP-2024-003</TableCell>
+                <TableCell className="text-sm">Carlos Supervisor</TableCell>
+                <TableCell className="text-sm">Hoy</TableCell>
+                <TableCell>
+                  <Badge className="bg-red-100 text-red-700">Vencido</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm">HPT</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm">HPT - Centro Hualaihué</TableCell>
+                <TableCell className="text-sm">Ana Admin</TableCell>
+                <TableCell className="text-sm">Mañana</TableCell>
+                <TableCell>
+                  <Badge className="bg-orange-100 text-orange-700">Pendiente</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm">
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+const HomeSkeleton = () => (
+  <div className="container mx-auto py-6 space-y-6">
+    <div className="flex items-center justify-between">
+      <div>
+        <Skeleton className="h-8 w-48 mb-2" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+      <Skeleton className="h-10 w-32" />
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i}>
+          <CardContent className="p-4">
+            <Skeleton className="h-16 w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+      </CardContent>
+    </Card>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {[...Array(2)].map((_, i) => (
+        <Card key={i}>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, j) => (
+                <Skeleton key={j} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+);

@@ -83,7 +83,7 @@ export function AppSidebar() {
           ]
         },
         {
-          title: "Equipos de Buceo",
+          title: "Pool de Usuarios",
           icon: Users,
           url: "/pool-usuarios",
           badge: "12"
@@ -141,7 +141,7 @@ export function AppSidebar() {
           ]
         },
         {
-          title: "Equipos de Buceo",
+          title: "Pool de Usuarios",
           icon: Users,
           url: "/pool-usuarios",
           badge: "12"
@@ -192,11 +192,6 @@ export function AppSidebar() {
             { title: "Equipos", url: "/empresa/equipos" },
             { title: "Usuarios", url: "/empresa/usuarios" }
           ]
-        },
-        {
-          title: "Equipos de Buceo",
-          icon: Users,
-          url: "/pool-usuarios"
         },
         {
           title: "Operaciones",
@@ -307,15 +302,15 @@ export function AppSidebar() {
             <span className="text-white font-bold text-sm">B</span>
           </div>
           <div>
-            <h2 className="font-semibold text-lg" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>Breus</h2>
-            <p className="text-xs text-zinc-500" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>Gestión de Buceo</p>
+            <h2 className="font-semibold text-lg">Breus</h2>
+            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
           </div>
         </div>
       </SidebarHeader>
       
       <SidebarContent className="p-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
             Navegación Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -325,7 +320,7 @@ export function AppSidebar() {
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                        <SidebarMenuButton className="w-full">
                           <item.icon className="w-4 h-4" />
                           <span className="flex-1">{item.title}</span>
                           <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -336,7 +331,7 @@ export function AppSidebar() {
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild>
-                                <Link to={subItem.url} style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                                <Link to={subItem.url}>
                                   <span>{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
@@ -347,7 +342,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <Link to={item.url!} className="flex items-center justify-between w-full" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                      <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>
@@ -378,8 +373,8 @@ export function AppSidebar() {
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>Usuario {currentRole}</p>
-            <p className="text-xs text-zinc-500 truncate" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>{currentRole}@breus.cl</p>
+            <p className="text-sm font-medium truncate">Usuario {currentRole}</p>
+            <p className="text-xs text-zinc-500 truncate">{currentRole}@breus.cl</p>
           </div>
           <Button
             variant="ghost"
