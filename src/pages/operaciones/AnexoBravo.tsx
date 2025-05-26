@@ -19,9 +19,9 @@ const AnexoBravo = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   const navigate = useNavigate();
   
-  const { anexos, isLoading, deleteAnexoBravo } = useAnexoBravo();
+  const { anexosBravo, isLoading, deleteAnexoBravo } = useAnexoBravo();
 
-  const filteredAnexos = anexos.filter(anexo => {
+  const filteredAnexos = anexosBravo.filter(anexo => {
     const matchesSearch = anexo.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          anexo.supervisor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || anexo.estado === filterStatus;
@@ -203,25 +203,25 @@ const AnexoBravo = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-blue-600">
-                    {anexos.length}
+                    {anexosBravo.length}
                   </div>
                   <div className="text-sm text-zinc-500">Total Anexos</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-green-600">
-                    {anexos.filter(a => a.firmado).length}
+                    {anexosBravo.filter(a => a.firmado).length}
                   </div>
                   <div className="text-sm text-zinc-500">Firmados</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {anexos.filter(a => !a.firmado && a.estado === 'pendiente').length}
+                    {anexosBravo.filter(a => !a.firmado && a.estado === 'pendiente').length}
                   </div>
                   <div className="text-sm text-zinc-500">Pendientes</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-gray-600">
-                    {anexos.filter(a => a.estado === 'borrador').length}
+                    {anexosBravo.filter(a => a.estado === 'borrador').length}
                   </div>
                   <div className="text-sm text-zinc-500">Borradores</div>
                 </Card>
