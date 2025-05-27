@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
 import { SitioTableView } from "@/components/sitios/SitioTableView";
@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Sitios() {
   const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table'); // Default to table view
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -70,7 +70,7 @@ export default function Sitios() {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
-          <AppSidebar />
+          <RoleBasedSidebar />
           <main className="flex-1 p-6">
             <div className="space-y-4">
               <Skeleton className="h-8 w-64" />
@@ -91,7 +91,7 @@ export default function Sitios() {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
-          <AppSidebar />
+          <RoleBasedSidebar />
           <main className="flex-1 p-6">
             <CreateSitioForm
               onSubmit={handleCreateSitio}
@@ -106,7 +106,7 @@ export default function Sitios() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header title="Sitios" subtitle="Gestión de sitios de trabajo" icon={MapPin}>
             <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default function Sitios() {
               </div>
               <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Sitio
+                Nuevo
               </Button>
             </div>
           </Header>
@@ -156,26 +156,6 @@ export default function Sitios() {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'cards')}>
-                    <TabsContent value="cards">
-                      {filteredSitios.length === 0 ? (
-                        <div className="text-center py-12">
-                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
-                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
-                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Crear Primer Sitio
-                          </Button>
-                        </div>
-                      ) : (
-                        <SitioCardView
-                          sitios={filteredSitios}
-                          onEdit={handleUpdateSitio}
-                          onDelete={handleDeleteSitio}
-                        />
-                      )}
-                    </TabsContent>
-
                     <TabsContent value="table">
                       {filteredSitios.length === 0 ? (
                         <div className="text-center py-12">
@@ -189,6 +169,26 @@ export default function Sitios() {
                         </div>
                       ) : (
                         <SitioTableView
+                          sitios={filteredSitios}
+                          onEdit={handleUpdateSitio}
+                          onDelete={handleDeleteSitio}
+                        />
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="cards">
+                      {filteredSitios.length === 0 ? (
+                        <div className="text-center py-12">
+                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
+                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
+                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Crear Primer Sitio
+                          </Button>
+                        </div>
+                      ) : (
+                        <SitioCardView
                           sitios={filteredSitios}
                           onEdit={handleUpdateSitio}
                           onDelete={handleDeleteSitio}

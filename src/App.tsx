@@ -65,6 +65,8 @@ const App: React.FC = () => (
               </ProtectedRoute>
             } />
             
+            {/* Fix: Remove /dashboard route since it's causing 404 */}
+            
             <Route path="/empresas/salmoneras" element={
               <ProtectedRoute requiredRole="superuser">
                 <Salmoneras />

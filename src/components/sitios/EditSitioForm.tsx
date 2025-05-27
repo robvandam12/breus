@@ -1,22 +1,24 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EnhancedSelect } from "@/components/ui/enhanced-select";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin } from "lucide-react";
 import { Sitio, SitioFormData } from "@/hooks/useSitios";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { MapPicker } from "@/components/ui/map-picker";
 
 interface EditSitioFormProps {
   sitio: Sitio;
   onSubmit: (data: SitioFormData) => Promise<void>;
   onCancel: () => void;
-  salmoneras: Array<{ id: string; nombre: string }>;
 }
 
-export const EditSitioForm = ({ sitio, onSubmit, onCancel, salmoneras }: EditSitioFormProps) => {
+export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps) => {
+  const { salmoneras } = useSalmoneras();
   const [formData, setFormData] = useState<SitioFormData>({
     nombre: sitio.nombre,
     codigo: sitio.codigo,
@@ -42,6 +44,25 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel, salmoneras }: EditSit
       setIsSubmitting(false);
     }
   };
+
+  const handleMapChange = (coordinates: { lat: number; lng: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      coordenadas_lat: coordinates.lat,
+      coordenadas_lng: coordinates.lng
+    }));
+  };
+
+  const salmoneraOptions = salmoneras.map(salmonera => ({
+    value: salmonera.id,
+    label: salmonera.nombre
+  }));
+
+  const estadoOptions = [
+    { value: 'activo', label: 'Activo' },
+    { value: 'inactivo', label: 'Inactivo' },
+    { value: 'mantenimiento', label: 'Mantenimiento' }
+  ];
 
   return (
     <>
@@ -79,20 +100,13 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel, salmoneras }: EditSit
 
         <div>
           <Label htmlFor="salmonera">Salmonera *</Label>
-          <Select value={formData.salmonera_id} onValueChange={(value) => 
-            setFormData(prev => ({ ...prev, salmonera_id: value }))
-          }>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccione una salmonera" />
-            </SelectTrigger>
-            <SelectContent>
-              {salmoneras.map((salmonera) => (
-                <SelectItem key={salmonera.id} value={salmonera.id}>
-                  {salmonera.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <EnhancedSelect
+            options={salmoneraOptions}
+            value={formData.salmonera_id}
+            onChange={(value) => setFormData(prev => ({ ...prev, salmonera_id: value }))}
+            placeholder="Seleccione una salmonera"
+            className="w-full"
+          />
         </div>
 
         <div>
@@ -104,38 +118,6 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel, salmoneras }: EditSit
             placeholder="Ubicación geográfica del sitio"
             required
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="coordenadas_lat">Latitud</Label>
-            <Input
-              id="coordenadas_lat"
-              type="number"
-              step="any"
-              value={formData.coordenadas_lat || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                coordenadas_lat: e.target.value ? parseFloat(e.target.value) : undefined 
-              }))}
-              placeholder="-41.4693"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="coordenadas_lng">Longitud</Label>
-            <Input
-              id="coordenadas_lng"
-              type="number"
-              step="any"
-              value={formData.coordenadas_lng || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                coordenadas_lng: e.target.value ? parseFloat(e.target.value) : undefined 
-              }))}
-              placeholder="-72.9396"
-            />
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,19 +152,27 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel, salmoneras }: EditSit
 
           <div>
             <Label htmlFor="estado">Estado</Label>
-            <Select value={formData.estado} onValueChange={(value: 'activo' | 'inactivo' | 'mantenimiento') => 
-              setFormData(prev => ({ ...prev, estado: value }))
-            }>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="inactivo">Inactivo</SelectItem>
-                <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
-              </SelectContent>
-            </Select>
+            <EnhancedSelect
+              options={estadoOptions}
+              value={formData.estado}
+              onChange={(value) => setFormData(prev => ({ ...prev, estado: value as 'activo' | 'inactivo' | 'mantenimiento' }))}
+              placeholder="Seleccione estado"
+              className="w-full"
+            />
           </div>
+        </div>
+
+        <div>
+          <Label>Ubicación en Mapa</Label>
+          <MapPicker
+            value={
+              formData.coordenadas_lat && formData.coordenadas_lng
+                ? { lat: formData.coordenadas_lat, lng: formData.coordenadas_lng }
+                : undefined
+            }
+            onChange={handleMapChange}
+            className="mt-2"
+          />
         </div>
 
         <div>

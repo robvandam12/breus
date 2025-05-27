@@ -4,14 +4,16 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, FileText, Anchor } from "lucide-react";
+import { Plus, Calendar, Map, CalendarDays } from "lucide-react";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
-import { useNavigate } from "react-router-dom";
+import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
+import { OperacionesCalendarView } from "@/components/operaciones/OperacionesCalendarView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const navigate = useNavigate();
+  const [activeView, setActiveView] = useState('lista');
 
   return (
     <SidebarProvider>
@@ -22,46 +24,34 @@ export default function Operaciones() {
             title="Operaciones" 
             subtitle="Gestión de operaciones de buceo y documentos asociados" 
             icon={Calendar} 
-          />
+          >
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo
+            </Button>
+          </Header>
+          
           <div className="flex-1 overflow-auto">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Operaciones</h1>
-                  <p className="text-gray-600">
-                    Administra operaciones de buceo, HPT, Anexo Bravo e inmersiones
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/formularios/hpt')}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    + Nuevo HPT
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/formularios/anexo-bravo')}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    + Nuevo Anexo
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/inmersiones')}
-                  >
-                    <Anchor className="w-4 h-4 mr-2" />
-                    + Nueva Inmersión
-                  </Button>
-                  <Button onClick={() => setShowCreateForm(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    + Nuevo
-                  </Button>
-                </div>
-              </div>
+              <Tabs value={activeView} onValueChange={setActiveView}>
+                <TabsList className="grid w-full grid-cols-3 max-w-md">
+                  <TabsTrigger value="lista">Lista</TabsTrigger>
+                  <TabsTrigger value="mapa">Mapa</TabsTrigger>
+                  <TabsTrigger value="calendario">Calendario</TabsTrigger>
+                </TabsList>
 
-              <OperacionesManager />
+                <TabsContent value="lista" className="mt-6">
+                  <OperacionesManager />
+                </TabsContent>
+
+                <TabsContent value="mapa" className="mt-6">
+                  <OperacionesMapView />
+                </TabsContent>
+
+                <TabsContent value="calendario" className="mt-6">
+                  <OperacionesCalendarView />
+                </TabsContent>
+              </Tabs>
 
               {/* Create Form Modal */}
               {showCreateForm && (

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { CreateHPTForm } from '@/components/hpt/CreateHPTForm';
-import { CreateAnexoBravoForm } from '@/components/anexo-bravo/CreateAnexoBravoForm';
+import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 
 interface OperacionDetailsProps {
@@ -414,18 +415,20 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           <CreateHPTForm
             onSubmit={handleCreateHPT}
             onCancel={() => setShowCreateHPT(false)}
+            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
 
       <Dialog open={showCreateAnexo} onOpenChange={setShowCreateAnexo}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
           </DialogHeader>
-          <CreateAnexoBravoForm
+          <AnexoBravoWizard
             onSubmit={handleCreateAnexo}
             onCancel={() => setShowCreateAnexo(false)}
+            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
@@ -438,6 +441,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           <CreateInmersionForm
             onSubmit={handleCreateInmersion}
             onCancel={() => setShowCreateInmersion(false)}
+            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>

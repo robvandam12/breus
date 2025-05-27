@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
 
 interface MenuSubItem {
   title: string;
@@ -54,6 +55,7 @@ interface MenuItem {
 
 export function RoleBasedSidebar() {
   const { profile, signOut } = useAuth();
+  const { salmoneras } = useSalmoneras();
 
   const getMenuItemsForRole = (): MenuItem[] => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
@@ -402,9 +404,9 @@ export function RoleBasedSidebar() {
   };
 
   const getCompanyName = () => {
-    // TODO: Obtener el nombre real de la empresa desde la base de datos
     if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
-      return 'Salmonera Blumar'; // Placeholder - debería venir de la BD
+      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
+      return salmonera?.nombre || null;
     }
     if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
       return 'Servicio Buceo Corp'; // Placeholder - debería venir de la BD
