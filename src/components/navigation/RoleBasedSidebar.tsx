@@ -219,7 +219,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Admin Salmonera
+    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA
     if (profile?.role === 'admin_salmonera') {
       return [
         {
@@ -230,7 +230,7 @@ export function RoleBasedSidebar() {
         },
         {
           title: "Mi Empresa",
-          icon: Folder,
+          icon: Building,
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
             { title: "Contratistas", url: "/empresas/contratistas" },
@@ -279,13 +279,6 @@ export function RoleBasedSidebar() {
           title: "Configuración",
           icon: Settings,
           url: "/configuracion"
-        },
-        {
-          title: "Admin",
-          icon: Shield,
-          items: [
-            { title: "Gestión Salmonera", url: "/admin/salmonera" }
-          ]
         }
       ];
     }
@@ -408,6 +401,17 @@ export function RoleBasedSidebar() {
     }
   };
 
+  const getCompanyName = () => {
+    // TODO: Obtener el nombre real de la empresa desde la base de datos
+    if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+      return 'Salmonera Blumar'; // Placeholder - debería venir de la BD
+    }
+    if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
+      return 'Servicio Buceo Corp'; // Placeholder - debería venir de la BD
+    }
+    return null;
+  };
+
   return (
     <Sidebar className="border-r border-border/40 font-sans">
       <SidebarHeader className="border-b border-border/40 p-4">
@@ -425,7 +429,7 @@ export function RoleBasedSidebar() {
       <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
-            Navegación
+            Navegación Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -486,6 +490,9 @@ export function RoleBasedSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
             <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
+            {getCompanyName() && (
+              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
+            )}
           </div>
           <Button
             variant="ghost"

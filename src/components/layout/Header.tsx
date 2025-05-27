@@ -21,9 +21,9 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, icon: Icon, chi
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbPage className="flex items-center gap-2">
-              {Icon && <Icon className="w-4 h-4" />}
+              {Icon && <Icon className="w-5 h-5" />}
               <div>
-                <span className="font-semibold">{title}</span>
+                <span className="font-semibold text-lg">{title}</span>
                 {subtitle && (
                   <p className="text-sm text-muted-foreground">{subtitle}</p>
                 )}

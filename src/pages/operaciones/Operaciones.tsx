@@ -38,25 +38,25 @@ export default function Operaciones() {
                     onClick={() => navigate('/formularios/hpt')}
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    Crear HPT
+                    + Nuevo HPT
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={() => navigate('/formularios/anexo-bravo')}
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    Crear Anexo Bravo
+                    + Nuevo Anexo
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={() => navigate('/inmersiones')}
                   >
                     <Anchor className="w-4 h-4 mr-2" />
-                    Nueva Inmersión
+                    + Nueva Inmersión
                   </Button>
                   <Button onClick={() => setShowCreateForm(true)}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Nueva Operación
+                    + Nuevo
                   </Button>
                 </div>
               </div>
