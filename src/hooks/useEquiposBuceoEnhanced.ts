@@ -1,26 +1,18 @@
 
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserCompany } from "@/hooks/useUserCompany";
 
 export interface EquipoBuceoMiembro {
   id: string;
-  equipo_id: string;
-  usuario_id: string;
-  rol_equipo: string;
+  nombre_completo: string;
+  rol: string;
   disponible: boolean;
-  nombre?: string;
-  apellido?: string;
+  matricula?: string;
   email?: string;
   telefono?: string;
-  matricula?: string;
-  nombre_completo?: string;
-  rol?: string;
   invitado?: boolean;
-  estado_invitacion?: 'pendiente' | 'aceptado' | 'rechazado';
+  estado_invitacion?: 'pendiente' | 'aceptada' | 'rechazada';
 }
 
 export interface EquipoBuceo {
@@ -28,150 +20,253 @@ export interface EquipoBuceo {
   nombre: string;
   descripcion?: string;
   empresa_id: string;
-  tipo_empresa: 'salmonera' | 'contratista';
+  tipo_empresa: string;
   activo: boolean;
   created_at: string;
   updated_at: string;
   miembros?: EquipoBuceoMiembro[];
 }
 
+export interface EquipoBuceoFormData {
+  nombre: string;
+  descripcion: string;
+  empresa_id: string;
+}
+
+export interface AddMiembroData {
+  equipo_id: string;
+  usuario_id: string;
+  rol_equipo: string;
+  nombre_completo: string;
+  email?: string;
+  invitado: boolean;
+}
+
+export interface InviteMemberData {
+  equipo_id: string;
+  email: string;
+  nombre_completo: string;
+  rol_equipo: string;
+}
+
 export const useEquiposBuceoEnhanced = () => {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
-  const { companyInfo } = useUserCompany();
 
   const { data: equipos = [], isLoading } = useQuery({
-    queryKey: ['equipos-buceo-enhanced'],
+    queryKey: ['equipos-buceo'],
     queryFn: async () => {
+      console.log('Fetching equipos de buceo...');
       const { data, error } = await supabase
         .from('equipos_buceo')
         .select(`
           *,
-          miembros:equipo_buceo_miembros(
-            *,
-            usuario:usuario(nombre, apellido, email, rol, perfil_buzo)
+          equipo_buceo_miembros (
+            id,
+            usuario_id,
+            disponible,
+            rol_equipo,
+            usuario:usuario_id (
+              nombre,
+              apellido,
+              email
+            )
           )
         `)
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      return data.map(equipo => ({
+      if (error) {
+        console.error('Error fetching equipos:', error);
+        throw error;
+      }
+
+      return (data || []).map(equipo => ({
         ...equipo,
-        miembros: equipo.miembros?.map(miembro => {
-          const perfilBuzo = miembro.usuario?.perfil_buzo as any;
-          return {
-            ...miembro,
-            nombre: miembro.usuario?.nombre || '',
-            apellido: miembro.usuario?.apellido || '',
-            email: miembro.usuario?.email || '',
-            rol: miembro.usuario?.rol || '',
-            telefono: perfilBuzo?.telefono || '',
-            matricula: perfilBuzo?.matricula || '',
-            nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
-            invitado: false,
-            estado_invitacion: 'aceptado' as const
-          };
-        }) || []
+        miembros: equipo.equipo_buceo_miembros?.map(miembro => ({
+          id: miembro.id,
+          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
+          rol: miembro.rol_equipo,
+          disponible: miembro.disponible,
+          email: miembro.usuario?.email,
+          matricula: '',
+          telefono: '',
+          invitado: false,
+          estado_invitacion: 'aceptada' as const
+        })) || []
       })) as EquipoBuceo[];
     },
   });
 
-  const createEquipo = useMutation({
-    mutationFn: async (equipoData: {
-      nombre: string;
-      descripcion?: string;
-      empresa_id?: string;
-    }) => {
-      if (!profile?.salmonera_id && !profile?.servicio_id && !equipoData.empresa_id) {
-        throw new Error('Usuario debe estar asignado a una empresa');
+  const createEquipoMutation = useMutation({
+    mutationFn: async (data: EquipoBuceoFormData) => {
+      console.log('Creating equipo de buceo:', data);
+      
+      // Get current user to determine empresa_id and tipo_empresa
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Usuario no autenticado');
+
+      const { data: userProfile } = await supabase
+        .from('usuario')
+        .select('salmonera_id, servicio_id')
+        .eq('usuario_id', user.user.id)
+        .single();
+
+      if (!userProfile) throw new Error('Perfil de usuario no encontrado');
+
+      const equipoData = {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        empresa_id: userProfile.salmonera_id || userProfile.servicio_id || data.empresa_id,
+        tipo_empresa: userProfile.salmonera_id ? 'salmonera' : 'servicio',
+        activo: true
+      };
+
+      const { data: result, error } = await supabase
+        .from('equipos_buceo')
+        .insert([equipoData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating equipo:', error);
+        throw error;
       }
 
-      const empresa_id = equipoData.empresa_id || profile.salmonera_id || profile.servicio_id;
-      const tipo_empresa = profile.salmonera_id ? 'salmonera' : 'contratista';
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Equipo creado",
+        description: "El equipo de buceo ha sido creado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating equipo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el equipo de buceo.",
+        variant: "destructive",
+      });
+    },
+  });
 
-      const { data, error } = await supabase
-        .from('equipos_buceo')
+  const addMiembroMutation = useMutation({
+    mutationFn: async (data: AddMiembroData) => {
+      console.log('Adding miembro to equipo:', data);
+      
+      const { data: result, error } = await supabase
+        .from('equipo_buceo_miembros')
         .insert([{
-          nombre: equipoData.nombre,
-          descripcion: equipoData.descripcion,
-          empresa_id,
-          tipo_empresa,
-          activo: true
+          equipo_id: data.equipo_id,
+          usuario_id: data.usuario_id,
+          rol_equipo: data.rol_equipo,
+          disponible: true
         }])
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error adding miembro:', error);
+        throw error;
+      }
+
+      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
       toast({
-        title: 'Equipo creado',
-        description: 'El equipo de buceo ha sido creado exitosamente.',
+        title: "Miembro agregado",
+        description: "El miembro ha sido agregado al equipo exitosamente.",
       });
     },
-    onError: (error: any) => {
-      console.error('Error creating equipo:', error);
+    onError: (error) => {
+      console.error('Error adding miembro:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo crear el equipo de buceo.',
-        variant: 'destructive',
+        title: "Error",
+        description: "No se pudo agregar el miembro al equipo.",
+        variant: "destructive",
       });
     },
   });
 
-  const addMiembro = useMutation({
-    mutationFn: async ({ equipo_id, usuario_id, rol_equipo }: {
-      equipo_id: string;
-      usuario_id: string;
-      rol_equipo: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('equipo_buceo_miembros')
-        .insert({ equipo_id, usuario_id, rol_equipo, disponible: true })
+  const inviteMemberMutation = useMutation({
+    mutationFn: async (data: InviteMemberData) => {
+      console.log('Inviting member to equipo:', data);
+      
+      // Create invitation logic here
+      // For now, we'll just simulate success
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitación enviada",
+        description: "La invitación ha sido enviada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error inviting member:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la invitación.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateEquipoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<EquipoBuceoFormData> }) => {
+      console.log('Updating equipo:', id, data);
+      
+      const { data: result, error } = await supabase
+        .from('equipos_buceo')
+        .update(data)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
       toast({
-        title: 'Miembro agregado',
-        description: 'El miembro ha sido agregado al equipo exitosamente.',
+        title: "Equipo actualizado",
+        description: "El equipo ha sido actualizado exitosamente.",
       });
     },
   });
 
-  const inviteMember = useMutation({
-    mutationFn: async ({ equipo_id, email, nombre_completo, rol_equipo }: {
-      equipo_id: string;
-      email: string;
-      nombre_completo: string;
-      rol_equipo: string;
-    }) => {
-      // Por ahora solo simularemos la invitación
-      // En el futuro aquí se podría implementar la lógica real de invitación
-      toast({
-        title: 'Invitación enviada',
-        description: `Invitación enviada a ${email}`,
-      });
+  const deleteEquipoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting equipo:', id);
+      
+      const { error } = await supabase
+        .from('equipos_buceo')
+        .update({ activo: false })
+        .eq('id', id);
+
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Equipo eliminado",
+        description: "El equipo ha sido eliminado exitosamente.",
+      });
     },
   });
 
   return {
     equipos,
     isLoading,
-    createEquipo: createEquipo.mutate,
-    addMiembro: addMiembro.mutate,
-    inviteMember: inviteMember.mutate,
-    isCreating: createEquipo.isPending,
+    createEquipo: createEquipoMutation.mutateAsync,
+    addMiembro: addMiembroMutation.mutateAsync,
+    inviteMember: inviteMemberMutation.mutateAsync,
+    updateEquipo: updateEquipoMutation.mutateAsync,
+    deleteEquipo: deleteEquipoMutation.mutateAsync,
+    isCreating: createEquipoMutation.isPending,
+    isUpdating: updateEquipoMutation.isPending,
+    isDeleting: deleteEquipoMutation.isPending,
   };
 };

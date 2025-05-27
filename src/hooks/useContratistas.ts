@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,30 +32,41 @@ export interface ContratistaFormData {
 export const useContratistas = () => {
   const queryClient = useQueryClient();
 
-  const { data: contratistas = [], isLoading } = useQuery({
+  const { data: contratistas = [], isLoading, error } = useQuery({
     queryKey: ['contratistas'],
     queryFn: async () => {
+      console.log('Fetching contratistas...');
       const { data, error } = await supabase
         .from('contratistas')
         .select('*')
-        .eq('estado', 'activo')
-        .order('nombre');
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching contratistas:', error);
+        throw error;
+      }
+
+      console.log('Contratistas fetched:', data);
       return data as Contratista[];
     },
   });
 
-  const createContratista = useMutation({
-    mutationFn: async (data: ContratistaFormData) => {
-      const { data: result, error } = await supabase
+  const createContratistaMutation = useMutation({
+    mutationFn: async (contratistaData: ContratistaFormData) => {
+      console.log('Creating contratista:', contratistaData);
+      const { data, error } = await supabase
         .from('contratistas')
-        .insert([data])
+        .insert([contratistaData])
         .select()
         .single();
 
-      if (error) throw error;
-      return result;
+      if (error) {
+        console.error('Error creating contratista:', error);
+        throw error;
+      }
+
+      console.log('Contratista created:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contratistas'] });
@@ -63,27 +75,33 @@ export const useContratistas = () => {
         description: "El contratista ha sido creado exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Error creating contratista:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear el contratista.",
+        description: "No se pudo crear el contratista. Intente nuevamente.",
         variant: "destructive",
       });
     },
   });
 
-  const updateContratista = useMutation({
+  const updateContratistaMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ContratistaFormData> }) => {
-      const { data: result, error } = await supabase
+      console.log('Updating contratista:', id, data);
+      const { data: updatedData, error } = await supabase
         .from('contratistas')
         .update(data)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
-      return result;
+      if (error) {
+        console.error('Error updating contratista:', error);
+        throw error;
+      }
+
+      console.log('Contratista updated:', updatedData);
+      return updatedData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contratistas'] });
@@ -92,24 +110,30 @@ export const useContratistas = () => {
         description: "El contratista ha sido actualizado exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Error updating contratista:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el contratista.",
+        description: "No se pudo actualizar el contratista. Intente nuevamente.",
         variant: "destructive",
       });
     },
   });
 
-  const deleteContratista = useMutation({
+  const deleteContratistaMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting contratista:', id);
       const { error } = await supabase
         .from('contratistas')
-        .update({ estado: 'inactivo' })
+        .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting contratista:', error);
+        throw error;
+      }
+
+      console.log('Contratista deleted:', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contratistas'] });
@@ -118,11 +142,11 @@ export const useContratistas = () => {
         description: "El contratista ha sido eliminado exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Error deleting contratista:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el contratista.",
+        description: "No se pudo eliminar el contratista. Intente nuevamente.",
         variant: "destructive",
       });
     },
@@ -131,11 +155,12 @@ export const useContratistas = () => {
   return {
     contratistas,
     isLoading,
-    createContratista: createContratista.mutate,
-    updateContratista: updateContratista.mutate,
-    deleteContratista: deleteContratista.mutate,
-    isCreating: createContratista.isPending,
-    isUpdating: updateContratista.isPending,
-    isDeleting: deleteContratista.isPending,
+    error,
+    createContratista: createContratistaMutation.mutateAsync,
+    updateContratista: updateContratistaMutation.mutateAsync,
+    deleteContratista: deleteContratistaMutation.mutateAsync,
+    isCreating: createContratistaMutation.isPending,
+    isUpdating: updateContratistaMutation.isPending,
+    isDeleting: deleteContratistaMutation.isPending,
   };
 };

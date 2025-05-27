@@ -24,7 +24,7 @@ export default function BitacoraBuzo() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-white">
+          <div className="flex-1 overflow-auto bg-gray-50">
             <div className="p-6">
               <Card>
                 <CardHeader>

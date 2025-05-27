@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,12 +50,8 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
   );
 
   const handleCreateEquipo = () => {
-    if (newEquipo.nombre && (newEquipo.empresa_id || salmoneraId)) {
-      createEquipo({
-        nombre: newEquipo.nombre,
-        descripcion: newEquipo.descripcion || undefined,
-        empresa_id: newEquipo.empresa_id || salmoneraId
-      });
+    if (newEquipo.nombre && newEquipo.empresa_id) {
+      createEquipo(newEquipo);
       setNewEquipo({ nombre: '', descripcion: '', empresa_id: salmoneraId || '' });
       setIsCreateDialogOpen(false);
     }
@@ -69,7 +66,10 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
         addMiembro({
           equipo_id: selectedEquipo,
           usuario_id: usuario.usuario_id,
-          rol_equipo: newMember.rol_equipo
+          rol_equipo: newMember.rol_equipo,
+          nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
+          email: usuario.email,
+          invitado: false
         });
       }
     } else if (newMember.tipo === 'invite' && newMember.email && newMember.nombre_completo) {
@@ -320,8 +320,8 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getRolBadgeColor(miembro.rol_equipo)}>
-                            {miembro.rol_equipo.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          <Badge variant="outline" className={getRolBadgeColor(miembro.rol)}>
+                            {miembro.rol.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Badge>
                         </TableCell>
                         <TableCell>
