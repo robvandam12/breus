@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,34 +7,16 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Users, Settings } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
-interface MapboxMap {
-  remove(): void;
-  addControl(control: any, position?: string): void;
-  on(event: string, callback: () => void): void;
-  setFog(options: any): void;
-  getZoom(): number;
-  getCenter(): { lng: number };
-  easeTo(options: any): void;
-}
-
-interface MapboxGL {
-  accessToken: string;
-  Map: new (options: any) => MapboxMap;
-  NavigationControl: new (options?: any) => any;
-  Marker: new (options?: any) => any;
-  Popup: new (options?: any) => any;
-}
-
 declare global {
   interface Window {
-    mapboxgl?: MapboxGL;
+    mapboxgl?: any;
   }
 }
 
 export const OperacionesMapView = () => {
   const { operaciones, isLoading } = useOperaciones();
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<MapboxMap | null>(null);
+  const map = useRef<any>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [mapboxLoaded, setMapboxLoaded] = useState(false);
   const [mapInitialized, setMapInitialized] = useState(false);
