@@ -25,6 +25,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import EmailConfirmation from "./pages/auth/EmailConfirmation";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import AuthCallback from "./pages/auth/AuthCallback";
+import Onboarding from "./pages/Onboarding";
 import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
@@ -46,7 +47,16 @@ const App: React.FC = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/email-confirmation" element={<EmailConfirmation />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/profile-setup" element={<ProfileSetup />} />
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile-setup" element={
+              <ProtectedRoute>
+                <ProfileSetup />
+              </ProtectedRoute>
+            } />
             
             {/* Protected Routes */}
             <Route path="/" element={
@@ -134,7 +144,7 @@ const App: React.FC = () => (
             } />
             
             <Route path="/admin/users" element={
-              <ProtectedRoute requiredRole="superuser">
+              <ProtectedRoute>
                 <UserManagement />
               </ProtectedRoute>
             } />

@@ -1,18 +1,46 @@
 
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { AdminSalmoneraView } from "@/components/dashboard/AdminSalmoneraView";
 import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoView } from "@/components/dashboard/BuzoView";
+import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Index() {
-  const { profile } = useAuth();
+  const { profile, user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!loading && !user) {
+      navigate('/login');
+      return;
+    }
+
+    // Redirect new users to onboarding
+    if (user && profile && !profile.nombre && !profile.apellido) {
+      navigate('/onboarding');
+      return;
+    }
+  }, [loading, user, profile, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const getDashboardContent = () => {
+    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+
     switch (profile?.role) {
       case 'superuser':
         return <AdminSalmoneraView />;
@@ -23,13 +51,16 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        return <BuzoView />;
+        // Si el buzo no está asignado a empresa, mostrar vista restringida
+        return isAssigned ? <BuzoView /> : <BuzoRestrictedView />;
       default:
-        return <BuzoView />;
+        return <BuzoRestrictedView />;
     }
   };
 
   const getDashboardTitle = () => {
+    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+
     switch (profile?.role) {
       case 'superuser':
         return "Panel de Administración";
@@ -40,13 +71,15 @@ export default function Index() {
       case 'supervisor':
         return "Dashboard Supervisor";
       case 'buzo':
-        return "Dashboard Buzo";
+        return isAssigned ? "Dashboard Buzo" : "Bienvenido a Breus";
       default:
         return "Dashboard";
     }
   };
 
   const getDashboardSubtitle = () => {
+    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+
     switch (profile?.role) {
       case 'superuser':
         return "Gestión completa del sistema";
@@ -57,7 +90,7 @@ export default function Index() {
       case 'supervisor':
         return "Supervisión de operaciones de buceo";
       case 'buzo':
-        return "Mis inmersiones y bitácoras";
+        return isAssigned ? "Mis inmersiones y bitácoras" : "Completa tu perfil para comenzar";
       default:
         return "Panel de control personal";
     }
@@ -66,7 +99,7 @@ export default function Index() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title={getDashboardTitle()} 
