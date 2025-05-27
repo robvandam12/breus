@@ -27,7 +27,12 @@ export const HPTWizardStep4: React.FC<HPTWizardStep4Props> = ({ data, updateData
     const updatedAsistentes = [...currentAsistentes];
     
     if (!updatedAsistentes[index]) {
-      updatedAsistentes[index] = {};
+      updatedAsistentes[index] = {
+        nombre: '',
+        rut: '',
+        empresa: '',
+        firma_url: ''
+      };
     }
     
     updatedAsistentes[index] = {
@@ -45,7 +50,7 @@ export const HPTWizardStep4: React.FC<HPTWizardStep4Props> = ({ data, updateData
     updateData({
       hpt_conocimiento_asistentes: [
         ...currentAsistentes,
-        { nombre: '', empresa: '', cargo: '' }
+        { nombre: '', rut: '', empresa: '', firma_url: '' }
       ]
     });
   };
@@ -80,12 +85,22 @@ export const HPTWizardStep4: React.FC<HPTWizardStep4Props> = ({ data, updateData
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="difusion_nombre">Nombre de la Difusión</Label>
+              <Label htmlFor="relator_nombre">Nombre del Relator</Label>
               <Input
-                id="difusion_nombre"
-                value={data.hpt_conocimiento?.difusion_nombre || ''}
-                onChange={(e) => handleConocimientoChange('difusion_nombre', e.target.value)}
-                placeholder="Ej: Charla de Seguridad Operación Buceo"
+                id="relator_nombre"
+                value={data.hpt_conocimiento?.relator_nombre || ''}
+                onChange={(e) => handleConocimientoChange('relator_nombre', e.target.value)}
+                placeholder="Nombre completo del relator"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="relator_cargo">Cargo del Relator</Label>
+              <Input
+                id="relator_cargo"
+                value={data.hpt_conocimiento?.relator_cargo || ''}
+                onChange={(e) => handleConocimientoChange('relator_cargo', e.target.value)}
+                placeholder="Cargo o función del relator"
               />
             </div>
 
@@ -158,22 +173,22 @@ export const HPTWizardStep4: React.FC<HPTWizardStep4Props> = ({ data, updateData
                 </div>
 
                 <div>
+                  <Label htmlFor={`asistente_rut_${index}`}>RUT</Label>
+                  <Input
+                    id={`asistente_rut_${index}`}
+                    value={asistente.rut || ''}
+                    onChange={(e) => handleAsistenteChange(index, 'rut', e.target.value)}
+                    placeholder="12.345.678-9"
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor={`asistente_empresa_${index}`}>Empresa</Label>
                   <Input
                     id={`asistente_empresa_${index}`}
                     value={asistente.empresa || ''}
                     onChange={(e) => handleAsistenteChange(index, 'empresa', e.target.value)}
                     placeholder="Nombre de la empresa"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor={`asistente_cargo_${index}`}>Cargo</Label>
-                  <Input
-                    id={`asistente_cargo_${index}`}
-                    value={asistente.cargo || ''}
-                    onChange={(e) => handleAsistenteChange(index, 'cargo', e.target.value)}
-                    placeholder="Cargo o función"
                   />
                 </div>
               </div>

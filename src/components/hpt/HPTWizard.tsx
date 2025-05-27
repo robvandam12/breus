@@ -21,38 +21,7 @@ import { HPTWizardStep3 } from "./HPTWizardStep3";
 import { HPTWizardStep4 } from "./HPTWizardStep4";
 import { HPTWizardStep5 } from "./HPTWizardStep5";
 import { HPTWizardComplete } from "./HPTWizardComplete";
-
-export interface HPTWizardData {
-  // Step 1: Información General
-  operacion_id?: string;
-  folio?: string;
-  fecha?: string;
-  empresa_servicio_nombre?: string;
-  supervisor_nombre?: string;
-  centro_trabajo_nombre?: string;
-  jefe_mandante_nombre?: string;
-  descripcion_tarea?: string;
-  es_rutinaria?: boolean;
-  lugar_especifico?: string;
-  estado_puerto?: string;
-
-  // Step 2: Equipo de Protección Personal
-  hpt_epp?: any;
-  hpt_conocimiento_asistentes?: any[];
-
-  // Step 3: Evaluación de Riesgos y Controles
-  hpt_erc?: any;
-  hpt_medidas?: any;
-  hpt_riesgos_comp?: any;
-
-  // Step 4: Conocimiento y Competencias
-  hpt_conocimiento?: any;
-
-  // Step 5: Firmas y Validación
-  hpt_firmas?: any;
-  supervisor_servicio_id?: string;
-  supervisor_mandante_id?: string;
-}
+import { HPTWizardData } from "@/hooks/useHPTWizard";
 
 interface HPTWizardProps {
   operacionId?: string;
@@ -63,9 +32,69 @@ interface HPTWizardProps {
 export const HPTWizard = ({ operacionId, onComplete, onCancel }: HPTWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<HPTWizardData>({
-    operacion_id: operacionId,
+    operacion_id: operacionId || '',
+    plan_trabajo: '',
+    supervisor: '',
+    folio: '',
     fecha: new Date().toISOString().split('T')[0],
+    hora_inicio: '',
+    hora_termino: '',
+    empresa_servicio_nombre: '',
+    supervisor_nombre: '',
+    centro_trabajo_nombre: '',
+    jefe_mandante_nombre: '',
+    descripcion_tarea: '',
     es_rutinaria: false,
+    lugar_especifico: '',
+    estado_puerto: 'abierto',
+    hpt_epp: {
+      casco: false,
+      lentes: false,
+      guantes: false,
+      botas: false,
+      chaleco: false,
+      respirador: false,
+      arnes: false,
+      otros: ''
+    },
+    hpt_erc: {
+      izaje: false,
+      buceo: false,
+      navegacion: false,
+      trabajo_altura: false,
+      espacios_confinados: false,
+      energia_peligrosa: false,
+      materiales_peligrosos: false,
+      otros: ''
+    },
+    hpt_medidas: {
+      listas_chequeo_erc_disponibles: 'na',
+      personal_competente_disponible: 'na',
+      equipos_proteccion_disponibles: 'na',
+      procedimientos_emergencia_conocidos: 'na',
+      comunicacion_establecida: 'na',
+      autorizaciones_vigentes: 'na'
+    },
+    hpt_riesgos_comp: {
+      condiciones_ambientales: { valor: 'na', acciones: '' },
+      estado_equipos: { valor: 'na', acciones: '' },
+      competencia_personal: { valor: 'na', acciones: '' },
+      coordinacion_actividades: { valor: 'na', acciones: '' },
+      comunicacion_riesgos: { valor: 'na', acciones: '' }
+    },
+    hpt_conocimiento: {
+      fecha: new Date().toISOString().split('T')[0],
+      hora: '',
+      duracion: 30,
+      relator_nombre: '',
+      relator_cargo: '',
+      relator_firma_url: ''
+    },
+    hpt_conocimiento_asistentes: [],
+    hpt_firmas: {
+      supervisor_servicio_url: '',
+      supervisor_mandante_url: ''
+    }
   });
 
   const totalSteps = 5;

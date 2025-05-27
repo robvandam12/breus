@@ -23,8 +23,14 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
   };
 
   const handleRiesgosChange = (key: string, field: string, value: string) => {
-    const currentRiesgos = data.hpt_riesgos_comp || {};
-    const currentItem = currentRiesgos[key] || {};
+    const currentRiesgos = data.hpt_riesgos_comp || {
+      condiciones_ambientales: { valor: 'na', acciones: '' },
+      estado_equipos: { valor: 'na', acciones: '' },
+      competencia_personal: { valor: 'na', acciones: '' },
+      coordinacion_actividades: { valor: 'na', acciones: '' },
+      comunicacion_riesgos: { valor: 'na', acciones: '' }
+    };
+    const currentItem = currentRiesgos[key] || { valor: 'na', acciones: '' };
     
     updateData({
       hpt_riesgos_comp: {
