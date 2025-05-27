@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "@/hooks/useRouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,29 +34,43 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { NotificationItem } from "@/components/notifications/NotificationItem";
+
+interface NotificationItemProps {
+  notification: any;
+  onMarkAsRead?: (id: string) => void;
+}
+
+const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
+  return (
+    <div className="p-3 border-b border-border/20 cursor-pointer hover:bg-gray-50" 
+         onClick={() => onMarkAsRead?.(notification.id)}>
+      <div className="font-medium text-sm">{notification.title}</div>
+      <div className="text-xs text-gray-500">{notification.message}</div>
+    </div>
+  );
+};
 
 export function AppSidebar() {
-  const { profile, logout } = useAuth();
-  const { location, navigateTo } = useRouter();
+  const { profile, signOut } = useAuth();
+  const { navigateTo, location } = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const isUsersSectionVisible = profile?.rol === 'superuser';
+  const isUsersSectionVisible = profile?.role === 'superuser';
 
   useEffect(() => {
-    if (profile?.id) {
+    if (profile?.usuario_id) {
       fetchNotifications();
     }
-  }, [profile?.id]);
+  }, [profile?.usuario_id]);
 
   const fetchNotifications = async () => {
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', profile?.id)
+        .eq('user_id', profile?.usuario_id)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -86,7 +101,7 @@ export function AppSidebar() {
       await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', profile?.id)
+        .eq('user_id', profile?.usuario_id)
         .eq('read', false);
 
       fetchNotifications();
@@ -96,7 +111,7 @@ export function AppSidebar() {
   };
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigateTo('/login');
   };
 
@@ -116,7 +131,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => navigateTo('/')}
-                isActive={location.pathname === '/'}
+                isActive={location?.pathname === '/'}
                 className="ios-button"
               >
                 <Home className="w-5 h-5" />
@@ -133,7 +148,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/operaciones')}
-                  isActive={location.pathname === '/operaciones'}
+                  isActive={location?.pathname === '/operaciones'}
                   className="ios-button"
                 >
                   <Calendar className="w-5 h-5" />
@@ -143,7 +158,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/inmersiones')}
-                  isActive={location.pathname === '/inmersiones'}
+                  isActive={location?.pathname === '/inmersiones'}
                   className="ios-button"
                 >
                   <Waves className="w-5 h-5" />
@@ -153,7 +168,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/equipo-de-buceo')}
-                  isActive={location.pathname === '/equipo-de-buceo'}
+                  isActive={location?.pathname === '/equipo-de-buceo'}
                   className="ios-button"
                 >
                   <Users className="w-5 h-5" />
@@ -171,7 +186,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/formularios/hpt')}
-                  isActive={location.pathname === '/formularios/hpt'}
+                  isActive={location?.pathname === '/formularios/hpt'}
                   className="ios-button"
                 >
                   <FileText className="w-5 h-5" />
@@ -181,7 +196,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/formularios/anexo-bravo')}
-                  isActive={location.pathname === '/formularios/anexo-bravo'}
+                  isActive={location?.pathname === '/formularios/anexo-bravo'}
                   className="ios-button"
                 >
                   <FileCheck className="w-5 h-5" />
@@ -199,7 +214,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/bitacoras/supervisor')}
-                  isActive={location.pathname === '/bitacoras/supervisor'}
+                  isActive={location?.pathname === '/bitacoras/supervisor'}
                   className="ios-button"
                 >
                   <ClipboardCheck className="w-5 h-5" />
@@ -209,7 +224,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/bitacoras/buzo')}
-                  isActive={location.pathname === '/bitacoras/buzo'}
+                  isActive={location?.pathname === '/bitacoras/buzo'}
                   className="ios-button"
                 >
                   <FileText className="w-5 h-5" />
@@ -227,7 +242,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/empresas')}
-                  isActive={location.pathname === '/empresas'}
+                  isActive={location?.pathname === '/empresas'}
                   className="ios-button"
                 >
                   <Building className="w-5 h-5" />
@@ -246,7 +261,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => navigateTo('/usuarios')}
-                    isActive={location.pathname === '/usuarios'}
+                    isActive={location?.pathname === '/usuarios'}
                     className="ios-button"
                   >
                     <Users className="w-5 h-5" />
@@ -265,7 +280,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/reportes')}
-                  isActive={location.pathname === '/reportes'}
+                  isActive={location?.pathname === '/reportes'}
                   className="ios-button"
                 >
                   <BarChart3 className="w-5 h-5" />
@@ -283,7 +298,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => navigateTo('/configuracion')}
-                  isActive={location.pathname === '/configuracion'}
+                  isActive={location?.pathname === '/configuracion'}
                   className="ios-button"
                 >
                   <Settings className="w-5 h-5" />
@@ -299,7 +314,7 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarImage src={''} />
               <AvatarFallback className="bg-zinc-200 text-zinc-800">
                 {profile?.nombre?.charAt(0) || 'U'}
               </AvatarFallback>
