@@ -103,7 +103,13 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel }: AnexoBravoWizardProps) 
   const { operaciones, isLoading: loadingOperaciones } = useOperaciones();
 
   const [formData, setFormData] = useState({
-    informacionGeneral: {},
+    informacionGeneral: {
+      operacion_id: "",
+      empresa_nombre: "",
+      lugar_faena: "",
+      fecha: new Date().toISOString().split('T')[0],
+      jefe_centro_nombre: "",
+    },
     identificacionBuzo: {},
     equipos: {},
     bitacora: {},
@@ -332,7 +338,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel }: AnexoBravoWizardProps) 
                 <Checkbox
                   id="autorizacion_armada"
                   checked={identificacionForm.watch('autorizacion_armada')}
-                  onCheckedChange={(checked) => identificacionForm.setValue('autorizacion_armada', checked)}
+                  onCheckedChange={(checked) => identificacionForm.setValue('autorizacion_armada', !!checked)}
                 />
                 <Label htmlFor="autorizacion_armada">
                   Autorización de la Autoridad Marítima
@@ -392,7 +398,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel }: AnexoBravoWizardProps) 
                   <Checkbox
                     id={equipo.key}
                     checked={equiposForm.watch(equipo.key)}
-                    onCheckedChange={(checked) => equiposForm.setValue(equipo.key, checked)}
+                    onCheckedChange={(checked) => equiposForm.setValue(equipo.key, !!checked)}
                   />
                   <Label htmlFor={equipo.key} className="font-medium">
                     {equipo.label}

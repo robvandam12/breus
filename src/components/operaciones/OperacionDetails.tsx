@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -415,7 +414,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           <CreateHPTForm
             onSubmit={handleCreateHPT}
             onCancel={() => setShowCreateHPT(false)}
-            preSelectedOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
