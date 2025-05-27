@@ -14,13 +14,14 @@ import { CreateSitioFormAnimated } from "@/components/sitios/CreateSitioFormAnim
 import { useSitios } from "@/hooks/useSitios";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AnimatePresence } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 const Sitios = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  const { sitios, isLoading, createSitio } = useSitios();
+  const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
 
   const filteredSitios = sitios.filter(sitio => 
     sitio.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -32,8 +33,51 @@ const Sitios = () => {
     try {
       await createSitio(data);
       setIsCreateDialogOpen(false);
+      toast({
+        title: "Sitio creado",
+        description: "El sitio ha sido creado exitosamente.",
+      });
     } catch (error) {
       console.error('Error creating sitio:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el sitio.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSitio = async (id: string, data: any) => {
+    try {
+      await updateSitio({ id, data });
+      toast({
+        title: "Sitio actualizado",
+        description: "El sitio ha sido actualizado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error updating sitio:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el sitio.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSitio = async (id: string) => {
+    try {
+      await deleteSitio(id);
+      toast({
+        title: "Sitio eliminado",
+        description: "El sitio ha sido eliminado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error deleting sitio:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el sitio.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -150,9 +194,17 @@ const Sitios = () => {
                   </CardContent>
                 </Card>
               ) : viewMode === 'table' ? (
-                <SitioTableView sitios={filteredSitios} />
+                <SitioTableView 
+                  sitios={filteredSitios} 
+                  onEdit={handleEditSitio}
+                  onDelete={handleDeleteSitio}
+                />
               ) : (
-                <SitioCardView sitios={filteredSitios} />
+                <SitioCardView 
+                  sitios={filteredSitios}
+                  onEdit={handleEditSitio}
+                  onDelete={handleDeleteSitio}
+                />
               )}
             </div>
           </div>

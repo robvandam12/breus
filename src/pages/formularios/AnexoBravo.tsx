@@ -3,15 +3,14 @@ import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, AlertTriangle, CheckCircle, Settings } from "lucide-react";
 import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
-import { EnhancedAnexoBravoForm } from "@/components/anexo-bravo/EnhancedAnexoBravoForm";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -20,7 +19,6 @@ import { EnhancedSelect } from "@/components/ui/enhanced-select";
 const AnexoBravoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showCreateCompleteForm, setShowCreateCompleteForm] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
   const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
@@ -37,7 +35,7 @@ const AnexoBravoPage = () => {
     anexo.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateAnexoBravo = (tipo: 'simple' | 'completo' = 'simple') => {
+  const handleCreateAnexoBravo = () => {
     if (!selectedOperacionId) {
       alert('Debe seleccionar una operación para crear el Anexo Bravo');
       return;
@@ -48,18 +46,13 @@ const AnexoBravoPage = () => {
       return;
     }
     
-    if (tipo === 'completo') {
-      setShowCreateCompleteForm(true);
-    } else {
-      setShowCreateForm(true);
-    }
+    setShowCreateForm(true);
   };
 
   const handleAnexoBravoComplete = async (data: any) => {
     try {
       await createAnexoBravo(data);
       setShowCreateForm(false);
-      setShowCreateCompleteForm(false);
       setSelectedOperacionId('');
     } catch (error) {
       console.error('Error creating anexo bravo:', error);
@@ -120,22 +113,12 @@ const AnexoBravoPage = () => {
                 />
                 
                 <Button 
-                  onClick={() => handleCreateAnexoBravo('simple')}
+                  onClick={handleCreateAnexoBravo}
                   disabled={!selectedOperacionId}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Anexo Bravo
-                </Button>
-                
-                <Button 
-                  onClick={() => handleCreateAnexoBravo('completo')}
-                  disabled={!selectedOperacionId}
-                  variant="outline"
-                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Anexo Bravo Completo
                 </Button>
               </div>
             </div>
@@ -213,21 +196,12 @@ const AnexoBravoPage = () => {
                           className="w-64"
                         />
                         <Button 
-                          onClick={() => handleCreateAnexoBravo('simple')} 
+                          onClick={handleCreateAnexoBravo} 
                           disabled={!selectedOperacionId}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Nuevo Anexo Bravo
-                        </Button>
-                        <Button 
-                          onClick={() => handleCreateAnexoBravo('completo')} 
-                          disabled={!selectedOperacionId}
-                          variant="outline"
-                          className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                        >
-                          <Settings className="w-4 h-4 mr-2" />
-                          Anexo Completo
                         </Button>
                       </div>
                     )}
@@ -307,7 +281,7 @@ const AnexoBravoPage = () => {
             </div>
           </div>
 
-          {/* Modal para crear Anexo Bravo simple */}
+          {/* Modal para crear Anexo Bravo */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <AnexoBravoWizard 
@@ -315,17 +289,6 @@ const AnexoBravoPage = () => {
                 type="simple"
                 onSubmit={handleAnexoBravoComplete}
                 onCancel={() => setShowCreateForm(false)}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Modal para crear Anexo Bravo completo */}
-          <Dialog open={showCreateCompleteForm} onOpenChange={setShowCreateCompleteForm}>
-            <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-              <EnhancedAnexoBravoForm 
-                operacionId={selectedOperacionId}
-                onComplete={handleAnexoBravoComplete}
-                onCancel={() => setShowCreateCompleteForm(false)}
               />
             </DialogContent>
           </Dialog>
