@@ -15,6 +15,7 @@ export interface Operacion {
   fecha_fin?: string;
   tareas?: string;
   estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
   salmoneras?: { nombre: string };

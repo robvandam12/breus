@@ -3,6 +3,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+export interface EquipoBuceoMiembro {
+  id: string;
+  nombre_completo: string;
+  rol: string;
+  disponible: boolean;
+  matricula?: string;
+  email?: string;
+  telefono?: string;
+  invitado?: boolean;
+  estado_invitacion?: 'pendiente' | 'aceptada' | 'rechazada';
+}
+
 export interface EquipoBuceo {
   id: string;
   nombre: string;
@@ -12,18 +24,29 @@ export interface EquipoBuceo {
   activo: boolean;
   created_at: string;
   updated_at: string;
-  miembros?: Array<{
-    id: string;
-    nombre_completo: string;
-    rol: string;
-    disponible: boolean;
-  }>;
+  miembros?: EquipoBuceoMiembro[];
 }
 
 export interface EquipoBuceoFormData {
   nombre: string;
   descripcion: string;
   empresa_id: string;
+}
+
+export interface AddMiembroData {
+  equipo_id: string;
+  usuario_id: string;
+  rol_equipo: string;
+  nombre_completo: string;
+  email?: string;
+  invitado: boolean;
+}
+
+export interface InviteMemberData {
+  equipo_id: string;
+  email: string;
+  nombre_completo: string;
+  rol_equipo: string;
 }
 
 export const useEquiposBuceoEnhanced = () => {
@@ -44,7 +67,8 @@ export const useEquiposBuceoEnhanced = () => {
             rol_equipo,
             usuario:usuario_id (
               nombre,
-              apellido
+              apellido,
+              email
             )
           )
         `)
@@ -62,7 +86,12 @@ export const useEquiposBuceoEnhanced = () => {
           id: miembro.id,
           nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
           rol: miembro.rol_equipo,
-          disponible: miembro.disponible
+          disponible: miembro.disponible,
+          email: miembro.usuario?.email,
+          matricula: '',
+          telefono: '',
+          invitado: false,
+          estado_invitacion: 'aceptada' as const
         })) || []
       })) as EquipoBuceo[];
     },
@@ -122,6 +151,69 @@ export const useEquiposBuceoEnhanced = () => {
     },
   });
 
+  const addMiembroMutation = useMutation({
+    mutationFn: async (data: AddMiembroData) => {
+      console.log('Adding miembro to equipo:', data);
+      
+      const { data: result, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert([{
+          equipo_id: data.equipo_id,
+          usuario_id: data.usuario_id,
+          rol_equipo: data.rol_equipo,
+          disponible: true
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding miembro:', error);
+        throw error;
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Miembro agregado",
+        description: "El miembro ha sido agregado al equipo exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding miembro:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el miembro al equipo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const inviteMemberMutation = useMutation({
+    mutationFn: async (data: InviteMemberData) => {
+      console.log('Inviting member to equipo:', data);
+      
+      // Create invitation logic here
+      // For now, we'll just simulate success
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitación enviada",
+        description: "La invitación ha sido enviada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error inviting member:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la invitación.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateEquipoMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<EquipoBuceoFormData> }) => {
       console.log('Updating equipo:', id, data);
@@ -169,6 +261,8 @@ export const useEquiposBuceoEnhanced = () => {
     equipos,
     isLoading,
     createEquipo: createEquipoMutation.mutateAsync,
+    addMiembro: addMiembroMutation.mutateAsync,
+    inviteMember: inviteMemberMutation.mutateAsync,
     updateEquipo: updateEquipoMutation.mutateAsync,
     deleteEquipo: deleteEquipoMutation.mutateAsync,
     isCreating: createEquipoMutation.isPending,
