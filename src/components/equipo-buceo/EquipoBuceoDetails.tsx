@@ -77,7 +77,7 @@ export const EquipoBuceoDetails: React.FC<EquipoBuceoDetailsProps> = ({
                           <Mail className="w-3 h-3" />
                           {miembro.email}
                         </span>
-                        <Badge variant="outline" size="sm">
+                        <Badge variant="outline">
                           {miembro.rol_equipo}
                         </Badge>
                       </div>
