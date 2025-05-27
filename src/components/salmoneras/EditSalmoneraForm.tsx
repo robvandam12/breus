@@ -21,7 +21,7 @@ export const EditSalmoneraForm = ({ salmonera, onSubmit, onCancel }: EditSalmone
     direccion: salmonera.direccion,
     telefono: salmonera.telefono || '',
     email: salmonera.email || '',
-    estado: salmonera.estado
+    estado: salmonera.estado as 'activa' | 'inactiva' | 'suspendida'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

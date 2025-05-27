@@ -27,7 +27,7 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
     profundidad_maxima: sitio.profundidad_maxima || undefined,
     coordenadas_lat: sitio.coordenadas_lat || undefined,
     coordenadas_lng: sitio.coordenadas_lng || undefined,
-    estado: sitio.estado,
+    estado: sitio.estado as 'activo' | 'inactivo' | 'mantenimiento',
     capacidad_jaulas: sitio.capacidad_jaulas || undefined,
     observaciones: sitio.observaciones || ''
   });
