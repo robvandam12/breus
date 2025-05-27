@@ -8,23 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SitioDetails } from "./SitioDetails";
 import { EditSitioForm } from "./EditSitioForm";
 import { MapPin, Anchor, Grid3X3, Eye, Edit, Trash2 } from "lucide-react";
-
-interface Sitio {
-  id: string;
-  nombre: string;
-  codigo: string;
-  ubicacion: string;
-  estado: string;
-  coordenadas_lat?: number;
-  coordenadas_lng?: number;
-  profundidad_maxima?: number;
-  capacidad_jaulas?: number;
-  observaciones?: string;
-  salmonera_id: string;
-  created_at: string;
-  updated_at: string;
-  salmoneras?: { nombre: string };
-}
+import { Sitio } from "@/hooks/useSitios";
 
 interface SitioCardViewProps {
   sitios: Sitio[];

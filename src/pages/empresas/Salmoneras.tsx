@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Header } from "@/components/layout/Header";
 import { CreateSalmoneraForm } from "@/components/salmoneras/CreateSalmoneraForm";
 import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
 import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
@@ -33,6 +35,14 @@ export default function Salmoneras() {
 
   const handleSelectSalmonera = (salmonera: Salmonera) => {
     setSelectedSalmonera(salmonera);
+  };
+
+  const handleUpdateSalmonera = async (id: string, data: any) => {
+    await updateSalmonera({ id, data });
+  };
+
+  const handleDeleteSalmonera = async (id: string) => {
+    await deleteSalmonera(id);
   };
 
   const salmoneraUsers = usuarios.filter(u => u.salmonera_id === selectedSalmonera?.id);
@@ -198,15 +208,15 @@ export default function Salmoneras() {
                   {viewMode === 'table' ? (
                     <SalmoneraTableView
                       salmoneras={salmoneras}
-                      onEdit={updateSalmonera}
-                      onDelete={deleteSalmonera}
+                      onEdit={handleUpdateSalmonera}
+                      onDelete={handleDeleteSalmonera}
                       onSelect={handleSelectSalmonera}
                     />
                   ) : (
                     <SalmoneraCardView
                       salmoneras={salmoneras}
-                      onEdit={updateSalmonera}
-                      onDelete={deleteSalmonera}
+                      onEdit={handleUpdateSalmonera}
+                      onDelete={handleDeleteSalmonera}
                       onSelect={handleSelectSalmonera}
                     />
                   )}

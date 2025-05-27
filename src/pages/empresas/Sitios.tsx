@@ -5,19 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Header } from "@/components/layout/Header";
 import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
-import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid } from "lucide-react";
+import { SitioTableView } from "@/components/sitios/SitioTableView";
+import { SitioCardView } from "@/components/sitios/SitioCardView";
+import { MapPin, Plus, Table as TableIcon, Grid } from "lucide-react";
 import { useSitios } from "@/hooks/useSitios";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Sitios() {
   const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedSitio, setSelectedSitio] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
@@ -32,6 +33,18 @@ export default function Sitios() {
       });
     } catch (error) {
       console.error('Error creating sitio:', error);
+    }
+  };
+
+  const handleUpdateSitio = async (id: string, data: any) => {
+    try {
+      await updateSitio({ id, data });
+      toast({
+        title: "Sitio actualizado",
+        description: "El sitio ha sido actualizado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error updating sitio:', error);
     }
   };
 
@@ -94,209 +107,98 @@ export default function Sitios() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger />
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold">Sitios</h1>
-                    <p className="text-zinc-500">Gestión de sitios de trabajo</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-white rounded-lg border">
-                  <Button
-                    variant={viewMode === 'table' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('table')}
-                    className="rounded-r-none"
-                  >
-                    <TableIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('cards')}
-                    className="rounded-l-none"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
-                <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Sitio
+        <main className="flex-1 flex flex-col">
+          <Header title="Sitios" subtitle="Gestión de sitios de trabajo" icon={MapPin}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white rounded-lg border">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-r-none"
+                >
+                  <TableIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="rounded-l-none"
+                >
+                  <Grid className="w-4 h-4" />
                 </Button>
               </div>
+              <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Sitio
+              </Button>
             </div>
+          </Header>
 
-            <Card className="ios-card">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Sitios Registrados</span>
-                    <Badge variant="outline">{filteredSitios.length} sitios</Badge>
-                  </CardTitle>
-                </div>
-                <div className="flex items-center gap-4 mt-4">
-                  <Input
-                    placeholder="Buscar sitios..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'cards')}>
-                  <TabsContent value="cards">
-                    {filteredSitios.length === 0 ? (
-                      <div className="text-center py-12">
-                        <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
-                        <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
-                        <Button onClick={() => setShowCreateForm(true)} variant="outline">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Crear Primer Sitio
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredSitios.map((sitio) => (
-                          <Card key={sitio.id} className="hover:shadow-md transition-shadow">
-                            <CardHeader className="pb-3">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <CardTitle className="text-lg font-semibold">{sitio.nombre}</CardTitle>
-                                  <p className="text-sm text-zinc-500">{sitio.codigo}</p>
-                                </div>
-                                <Badge variant="outline" className={
-                                  sitio.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                                }>
-                                  {sitio.estado}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <div className="flex items-start gap-2 text-sm text-zinc-600">
-                                <MapPin className="w-4 h-4 mt-0.5" />
-                                <span>{sitio.ubicacion}</span>
-                              </div>
-                              
-                              {sitio.coordenadas_lat && sitio.coordenadas_lng && (
-                                <div className="text-xs text-zinc-500">
-                                  Coordenadas: {sitio.coordenadas_lat.toFixed(6)}, {sitio.coordenadas_lng.toFixed(6)}
-                                </div>
-                              )}
+          <div className="flex-1 overflow-auto">
+            <div className="p-6 space-y-6">
+              <Card className="ios-card">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Sitios Registrados</span>
+                      <Badge variant="outline">{filteredSitios.length} sitios</Badge>
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-4 mt-4">
+                    <Input
+                      placeholder="Buscar sitios..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'cards')}>
+                    <TabsContent value="cards">
+                      {filteredSitios.length === 0 ? (
+                        <div className="text-center py-12">
+                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
+                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
+                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Crear Primer Sitio
+                          </Button>
+                        </div>
+                      ) : (
+                        <SitioCardView
+                          sitios={filteredSitios}
+                          onEdit={handleUpdateSitio}
+                          onDelete={handleDeleteSitio}
+                        />
+                      )}
+                    </TabsContent>
 
-                              {sitio.observaciones && (
-                                <p className="text-xs text-zinc-600 line-clamp-2">{sitio.observaciones}</p>
-                              )}
-
-                              <div className="flex gap-2 pt-3">
-                                <Button variant="outline" size="sm" className="flex-1">
-                                  <Edit className="w-4 h-4 mr-1" />
-                                  Editar
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleDeleteSitio(sitio.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="table">
-                    {filteredSitios.length === 0 ? (
-                      <div className="text-center py-12">
-                        <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
-                        <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
-                        <Button onClick={() => setShowCreateForm(true)} variant="outline">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Crear Primer Sitio
-                        </Button>
-                      </div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Sitio</TableHead>
-                            <TableHead>Ubicación</TableHead>
-                            <TableHead>Coordenadas</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredSitios.map((sitio) => (
-                            <TableRow key={sitio.id}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{sitio.nombre}</div>
-                                  <div className="text-sm text-zinc-500">{sitio.codigo}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-gray-400" />
-                                  <span>{sitio.ubicacion}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {sitio.coordenadas_lat && sitio.coordenadas_lng ? (
-                                  <div className="text-sm">
-                                    <div>{sitio.coordenadas_lat.toFixed(6)}</div>
-                                    <div className="text-zinc-500">{sitio.coordenadas_lng.toFixed(6)}</div>
-                                  </div>
-                                ) : (
-                                  <span className="text-zinc-400">No disponible</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={
-                                  sitio.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                                }>
-                                  {sitio.estado}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleDeleteSitio(sitio.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+                    <TabsContent value="table">
+                      {filteredSitios.length === 0 ? (
+                        <div className="text-center py-12">
+                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
+                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
+                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Crear Primer Sitio
+                          </Button>
+                        </div>
+                      ) : (
+                        <SitioTableView
+                          sitios={filteredSitios}
+                          onEdit={handleUpdateSitio}
+                          onDelete={handleDeleteSitio}
+                        />
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>
