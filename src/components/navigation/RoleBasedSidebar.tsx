@@ -412,8 +412,6 @@ export function RoleBasedSidebar() {
     return null;
   };
 
-  const menuItems = getMenuItemsForRole();
-
   return (
     <Sidebar className="border-r border-border/40 font-sans">
       <SidebarHeader className="border-b border-border/40 p-4">
