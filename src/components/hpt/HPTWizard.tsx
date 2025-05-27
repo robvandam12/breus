@@ -15,11 +15,11 @@ import {
   Wrench,
   PenTool
 } from "lucide-react";
-import { HPTStep1 } from "./HPTWizardStep1";
-import { HPTStep2 } from "./HPTWizardStep2";
-import { HPTStep3 } from "./HPTWizardStep3";
-import { HPTStep4 } from "./HPTWizardStep4";
-import { HPTStep5 } from "./HPTWizardStep5";
+import { HPTWizardStep1 } from "./HPTWizardStep1";
+import { HPTWizardStep2 } from "./HPTWizardStep2";
+import { HPTWizardStep3 } from "./HPTWizardStep3";
+import { HPTWizardStep4 } from "./HPTWizardStep4";
+import { HPTWizardStep5 } from "./HPTWizardStep5";
 import { HPTWizardComplete } from "./HPTWizardComplete";
 
 export interface HPTWizardData {
@@ -97,15 +97,15 @@ export const HPTWizard = ({ operacionId, onComplete, onCancel }: HPTWizardProps)
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep2 data={data} updateData={updateData} />;
       case 3:
-        return <HPTStep3 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
-        return <HPTStep4 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep4 data={data} updateData={updateData} />;
       case 5:
-        return <HPTStep5 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       default:
         return null;
     }
@@ -201,7 +201,7 @@ export const HPTWizard = ({ operacionId, onComplete, onCancel }: HPTWizardProps)
             </Button>
           ) : (
             <HPTWizardComplete 
-              data={data} 
+              operacionId={operacionId || ''}
               onComplete={onComplete}
             />
           )}
