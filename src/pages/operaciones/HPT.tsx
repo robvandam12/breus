@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -169,59 +168,76 @@ const HPT = () => {
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <Header 
-            title="HPT" 
-            subtitle="Hojas de Planificación de Tarea" 
-            icon={FileText} 
-          >
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar HPTs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
+          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
+            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
+              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-zinc-600" />
+                <div>
+                  <h1 className="text-xl font-semibold text-zinc-900">HPT</h1>
+                  <p className="text-sm text-zinc-500">Hojas de Planificación de Tarea</p>
+                </div>
               </div>
+              <div className="flex-1" />
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                  <Input
+                    placeholder="Buscar HPTs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
 
-              <div className="flex gap-2">
-                <Button 
-                  variant={filterStatus === 'all' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterStatus('all')}
-                >
-                  Todos
-                </Button>
-                <Button 
-                  variant={filterStatus === 'borrador' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterStatus('borrador')}
-                >
-                  Borrador
-                </Button>
-                <Button 
-                  variant={filterStatus === 'pendiente' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterStatus('pendiente')}
-                >
-                  Pendientes
-                </Button>
-                <Button 
-                  variant={filterStatus === 'firmado' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterStatus('firmado')}
-                >
-                  Firmados
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={filterStatus === 'all' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setFilterStatus('all')}
+                  >
+                    Todos
+                  </Button>
+                  <Button 
+                    variant={filterStatus === 'borrador' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setFilterStatus('borrador')}
+                  >
+                    Borrador
+                  </Button>
+                  <Button 
+                    variant={filterStatus === 'pendiente' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setFilterStatus('pendiente')}
+                  >
+                    Pendientes
+                  </Button>
+                  <Button 
+                    variant={filterStatus === 'firmado' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setFilterStatus('firmado')}
+                  >
+                    Firmados
+                  </Button>
+                </div>
+
+                <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      HPT Completa
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="p-0">
+                    <HPTWizard
+                      onComplete={handleWizardComplete}
+                      onCancel={() => setIsWizardOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
-
-              <Button onClick={() => setIsWizardOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                HPT Completa
-              </Button>
             </div>
-          </Header>
+          </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
