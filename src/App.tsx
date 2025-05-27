@@ -9,8 +9,8 @@ import { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
 
 // Lazy load components
-const Dashboard = lazy(() => import("@/components/Dashboard").then(module => ({ default: module.Dashboard || module.default })));
-const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(module => ({ default: module.LoginForm || module.default })));
+const Dashboard = lazy(() => import("@/components/Dashboard").then(module => ({ default: module.Dashboard })));
+const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(module => ({ default: module.LoginForm })));
 
 // Pages
 const Operaciones = lazy(() => import("@/pages/operaciones/Operaciones"));
