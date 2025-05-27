@@ -56,8 +56,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           ...prev,
           operacion_id: operacionId,
           codigo,
-          supervisor: operacion.supervisor_asignado_id || '',
-          supervisor_id: operacion.supervisor_asignado_id || ''
+          // Note: Using available properties from the operation table
+          supervisor: '',
+          supervisor_id: ''
         }));
       }
     }

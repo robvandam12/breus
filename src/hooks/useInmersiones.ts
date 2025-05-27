@@ -64,10 +64,10 @@ export const useInmersiones = () => {
   });
 
   const createInmersionMutation = useMutation({
-    mutationFn: async (inmersionData: Partial<Inmersion>) => {
+    mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
       const { data, error } = await supabase
         .from('inmersion')
-        .insert([inmersionData])
+        .insert(inmersionData)
         .select()
         .single();
 
