@@ -358,7 +358,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
 
-  const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+  // Fix the type error by explicitly converting to boolean
+  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
   const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
 
   const filteredMenuItems = menuItems.filter(item => {
