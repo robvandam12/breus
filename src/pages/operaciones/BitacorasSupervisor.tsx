@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -21,7 +20,7 @@ export default function BitacorasSupervisor() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
-  const { bitacorasSupervisor, isLoading } = useBitacoras();
+  const { bitacorasSupervisor, loading } = useBitacoras();
 
   const filteredBitacoras = bitacorasSupervisor.filter(bitacora => {
     const matchesSearch = bitacora.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,7 +55,7 @@ export default function BitacorasSupervisor() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full">

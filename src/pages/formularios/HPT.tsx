@@ -30,13 +30,8 @@ export default function HPT() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleCreateHPT = async (data: any) => {
-    try {
-      await createHPT(data);
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
+  const handleCreateComplete = (hptId: string) => {
+    setIsCreateDialogOpen(false);
   };
 
   const getEstadoBadge = (estado: string, firmado: boolean) => {
@@ -142,7 +137,7 @@ export default function HPT() {
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
                   <HPTWizard
-                    onSubmit={handleCreateHPT}
+                    onComplete={handleCreateComplete}
                     onCancel={() => setIsCreateDialogOpen(false)}
                   />
                 </DialogContent>

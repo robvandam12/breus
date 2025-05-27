@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -21,7 +20,7 @@ export default function BitacorasBuzo() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
-  const { bitacorasBuzo, isLoading } = useBitacoras();
+  const { bitacorasBuzo, loading } = useBitacoras();
 
   const filteredBitacoras = bitacorasBuzo.filter(bitacora => {
     const matchesSearch = bitacora.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,7 +55,7 @@ export default function BitacorasBuzo() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
