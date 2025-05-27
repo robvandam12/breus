@@ -1,17 +1,16 @@
 
 import { useState } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
+import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
@@ -24,8 +23,8 @@ const BitacorasSupervisor = () => {
   const { 
     bitacorasSupervisor, 
     loading, 
-    refreshBitacoras,
-    createBitacoraSupervisor
+    createBitacoraSupervisor, 
+    refreshBitacoras 
   } = useBitacoras();
   
   const { signBitacoraSupervisor } = useBitacoraActions();
@@ -52,13 +51,20 @@ const BitacorasSupervisor = () => {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gray-50">
-          <RoleBasedSidebar />
+          <AppSidebar />
           <main className="flex-1 flex flex-col">
-            <Header 
-              title="Bitácoras Supervisor" 
-              subtitle="Supervisión y control de inmersiones" 
-              icon={FileText} 
-            />
+            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
+              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
+                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-zinc-600" />
+                  <div>
+                    <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
+                    <p className="text-sm text-zinc-500">Registro de supervisión de inmersiones</p>
+                  </div>
+                </div>
+              </div>
+            </header>
             <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -92,42 +98,49 @@ const BitacorasSupervisor = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
-        <RoleBasedSidebar />
+        <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <Header 
-            title="Bitácoras Supervisor" 
-            subtitle="Supervisión y control de inmersiones" 
-            icon={FileText} 
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
+            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
+              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-zinc-600" />
+                <div>
+                  <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
+                  <p className="text-sm text-zinc-500">Registro de supervisión de inmersiones</p>
+                </div>
+              </div>
+              <div className="flex-1" />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </Button>
+                </div>
+
                 <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="h-8 px-3"
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-purple-600 hover:bg-purple-700"
                 >
-                  <LayoutGrid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 px-3"
-                >
-                  <LayoutList className="w-4 h-4" />
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Bitácora Supervisor
                 </Button>
               </div>
-
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Bitácora Supervisor
-              </Button>
             </div>
-          </Header>
+          </header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -168,7 +181,7 @@ const BitacorasSupervisor = () => {
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
-                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Nueva Bitácora Supervisor
                       </Button>
@@ -184,7 +197,6 @@ const BitacorasSupervisor = () => {
                         <TableHead>Inmersión</TableHead>
                         <TableHead>Supervisor</TableHead>
                         <TableHead>Fecha</TableHead>
-                        <TableHead>Desarrollo</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
@@ -206,8 +218,8 @@ const BitacorasSupervisor = () => {
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent variant="form" className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
-              <CreateBitacoraSupervisorForm
+            <DialogContent variant="form" className="p-0">
+              <BitacoraSupervisorFormEnhanced
                 onSubmit={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />

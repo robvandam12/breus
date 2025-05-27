@@ -171,7 +171,8 @@ export function RoleBasedSidebar() {
           title: "Mi Empresa",
           icon: Building,
           items: [
-            { title: "Información", url: "/empresas/contratistas" }
+            { title: "Información", url: "/empresas/contratistas" },
+            { title: "Usuarios", url: "/admin/users" }
           ]
         },
         {
@@ -220,7 +221,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA (sin usuarios para no superuser)
+    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA
     if (profile?.role === 'admin_salmonera') {
       return [
         {
@@ -234,7 +235,8 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
-            { title: "Contratistas", url: "/empresas/contratistas" }
+            { title: "Contratistas", url: "/empresas/contratistas" },
+            { title: "Usuarios", url: "/admin/users" }
           ]
         },
         {
@@ -283,7 +285,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Superuser - INCLUYE USUARIOS
+    // Superuser
     if (profile?.role === 'superuser') {
       return [
         {

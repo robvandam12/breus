@@ -19,6 +19,7 @@ export default function HPT() {
   const operacionId = searchParams.get('operacion');
 
   useEffect(() => {
+    // Si viene con operacionId, mostrar wizard directamente
     if (operacionId) {
       setShowWizard(true);
     }
@@ -44,7 +45,7 @@ export default function HPT() {
   if (showWizard) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
+        <div className="min-h-screen flex w-full">
           <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
@@ -75,7 +76,7 @@ export default function HPT() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full">
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
