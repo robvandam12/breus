@@ -77,7 +77,10 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
   const equiposForm = useForm();
   const bitacoraForm = useForm({
     defaultValues: {
-      bitacora_fecha: new Date().toISOString().split('T')[0]
+      bitacora_fecha: new Date().toISOString().split('T')[0],
+      bitacora_hora_inicio: "",
+      bitacora_hora_termino: "",
+      bitacora_relator: ""
     }
   });
   const participantesForm = useForm();
