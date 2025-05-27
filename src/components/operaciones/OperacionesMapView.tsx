@@ -1,131 +1,18 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Users } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-
-declare global {
-  interface Window {
-    mapboxgl?: any;
-  }
-}
+import { SimpleMap } from "@/components/ui/simple-map";
 
 export const OperacionesMapView = () => {
   const { operaciones, isLoading } = useOperaciones();
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const [mapboxLoaded, setMapboxLoaded] = useState(false);
-  const [mapInitialized, setMapInitialized] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState({ lat: -35.675147, lng: -71.542969 });
 
-  // Cargar Mapbox GL JS
-  useEffect(() => {
-    if (window.mapboxgl) {
-      setMapboxLoaded(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-    script.onload = () => setMapboxLoaded(true);
-    document.head.appendChild(script);
-
-    const link = document.createElement('link');
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
-    return () => {
-      if (script.parentNode) script.parentNode.removeChild(script);
-      if (link.parentNode) link.parentNode.removeChild(link);
-    };
-  }, []);
-
-  // Inicializar mapa cuando Mapbox esté cargado
-  useEffect(() => {
-    if (!mapboxLoaded || !mapContainer.current || mapInitialized) return;
-
-    const mapboxgl = window.mapboxgl;
-    if (!mapboxgl) return;
-
-    try {
-      // Usar el token desde las variables de entorno
-      mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-      
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/satellite-v9',
-        projection: 'globe',
-        zoom: 6,
-        center: [-71.542969, -35.675147], // Chile central
-        pitch: 45,
-      });
-
-      // Agregar controles de navegación
-      map.current.addControl(
-        new mapboxgl.NavigationControl({
-          visualizePitch: true,
-        }),
-        'top-right'
-      );
-
-      // Configurar efectos atmosféricos
-      map.current.on('style.load', () => {
-        map.current?.setFog({
-          color: 'rgb(186, 210, 235)',
-          'high-color': 'rgb(36, 92, 223)',
-          'horizon-blend': 0.02,
-          'space-color': 'rgb(11, 11, 25)',
-          'star-intensity': 0.6,
-        });
-      });
-
-      // Agregar marcadores para operaciones
-      operaciones.forEach((operacion, index) => {
-        if (!mapboxgl) return;
-        
-        // Coordenadas simuladas para diferentes regiones de Chile
-        const coords = [
-          [-71.542969, -35.675147], // Santiago
-          [-73.24776, -39.81422],   // Temuco
-          [-72.59842, -45.86508],   // Coyhaique
-          [-70.91228, -53.15483],   // Punta Arenas
-          [-70.30829, -18.47649],   // Arica
-        ];
-        
-        const coord = coords[index % coords.length];
-        
-        // Crear popup con información
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div class="p-2">
-            <h3 class="font-bold text-sm">${operacion.nombre}</h3>
-            <p class="text-xs text-gray-600">Código: ${operacion.codigo}</p>
-            <p class="text-xs text-gray-600">Estado: ${operacion.estado}</p>
-            <p class="text-xs text-gray-600">Fecha: ${new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</p>
-          </div>
-        `);
-
-        // Crear marcador
-        const marker = new mapboxgl.Marker({
-          color: operacion.estado === 'activa' ? '#22c55e' : '#6b7280'
-        })
-          .setLngLat(coord)
-          .setPopup(popup)
-          .addTo(map.current!);
-      });
-
-      setMapInitialized(true);
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [mapboxLoaded, operaciones, mapInitialized]);
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setSelectedLocation({ lat, lng });
+  };
 
   if (isLoading) {
     return (
@@ -145,11 +32,17 @@ export const OperacionesMapView = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div 
-            ref={mapContainer} 
-            className="w-full h-96 rounded-xl border border-gray-200"
-            style={{ minHeight: '400px' }}
+          <SimpleMap
+            onLocationSelect={handleLocationSelect}
+            initialLat={selectedLocation.lat}
+            initialLng={selectedLocation.lng}
+            height="400px"
           />
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Ubicación seleccionada:</strong> {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -170,7 +63,7 @@ export const OperacionesMapView = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  <span>Región de operación</span>
+                  <span>Chile - Región {Math.floor(Math.random() * 15) + 1}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />

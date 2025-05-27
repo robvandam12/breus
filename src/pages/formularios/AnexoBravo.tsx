@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, ArrowLeft } from "lucide-react";
 import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -50,14 +49,14 @@ export default function AnexoBravo() {
     if (operacionId) {
       navigateTo('/operaciones');
     } else {
-      navigateTo('/formularios/anexo-bravo');
+      navigateTo('/operaciones');
     }
   };
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <RoleBasedSidebar />
+        <AppSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Crear Anexo Bravo" 

@@ -7,6 +7,9 @@ import { Tables, TablesInsert } from '@/integrations/supabase/types';
 // Using the actual database types
 type EquipoBuceo = Tables<'operacion'> & {
   miembros?: EquipoBuceoMiembro[];
+  salmoneras?: { nombre: string } | null;
+  sitios?: { nombre: string } | null;
+  contratistas?: { nombre: string } | null;
 };
 
 type EquipoBuceoMiembro = {
@@ -73,12 +76,15 @@ export const useEquipoBuceo = () => {
     }
   };
 
-  const createEquipo = async (equipoData: Partial<Tables<'operacion'>>) => {
+  const createEquipo = async (equipoData: Partial<EquipoBuceo>) => {
     try {
-      // Ensure required fields are present
+      // Generate a unique code if not provided
+      const codigo = equipoData.codigo || `EQ-${Date.now().toString().slice(-6)}`;
+      
+      // Ensure required fields are present with proper defaults
       const operacionData: TablesInsert<'operacion'> = {
-        codigo: equipoData.codigo || `OP-${Date.now()}`,
-        nombre: equipoData.nombre || 'Nueva Operación',
+        codigo: codigo,
+        nombre: equipoData.nombre || 'Nuevo Equipo',
         fecha_inicio: equipoData.fecha_inicio || new Date().toISOString().split('T')[0],
         estado: equipoData.estado || 'planificada',
         salmonera_id: equipoData.salmonera_id || null,
@@ -92,12 +98,22 @@ export const useEquipoBuceo = () => {
       const { data, error } = await supabase
         .from('operacion')
         .insert([operacionData])
-        .select()
+        .select(`
+          *,
+          salmoneras(nombre),
+          sitios(nombre),
+          contratistas(nombre)
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
-      await fetchEquipos();
+      // Update local state
+      setEquipos(prev => [data, ...prev]);
+      
       toast({
         title: "Éxito",
         description: "Equipo de buceo creado correctamente",
@@ -108,7 +124,7 @@ export const useEquipoBuceo = () => {
       console.error('Error creating equipo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el equipo de buceo",
+        description: `No se pudo crear el equipo de buceo: ${error.message || error}`,
         variant: "destructive",
       });
       throw error;
