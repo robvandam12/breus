@@ -47,7 +47,7 @@ export default function LoginForm() {
       <Card className="w-full max-w-md shadow-2xl border-0">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <Lock className="w-8 h-8 text-white" />
+            <span className="text-white font-bold text-xl">B</span>
           </div>
           <div className="space-y-2">
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">

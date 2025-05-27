@@ -45,9 +45,9 @@ export default function HPT() {
   if (showWizard) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full bg-white">
           <RoleBasedSidebar />
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col bg-white">
             <Header 
               title="Crear HPT" 
               subtitle="Hoja de Planificación de Tarea" 
@@ -59,7 +59,7 @@ export default function HPT() {
               </Button>
             </Header>
             
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <HPTWizard
                   operacionId={operacionId || undefined}
@@ -76,9 +76,9 @@ export default function HPT() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-white">
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col bg-white">
           <Header 
             title="HPT" 
             subtitle="Hoja de Planificación de Tarea" 
@@ -90,7 +90,7 @@ export default function HPT() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               <Card>
                 <CardHeader>

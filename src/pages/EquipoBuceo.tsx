@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,15 +37,15 @@ const EquipoBuceo = () => {
   if (isLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <AppSidebar />
-          <main className="flex-1 flex flex-col">
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
+          <main className="flex-1 flex flex-col bg-white">
             <Header 
               title="Equipo de Buceo" 
               subtitle="Gestión de equipos y personal de buceo" 
               icon={Users} 
             />
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center bg-white">
               <LoadingSpinner text="Cargando equipos..." />
             </div>
           </main>
@@ -56,9 +56,9 @@ const EquipoBuceo = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col">
+      <div className="min-h-screen flex w-full bg-white">
+        <RoleBasedSidebar />
+        <main className="flex-1 flex flex-col bg-white">
           <Header 
             title="Equipo de Buceo" 
             subtitle="Gestión de equipos y personal de buceo" 
@@ -92,7 +92,7 @@ const EquipoBuceo = () => {
             </div>
           </Header>
           
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -166,7 +166,7 @@ const EquipoBuceo = () => {
                               <div>
                                 <div className="font-medium">{equipo.nombre}</div>
                                 <div className="text-xs text-zinc-500">
-                                  Creado: {new Date(equipo.created_at).toLocaleDateString('es-CL')}
+                                  Creado: {new Date(equipo.created_at || '').toLocaleDateString('es-CL')}
                                 </div>
                               </div>
                             </div>
@@ -187,7 +187,7 @@ const EquipoBuceo = () => {
                                       className="w-6 h-6 bg-zinc-300 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white"
                                       title={miembro.nombre_completo}
                                     >
-                                      {miembro.nombre_completo.charAt(0).toUpperCase()}
+                                      {(miembro.nombre_completo || '').charAt(0).toUpperCase()}
                                     </div>
                                   ))}
                                   {(equipo.miembros?.length || 0) > 3 && (

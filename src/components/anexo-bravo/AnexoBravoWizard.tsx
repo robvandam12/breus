@@ -1,292 +1,203 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Save, FileText, Users, CheckSquare, UserCheck, Edit3 } from "lucide-react";
-import { AnexoBravoStep1 } from "./steps/AnexoBravoStep1";
-import { AnexoBravoStep2 } from "./steps/AnexoBravoStep2";
-import { AnexoBravoStep3 } from "./steps/AnexoBravoStep3";
-import { AnexoBravoStep4 } from "./steps/AnexoBravoStep4";
-import { AnexoBravoStep5 } from "./steps/AnexoBravoStep5";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useContratistas } from "@/hooks/useContratistas";
+import { useSitios } from "@/hooks/useSitios";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AnexoBravoWizardProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
   defaultOperacionId?: string;
+  type?: 'simple' | 'completo';
 }
 
-export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: AnexoBravoWizardProps) => {
-  const { toast } = useToast();
-  const { miembros } = useEquipoBuceo();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  
+export const AnexoBravoWizard = ({ 
+  onSubmit, 
+  onCancel, 
+  defaultOperacionId,
+  type = 'simple' 
+}: AnexoBravoWizardProps) => {
   const [formData, setFormData] = useState({
     operacion_id: defaultOperacionId || '',
     codigo: '',
+    fecha: new Date().toISOString().split('T')[0],
+    supervisor: '',
     empresa_nombre: '',
     lugar_faena: '',
     buzo_o_empresa_nombre: '',
     asistente_buzo_nombre: '',
-    supervisor: '',
-    trabajadores: [] as Array<{
-      nombre: string;
-      rut: string;
-      empresa: string;
-    }>,
-    checklist: [],
     observaciones_generales: ''
   });
 
-  const steps = [
-    { id: 1, title: "Información General", description: "Datos básicos del anexo", icon: FileText },
-    { id: 2, title: "Personal y Equipos", description: "Trabajadores y equipos", icon: Users },
-    { id: 3, title: "Lista de Verificación", description: "Checklist de seguridad", icon: CheckSquare },
-    { id: 4, title: "Verificación Final", description: "Revisión y observaciones", icon: UserCheck },
-    { id: 5, title: "Resumen", description: "Confirmación final", icon: Edit3 }
-  ];
+  const { operaciones } = useOperaciones();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
+  const { sitios } = useSitios();
+  const { equipos } = useEquipoBuceo();
 
-  // Pre-populate data when operation is selected
-  useEffect(() => {
-    const populateOperationData = async () => {
-      if (!defaultOperacionId) return;
+  const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
 
-      try {
-        // Get operation with related data
-        const { data: opData, error } = await supabase
-          .from('operacion')
-          .select(`
-            *,
-            sitios:sitio_id (nombre, ubicacion),
-            contratistas:contratista_id (nombre),
-            salmoneras:salmonera_id (nombre)
-          `)
-          .eq('id', defaultOperacionId)
-          .single();
-
-        if (error) throw error;
-
-        const operacion = opData;
-        
-        // Find supervisor and team members
-        const supervisor = miembros.find(m => 
-          m.equipo_id === operacion.equipo_buceo_id && 
-          m.rol_equipo === 'supervisor'
-        );
-
-        const teamMembers = miembros.filter(m => 
-          m.equipo_id === operacion.equipo_buceo_id
-        );
-
-        // Generate code based on operation
-        const codigo = `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
-        
-        setFormData(prev => ({
-          ...prev,
-          operacion_id: defaultOperacionId,
-          codigo,
-          empresa_nombre: operacion.salmoneras?.nombre || '',
-          lugar_faena: operacion.sitios?.nombre || '',
-          buzo_o_empresa_nombre: operacion.contratistas?.nombre || '',
-          supervisor: supervisor?.nombre_completo || '',
-          trabajadores: teamMembers.map(member => ({
-            nombre: member.nombre_completo || member.nombre || '',
-            rut: '', // Will need to be filled manually
-            empresa: operacion.contratistas?.nombre || ''
-          }))
-        }));
-
-        console.log('Anexo Bravo data populated:', {
-          operacion,
-          supervisor,
-          teamMembers,
-          codigo
-        });
-
-      } catch (error) {
-        console.error('Error populating operation data:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos de la operación",
-          variant: "destructive",
-        });
-      }
-    };
-
-    populateOperationData();
-  }, [defaultOperacionId, miembros, toast]);
-
-  const updateFormData = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(prev => prev + 1);
+  const handleOperacionChange = (operacionId: string) => {
+    const operacion = operaciones.find(op => op.id === operacionId);
+    if (operacion) {
+      // Auto-populate fields based on operation
+      const salmonera = salmoneras.find(s => s.id === operacion.salmonera_id);
+      const contratista = contratistas.find(c => c.id === operacion.contratista_id);
+      const sitio = sitios.find(s => s.id === operacion.sitio_id);
+      
+      setFormData(prev => ({
+        ...prev,
+        operacion_id: operacionId,
+        codigo: `AB-${operacion.codigo}-${Date.now()}`,
+        empresa_nombre: salmonera?.nombre || '',
+        lugar_faena: sitio?.nombre || '',
+        buzo_o_empresa_nombre: contratista?.nombre || ''
+      }));
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      form_version: type === 'completo' ? 2 : 1,
+      estado: 'borrador',
+      firmado: false
+    });
   };
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
-    try {
-      await onSubmit(formData);
-      toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error creating Anexo Bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el Anexo Bravo.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
-      case 2:
-        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
-      case 3:
-        return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
-      case 4:
-        return <AnexoBravoStep4 data={formData} onUpdate={updateFormData} />;
-      case 5:
-        return <AnexoBravoStep5 data={formData} onUpdate={updateFormData} />;
-      default:
-        return null;
-    }
-  };
-
-  const progress = Math.round((currentStep / steps.length) * 100);
-  const currentStepData = steps[currentStep - 1];
 
   return (
-    <div className="w-full max-w-full h-full flex flex-col">
-      {/* Header with Progress */}
-      <div className="flex-shrink-0 p-6 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <currentStepData.icon className="w-6 h-6" />
-            </div>
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>
+          {type === 'completo' ? 'Nuevo Anexo Bravo Completo' : 'Nuevo Anexo Bravo'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <CardTitle className="text-xl md:text-2xl text-gray-900">
-                Crear Anexo Bravo
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Paso {currentStep} de {steps.length}: {currentStepData.title}
-              </p>
+              <Label htmlFor="operacion">Operación *</Label>
+              <Select
+                value={formData.operacion_id}
+                onValueChange={handleOperacionChange}
+                disabled={!!defaultOperacionId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar operación..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {operaciones.map((operacion) => (
+                    <SelectItem key={operacion.id} value={operacion.id}>
+                      {operacion.nombre} - {operacion.codigo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="codigo">Código *</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                required
+                readOnly
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="fecha">Fecha *</Label>
+              <Input
+                id="fecha"
+                type="date"
+                value={formData.fecha}
+                onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="supervisor">Supervisor *</Label>
+              <Input
+                id="supervisor"
+                value={formData.supervisor}
+                onChange={(e) => setFormData(prev => ({ ...prev, supervisor: e.target.value }))}
+                placeholder="Nombre del supervisor"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="empresa">Empresa (Salmonera)</Label>
+              <Input
+                id="empresa"
+                value={formData.empresa_nombre}
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="lugar_faena">Lugar de Faena (Sitio)</Label>
+              <Input
+                id="lugar_faena"
+                value={formData.lugar_faena}
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="buzo_empresa">Buzo o Empresa de Buceo (Contratista)</Label>
+              <Input
+                id="buzo_empresa"
+                value={formData.buzo_o_empresa_nombre}
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="asistente">Asistente de Buzo</Label>
+              <Input
+                id="asistente"
+                value={formData.asistente_buzo_nombre}
+                onChange={(e) => setFormData(prev => ({ ...prev, asistente_buzo_nombre: e.target.value }))}
+                placeholder="Nombre del asistente (campo libre)"
+              />
             </div>
           </div>
-          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-            {progress}% Completado
-          </Badge>
-        </div>
 
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Progress value={progress} className="h-3" />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Progreso General</span>
-            <span>{progress}%</span>
+          <div>
+            <Label htmlFor="observaciones">Observaciones Generales</Label>
+            <Textarea
+              id="observaciones"
+              value={formData.observaciones_generales}
+              onChange={(e) => setFormData(prev => ({ ...prev, observaciones_generales: e.target.value }))}
+              placeholder="Observaciones adicionales..."
+            />
           </div>
-        </div>
 
-        {/* Step Indicators */}
-        <div className="flex justify-between mt-6">
-          {steps.map((step, index) => (
-            <div 
-              key={step.id}
-              className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
-            >
-              <div className={`h-2 rounded-full ${
-                step.id < currentStep ? 'bg-green-500' : 
-                step.id === currentStep ? 'bg-orange-500' : 
-                'bg-gray-200'
-              }`} />
-              <div className="mt-2 text-xs text-center">
-                <span className={`${
-                  step.id === currentStep ? 'text-orange-600 font-medium' : 
-                  step.id < currentStep ? 'text-green-600' : 
-                  'text-gray-500'
-                }`}>
-                  {step.title}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-auto">
-        <Card className="border-0 shadow-none h-full">
-          <CardContent className="p-6 md:p-8">
-            {renderStep()}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Navigation - Fixed at bottom */}
-      <div className="flex-shrink-0 flex justify-between items-center p-6 gap-4 border-t bg-white">
-        <Button 
-          variant="outline" 
-          onClick={onCancel}
-          disabled={isLoading}
-          className="min-w-[100px]"
-        >
-          Cancelar
-        </Button>
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1 || isLoading}
-            className="flex items-center gap-2 min-w-[100px]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Anterior
-          </Button>
-          
-          {currentStep < steps.length ? (
-            <Button
-              onClick={nextStep}
-              disabled={isLoading}
-              className="flex items-center gap-2 min-w-[100px] bg-orange-600 hover:bg-orange-700"
-            >
-              Siguiente
-              <ArrowRight className="w-4 h-4" />
+          <div className="flex gap-3 pt-4">
+            <Button type="submit" className="flex-1">
+              Crear Anexo Bravo
             </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
-            >
-              <Save className="w-4 h-4" />
-              {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
             </Button>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

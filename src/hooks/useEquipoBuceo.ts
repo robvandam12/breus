@@ -98,10 +98,39 @@ export const useEquipoBuceo = () => {
     },
   });
 
+  const addMiembroMutation = useMutation({
+    mutationFn: async (memberData: { equipo_id: string; usuario_id: string; rol_equipo: string }) => {
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert(memberData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipo-buceo-miembros'] });
+      toast({
+        title: "Miembro agregado",
+        description: "El miembro ha sido agregado al equipo exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding member:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el miembro al equipo.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     equipos,
     miembros,
     isLoading: loadingEquipos || loadingMiembros,
     createEquipo: createEquipoMutation.mutateAsync,
+    addMiembro: addMiembroMutation.mutateAsync,
   };
 };

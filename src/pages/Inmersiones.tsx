@@ -89,16 +89,16 @@ export default function Inmersiones() {
   if (showWizard) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full bg-white">
           <RoleBasedSidebar />
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col bg-white">
             <Header 
               title="Nueva Inmersión" 
               subtitle="Crear inmersión de buceo" 
               icon={Anchor} 
             />
             
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <InmersionWizard
                   operacionId={operacionId || undefined}
@@ -115,9 +115,9 @@ export default function Inmersiones() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-white">
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col bg-white">
           <Header 
             title="Inmersiones" 
             subtitle="Gestión de inmersiones de buceo" 
@@ -129,7 +129,7 @@ export default function Inmersiones() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               {isLoading ? (
                 <div className="text-center py-8">
