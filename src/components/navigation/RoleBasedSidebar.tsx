@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Calendar, 
@@ -35,8 +34,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserCompany } from "@/hooks/useUserCompany";
 import { toast } from "@/hooks/use-toast";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
 
 interface MenuSubItem {
   title: string;
@@ -55,7 +54,7 @@ interface MenuItem {
 
 export function RoleBasedSidebar() {
   const { profile, signOut } = useAuth();
-  const { salmoneras } = useSalmoneras();
+  const { companyInfo } = useUserCompany();
 
   const getMenuItemsForRole = (): MenuItem[] => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
@@ -502,6 +501,9 @@ export function RoleBasedSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
             <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
+            {companyInfo && (
+              <p className="text-xs text-blue-600 truncate font-medium">{companyInfo.nombre}</p>
+            )}
           </div>
           <Button
             variant="ghost"
