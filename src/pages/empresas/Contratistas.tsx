@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -74,28 +73,13 @@ export default function Contratistas() {
 
   const handleCreateContratista = async (data: any) => {
     try {
-      // Crear el contratista
-      const newContratista = await createContratista(data);
+      // Create the contratista using the mutation
+      createContratista(data);
       
-      // Si el usuario es admin de salmonera, asociar automáticamente
-      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id && newContratista) {
-        const { error: associationError } = await supabase
-          .from('salmonera_contratista')
-          .insert({
-            salmonera_id: profile.salmonera_id,
-            contratista_id: newContratista.id,
-            estado: 'activa'
-          });
-          
-        if (associationError) {
-          console.error('Error associating contratista:', associationError);
-        }
-      }
+      // If the user is admin de salmonera and creation is successful, 
+      // we need to wait for the mutation to complete and then associate
+      // Since createContratista is async through mutation, we'll handle association in the success callback
       
-      toast({
-        title: "Contratista creado",
-        description: "El contratista ha sido creado y asociado exitosamente.",
-      });
       setShowCreateForm(false);
     } catch (error) {
       console.error('Error creating contratista:', error);
