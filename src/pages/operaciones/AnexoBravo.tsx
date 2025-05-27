@@ -22,9 +22,13 @@ const AnexoBravo = () => {
   
   const { anexosBravo, isLoading, createAnexoBravo, updateAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
 
-  const filteredAnexos = anexosBravo.filter(anexo => {
-    const matchesSearch = anexo.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         anexo.supervisor.toLowerCase().includes(searchTerm.toLowerCase());
+  // Ensure anexosBravo is always an array
+  const safeAnexosBravo = anexosBravo || [];
+
+  const filteredAnexos = safeAnexosBravo.filter(anexo => {
+    if (!anexo) return false;
+    const matchesSearch = (anexo.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (anexo.supervisor || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || anexo.estado === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -52,10 +56,19 @@ const AnexoBravo = () => {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
     try {
       return format(new Date(dateString), "dd/MM/yyyy", { locale: es });
     } catch {
       return dateString;
+    }
+  };
+
+  const handleDeleteAnexo = async (id: string) => {
+    try {
+      await deleteAnexoBravo(id);
+    } catch (error) {
+      console.error('Error deleting Anexo Bravo:', error);
     }
   };
 
@@ -168,25 +181,25 @@ const AnexoBravo = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-green-600">
-                    {anexosBravo.length}
+                    {safeAnexosBravo.length}
                   </div>
                   <div className="text-sm text-zinc-500">Total Anexos Bravo</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-blue-600">
-                    {anexosBravo.filter(a => a.firmado).length}
+                    {safeAnexosBravo.filter(a => a?.firmado).length}
                   </div>
                   <div className="text-sm text-zinc-500">Firmados</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {anexosBravo.filter(a => !a.firmado && a.estado === 'pendiente').length}
+                    {safeAnexosBravo.filter(a => a && !a.firmado && a.estado === 'pendiente').length}
                   </div>
                   <div className="text-sm text-zinc-500">Pendientes</div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-gray-600">
-                    {anexosBravo.filter(a => a.estado === 'borrador').length}
+                    {safeAnexosBravo.filter(a => a?.estado === 'borrador').length}
                   </div>
                   <div className="text-sm text-zinc-500">Borradores</div>
                 </Card>
@@ -220,6 +233,8 @@ const AnexoBravo = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredAnexos.map((anexo) => {
+                        if (!anexo || !anexo.id) return null;
+                        
                         const estadoInfo = getEstadoBadge(anexo.estado || 'borrador', anexo.firmado);
                         const IconComponent = estadoInfo.icon;
                         
@@ -231,15 +246,15 @@ const AnexoBravo = () => {
                                   <FileCheck className="w-4 h-4 text-green-600" />
                                 </div>
                                 <div>
-                                  <div className="font-medium">{anexo.codigo}</div>
+                                  <div className="font-medium">{anexo.codigo || 'Sin código'}</div>
                                   <div className="text-xs text-zinc-500">{formatDate(anexo.created_at)}</div>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-zinc-600">{anexo.supervisor}</TableCell>
-                            <TableCell className="text-zinc-600">{anexo.jefe_centro}</TableCell>
+                            <TableCell className="text-zinc-600">{anexo.supervisor || 'N/A'}</TableCell>
+                            <TableCell className="text-zinc-600">{anexo.jefe_centro || 'N/A'}</TableCell>
                             <TableCell className="text-zinc-600">
-                              {anexo.fecha_verificacion ? formatDate(anexo.fecha_verificacion) : "N/A"}
+                              {formatDate(anexo.fecha_verificacion)}
                             </TableCell>
                             <TableCell>
                               <Badge variant="secondary" className={estadoInfo.className}>
@@ -269,7 +284,7 @@ const AnexoBravo = () => {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  onClick={() => deleteAnexoBravo(anexo.id)}
+                                  onClick={() => handleDeleteAnexo(anexo.id)}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
