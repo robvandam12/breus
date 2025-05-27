@@ -1,98 +1,60 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export const NotificationButton = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const notificationCount = 3; // This would come from a hook in real implementation
-
-  const notifications = [
-    {
-      id: 1,
-      title: "Nueva operación asignada",
-      message: "Se te ha asignado la operación OP-2024-001",
-      time: "5 min",
-      unread: true
-    },
-    {
-      id: 2,
-      title: "Bitácora pendiente de firma",
-      message: "La bitácora BIT-001 requiere tu firma",
-      time: "1 hora",
-      unread: true
-    },
-    {
-      id: 3,
-      title: "HPT aprobado",
-      message: "El HPT-001 ha sido aprobado",
-      time: "2 horas",
-      unread: false
-    }
-  ];
+  const [notifications] = useState<{ id: number; title: string; message: string }[]>([
+    { id: 1, title: 'Nueva operación asignada', message: 'Se ha asignado una nueva operación a tu equipo.' },
+  ]);
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="w-5 h-5" />
-          {notificationCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-            >
-              {notificationCount}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full h-9 w-9 hover:bg-zinc-100"
+        >
+          <Bell className="h-5 w-5 text-zinc-500" />
+          {notifications.length > 0 && (
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
+              {notifications.length}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Notificaciones</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-96 overflow-y-auto">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                    notification.unread ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold mb-1">
-                        {notification.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-1">
-                        {notification.message}
-                      </p>
-                      <span className="text-xs text-gray-500">
-                        {notification.time}
-                      </span>
-                    </div>
-                    {notification.unread && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full ml-2 mt-1"></div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="p-4 border-t border-gray-100">
-              <Button variant="ghost" className="w-full text-sm">
-                Ver todas las notificaciones
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="p-4 border-b">
+          <h3 className="font-medium">Notificaciones</h3>
+        </div>
+        {notifications.length === 0 ? (
+          <div className="p-4 text-center text-zinc-500 py-8">
+            No tienes notificaciones
+          </div>
+        ) : (
+          <div className="max-h-96 overflow-auto">
+            {notifications.map((notification) => (
+              <div key={notification.id} className="p-4 border-b last:border-0 hover:bg-zinc-50">
+                <h4 className="font-medium text-sm">{notification.title}</h4>
+                <p className="text-xs text-zinc-500 mt-1">{notification.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {notifications.length > 0 && (
+          <div className="p-2 border-t text-center">
+            <Button variant="ghost" className="text-xs text-blue-600 w-full" size="sm">
+              Marcar todas como leídas
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

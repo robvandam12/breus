@@ -25,7 +25,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
@@ -35,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { BreusLogo } from "@/components/ui/logo/BreusLogo";
 
 interface MenuSubItem {
   title: string;
@@ -51,312 +51,316 @@ interface MenuItem {
   roleRequired?: string;
 }
 
-const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] => {
-  // Buzo sin empresa asignada - navegación muy limitada
-  if (role === 'buzo' && !isAssigned) {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-      },
-      {
-        title: "Mi Perfil",
-        icon: Users,
-        url: "/profile-setup",
-      }
-    ];
-  }
-
-  // Buzo con empresa asignada
-  if (role === 'buzo' && isAssigned) {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mis Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-      },
-      {
-        title: "Mis Bitácoras",
-        icon: Book,
-        url: "/bitacoras/buzo",
-      },
-      {
-        title: "Mi Perfil",
-        icon: Settings,
-        url: "/configuracion",
-      }
-    ];
-  }
-
-  // Supervisor
-  if (role === 'supervisor') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "5"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Servicio (Contratista)
-  if (role === 'admin_servicio') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "8"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Información", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Salmonera
-  if (role === 'admin_salmonera') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "15"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "25"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "18"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Superuser
-  if (role === 'superuser') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Empresas",
-        icon: Folder,
-        items: [
-          { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      },
-      {
-        title: "Admin",
-        icon: Shield,
-        items: [
-          { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
-        ]
-      }
-    ];
-  }
-
-  return [];
-};
-
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
+
+  const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] => {
+    const isSuperUser = role === 'superuser';
+    
+    // Buzo sin empresa asignada - navegación muy limitada
+    if (role === 'buzo' && !isAssigned) {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+        },
+        {
+          title: "Mi Perfil",
+          icon: Users,
+          url: "/profile-setup",
+        }
+      ];
+    }
+
+    // Buzo con empresa asignada
+    if (role === 'buzo' && isAssigned) {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "3"
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Mis Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+        },
+        {
+          title: "Mis Bitácoras",
+          icon: Book,
+          url: "/bitacoras/buzo",
+        },
+        {
+          title: "Mi Perfil",
+          icon: Settings,
+          url: "/configuracion",
+        }
+      ];
+    }
+
+    // Supervisor
+    if (role === 'supervisor') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "5"
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        }
+      ];
+    }
+
+    // Admin Servicio (Contratista)
+    if (role === 'admin_servicio') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "8"
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Mi Empresa",
+          icon: Building,
+          items: [
+            { title: "Información", url: "/empresas/contratistas" },
+            ...(isSuperUser ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+          ]
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        }
+      ];
+    }
+
+    // Admin Salmonera
+    if (role === 'admin_salmonera') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "15"
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Mi Empresa",
+          icon: Building,
+          items: [
+            { title: "Sitios", url: "/empresas/sitios" },
+            { title: "Contratistas", url: "/empresas/contratistas" },
+            ...(isSuperUser ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+          ]
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "25"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "18"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        }
+      ];
+    }
+
+    // Superuser
+    if (role === 'superuser') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "3"
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Empresas",
+          icon: Folder,
+          items: [
+            { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
+            { title: "Sitios", url: "/empresas/sitios" },
+            { title: "Contratistas", url: "/empresas/contratistas" }
+          ]
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        },
+        {
+          title: "Admin",
+          icon: Shield,
+          items: [
+            { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
+            { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
+          ]
+        }
+      ];
+    }
+
+    return [];
+  };
 
   // Fix the type error by explicitly converting to boolean
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
@@ -419,7 +423,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">B</span>
+            <BreusLogo width={20} height={12} className="text-white fill-current" />
           </div>
           <div>
             <h2 className="font-semibold text-lg">Breus</h2>

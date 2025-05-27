@@ -1,30 +1,17 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from './use-toast';
+import { useNavigate } from 'react-router-dom';
 
-export interface HPT {
-  id: string;
+export interface HPTFormData {
+  operacion_id: string;
   codigo: string;
   supervisor: string;
   plan_trabajo: string;
-  operacion_id: string;
-  fecha_programada?: string;
-  hora_inicio?: string;
-  hora_fin?: string;
-  descripcion_trabajo?: string;
-  profundidad_maxima?: number;
-  temperatura?: number;
-  observaciones?: string;
-  firmado: boolean;
-  estado: string;
-  progreso: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  // Nuevos campos según especificación
-  folio?: string;
+  // Se añaden otros campos según la estructura de la tabla hpt
   fecha?: string;
+  hora_inicio?: string;
   hora_termino?: string;
   empresa_servicio_nombre?: string;
   supervisor_nombre?: string;
@@ -33,7 +20,7 @@ export interface HPT {
   descripcion_tarea?: string;
   es_rutinaria?: boolean;
   lugar_especifico?: string;
-  estado_puerto?: string;
+  estado_puerto?: 'abierto' | 'cerrado';
   hpt_epp?: any;
   hpt_erc?: any;
   hpt_medidas?: any;
@@ -41,233 +28,162 @@ export interface HPT {
   hpt_conocimiento?: any;
   hpt_conocimiento_asistentes?: any[];
   hpt_firmas?: any;
-  supervisor_servicio_id?: string;
-  supervisor_mandante_id?: string;
-  form_version?: number;
-}
-
-export interface HPTFormData {
-  codigo: string;
-  supervisor: string;
-  operacion_id: string;
-  plan_trabajo: string;
-  fecha_programada?: string;
-  hora_inicio?: string;
-  hora_fin?: string;
-  descripcion_trabajo?: string;
-  profundidad_maxima?: number;
-  temperatura?: number;
-  observaciones?: string;
-  // Nuevos campos para el formulario completo
-  folio?: string;
-  fecha?: string;
-  hora_termino?: string;
-  empresa_servicio_nombre?: string;
-  supervisor_nombre?: string;
-  centro_trabajo_nombre?: string;
-  jefe_mandante_nombre?: string;
-  descripcion_tarea?: string;
-  es_rutinaria?: boolean;
-  lugar_especifico?: string;
-  estado_puerto?: string;
-  hpt_epp?: any;
-  hpt_erc?: any;
-  hpt_medidas?: any;
-  hpt_riesgos_comp?: any;
-  hpt_conocimiento?: any;
-  hpt_conocimiento_asistentes?: any[];
 }
 
 export const useHPT = () => {
-  const queryClient = useQueryClient();
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
 
-  const { data: hpts = [], isLoading, error } = useQuery({
-    queryKey: ['hpts'],
-    queryFn: async () => {
-      console.log('useHPT - Fetching HPTs...');
-      const { data, error } = await supabase
+  const createHPT = async (data: HPTFormData) => {
+    setIsCreating(true);
+    try {
+      const { data: createdHPT, error } = await supabase
         .from('hpt')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('useHPT - Error fetching HPTs:', error);
-        throw error;
-      }
-
-      console.log('useHPT - HPTs data:', data);
-      return data as HPT[];
-    },
-  });
-
-  const createHPTMutation = useMutation({
-    mutationFn: async (hptData: HPTFormData) => {
-      console.log('Creating HPT:', hptData);
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
-
-      const { data, error } = await supabase
-        .from('hpt')
-        .insert([{
-          ...hptData,
-          user_id: user.id,
-          fecha_creacion: new Date().toISOString().split('T')[0],
-          estado: 'borrador',
-          progreso: 0,
-          firmado: false
-        }])
+        .insert([data])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating HPT:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('HPT created:', data);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hpts'] });
-      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
-        title: "HPT creada",
-        description: "La Hoja de Planificación de Tarea ha sido creada exitosamente.",
+        title: 'HPT creado',
+        description: 'La HPT ha sido creada correctamente',
       });
-    },
-    onError: (error) => {
+      
+      return createdHPT;
+    } catch (error: any) {
       console.error('Error creating HPT:', error);
       toast({
-        title: "Error",
-        description: "No se pudo crear la HPT. Intente nuevamente.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'No se pudo crear la HPT',
+        variant: 'destructive',
       });
-    },
-  });
+      throw error;
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
-  const updateHPTMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<HPTFormData> }) => {
-      console.log('Updating HPT:', id, data);
-      const { data: updatedData, error } = await supabase
+  const updateHPT = async ({ id, data }: { id: string; data: Partial<HPTFormData> }) => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
         .from('hpt')
         .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
-      if (error) {
-        console.error('Error updating HPT:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('HPT updated:', updatedData);
-      return updatedData;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hpts'] });
-      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
-        title: "HPT actualizada",
-        description: "La HPT ha sido actualizada exitosamente.",
+        title: 'HPT actualizada',
+        description: 'La HPT ha sido actualizada correctamente',
       });
-    },
-    onError: (error) => {
+      
+      return true;
+    } catch (error: any) {
       console.error('Error updating HPT:', error);
       toast({
-        title: "Error",
-        description: "No se pudo actualizar la HPT. Intente nuevamente.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'No se pudo actualizar la HPT',
+        variant: 'destructive',
       });
-    },
-  });
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-  const signHPTMutation = useMutation({
-    mutationFn: async ({ id, signatures }: { id: string; signatures: any }) => {
-      console.log('Signing HPT:', id, signatures);
-      const { data, error } = await supabase
+  const signHPT = async ({ id, signatures }: { id: string; signatures: any }) => {
+    setIsSigning(true);
+    try {
+      const { error } = await supabase
         .from('hpt')
         .update({
+          hpt_firmas: signatures,
           firmado: true,
           estado: 'firmado',
-          progreso: 100,
-          hpt_firmas: signatures
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
-      if (error) {
-        console.error('Error signing HPT:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('HPT signed:', data);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hpts'] });
-      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
-        title: "HPT firmada",
-        description: "La HPT ha sido firmada exitosamente.",
+        title: 'HPT firmada',
+        description: 'La HPT ha sido firmada correctamente',
       });
-    },
-    onError: (error) => {
+      
+      return true;
+    } catch (error: any) {
       console.error('Error signing HPT:', error);
       toast({
-        title: "Error",
-        description: "No se pudo firmar la HPT. Intente nuevamente.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'No se pudo firmar la HPT',
+        variant: 'destructive',
       });
-    },
-  });
+      return false;
+    } finally {
+      setIsSigning(false);
+    }
+  };
 
-  const deleteHPTMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Deleting HPT:', id);
+  const deleteHPT = async (id: string) => {
+    setIsDeleting(true);
+    try {
       const { error } = await supabase
         .from('hpt')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting HPT:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('HPT deleted:', id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hpts'] });
-      queryClient.invalidateQueries({ queryKey: ['workflow-status'] });
       toast({
-        title: "HPT eliminada",
-        description: "La HPT ha sido eliminada exitosamente.",
+        title: 'HPT eliminada',
+        description: 'La HPT ha sido eliminada correctamente',
       });
-    },
-    onError: (error) => {
+      
+      return true;
+    } catch (error: any) {
       console.error('Error deleting HPT:', error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar la HPT. Intente nuevamente.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'No se pudo eliminar la HPT',
+        variant: 'destructive',
       });
-    },
-  });
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const getHPT = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('hpt')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting HPT:', error);
+      return null;
+    }
+  };
 
   return {
-    hpts,
-    isLoading,
-    error,
-    createHPT: createHPTMutation.mutateAsync,
-    updateHPT: updateHPTMutation.mutateAsync,
-    signHPT: signHPTMutation.mutateAsync,
-    deleteHPT: deleteHPTMutation.mutateAsync,
-    isCreating: createHPTMutation.isPending,
-    isUpdating: updateHPTMutation.isPending,
-    isSigning: signHPTMutation.isPending,
-    isDeleting: deleteHPTMutation.isPending,
+    createHPT,
+    updateHPT,
+    signHPT,
+    deleteHPT,
+    getHPT,
+    isCreating,
+    isUpdating,
+    isSigning,
+    isDeleting
   };
 };
