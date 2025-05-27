@@ -19,6 +19,7 @@ export const MapboxPicker = ({
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [mapboxToken] = useState('pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw');
 
   useEffect(() => {
     const loadMapbox = () => {
@@ -42,10 +43,9 @@ export const MapboxPicker = ({
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !mapContainer.current || map.current) return;
+    if (!isLoaded || !mapContainer.current || map.current || !mapboxToken) return;
 
-    // Usar el token desde las variables de entorno
-    window.mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    window.mapboxgl.accessToken = mapboxToken;
 
     map.current = new window.mapboxgl.Map({
       container: mapContainer.current,
@@ -77,7 +77,7 @@ export const MapboxPicker = ({
         map.current = null;
       }
     };
-  }, [isLoaded, initialLat, initialLng, onLocationSelect]);
+  }, [isLoaded, initialLat, initialLng, onLocationSelect, mapboxToken]);
 
   if (!isLoaded) {
     return (

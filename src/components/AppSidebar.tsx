@@ -114,8 +114,7 @@ const menuItems: MenuItem[] = [
     icon: Shield,
     items: [
       { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-      { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
-      { title: "Gestión Salmonera", url: "/admin/salmonera", roleRequired: "admin_salmonera" }
+      { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
     ]
   }
 ];
@@ -176,7 +175,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans">
+    <Sidebar className="border-r border-border/40 font-sans bg-white">
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
@@ -189,7 +188,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
             Navegación Principal
@@ -201,7 +200,7 @@ export function AppSidebar() {
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full">
+                        <SidebarMenuButton className="w-full hover:bg-gray-100 data-[state=open]:bg-gray-50">
                           <item.icon className="w-4 h-4" />
                           <span className="flex-1">{item.title}</span>
                           <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -212,7 +211,7 @@ export function AppSidebar() {
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild>
-                                <Link to={subItem.url}>
+                                <Link to={subItem.url} className="hover:bg-gray-100">
                                   <span>{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
@@ -223,7 +222,7 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <Link to={item.url!} className="flex items-center justify-between w-full">
+                      <Link to={item.url!} className="flex items-center justify-between w-full hover:bg-gray-100">
                         <div className="flex items-center gap-3">
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>
@@ -243,7 +242,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-border/40 p-4">
+      <SidebarFooter className="border-t border-border/40 p-4 bg-white">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
             <span className="text-white font-medium text-sm">

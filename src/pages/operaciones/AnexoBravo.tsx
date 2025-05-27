@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileCheck, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { CreateAnexoBravoForm } from "@/components/anexo-bravo/CreateAnexoBravoForm";
+import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "@/hooks/use-toast";
 
 const AnexoBravo = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,9 +38,22 @@ const AnexoBravo = () => {
     try {
       await createAnexoBravo(data);
       setIsCreateDialogOpen(false);
+      toast({
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
+      });
     } catch (error) {
       console.error('Error creating Anexo Bravo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el Anexo Bravo.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleCancelWizard = () => {
+    setIsCreateDialogOpen(false);
   };
 
   const getEstadoBadge = (estado: string, firmado: boolean) => {
@@ -164,10 +178,10 @@ const AnexoBravo = () => {
                       Nuevo Anexo Bravo
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-                    <CreateAnexoBravoForm
+                  <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-6">
+                    <AnexoBravoWizard
                       onSubmit={handleCreateAnexoBravo}
-                      onCancel={() => setIsCreateDialogOpen(false)}
+                      onCancel={handleCancelWizard}
                     />
                   </DialogContent>
                 </Dialog>
