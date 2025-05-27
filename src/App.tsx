@@ -9,15 +9,15 @@ import { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
 
 // Lazy load components
-const Dashboard = lazy(() => import("@/components/Dashboard"));
-const LoginForm = lazy(() => import("@/components/auth/LoginForm"));
+const Dashboard = lazy(() => import("@/components/Dashboard").then(module => ({ default: module.Dashboard || module.default })));
+const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(module => ({ default: module.LoginForm || module.default })));
 
 // Pages
 const Operaciones = lazy(() => import("@/pages/operaciones/Operaciones"));
 const OperacionesAnexoBravo = lazy(() => import("@/pages/operaciones/AnexoBravo"));
 const Inmersiones = lazy(() => import("@/pages/operaciones/Inmersiones"));
-const BitacorasSupervisor = lazy(() => import("@/pages/bitacoras/BitacorasSupervisor"));
-const BitacorasBuzo = lazy(() => import("@/pages/bitacoras/BitacorasBuzo"));
+const BitacorasSupervisor = lazy(() => import("@/pages/operaciones/BitacorasSupervisor"));
+const BitacorasBuzo = lazy(() => import("@/pages/operaciones/BitacorasBuzo"));
 
 // Empresas
 const Salmoneras = lazy(() => import("@/pages/empresas/Salmoneras"));
@@ -32,10 +32,10 @@ const AnexoBravo = lazy(() => import("@/pages/formularios/AnexoBravo"));
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
 
 // Reportes
-const Reportes = lazy(() => import("@/pages/reportes/Reportes"));
+const Reportes = lazy(() => import("@/pages/Reportes"));
 
 // Configuración
-const Configuracion = lazy(() => import("@/pages/configuracion/Configuracion"));
+const Configuracion = lazy(() => import("@/pages/Configuracion"));
 
 // Equipo de Buceo
 const EquipoBuceo = lazy(() => import("@/pages/equipos/EquipoBuceo"));
