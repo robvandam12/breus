@@ -6,25 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
-import { EditSitioForm } from "@/components/sitios/EditSitioForm";
-import { SitioDetailsView } from "@/components/sitios/SitioDetailsView";
-import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid, Eye, AlertTriangle } from "lucide-react";
+import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid } from "lucide-react";
 import { useSitios } from "@/hooks/useSitios";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Sitios() {
   const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingSitio, setEditingSitio] = useState<any>(null);
-  const [viewingSitio, setViewingSitio] = useState<any>(null);
+  const [selectedSitio, setSelectedSitio] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleCreateSitio = async (data: any) => {
@@ -40,25 +35,9 @@ export default function Sitios() {
     }
   };
 
-  const handleUpdateSitio = async (data: any) => {
-    if (editingSitio) {
-      try {
-        await updateSitio({ id: editingSitio.id, data });
-        setEditingSitio(null);
-        toast({
-          title: "Sitio actualizado",
-          description: "El sitio ha sido actualizado exitosamente.",
-        });
-      } catch (error) {
-        console.error('Error updating sitio:', error);
-      }
-    }
-  };
-
   const handleDeleteSitio = async (id: string) => {
     try {
       await deleteSitio(id);
-      setDeleteConfirm(null);
       toast({
         title: "Sitio eliminado",
         description: "El sitio ha sido eliminado exitosamente.",
@@ -104,43 +83,6 @@ export default function Sitios() {
             <CreateSitioForm
               onSubmit={handleCreateSitio}
               onCancel={() => setShowCreateForm(false)}
-            />
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
-  if (editingSitio) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <main className="flex-1 p-6">
-            <EditSitioForm
-              sitio={editingSitio}
-              onSubmit={handleUpdateSitio}
-              onCancel={() => setEditingSitio(null)}
-            />
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
-  if (viewingSitio) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <main className="flex-1 p-6">
-            <SitioDetailsView
-              sitio={viewingSitio}
-              onBack={() => setViewingSitio(null)}
-              onEdit={() => {
-                setEditingSitio(viewingSitio);
-                setViewingSitio(null);
-              }}
             />
           </main>
         </div>
@@ -257,26 +199,14 @@ export default function Sitios() {
                               )}
 
                               <div className="flex gap-2 pt-3">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setViewingSitio(sitio)}
-                                  className="flex-1"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Ver
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  <Edit className="w-4 h-4 mr-1" />
+                                  Editar
                                 </Button>
                                 <Button 
                                   variant="outline" 
                                   size="sm"
-                                  onClick={() => setEditingSitio(sitio)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setDeleteConfirm(sitio.id)}
+                                  onClick={() => handleDeleteSitio(sitio.id)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -345,24 +275,13 @@ export default function Sitios() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setViewingSitio(sitio)}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setEditingSitio(sitio)}
-                                  >
+                                  <Button variant="outline" size="sm">
                                     <Edit className="w-4 h-4" />
                                   </Button>
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => setDeleteConfirm(sitio.id)}
+                                    onClick={() => handleDeleteSitio(sitio.id)}
                                     className="text-red-600 hover:text-red-700"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -379,32 +298,6 @@ export default function Sitios() {
               </CardContent>
             </Card>
           </div>
-
-          <Dialog open={deleteConfirm !== null} onOpenChange={() => setDeleteConfirm(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                  Confirmar eliminación
-                </DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro de que desea eliminar este sitio? Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex gap-3 mt-6">
-                <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => deleteConfirm && handleDeleteSitio(deleteConfirm)}
-                  className="flex-1"
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </main>
       </div>
     </SidebarProvider>

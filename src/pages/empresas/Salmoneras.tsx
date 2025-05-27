@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CreateSalmoneraForm } from "@/components/salmoneras/CreateSalmoneraForm";
-import { EditSalmoneraForm } from "@/components/salmoneras/EditSalmoneraForm";
 import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
 import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 import { AsociacionContratistas } from "@/components/salmoneras/AsociacionContratistas";
@@ -16,15 +14,12 @@ import { UserManagement } from "@/components/empresa/UserManagement";
 import { Building, Plus, Table, Grid, Users, Link } from "lucide-react";
 import { useSalmoneras, Salmonera } from "@/hooks/useSalmoneras";
 import { useUsersByCompany } from "@/hooks/useUsersByCompany";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Salmoneras() {
   const { salmoneras, isLoading, createSalmonera, updateSalmonera, deleteSalmonera } = useSalmoneras();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingSalmonera, setEditingSalmonera] = useState<Salmonera | null>(null);
   const [selectedSalmonera, setSelectedSalmonera] = useState<Salmonera | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const { toast } = useToast();
 
   const { usuarios, inviteUser, createUser } = useUsersByCompany(
     selectedSalmonera?.id, 
@@ -36,27 +31,8 @@ export default function Salmoneras() {
     setShowCreateForm(false);
   };
 
-  const handleEditSalmonera = async (data: any) => {
-    if (editingSalmonera) {
-      await updateSalmonera({ id: editingSalmonera.id, data });
-      setEditingSalmonera(null);
-      toast({
-        title: "Salmonera actualizada",
-        description: "La salmonera ha sido actualizada exitosamente.",
-      });
-    }
-  };
-
   const handleSelectSalmonera = (salmonera: Salmonera) => {
     setSelectedSalmonera(salmonera);
-  };
-
-  const handleDeleteSalmonera = async (id: string) => {
-    await deleteSalmonera(id);
-    toast({
-      title: "Salmonera eliminada",
-      description: "La salmonera ha sido eliminada exitosamente.",
-    });
   };
 
   const salmoneraUsers = usuarios.filter(u => u.salmonera_id === selectedSalmonera?.id);
@@ -91,23 +67,6 @@ export default function Salmoneras() {
             <CreateSalmoneraForm
               onSubmit={handleCreateSalmonera}
               onCancel={() => setShowCreateForm(false)}
-            />
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
-  if (editingSalmonera) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <main className="flex-1 p-6">
-            <EditSalmoneraForm
-              salmonera={editingSalmonera}
-              onSubmit={handleEditSalmonera}
-              onCancel={() => setEditingSalmonera(null)}
             />
           </main>
         </div>
@@ -168,8 +127,10 @@ export default function Salmoneras() {
                     }))}
                     onCreateUser={async (userData) => {
                       if (userData.usuario_id) {
+                        // Usuario existente
                         await createUser(userData);
                       } else {
+                        // Invitar usuario nuevo
                         await inviteUser(userData);
                       }
                     }}
@@ -248,15 +209,15 @@ export default function Salmoneras() {
                 {viewMode === 'table' ? (
                   <SalmoneraTableView
                     salmoneras={salmoneras}
-                    onEdit={setEditingSalmonera}
-                    onDelete={handleDeleteSalmonera}
+                    onEdit={() => {}}
+                    onDelete={deleteSalmonera}
                     onSelect={handleSelectSalmonera}
                   />
                 ) : (
                   <SalmoneraCardView
                     salmoneras={salmoneras}
-                    onEdit={setEditingSalmonera}
-                    onDelete={handleDeleteSalmonera}
+                    onEdit={() => {}}
+                    onDelete={deleteSalmonera}
                     onSelect={handleSelectSalmonera}
                   />
                 )}

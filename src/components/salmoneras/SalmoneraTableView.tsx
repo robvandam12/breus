@@ -1,138 +1,133 @@
 
-import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Edit, Trash2, Eye, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Building2, MapPin, Edit, Trash2, Eye } from "lucide-react";
 import { Salmonera } from "@/hooks/useSalmoneras";
-import { useToast } from "@/hooks/use-toast";
 
 interface SalmoneraTableViewProps {
   salmoneras: Salmonera[];
-  onEdit: (salmonera: Salmonera) => void;
-  onDelete: (id: string) => Promise<void>;
-  onSelect: (salmonera: Salmonera) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onSelect?: (salmonera: Salmonera) => void;
+  isDeleting?: boolean;
+  isUpdating?: boolean;
 }
 
-export const SalmoneraTableView = ({ salmoneras, onEdit, onDelete, onSelect }: SalmoneraTableViewProps) => {
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const handleDelete = async (id: string) => {
-    try {
-      await onDelete(id);
-      setDeleteConfirm(null);
-      toast({
-        title: "Salmonera eliminada",
-        description: "La salmonera ha sido eliminada exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error deleting salmonera:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la salmonera.",
-        variant: "destructive",
-      });
+export const SalmoneraTableView = ({ 
+  salmoneras, 
+  onEdit, 
+  onDelete, 
+  onSelect,
+  isDeleting = false, 
+  isUpdating = false 
+}: SalmoneraTableViewProps) => {
+  const getEstadoBadgeColor = (estado: string | undefined | null) => {
+    if (!estado) return 'bg-gray-100 text-gray-700 border-gray-200';
+    
+    switch (estado) {
+      case 'activa':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'inactiva':
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'suspendida':
+        return 'bg-red-100 text-red-700 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
+  const formatEstado = (estado: string | undefined | null) => {
+    if (!estado) return 'Sin estado';
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
+  };
+
   return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Empresa</TableHead>
-            <TableHead>RUT</TableHead>
-            <TableHead>Contacto</TableHead>
-            <TableHead>Sitios</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {salmoneras.map((salmonera) => (
-            <TableRow key={salmonera.id}>
-              <TableCell>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Empresa</TableHead>
+          <TableHead>RUT</TableHead>
+          <TableHead>Contacto</TableHead>
+          <TableHead>Sitios</TableHead>
+          <TableHead>Estado</TableHead>
+          <TableHead className="text-right">Acciones</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {salmoneras.map((salmonera) => (
+          <TableRow key={salmonera.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800">
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-zinc-600" />
+                </div>
                 <div>
-                  <div className="font-medium">{salmonera.nombre}</div>
-                  <div className="text-sm text-zinc-500">{salmonera.direccion}</div>
+                  <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                    {salmonera.nombre || 'Sin nombre'}
+                  </div>
+                  <div className="text-sm text-zinc-500 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {salmonera.direccion || 'Sin dirección'}
+                  </div>
                 </div>
-              </TableCell>
-              <TableCell className="font-mono">{salmonera.rut}</TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  {salmonera.email && <div>{salmonera.email}</div>}
-                  {salmonera.telefono && <div className="text-zinc-500">{salmonera.telefono}</div>}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{salmonera.sitios_activos || 0} sitios</Badge>
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={salmonera.estado === 'activa' ? 'default' : 'secondary'}
-                  className={salmonera.estado === 'activa' ? 'bg-green-100 text-green-700' : ''}
-                >
-                  {salmonera.estado}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
+              </div>
+            </TableCell>
+            <TableCell className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
+              {salmonera.rut || 'Sin RUT'}
+            </TableCell>
+            <TableCell>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                {salmonera.telefono && <div>{salmonera.telefono}</div>}
+                {salmonera.email && <div className="truncate max-w-[200px]">{salmonera.email}</div>}
+                {!salmonera.telefono && !salmonera.email && <div className="text-zinc-400">Sin contacto</div>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                {salmonera.sitios_activos || 0} sitios
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline" className={getEstadoBadgeColor(salmonera.estado)}>
+                {formatEstado(salmonera.estado)}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-2">
+                {onSelect && (
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => onSelect(salmonera)}
+                    className="touch-target"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onEdit(salmonera)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setDeleteConfirm(salmonera.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <Dialog open={deleteConfirm !== null} onOpenChange={() => setDeleteConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              Confirmar eliminación
-            </DialogTitle>
-            <DialogDescription>
-              ¿Está seguro de que desea eliminar esta salmonera? Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
-              className="flex-1"
-            >
-              Eliminar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onEdit(salmonera.id)}
+                  disabled={isUpdating}
+                  className="touch-target"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onDelete(salmonera.id)}
+                  disabled={isDeleting}
+                  className="touch-target text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };

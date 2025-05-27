@@ -26,65 +26,67 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
     }
   };
 
-  const getColorClass = () => {
+  const getBorderColor = () => {
     switch (notification.type) {
       case 'success':
-        return 'border-l-green-500 bg-green-50';
+        return 'border-l-green-500';
       case 'warning':
-        return 'border-l-yellow-500 bg-yellow-50';
+        return 'border-l-yellow-500';
       case 'error':
-        return 'border-l-red-500 bg-red-50';
+        return 'border-l-red-500';
       default:
-        return 'border-l-blue-500 bg-blue-50';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: es });
-    } catch {
-      return dateString;
+        return 'border-l-blue-500';
     }
   };
 
   return (
-    <Card className={`border-l-4 ${getColorClass()} ${!notification.read ? 'font-medium' : 'opacity-75'}`}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 flex-1">
+    <Card className={`${getBorderColor()} border-l-4 ${!notification.read ? 'bg-blue-50' : ''}`}>
+      <CardContent className="p-3">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5">
             {getIcon()}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {notification.title}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                {notification.message}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {formatDate(notification.created_at)}
-              </p>
-            </div>
           </div>
           
-          <div className="flex gap-1">
-            {!notification.read && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => markAsRead(notification.id)}
-                className="h-6 w-6 p-0"
-              >
-                <Check className="w-3 h-3" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => deleteNotification(notification.id)}
-              className="h-6 w-6 p-0"
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <h4 className="font-medium text-sm text-gray-900 mb-1">
+                {notification.title}
+              </h4>
+              {!notification.read && (
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2"></div>
+              )}
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-2">
+              {notification.message}
+            </p>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">
+                {format(new Date(notification.created_at), 'dd MMM, HH:mm', { locale: es })}
+              </span>
+              
+              <div className="flex items-center gap-1">
+                {!notification.read && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => markAsRead(notification.id)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Check className="w-3 h-3" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteNotification(notification.id)}
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +13,12 @@ import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
 import { Briefcase, Plus, Table, Grid, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useRouter } from "@/hooks/useRouter";
 
 export default function Operaciones() {
   const { operaciones, isLoading, createOperacion, updateOperacion, deleteOperacion } = useOperaciones();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const router = useRouter();
 
   const handleCreateOperacion = async (data: any) => {
     await createOperacion(data);
@@ -30,20 +29,12 @@ export default function Operaciones() {
     setSelectedOperacionId(operacion.id);
   };
 
-  const handleCreateHPT = (operacionId: string) => {
-    router.push(`/formularios/hpt?operacion_id=${operacionId}`);
-  };
-
-  const handleCreateAnexoBravo = (operacionId: string) => {
-    router.push(`/formularios/anexo-bravo?operacion_id=${operacionId}`);
-  };
-
   const getOperacionStats = () => {
     const stats = {
       total: operaciones.length,
       activas: operaciones.filter(op => op.estado === 'activa').length,
       completadas: operaciones.filter(op => op.estado === 'completada').length,
-      documentosPendientes: operaciones.filter(op => op.estado === 'activa').length * 2
+      documentosPendientes: operaciones.filter(op => op.estado === 'activa').length * 2 // Estimación de HPT y Anexo Bravo pendientes
     };
     return stats;
   };
@@ -148,6 +139,57 @@ export default function Operaciones() {
               </div>
             </div>
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Total Operaciones</p>
+                      <p className="text-2xl font-bold">{stats.total}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Activas</p>
+                      <p className="text-2xl font-bold text-green-600">{stats.activas}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Completadas</p>
+                      <p className="text-2xl font-bold text-blue-600">{stats.completadas}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-yellow-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Docs. Pendientes</p>
+                      <p className="text-2xl font-bold text-yellow-600">{stats.documentosPendientes}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <Card className="ios-card">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center justify-between">
@@ -158,10 +200,7 @@ export default function Operaciones() {
               <CardContent>
                 <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'cards')}>
                   <TabsContent value="table">
-                    <OperacionesManager 
-                      onCreateHPT={handleCreateHPT}
-                      onCreateAnexoBravo={handleCreateAnexoBravo}
-                    />
+                    <OperacionesManager />
                   </TabsContent>
                   
                   <TabsContent value="cards">
@@ -169,8 +208,6 @@ export default function Operaciones() {
                       operaciones={operaciones}
                       onSelect={handleSelectOperacion}
                       onEdit={() => {}}
-                      onCreateHPT={handleCreateHPT}
-                      onCreateAnexoBravo={handleCreateAnexoBravo}
                     />
                   </TabsContent>
                 </Tabs>
