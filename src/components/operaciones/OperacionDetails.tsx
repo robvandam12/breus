@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
-import { CreateHPTForm } from '@/components/hpt/CreateHPTForm';
+import { HPTWizard } from '@/components/hpt/HPTWizard';
 import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
+import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
 
 interface OperacionDetailsProps {
   operacionId: string;
@@ -42,6 +43,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   const [showCreateHPT, setShowCreateHPT] = useState(false);
   const [showCreateAnexo, setShowCreateAnexo] = useState(false);
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
+  const [showTeamManager, setShowTeamManager] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
 
   useEffect(() => {
@@ -89,26 +91,11 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     fetchOperacionDetails();
   }, [operacionId]);
 
-  const handleCreateHPT = async (data: any) => {
-    try {
-      const hptData = {
-        ...data,
-        operacion_id: operacionId,
-        codigo: `HPT-${Date.now()}`,
-        estado: 'borrador',
-        firmado: false,
-        fecha_creacion: new Date().toISOString().split('T')[0]
-      };
-      
-      const { error } = await supabase.from('hpt').insert([hptData]);
-      if (error) throw error;
-      
-      setShowCreateHPT(false);
-      // Refresh data
-      window.location.reload();
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
+  const handleCreateHPT = async (hptId: string) => {
+    console.log('HPT created:', hptId);
+    setShowCreateHPT(false);
+    // Refresh data
+    window.location.reload();
   };
 
   const handleCreateAnexo = async (data: any) => {
@@ -200,8 +187,9 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
@@ -272,6 +260,23 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="equipo" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Equipo de Buceo</CardTitle>
+              <Button onClick={() => setShowTeamManager(true)} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Gestionar Equipo
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-4">
+                Configure el equipo de buceo antes de crear documentos
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="documentos" className="space-y-4">
@@ -377,7 +382,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
                       <div>
                         <p className="font-medium">{inmersion.codigo}</p>
                         <p className="text-sm text-gray-600">
-                          Buzo: {inmersion.buzo_principal} • Prof: {inmersion.profundidad_maxima}m
+                          Buzo: {inmersion.buzo_principal} • Prof: {inmersion.profundidad_max}m
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -408,14 +413,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
       {/* Dialogs para crear documentos */}
       <Dialog open={showCreateHPT} onOpenChange={setShowCreateHPT}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Crear Nuevo HPT</DialogTitle>
           </DialogHeader>
-          <CreateHPTForm
-            onSubmit={handleCreateHPT}
+          <HPTWizard
+            operacionId={operacionId}
+            onComplete={handleCreateHPT}
             onCancel={() => setShowCreateHPT(false)}
-            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
@@ -442,6 +447,18 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
             onSubmit={handleCreateInmersion}
             onCancel={() => setShowCreateInmersion(false)}
             defaultOperacionId={operacionId}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTeamManager} onOpenChange={setShowTeamManager}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Gestionar Equipo de Buceo</DialogTitle>
+          </DialogHeader>
+          <OperacionTeamManager
+            operacionId={operacionId}
+            onClose={() => setShowTeamManager(false)}
           />
         </DialogContent>
       </Dialog>

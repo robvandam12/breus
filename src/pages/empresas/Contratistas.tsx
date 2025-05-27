@@ -9,12 +9,15 @@ import { ContratistaTableView } from "@/components/contratistas/ContratistaTable
 import { CreateContratistaForm } from "@/components/contratistas/CreateContratistaForm";
 import { DeleteContratistaDialog } from "@/components/contratistas/DeleteContratistaDialog";
 import { useContratistas } from "@/hooks/useContratistas";
+import { useAuthRoles } from "@/hooks/useAuthRoles";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export default function Contratistas() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deleteContratista, setDeleteContratista] = useState<{id: string, nombre: string} | null>(null);
   const { contratistas, deleteContratista: deleteContratistaFn, createContratista, isDeleting } = useContratistas();
+  const { userProfile } = useAuthRoles();
 
   const handleDelete = async () => {
     if (!deleteContratista) return;
@@ -48,10 +51,27 @@ export default function Contratistas() {
 
   const handleCreateContratista = async (data: any) => {
     try {
-      await createContratista(data);
+      // Crear el contratista
+      const newContratista = await createContratista(data);
+      
+      // Si el usuario es admin de salmonera, asociar automáticamente
+      if (userProfile?.rol === 'admin_salmonera' && userProfile?.salmonera_id && newContratista) {
+        const { error: associationError } = await supabase
+          .from('salmonera_contratista')
+          .insert({
+            salmonera_id: userProfile.salmonera_id,
+            contratista_id: newContratista.id,
+            estado: 'activa'
+          });
+          
+        if (associationError) {
+          console.error('Error associating contratista:', associationError);
+        }
+      }
+      
       toast({
         title: "Contratista creado",
-        description: "El contratista ha sido creado exitosamente.",
+        description: "El contratista ha sido creado y asociado exitosamente.",
       });
       setShowCreateForm(false);
     } catch (error) {
@@ -80,8 +100,8 @@ export default function Contratistas() {
             </Button>
           </Header>
           <div className="flex-1 overflow-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
+            <div className="p-6 space-y-6">
+              <div className="flex justify-between items-center">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Contratistas</h1>
                   <p className="text-gray-600">
@@ -103,12 +123,14 @@ export default function Contratistas() {
                 }}
               />
 
-              {/* Create Form Modal */}
+              {/* Create Form - aparece abajo del listado */}
               {showCreateForm && (
-                <CreateContratistaForm 
-                  onSubmit={handleCreateContratista}
-                  onCancel={() => setShowCreateForm(false)}
-                />
+                <div className="border-t pt-6">
+                  <CreateContratistaForm 
+                    onSubmit={handleCreateContratista}
+                    onCancel={() => setShowCreateForm(false)}
+                  />
+                </div>
               )}
 
               {/* Delete Confirmation Dialog */}
