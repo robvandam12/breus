@@ -1,73 +1,88 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Book, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock } from "lucide-react";
-import { CreateBitacoraBuzoForm } from "@/components/bitacoras/CreateBitacoraBuzoForm";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
+import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
+import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
+import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras } from "@/hooks/useBitacoras";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useBitacoraActions } from "@/hooks/useBitacoraActions";
+import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
+import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function BitacorasBuzo() {
-  const [searchTerm, setSearchTerm] = useState("");
+const BitacorasBuzo = () => {
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'borrador' | 'firmado' | 'pendiente'>('all');
   
-  const { bitacorasBuzo, loading } = useBitacoras();
+  const { 
+    bitacorasBuzo, 
+    loading, 
+    refreshBitacoras 
+  } = useBitacoras();
+  
+  const { createBitacoraBuzo } = useBitacoraEnhanced();
+  const { signBitacoraBuzo } = useBitacoraActions();
+  const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
-  const filteredBitacoras = bitacorasBuzo.filter(bitacora => {
-    const matchesSearch = bitacora.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bitacora.buzo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || 
-                         (filterStatus === 'firmado' && bitacora.firmado) ||
-                         (filterStatus === 'borrador' && !bitacora.firmado);
-    return matchesSearch && matchesFilter;
-  });
+  const filteredBitacorasBuzo = filterBitacoras(bitacorasBuzo);
 
-  const handleCreateBitacora = async (data: any) => {
+  const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
     try {
-      // Logic to create bitacora
+      await createBitacoraBuzo(data);
       setIsCreateDialogOpen(false);
-    } catch (error: any) {
-      console.error('Error creating Bitacora:', error);
+      refreshBitacoras();
+    } catch (error) {
+      console.error('Error creating bitácora buzo:', error);
     }
   };
 
-  const getEstadoBadge = (firmado: boolean) => {
-    if (firmado) {
-      return { className: "bg-green-100 text-green-700", label: "Firmado", icon: CheckCircle };
-    }
-    return { className: "bg-gray-100 text-gray-700", label: "Borrador", icon: Clock };
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy", { locale: es });
-    } catch {
-      return dateString;
-    }
+  const handleSignBuzo = async (id: string) => {
+    await signBitacoraBuzo(id);
+    refreshBitacoras();
   };
 
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <RoleBasedSidebar />
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
               title="Bitácoras Buzo" 
-              subtitle="Gestión de Bitácoras de Buzo" 
-              icon={Book} 
+              subtitle="Registro personal de inmersiones" 
+              icon={FileText} 
             />
-            <div className="flex-1 flex items-center justify-center">
-              <LoadingSpinner text="Cargando Bitácoras..." />
+            <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <Skeleton className="h-8 w-20 mb-2" />
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </main>
         </div>
@@ -77,100 +92,88 @@ export default function BitacorasBuzo() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <RoleBasedSidebar />
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <AppSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Bitácoras Buzo" 
-            subtitle="Gestión de Bitácoras de Buzo" 
-            icon={Book} 
+            subtitle="Registro personal de inmersiones" 
+            icon={FileText} 
           >
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar Bitácoras..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  variant={filterStatus === 'all' ? 'default' : 'outline'} 
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setFilterStatus('all')}
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-3"
                 >
-                  Todas
+                  <LayoutGrid className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant={filterStatus === 'borrador' ? 'default' : 'outline'} 
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setFilterStatus('borrador')}
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-3"
                 >
-                  Borradores
-                </Button>
-                <Button 
-                  variant={filterStatus === 'firmado' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterStatus('firmado')}
-                >
-                  Firmadas
+                  <LayoutList className="w-4 h-4" />
                 </Button>
               </div>
 
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nueva Bitácora
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <CreateBitacoraBuzoForm
-                    onSubmit={handleCreateBitacora}
-                    onCancel={() => setIsCreateDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-teal-600 hover:bg-teal-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Bitácora Buzo
+              </Button>
             </div>
           </Header>
           
           <div className="flex-1 overflow-auto">
-            <div className="p-6">
-              {/* KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {bitacorasBuzo.length}
-                  </div>
-                  <div className="text-sm text-zinc-500">Total Bitácoras</div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {bitacorasBuzo.filter(b => b.firmado).length}
-                  </div>
-                  <div className="text-sm text-zinc-500">Firmadas</div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-2xl font-bold text-gray-600">
-                    {bitacorasBuzo.filter(b => !b.firmado).length}
-                  </div>
-                  <div className="text-sm text-zinc-500">Borradores</div>
-                </Card>
-              </div>
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              <BitacoraStats 
+                bitacorasSupervisor={[]}
+                bitacorasBuzo={bitacorasBuzo}
+                filteredSupervisor={[]}
+                filteredBuzo={filteredBitacorasBuzo}
+              />
 
-              {filteredBitacoras.length === 0 ? (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Filtros y Búsqueda
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BitacoraFilters
+                    activeFilters={filters}
+                    onFiltersChange={setFilters}
+                  />
+                </CardContent>
+              </Card>
+
+              {filteredBitacorasBuzo.length === 0 ? (
                 <Card className="text-center py-12">
                   <CardContent>
-                    <Book className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay bitácoras registradas</h3>
-                    <p className="text-zinc-500 mb-4">Comience creando la primera bitácora de buzo</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva Bitácora
-                    </Button>
+                    <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-zinc-900 mb-2">
+                      {bitacorasBuzo.length === 0 
+                        ? "No hay bitácoras de buzo" 
+                        : "No se encontraron resultados"}
+                    </h3>
+                    <p className="text-zinc-500 mb-4">
+                      {bitacorasBuzo.length === 0 
+                        ? "Comienza creando tu primera bitácora de buzo"
+                        : "Intenta ajustar los filtros de búsqueda"}
+                    </p>
+                    {bitacorasBuzo.length === 0 && (
+                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-teal-600 hover:bg-teal-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nueva Bitácora Buzo
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
@@ -179,68 +182,42 @@ export default function BitacorasBuzo() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Código</TableHead>
+                        <TableHead>Inmersión</TableHead>
                         <TableHead>Buzo</TableHead>
                         <TableHead>Fecha</TableHead>
                         <TableHead>Profundidad</TableHead>
-                        <TableHead>Trabajos</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredBitacoras.map((bitacora) => {
-                        const estadoInfo = getEstadoBadge(bitacora.firmado);
-                        const IconComponent = estadoInfo.icon;
-                        
-                        return (
-                          <TableRow key={bitacora.bitacora_id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                  <Book className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <div className="font-medium">{bitacora.codigo}</div>
-                                  <div className="text-xs text-zinc-500">{formatDate(bitacora.created_at)}</div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-zinc-600">{bitacora.buzo}</TableCell>
-                            <TableCell className="text-zinc-600">{formatDate(bitacora.fecha)}</TableCell>
-                            <TableCell className="text-zinc-600">{bitacora.profundidad_maxima}m</TableCell>
-                            <TableCell className="text-zinc-600 max-w-xs truncate">
-                              {bitacora.trabajos_realizados}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className={estadoInfo.className}>
-                                <IconComponent className="w-3 h-3 mr-1" />
-                                {estadoInfo.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {filteredBitacorasBuzo.map((bitacora) => (
+                        <BitacoraTableRow
+                          key={bitacora.id}
+                          bitacora={bitacora}
+                          type="buzo"
+                          onSign={handleSignBuzo}
+                        />
+                      ))}
                     </TableBody>
                   </Table>
                 </Card>
               )}
             </div>
           </div>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent variant="form" className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+              <CreateBitacoraBuzoFormEnhanced
+                onSubmit={handleCreateBuzo}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>
   );
-}
+};
+
+export default BitacorasBuzo;
