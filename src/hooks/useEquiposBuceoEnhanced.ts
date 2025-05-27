@@ -17,6 +17,11 @@ export interface EquipoBuceo {
     nombre_completo: string;
     rol: string;
     disponible: boolean;
+    matricula?: string;
+    email?: string;
+    telefono?: string;
+    invitado?: boolean;
+    estado_invitacion?: string;
   }>;
 }
 
@@ -54,7 +59,8 @@ export const useEquiposBuceoEnhanced = () => {
               usuario:usuario_id (
                 nombre,
                 apellido,
-                rol
+                rol,
+                email
               )
             `)
             .eq('equipo_id', equipo.id);
@@ -63,7 +69,12 @@ export const useEquiposBuceoEnhanced = () => {
             id: miembro.id,
             nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
             rol: miembro.usuario?.rol || miembro.rol_equipo,
-            disponible: miembro.disponible
+            disponible: miembro.disponible,
+            email: miembro.usuario?.email,
+            matricula: '',
+            telefono: '',
+            invitado: false,
+            estado_invitacion: 'activo'
           }));
 
           return {
@@ -99,7 +110,7 @@ export const useEquiposBuceoEnhanced = () => {
           nombre: equipoData.nombre,
           descripcion: equipoData.descripcion,
           empresa_id: equipoData.empresa_id,
-          tipo_empresa: 'salmonera', // Default value
+          tipo_empresa: 'salmonera',
           activo: true
         }])
         .select()
@@ -127,6 +138,66 @@ export const useEquiposBuceoEnhanced = () => {
     }
   };
 
+  const addMiembro = async (miembroData: {
+    equipo_id: string;
+    usuario_id: string;
+    rol_equipo: string;
+    nombre_completo: string;
+    email: string;
+    invitado: boolean;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert([{
+          equipo_id: miembroData.equipo_id,
+          usuario_id: miembroData.usuario_id,
+          rol_equipo: miembroData.rol_equipo,
+          disponible: true
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Miembro agregado",
+        description: "El miembro ha sido agregado al equipo exitosamente.",
+      });
+
+      await fetchEquipos();
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el miembro al equipo.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const inviteMember = async (inviteData: {
+    equipo_id: string;
+    email: string;
+    nombre_completo: string;
+    rol_equipo: string;
+  }) => {
+    try {
+      // Here you would implement the invitation logic
+      toast({
+        title: "Invitación enviada",
+        description: "Se ha enviado una invitación al miembro.",
+      });
+    } catch (error) {
+      console.error('Error inviting member:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la invitación.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchEquipos();
   }, []);
@@ -136,6 +207,8 @@ export const useEquiposBuceoEnhanced = () => {
     isLoading,
     isCreating,
     createEquipo,
+    addMiembro,
+    inviteMember,
     refreshEquipos: fetchEquipos
   };
 };

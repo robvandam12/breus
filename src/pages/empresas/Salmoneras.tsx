@@ -51,6 +51,14 @@ export default function Salmoneras() {
     setSelectedSalmonera(salmonera);
   };
 
+  const handleDeleteSalmonera = async (id: string) => {
+    await deleteSalmonera(id);
+    toast({
+      title: "Salmonera eliminada",
+      description: "La salmonera ha sido eliminada exitosamente.",
+    });
+  };
+
   const salmoneraUsers = usuarios.filter(u => u.salmonera_id === selectedSalmonera?.id);
 
   if (isLoading) {
@@ -160,10 +168,8 @@ export default function Salmoneras() {
                     }))}
                     onCreateUser={async (userData) => {
                       if (userData.usuario_id) {
-                        // Usuario existente
                         await createUser(userData);
                       } else {
-                        // Invitar usuario nuevo
                         await inviteUser(userData);
                       }
                     }}
@@ -243,14 +249,14 @@ export default function Salmoneras() {
                   <SalmoneraTableView
                     salmoneras={salmoneras}
                     onEdit={setEditingSalmonera}
-                    onDelete={deleteSalmonera}
+                    onDelete={handleDeleteSalmonera}
                     onSelect={handleSelectSalmonera}
                   />
                 ) : (
                   <SalmoneraCardView
                     salmoneras={salmoneras}
                     onEdit={setEditingSalmonera}
-                    onDelete={deleteSalmonera}
+                    onDelete={handleDeleteSalmonera}
                     onSelect={handleSelectSalmonera}
                   />
                 )}

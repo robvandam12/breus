@@ -21,7 +21,7 @@ export const EditSalmoneraForm = ({ salmonera, onSubmit, onCancel }: EditSalmone
     direccion: salmonera.direccion,
     email: salmonera.email || '',
     telefono: salmonera.telefono || '',
-    estado: salmonera.estado
+    estado: salmonera.estado as 'activa' | 'inactiva' | 'suspendida'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,7 +119,7 @@ export const EditSalmoneraForm = ({ salmonera, onSubmit, onCancel }: EditSalmone
                 <Label htmlFor="estado">Estado</Label>
                 <Select
                   value={formData.estado}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, estado: value }))}
+                  onValueChange={(value: 'activa' | 'inactiva' | 'suspendida') => setFormData(prev => ({ ...prev, estado: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
