@@ -73,7 +73,7 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
             <EnhancedSelect
               options={operacionOptions}
               value={formData.operacion_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
               placeholder="Seleccione una operación"
               className="w-full"
             />
