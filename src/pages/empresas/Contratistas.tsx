@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 export default function Contratistas() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deleteContratista, setDeleteContratista] = useState<{id: string, nombre: string} | null>(null);
-  const { contratistas, deleteContratista: deleteContratistaFn, isDeleting } = useContratistas();
+  const { contratistas, deleteContratista: deleteContratistaFn, createContratista, isDeleting } = useContratistas();
 
   const handleDelete = async () => {
     if (!deleteContratista) return;
@@ -46,8 +46,22 @@ export default function Contratistas() {
     }
   };
 
-  const handleCreateSuccess = () => {
-    setShowCreateForm(false);
+  const handleCreateContratista = async (data: any) => {
+    try {
+      await createContratista(data);
+      toast({
+        title: "Contratista creado",
+        description: "El contratista ha sido creado exitosamente.",
+      });
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error('Error creating contratista:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el contratista.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -92,7 +106,7 @@ export default function Contratistas() {
               {/* Create Form Modal */}
               {showCreateForm && (
                 <CreateContratistaForm 
-                  onSuccess={handleCreateSuccess}
+                  onSubmit={handleCreateContratista}
                   onCancel={() => setShowCreateForm(false)}
                 />
               )}
