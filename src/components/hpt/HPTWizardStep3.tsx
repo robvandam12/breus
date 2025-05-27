@@ -17,24 +17,16 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
     updateData({
       hpt_medidas: {
         ...data.hpt_medidas,
-        [key]: value
+        [key]: value as 'si' | 'no' | 'na'
       }
     });
   };
 
   const handleRiesgosChange = (key: string, field: string, value: string) => {
-    const currentRiesgos = data.hpt_riesgos_comp || {
-      condiciones_ambientales: { valor: 'na', acciones: '' },
-      estado_equipos: { valor: 'na', acciones: '' },
-      competencia_personal: { valor: 'na', acciones: '' },
-      coordinacion_actividades: { valor: 'na', acciones: '' },
-      comunicacion_riesgos: { valor: 'na', acciones: '' }
-    };
-    const currentItem = currentRiesgos[key] || { valor: 'na', acciones: '' };
-    
+    const currentItem = data.hpt_riesgos_comp[key] || { valor: 'na', acciones: '' };
     updateData({
       hpt_riesgos_comp: {
-        ...currentRiesgos,
+        ...data.hpt_riesgos_comp,
         [key]: {
           ...currentItem,
           [field]: value
@@ -43,16 +35,16 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
     });
   };
 
-  const medidasEjecucion = [
+  const medidasItems = [
     { key: 'listas_chequeo_erc_disponibles', label: '¿Están disponibles las listas de chequeo de ERC?' },
-    { key: 'personal_competente_disponible', label: '¿Personal competente está disponible?' },
-    { key: 'equipos_proteccion_disponibles', label: '¿Equipos de protección están disponibles?' },
-    { key: 'procedimientos_emergencia_conocidos', label: '¿Procedimientos de emergencia son conocidos?' },
+    { key: 'personal_competente_disponible', label: '¿El personal competente está disponible?' },
+    { key: 'equipos_proteccion_disponibles', label: '¿Los equipos de protección están disponibles?' },
+    { key: 'procedimientos_emergencia_conocidos', label: '¿Se conocen los procedimientos de emergencia?' },
     { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación?' },
     { key: 'autorizaciones_vigentes', label: '¿Las autorizaciones están vigentes?' }
   ];
 
-  const riesgosComplementarios = [
+  const riesgosItems = [
     { key: 'condiciones_ambientales', label: 'Condiciones Ambientales' },
     { key: 'estado_equipos', label: 'Estado de Equipos' },
     { key: 'competencia_personal', label: 'Competencia del Personal' },
@@ -63,30 +55,30 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Medidas Claves y Riesgos Complementarios</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Medidas Clave y Riesgos Complementarios</h2>
         <p className="mt-2 text-gray-600">
-          Verificación de medidas de control e identificación de riesgos adicionales
+          Verificación de medidas de control y análisis de riesgos adicionales
         </p>
       </div>
 
-      {/* Medidas Claves */}
+      {/* Medidas Clave */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
-            Medidas Claves para Ejecución
+            Medidas Clave para Ejecución
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {medidasEjecucion.map((medida) => (
+            {medidasItems.map((medida) => (
               <div key={medida.key} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 border rounded-lg">
                 <Label className="text-sm font-medium">
                   {medida.label}
                 </Label>
                 <div>
                   <Select 
-                    value={data.hpt_medidas?.[medida.key] || ''} 
+                    value={data.hpt_medidas[medida.key] || ''} 
                     onValueChange={(value) => handleMedidasChange(medida.key, value)}
                   >
                     <SelectTrigger>
@@ -130,7 +122,7 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {riesgosComplementarios.map((riesgo) => (
+            {riesgosItems.map((riesgo) => (
               <div key={riesgo.key} className="border rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                   <Label className="text-sm font-medium">
@@ -138,11 +130,11 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
                   </Label>
                   <div>
                     <Select 
-                      value={data.hpt_riesgos_comp?.[riesgo.key]?.valor || ''} 
+                      value={data.hpt_riesgos_comp[riesgo.key]?.valor || ''} 
                       onValueChange={(value) => handleRiesgosChange(riesgo.key, 'valor', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Evaluar..." />
+                        <SelectValue placeholder="¿Presente?" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="si">Sí</SelectItem>
@@ -153,15 +145,15 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
                   </div>
                 </div>
                 
-                {data.hpt_riesgos_comp?.[riesgo.key]?.valor === 'si' && (
+                {data.hpt_riesgos_comp[riesgo.key]?.valor === 'si' && (
                   <div className="mt-4">
                     <Label className="text-sm font-medium text-gray-700">
                       Acciones de Control
                     </Label>
                     <Textarea
-                      value={data.hpt_riesgos_comp?.[riesgo.key]?.acciones || ''}
+                      value={data.hpt_riesgos_comp[riesgo.key]?.acciones || ''}
                       onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones', e.target.value)}
-                      placeholder="Describa las acciones de control..."
+                      placeholder="Describa las acciones de control implementadas..."
                       rows={3}
                       className="mt-2"
                     />
@@ -172,6 +164,18 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
           </div>
         </CardContent>
       </Card>
+
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="text-sm text-red-800">
+            <strong>Crítico:</strong> Para cualquier medida marcada como "No" o riesgo presente, 
+            se deben implementar acciones correctivas antes de proceder. Documente todas las acciones en los campos correspondientes.
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,9 +25,6 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
-import { useContratistas } from "@/hooks/useContratistas";
-import { useSitios } from "@/hooks/useSitios";
 
 interface AnexoBravoWizardProps {
   onSubmit: (data: any) => Promise<void>;
@@ -37,35 +35,24 @@ interface AnexoBravoWizardProps {
 export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: AnexoBravoWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const { operaciones, isLoading: loadingOperaciones } = useOperaciones();
-  const { equipos } = useEquiposBuceo();
-  const { contratistas } = useContratistas();
-  const { sitios } = useSitios();
-
-  // Get operation data for pre-filling
-  const operacion = operaciones.find(op => op.id === defaultOperacionId);
-  const contratista = contratistas.find(c => c.id === operacion?.contratista_id);
-  const sitio = sitios.find(s => s.id === operacion?.sitio_id);
-  const equipoBuceo = equipos.find(eq => eq.id === operacion?.equipo_buceo_id);
 
   const [formData, setFormData] = useState({
     informacionGeneral: {
       operacion_id: defaultOperacionId || "",
-      empresa_nombre: contratista?.nombre || "",
-      lugar_faena: sitio?.nombre || "",
+      empresa_nombre: "",
+      lugar_faena: "",
       fecha: new Date().toISOString().split('T')[0],
       jefe_centro_nombre: "",
     },
-    identificacionBuzo: {
-      buzo_o_empresa_nombre: contratista?.nombre || "",
-      asistente_buzo_nombre: ""
-    },
+    identificacionBuzo: {},
     equipos: {},
     bitacora: {},
-    participantes: equipoBuceo?.miembros || [],
+    participantes: [],
     firmas: {}
   });
 
   const totalSteps = 6;
+  const progress = (currentStep / totalSteps) * 100;
 
   const steps = [
     { number: 1, title: "Información General", icon: Building },
@@ -79,32 +66,12 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
   const informacionForm = useForm({
     defaultValues: {
       operacion_id: defaultOperacionId || "",
-      empresa_nombre: contratista?.nombre || "",
-      lugar_faena: sitio?.nombre || "",
+      empresa_nombre: "",
+      lugar_faena: "",
       fecha: new Date().toISOString().split('T')[0],
       jefe_centro_nombre: ""
     }
   });
-
-  // Update form when operation data loads
-  useEffect(() => {
-    if (operacion && contratista && sitio) {
-      informacionForm.setValue('empresa_nombre', contratista.nombre || '');
-      informacionForm.setValue('lugar_faena', sitio.nombre || '');
-      setFormData(prev => ({
-        ...prev,
-        informacionGeneral: {
-          ...prev.informacionGeneral,
-          empresa_nombre: contratista.nombre || '',
-          lugar_faena: sitio.nombre || '',
-        },
-        identificacionBuzo: {
-          ...prev.identificacionBuzo,
-          buzo_o_empresa_nombre: contratista.nombre || '',
-        }
-      }));
-    }
-  }, [operacion, contratista, sitio, informacionForm]);
 
   const identificacionForm = useForm();
   const equiposForm = useForm();
@@ -124,7 +91,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
     label: `${op.codigo} - ${op.nombre}`
   }));
 
-  const equipos_lista = [
+  const equipos = [
     { key: 'compresor', label: 'Compresor (estanque de reserva)' },
     { key: 'regulador_aire', label: 'Regulador de aire c/ arnés de afirm.' },
     { key: 'traje_neopren', label: 'Traje de Neoprén' },
@@ -206,8 +173,6 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...informacionForm.register('empresa_nombre')}
                 placeholder="Nombre de la empresa"
-                value={contratista?.nombre || informacionForm.watch('empresa_nombre')}
-                readOnly={!!contratista?.nombre}
               />
             </div>
 
@@ -216,8 +181,6 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...informacionForm.register('lugar_faena')}
                 placeholder="Centro de trabajo"
-                value={sitio?.nombre || informacionForm.watch('lugar_faena')}
-                readOnly={!!sitio?.nombre}
               />
             </div>
 
@@ -247,8 +210,6 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...identificacionForm.register('buzo_o_empresa_nombre')}
                 placeholder="Nombre del buzo o empresa"
-                value={contratista?.nombre || identificacionForm.watch('buzo_o_empresa_nombre')}
-                readOnly={!!contratista?.nombre}
               />
             </div>
 
@@ -272,10 +233,10 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
             </div>
 
             <div>
-              <Label htmlFor="asistente_buzo_nombre">Asistente de Buzo (Nombre)</Label>
+              <Label htmlFor="asistente_buzo_nombre">Asistente de Buzo</Label>
               <Input
                 {...identificacionForm.register('asistente_buzo_nombre')}
-                placeholder="Nombre del asistente de buzo"
+                placeholder="Nombre del asistente"
               />
             </div>
 
@@ -296,7 +257,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               Marque los equipos e insumos verificados:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {equipos_lista.map((equipo) => (
+              {equipos.map((equipo) => (
                 <div key={equipo.key} className="flex items-center space-x-2">
                   <Checkbox
                     id={equipo.key}
@@ -354,57 +315,23 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
         return (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Trabajadores del equipo de buceo asignado:
+              Agregue los trabajadores que participan en la faena:
             </p>
-            {equipoBuceo?.miembros?.map((miembro, index) => (
-              <div key={miembro.id} className="grid grid-cols-3 gap-4 p-3 border rounded-lg">
-                <div>
-                  <Label>Nombre</Label>
-                  <Input
-                    value={`${miembro.usuario?.nombre} ${miembro.usuario?.apellido}`}
-                    readOnly
-                    className="bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <Label>Rol</Label>
-                  <Input
-                    value={miembro.rol_equipo}
-                    readOnly
-                    className="bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    value={miembro.usuario?.email || ''}
-                    readOnly
-                    className="bg-gray-50"
-                  />
-                </div>
-              </div>
-            )) || (
-              <p className="text-gray-500 text-center py-4">
-                No hay miembros en el equipo de buceo asignado
-              </p>
-            )}
-            
-            {/* Additional manual workers */}
-            {[1, 2, 3].map((index) => (
+            {[1, 2, 3, 4, 5, 6].map((index) => (
               <div key={index} className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor={`trabajador_adicional_${index}_nombre`}>
-                    Trabajador Adicional {index}
+                  <Label htmlFor={`trabajador_${index}_nombre`}>
+                    Nombre del Trabajador {index}
                   </Label>
                   <Input
-                    {...participantesForm.register(`trabajador_adicional_${index}_nombre`)}
+                    {...participantesForm.register(`trabajador_${index}_nombre`)}
                     placeholder="Nombre completo"
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`trabajador_adicional_${index}_rut`}>RUT</Label>
+                  <Label htmlFor={`trabajador_${index}_rut`}>RUT</Label>
                   <Input
-                    {...participantesForm.register(`trabajador_adicional_${index}_rut`)}
+                    {...participantesForm.register(`trabajador_${index}_rut`)}
                     placeholder="12.345.678-9"
                   />
                 </div>
@@ -416,12 +343,6 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
       case 6:
         return (
           <div className="space-y-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-amber-800">
-                <strong>Nota:</strong> Las firmas se agregarán después de que el Anexo Bravo sea creado y revisado.
-              </p>
-            </div>
-
             <div>
               <Label htmlFor="supervisor_servicio_nombre">
                 Nombre del Supervisor del servicio a cargo del trabajo
@@ -434,7 +355,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
 
             <div>
               <Label htmlFor="supervisor_mandante_nombre">
-                Nombre del Supervisor de la Salmonera
+                Nombre del Supervisor de BLUMAR
               </Label>
               <Input
                 {...firmasForm.register('supervisor_mandante_nombre')}
@@ -459,7 +380,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -472,6 +393,15 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
         <Badge variant="outline">
           Paso {currentStep} de {totalSteps}
         </Badge>
+      </div>
+
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Progreso del formulario</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
       </div>
 
       {/* Steps Navigation */}
