@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Users, Plus, X, UserPlus } from "lucide-react";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,12 +22,13 @@ interface OperacionTeamManagerProps {
 }
 
 export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: OperacionTeamManagerProps) => {
-  const { equipos } = useEquiposBuceoEnhanced();
+  const { equipos, createEquipo } = useEquiposBuceoEnhanced();
   const { operaciones } = useOperaciones();
   const queryClient = useQueryClient();
   
   const [selectedEquipoId, setSelectedEquipoId] = useState('');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isCreateEquipoDialogOpen, setIsCreateEquipoDialogOpen] = useState(false);
   
   const operacion = operaciones.find(op => op.id === operacionId);
   const availableEquipos = equipos.filter(e => e.empresa_id === salmoneraId);
@@ -106,6 +109,15 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: Oper
     removeOperacionTeam.mutate();
   };
 
+  const handleCreateEquipo = async (data: any) => {
+    try {
+      await createEquipo(data);
+      setIsCreateEquipoDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating equipo:', error);
+    }
+  };
+
   const getRolBadgeColor = (rol: string) => {
     const colorMap: Record<string, string> = {
       supervisor: 'bg-blue-100 text-blue-700',
@@ -139,6 +151,22 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: Oper
                 Remover Equipo
               </Button>
             )}
+            
+            <Dialog open={isCreateEquipoDialogOpen} onOpenChange={setIsCreateEquipoDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Equipo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <CreateEquipoForm
+                  onSubmit={handleCreateEquipo}
+                  onCancel={() => setIsCreateEquipoDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -211,10 +239,16 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: Oper
             <p className="text-sm text-zinc-500 mb-4">
               Asigne un equipo de buceo para esta operación
             </p>
-            <Button onClick={() => setIsAssignDialogOpen(true)} variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Asignar Equipo
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => setIsCreateEquipoDialogOpen(true)} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Equipo
+              </Button>
+              <Button onClick={() => setIsAssignDialogOpen(true)} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Asignar Equipo
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

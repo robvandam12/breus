@@ -5,14 +5,12 @@ import { toast } from "@/hooks/use-toast";
 
 export interface EquipoBuceoMiembro {
   id: string;
-  usuario_id: string;
-  equipo_id: string;
+  nombre_completo: string;
   rol_equipo: string;
   disponible: boolean;
-  nombre?: string;
-  apellido?: string;
   email?: string;
-  nombre_completo?: string;
+  matricula?: string;
+  telefono?: string;
 }
 
 export interface EquipoBuceo {
@@ -22,64 +20,98 @@ export interface EquipoBuceo {
   empresa_id: string;
   tipo_empresa: string;
   activo: boolean;
-  created_at?: string;
+  created_at: string;
+  updated_at: string;
   miembros?: EquipoBuceoMiembro[];
+}
+
+export interface EquipoBuceoFormData {
+  nombre: string;
+  descripcion: string;
 }
 
 export const useEquipoBuceo = () => {
   const queryClient = useQueryClient();
 
-  const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
+  const { data: equipos = [], isLoading } = useQuery({
     queryKey: ['equipos-buceo'],
     queryFn: async () => {
+      console.log('Fetching equipos de buceo...');
       const { data, error } = await supabase
         .from('equipos_buceo')
-        .select('*')
-        .eq('activo', true)
-        .order('nombre');
-
-      if (error) throw error;
-      return data as EquipoBuceo[];
-    },
-  });
-
-  const { data: miembros = [], isLoading: loadingMiembros } = useQuery({
-    queryKey: ['equipo-buceo-miembros'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('equipo_buceo_miembros')
         .select(`
           *,
-          usuario:usuario_id (
-            nombre,
-            apellido,
-            email
+          equipo_buceo_miembros (
+            id,
+            usuario_id,
+            disponible,
+            rol_equipo,
+            usuario:usuario_id (
+              nombre,
+              apellido,
+              email
+            )
           )
         `)
-        .eq('disponible', true);
+        .eq('activo', true)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      return data.map(miembro => ({
-        ...miembro,
-        nombre: miembro.usuario?.nombre || '',
-        apellido: miembro.usuario?.apellido || '',
-        email: miembro.usuario?.email || '',
-        nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim()
-      })) as EquipoBuceoMiembro[];
+      if (error) {
+        console.error('Error fetching equipos:', error);
+        throw error;
+      }
+
+      return (data || []).map(equipo => ({
+        ...equipo,
+        miembros: equipo.equipo_buceo_miembros?.map(miembro => ({
+          id: miembro.id,
+          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
+          rol_equipo: miembro.rol_equipo,
+          disponible: miembro.disponible,
+          email: miembro.usuario?.email,
+          matricula: '',
+          telefono: '',
+        })) || []
+      })) as EquipoBuceo[];
     },
   });
 
-  const createEquipoMutation = useMutation({
-    mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at'>) => {
-      const { data, error } = await supabase
+  const createEquipo = useMutation({
+    mutationFn: async (data: EquipoBuceoFormData) => {
+      console.log('Creating equipo de buceo:', data);
+      
+      // Get current user to determine empresa_id and tipo_empresa
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Usuario no autenticado');
+
+      const { data: userProfile } = await supabase
+        .from('usuario')
+        .select('salmonera_id, servicio_id')
+        .eq('usuario_id', user.user.id)
+        .single();
+
+      if (!userProfile) throw new Error('Perfil de usuario no encontrado');
+
+      const equipoData = {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        empresa_id: userProfile.salmonera_id || userProfile.servicio_id,
+        tipo_empresa: userProfile.salmonera_id ? 'salmonera' : 'servicio',
+        activo: true
+      };
+
+      const { data: result, error } = await supabase
         .from('equipos_buceo')
-        .insert(equipoData)
+        .insert([equipoData])
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error creating equipo:', error);
+        throw error;
+      }
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
@@ -98,39 +130,57 @@ export const useEquipoBuceo = () => {
     },
   });
 
-  const addMiembroMutation = useMutation({
-    mutationFn: async (memberData: { equipo_id: string; usuario_id: string; rol_equipo: string }) => {
-      const { data, error } = await supabase
-        .from('equipo_buceo_miembros')
-        .insert(memberData)
+  const updateEquipo = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<EquipoBuceoFormData> }) => {
+      console.log('Updating equipo:', id, data);
+      
+      const { data: result, error } = await supabase
+        .from('equipos_buceo')
+        .update(data)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipo-buceo-miembros'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
       toast({
-        title: "Miembro agregado",
-        description: "El miembro ha sido agregado al equipo exitosamente.",
+        title: "Equipo actualizado",
+        description: "El equipo ha sido actualizado exitosamente.",
       });
     },
-    onError: (error) => {
-      console.error('Error adding member:', error);
+  });
+
+  const deleteEquipo = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting equipo:', id);
+      
+      const { error } = await supabase
+        .from('equipos_buceo')
+        .update({ activo: false })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
       toast({
-        title: "Error",
-        description: "No se pudo agregar el miembro al equipo.",
-        variant: "destructive",
+        title: "Equipo eliminado",
+        description: "El equipo ha sido eliminado exitosamente.",
       });
     },
   });
 
   return {
     equipos,
-    miembros,
-    isLoading: loadingEquipos || loadingMiembros,
-    createEquipo: createEquipoMutation.mutateAsync,
-    addMiembro: addMiembroMutation.mutateAsync,
+    isLoading,
+    createEquipo: createEquipo.mutateAsync,
+    updateEquipo: updateEquipo.mutateAsync,
+    deleteEquipo: deleteEquipo.mutateAsync,
+    isCreating: createEquipo.isPending,
+    isUpdating: updateEquipo.isPending,
+    isDeleting: deleteEquipo.isPending,
   };
 };
