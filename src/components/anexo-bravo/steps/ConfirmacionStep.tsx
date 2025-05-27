@@ -7,7 +7,7 @@ import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/for
 import { FileCheck, Shield, Users, Settings } from 'lucide-react';
 
 export const ConfirmacionStep = ({ form }) => {
-  const { watch, setValue } = form;
+  const { watch } = form;
 
   const datosGenerales = {
     codigo: watch('codigo'),
@@ -22,9 +22,8 @@ export const ConfirmacionStep = ({ form }) => {
   const checklist = watch('anexo_bravo_checklist') || {};
   const participantes = watch('anexo_bravo_trabajadores') || [];
   const equipos = watch('anexo_bravo_equipos') || [];
-  const observaciones = watch('observaciones_generales') || '';
 
-  const itemsVerificados = Object.values(checklist).filter(item => item.verificado).length;
+  const itemsVerificados = Object.values(checklist).filter((item: any) => item?.verificado).length;
   const totalItems = Object.keys(checklist).length;
 
   return (
@@ -99,7 +98,7 @@ export const ConfirmacionStep = ({ form }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participantes.map((p) => (
+                  {participantes.map((p: any) => (
                     <TableRow key={p.id}>
                       <TableCell>{p.nombre}</TableCell>
                       <TableCell>{p.rut}</TableCell>
@@ -127,7 +126,7 @@ export const ConfirmacionStep = ({ form }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {equipos.map((e) => (
+                  {equipos.map((e: any) => (
                     <TableRow key={e.id}>
                       <TableCell>{e.equipo_nombre}</TableCell>
                     </TableRow>

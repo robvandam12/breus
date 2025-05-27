@@ -29,12 +29,12 @@ export const ParticipantesStep = ({ form, selectedOperacion }) => {
     setRut('');
   };
 
-  const handleRemoveParticipante = (index) => {
+  const handleRemoveParticipante = (index: number) => {
     const updatedParticipantes = [...participantes];
     updatedParticipantes.splice(index, 1);
     
     // Actualizar el orden
-    const reordered = updatedParticipantes.map((p, i) => ({
+    const reordered = updatedParticipantes.map((p: any, i: number) => ({
       ...p,
       orden: i + 1
     }));
@@ -51,11 +51,11 @@ export const ParticipantesStep = ({ form, selectedOperacion }) => {
       if (equipoBuceo && equipoBuceo.miembros && equipoBuceo.miembros.length > 0) {
         // Agregar solo a los buzos del equipo
         const buzosMiembros = equipoBuceo.miembros
-          .filter(m => m.rol_equipo === 'buzo')
-          .map((miembro, index) => ({
+          .filter((m: any) => m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'buzo_asistente')
+          .map((miembro: any, index: number) => ({
             id: Date.now().toString() + index,
-            nombre: miembro.usuario?.nombre + ' ' + miembro.usuario?.apellido,
-            rut: miembro.usuario?.rut || 'Sin RUT',
+            nombre: miembro.usuario?.nombre + ' ' + (miembro.usuario?.apellido || ''),
+            rut: 'Sin RUT', // No tenemos RUT en el usuario
             orden: index + 1
           }));
         
@@ -114,7 +114,7 @@ export const ParticipantesStep = ({ form, selectedOperacion }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participantes.map((participante, index) => (
+                  {participantes.map((participante: any, index: number) => (
                     <TableRow key={participante.id}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{participante.nombre}</TableCell>

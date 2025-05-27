@@ -5,7 +5,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Shield, AlertTriangle } from 'lucide-react';
-import { FormField, FormItem, FormControl } from '@/components/ui/form';
 
 // Lista de verificación del Anexo Bravo
 const checklistItems = [
@@ -89,7 +88,7 @@ const checklistItems = [
 export const ChecklistStep = ({ form }) => {
   const checklist = form.watch('anexo_bravo_checklist') || {};
   
-  const handleCheckItem = (id, checked) => {
+  const handleCheckItem = (id: string, checked: boolean) => {
     const updatedChecklist = { 
       ...checklist, 
       [id]: {
@@ -100,7 +99,7 @@ export const ChecklistStep = ({ form }) => {
     form.setValue('anexo_bravo_checklist', updatedChecklist);
   };
   
-  const handleAddObservation = (id, observation) => {
+  const handleAddObservation = (id: string, observation: string) => {
     const updatedChecklist = { 
       ...checklist, 
       [id]: {
@@ -112,7 +111,7 @@ export const ChecklistStep = ({ form }) => {
   };
 
   // Agrupar los elementos de la lista por categoría
-  const groupedItems = checklistItems.reduce((groups, item) => {
+  const groupedItems = checklistItems.reduce((groups: Record<string, typeof checklistItems>, item) => {
     if (!groups[item.category]) {
       groups[item.category] = [];
     }
@@ -141,7 +140,7 @@ export const ChecklistStep = ({ form }) => {
                         <Checkbox
                           id={`check_${item.id}`}
                           checked={checklist[item.id]?.verificado || false}
-                          onCheckedChange={(checked) => handleCheckItem(item.id, checked)}
+                          onCheckedChange={(checked) => handleCheckItem(item.id, checked as boolean)}
                           className="mt-1"
                         />
                         <div className="flex-1">
@@ -175,7 +174,6 @@ export const ChecklistStep = ({ form }) => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };

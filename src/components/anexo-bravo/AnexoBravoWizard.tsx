@@ -53,23 +53,18 @@ export const AnexoBravoWizard: React.FC<AnexoBravoWizardProps> = ({
       if (operacion) {
         setSelectedOperacion(operacion);
         
-        // Prellenar datos de la operación
-        form.setValue('supervisor', operacion.supervisor_asignado_nombre || '');
+        // Prellenar datos de la operación usando las propiedades correctas
+        // Supervisor - necesitamos obtener esto del equipo_buceo o usuario asignado
         
         // Si la operación tiene un sitio asociado
-        if (operacion.sitio) {
-          form.setValue('lugar_faena', operacion.sitio.nombre || '');
+        if (operacion.sitios) {
+          form.setValue('lugar_faena', operacion.sitios.nombre || '');
         }
         
         // Si la operación tiene un contratista asociado
-        if (operacion.contratista) {
-          form.setValue('empresa_nombre', operacion.contratista.nombre || '');
-          form.setValue('buzo_o_empresa_nombre', operacion.contratista.nombre || '');
-        }
-        
-        // Si hay supervisor asignado y tiene nombre
-        if (operacion.supervisor_asignado_nombre) {
-          form.setValue('supervisor', operacion.supervisor_asignado_nombre);
+        if (operacion.contratistas) {
+          form.setValue('empresa_nombre', operacion.contratistas.nombre || '');
+          form.setValue('buzo_o_empresa_nombre', operacion.contratistas.nombre || '');
         }
       }
     }

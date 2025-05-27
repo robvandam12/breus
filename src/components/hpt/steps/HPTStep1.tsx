@@ -24,22 +24,20 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
     if (data.operacion_id && operaciones.length > 0) {
       const operacion = operaciones.find(op => op.id === data.operacion_id);
       if (operacion) {
-        // Poblar datos de la operación seleccionada
-        if (operacion.contratista) {
-          onUpdate({ empresa_servicio_nombre: operacion.contratista.nombre || '' });
+        // Poblar datos de la operación seleccionada usando propiedades correctas
+        if (operacion.contratistas) {
+          onUpdate({ empresa_servicio_nombre: operacion.contratistas.nombre || '' });
         }
         
-        if (operacion.supervisor_asignado_nombre) {
-          onUpdate({ supervisor_nombre: operacion.supervisor_asignado_nombre });
-          onUpdate({ supervisor: operacion.supervisor_asignado_nombre });
-        }
+        // Supervisor - necesitamos obtenerlo del equipo de buceo o de otra fuente
+        // Por ahora dejamos que se ingrese manualmente
         
-        if (operacion.sitio) {
-          onUpdate({ centro_trabajo_nombre: operacion.sitio.nombre || '' });
+        if (operacion.sitios) {
+          onUpdate({ centro_trabajo_nombre: operacion.sitios.nombre || '' });
           
           // Si el sitio tiene ubicación, usarla como lugar_especifico
-          if (operacion.sitio.ubicacion) {
-            onUpdate({ lugar_especifico: operacion.sitio.ubicacion });
+          if (operacion.sitios.ubicacion) {
+            onUpdate({ lugar_especifico: operacion.sitios.ubicacion });
           }
         }
       }

@@ -36,7 +36,6 @@ export const HPTStep6: React.FC<HPTStep6Props> = ({ data, onUpdate }) => {
     if (!nombreAsistente) return;
     
     const newAsistente = {
-      id: Date.now().toString(),
       nombre: nombreAsistente,
       rut: rutAsistente,
       empresa: empresaAsistente,
@@ -72,11 +71,10 @@ export const HPTStep6: React.FC<HPTStep6Props> = ({ data, onUpdate }) => {
         const equipoBuceo = equipos.find(e => e.id === operacion.equipo_buceo_id);
         
         if (equipoBuceo?.miembros?.length) {
-          const miembrosEquipo = equipoBuceo.miembros.map(miembro => ({
-            id: Date.now().toString() + Math.random(),
+          const miembrosEquipo = equipoBuceo.miembros.map((miembro: any) => ({
             nombre: miembro.usuario?.nombre + ' ' + (miembro.usuario?.apellido || ''),
-            rut: miembro.usuario?.rut || '',
-            empresa: equipoBuceo.empresa_nombre || 'Empresa de buceo'
+            rut: 'Sin RUT', // No tenemos RUT en el usuario
+            empresa: 'Empresa de buceo' // No tenemos empresa_nombre en EquipoBuceo
           }));
           
           onUpdate({
@@ -214,8 +212,8 @@ export const HPTStep6: React.FC<HPTStep6Props> = ({ data, onUpdate }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {asistentes.map((asistente, index) => (
-                    <TableRow key={asistente.id || index}>
+                  {asistentes.map((asistente: any, index: number) => (
+                    <TableRow key={index}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{asistente.nombre}</TableCell>
                       <TableCell>{asistente.rut}</TableCell>

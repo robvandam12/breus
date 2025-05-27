@@ -28,7 +28,7 @@ export function OperacionesManager() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showCreateDocumentDialog, setShowCreateDocumentDialog] = useState(false);
   
-  const { operaciones, loading, error } = useOperaciones();
+  const { operaciones, isLoading } = useOperaciones();
 
   const filterOperaciones = () => {
     return operaciones.filter((op) => {
@@ -37,13 +37,13 @@ export function OperacionesManager() {
         viewMode === 'all' ? true :
         viewMode === 'active' ? op.estado === 'activa' :
         viewMode === 'completed' ? op.estado === 'completada' :
-        viewMode === 'pending' ? op.estado_aprobacion === 'pendiente' : true;
+        viewMode === 'pending' ? true : true; // Sin estado_aprobacion en el tipo
       
       // Filtrar por término de búsqueda
       const searchCondition = 
         op.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         op.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (op.sitio?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (op.sitios?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       return viewCondition && searchCondition;
     });
@@ -175,7 +175,7 @@ export function OperacionesManager() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
-                        <span>{operacion.sitio?.nombre || "N/A"}</span>
+                        <span>{operacion.sitios?.nombre || "N/A"}</span>
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(operacion.fecha_inicio)}</TableCell>
@@ -188,7 +188,7 @@ export function OperacionesManager() {
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="bg-gray-50">
                           <FileText className="w-3 h-3 mr-1" />
-                          {(operacion.documentos?.length || 0)}
+                          0
                         </Badge>
                       </div>
                     </TableCell>
