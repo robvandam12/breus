@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -138,7 +137,7 @@ export default function Operaciones() {
           
           <div className="flex-1 overflow-auto">
             <div className="p-6 space-y-6">
-              {/* Stats Cards */}
+              {/* Stats Cards - Solo aquí, no duplicados */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-6">

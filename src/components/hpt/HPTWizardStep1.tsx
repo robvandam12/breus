@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -98,16 +97,6 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
             </div>
 
             <div>
-              <Label htmlFor="supervisor_nombre">Supervisor</Label>
-              <Input
-                id="supervisor_nombre"
-                value={data.supervisor_nombre}
-                onChange={(e) => updateData({ supervisor_nombre: e.target.value })}
-                placeholder="Nombre del supervisor"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="centro_trabajo_nombre">Centro de Trabajo</Label>
               <Input
                 id="centro_trabajo_nombre"
@@ -126,6 +115,12 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
                 placeholder="Nombre del jefe mandante"
               />
             </div>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <strong>Nota:</strong> El supervisor se seleccionará en el siguiente paso según la operación asignada.
+            </p>
           </div>
         </CardContent>
       </Card>

@@ -157,72 +157,62 @@ export default function Salmoneras() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger />
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Building className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold">Salmoneras</h1>
-                    <p className="text-zinc-500">Gestión de empresas salmoneras</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-white rounded-lg border">
-                  <Button
-                    variant={viewMode === 'table' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('table')}
-                    className="rounded-r-none"
-                  >
-                    <Table className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('cards')}
-                    className="rounded-l-none"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
-                <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Salmonera
+        <main className="flex-1 flex flex-col">
+          <Header title="Salmoneras" subtitle="Gestión de empresas salmoneras" icon={Building}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white rounded-lg border">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-r-none"
+                >
+                  <Table className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="rounded-l-none"
+                >
+                  <Grid className="w-4 h-4" />
                 </Button>
               </div>
+              <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Salmonera
+              </Button>
             </div>
-
-            <Card className="ios-card">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center justify-between">
-                  <span>Empresas Registradas</span>
-                  <Badge variant="outline">{salmoneras.length} empresas</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {viewMode === 'table' ? (
-                  <SalmoneraTableView
-                    salmoneras={salmoneras}
-                    onEdit={() => {}}
-                    onDelete={deleteSalmonera}
-                    onSelect={handleSelectSalmonera}
-                  />
-                ) : (
-                  <SalmoneraCardView
-                    salmoneras={salmoneras}
-                    onEdit={() => {}}
-                    onDelete={deleteSalmonera}
-                    onSelect={handleSelectSalmonera}
-                  />
-                )}
-              </CardContent>
-            </Card>
+          </Header>
+          
+          <div className="flex-1 overflow-auto">
+            <div className="p-6 space-y-6">
+              <Card className="ios-card">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Empresas Registradas</span>
+                    <Badge variant="outline">{salmoneras.length} empresas</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {viewMode === 'table' ? (
+                    <SalmoneraTableView
+                      salmoneras={salmoneras}
+                      onEdit={updateSalmonera}
+                      onDelete={deleteSalmonera}
+                      onSelect={handleSelectSalmonera}
+                    />
+                  ) : (
+                    <SalmoneraCardView
+                      salmoneras={salmoneras}
+                      onEdit={updateSalmonera}
+                      onDelete={deleteSalmonera}
+                      onSelect={handleSelectSalmonera}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>

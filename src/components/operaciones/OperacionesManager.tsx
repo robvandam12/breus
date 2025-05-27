@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,72 +38,9 @@ export const OperacionesManager = () => {
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const getOperacionStats = () => {
-    const stats = {
-      total: operaciones.length,
-      activas: operaciones.filter(op => op.estado === 'activa').length,
-      pausadas: operaciones.filter(op => op.estado === 'pausada').length,
-      completadas: operaciones.filter(op => op.estado === 'completada').length
-    };
-    return stats;
-  };
-
-  const stats = getOperacionStats();
-
   return (
     <div className="space-y-6">
-      {/* Header y Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Operaciones</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Activas</p>
-                <p className="text-2xl font-bold text-green-600">{stats.activas}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">Pausadas</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pausadas}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Completadas</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.completadas}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Controles principales */}
+      {/* Controles principales - sin estadísticas duplicadas */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -184,6 +120,7 @@ export const OperacionesManager = () => {
                       <TableHead>Contratista</TableHead>
                       <TableHead>Período</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead>Documentos</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -223,14 +160,40 @@ export const OperacionesManager = () => {
                             {operacion.estado}
                           </Badge>
                         </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
+                              HPT: Pendiente
+                            </Badge>
+                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
+                              Anexo: Pendiente
+                            </Badge>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedOperacion(operacion.id)}
-                          >
-                            Ver Detalles
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedOperacion(operacion.id)}
+                            >
+                              Ver Detalles
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            >
+                              HPT
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-green-50 text-green-700 hover:bg-green-100"
+                            >
+                              Anexo
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

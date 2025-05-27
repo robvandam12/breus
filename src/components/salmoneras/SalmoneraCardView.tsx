@@ -1,131 +1,151 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, MapPin, Phone, Mail, Edit, Trash2, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EditSalmoneraForm } from "./EditSalmoneraForm";
+import { Building, MapPin, Phone, Mail, Eye, Edit, Trash2 } from "lucide-react";
 import { Salmonera } from "@/hooks/useSalmoneras";
 
 interface SalmoneraCardViewProps {
   salmoneras: Salmonera[];
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onSelect?: (salmonera: Salmonera) => void;
-  isDeleting?: boolean;
-  isUpdating?: boolean;
+  onEdit: (id: string, data: any) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onSelect: (salmonera: Salmonera) => void;
 }
 
-export const SalmoneraCardView = ({ 
-  salmoneras, 
-  onEdit, 
-  onDelete, 
-  onSelect,
-  isDeleting = false, 
-  isUpdating = false 
-}: SalmoneraCardViewProps) => {
-  const getEstadoBadgeColor = (estado: string | undefined | null) => {
-    if (!estado) return 'bg-gray-100 text-gray-700 border-gray-200';
-    
-    switch (estado) {
-      case 'activa':
-        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'inactiva':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-      case 'suspendida':
-        return 'bg-red-100 text-red-700 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+export const SalmoneraCardView = ({ salmoneras, onEdit, onDelete, onSelect }: SalmoneraCardViewProps) => {
+  const [editingSalmonera, setEditingSalmonera] = useState<Salmonera | null>(null);
+  const [deletingSalmonera, setDeletingSalmonera] = useState<Salmonera | null>(null);
+
+  const getEstadoBadge = (estado: string) => {
+    const colors = {
+      'activa': 'bg-green-100 text-green-700',
+      'inactiva': 'bg-gray-100 text-gray-700',
+      'suspendida': 'bg-red-100 text-red-700'
+    };
+    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+  };
+
+  const handleEdit = async (data: any) => {
+    if (editingSalmonera) {
+      await onEdit(editingSalmonera.id, data);
+      setEditingSalmonera(null);
     }
   };
 
-  const formatEstado = (estado: string | undefined | null) => {
-    if (!estado) return 'Sin estado';
-    return estado.charAt(0).toUpperCase() + estado.slice(1);
+  const handleDelete = async () => {
+    if (deletingSalmonera) {
+      await onDelete(deletingSalmonera.id);
+      setDeletingSalmonera(null);
+    }
   };
 
   return (
-    <div className="grid gap-6">
-      {salmoneras.map((salmonera) => (
-        <Card key={salmonera.id} className="ios-card hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-          <CardHeader className="pb-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-zinc-600" />
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {salmoneras.map((salmonera) => (
+          <Card key={salmonera.id} className="ios-card hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Building className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{salmonera.nombre}</CardTitle>
+                    <p className="text-sm text-gray-500">{salmonera.rut}</p>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg text-zinc-900 dark:text-zinc-100">
-                    {salmonera.nombre || 'Sin nombre'}
-                  </CardTitle>
-                  <p className="text-sm text-zinc-500 font-mono">RUT: {salmonera.rut || 'Sin RUT'}</p>
-                </div>
+                <Badge className={getEstadoBadge(salmonera.estado)}>
+                  {salmonera.estado}
+                </Badge>
               </div>
-              <Badge 
-                variant="outline" 
-                className={`${getEstadoBadgeColor(salmonera.estado)} font-medium`}
-              >
-                {formatEstado(salmonera.estado)}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+            </CardHeader>
+            
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
-                <span className="truncate">{salmonera.direccion || 'Sin dirección'}</span>
+                <span className="truncate">{salmonera.direccion}</span>
               </div>
+              
               {salmonera.telefono && (
-                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Phone className="w-4 h-4" />
                   <span>{salmonera.telefono}</span>
                 </div>
               )}
+              
               {salmonera.email && (
-                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Mail className="w-4 h-4" />
                   <span className="truncate">{salmonera.email}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <Building2 className="w-4 h-4" />
-                <span>{salmonera.sitios_activos || 0} sitios activos</span>
+
+              <div className="pt-2 border-t">
+                <p className="text-sm text-gray-500">
+                  {salmonera.sitios_activos} sitios activos
+                </p>
               </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-              {onSelect && (
-                <Button 
-                  variant="outline" 
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => onSelect(salmonera)}
-                  className="touch-target"
+                  className="flex-1"
                 >
-                  <Eye className="w-4 h-4 mr-1" />
-                  Ver Detalles
+                  <Eye className="w-4 h-4 mr-2" />
+                  Ver
                 </Button>
-              )}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onEdit(salmonera.id)}
-                disabled={isUpdating}
-                className="touch-target"
-              >
-                <Edit className="w-4 h-4 mr-1" />
-                Editar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onDelete(salmonera.id)}
-                disabled={isDeleting}
-                className="touch-target text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Eliminar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingSalmonera(salmonera)}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeletingSalmonera(salmonera)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingSalmonera} onOpenChange={() => setEditingSalmonera(null)}>
+        <DialogContent className="max-w-2xl">
+          {editingSalmonera && (
+            <EditSalmoneraForm
+              salmonera={editingSalmonera}
+              onSubmit={handleEdit}
+              onCancel={() => setEditingSalmonera(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deletingSalmonera}
+        onOpenChange={() => setDeletingSalmonera(null)}
+        title="Eliminar Salmonera"
+        description={`¿Está seguro de que desea eliminar la salmonera "${deletingSalmonera?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 };
