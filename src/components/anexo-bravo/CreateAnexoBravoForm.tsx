@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,10 +77,16 @@ export const CreateAnexoBravoForm = ({ onSubmit, onCancel }: CreateAnexoBravoFor
     }
   };
 
-  const operacionOptions = operaciones.map(op => ({
-    value: op.id,
-    label: `${op.codigo} - ${op.nombre}`,
-  }));
+  // Ensure operacionOptions is always a valid array
+  const operacionOptions = React.useMemo(() => {
+    if (!operaciones || !Array.isArray(operaciones)) {
+      return [];
+    }
+    return operaciones.map(op => ({
+      value: op.id,
+      label: `${op.codigo} - ${op.nombre}`,
+    }));
+  }, [operaciones]);
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
