@@ -74,7 +74,7 @@ export const useEquipoBuceo = () => {
     mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at'>) => {
       const { data, error } = await supabase
         .from('equipos_buceo')
-        .insert([equipoData])
+        .insert(equipoData)
         .select()
         .single();
 

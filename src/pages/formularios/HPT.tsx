@@ -45,7 +45,7 @@ export default function HPT() {
   if (showWizard) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-white">
+        <div className="min-h-screen flex w-full">
           <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
@@ -76,7 +76,7 @@ export default function HPT() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white">
+      <div className="min-h-screen flex w-full">
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
@@ -90,7 +90,7 @@ export default function HPT() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto">
             <div className="p-6">
               <Card>
                 <CardHeader>

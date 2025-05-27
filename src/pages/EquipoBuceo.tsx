@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Edit, Trash2, Eye, UserPlus } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Eye, UserPlus, Mail } from "lucide-react";
 import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -36,8 +37,8 @@ const EquipoBuceo = () => {
   if (isLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-white">
-          <RoleBasedSidebar />
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
               title="Equipo de Buceo" 
@@ -55,8 +56,8 @@ const EquipoBuceo = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white">
-        <RoleBasedSidebar />
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <AppSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Equipo de Buceo" 
@@ -91,7 +92,7 @@ const EquipoBuceo = () => {
             </div>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -165,7 +166,7 @@ const EquipoBuceo = () => {
                               <div>
                                 <div className="font-medium">{equipo.nombre}</div>
                                 <div className="text-xs text-zinc-500">
-                                  Creado: {new Date(equipo.created_at || '').toLocaleDateString('es-CL')}
+                                  Creado: {new Date(equipo.created_at).toLocaleDateString('es-CL')}
                                 </div>
                               </div>
                             </div>
@@ -186,7 +187,7 @@ const EquipoBuceo = () => {
                                       className="w-6 h-6 bg-zinc-300 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white"
                                       title={miembro.nombre_completo}
                                     >
-                                      {miembro.nombre_completo?.charAt(0).toUpperCase()}
+                                      {miembro.nombre_completo.charAt(0).toUpperCase()}
                                     </div>
                                   ))}
                                   {(equipo.miembros?.length || 0) > 3 && (
