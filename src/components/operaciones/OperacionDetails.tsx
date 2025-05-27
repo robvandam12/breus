@@ -1,325 +1,466 @@
-
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  FileText, 
-  Building, 
-  Clock,
-  Plus,
-  AlertTriangle,
-  CheckCircle2,
-  Waves,
-  Edit,
-  Eye
-} from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { HPTWizard } from "@/components/hpt/HPTWizard";
-import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { HPTWizard } from '@/components/hpt/HPTWizard';
+import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
+import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
+import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OperacionDetailsProps {
   operacionId: string;
   onClose: () => void;
 }
 
-export const OperacionDetails = ({ operacionId, onClose }: OperacionDetailsProps) => {
-  const { operaciones } = useOperaciones();
-  const [showHPTWizard, setShowHPTWizard] = useState(false);
-  const [showAnexoBravoWizard, setShowAnexoBravoWizard] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+interface OperacionFull {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  tareas?: string;
+  sitio_nombre?: string;
+  contratista_nombre?: string;
+  created_at: string;
+}
 
-  const operacion = operaciones.find(op => op.id === operacionId);
+interface DocumentStatus {
+  hpts: any[];
+  anexosBravo: any[];
+  inmersiones: any[];
+}
 
-  if (!operacion) {
+export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
+  const [operacion, setOperacion] = useState<OperacionFull | null>(null);
+  const [documentStatus, setDocumentStatus] = useState<DocumentStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreateHPT, setShowCreateHPT] = useState(false);
+  const [showCreateAnexo, setShowCreateAnexo] = useState(false);
+  const [showCreateInmersion, setShowCreateInmersion] = useState(false);
+  const [showTeamManager, setShowTeamManager] = useState(false);
+  const [activeTab, setActiveTab] = useState('resumen');
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    const fetchOperacionDetails = async () => {
+      try {
+        // Obtener datos de la operación
+        const { data: opData, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            sitio:sitio_id (nombre),
+            contratista:contratista_id (nombre)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (opError) throw opError;
+
+        setOperacion({
+          ...opData,
+          sitio_nombre: opData.sitio?.nombre,
+          contratista_nombre: opData.contratista?.nombre
+        });
+
+        // Obtener documentos asociados
+        const [hptData, anexoData, inmersionData] = await Promise.all([
+          supabase.from('hpt').select('*').eq('operacion_id', operacionId),
+          supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId),
+          supabase.from('inmersion').select('*').eq('operacion_id', operacionId)
+        ]);
+
+        setDocumentStatus({
+          hpts: hptData.data || [],
+          anexosBravo: anexoData.data || [],
+          inmersiones: inmersionData.data || []
+        });
+
+      } catch (error) {
+        console.error('Error fetching operation details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOperacionDetails();
+  }, [operacionId]);
+
+  const handleCreateHPT = async (hptId: string) => {
+    console.log('HPT created:', hptId);
+    setShowCreateHPT(false);
+    // Refresh data
+    window.location.reload();
+  };
+
+  const handleCreateAnexo = async (data: any) => {
+    try {
+      const anexoData = {
+        ...data,
+        operacion_id: operacionId
+      };
+      
+      const { error } = await supabase.from('anexo_bravo').insert([anexoData]);
+      if (error) throw error;
+      
+      setShowCreateAnexo(false);
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating Anexo Bravo:', error);
+    }
+  };
+
+  const handleCreateInmersion = async (data: any) => {
+    try {
+      const inmersionData = {
+        ...data,
+        operacion_id: operacionId
+      };
+      
+      const { error } = await supabase.from('inmersion').insert([inmersionData]);
+      if (error) throw error;
+      
+      setShowCreateInmersion(false);
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating Inmersion:', error);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="p-6 text-center">
-        <p>Operación no encontrada</p>
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-500 mt-4">Cargando detalles...</p>
       </div>
     );
   }
 
-  // Verificar si tiene equipo de buceo asignado
-  const hasEquipoBuceo = !!operacion.equipo_buceo_id;
+  if (!operacion) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-gray-500">No se encontró la operación</p>
+      </div>
+    );
+  }
 
-  const handleCreateDocument = (type: 'hpt' | 'anexo_bravo') => {
-    if (!hasEquipoBuceo) {
-      toast({
-        title: "Equipo de buceo requerido",
-        description: "Debe asignar un equipo de buceo a la operación antes de crear documentos.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (type === 'hpt') {
-      setShowHPTWizard(true);
-    } else {
-      setShowAnexoBravoWizard(true);
-    }
-  };
-
-  const handleDocumentComplete = (documentId: string) => {
-    toast({
-      title: "Documento creado",
-      description: "El documento ha sido creado exitosamente como borrador.",
-    });
-    setShowHPTWizard(false);
-    setShowAnexoBravoWizard(false);
-    // Aquí se actualizarían los documentos de la operación
-  };
-
-  const getEstadoBadge = (estado: string) => {
+  const getStatusColor = (estado: string) => {
     const colors = {
       'activa': 'bg-green-100 text-green-700',
-      'completada': 'bg-blue-100 text-blue-700',
       'pausada': 'bg-yellow-100 text-yellow-700',
+      'completada': 'bg-blue-100 text-blue-700',
       'cancelada': 'bg-red-100 text-red-700'
     };
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
+  const getComplianceStatus = () => {
+    if (!documentStatus) return null;
+    
+    const hasValidHPT = documentStatus.hpts.some(h => h.firmado);
+    const hasValidAnexo = documentStatus.anexosBravo.some(a => a.firmado);
+    const canExecute = hasValidHPT && hasValidAnexo;
+    
+    return { hasValidHPT, hasValidAnexo, canExecute };
+  };
+
+  const compliance = getComplianceStatus();
+
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Building className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{operacion.codigo}</h2>
-            <p className="text-gray-600">{operacion.nombre}</p>
-          </div>
+    <div className="space-y-6 max-w-6xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{operacion.nombre}</h2>
+          <p className="text-gray-600">Código: {operacion.codigo}</p>
         </div>
-        <Badge className={getEstadoBadge(operacion.estado)}>
+        <Badge className={getStatusColor(operacion.estado)}>
           {operacion.estado}
         </Badge>
       </div>
 
-      {/* Alerta si no tiene equipo de buceo */}
-      {!hasEquipoBuceo && (
-        <Card className="mb-6 border-orange-200 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-orange-900">Equipo de buceo requerido</h4>
-                <p className="text-sm text-orange-700 mt-1">
-                  Esta operación no tiene un equipo de buceo asignado. Es necesario asignar un equipo 
-                  antes de poder crear documentos como HPT o Anexo Bravo.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="immersions">Inmersiones</TabsTrigger>
-          <TabsTrigger value="team">Equipo</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+          <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+          <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="resumen" className="space-y-4">
+          {/* Información básica */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Información General
-                </CardTitle>
+                <CardTitle className="text-lg">Información General</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">Inicio: {format(new Date(operacion.fecha_inicio), "dd/MM/yyyy", { locale: es })}</span>
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">Sitio: {operacion.sitio_nombre || 'No asignado'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">Contratista: {operacion.contratista_nombre || 'No asignado'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">
+                    Fecha inicio: {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                  </span>
                 </div>
                 {operacion.fecha_fin && (
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">Fin: {format(new Date(operacion.fecha_fin), "dd/MM/yyyy", { locale: es })}</span>
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm">
+                      Fecha fin: {new Date(operacion.fecha_fin).toLocaleDateString('es-CL')}
+                    </span>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">{operacion.sitios?.nombre || "Sin sitio"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">{operacion.salmoneras?.nombre || "Sin salmonera"}</span>
-                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Equipo y Contratista
-                </CardTitle>
+                <CardTitle className="text-lg">Estado de Cumplimiento</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">{operacion.contratistas?.nombre || "Sin contratista"}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">HPT Válido</span>
+                  {compliance?.hasValidHPT ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">
-                    Equipo de buceo: {hasEquipoBuceo ? "Asignado" : "Sin asignar"}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Anexo Bravo Válido</span>
+                  {compliance?.hasValidAnexo ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {operacion.tareas && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Descripción de Tareas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{operacion.tareas}</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="documents" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Documentos de la Operación</h3>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => handleCreateDocument('hpt')}
-                disabled={!hasEquipoBuceo}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Crear HPT
-              </Button>
-              <Button 
-                onClick={() => handleCreateDocument('anexo_bravo')}
-                disabled={!hasEquipoBuceo}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Anexo Bravo
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Lista de HPTs */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                  HPT (Hojas de Planificación)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Aquí se mostrarían los HPTs reales de la operación */}
-                  <div className="text-center py-6 text-gray-500">
-                    <FileText className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No hay HPTs creados</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lista de Anexos Bravo */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  Anexo Bravo (Verificaciones)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Aquí se mostrarían los Anexos Bravo reales de la operación */}
-                  <div className="text-center py-6 text-gray-500">
-                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No hay Anexos Bravo creados</p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Puede Ejecutar Inmersiones</span>
+                  {compliance?.canExecute ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="immersions" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Inmersiones</h3>
-            <Button disabled={!hasEquipoBuceo}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Inmersión
-            </Button>
-          </div>
-
+        <TabsContent value="equipo" className="space-y-4">
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-6 text-gray-500">
-                <Waves className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No hay inmersiones registradas</p>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Equipo de Buceo</CardTitle>
+              <Button onClick={() => setShowTeamManager(true)} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Gestionar Equipo
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-4">
+                Configure el equipo de buceo antes de crear documentos
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="team" className="space-y-6">
-          <h3 className="text-lg font-semibold">Equipo de Buceo</h3>
-          
+        <TabsContent value="documentos" className="space-y-4">
+          {/* HPTs */}
           <Card>
-            <CardContent className="pt-6">
-              {hasEquipoBuceo ? (
-                <div className="text-center py-6 text-gray-500">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">Información del equipo no disponible</p>
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">HPTs ({documentStatus?.hpts.length || 0})</CardTitle>
+              <Button onClick={() => setShowCreateHPT(true)} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo HPT
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {documentStatus?.hpts.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No hay HPTs creados</p>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No hay equipo de buceo asignado</p>
-                  <Button className="mt-3" variant="outline">
-                    Asignar Equipo
-                  </Button>
+                <div className="space-y-2">
+                  {documentStatus?.hpts.map((hpt) => (
+                    <div key={hpt.id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <p className="font-medium">{hpt.codigo}</p>
+                        <p className="text-sm text-gray-600">Supervisor: {hpt.supervisor}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={hpt.firmado ? "default" : "secondary"}>
+                          {hpt.firmado ? "Firmado" : "Borrador"}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Anexos Bravo */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Anexos Bravo ({documentStatus?.anexosBravo.length || 0})</CardTitle>
+              <Button onClick={() => setShowCreateAnexo(true)} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Anexo
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {documentStatus?.anexosBravo.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No hay Anexos Bravo creados</p>
+              ) : (
+                <div className="space-y-2">
+                  {documentStatus?.anexosBravo.map((anexo) => (
+                    <div key={anexo.id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <p className="font-medium">{anexo.codigo}</p>
+                        <p className="text-sm text-gray-600">Progreso: {anexo.progreso || 0}%</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={anexo.firmado ? "default" : "secondary"}>
+                          {anexo.firmado ? "Firmado" : "Borrador"}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="inmersiones" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Inmersiones ({documentStatus?.inmersiones.length || 0})</CardTitle>
+              <Button 
+                onClick={() => setShowCreateInmersion(true)} 
+                size="sm"
+                disabled={!compliance?.canExecute}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Inmersión
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {!compliance?.canExecute && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-yellow-700">
+                    Para crear inmersiones se requiere tener un HPT y Anexo Bravo firmados.
+                  </p>
+                </div>
+              )}
+              
+              {documentStatus?.inmersiones.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No hay inmersiones registradas</p>
+              ) : (
+                <div className="space-y-2">
+                  {documentStatus?.inmersiones.map((inmersion) => (
+                    <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <p className="font-medium">{inmersion.codigo}</p>
+                        <p className="text-sm text-gray-600">
+                          Buzo: {inmersion.buzo_principal} • Prof: {inmersion.profundidad_max}m
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{inmersion.estado}</Badge>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historial">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Historial de Actividades</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-4">Funcionalidad en desarrollo</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {/* HPT Wizard Dialog */}
-      <Dialog open={showHPTWizard} onOpenChange={setShowHPTWizard}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+      {/* Dialogs para crear documentos */}
+      <Dialog open={showCreateHPT} onOpenChange={setShowCreateHPT}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo HPT</DialogTitle>
+          </DialogHeader>
           <HPTWizard
             operacionId={operacionId}
-            onComplete={handleDocumentComplete}
-            onCancel={() => setShowHPTWizard(false)}
+            onComplete={handleCreateHPT}
+            onCancel={() => setShowCreateHPT(false)}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Anexo Bravo Wizard Dialog */}
-      <Dialog open={showAnexoBravoWizard} onOpenChange={setShowAnexoBravoWizard}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+      <Dialog open={showCreateAnexo} onOpenChange={setShowCreateAnexo}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
+          </DialogHeader>
           <AnexoBravoWizard
+            onSubmit={handleCreateAnexo}
+            onCancel={() => setShowCreateAnexo(false)}
+            defaultOperacionId={operacionId}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateInmersion} onOpenChange={setShowCreateInmersion}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crear Nueva Inmersión</DialogTitle>
+          </DialogHeader>
+          <CreateInmersionForm
+            onSubmit={handleCreateInmersion}
+            onCancel={() => setShowCreateInmersion(false)}
+            defaultOperacionId={operacionId}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTeamManager} onOpenChange={setShowTeamManager}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Gestionar Equipo de Buceo</DialogTitle>
+          </DialogHeader>
+          <OperacionTeamManager
             operacionId={operacionId}
-            onComplete={handleDocumentComplete}
-            onCancel={() => setShowAnexoBravoWizard(false)}
+            salmoneraId={profile?.salmonera_id}
+            onClose={() => setShowTeamManager(false)}
           />
         </DialogContent>
       </Dialog>
