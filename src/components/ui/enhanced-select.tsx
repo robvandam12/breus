@@ -67,32 +67,30 @@ export const EnhancedSelect = ({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-full p-0" style={{ zIndex: 1000 }}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
-          {safeOptions.length > 0 && (
-            <CommandGroup>
-              {safeOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    onValueChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+          <CommandGroup>
+            {safeOptions.map((option) => (
+              <CommandItem
+                key={option.value}
+                value={option.value}
+                onSelect={(currentValue) => {
+                  onValueChange(currentValue === value ? "" : currentValue);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === option.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {option.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
         </Command>
       </PopoverContent>
     </Popover>
