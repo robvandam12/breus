@@ -8,22 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
-import { SitioDetailsModal } from "@/components/sitios/SitioDetailsModal";
-import { EditSitioForm } from "@/components/sitios/EditSitioForm";
-import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid, Eye } from "lucide-react";
-import { useSitios, Sitio } from "@/hooks/useSitios";
+import { MapPin, Plus, Building, Edit, Trash2, Table as TableIcon, Grid } from "lucide-react";
+import { useSitios } from "@/hooks/useSitios";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Sitios() {
   const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingSitio, setEditingSitio] = useState<Sitio | null>(null);
-  const [selectedSitio, setSelectedSitio] = useState<Sitio | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedSitio, setSelectedSitio] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
@@ -41,21 +35,6 @@ export default function Sitios() {
     }
   };
 
-  const handleEditSitio = async (data: any) => {
-    if (!editingSitio) return;
-    try {
-      await updateSitio({ id: editingSitio.id, data });
-      setShowEditForm(false);
-      setEditingSitio(null);
-      toast({
-        title: "Sitio actualizado",
-        description: "El sitio ha sido actualizado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error updating sitio:', error);
-    }
-  };
-
   const handleDeleteSitio = async (id: string) => {
     try {
       await deleteSitio(id);
@@ -66,16 +45,6 @@ export default function Sitios() {
     } catch (error) {
       console.error('Error deleting sitio:', error);
     }
-  };
-
-  const handleViewSitio = (sitio: Sitio) => {
-    setSelectedSitio(sitio);
-    setShowDetailsModal(true);
-  };
-
-  const handleEditClick = (sitio: Sitio) => {
-    setEditingSitio(sitio);
-    setShowEditForm(true);
   };
 
   const filteredSitios = sitios.filter(sitio =>
@@ -230,21 +199,9 @@ export default function Sitios() {
                               )}
 
                               <div className="flex gap-2 pt-3">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleViewSitio(sitio)}
-                                  className="flex-1"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Ver
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEditClick(sitio)}
-                                >
-                                  <Edit className="w-4 h-4" />
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  <Edit className="w-4 h-4 mr-1" />
+                                  Editar
                                 </Button>
                                 <Button 
                                   variant="outline" 
@@ -318,18 +275,7 @@ export default function Sitios() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleViewSitio(sitio)}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleEditClick(sitio)}
-                                  >
+                                  <Button variant="outline" size="sm">
                                     <Edit className="w-4 h-4" />
                                   </Button>
                                   <Button 
@@ -352,35 +298,6 @@ export default function Sitios() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Details Modal */}
-          <SitioDetailsModal
-            sitio={selectedSitio}
-            open={showDetailsModal}
-            onClose={() => {
-              setShowDetailsModal(false);
-              setSelectedSitio(null);
-            }}
-          />
-
-          {/* Edit Modal */}
-          <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Editar Sitio</DialogTitle>
-              </DialogHeader>
-              {editingSitio && (
-                <EditSitioForm
-                  sitio={editingSitio}
-                  onSubmit={handleEditSitio}
-                  onCancel={() => {
-                    setShowEditForm(false);
-                    setEditingSitio(null);
-                  }}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
         </main>
       </div>
     </SidebarProvider>
