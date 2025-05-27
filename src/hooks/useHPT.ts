@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ export interface HPTFormData {
   codigo: string;
   supervisor: string;
   plan_trabajo: string;
+  user_id?: string;
   // Se añaden otros campos según la estructura de la tabla hpt
   fecha?: string;
   hora_inicio?: string;
@@ -31,18 +32,56 @@ export interface HPTFormData {
 }
 
 export const useHPT = () => {
+  const [hpts, setHpts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch HPTs on component mount
+  useEffect(() => {
+    fetchHPTs();
+  }, []);
+
+  const fetchHPTs = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('hpt')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setHpts(data || []);
+    } catch (error) {
+      console.error('Error fetching HPTs:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar las HPTs',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const createHPT = async (data: HPTFormData) => {
     setIsCreating(true);
     try {
+      // Add user_id from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const hptData = {
+        ...data,
+        user_id: user.id
+      };
+
       const { data: createdHPT, error } = await supabase
         .from('hpt')
-        .insert([data])
+        .insert([hptData])
         .select()
         .single();
 
@@ -52,6 +91,9 @@ export const useHPT = () => {
         title: 'HPT creado',
         description: 'La HPT ha sido creada correctamente',
       });
+      
+      // Refresh the list
+      fetchHPTs();
       
       return createdHPT;
     } catch (error: any) {
@@ -81,6 +123,9 @@ export const useHPT = () => {
         title: 'HPT actualizada',
         description: 'La HPT ha sido actualizada correctamente',
       });
+      
+      // Refresh the list
+      fetchHPTs();
       
       return true;
     } catch (error: any) {
@@ -115,6 +160,9 @@ export const useHPT = () => {
         description: 'La HPT ha sido firmada correctamente',
       });
       
+      // Refresh the list
+      fetchHPTs();
+      
       return true;
     } catch (error: any) {
       console.error('Error signing HPT:', error);
@@ -143,6 +191,9 @@ export const useHPT = () => {
         title: 'HPT eliminada',
         description: 'La HPT ha sido eliminada correctamente',
       });
+      
+      // Refresh the list
+      fetchHPTs();
       
       return true;
     } catch (error: any) {
@@ -176,11 +227,14 @@ export const useHPT = () => {
   };
 
   return {
+    hpts,
+    isLoading,
     createHPT,
     updateHPT,
     signHPT,
     deleteHPT,
     getHPT,
+    fetchHPTs,
     isCreating,
     isUpdating,
     isSigning,

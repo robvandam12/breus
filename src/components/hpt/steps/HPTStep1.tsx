@@ -1,114 +1,159 @@
 
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Building, MapPin } from 'lucide-react';
 import { HPTWizardData } from '@/hooks/useHPTWizard';
-import { useOperaciones } from '@/hooks/useOperaciones';
-import { useSitios } from '@/hooks/useSitios';
 
 interface HPTStep1Props {
   data: HPTWizardData;
-  onUpdate: (updates: Partial<HPTWizardData>) => void;
+  updateData: (updates: Partial<HPTWizardData>) => void;
+  operaciones: any[];
+  selectedOperacion: any;
+  setSelectedOperacion: (operacion: any) => void;
 }
 
-export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
-  const { operaciones } = useOperaciones();
-  const { sitios } = useSitios();
+export const HPTStep1: React.FC<HPTStep1Props> = ({ 
+  data, 
+  updateData, 
+  operaciones, 
+  selectedOperacion,
+  setSelectedOperacion 
+}) => {
   
-  // Si hay operación_id, cargar datos de esa operación
+  // Auto-populate fields when operation is selected
   useEffect(() => {
-    if (data.operacion_id && operaciones.length > 0) {
-      const operacion = operaciones.find(op => op.id === data.operacion_id);
-      if (operacion) {
-        // Poblar datos de la operación seleccionada usando propiedades correctas
-        if (operacion.contratistas) {
-          onUpdate({ empresa_servicio_nombre: operacion.contratistas.nombre || '' });
-        }
-        
-        // Supervisor - necesitamos obtenerlo del equipo de buceo o de otra fuente
-        // Por ahora dejamos que se ingrese manualmente
-        
-        if (operacion.sitios) {
-          onUpdate({ centro_trabajo_nombre: operacion.sitios.nombre || '' });
-          
-          // Si el sitio tiene ubicación, usarla como lugar_especifico
-          if (operacion.sitios.ubicacion) {
-            onUpdate({ lugar_especifico: operacion.sitios.ubicacion });
-          }
-        }
+    if (selectedOperacion) {
+      // Populate company name from contractor
+      if (selectedOperacion.contratistas) {
+        updateData({ 
+          empresa_servicio_nombre: selectedOperacion.contratistas.nombre || ''
+        });
+      }
+      
+      // Populate supervisor - need to get from assigned supervisor or team
+      if (selectedOperacion.supervisor_asignado_id) {
+        // We'll need to fetch supervisor name from usuario table or equipo_buceo
+        updateData({ 
+          supervisor_nombre: '' // This should be populated from the team or assigned supervisor
+        });
+      }
+      
+      // Populate work center from site
+      if (selectedOperacion.sitios) {
+        updateData({ 
+          centro_trabajo_nombre: selectedOperacion.sitios.nombre || '',
+          lugar_especifico: selectedOperacion.sitios.nombre || ''
+        });
       }
     }
-  }, [data.operacion_id, operaciones, onUpdate]);
+  }, [selectedOperacion, updateData]);
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Información General</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Datos Generales de la Tarea</h2>
         <p className="mt-2 text-gray-600">
-          Complete la información básica para la Hoja de Planificación de Tarea
+          Información básica y detalles de la operación de buceo
         </p>
       </div>
 
+      {/* Información Básica */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
-            Datos Generales
+            Información Básica
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="folio">Folio</Label>
+              <Label htmlFor="operacion_id">Operación *</Label>
+              <Select 
+                value={data.operacion_id} 
+                onValueChange={(value) => {
+                  updateData({ operacion_id: value });
+                  const operacion = operaciones.find(op => op.id === value);
+                  setSelectedOperacion(operacion);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar operación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {operaciones.map((operacion) => (
+                    <SelectItem key={operacion.id} value={operacion.id}>
+                      {operacion.codigo} - {operacion.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="folio">Folio *</Label>
               <Input
                 id="folio"
-                value={data.folio || ''}
-                onChange={(e) => onUpdate({ folio: e.target.value })}
-                placeholder="Ingrese el folio"
+                value={data.folio}
+                onChange={(e) => updateData({ folio: e.target.value })}
+                placeholder="Ej: HPT-2024-001"
               />
             </div>
-            
+
             <div>
-              <Label htmlFor="fecha">Fecha</Label>
+              <Label htmlFor="fecha">Fecha *</Label>
               <Input
                 id="fecha"
                 type="date"
-                value={data.fecha || ''}
-                onChange={(e) => onUpdate({ fecha: e.target.value })}
+                value={data.fecha}
+                onChange={(e) => updateData({ fecha: e.target.value })}
               />
             </div>
 
             <div>
-              <Label htmlFor="hora_inicio">Hora de Inicio</Label>
+              <Label htmlFor="hora_inicio">Hora de Inicio *</Label>
               <Input
                 id="hora_inicio"
                 type="time"
-                value={data.hora_inicio || ''}
-                onChange={(e) => onUpdate({ hora_inicio: e.target.value })}
+                value={data.hora_inicio}
+                onChange={(e) => updateData({ hora_inicio: e.target.value })}
               />
             </div>
 
             <div>
-              <Label htmlFor="hora_termino">Hora de Término (estimada)</Label>
+              <Label htmlFor="hora_termino">Hora de Término</Label>
               <Input
                 id="hora_termino"
                 type="time"
-                value={data.hora_termino || ''}
-                onChange={(e) => onUpdate({ hora_termino: e.target.value })}
+                value={data.hora_termino}
+                onChange={(e) => updateData({ hora_termino: e.target.value })}
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Información de Personal */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="w-5 h-5 text-green-600" />
+            Personal y Empresa
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="empresa_servicio_nombre">Empresa de Servicio</Label>
               <Input
                 id="empresa_servicio_nombre"
-                value={data.empresa_servicio_nombre || ''}
-                onChange={(e) => onUpdate({ empresa_servicio_nombre: e.target.value })}
-                placeholder="Nombre de la empresa"
+                value={data.empresa_servicio_nombre}
+                onChange={(e) => updateData({ empresa_servicio_nombre: e.target.value })}
+                placeholder="Nombre de la empresa de buceo"
               />
             </div>
 
@@ -116,11 +161,8 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
               <Label htmlFor="supervisor_nombre">Supervisor</Label>
               <Input
                 id="supervisor_nombre"
-                value={data.supervisor_nombre || ''}
-                onChange={(e) => onUpdate({ 
-                  supervisor_nombre: e.target.value,
-                  supervisor: e.target.value 
-                })}
+                value={data.supervisor_nombre}
+                onChange={(e) => updateData({ supervisor_nombre: e.target.value })}
                 placeholder="Nombre del supervisor"
               />
             </div>
@@ -129,9 +171,9 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
               <Label htmlFor="centro_trabajo_nombre">Centro de Trabajo</Label>
               <Input
                 id="centro_trabajo_nombre"
-                value={data.centro_trabajo_nombre || ''}
-                onChange={(e) => onUpdate({ centro_trabajo_nombre: e.target.value })}
-                placeholder="Centro de trabajo"
+                value={data.centro_trabajo_nombre}
+                onChange={(e) => updateData({ centro_trabajo_nombre: e.target.value })}
+                placeholder="Nombre del centro"
               />
             </div>
 
@@ -139,8 +181,8 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
               <Label htmlFor="jefe_mandante_nombre">Jefe Mandante</Label>
               <Input
                 id="jefe_mandante_nombre"
-                value={data.jefe_mandante_nombre || ''}
-                onChange={(e) => onUpdate({ jefe_mandante_nombre: e.target.value })}
+                value={data.jefe_mandante_nombre}
+                onChange={(e) => updateData({ jefe_mandante_nombre: e.target.value })}
                 placeholder="Nombre del jefe mandante"
               />
             </div>
@@ -148,54 +190,45 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
         </CardContent>
       </Card>
 
+      {/* Descripción de la Tarea */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Building className="w-5 h-5 text-blue-600" />
-            Detalles de la Tarea
+            <MapPin className="w-5 h-5 text-orange-600" />
+            Descripción de la Tarea
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <Label htmlFor="descripcion_tarea">Descripción de la Tarea</Label>
-              <Input
-                id="descripcion_tarea"
-                value={data.descripcion_tarea || ''}
-                onChange={(e) => onUpdate({ descripcion_tarea: e.target.value })}
-                placeholder="Describa la tarea a realizar"
-              />
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="descripcion_tarea">Descripción del Trabajo *</Label>
+            <Textarea
+              id="descripcion_tarea"
+              value={data.descripcion_tarea}
+              onChange={(e) => updateData({ descripcion_tarea: e.target.value })}
+              placeholder="Describa detalladamente el trabajo a realizar..."
+              rows={4}
+            />
+          </div>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="es_rutinaria"
-                checked={data.es_rutinaria || false}
-                onCheckedChange={(checked) => onUpdate({ es_rutinaria: !!checked })}
-              />
-              <Label htmlFor="es_rutinaria" className="cursor-pointer">
-                La tarea es rutinaria
-              </Label>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="lugar_especifico">Lugar Específico</Label>
               <Input
                 id="lugar_especifico"
-                value={data.lugar_especifico || ''}
-                onChange={(e) => onUpdate({ lugar_especifico: e.target.value })}
-                placeholder="Ubicación específica donde se realizará la tarea"
+                value={data.lugar_especifico}
+                onChange={(e) => updateData({ lugar_especifico: e.target.value })}
+                placeholder="Ubicación exacta del trabajo"
               />
             </div>
 
             <div>
               <Label htmlFor="estado_puerto">Estado del Puerto</Label>
-              <Select
-                value={data.estado_puerto || 'abierto'}
-                onValueChange={(value) => onUpdate({ estado_puerto: value as 'abierto' | 'cerrado' })}
+              <Select 
+                value={data.estado_puerto} 
+                onValueChange={(value) => updateData({ estado_puerto: value as 'abierto' | 'cerrado' })}
               >
-                <SelectTrigger id="estado_puerto">
-                  <SelectValue placeholder="Seleccione estado del puerto" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="abierto">Abierto</SelectItem>
@@ -206,6 +239,18 @@ export const HPTStep1: React.FC<HPTStep1Props> = ({ data, onUpdate }) => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <FileText className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-sm text-blue-800">
+            <strong>Información:</strong> Los campos marcados con (*) son obligatorios. 
+            Complete toda la información antes de continuar al siguiente paso.
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
