@@ -2,12 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
-declare global {
-  interface Window {
-    mapboxgl: any;
-  }
-}
-
 interface MapboxPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
   initialLat?: number;

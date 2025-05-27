@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -9,7 +8,7 @@ import { ContratistaTableView } from "@/components/contratistas/ContratistaTable
 import { CreateContratistaForm } from "@/components/contratistas/CreateContratistaForm";
 import { DeleteContratistaDialog } from "@/components/contratistas/DeleteContratistaDialog";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useAuthRoles } from "@/hooks/useAuthRoles";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -17,7 +16,7 @@ export default function Contratistas() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deleteContratista, setDeleteContratista] = useState<{id: string, nombre: string} | null>(null);
   const { contratistas, deleteContratista: deleteContratistaFn, createContratista, isDeleting } = useContratistas();
-  const { userProfile } = useAuthRoles();
+  const { profile } = useAuth();
 
   const handleDelete = async () => {
     if (!deleteContratista) return;
@@ -55,11 +54,11 @@ export default function Contratistas() {
       const newContratista = await createContratista(data);
       
       // Si el usuario es admin de salmonera, asociar automáticamente
-      if (userProfile?.rol === 'admin_salmonera' && userProfile?.salmonera_id && newContratista) {
+      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id && newContratista) {
         const { error: associationError } = await supabase
           .from('salmonera_contratista')
           .insert({
-            salmonera_id: userProfile.salmonera_id,
+            salmonera_id: profile.salmonera_id,
             contratista_id: newContratista.id,
             estado: 'activa'
           });

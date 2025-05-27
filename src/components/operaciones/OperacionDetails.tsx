@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { HPTWizard } from '@/components/hpt/HPTWizard';
 import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OperacionDetailsProps {
   operacionId: string;
@@ -45,6 +45,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
   const [showTeamManager, setShowTeamManager] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
+  const { profile } = useAuth();
 
   useEffect(() => {
     const fetchOperacionDetails = async () => {
@@ -458,6 +459,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           </DialogHeader>
           <OperacionTeamManager
             operacionId={operacionId}
+            salmoneraId={profile?.salmonera_id}
             onClose={() => setShowTeamManager(false)}
           />
         </DialogContent>

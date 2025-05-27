@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,10 +15,11 @@ import { toast } from "@/hooks/use-toast";
 
 interface OperacionTeamManagerProps {
   operacionId: string;
-  salmoneraId: string;
+  salmoneraId?: string;
+  onClose?: () => void;
 }
 
-export const OperacionTeamManager = ({ operacionId, salmoneraId }: OperacionTeamManagerProps) => {
+export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: OperacionTeamManagerProps) => {
   const { equipos } = useEquiposBuceoEnhanced();
   const { operaciones } = useOperaciones();
   const queryClient = useQueryClient();
