@@ -2,7 +2,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { EquipoBuceoManager } from "@/components/equipo-buceo/EquipoBuceoManager";
+import { EquipoBuceoManager } from "@/components/equipos/EquipoBuceoManager";
 import { Users } from "lucide-react";
 
 const EquipoBuceo = () => {

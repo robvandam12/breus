@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
-import { CreateBitacoraSupervisorFormEnhanced } from "@/components/bitacoras/CreateBitacoraSupervisorFormEnhanced";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
@@ -208,7 +208,7 @@ const BitacorasSupervisor = () => {
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogContent variant="form" className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
-              <CreateBitacoraSupervisorFormEnhanced
+              <CreateBitacoraSupervisorForm
                 onSubmit={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />
