@@ -19,7 +19,6 @@ export default function HPT() {
   const operacionId = searchParams.get('operacion');
 
   useEffect(() => {
-    // Si viene con operacionId, mostrar wizard directamente
     if (operacionId) {
       setShowWizard(true);
     }

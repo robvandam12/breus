@@ -220,7 +220,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA
+    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA (sin usuarios para no superuser)
     if (profile?.role === 'admin_salmonera') {
       return [
         {
@@ -283,7 +283,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Superuser
+    // Superuser - INCLUYE USUARIOS
     if (profile?.role === 'superuser') {
       return [
         {
@@ -411,6 +411,8 @@ export function RoleBasedSidebar() {
     }
     return null;
   };
+
+  const menuItems = getMenuItemsForRole();
 
   return (
     <Sidebar className="border-r border-border/40 font-sans">

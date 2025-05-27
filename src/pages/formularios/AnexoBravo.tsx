@@ -12,6 +12,7 @@ import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function AnexoBravo() {
   const [showWizard, setShowWizard] = useState(false);
@@ -22,7 +23,6 @@ export default function AnexoBravo() {
   const operacionId = searchParams.get('operacion');
 
   useEffect(() => {
-    // Si viene con operacionId, mostrar wizard directamente
     if (operacionId) {
       setShowWizard(true);
     }
@@ -59,42 +59,8 @@ export default function AnexoBravo() {
     setShowWizard(false);
     if (operacionId) {
       navigateTo('/operaciones');
-    } else {
-      navigateTo('/operaciones');
     }
   };
-
-  if (showWizard) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <RoleBasedSidebar />
-          <main className="flex-1 flex flex-col">
-            <Header 
-              title="Crear Anexo Bravo" 
-              subtitle="Lista de chequeo para faenas de buceo" 
-              icon={FileText} 
-            >
-              <Button variant="outline" onClick={handleCancel}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
-              </Button>
-            </Header>
-            
-            <div className="flex-1 overflow-auto">
-              <div className="p-6">
-                <AnexoBravoWizard
-                  onSubmit={handleCreateAnexo}
-                  onCancel={handleCancel}
-                  defaultOperacionId={operacionId || undefined}
-                />
-              </div>
-            </div>
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
 
   return (
     <SidebarProvider>
@@ -138,6 +104,17 @@ export default function AnexoBravo() {
               </Card>
             </div>
           </div>
+
+          {/* Modal Wizard */}
+          <Dialog open={showWizard} onOpenChange={setShowWizard}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+              <AnexoBravoWizard
+                onSubmit={handleCreateAnexo}
+                onCancel={handleCancel}
+                defaultOperacionId={operacionId || undefined}
+              />
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>
