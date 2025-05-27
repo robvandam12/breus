@@ -44,6 +44,7 @@ export const MapboxPicker = ({
   useEffect(() => {
     if (!isLoaded || !mapContainer.current || map.current) return;
 
+    // Usar el token desde las variables de entorno
     window.mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
     map.current = new window.mapboxgl.Map({

@@ -1,10 +1,11 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Users, Settings } from "lucide-react";
+import { MapPin, Calendar, Users } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
 declare global {
@@ -17,7 +18,6 @@ export const OperacionesMapView = () => {
   const { operaciones, isLoading } = useOperaciones();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
-  const [mapboxToken, setMapboxToken] = useState('');
   const [mapboxLoaded, setMapboxLoaded] = useState(false);
   const [mapInitialized, setMapInitialized] = useState(false);
 
@@ -44,19 +44,20 @@ export const OperacionesMapView = () => {
     };
   }, []);
 
-  // Inicializar mapa cuando Mapbox esté cargado y tengamos token
+  // Inicializar mapa cuando Mapbox esté cargado
   useEffect(() => {
-    if (!mapboxLoaded || !mapboxToken || !mapContainer.current || mapInitialized) return;
+    if (!mapboxLoaded || !mapContainer.current || mapInitialized) return;
 
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
     try {
-      mapboxgl.accessToken = mapboxToken;
+      // Usar el token desde las variables de entorno
+      mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: 'mapbox://styles/mapbox/satellite-v9',
         projection: 'globe',
         zoom: 6,
         center: [-71.542969, -35.675147], // Chile central
@@ -124,47 +125,13 @@ export const OperacionesMapView = () => {
     return () => {
       map.current?.remove();
     };
-  }, [mapboxLoaded, mapboxToken, operaciones, mapInitialized]);
+  }, [mapboxLoaded, operaciones, mapInitialized]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
-    );
-  }
-
-  if (!mapboxToken) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Configuración de Mapbox
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="mapbox-token">Token de Mapbox</Label>
-            <Input
-              id="mapbox-token"
-              type="password"
-              placeholder="Ingrese su token público de Mapbox"
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Obtén tu token en <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://mapbox.com/</a>
-            </p>
-          </div>
-          <Button 
-            onClick={() => {/* Token se guarda automáticamente */}}
-            disabled={!mapboxToken}
-          >
-            Configurar Mapa
-          </Button>
-        </CardContent>
-      </Card>
     );
   }
 
