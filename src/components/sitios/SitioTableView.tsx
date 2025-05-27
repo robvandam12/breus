@@ -44,6 +44,20 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
     }
   };
 
+  const handleEditFromDetails = () => {
+    if (selectedSitio) {
+      setEditingSitio(selectedSitio);
+      setSelectedSitio(null);
+    }
+  };
+
+  const handleDeleteFromDetails = () => {
+    if (selectedSitio) {
+      setDeletingSitio(selectedSitio);
+      setSelectedSitio(null);
+    }
+  };
+
   return (
     <>
       <Table>
@@ -128,6 +142,8 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
             <SitioDetails
               sitio={selectedSitio}
               onClose={() => setSelectedSitio(null)}
+              onEdit={handleEditFromDetails}
+              onDelete={handleDeleteFromDetails}
             />
           )}
         </DialogContent>
@@ -141,6 +157,7 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
               sitio={editingSitio}
               onSubmit={handleEdit}
               onCancel={() => setEditingSitio(null)}
+              salmoneras={[]}
             />
           )}
         </DialogContent>

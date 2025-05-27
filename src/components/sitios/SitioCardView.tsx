@@ -44,6 +44,20 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
     }
   };
 
+  const handleEditFromDetails = () => {
+    if (selectedSitio) {
+      setEditingSitio(selectedSitio);
+      setSelectedSitio(null);
+    }
+  };
+
+  const handleDeleteFromDetails = () => {
+    if (selectedSitio) {
+      setDeletingSitio(selectedSitio);
+      setSelectedSitio(null);
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -126,6 +140,8 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
             <SitioDetails
               sitio={selectedSitio}
               onClose={() => setSelectedSitio(null)}
+              onEdit={handleEditFromDetails}
+              onDelete={handleDeleteFromDetails}
             />
           )}
         </DialogContent>
@@ -139,6 +155,7 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
               sitio={editingSitio}
               onSubmit={handleEdit}
               onCancel={() => setEditingSitio(null)}
+              salmoneras={[]}
             />
           )}
         </DialogContent>
