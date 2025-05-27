@@ -17,14 +17,13 @@ export default function HPT() {
   const { navigateTo } = useRouter();
   
   const operacionId = searchParams.get('operacion');
-  const hptId = searchParams.get('id');
 
   useEffect(() => {
-    // Si viene con operacionId o hptId, mostrar wizard directamente
-    if (operacionId || hptId) {
+    // Si viene con operacionId, mostrar wizard directamente
+    if (operacionId) {
       setShowWizard(true);
     }
-  }, [operacionId, hptId]);
+  }, [operacionId]);
 
   const handleCreateHPT = async (hptId: string) => {
     toast({
@@ -38,7 +37,7 @@ export default function HPT() {
 
   const handleCancel = () => {
     setShowWizard(false);
-    if (operacionId || hptId) {
+    if (operacionId) {
       navigateTo('/operaciones');
     }
   };
@@ -50,7 +49,7 @@ export default function HPT() {
           <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
-              title={hptId ? "Editar HPT" : "Crear HPT"} 
+              title="Crear HPT" 
               subtitle="Hoja de Planificación de Tarea" 
               icon={FileText} 
             >
@@ -64,7 +63,6 @@ export default function HPT() {
               <div className="p-6">
                 <HPTWizard
                   operacionId={operacionId || undefined}
-                  hptId={hptId || undefined}
                   onComplete={handleCreateHPT}
                   onCancel={handleCancel}
                 />

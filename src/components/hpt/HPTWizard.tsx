@@ -1,39 +1,26 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
-
-// Importando los componentes de cada paso
 import { HPTStep1 } from "./steps/HPTStep1";
 import { HPTStep2 } from "./steps/HPTStep2";
 import { HPTStep3 } from "./steps/HPTStep3";
 import { HPTStep4 } from "./steps/HPTStep4";
 import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
+import { useToast } from "@/hooks/use-toast";
+import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 
 interface HPTWizardProps {
   operacionId?: string;
   hptId?: string;
   onComplete?: (hptId: string) => void;
   onCancel?: () => void;
-  operaciones?: any[];
-  selectedOperacion?: any;
-  setSelectedOperacion?: (operacion: any) => void;
 }
 
-export const HPTWizard = ({ 
-  operacionId, 
-  hptId, 
-  onComplete, 
-  onCancel,
-  operaciones = [],
-  selectedOperacion,
-  setSelectedOperacion = () => {}
-}: HPTWizardProps) => {
+export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
   const { toast } = useToast();
   const {
     currentStep,
@@ -77,15 +64,7 @@ export const HPTWizard = ({
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <HPTStep1 
-            data={data} 
-            updateData={updateData}
-            operaciones={operaciones}
-            selectedOperacion={selectedOperacion}
-            setSelectedOperacion={setSelectedOperacion}
-          />
-        );
+        return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
         return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
       case 3:
@@ -124,7 +103,7 @@ export const HPTWizard = ({
 
   return (
     <div className="h-full max-h-[90vh] flex flex-col">
-      {/* Header */}
+      {/* Header with Progress */}
       <div className="flex-shrink-0 p-4 md:p-6 border-b">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -147,6 +126,18 @@ export const HPTWizard = ({
             >
               {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
             </Badge>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {progress}% Completado
+            </Badge>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <Progress value={progress} className="h-3" />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Progreso General</span>
+            <span>{progress}%</span>
           </div>
         </div>
 

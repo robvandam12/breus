@@ -37,7 +37,6 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { BreusLogo } from "@/components/ui/logo/BreusLogo";
 
 interface MenuSubItem {
   title: string;
@@ -59,8 +58,7 @@ export function RoleBasedSidebar() {
   const { salmoneras } = useSalmoneras();
 
   const getMenuItemsForRole = (): MenuItem[] => {
-    const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-    const isSuperUser = profile?.role === 'superuser';
+    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
     // Buzo sin empresa asignada - navegación muy limitada
     if (profile?.role === 'buzo' && !isAssigned) {
@@ -174,7 +172,7 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Información", url: "/empresas/contratistas" },
-            ...(isSuperUser ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+            { title: "Usuarios", url: "/admin/users" }
           ]
         },
         {
@@ -238,7 +236,7 @@ export function RoleBasedSidebar() {
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
             { title: "Contratistas", url: "/empresas/contratistas" },
-            ...(isSuperUser ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+            { title: "Usuarios", url: "/admin/users" }
           ]
         },
         {
@@ -421,7 +419,7 @@ export function RoleBasedSidebar() {
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-            <BreusLogo width={20} height={12} className="text-white fill-current" />
+            <span className="text-white font-bold text-sm">B</span>
           </div>
           <div>
             <h2 className="font-semibold text-lg">Breus</h2>

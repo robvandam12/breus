@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/layout/Header";
@@ -23,11 +23,7 @@ export default function AnexoBravo() {
     try {
       const anexoData = {
         ...data,
-        operacion_id: operacionId || data.operacion_id,
-        estado: 'borrador',
-        firmado: false,
-        progreso: 100,
-        checklist_completo: true
+        operacion_id: operacionId || data.operacion_id
       };
       
       const { error } = await supabase.from('anexo_bravo').insert([anexoData]);
@@ -35,7 +31,7 @@ export default function AnexoBravo() {
       
       toast({
         title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente. Podrá firmarlo en la vista de operaciones.",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
       });
       
       navigateTo('/operaciones');
@@ -50,7 +46,11 @@ export default function AnexoBravo() {
   };
 
   const handleCancel = () => {
-    navigateTo('/operaciones');
+    if (operacionId) {
+      navigateTo('/operaciones');
+    } else {
+      navigateTo('/operaciones');
+    }
   };
 
   return (
