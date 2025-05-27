@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -8,16 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Edit, Trash2, Eye, UserPlus } from "lucide-react";
+import { Users, Plus, Search, Edit, Eye, UserPlus } from "lucide-react";
 import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
-import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const EquipoBuceo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  const { equipos, isLoading, createEquipo } = useEquipoBuceo();
+  const { equipos, isLoading, createEquipo } = useEquiposBuceoEnhanced();
 
   const filteredEquipos = equipos.filter(equipo => 
     equipo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,7 +77,7 @@ const EquipoBuceo = () => {
 
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="ios-button bg-blue-600 hover:bg-blue-700">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="w-4 h-4 mr-2" />
                     Nuevo Equipo
                   </Button>
@@ -91,7 +92,7 @@ const EquipoBuceo = () => {
             </div>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

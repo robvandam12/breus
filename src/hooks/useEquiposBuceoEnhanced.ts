@@ -1,18 +1,24 @@
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserCompany } from "@/hooks/useUserCompany";
 
 export interface EquipoBuceoMiembro {
   id: string;
-  nombre_completo: string;
-  rol: string;
+  equipo_id: string;
+  usuario_id: string;
+  rol_equipo: string;
   disponible: boolean;
-  matricula?: string;
+  nombre?: string;
+  apellido?: string;
   email?: string;
   telefono?: string;
-  invitado?: boolean;
-  estado_invitacion?: 'pendiente' | 'aceptada' | 'rechazada';
+  matricula?: string;
+  nombre_completo?: string;
+  rol?: string;
 }
 
 export interface EquipoBuceo {
@@ -20,239 +26,114 @@ export interface EquipoBuceo {
   nombre: string;
   descripcion?: string;
   empresa_id: string;
-  tipo_empresa: string;
+  tipo_empresa: 'salmonera' | 'contratista';
   activo: boolean;
   created_at: string;
   updated_at: string;
   miembros?: EquipoBuceoMiembro[];
 }
 
-export interface EquipoBuceoFormData {
-  nombre: string;
-  descripcion: string;
-  empresa_id: string;
-}
-
-export interface AddMiembroData {
-  equipo_id: string;
-  usuario_id: string;
-  rol_equipo: string;
-  nombre_completo: string;
-  email?: string;
-  invitado: boolean;
-}
-
-export interface InviteMemberData {
-  equipo_id: string;
-  email: string;
-  nombre_completo: string;
-  rol_equipo: string;
-}
-
 export const useEquiposBuceoEnhanced = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  const { companyInfo } = useUserCompany();
 
   const { data: equipos = [], isLoading } = useQuery({
-    queryKey: ['equipos-buceo'],
+    queryKey: ['equipos-buceo-enhanced'],
     queryFn: async () => {
-      console.log('Fetching equipos de buceo...');
       const { data, error } = await supabase
         .from('equipos_buceo')
         .select(`
           *,
-          equipo_buceo_miembros (
-            id,
-            usuario_id,
-            disponible,
-            rol_equipo,
-            usuario:usuario_id (
-              nombre,
-              apellido,
-              email
-            )
+          miembros:equipo_buceo_miembros(
+            *,
+            usuario:usuario(nombre, apellido, email, rol, perfil_buzo)
           )
         `)
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching equipos:', error);
-        throw error;
-      }
-
-      return (data || []).map(equipo => ({
+      if (error) throw error;
+      
+      return data.map(equipo => ({
         ...equipo,
-        miembros: equipo.equipo_buceo_miembros?.map(miembro => ({
-          id: miembro.id,
-          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
-          rol: miembro.rol_equipo,
-          disponible: miembro.disponible,
-          email: miembro.usuario?.email,
-          matricula: '',
-          telefono: '',
-          invitado: false,
-          estado_invitacion: 'aceptada' as const
+        miembros: equipo.miembros?.map(miembro => ({
+          ...miembro,
+          nombre: miembro.usuario?.nombre || '',
+          apellido: miembro.usuario?.apellido || '',
+          email: miembro.usuario?.email || '',
+          rol: miembro.usuario?.rol || '',
+          telefono: miembro.usuario?.perfil_buzo?.telefono || '',
+          matricula: miembro.usuario?.perfil_buzo?.matricula || '',
+          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim()
         })) || []
       })) as EquipoBuceo[];
     },
   });
 
-  const createEquipoMutation = useMutation({
-    mutationFn: async (data: EquipoBuceoFormData) => {
-      console.log('Creating equipo de buceo:', data);
-      
-      // Get current user to determine empresa_id and tipo_empresa
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Usuario no autenticado');
-
-      const { data: userProfile } = await supabase
-        .from('usuario')
-        .select('salmonera_id, servicio_id')
-        .eq('usuario_id', user.user.id)
-        .single();
-
-      if (!userProfile) throw new Error('Perfil de usuario no encontrado');
-
-      const equipoData = {
-        nombre: data.nombre,
-        descripcion: data.descripcion,
-        empresa_id: userProfile.salmonera_id || userProfile.servicio_id || data.empresa_id,
-        tipo_empresa: userProfile.salmonera_id ? 'salmonera' : 'servicio',
-        activo: true
-      };
-
-      const { data: result, error } = await supabase
-        .from('equipos_buceo')
-        .insert([equipoData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating equipo:', error);
-        throw error;
+  const createEquipo = useMutation({
+    mutationFn: async (equipoData: {
+      nombre: string;
+      descripcion?: string;
+    }) => {
+      if (!profile?.salmonera_id && !profile?.servicio_id) {
+        throw new Error('Usuario debe estar asignado a una empresa');
       }
 
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-      toast({
-        title: "Equipo creado",
-        description: "El equipo de buceo ha sido creado exitosamente.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error creating equipo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el equipo de buceo.",
-        variant: "destructive",
-      });
-    },
-  });
+      const empresa_id = profile.salmonera_id || profile.servicio_id;
+      const tipo_empresa = profile.salmonera_id ? 'salmonera' : 'contratista';
 
-  const addMiembroMutation = useMutation({
-    mutationFn: async (data: AddMiembroData) => {
-      console.log('Adding miembro to equipo:', data);
-      
-      const { data: result, error } = await supabase
-        .from('equipo_buceo_miembros')
+      const { data, error } = await supabase
+        .from('equipos_buceo')
         .insert([{
-          equipo_id: data.equipo_id,
-          usuario_id: data.usuario_id,
-          rol_equipo: data.rol_equipo,
-          disponible: true
+          ...equipoData,
+          empresa_id,
+          tipo_empresa,
+          activo: true
         }])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error adding miembro:', error);
-        throw error;
-      }
-
-      return result;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
       toast({
-        title: "Miembro agregado",
-        description: "El miembro ha sido agregado al equipo exitosamente.",
+        title: 'Equipo creado',
+        description: 'El equipo de buceo ha sido creado exitosamente.',
       });
     },
-    onError: (error) => {
-      console.error('Error adding miembro:', error);
+    onError: (error: any) => {
+      console.error('Error creating equipo:', error);
       toast({
-        title: "Error",
-        description: "No se pudo agregar el miembro al equipo.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'No se pudo crear el equipo de buceo.',
+        variant: 'destructive',
       });
     },
   });
 
-  const inviteMemberMutation = useMutation({
-    mutationFn: async (data: InviteMemberData) => {
-      console.log('Inviting member to equipo:', data);
-      
-      // Create invitation logic here
-      // For now, we'll just simulate success
-      return { success: true };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Invitación enviada",
-        description: "La invitación ha sido enviada exitosamente.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error inviting member:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo enviar la invitación.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateEquipoMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<EquipoBuceoFormData> }) => {
-      console.log('Updating equipo:', id, data);
-      
-      const { data: result, error } = await supabase
-        .from('equipos_buceo')
-        .update(data)
-        .eq('id', id)
+  const addMiembro = useMutation({
+    mutationFn: async ({ equipo_id, usuario_id, rol_equipo }: {
+      equipo_id: string;
+      usuario_id: string;
+      rol_equipo: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert({ equipo_id, usuario_id, rol_equipo, disponible: true })
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
       toast({
-        title: "Equipo actualizado",
-        description: "El equipo ha sido actualizado exitosamente.",
-      });
-    },
-  });
-
-  const deleteEquipoMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Deleting equipo:', id);
-      
-      const { error } = await supabase
-        .from('equipos_buceo')
-        .update({ activo: false })
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-      toast({
-        title: "Equipo eliminado",
-        description: "El equipo ha sido eliminado exitosamente.",
+        title: 'Miembro agregado',
+        description: 'El miembro ha sido agregado al equipo exitosamente.',
       });
     },
   });
@@ -260,13 +141,8 @@ export const useEquiposBuceoEnhanced = () => {
   return {
     equipos,
     isLoading,
-    createEquipo: createEquipoMutation.mutateAsync,
-    addMiembro: addMiembroMutation.mutateAsync,
-    inviteMember: inviteMemberMutation.mutateAsync,
-    updateEquipo: updateEquipoMutation.mutateAsync,
-    deleteEquipo: deleteEquipoMutation.mutateAsync,
-    isCreating: createEquipoMutation.isPending,
-    isUpdating: updateEquipoMutation.isPending,
-    isDeleting: deleteEquipoMutation.isPending,
+    createEquipo: createEquipo.mutate,
+    addMiembro: addMiembro.mutate,
+    isCreating: createEquipo.isPending,
   };
 };

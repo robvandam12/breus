@@ -24,7 +24,7 @@ export default function Configuracion() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               <Card>
                 <CardHeader>

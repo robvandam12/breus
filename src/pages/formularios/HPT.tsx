@@ -19,7 +19,6 @@ export default function HPT() {
   const operacionId = searchParams.get('operacion');
 
   useEffect(() => {
-    // Si viene con operacionId, mostrar wizard directamente
     if (operacionId) {
       setShowWizard(true);
     }
@@ -59,7 +58,7 @@ export default function HPT() {
               </Button>
             </Header>
             
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <HPTWizard
                   operacionId={operacionId || undefined}
@@ -90,7 +89,7 @@ export default function HPT() {
             </Button>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               <Card>
                 <CardHeader>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
@@ -19,6 +19,12 @@ export default function AnexoBravo() {
   const { navigateTo } = useRouter();
   
   const operacionId = searchParams.get('operacion');
+
+  useEffect(() => {
+    if (operacionId) {
+      setShowWizard(true);
+    }
+  }, [operacionId]);
 
   const handleCreateAnexo = async (data: any) => {
     try {
@@ -80,12 +86,13 @@ export default function AnexoBravo() {
               </Button>
             </Header>
             
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <AnexoBravoWizard
                   onSubmit={handleCreateAnexo}
                   onCancel={handleCancel}
                   defaultOperacionId={operacionId || undefined}
+                  type={wizardType}
                 />
               </div>
             </div>
@@ -106,7 +113,7 @@ export default function AnexoBravo() {
             icon={FileText} 
           />
           
-          <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 <Card>
