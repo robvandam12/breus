@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,15 +87,15 @@ export const HPTWizard = ({
           />
         );
       case 2:
-        return <HPTStep2 data={data} updateData={updateData} operacionId={operacionId || ''} />;
+        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
       case 3:
-        return <HPTStep3 data={data} updateData={updateData} />;
+        return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:
-        return <HPTStep4 data={data} updateData={updateData} />;
+        return <HPTStep4 data={data} onUpdate={updateData} />;
       case 5:
-        return <HPTStep5 data={data} updateData={updateData} />;
+        return <HPTStep5 data={data} onUpdate={updateData} />;
       case 6:
-        return <HPTStep6 data={data} updateData={updateData} />;
+        return <HPTStep6 data={data} onUpdate={updateData} />;
       default:
         return null;
     }
