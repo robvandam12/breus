@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EnhancedSelect } from "@/components/ui/enhanced-select";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { Anchor, Calendar, User, Clock, Target } from "lucide-react";
 
 interface InmersionWizardProps {
@@ -22,7 +22,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
   onCancel
 }) => {
   const { operaciones } = useOperaciones();
-  const { equipos, miembros } = useEquipoBuceo();
+  const { equipos } = useEquiposBuceoEnhanced();
   
   const [formData, setFormData] = useState({
     operacion_id: operacionId || '',
@@ -52,35 +52,56 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
         // Generate code based on operation
         const codigo = `INM-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
         
+        // Find team members if equipo is assigned
+        let supervisor = null;
+        let buzoPrincipal = null;
+        let buzoAsistente = null;
+        
+        if (operacion.equipo_buceo_id) {
+          const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
+          if (equipo?.miembros) {
+            supervisor = equipo.miembros.find(m => m.rol === 'supervisor');
+            const buzos = equipo.miembros.filter(m => m.rol === 'buzo_principal' || m.rol === 'buzo_asistente');
+            buzoPrincipal = buzos.find(m => m.rol === 'buzo_principal') || buzos[0];
+            buzoAsistente = buzos.find(m => m.rol === 'buzo_asistente') || buzos[1];
+          }
+        }
+        
         setFormData(prev => ({
           ...prev,
           operacion_id: operacionId,
           codigo,
-          // Note: Using available properties from the operation table
-          supervisor: '',
-          supervisor_id: ''
+          supervisor: supervisor?.nombre_completo || '',
+          supervisor_id: supervisor?.id || '',
+          buzo_principal: buzoPrincipal?.nombre_completo || '',
+          buzo_principal_id: buzoPrincipal?.id || '',
+          buzo_asistente: buzoAsistente?.nombre_completo || '',
+          buzo_asistente_id: buzoAsistente?.id || ''
         }));
       }
     }
-  }, [operacionId, operaciones]);
+  }, [operacionId, operaciones, equipos]);
 
   const operacionOptions = operaciones.map(op => ({
     value: op.id,
     label: `${op.codigo} - ${op.nombre}`
   }));
 
-  const buzosOptions = miembros
-    .filter(miembro => miembro.rol_equipo === 'buzo')
+  // Get all members from all teams for selection
+  const allMembers = equipos.flatMap(equipo => equipo.miembros || []);
+  
+  const buzosOptions = allMembers
+    .filter(miembro => miembro.rol === 'buzo_principal' || miembro.rol === 'buzo_asistente')
     .map(miembro => ({
-      value: miembro.usuario_id,
-      label: miembro.nombre || 'Sin nombre'
+      value: miembro.id,
+      label: miembro.nombre_completo || 'Sin nombre'
     }));
 
-  const supervisoresOptions = miembros
-    .filter(miembro => miembro.rol_equipo === 'supervisor')
+  const supervisoresOptions = allMembers
+    .filter(miembro => miembro.rol === 'supervisor')
     .map(miembro => ({
-      value: miembro.usuario_id,
-      label: miembro.nombre || 'Sin nombre'
+      value: miembro.id,
+      label: miembro.nombre_completo || 'Sin nombre'
     }));
 
   const handleInputChange = (field: string, value: string) => {
@@ -192,9 +213,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
               options={supervisoresOptions}
               value={formData.supervisor_id}
               onValueChange={(value) => {
-                const supervisor = miembros.find(m => m.usuario_id === value);
+                const supervisor = allMembers.find(m => m.id === value);
                 handleInputChange('supervisor_id', value);
-                handleInputChange('supervisor', supervisor?.nombre || '');
+                handleInputChange('supervisor', supervisor?.nombre_completo || '');
               }}
               placeholder="Seleccione un supervisor"
             />
@@ -207,9 +228,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                 options={buzosOptions}
                 value={formData.buzo_principal_id}
                 onValueChange={(value) => {
-                  const buzo = miembros.find(m => m.usuario_id === value);
+                  const buzo = allMembers.find(m => m.id === value);
                   handleInputChange('buzo_principal_id', value);
-                  handleInputChange('buzo_principal', buzo?.nombre || '');
+                  handleInputChange('buzo_principal', buzo?.nombre_completo || '');
                 }}
                 placeholder="Seleccione el buzo principal"
               />
@@ -220,9 +241,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                 options={buzosOptions}
                 value={formData.buzo_asistente_id}
                 onValueChange={(value) => {
-                  const buzo = miembros.find(m => m.usuario_id === value);
+                  const buzo = allMembers.find(m => m.id === value);
                   handleInputChange('buzo_asistente_id', value);
-                  handleInputChange('buzo_asistente', buzo?.nombre || '');
+                  handleInputChange('buzo_asistente', buzo?.nombre_completo || '');
                 }}
                 placeholder="Seleccione el buzo asistente (opcional)"
               />

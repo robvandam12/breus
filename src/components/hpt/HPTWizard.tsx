@@ -13,7 +13,7 @@ import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HPTWizardProps {
@@ -26,7 +26,7 @@ interface HPTWizardProps {
 export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
   const { toast } = useToast();
   const { operaciones } = useOperaciones();
-  const { miembros } = useEquipoBuceo();
+  const { equipos } = useEquiposBuceoEnhanced();
   const {
     currentStep,
     data,
@@ -64,11 +64,14 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
 
         const operacion = opData;
         
-        // Find supervisor from team members
-        const supervisor = miembros.find(m => 
-          m.equipo_id === operacion.equipo_buceo_id && 
-          m.rol_equipo === 'supervisor'
-        );
+        // Find supervisor from team members if equipo is assigned
+        let supervisor = null;
+        if (operacion.equipo_buceo_id) {
+          const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
+          supervisor = equipo?.miembros?.find(m => 
+            m.rol === 'supervisor'
+          );
+        }
 
         // Generate folio based on operation
         const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
@@ -100,7 +103,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
     };
 
     populateOperationData();
-  }, [operacionId, miembros, updateData, toast]);
+  }, [operacionId, equipos, updateData, toast]);
 
   const handleNext = () => {
     const currentStepData = steps[currentStep - 1];
