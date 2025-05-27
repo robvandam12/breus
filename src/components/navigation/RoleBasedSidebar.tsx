@@ -172,7 +172,8 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Información", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            // Ocultar "Usuarios" para roles que no sean superuser
+            ...(profile?.role === 'superuser' ? [{ title: "Usuarios", url: "/admin/users" }] : [])
           ]
         },
         {
@@ -236,7 +237,8 @@ export function RoleBasedSidebar() {
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
             { title: "Contratistas", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            // Ocultar "Usuarios" para roles que no sean superuser
+            ...(profile?.role === 'superuser' ? [{ title: "Usuarios", url: "/admin/users" }] : [])
           ]
         },
         {

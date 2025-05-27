@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ const BitacorasBuzo = () => {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gray-50">
-          <AppSidebar />
+          <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
               title="Bitácoras Buzo" 
@@ -93,7 +93,7 @@ const BitacorasBuzo = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
-        <AppSidebar />
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Bitácoras Buzo" 

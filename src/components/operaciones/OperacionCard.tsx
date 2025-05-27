@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Building, Clock, Edit, Trash2, Eye } from "lucide-react";
+import { Calendar, Users, MapPin, Building, Clock, Edit, Trash2, Eye, FileText, Waves } from "lucide-react";
 import { Operacion } from "@/hooks/useOperaciones";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -11,9 +11,19 @@ interface OperacionCardProps {
   operacion: Operacion;
   onEdit?: () => void;
   onDelete?: () => void;
+  onCreateHPT?: () => void;
+  onCreateAnexoBravo?: () => void;
+  onCreateInmersion?: () => void;
 }
 
-export const OperacionCard = ({ operacion, onEdit, onDelete }: OperacionCardProps) => {
+export const OperacionCard = ({ 
+  operacion, 
+  onEdit, 
+  onDelete, 
+  onCreateHPT, 
+  onCreateAnexoBravo, 
+  onCreateInmersion 
+}: OperacionCardProps) => {
   const getEstadoBadge = (estado: string) => {
     const estadoMap: Record<string, { className: string; label: string }> = {
       activa: { className: "bg-green-100 text-green-700", label: "Activa" },
@@ -33,9 +43,10 @@ export const OperacionCard = ({ operacion, onEdit, onDelete }: OperacionCardProp
   };
 
   const estadoInfo = getEstadoBadge(operacion.estado);
+  const hasEquipo = !!operacion.equipo_buceo_id;
 
   return (
-    <Card className="ios-card hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -79,8 +90,59 @@ export const OperacionCard = ({ operacion, onEdit, onDelete }: OperacionCardProp
             </div>
           )}
         </div>
+
+        {/* Equipo de Buceo Status */}
+        <div className="flex items-center gap-2 text-sm">
+          <Users className="w-4 h-4" />
+          <span>Equipo de Buceo:</span>
+          <Badge variant={hasEquipo ? "default" : "destructive"}>
+            {hasEquipo ? "Asignado" : "Sin Asignar"}
+          </Badge>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-zinc-700">Acciones Rápidas:</p>
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onCreateHPT}
+              disabled={!hasEquipo}
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <FileText className="w-4 h-4 mr-1" />
+              HPT
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onCreateAnexoBravo}
+              disabled={!hasEquipo}
+              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            >
+              <FileText className="w-4 h-4 mr-1" />
+              Anexo Bravo
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onCreateInmersion}
+              disabled={!hasEquipo}
+              className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+            >
+              <Waves className="w-4 h-4 mr-1" />
+              Inmersión
+            </Button>
+          </div>
+          {!hasEquipo && (
+            <p className="text-xs text-red-500">
+              Asigne un equipo de buceo para habilitar la creación de documentos
+            </p>
+          )}
+        </div>
         
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 border-t">
           <Button variant="outline" size="sm">
             <Eye className="w-4 h-4" />
           </Button>
