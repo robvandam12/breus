@@ -1,7 +1,9 @@
+
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { Header } from "@/components/layout/Header";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,12 +16,12 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-const Inmersiones = () => {
+export default function Inmersiones() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'planificada' | 'en_progreso' | 'completada' | 'cancelada'>('all');
   
-  const { inmersiones, isLoading, createInmersion, updateInmersion, deleteInmersion } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, deleteInmersion } = useInmersiones();
 
   const filteredInmersiones = inmersiones.filter(inmersion => {
     const matchesSearch = inmersion.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,7 +37,6 @@ const Inmersiones = () => {
       setIsCreateDialogOpen(false);
     } catch (error: any) {
       console.error('Error creating Inmersion:', error);
-      // El hook ya maneja el toast de error
     }
   };
 
@@ -65,21 +66,14 @@ const Inmersiones = () => {
   if (isLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <AppSidebar />
+        <div className="min-h-screen flex w-full">
+          <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
-            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-                <div className="flex items-center gap-3">
-                  <Waves className="w-6 h-6 text-zinc-600" />
-                  <div>
-                    <h1 className="text-xl font-semibold text-zinc-900">Inmersiones</h1>
-                    <p className="text-sm text-zinc-500">Gestión de Inmersiones de Buceo</p>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <Header 
+              title="Inmersiones" 
+              subtitle="Gestión de Inmersiones de Buceo" 
+              icon={Waves} 
+            />
             <div className="flex-1 flex items-center justify-center">
               <LoadingSpinner text="Cargando Inmersiones..." />
             </div>
@@ -91,82 +85,75 @@ const Inmersiones = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <AppSidebar />
+      <div className="min-h-screen flex w-full">
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <Waves className="w-6 h-6 text-zinc-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Inmersiones</h1>
-                  <p className="text-sm text-zinc-500">Gestión de Inmersiones de Buceo</p>
-                </div>
+          <Header 
+            title="Inmersiones" 
+            subtitle="Gestión de Inmersiones de Buceo" 
+            icon={Waves} 
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar Inmersiones..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
               </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-                  <Input
-                    placeholder="Buscar Inmersiones..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
+
+              <div className="flex gap-2">
+                <Button 
+                  variant={filterStatus === 'all' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('all')}
+                >
+                  Todas
+                </Button>
+                <Button 
+                  variant={filterStatus === 'planificada' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('planificada')}
+                >
+                  Planificadas
+                </Button>
+                <Button 
+                  variant={filterStatus === 'en_progreso' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('en_progreso')}
+                >
+                  En Progreso
+                </Button>
+                <Button 
+                  variant={filterStatus === 'completada' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('completada')}
+                >
+                  Completadas
+                </Button>
+              </div>
+
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nueva Inmersión
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <CreateInmersionForm
+                    onSubmit={handleCreateInmersion}
+                    onCancel={() => setIsCreateDialogOpen(false)}
                   />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button 
-                    variant={filterStatus === 'all' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('all')}
-                  >
-                    Todas
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'planificada' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('planificada')}
-                  >
-                    Planificadas
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'en_progreso' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('en_progreso')}
-                  >
-                    En Progreso
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'completada' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('completada')}
-                  >
-                    Completadas
-                  </Button>
-                </div>
-
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva Inmersión
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <CreateInmersionForm
-                      onSubmit={handleCreateInmersion}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
+                </DialogContent>
+              </Dialog>
             </div>
-          </header>
+          </Header>
           
           <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            <div className="p-6">
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
@@ -201,7 +188,7 @@ const Inmersiones = () => {
                     <Waves className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay inmersiones registradas</h3>
                     <p className="text-zinc-500 mb-4">Comience creando la primera inmersión de buceo</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Nueva Inmersión
                     </Button>
@@ -305,6 +292,4 @@ const Inmersiones = () => {
       </div>
     </SidebarProvider>
   );
-};
-
-export default Inmersiones;
+}

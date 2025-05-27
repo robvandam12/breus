@@ -37,6 +37,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { BreusLogo } from "@/components/ui/breus-logo";
 
 interface MenuSubItem {
   title: string;
@@ -172,7 +173,7 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Información", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            { title: "Usuarios", url: "/admin/users", roleRequired: ["admin_servicio", "superuser"] }
           ]
         },
         {
@@ -236,7 +237,7 @@ export function RoleBasedSidebar() {
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
             { title: "Contratistas", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            { title: "Usuarios", url: "/admin/users", roleRequired: ["admin_salmonera", "superuser"] }
           ]
         },
         {
@@ -362,6 +363,15 @@ export function RoleBasedSidebar() {
 
   const menuItems = getMenuItemsForRole();
 
+  // Filter menu items based on role requirements
+  const filteredMenuItems = menuItems.map(item => ({
+    ...item,
+    items: item.items?.filter(subItem => {
+      if (!subItem.roleRequired) return true;
+      return subItem.roleRequired.includes(profile?.role || '');
+    })
+  }));
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -418,9 +428,7 @@ export function RoleBasedSidebar() {
     <Sidebar className="border-r border-border/40 font-sans">
       <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">B</span>
-          </div>
+          <BreusLogo className="w-8 h-8" />
           <div>
             <h2 className="font-semibold text-lg">Breus</h2>
             <p className="text-xs text-zinc-500">Gestión de Buceo</p>
@@ -435,7 +443,7 @@ export function RoleBasedSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
