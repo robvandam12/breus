@@ -1,291 +1,510 @@
 
 import React from 'react';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "@/hooks/useRouter";
 import { 
-  Building2, 
   Calendar, 
+  ChevronRight, 
   FileText, 
-  Users, 
-  Settings, 
-  LogOut, 
-  User,
-  Ship,
-  MapPin,
-  Waves,
-  ClipboardList,
+  Book,
+  Folder,
+  Anchor,
+  BarChart3,
+  Settings,
   Shield,
-  Home,
-  Anchor
+  LogOut,
+  Users,
+  User,
+  Building
 } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarHeader,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
 
-interface MenuItemType {
+interface MenuSubItem {
   title: string;
+  url: string;
+  roleRequired?: string[];
+}
+
+interface MenuItem {
+  title: string;
+  icon: React.ElementType;
   url?: string;
-  icon: React.ComponentType<any>;
-  roles: string[];
-  submenu?: Array<{
-    title: string;
-    url: string;
-    icon: React.ComponentType<any>;
-    roles: string[];
-  }>;
+  badge?: string;
+  items?: MenuSubItem[];
+  roleRequired?: string[];
 }
 
 export function RoleBasedSidebar() {
-  const { profile, user, signOut } = useAuth();
-  const { navigateTo } = useRouter();
-  
-  // Get current path from window.location
-  const currentPath = window.location.pathname;
+  const { profile, signOut } = useAuth();
+  const { salmoneras } = useSalmoneras();
+
+  const getMenuItemsForRole = (): MenuItem[] => {
+    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+
+    // Buzo sin empresa asignada - navegación muy limitada
+    if (profile?.role === 'buzo' && !isAssigned) {
+      return [
+        {
+          title: "Inicio",
+          icon: BarChart3,
+          url: "/",
+        },
+        {
+          title: "Mi Perfil",
+          icon: User,
+          url: "/profile-setup",
+        }
+      ];
+    }
+
+    // Buzo con empresa asignada
+    if (profile?.role === 'buzo' && isAssigned) {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "3"
+        },
+        {
+          title: "Mis Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+        },
+        {
+          title: "Mis Bitácoras",
+          icon: Book,
+          url: "/bitacoras/buzo",
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Mi Perfil",
+          icon: User,
+          url: "/profile-setup",
+        }
+      ];
+    }
+
+    // Supervisor
+    if (profile?.role === 'supervisor') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "5"
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        }
+      ];
+    }
+
+    // Admin Servicio (Contratista)
+    if (profile?.role === 'admin_servicio') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "8"
+        },
+        {
+          title: "Mi Empresa",
+          icon: Building,
+          items: [
+            { title: "Información", url: "/empresas/contratistas" },
+            { title: "Usuarios", url: "/admin/users" }
+          ]
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        }
+      ];
+    }
+
+    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA
+    if (profile?.role === 'admin_salmonera') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "15"
+        },
+        {
+          title: "Mi Empresa",
+          icon: Building,
+          items: [
+            { title: "Sitios", url: "/empresas/sitios" },
+            { title: "Contratistas", url: "/empresas/contratistas" },
+            { title: "Usuarios", url: "/admin/users" }
+          ]
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "25"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "18"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        }
+      ];
+    }
+
+    // Superuser
+    if (profile?.role === 'superuser') {
+      return [
+        {
+          title: "Dashboard",
+          icon: BarChart3,
+          url: "/",
+          badge: "3"
+        },
+        {
+          title: "Empresas",
+          icon: Folder,
+          items: [
+            { title: "Salmoneras", url: "/empresas/salmoneras" },
+            { title: "Sitios", url: "/empresas/sitios" },
+            { title: "Contratistas", url: "/empresas/contratistas" }
+          ]
+        },
+        {
+          title: "Equipo de Buceo",
+          icon: Users,
+          url: "/equipo-de-buceo"
+        },
+        {
+          title: "Operaciones",
+          icon: Calendar,
+          url: "/operaciones",
+          badge: "12"
+        },
+        {
+          title: "Formularios",
+          icon: FileText,
+          items: [
+            { title: "HPT", url: "/formularios/hpt" },
+            { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          ]
+        },
+        {
+          title: "Inmersiones",
+          icon: Anchor,
+          url: "/inmersiones",
+          badge: "7"
+        },
+        {
+          title: "Bitácoras",
+          icon: Book,
+          items: [
+            { title: "Supervisor", url: "/bitacoras/supervisor" },
+            { title: "Buzo", url: "/bitacoras/buzo" }
+          ]
+        },
+        {
+          title: "Reportes",
+          icon: BarChart3,
+          url: "/reportes"
+        },
+        {
+          title: "Configuración",
+          icon: Settings,
+          url: "/configuracion"
+        },
+        {
+          title: "Admin",
+          icon: Shield,
+          items: [
+            { title: "Gestión de Usuarios", url: "/admin/users" },
+            { title: "Roles y Permisos", url: "/admin/roles" }
+          ]
+        }
+      ];
+    }
+
+    return [];
+  };
+
+  const menuItems = getMenuItemsForRole();
 
   const handleLogout = async () => {
     try {
       await signOut();
-      navigateTo('/');
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
     } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  // Determinar el rol del usuario
-  const getUserRole = () => {
-    if (!profile) return 'guest';
-    
-    if (profile.rol === 'superuser') return 'superuser';
-    if (profile.rol === 'admin_salmonera') return 'admin_salmonera';
-    if (profile.rol === 'admin_servicio') return 'admin_servicio';
-    if (profile.rol === 'supervisor') return 'supervisor';
-    if (profile.rol === 'buzo') return 'buzo';
-    
-    return 'guest';
-  };
-
-  const userRole = getUserRole();
-
-  // Configuración de menú basada en roles
-  const getMenuItems = (): MenuItemType[] => {
-    const baseItems = [
-      {
-        title: "Inicio",
-        url: "/",
-        icon: Home,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
-      }
-    ];
-
-    const menuItems: MenuItemType[] = [
-      ...baseItems,
-      {
-        title: "Empresas",
-        url: "/empresas",
-        icon: Building2,
-        roles: ['superuser']
-      },
-      {
-        title: "Salmoneras",
-        url: "/empresas/salmoneras",
-        icon: Building2,
-        roles: ['superuser']
-      },
-      {
-        title: "Servicios",
-        url: "/empresas/servicios",
-        icon: Ship,
-        roles: ['superuser']
-      },
-      {
-        title: "Sitios",
-        url: "/empresas/sitios",
-        icon: MapPin,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio']
-      },
-      {
-        title: "Contratistas",
-        url: "/empresas/contratistas",
-        icon: Users,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio']
-      },
-      {
-        title: "Equipos de Buceo",
-        url: "/empresas/equipos-buceo",
-        icon: Anchor,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio']
-      },
-      {
-        title: "Operaciones",
-        url: "/operaciones",
-        icon: Calendar,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor']
-      },
-      {
-        title: "Inmersiones",
-        url: "/inmersiones",
-        icon: Waves,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor'],
-        submenu: [
-          {
-            title: "HPT",
-            url: "/formularios/hpt",
-            icon: ClipboardList,
-            roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor']
-          },
-          {
-            title: "Anexo Bravo",
-            url: "/formularios/anexo-bravo",
-            icon: Shield,
-            roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor']
-          }
-        ]
-      }
-    ];
-
-    // Solo mostrar usuarios para superuser
-    if (userRole === 'superuser') {
-      menuItems.push({
-        title: "Usuarios",
-        url: "/usuarios",
-        icon: Users,
-        roles: ['superuser']
+      console.error('Error during logout:', error);
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión.",
+        variant: "destructive",
       });
     }
-
-    menuItems.push({
-      title: "Configuración",
-      url: "/configuracion",
-      icon: Settings,
-      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
-    });
-
-    return menuItems.filter(item => item.roles.includes(userRole));
   };
 
-  const menuItems = getMenuItems();
+  const getUserDisplayName = () => {
+    if (profile) {
+      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
+    }
+    return 'Usuario';
+  };
 
-  const getRoleDisplay = (role: string) => {
+  const getRoleDisplayName = (role?: string) => {
     switch (role) {
       case 'superuser':
-        return { label: 'Super Usuario', color: 'bg-purple-100 text-purple-800' };
+        return 'Super Usuario';
       case 'admin_salmonera':
-        return { label: 'Admin Salmonera', color: 'bg-blue-100 text-blue-800' };
+        return 'Admin Salmonera';
       case 'admin_servicio':
-        return { label: 'Admin Servicio', color: 'bg-green-100 text-green-800' };
+        return 'Admin Servicio';
       case 'supervisor':
-        return { label: 'Supervisor', color: 'bg-orange-100 text-orange-800' };
+        return 'Supervisor';
       case 'buzo':
-        return { label: 'Buzo', color: 'bg-teal-100 text-teal-800' };
+        return 'Buzo';
       default:
-        return { label: 'Usuario', color: 'bg-gray-100 text-gray-800' };
+        return 'Usuario';
     }
   };
 
-  const roleDisplay = getRoleDisplay(userRole);
+  const getCompanyName = () => {
+    if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
+      return salmonera?.nombre || null;
+    }
+    if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
+      return 'Servicio Buceo Corp'; // Placeholder - debería venir de la BD
+    }
+    return null;
+  };
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-white">
-      <SidebarHeader className="p-6 border-b border-gray-100">
+    <Sidebar className="border-r border-border/40 font-sans">
+      <SidebarHeader className="border-b border-border/40 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-            <Waves className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">B</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">AquaSafe</h1>
-            <p className="text-sm text-gray-500">Sistema de Buceo</p>
+            <h2 className="font-semibold text-lg">Breus</h2>
+            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
           </div>
         </div>
       </SidebarHeader>
-
-      <SidebarContent className="flex-1 overflow-y-auto">
-        <SidebarMenu className="px-3 py-4">
-          {menuItems.map((item, index) => (
-            <SidebarMenuItem key={index}>
-              {item.submenu ? (
-                <div className="space-y-1">
-                  <div className="px-3 py-2 text-sm font-medium text-gray-700 flex items-center gap-3">
-                    <item.icon className="w-5 h-5" />
-                    {item.title}
-                  </div>
-                  <div className="ml-8 space-y-1">
-                    {item.submenu.map((subItem, subIndex) => (
-                      <SidebarMenuButton
-                        key={subIndex}
-                        onClick={() => navigateTo(subItem.url)}
-                        className={`w-full justify-start text-left ${
-                          currentPath === subItem.url
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <subItem.icon className="w-4 h-4" />
-                        {subItem.title}
-                      </SidebarMenuButton>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <SidebarMenuButton
-                  onClick={() => item.url && navigateTo(item.url)}
-                  className={`w-full justify-start text-left ${
-                    currentPath === item.url
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.title}
-                </SidebarMenuButton>
-              )}
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+      
+      <SidebarContent className="p-2">
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
+            Navegación Principal
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  {item.items ? (
+                    <Collapsible defaultOpen className="group/collapsible">
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton className="w-full">
+                          <item.icon className="w-4 h-4" />
+                          <span className="flex-1">{item.title}</span>
+                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton asChild>
+                                <Link to={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url!} className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.title}</span>
+                        </div>
+                        {item.badge && (
+                          <Badge variant="secondary" className="h-5 text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-gray-100 bg-gray-50">
-        {profile && (
-          <div className="space-y-3">
-            {/* Información de la empresa */}
-            <div className="text-center">
-              <p className="text-xs text-gray-500 mb-1">
-                {profile.salmonera_id ? 'Salmonera' : profile.servicio_id ? 'Servicio' : 'Sin empresa asignada'}
-              </p>
-            </div>
-
-            {/* Información del usuario */}
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm font-semibold">
-                  {profile.nombre?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {profile.nombre} {profile.apellido}
-                </p>
-                <Badge className={`text-xs ${roleDisplay.color}`}>
-                  {roleDisplay.label}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Botón de logout */}
-            <SidebarMenuButton
-              onClick={handleLogout}
-              className="w-full justify-start text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4" />
-              Cerrar Sesión
-            </SidebarMenuButton>
+      
+      <SidebarFooter className="border-t border-border/40 p-4">
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
+          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-medium text-sm">
+              {getUserDisplayName().charAt(0).toUpperCase()}
+            </span>
           </div>
-        )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+            <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
+            {getCompanyName() && (
+              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="h-8 w-8 p-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

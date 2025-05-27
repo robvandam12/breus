@@ -45,7 +45,7 @@ export default function HPT() {
   if (showWizard) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-white">
+        <div className="min-h-screen flex w-full">
           <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
             <Header 
@@ -76,7 +76,7 @@ export default function HPT() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white">
+      <div className="min-h-screen flex w-full">
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 

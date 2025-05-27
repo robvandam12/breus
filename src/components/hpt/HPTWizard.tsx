@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
-import { HPTWizardStep1 } from "./HPTWizardStep1";
-import { HPTWizardStep2 } from "./HPTWizardStep2";
-import { HPTWizardStep3 } from "./HPTWizardStep3";
-import { HPTWizardStep4 } from "./HPTWizardStep4";
-import { HPTWizardStep5 } from "./HPTWizardStep5";
+import { HPTStep1 } from "./steps/HPTStep1";
+import { HPTStep2 } from "./steps/HPTStep2";
+import { HPTStep3 } from "./steps/HPTStep3";
+import { HPTStep4 } from "./steps/HPTStep4";
+import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
@@ -30,6 +31,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
     prevStep,
     submitHPT,
     isFormComplete,
+    progress,
     isLoading,
     autoSaveEnabled,
     setAutoSaveEnabled
@@ -62,15 +64,15 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <HPTWizardStep1 data={data} updateData={updateData} />;
+        return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={data} updateData={updateData} operacionId={operacionId || ''} />;
+        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
       case 3:
-        return <HPTWizardStep3 data={data} updateData={updateData} />;
+        return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:
-        return <HPTWizardStep4 data={data} updateData={updateData} />;
+        return <HPTStep4 data={data} onUpdate={updateData} />;
       case 5:
-        return <HPTWizardStep5 data={data} updateData={updateData} />;
+        return <HPTStep5 data={data} onUpdate={updateData} />;
       case 6:
         return <HPTStep6 data={data} onUpdate={updateData} />;
       default:
@@ -101,7 +103,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
 
   return (
     <div className="h-full max-h-[90vh] flex flex-col">
-      {/* Header simplificado - SIN barra de progreso general */}
+      {/* Header with Progress */}
       <div className="flex-shrink-0 p-4 md:p-6 border-b">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -124,6 +126,18 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
             >
               {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
             </Badge>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {progress}% Completado
+            </Badge>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <Progress value={progress} className="h-3" />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Progreso General</span>
+            <span>{progress}%</span>
           </div>
         </div>
 
