@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,9 +19,20 @@ interface HPTWizardProps {
   hptId?: string;
   onComplete?: (hptId: string) => void;
   onCancel?: () => void;
+  operaciones?: any[];
+  selectedOperacion?: any;
+  setSelectedOperacion?: (operacion: any) => void;
 }
 
-export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
+export const HPTWizard = ({ 
+  operacionId, 
+  hptId, 
+  onComplete, 
+  onCancel,
+  operaciones = [],
+  selectedOperacion,
+  setSelectedOperacion = () => {}
+}: HPTWizardProps) => {
   const { toast } = useToast();
   const {
     currentStep,
@@ -66,17 +76,25 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={data} onUpdate={updateData} />;
+        return (
+          <HPTStep1 
+            data={data} 
+            updateData={updateData}
+            operaciones={operaciones}
+            selectedOperacion={selectedOperacion}
+            setSelectedOperacion={setSelectedOperacion}
+          />
+        );
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
+        return <HPTStep2 data={data} updateData={updateData} operacionId={operacionId || ''} />;
       case 3:
-        return <HPTStep3 data={data} onUpdate={updateData} />;
+        return <HPTStep3 data={data} updateData={updateData} />;
       case 4:
-        return <HPTStep4 data={data} onUpdate={updateData} />;
+        return <HPTStep4 data={data} updateData={updateData} />;
       case 5:
-        return <HPTStep5 data={data} onUpdate={updateData} />;
+        return <HPTStep5 data={data} updateData={updateData} />;
       case 6:
-        return <HPTStep6 data={data} onUpdate={updateData} />;
+        return <HPTStep6 data={data} updateData={updateData} />;
       default:
         return null;
     }
