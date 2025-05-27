@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
-import { HPTWizardStep1 } from "./steps/HPTWizardStep1";
-import { HPTWizardStep2 } from "./steps/HPTWizardStep2";
-import { HPTWizardStep3 } from "./steps/HPTWizardStep3";
-import { HPTWizardStep4 } from "./steps/HPTWizardStep4";
-import { HPTWizardStep5 } from "./steps/HPTWizardStep5";
-import { HPTWizardStep6 } from "./steps/HPTWizardStep6";
+import { HPTWizardStep1 } from "./HPTWizardStep1";
+import { HPTWizardStep2 } from "./HPTWizardStep2";
+import { HPTWizardStep3 } from "./HPTWizardStep3";
+import { HPTWizardStep4 } from "./HPTWizardStep4";
+import { HPTWizardStep5 } from "./HPTWizardStep5";
+import { HPTWizardStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 
@@ -63,15 +63,15 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <HPTWizardStep1 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
+        return <HPTWizardStep2 data={data} updateData={updateData} />;
       case 3:
-        return <HPTWizardStep3 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
-        return <HPTWizardStep4 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep4 data={data} updateData={updateData} />;
       case 5:
-        return <HPTWizardStep5 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       case 6:
         return <HPTWizardStep6 data={data} onUpdate={updateData} />;
       default:
