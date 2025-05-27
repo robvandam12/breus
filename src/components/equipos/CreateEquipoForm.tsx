@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Users } from 'lucide-react';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
 
 interface CreateEquipoFormProps {
   onSubmit: (data: { nombre: string; descripcion: string; empresa_id: string }) => Promise<void>;
@@ -13,24 +15,21 @@ interface CreateEquipoFormProps {
 }
 
 export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) => {
+  const { salmoneras } = useSalmoneras();
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    empresa_id: '' // This should be populated from user context
+    empresa_id: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre.trim()) return;
+    if (!formData.nombre.trim() || !formData.empresa_id) return;
 
     setIsSubmitting(true);
     try {
-      // For now, we'll use a placeholder empresa_id - this should come from user context
-      await onSubmit({
-        ...formData,
-        empresa_id: 'placeholder-empresa-id'
-      });
+      await onSubmit(formData);
     } catch (error) {
       console.error('Error creating team:', error);
     } finally {
@@ -60,6 +59,22 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
         </div>
 
         <div>
+          <Label htmlFor="empresa_id">Empresa *</Label>
+          <Select value={formData.empresa_id} onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar empresa" />
+            </SelectTrigger>
+            <SelectContent>
+              {salmoneras.map((salmonera) => (
+                <SelectItem key={salmonera.id} value={salmonera.id}>
+                  {salmonera.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label htmlFor="descripcion">Descripción</Label>
           <Textarea
             id="descripcion"
@@ -73,7 +88,7 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
         <div className="flex gap-3 pt-4">
           <Button 
             type="submit" 
-            disabled={!formData.nombre.trim() || isSubmitting}
+            disabled={!formData.nombre.trim() || !formData.empresa_id || isSubmitting}
             className="flex-1"
           >
             {isSubmitting ? 'Creando...' : 'Crear Equipo'}

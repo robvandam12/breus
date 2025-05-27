@@ -11,7 +11,7 @@ import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionFor
 import { OperacionDetails } from "@/components/operaciones/OperacionDetails";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
-import { Briefcase, Plus, Table, Grid, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Briefcase, Plus, Table, Grid, FileText, CheckCircle, Clock } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
 export default function Operaciones() {
@@ -34,7 +34,7 @@ export default function Operaciones() {
       total: operaciones.length,
       activas: operaciones.filter(op => op.estado === 'activa').length,
       completadas: operaciones.filter(op => op.estado === 'completada').length,
-      documentosPendientes: operaciones.filter(op => op.estado === 'activa').length * 2 // Estimación de HPT y Anexo Bravo pendientes
+      documentosPendientes: operaciones.filter(op => op.estado === 'activa').length * 2
     };
     return stats;
   };
@@ -139,7 +139,7 @@ export default function Operaciones() {
               </div>
             </div>
 
-            {/* Stats Cards */}
+            {/* Stats Cards - Solo una vez */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-6">
@@ -218,4 +218,4 @@ export default function Operaciones() {
       </div>
     </SidebarProvider>
   );
-};
+}
