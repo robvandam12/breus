@@ -1,17 +1,19 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperacionDetails } from "@/components/operaciones/OperacionDetails";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
+import { DocumentStatusCard } from "@/components/operaciones/DocumentStatusCard";
 import { Header } from "@/components/layout/Header";
-import { Briefcase, Plus, Table, Grid, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Briefcase, Plus, Table, Grid, FileText, CheckCircle, Clock } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
 export default function Operaciones() {
@@ -137,7 +139,7 @@ export default function Operaciones() {
           
           <div className="flex-1 overflow-auto">
             <div className="p-6 space-y-6">
-              {/* Stats Cards - Solo aquí, no duplicados */}
+              {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-6">
@@ -188,6 +190,27 @@ export default function Operaciones() {
                 </Card>
               </div>
 
+              {/* Document Status Cards for each operation */}
+              {operaciones.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Estado de Documentos por Operación</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {operaciones.slice(0, 4).map((operacion) => (
+                      <DocumentStatusCard
+                        key={operacion.id}
+                        operacionId={operacion.id}
+                        operacionCodigo={operacion.codigo}
+                        documents={{
+                          hpt: { exists: false, firmado: false },
+                          anexoBravo: { exists: false, firmado: false },
+                          inmersiones: { count: 0 }
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Card className="ios-card">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center justify-between">
@@ -217,4 +240,4 @@ export default function Operaciones() {
       </div>
     </SidebarProvider>
   );
-};
+}
