@@ -1,506 +1,387 @@
-
-import { 
-  Calendar, 
-  ChevronRight, 
-  FileText, 
-  Book,
-  Folder,
-  Anchor,
-  BarChart3,
-  Settings,
-  Shield,
-  LogOut,
-  Users,
-  Building
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "@/hooks/useRouter";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarTrigger,
-  SidebarHeader,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Logo } from "@/components/ui/logo";
+import {
+  Home,
+  Calendar,
+  FileText,
+  ClipboardCheck,
+  FileCheck,
+  Building,
+  Users,
+  BarChart3,
+  Settings,
+  Bell,
+  LogOut,
+  Waves,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
-
-interface MenuSubItem {
-  title: string;
-  url: string;
-  roleRequired?: string;
-}
-
-interface MenuItem {
-  title: string;
-  icon: React.ElementType;
-  url?: string;
-  badge?: string;
-  items?: MenuSubItem[];
-  roleRequired?: string;
-}
-
-const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] => {
-  // Buzo sin empresa asignada - navegación muy limitada
-  if (role === 'buzo' && !isAssigned) {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-      },
-      {
-        title: "Mi Perfil",
-        icon: Users,
-        url: "/profile-setup",
-      }
-    ];
-  }
-
-  // Buzo con empresa asignada
-  if (role === 'buzo' && isAssigned) {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mis Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-      },
-      {
-        title: "Mis Bitácoras",
-        icon: Book,
-        url: "/bitacoras/buzo",
-      },
-      {
-        title: "Mi Perfil",
-        icon: Settings,
-        url: "/configuracion",
-      }
-    ];
-  }
-
-  // Supervisor
-  if (role === 'supervisor') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "5"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Servicio (Contratista)
-  if (role === 'admin_servicio') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "8"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Información", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Salmonera
-  if (role === 'admin_salmonera') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "15"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "25"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "18"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Superuser
-  if (role === 'superuser') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Empresas",
-        icon: Folder,
-        items: [
-          { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      },
-      {
-        title: "Admin",
-        icon: Shield,
-        items: [
-          { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
-        ]
-      }
-    ];
-  }
-
-  return [];
-};
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { NotificationItem } from "@/components/notifications/NotificationItem";
 
 export function AppSidebar() {
-  const { profile, signOut } = useAuth();
+  const { profile, logout } = useAuth();
+  const { location, navigateTo } = useRouter();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  // Fix the type error by explicitly converting to boolean
-  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+  const isUsersSectionVisible = profile?.rol === 'superuser';
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roleRequired) return true;
-    return profile?.role === item.roleRequired;
-  }).map(item => ({
-    ...item,
-    items: item.items?.filter(subItem => {
-      if (!subItem.roleRequired) return true;
-      return profile?.role === subItem.roleRequired;
-    })
-  }));
+  useEffect(() => {
+    if (profile?.id) {
+      fetchNotifications();
+    }
+  }, [profile?.id]);
+
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', profile?.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      setNotifications(data || []);
+      setUnreadCount(data?.filter(n => !n.read).length || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', profile?.id)
+        .eq('read', false);
+
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Error",
-        description: "Error al cerrar sesión.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getUserDisplayName = () => {
-    if (profile) {
-      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
-    }
-    return 'Usuario';
-  };
-
-  const getRoleDisplayName = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'Super Usuario';
-      case 'admin_salmonera':
-        return 'Admin Salmonera';
-      case 'admin_servicio':
-        return 'Admin Servicio';
-      case 'supervisor':
-        return 'Supervisor';
-      case 'buzo':
-        return 'Buzo';
-      default:
-        return 'Usuario';
-    }
+    await logout();
+    navigateTo('/login');
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans">
-      <SidebarHeader className="border-b border-border/40 p-4">
+    <Sidebar className="border-r border-border/20">
+      <SidebarHeader className="border-b border-border/20 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">B</span>
-          </div>
-          <div>
-            <h2 className="font-semibold text-lg">Breus</h2>
-            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
-          </div>
+          <Logo width={100} height={18} />
+          <span className="text-sm font-medium text-zinc-600">AquaTech</span>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="p-2">
+
+      <SidebarContent className="flex-1 overflow-y-auto">
+        {/* Dashboard */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
-            Navegación Principal
-          </SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => navigateTo('/')}
+                isActive={location.pathname === '/'}
+                className="ios-button"
+              >
+                <Home className="w-5 h-5" />
+                <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Operaciones */}
+        <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full">
-                          <item.icon className="w-4 h-4" />
-                          <span className="flex-1">{item.title}</span>
-                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.items.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild>
-                                <Link to={subItem.url}>
-                                  <span>{subItem.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild>
-                      <Link to={item.url!} className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <item.icon className="w-4 h-4" />
-                          <span>{item.title}</span>
-                        </div>
-                        {item.badge && (
-                          <Badge variant="secondary" className="h-5 text-xs">
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/operaciones')}
+                  isActive={location.pathname === '/operaciones'}
+                  className="ios-button"
+                >
+                  <Calendar className="w-5 h-5" />
+                  <span>Operaciones</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/inmersiones')}
+                  isActive={location.pathname === '/inmersiones'}
+                  className="ios-button"
+                >
+                  <Waves className="w-5 h-5" />
+                  <span>Inmersiones</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/equipo-de-buceo')}
+                  isActive={location.pathname === '/equipo-de-buceo'}
+                  className="ios-button"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>Equipos de Buceo</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Formularios */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/formularios/hpt')}
+                  isActive={location.pathname === '/formularios/hpt'}
+                  className="ios-button"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>HPT</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/formularios/anexo-bravo')}
+                  isActive={location.pathname === '/formularios/anexo-bravo'}
+                  className="ios-button"
+                >
+                  <FileCheck className="w-5 h-5" />
+                  <span>Anexo Bravo</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Bitácoras */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/bitacoras/supervisor')}
+                  isActive={location.pathname === '/bitacoras/supervisor'}
+                  className="ios-button"
+                >
+                  <ClipboardCheck className="w-5 h-5" />
+                  <span>Bitácoras Supervisor</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/bitacoras/buzo')}
+                  isActive={location.pathname === '/bitacoras/buzo'}
+                  className="ios-button"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>Bitácoras Buzo</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Gestión de Empresas */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/empresas')}
+                  isActive={location.pathname === '/empresas'}
+                  className="ios-button"
+                >
+                  <Building className="w-5 h-5" />
+                  <span>Empresas</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Usuarios - Only for superuser */}
+        {isUsersSectionVisible && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigateTo('/usuarios')}
+                    isActive={location.pathname === '/usuarios'}
+                    className="ios-button"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span>Usuarios</span>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Reportes */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/reportes')}
+                  isActive={location.pathname === '/reportes'}
+                  className="ios-button"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span>Reportes</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Configuración */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigateTo('/configuracion')}
+                  isActive={location.pathname === '/configuracion'}
+                  className="ios-button"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Configuración</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t border-border/40 p-4">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
-          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-medium text-sm">
-              {getUserDisplayName().charAt(0).toUpperCase()}
-            </span>
+
+      <SidebarFooter className="border-t border-border/20 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-zinc-200 text-zinc-800">
+                {profile?.nombre?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium text-zinc-900">
+                {profile?.nombre} {profile?.apellido}
+              </p>
+              <p className="text-xs text-zinc-500">{profile?.email}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
-            <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
+
+          <div className="flex items-center gap-1">
+            <Popover open={showNotifications} onOpenChange={setShowNotifications}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative rounded-full h-8 w-8 ios-button"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge
+                      className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white"
+                      variant="destructive"
+                    >
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b border-border/20 flex items-center justify-between">
+                  <h3 className="font-medium">Notificaciones</h3>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={markAllAsRead}
+                      className="text-xs h-7"
+                    >
+                      Marcar todas como leídas
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-zinc-500 text-sm">
+                      No hay notificaciones
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <NotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={markAsRead}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className="p-2 border-t border-border/20">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => navigateTo('/notificaciones')}
+                  >
+                    Ver todas
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="rounded-full h-8 w-8 ios-button"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="h-8 w-8 p-0"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>

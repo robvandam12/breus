@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -94,76 +95,59 @@ const Inmersiones = () => {
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <Waves className="w-6 h-6 text-zinc-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Inmersiones</h1>
-                  <p className="text-sm text-zinc-500">Gestión de Inmersiones de Buceo</p>
-                </div>
+          <Header 
+            title="Inmersiones" 
+            subtitle="Gestión de Inmersiones de Buceo" 
+            icon={Waves} 
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar Inmersiones..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
               </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-                  <Input
-                    placeholder="Buscar Inmersiones..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant={filterStatus === 'all' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('all')}
-                  >
-                    Todas
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'planificada' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('planificada')}
-                  >
-                    Planificadas
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'en_progreso' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('en_progreso')}
-                  >
-                    En Progreso
-                  </Button>
-                  <Button 
-                    variant={filterStatus === 'completada' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setFilterStatus('completada')}
-                  >
-                    Completadas
-                  </Button>
-                </div>
-
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva Inmersión
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <CreateInmersionForm
-                      onSubmit={handleCreateInmersion}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
+              <div className="flex gap-2">
+                <Button 
+                  variant={filterStatus === 'all' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('all')}
+                >
+                  Todas
+                </Button>
+                <Button 
+                  variant={filterStatus === 'planificada' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('planificada')}
+                >
+                  Planificadas
+                </Button>
+                <Button 
+                  variant={filterStatus === 'en_progreso' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('en_progreso')}
+                >
+                  En Progreso
+                </Button>
+                <Button 
+                  variant={filterStatus === 'completada' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setFilterStatus('completada')}
+                >
+                  Completadas
+                </Button>
               </div>
+
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Inmersión
+              </Button>
             </div>
-          </header>
+          </Header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">

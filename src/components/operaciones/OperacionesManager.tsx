@@ -100,89 +100,102 @@ export const OperacionesManager = () => {
                       <p className="text-gray-500">No hay operaciones disponibles</p>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Operación</TableHead>
-                          <TableHead>Código</TableHead>
-                          <TableHead>Fecha Inicio</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredOperaciones.map((operacion) => (
-                          <TableRow key={operacion.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{operacion.nombre}</div>
-                                {operacion.tareas && (
-                                  <div className="text-sm text-gray-500">{operacion.tareas}</div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{operacion.codigo}</TableCell>
-                            <TableCell>
-                              {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getEstadoBadge(operacion.estado)}>
-                                {operacion.estado}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setSelectedOperacion(operacion.id)}
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Ver
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {}}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                    <div className="rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Operación</TableHead>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Fecha Inicio</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Equipo</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredOperaciones.map((operacion) => (
+                            <TableRow key={operacion.id} className="hover:bg-gray-50">
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{operacion.nombre}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {operacion.salmoneras?.nombre || operacion.contratistas?.nombre}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                  {operacion.codigo}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={getEstadoBadge(operacion.estado)}>
+                                  {operacion.estado}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {operacion.equipo_buceo_id ? (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">
+                                    Asignado
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-red-50 text-red-700">
+                                    Sin equipo
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedOperacion(operacion.id)}
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Ver
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {}}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </TabsContent>
 
                 <TabsContent value="cards">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredOperaciones.map((operacion) => (
-                      <div key={operacion.id} className="relative">
-                        <OperacionCard 
-                          operacion={operacion}
-                          onEdit={() => {}}
-                          onDelete={() => {}}
-                        />
-                        <div className="absolute top-2 right-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedOperacion(operacion.id)}
-                            className="bg-white/90 backdrop-blur-sm"
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Ver
-                          </Button>
-                        </div>
-                      </div>
+                      <OperacionCard 
+                        key={operacion.id}
+                        operacion={operacion}
+                        onEdit={() => {}}
+                        onDelete={() => {}}
+                        onView={() => setSelectedOperacion(operacion.id)}
+                      />
                     ))}
                   </div>
 
                   {filteredOperaciones.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No hay operaciones disponibles</p>
+                    <div className="text-center py-12">
+                      <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No hay operaciones disponibles
+                      </h3>
+                      <p className="text-gray-500">
+                        Crea una nueva operación para comenzar
+                      </p>
                     </div>
                   )}
                 </TabsContent>
