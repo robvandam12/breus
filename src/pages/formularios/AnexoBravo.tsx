@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowLeft } from "lucide-react";
@@ -55,8 +55,8 @@ export default function AnexoBravo() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
+      <div className="min-h-screen flex w-full bg-white">
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Crear Anexo Bravo" 

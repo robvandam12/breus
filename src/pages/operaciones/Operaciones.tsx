@@ -13,7 +13,7 @@ export default function Operaciones() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-white">
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 

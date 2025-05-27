@@ -1,7 +1,8 @@
 
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileCheck, Plus, Search, Edit, Trash2, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { CreateAnexoBravoForm } from "@/components/anexo-bravo/CreateAnexoBravoForm";
+import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -75,21 +76,14 @@ const AnexoBravo = () => {
   if (isLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <AppSidebar />
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
           <main className="flex-1 flex flex-col">
-            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-                <div className="flex items-center gap-3">
-                  <FileCheck className="w-6 h-6 text-zinc-600" />
-                  <div>
-                    <h1 className="text-xl font-semibold text-zinc-900">Anexo Bravo</h1>
-                    <p className="text-sm text-zinc-500">Formularios de Verificación de Equipos</p>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <Header 
+              title="Anexo Bravo" 
+              subtitle="Formularios de Verificación de Equipos" 
+              icon={FileCheck} 
+            />
             <div className="flex-1 flex items-center justify-center">
               <LoadingSpinner text="Cargando Anexos Bravo..." />
             </div>
@@ -101,28 +95,43 @@ const AnexoBravo = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <AppSidebar />
+      <div className="min-h-screen flex w-full bg-white">
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <FileCheck className="w-6 h-6 text-zinc-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Anexo Bravo</h1>
-                  <p className="text-sm text-zinc-500">Formularios de Verificación de Equipos</p>
+          <Header 
+            title="Anexo Bravo" 
+            subtitle="Formularios de Verificación de Equipos" 
+            icon={FileCheck} 
+          >
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Anexo Bravo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+                <div className="p-6">
+                  <AnexoBravoWizard
+                    onSubmit={handleCreateAnexoBravo}
+                    onCancel={() => setIsCreateDialogOpen(false)}
+                  />
                 </div>
-              </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
+              </DialogContent>
+            </Dialog>
+          </Header>
+          
+          <div className="flex-1 overflow-auto">
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              {/* Filtros movidos al contenido */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
                   <Input
                     placeholder="Buscar Anexos Bravo..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
+                    className="pl-10"
                   />
                 </div>
 
@@ -156,27 +165,8 @@ const AnexoBravo = () => {
                     Firmados
                   </Button>
                 </div>
-
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="ios-button bg-green-600 hover:bg-green-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Anexo Bravo
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-                    <CreateAnexoBravoForm
-                      onSubmit={handleCreateAnexoBravo}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
               </div>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="p-4">
