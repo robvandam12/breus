@@ -117,15 +117,42 @@ export const useBitacoraEnhanced = () => {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('usuario')
         .select(`
           *,
-          salmoneras:salmonera_id(nombre),
-          contratistas:servicio_id(nombre)
+          salmoneras:salmonera_id(nombre)
         `)
-        .or(`salmonera_id.eq.${profile.salmonera_id},servicio_id.eq.${profile.servicio_id}`)
         .in('rol', ['supervisor', 'buzo']);
+
+      // Add filter for salmonera_id if user belongs to a salmonera
+      if (profile.salmonera_id) {
+        query = query.eq('salmonera_id', profile.salmonera_id);
+      }
+
+      // For servicio_id, we need a separate query since the relation might not exist
+      if (profile.servicio_id && !profile.salmonera_id) {
+        const { data: servicioData, error: servicioError } = await supabase
+          .from('usuario')
+          .select('*')
+          .eq('servicio_id', profile.servicio_id)
+          .in('rol', ['supervisor', 'buzo']);
+
+        if (servicioError) {
+          console.error('Error fetching servicio usuarios:', servicioError);
+          throw servicioError;
+        }
+
+        return (servicioData || []).map(user => ({
+          id: user.usuario_id,
+          nombre: user.nombre,
+          apellido: user.apellido,
+          rol: user.rol as 'supervisor' | 'buzo',
+          empresa_nombre: 'Servicio'
+        })) as BitacoraUser[];
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching usuarios:', error);
@@ -137,7 +164,7 @@ export const useBitacoraEnhanced = () => {
         nombre: user.nombre,
         apellido: user.apellido,
         rol: user.rol as 'supervisor' | 'buzo',
-        empresa_nombre: user.salmoneras?.nombre || user.contratistas?.nombre || 'Sin empresa'
+        empresa_nombre: user.salmoneras?.nombre || 'Sin empresa'
       })) as BitacoraUser[];
     },
     enabled: !!(profile?.salmonera_id || profile?.servicio_id),

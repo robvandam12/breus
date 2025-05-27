@@ -12,9 +12,10 @@ import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBit
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { useBitacoras, BitacoraBuzoFormData } from "@/hooks/useBitacoras";
+import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
+import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BitacorasBuzo = () => {
@@ -24,10 +25,10 @@ const BitacorasBuzo = () => {
   const { 
     bitacorasBuzo, 
     loading, 
-    createBitacoraBuzo, 
     refreshBitacoras 
   } = useBitacoras();
   
+  const { createBitacoraBuzo } = useBitacoraEnhanced();
   const { signBitacoraBuzo } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 

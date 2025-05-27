@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, Anchor, Save, X } from 'lucide-react';
 import { useBitacoraEnhanced, BitacoraBuzoFormData, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
 import { useAuth } from '@/hooks/useAuth';
-import { SignatureCanvas } from '@/components/ui/signature-canvas';
 
 interface CreateBitacoraBuzoFormEnhancedProps {
   onSubmit: (data: BitacoraBuzoFormData) => void;
@@ -30,7 +29,7 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
   const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData>>({
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
-    buzo_id: profile?.usuario_id || '',
+    buzo_id: profile?.id || '',
     profundidad_maxima: 0,
     trabajos_realizados: '',
     estado_fisico_post: '',

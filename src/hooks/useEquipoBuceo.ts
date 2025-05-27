@@ -58,7 +58,7 @@ export const useEquipoBuceo = () => {
             `${miembro.usuario.nombre} ${miembro.usuario.apellido}`.trim() : 
             'Usuario desconocido',
           email: miembro.usuario?.email,
-          rol_equipo: miembro.rol_equipo,
+          rol_equipo: miembro.rol_equipo as 'supervisor' | 'buzo_principal' | 'buzo_asistente',
           disponible: miembro.disponible,
           usuario: miembro.usuario
         })) || []
@@ -95,7 +95,7 @@ export const useEquipoBuceo = () => {
           `${miembro.usuario.nombre} ${miembro.usuario.apellido}`.trim() : 
           'Usuario desconocido',
         email: miembro.usuario?.email,
-        rol_equipo: miembro.rol_equipo,
+        rol_equipo: miembro.rol_equipo as 'supervisor' | 'buzo_principal' | 'buzo_asistente',
         disponible: miembro.disponible,
         usuario: miembro.usuario
       }));
@@ -166,7 +166,7 @@ export const useEquipoBuceo = () => {
       });
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating equipo:', error);
       toast({
         title: "Error",
