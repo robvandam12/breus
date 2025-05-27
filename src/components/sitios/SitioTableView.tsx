@@ -157,7 +157,6 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
               sitio={editingSitio}
               onSubmit={handleEdit}
               onCancel={() => setEditingSitio(null)}
-              salmoneras={[]}
             />
           )}
         </DialogContent>

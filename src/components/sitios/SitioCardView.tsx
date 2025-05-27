@@ -155,7 +155,6 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
               sitio={editingSitio}
               onSubmit={handleEdit}
               onCancel={() => setEditingSitio(null)}
-              salmoneras={[]}
             />
           )}
         </DialogContent>

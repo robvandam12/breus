@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +60,7 @@ export const CreateHPTForm = ({ onSubmit, onCancel, defaultOperacionId }: Create
             <EnhancedSelect
               options={operacionOptions}
               value={formData.operacion_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
               placeholder="Seleccione una operación"
               className="w-full"
             />

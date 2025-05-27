@@ -103,7 +103,7 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
           <EnhancedSelect
             options={salmoneraOptions}
             value={formData.salmonera_id}
-            onChange={(value) => setFormData(prev => ({ ...prev, salmonera_id: value }))}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, salmonera_id: value }))}
             placeholder="Seleccione una salmonera"
             className="w-full"
           />
@@ -155,7 +155,7 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
             <EnhancedSelect
               options={estadoOptions}
               value={formData.estado}
-              onChange={(value) => setFormData(prev => ({ ...prev, estado: value as 'activo' | 'inactivo' | 'mantenimiento' }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, estado: value as 'activo' | 'inactivo' | 'mantenimiento' }))}
               placeholder="Seleccione estado"
               className="w-full"
             />

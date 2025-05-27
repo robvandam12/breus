@@ -154,7 +154,7 @@ export const OperacionesCalendarView = () => {
                     <p className="font-medium">{operacion.nombre}</p>
                     <p className="text-sm text-gray-600">
                       {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')} - 
-                      {operacion.sitio_nombre || 'Sitio no asignado'}
+                      Sitio no disponible
                     </p>
                   </div>
                   <Badge variant={operacion.estado === 'activa' ? 'default' : 'secondary'}>

@@ -76,11 +76,11 @@ export const OperacionesMapView = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  <span>{operacion.sitio_nombre || 'Sitio no asignado'}</span>
+                  <span>Sitio no disponible</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  <span>{operacion.contratista_nombre || 'Contratista no asignado'}</span>
+                  <span>Contratista no disponible</span>
                 </div>
               </div>
             </CardContent>

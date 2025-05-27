@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -73,7 +75,11 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
 
   const identificacionForm = useForm();
   const equiposForm = useForm();
-  const bitacoraForm = useForm();
+  const bitacoraForm = useForm({
+    defaultValues: {
+      bitacora_fecha: new Date().toISOString().split('T')[0]
+    }
+  });
   const participantesForm = useForm();
   const firmasForm = useForm();
 
@@ -153,7 +159,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <EnhancedSelect
                 options={operacionOptions}
                 value={informacionForm.watch('operacion_id')}
-                onChange={(value) => informacionForm.setValue('operacion_id', value)}
+                onValueChange={(value) => informacionForm.setValue('operacion_id', value)}
                 placeholder="Seleccione una operación"
                 className="w-full"
               />
@@ -186,7 +192,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
             <div>
               <Label htmlFor="jefe_centro_nombre">Jefe de Centro</Label>
               <Input
-                {...identificacionForm.register('jefe_centro_nombre')}
+                {...informacionForm.register('jefe_centro_nombre')}
                 placeholder="Nombre del jefe de centro"
               />
             </div>
@@ -215,7 +221,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="autorizacion_armada"
-                checked={identificacionForm.watch('autorizacion_armada')}
+                checked={identificacionForm.watch('autorizacion_armada') || false}
                 onCheckedChange={(checked) => identificacionForm.setValue('autorizacion_armada', !!checked)}
               />
               <Label htmlFor="autorizacion_armada">
@@ -252,7 +258,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
                 <div key={equipo.key} className="flex items-center space-x-2">
                   <Checkbox
                     id={equipo.key}
-                    checked={equiposForm.watch(equipo.key)}
+                    checked={equiposForm.watch(equipo.key) || false}
                     onCheckedChange={(checked) => equiposForm.setValue(equipo.key, !!checked)}
                   />
                   <Label htmlFor={equipo.key} className="font-medium">
@@ -416,7 +422,7 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               {step.number < currentStep ? (
                 <CheckCircle className="w-5 h-5" />
               ) : (
-                <step.icon className="w-5 h-5" />
+                React.createElement(step.icon, { className: "w-5 h-5" })
               )}
             </div>
             {step.number < steps.length && (
