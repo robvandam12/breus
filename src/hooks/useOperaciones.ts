@@ -52,7 +52,7 @@ export const useOperaciones = () => {
           sitios:sitio_id (nombre),
           contratistas:contratista_id (nombre)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }); // Las más nuevas primero
 
       if (error) {
         console.error('Error fetching operaciones:', error);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +12,9 @@ import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HPTWizardProps {
   operacionId?: string;
@@ -22,6 +25,8 @@ interface HPTWizardProps {
 
 export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
   const { toast } = useToast();
+  const { operaciones } = useOperaciones();
+  const { miembros } = useEquipoBuceo();
   const {
     currentStep,
     data,
@@ -36,6 +41,67 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
     autoSaveEnabled,
     setAutoSaveEnabled
   } = useHPTWizard(operacionId, hptId);
+
+  // Pre-populate data when operation is selected
+  useEffect(() => {
+    const populateOperationData = async () => {
+      if (!operacionId) return;
+
+      try {
+        // Get operation with related data
+        const { data: opData, error } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre),
+            salmoneras:salmonera_id (nombre)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (error) throw error;
+
+        const operacion = opData;
+        
+        // Find supervisor from team members
+        const supervisor = miembros.find(m => 
+          m.equipo_id === operacion.equipo_buceo_id && 
+          m.rol_equipo === 'supervisor'
+        );
+
+        // Generate code based on operation
+        const codigo = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        
+        updateData({
+          operacion_id: operacionId,
+          codigo,
+          folio: codigo,
+          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+          supervisor_nombre: supervisor?.nombre_completo || '',
+          centro_trabajo_nombre: operacion.sitios?.nombre || '',
+          lugar_especifico: operacion.sitios?.ubicacion || '',
+          plan_trabajo: operacion.tareas || ''
+        });
+
+        console.log('Operation data populated:', {
+          operacion,
+          supervisor,
+          codigo
+        });
+
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación",
+          variant: "destructive",
+        });
+      }
+    };
+
+    populateOperationData();
+  }, [operacionId, miembros, updateData, toast]);
 
   const handleNext = () => {
     const currentStepData = steps[currentStep - 1];
@@ -108,14 +174,14 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              {getStepIcon(currentStep)}
+              <FileText className="w-6 h-6" />
             </div>
             <div>
               <CardTitle className="text-xl md:text-2xl text-gray-900">
-                Hoja de Planificación de Tarea (HPT)
+                {hptId ? 'Editar' : 'Crear'} Hoja de Planificación de Tarea (HPT)
               </CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Paso {currentStep} de {steps.length}: {currentStepData?.title}
+                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
               </p>
             </div>
           </div>
@@ -170,22 +236,6 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-auto">
         <Card className="border-0 shadow-none">
-          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-teal-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                {getStepIcon(currentStep)}
-              </div>
-              <div>
-                <CardTitle className="text-lg text-gray-900">
-                  {currentStepData?.title}
-                </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
-                  {currentStepData?.description}
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          
           <CardContent className="p-6 md:p-8">
             {renderStep()}
           </CardContent>
@@ -227,7 +277,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
           {currentStep < steps.length ? (
             <Button
               onClick={handleNext}
-              disabled={!currentStepData?.isValid || isLoading}
+              disabled={!steps[currentStep - 1]?.isValid || isLoading}
               className="flex items-center gap-2 min-w-[100px] bg-blue-600 hover:bg-blue-700"
             >
               Siguiente
@@ -240,7 +290,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
               className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
               <Save className="w-4 h-4" />
-              {isLoading ? 'Enviando...' : 'Enviar HPT'}
+              {isLoading ? 'Enviando...' : 'Crear HPT'}
             </Button>
           )}
         </div>

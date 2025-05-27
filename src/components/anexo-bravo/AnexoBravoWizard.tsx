@@ -1,30 +1,18 @@
 
 import { useState, useEffect } from "react";
-import React from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { EnhancedSelect } from "@/components/ui/enhanced-select";
-import { 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle, 
-  Building,
-  User,
-  Shield,
-  Wrench,
-  Clock,
-  Users,
-  PenTool
-} from "lucide-react";
-import { useForm } from "react-hook-form";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { ArrowLeft, ArrowRight, Save, FileText, Users, CheckSquare, UserCheck, Edit3 } from "lucide-react";
+import { AnexoBravoStep1 } from "./steps/AnexoBravoStep1";
+import { AnexoBravoStep2 } from "./steps/AnexoBravoStep2";
+import { AnexoBravoStep3 } from "./steps/AnexoBravoStep3";
+import { AnexoBravoStep4 } from "./steps/AnexoBravoStep4";
+import { AnexoBravoStep5 } from "./steps/AnexoBravoStep5";
+import { useToast } from "@/hooks/use-toast";
+import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnexoBravoWizardProps {
   onSubmit: (data: any) => Promise<void>;
@@ -33,449 +21,268 @@ interface AnexoBravoWizardProps {
 }
 
 export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: AnexoBravoWizardProps) => {
+  const { toast } = useToast();
+  const { miembros } = useEquipoBuceo();
   const [currentStep, setCurrentStep] = useState(1);
-  const { operaciones, isLoading: loadingOperaciones } = useOperaciones();
-
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
-    informacionGeneral: {
-      operacion_id: defaultOperacionId || "",
-      empresa_nombre: "",
-      lugar_faena: "",
-      fecha: new Date().toISOString().split('T')[0],
-      jefe_centro_nombre: "",
-    },
-    identificacionBuzo: {},
-    equipos: {},
-    bitacora: {},
-    participantes: [],
-    firmas: {}
+    operacion_id: defaultOperacionId || '',
+    codigo: '',
+    empresa_nombre: '',
+    lugar_faena: '',
+    buzo_o_empresa_nombre: '',
+    asistente_buzo_nombre: '',
+    supervisor: '',
+    trabajadores: [] as Array<{
+      nombre: string;
+      rut: string;
+      empresa: string;
+    }>,
+    checklist: [],
+    observaciones_generales: ''
   });
-
-  const totalSteps = 6;
-  const progress = (currentStep / totalSteps) * 100;
 
   const steps = [
-    { number: 1, title: "Información General", icon: Building },
-    { number: 2, title: "Identificación del Buzo", icon: User },
-    { number: 3, title: "Chequeo de Equipos", icon: Wrench },
-    { number: 4, title: "Bitácora de Buceo", icon: Clock },
-    { number: 5, title: "Trabajadores Participantes", icon: Users },
-    { number: 6, title: "Firmas", icon: PenTool }
+    { id: 1, title: "Información General", description: "Datos básicos del anexo", icon: FileText },
+    { id: 2, title: "Personal y Equipos", description: "Trabajadores y equipos", icon: Users },
+    { id: 3, title: "Lista de Verificación", description: "Checklist de seguridad", icon: CheckSquare },
+    { id: 4, title: "Verificación Final", description: "Revisión y observaciones", icon: UserCheck },
+    { id: 5, title: "Resumen", description: "Confirmación final", icon: Edit3 }
   ];
 
-  const informacionForm = useForm({
-    defaultValues: {
-      operacion_id: defaultOperacionId || "",
-      empresa_nombre: "",
-      lugar_faena: "",
-      fecha: new Date().toISOString().split('T')[0],
-      jefe_centro_nombre: ""
-    }
-  });
+  // Pre-populate data when operation is selected
+  useEffect(() => {
+    const populateOperationData = async () => {
+      if (!defaultOperacionId) return;
 
-  const identificacionForm = useForm();
-  const equiposForm = useForm();
-  const bitacoraForm = useForm({
-    defaultValues: {
-      bitacora_fecha: new Date().toISOString().split('T')[0],
-      bitacora_hora_inicio: "",
-      bitacora_hora_termino: "",
-      bitacora_relator: ""
-    }
-  });
-  const participantesForm = useForm();
-  const firmasForm = useForm();
+      try {
+        // Get operation with related data
+        const { data: opData, error } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre),
+            salmoneras:salmonera_id (nombre)
+          `)
+          .eq('id', defaultOperacionId)
+          .single();
 
-  const operacionOptions = operaciones.map(op => ({
-    value: op.id,
-    label: `${op.codigo} - ${op.nombre}`
-  }));
+        if (error) throw error;
 
-  const equipos = [
-    { key: 'compresor', label: 'Compresor (estanque de reserva)' },
-    { key: 'regulador_aire', label: 'Regulador de aire c/ arnés de afirm.' },
-    { key: 'traje_neopren', label: 'Traje de Neoprén' },
-    { key: 'aletas_propulsion', label: 'Aletas de propulsión' },
-    { key: 'cinturon_lastre', label: 'Cinturón Lastre c/ escape rápido' },
-    { key: 'mascarilla', label: 'Mascarilla' },
-    { key: 'punal_buceo', label: 'Puñal de Buceo' },
-    { key: 'profundimetro', label: 'Profundímetro' },
-    { key: 'salvavidas_chaleco', label: 'Salvavidas tipo chaleco (buceo autónomo)' },
-    { key: 'tablas_descompresion', label: 'Tablas de descompresión plastificadas' },
-    { key: 'botiquin_primeros_auxilios', label: 'Botiquín primeros auxilios' },
-    { key: 'cabo_vida', label: 'Cabo de vida' },
-    { key: 'cabo_descenso', label: 'Cabo de descenso' },
-    { key: 'manguera_plastica', label: 'Manguera plástica (mín. 250 lbs) marcada c/ 10m' },
-    { key: 'equipo_comunicacion', label: 'Equipo de comunicación en lugar de faena' },
-    { key: 'matricula_buzo', label: 'Matrícula de buzo mariscador' },
-    { key: 'matricula_asistente', label: 'Matrícula de quien asiste al buzo (igual o superior)' },
-    { key: 'certificado_mantencion', label: 'Certificado de mantención y vigencia de equipos' },
-    { key: 'filtro_aire', label: 'Filtro de aire (salida compresor)' },
-    { key: 'nivel_aceite_motor', label: 'Nivel de aceite (mineral) motor del compresor' },
-    { key: 'nivel_aceite_cabezal', label: 'Nivel de aceite (vegetal) cabezal del compresor' },
-    { key: 'valvula_retencion', label: 'Válvula de retención operativa' },
-    { key: 'proteccion_partes', label: 'Protección de partes y piezas en movimiento del compresor' },
-    { key: 'botella_aire_auxiliar', label: 'Botella de aire auxiliar' }
-  ];
+        const operacion = opData;
+        
+        // Find supervisor and team members
+        const supervisor = miembros.find(m => 
+          m.equipo_id === operacion.equipo_buceo_id && 
+          m.rol_equipo === 'supervisor'
+        );
+
+        const teamMembers = miembros.filter(m => 
+          m.equipo_id === operacion.equipo_buceo_id
+        );
+
+        // Generate code based on operation
+        const codigo = `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        
+        setFormData(prev => ({
+          ...prev,
+          operacion_id: defaultOperacionId,
+          codigo,
+          empresa_nombre: operacion.salmoneras?.nombre || '',
+          lugar_faena: operacion.sitios?.nombre || '',
+          buzo_o_empresa_nombre: operacion.contratistas?.nombre || '',
+          supervisor: supervisor?.nombre_completo || '',
+          trabajadores: teamMembers.map(member => ({
+            nombre: member.nombre_completo || member.nombre || '',
+            rut: '', // Will need to be filled manually
+            empresa: operacion.contratistas?.nombre || ''
+          }))
+        }));
+
+        console.log('Anexo Bravo data populated:', {
+          operacion,
+          supervisor,
+          teamMembers,
+          codigo
+        });
+
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación",
+          variant: "destructive",
+        });
+      }
+    };
+
+    populateOperationData();
+  }, [defaultOperacionId, miembros, toast]);
+
+  const updateFormData = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    if (currentStep < steps.length) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
-  const handleFinalSubmit = async () => {
+  const handleSubmit = async () => {
+    setIsLoading(true);
     try {
-      const finalData = {
-        ...informacionForm.getValues(),
-        ...identificacionForm.getValues(),
-        equipos: equiposForm.getValues(),
-        bitacora: bitacoraForm.getValues(),
-        participantes: participantesForm.getValues(),
-        firmas: firmasForm.getValues(),
-        codigo: `AB-${Date.now()}`,
-        estado: 'borrador',
-        firmado: false,
-        progreso: 100,
-        checklist_completo: true
-      };
-      
-      await onSubmit(finalData);
+      await onSubmit(formData);
+      toast({
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
+      });
     } catch (error) {
-      console.error('Error submitting anexo bravo:', error);
+      console.error('Error creating Anexo Bravo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el Anexo Bravo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const renderStepContent = () => {
+  const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="operacion_id">Operación *</Label>
-              <EnhancedSelect
-                options={operacionOptions}
-                value={informacionForm.watch('operacion_id')}
-                onValueChange={(value) => informacionForm.setValue('operacion_id', value)}
-                placeholder="Seleccione una operación"
-                className="w-full"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="empresa_nombre">Empresa</Label>
-              <Input
-                {...informacionForm.register('empresa_nombre')}
-                placeholder="Nombre de la empresa"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="lugar_faena">Lugar de Faena (Centro)</Label>
-              <Input
-                {...informacionForm.register('lugar_faena')}
-                placeholder="Centro de trabajo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="fecha">Fecha</Label>
-              <Input
-                type="date"
-                {...informacionForm.register('fecha')}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="jefe_centro_nombre">Jefe de Centro</Label>
-              <Input
-                {...informacionForm.register('jefe_centro_nombre')}
-                placeholder="Nombre del jefe de centro"
-              />
-            </div>
-          </div>
-        );
-
+        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="buzo_o_empresa_nombre">Buzo o Empresa de Buceo</Label>
-              <Input
-                {...identificacionForm.register('buzo_o_empresa_nombre')}
-                placeholder="Nombre del buzo o empresa"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="buzo_matricula">Matrícula</Label>
-              <Input
-                {...identificacionForm.register('buzo_matricula')}
-                placeholder="Número de matrícula"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="autorizacion_armada"
-                checked={identificacionForm.watch('autorizacion_armada') || false}
-                onCheckedChange={(checked) => identificacionForm.setValue('autorizacion_armada', !!checked)}
-              />
-              <Label htmlFor="autorizacion_armada">
-                Autorización de la Autoridad Marítima
-              </Label>
-            </div>
-
-            <div>
-              <Label htmlFor="asistente_buzo_nombre">Asistente de Buzo</Label>
-              <Input
-                {...identificacionForm.register('asistente_buzo_nombre')}
-                placeholder="Nombre del asistente"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="asistente_buzo_matricula">Matrícula del Asistente</Label>
-              <Input
-                {...identificacionForm.register('asistente_buzo_matricula')}
-                placeholder="Número de matrícula del asistente"
-              />
-            </div>
-          </div>
-        );
-
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
-              Marque los equipos e insumos verificados:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {equipos.map((equipo) => (
-                <div key={equipo.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={equipo.key}
-                    checked={equiposForm.watch(equipo.key) || false}
-                    onCheckedChange={(checked) => equiposForm.setValue(equipo.key, !!checked)}
-                  />
-                  <Label htmlFor={equipo.key} className="font-medium">
-                    {equipo.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
+        return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bitacora_hora_inicio">Hora de Inicio</Label>
-                <Input
-                  type="time"
-                  {...bitacoraForm.register('bitacora_hora_inicio')}
-                />
-              </div>
-              <div>
-                <Label htmlFor="bitacora_hora_termino">Hora de Término</Label>
-                <Input
-                  type="time"
-                  {...bitacoraForm.register('bitacora_hora_termino')}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="bitacora_fecha">Fecha</Label>
-              <Input
-                type="date"
-                {...bitacoraForm.register('bitacora_fecha')}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="bitacora_relator">Relator</Label>
-              <Input
-                {...bitacoraForm.register('bitacora_relator')}
-                placeholder="Nombre del relator"
-              />
-            </div>
-          </div>
-        );
-
+        return <AnexoBravoStep4 data={formData} onUpdate={updateFormData} />;
       case 5:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Agregue los trabajadores que participan en la faena:
-            </p>
-            {[1, 2, 3, 4, 5, 6].map((index) => (
-              <div key={index} className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`trabajador_${index}_nombre`}>
-                    Nombre del Trabajador {index}
-                  </Label>
-                  <Input
-                    {...participantesForm.register(`trabajador_${index}_nombre`)}
-                    placeholder="Nombre completo"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`trabajador_${index}_rut`}>RUT</Label>
-                  <Input
-                    {...participantesForm.register(`trabajador_${index}_rut`)}
-                    placeholder="12.345.678-9"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="supervisor_servicio_nombre">
-                Nombre del Supervisor del servicio a cargo del trabajo
-              </Label>
-              <Input
-                {...firmasForm.register('supervisor_servicio_nombre')}
-                placeholder="Nombre completo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="supervisor_mandante_nombre">
-                Nombre del Supervisor de BLUMAR
-              </Label>
-              <Input
-                {...firmasForm.register('supervisor_mandante_nombre')}
-                placeholder="Nombre completo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="observaciones_generales">Observaciones Generales</Label>
-              <Textarea
-                {...firmasForm.register('observaciones_generales')}
-                placeholder="Observaciones adicionales..."
-                rows={4}
-              />
-            </div>
-          </div>
-        );
-
+        return <AnexoBravoStep5 data={formData} onUpdate={updateFormData} />;
       default:
         return null;
     }
   };
 
+  const progress = Math.round((currentStep / steps.length) * 100);
+  const currentStepData = steps[currentStep - 1];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6 text-blue-600" />
-            Anexo Bravo
-          </h2>
-          <p className="text-gray-600">Lista de chequeo para faenas de buceo</p>
-        </div>
-        <Badge variant="outline">
-          Paso {currentStep} de {totalSteps}
-        </Badge>
-      </div>
-
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Progreso del formulario</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Steps Navigation */}
-      <div className="flex items-center justify-between py-4">
-        {steps.map((step) => (
-          <div
-            key={step.number}
-            className={`flex items-center ${
-              step.number < steps.length ? 'flex-1' : ''
-            }`}
-          >
-            <div
-              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                step.number === currentStep
-                  ? 'border-blue-600 bg-blue-600 text-white'
-                  : step.number < currentStep
-                  ? 'border-green-600 bg-green-600 text-white'
-                  : 'border-gray-300 bg-white text-gray-400'
-              }`}
-            >
-              {step.number < currentStep ? (
-                <CheckCircle className="w-5 h-5" />
-              ) : (
-                React.createElement(step.icon, { className: "w-5 h-5" })
-              )}
+    <div className="w-full max-w-full h-full flex flex-col">
+      {/* Header with Progress */}
+      <div className="flex-shrink-0 p-6 border-b">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+              <currentStepData.icon className="w-6 h-6" />
             </div>
-            {step.number < steps.length && (
-              <div
-                className={`flex-1 h-1 mx-2 ${
-                  step.number < currentStep ? 'bg-green-600' : 'bg-gray-300'
-                }`}
-              />
-            )}
+            <div>
+              <CardTitle className="text-xl md:text-2xl text-gray-900">
+                Crear Anexo Bravo
+              </CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Paso {currentStep} de {steps.length}: {currentStepData.title}
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {/* Step Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {React.createElement(steps[currentStep - 1].icon, { className: "w-5 h-5" })}
-            {steps[currentStep - 1].title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderStepContent()}
-        </CardContent>
-      </Card>
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          {currentStep > 1 && (
-            <Button variant="outline" onClick={prevStep}>
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Anterior
-            </Button>
-          )}
+          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+            {progress}% Completado
+          </Badge>
         </div>
 
-        <div>
-          {currentStep < totalSteps ? (
-            <Button onClick={nextStep}>
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <Progress value={progress} className="h-3" />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Progreso General</span>
+            <span>{progress}%</span>
+          </div>
+        </div>
+
+        {/* Step Indicators */}
+        <div className="flex justify-between mt-6">
+          {steps.map((step, index) => (
+            <div 
+              key={step.id}
+              className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
+            >
+              <div className={`h-2 rounded-full ${
+                step.id < currentStep ? 'bg-green-500' : 
+                step.id === currentStep ? 'bg-orange-500' : 
+                'bg-gray-200'
+              }`} />
+              <div className="mt-2 text-xs text-center">
+                <span className={`${
+                  step.id === currentStep ? 'text-orange-600 font-medium' : 
+                  step.id < currentStep ? 'text-green-600' : 
+                  'text-gray-500'
+                }`}>
+                  {step.title}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto">
+        <Card className="border-0 shadow-none h-full">
+          <CardContent className="p-6 md:p-8">
+            {renderStep()}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navigation - Fixed at bottom */}
+      <div className="flex-shrink-0 flex justify-between items-center p-6 gap-4 border-t bg-white">
+        <Button 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={isLoading}
+          className="min-w-[100px]"
+        >
+          Cancelar
+        </Button>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1 || isLoading}
+            className="flex items-center gap-2 min-w-[100px]"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Anterior
+          </Button>
+          
+          {currentStep < steps.length ? (
+            <Button
+              onClick={nextStep}
+              disabled={isLoading}
+              className="flex items-center gap-2 min-w-[100px] bg-orange-600 hover:bg-orange-700"
+            >
               Siguiente
-              <ChevronRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
-            <Button onClick={handleFinalSubmit} className="bg-green-600 hover:bg-green-700">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Completar Anexo Bravo
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
+            >
+              <Save className="w-4 h-4" />
+              {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
             </Button>
           )}
         </div>
