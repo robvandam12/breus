@@ -19,6 +19,8 @@ export interface EquipoBuceoMiembro {
   matricula?: string;
   nombre_completo?: string;
   rol?: string;
+  invitado?: boolean;
+  estado_invitacion?: 'pendiente' | 'aceptado' | 'rechazado';
 }
 
 export interface EquipoBuceo {
@@ -57,16 +59,21 @@ export const useEquiposBuceoEnhanced = () => {
       
       return data.map(equipo => ({
         ...equipo,
-        miembros: equipo.miembros?.map(miembro => ({
-          ...miembro,
-          nombre: miembro.usuario?.nombre || '',
-          apellido: miembro.usuario?.apellido || '',
-          email: miembro.usuario?.email || '',
-          rol: miembro.usuario?.rol || '',
-          telefono: miembro.usuario?.perfil_buzo?.telefono || '',
-          matricula: miembro.usuario?.perfil_buzo?.matricula || '',
-          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim()
-        })) || []
+        miembros: equipo.miembros?.map(miembro => {
+          const perfilBuzo = miembro.usuario?.perfil_buzo as any;
+          return {
+            ...miembro,
+            nombre: miembro.usuario?.nombre || '',
+            apellido: miembro.usuario?.apellido || '',
+            email: miembro.usuario?.email || '',
+            rol: miembro.usuario?.rol || '',
+            telefono: perfilBuzo?.telefono || '',
+            matricula: perfilBuzo?.matricula || '',
+            nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
+            invitado: false,
+            estado_invitacion: 'aceptado' as const
+          };
+        }) || []
       })) as EquipoBuceo[];
     },
   });
@@ -75,18 +82,20 @@ export const useEquiposBuceoEnhanced = () => {
     mutationFn: async (equipoData: {
       nombre: string;
       descripcion?: string;
+      empresa_id?: string;
     }) => {
-      if (!profile?.salmonera_id && !profile?.servicio_id) {
+      if (!profile?.salmonera_id && !profile?.servicio_id && !equipoData.empresa_id) {
         throw new Error('Usuario debe estar asignado a una empresa');
       }
 
-      const empresa_id = profile.salmonera_id || profile.servicio_id;
+      const empresa_id = equipoData.empresa_id || profile.salmonera_id || profile.servicio_id;
       const tipo_empresa = profile.salmonera_id ? 'salmonera' : 'contratista';
 
       const { data, error } = await supabase
         .from('equipos_buceo')
         .insert([{
-          ...equipoData,
+          nombre: equipoData.nombre,
+          descripcion: equipoData.descripcion,
           empresa_id,
           tipo_empresa,
           activo: true
@@ -138,11 +147,31 @@ export const useEquiposBuceoEnhanced = () => {
     },
   });
 
+  const inviteMember = useMutation({
+    mutationFn: async ({ equipo_id, email, nombre_completo, rol_equipo }: {
+      equipo_id: string;
+      email: string;
+      nombre_completo: string;
+      rol_equipo: string;
+    }) => {
+      // Por ahora solo simularemos la invitación
+      // En el futuro aquí se podría implementar la lógica real de invitación
+      toast({
+        title: 'Invitación enviada',
+        description: `Invitación enviada a ${email}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo-enhanced'] });
+    },
+  });
+
   return {
     equipos,
     isLoading,
     createEquipo: createEquipo.mutate,
     addMiembro: addMiembro.mutate,
+    inviteMember: inviteMember.mutate,
     isCreating: createEquipo.isPending,
   };
 };
