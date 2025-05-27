@@ -58,7 +58,13 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return data || [];
+      // Ensure estado values match our type
+      return (data || []).map(op => ({
+        ...op,
+        estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
+          ? op.estado 
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada'
+      })) as Operacion[];
     },
   });
 

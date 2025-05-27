@@ -16,7 +16,7 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    empresa_id: '' // This should be populated from user context
+    empresa_id: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,11 +26,7 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
 
     setIsSubmitting(true);
     try {
-      // For now, we'll use a placeholder empresa_id - this should come from user context
-      await onSubmit({
-        ...formData,
-        empresa_id: 'placeholder-empresa-id'
-      });
+      await onSubmit(formData);
     } catch (error) {
       console.error('Error creating team:', error);
     } finally {

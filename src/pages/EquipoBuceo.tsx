@@ -14,6 +14,7 @@ import { CreatePersonalForm } from "@/components/personal/CreatePersonalForm";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
+import { Header } from "@/components/layout/Header";
 import { useToast } from "@/hooks/use-toast";
 
 const EquipoBuceo = () => {
@@ -127,18 +128,7 @@ const EquipoBuceo = () => {
         <div className="min-h-screen flex w-full bg-gray-50">
           <AppSidebar />
           <main className="flex-1 flex flex-col">
-            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-                <div className="flex items-center gap-3">
-                  <Users className="w-6 h-6 text-zinc-600" />
-                  <div>
-                    <h1 className="text-xl font-semibold text-zinc-900">Equipo de Buceo</h1>
-                    <p className="text-sm text-zinc-500">Gestión de equipos y personal de buceo</p>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <Header title="Equipo de Buceo" subtitle="Gestión de equipos y personal de buceo" icon={Users} />
             <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -164,38 +154,27 @@ const EquipoBuceo = () => {
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <Users className="w-6 h-6 text-zinc-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Equipo de Buceo</h1>
-                  <p className="text-sm text-zinc-500">Gestión de equipos y personal de buceo</p>
-                </div>
-              </div>
-              <div className="flex-1" />
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowCreateEquipoForm(true)}
-                  disabled={isCreatingEquipo}
-                  className="ios-button"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Equipo
-                </Button>
-                <Button 
-                  className="ios-button"
-                  onClick={() => setShowAddPersonalDialog(true)}
-                  disabled={isCreating}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Agregar Personal
-                </Button>
-              </div>
+          <Header title="Equipo de Buceo" subtitle="Gestión de equipos y personal de buceo" icon={Users}>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowCreateEquipoForm(true)}
+                disabled={isCreatingEquipo}
+                className="ios-button"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Equipo
+              </Button>
+              <Button 
+                className="ios-button"
+                onClick={() => setShowAddPersonalDialog(true)}
+                disabled={isCreating}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Agregar Personal
+              </Button>
             </div>
-          </header>
+          </Header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
