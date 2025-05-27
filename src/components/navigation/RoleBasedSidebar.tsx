@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -170,9 +171,7 @@ export function RoleBasedSidebar() {
           title: "Mi Empresa",
           icon: Building,
           items: [
-            { title: "Información", url: "/empresas/contratistas" },
-            // Ocultar "Usuarios" para roles que no sean superuser
-            ...(profile?.role === 'superuser' ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+            { title: "Información", url: "/empresas/contratistas" }
           ]
         },
         {
@@ -235,9 +234,7 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
-            { title: "Contratistas", url: "/empresas/contratistas" },
-            // Ocultar "Usuarios" para roles que no sean superuser
-            ...(profile?.role === 'superuser' ? [{ title: "Usuarios", url: "/admin/users" }] : [])
+            { title: "Contratistas", url: "/empresas/contratistas" }
           ]
         },
         {
