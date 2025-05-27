@@ -158,7 +158,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Admin Servicio (Contratista)
+    // Admin Servicio (Contratista) - SIN USUARIOS
     if (profile?.role === 'admin_servicio') {
       return [
         {
@@ -171,8 +171,7 @@ export function RoleBasedSidebar() {
           title: "Mi Empresa",
           icon: Building,
           items: [
-            { title: "Información", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            { title: "Información", url: "/empresas/contratistas" }
           ]
         },
         {
@@ -221,7 +220,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Admin Salmonera - NAVEGACIÓN ESTANDARIZADA
+    // Admin Salmonera - SIN USUARIOS
     if (profile?.role === 'admin_salmonera') {
       return [
         {
@@ -235,8 +234,7 @@ export function RoleBasedSidebar() {
           icon: Building,
           items: [
             { title: "Sitios", url: "/empresas/sitios" },
-            { title: "Contratistas", url: "/empresas/contratistas" },
-            { title: "Usuarios", url: "/admin/users" }
+            { title: "Contratistas", url: "/empresas/contratistas" }
           ]
         },
         {
@@ -285,7 +283,7 @@ export function RoleBasedSidebar() {
       ];
     }
 
-    // Superuser
+    // Superuser - ÚNICO ROL CON USUARIOS
     if (profile?.role === 'superuser') {
       return [
         {
@@ -360,8 +358,6 @@ export function RoleBasedSidebar() {
     return [];
   };
 
-  const menuItems = getMenuItemsForRole();
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -413,6 +409,8 @@ export function RoleBasedSidebar() {
     }
     return null;
   };
+
+  const menuItems = getMenuItemsForRole();
 
   return (
     <Sidebar className="border-r border-border/40 font-sans">

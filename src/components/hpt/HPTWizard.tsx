@@ -1,7 +1,7 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
 import { HPTStep1 } from "./steps/HPTStep1";
@@ -31,7 +31,6 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
     prevStep,
     submitHPT,
     isFormComplete,
-    progress,
     isLoading,
     autoSaveEnabled,
     setAutoSaveEnabled
@@ -103,7 +102,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
 
   return (
     <div className="h-full max-h-[90vh] flex flex-col">
-      {/* Header with Progress */}
+      {/* Header simplificado - SIN BARRA DE PROGRESO GENERAL */}
       <div className="flex-shrink-0 p-4 md:p-6 border-b">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -126,22 +125,10 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
             >
               {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
             </Badge>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {progress}% Completado
-            </Badge>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Progress value={progress} className="h-3" />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Progreso General</span>
-            <span>{progress}%</span>
-          </div>
-        </div>
-
-        {/* Step Indicators */}
+        {/* Step Indicators simplificados */}
         <div className="flex justify-between mt-6">
           {steps.map((step, index) => (
             <div 
@@ -240,7 +227,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
               className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
               <Save className="w-4 h-4" />
-              {isLoading ? 'Enviando...' : 'Enviar HPT'}
+              {isLoading ? 'Enviando...' : 'Crear HPT'}
             </Button>
           )}
         </div>
