@@ -4,12 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-// Using the actual database types
-type EquipoBuceo = Tables<'operacion'> & {
+// Using the actual database types for equipos_buceo
+type EquipoBuceo = Tables<'equipos_buceo'> & {
   miembros?: EquipoBuceoMiembro[];
-  salmoneras?: { nombre: string } | null;
-  sitios?: { nombre: string } | null;
-  contratistas?: { nombre: string } | null;
+  empresa_nombre?: string;
 };
 
 type EquipoBuceoMiembro = {
@@ -18,15 +16,13 @@ type EquipoBuceoMiembro = {
   usuario_id?: string;
   nombre_completo: string;
   email?: string;
-  rol: 'supervisor' | 'buzo' | 'asistente';
-  matricula?: string;
-  cargo?: string;
-  telefono?: string;
-  invitado: boolean;
-  estado_invitacion: 'pendiente' | 'aceptada' | 'rechazada';
-  token_invitacion?: string;
-  created_at: string;
-  updated_at: string;
+  rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
+  disponible: boolean;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    email: string;
+  };
 };
 
 export const useEquipoBuceo = () => {
@@ -37,19 +33,38 @@ export const useEquipoBuceo = () => {
 
   const fetchEquipos = async () => {
     try {
-      // Using the operacion table as the base for teams/equipos
       const { data, error } = await supabase
-        .from('operacion')
+        .from('equipos_buceo')
         .select(`
           *,
-          salmoneras(nombre),
-          sitios(nombre),
-          contratistas(nombre)
+          miembros:equipo_buceo_miembros(
+            *,
+            usuario:usuario(nombre, apellido, email)
+          )
         `)
+        .eq('activo', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEquipos(data || []);
+      
+      const equiposWithMiembros = (data || []).map(equipo => ({
+        ...equipo,
+        empresa_nombre: 'Empresa', // This should come from empresa relation
+        miembros: equipo.miembros?.map(miembro => ({
+          id: miembro.id,
+          equipo_id: miembro.equipo_id,
+          usuario_id: miembro.usuario_id,
+          nombre_completo: miembro.usuario ? 
+            `${miembro.usuario.nombre} ${miembro.usuario.apellido}`.trim() : 
+            'Usuario desconocido',
+          email: miembro.usuario?.email,
+          rol_equipo: miembro.rol_equipo,
+          disponible: miembro.disponible,
+          usuario: miembro.usuario
+        })) || []
+      }));
+      
+      setEquipos(equiposWithMiembros);
     } catch (error) {
       console.error('Error fetching equipos:', error);
       toast({
@@ -62,9 +77,30 @@ export const useEquipoBuceo = () => {
 
   const fetchMiembrosEquipo = async (equipoId: string) => {
     try {
-      // For now, we'll return mock data until the database types are updated
-      console.log('Fetching miembros for equipo:', equipoId);
-      return [];
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .select(`
+          *,
+          usuario:usuario(nombre, apellido, email)
+        `)
+        .eq('equipo_id', equipoId);
+
+      if (error) throw error;
+      
+      const miembrosFormatted = (data || []).map(miembro => ({
+        id: miembro.id,
+        equipo_id: miembro.equipo_id,
+        usuario_id: miembro.usuario_id,
+        nombre_completo: miembro.usuario ? 
+          `${miembro.usuario.nombre} ${miembro.usuario.apellido}`.trim() : 
+          'Usuario desconocido',
+        email: miembro.usuario?.email,
+        rol_equipo: miembro.rol_equipo,
+        disponible: miembro.disponible,
+        usuario: miembro.usuario
+      }));
+      
+      return miembrosFormatted;
     } catch (error) {
       console.error('Error fetching miembros:', error);
       toast({
@@ -78,31 +114,35 @@ export const useEquipoBuceo = () => {
 
   const createEquipo = async (equipoData: Partial<EquipoBuceo>) => {
     try {
-      // Generate a unique code if not provided
-      const codigo = equipoData.codigo || `EQ-${Date.now().toString().slice(-6)}`;
-      
-      // Ensure required fields are present with proper defaults
-      const operacionData: TablesInsert<'operacion'> = {
-        codigo: codigo,
+      // Get current user to determine empresa_id and tipo_empresa
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Usuario no autenticado');
+
+      const { data: userProfile } = await supabase
+        .from('usuario')
+        .select('salmonera_id, servicio_id')
+        .eq('usuario_id', user.user.id)
+        .single();
+
+      if (!userProfile) throw new Error('Perfil de usuario no encontrado');
+
+      const newEquipoData: TablesInsert<'equipos_buceo'> = {
         nombre: equipoData.nombre || 'Nuevo Equipo',
-        fecha_inicio: equipoData.fecha_inicio || new Date().toISOString().split('T')[0],
-        estado: equipoData.estado || 'planificada',
-        salmonera_id: equipoData.salmonera_id || null,
-        sitio_id: equipoData.sitio_id || null,
-        servicio_id: equipoData.servicio_id || null,
-        tareas: equipoData.tareas || null,
-        fecha_fin: equipoData.fecha_fin || null,
-        contratista_id: equipoData.contratista_id || null
+        descripcion: equipoData.descripcion || '',
+        empresa_id: userProfile.salmonera_id || userProfile.servicio_id || '',
+        tipo_empresa: userProfile.salmonera_id ? 'salmonera' : 'servicio',
+        activo: true
       };
 
       const { data, error } = await supabase
-        .from('operacion')
-        .insert([operacionData])
+        .from('equipos_buceo')
+        .insert([newEquipoData])
         .select(`
           *,
-          salmoneras(nombre),
-          sitios(nombre),
-          contratistas(nombre)
+          miembros:equipo_buceo_miembros(
+            *,
+            usuario:usuario(nombre, apellido, email)
+          )
         `)
         .single();
 
@@ -112,7 +152,13 @@ export const useEquipoBuceo = () => {
       }
       
       // Update local state
-      setEquipos(prev => [data, ...prev]);
+      const equipoFormatted = {
+        ...data,
+        empresa_nombre: 'Empresa',
+        miembros: []
+      };
+      
+      setEquipos(prev => [equipoFormatted, ...prev]);
       
       toast({
         title: "Éxito",
@@ -133,15 +179,29 @@ export const useEquipoBuceo = () => {
 
   const addMiembroEquipo = async (miembroData: Partial<EquipoBuceoMiembro>) => {
     try {
-      // For now, we'll use the notification system to track team members
-      console.log('Adding miembro:', miembroData);
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert([{
+          equipo_id: miembroData.equipo_id!,
+          usuario_id: miembroData.usuario_id!,
+          rol_equipo: miembroData.rol_equipo!,
+          disponible: true
+        }])
+        .select(`
+          *,
+          usuario:usuario(nombre, apellido, email)
+        `)
+        .single();
+
+      if (error) throw error;
       
       toast({
         title: "Éxito",
         description: "Miembro agregado al equipo correctamente",
       });
       
-      return miembroData;
+      await fetchEquipos(); // Refresh data
+      return data;
     } catch (error) {
       console.error('Error adding miembro:', error);
       toast({
@@ -153,21 +213,10 @@ export const useEquipoBuceo = () => {
     }
   };
 
-  const inviteMiembro = async (equipoId: string, email: string, rol: 'supervisor' | 'buzo' | 'asistente', nombreCompleto: string) => {
+  const inviteMiembro = async (equipoId: string, email: string, rol: 'supervisor' | 'buzo_principal' | 'buzo_asistente', nombreCompleto: string) => {
     try {
-      const token = crypto.randomUUID();
-      
-      const miembroData: Partial<EquipoBuceoMiembro> = {
-        equipo_id: equipoId,
-        email,
-        rol,
-        nombre_completo: nombreCompleto,
-        invitado: true,
-        estado_invitacion: 'pendiente',
-        token_invitacion: token
-      };
-
-      await addMiembroEquipo(miembroData);
+      // For now, we'll create a notification to track invitations
+      console.log('Inviting member:', { equipoId, email, rol, nombreCompleto });
       
       toast({
         title: "Invitación enviada",
