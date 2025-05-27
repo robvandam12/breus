@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowLeft } from "lucide-react";
 import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
-import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +14,6 @@ import { toast } from "@/hooks/use-toast";
 export default function AnexoBravo() {
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
 
@@ -56,7 +54,7 @@ export default function AnexoBravo() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <RoleBasedSidebar />
         <main className="flex-1 flex flex-col">
           <Header 
             title="Crear Anexo Bravo" 
