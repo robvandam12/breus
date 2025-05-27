@@ -1,6 +1,7 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface EquipoBuceoMiembro {
   id: string;
@@ -11,6 +12,7 @@ export interface EquipoBuceoMiembro {
   nombre?: string;
   apellido?: string;
   email?: string;
+  nombre_completo?: string;
 }
 
 export interface EquipoBuceo {
@@ -20,10 +22,13 @@ export interface EquipoBuceo {
   empresa_id: string;
   tipo_empresa: string;
   activo: boolean;
+  created_at?: string;
   miembros?: EquipoBuceoMiembro[];
 }
 
 export const useEquipoBuceo = () => {
+  const queryClient = useQueryClient();
+
   const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
     queryKey: ['equipos-buceo'],
     queryFn: async () => {
@@ -59,8 +64,37 @@ export const useEquipoBuceo = () => {
         ...miembro,
         nombre: miembro.usuario?.nombre || '',
         apellido: miembro.usuario?.apellido || '',
-        email: miembro.usuario?.email || ''
+        email: miembro.usuario?.email || '',
+        nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim()
       })) as EquipoBuceoMiembro[];
+    },
+  });
+
+  const createEquipoMutation = useMutation({
+    mutationFn: async (equipoData: Partial<EquipoBuceo>) => {
+      const { data, error } = await supabase
+        .from('equipos_buceo')
+        .insert([equipoData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Equipo creado",
+        description: "El equipo de buceo ha sido creado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating equipo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el equipo de buceo.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -68,5 +102,6 @@ export const useEquipoBuceo = () => {
     equipos,
     miembros,
     isLoading: loadingEquipos || loadingMiembros,
+    createEquipo: createEquipoMutation.mutateAsync,
   };
 };

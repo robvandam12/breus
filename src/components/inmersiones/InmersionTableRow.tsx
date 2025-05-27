@@ -1,4 +1,3 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +72,7 @@ export const InmersionTableRow = ({ inmersion }: InmersionTableRowProps) => {
         {inmersion.hora_inicio} {inmersion.hora_fin && `- ${inmersion.hora_fin}`}
       </TableCell>
       <TableCell>{inmersion.buzo_principal}</TableCell>
-      <TableCell>{inmersion.profundidad_maxima || '-'} m</TableCell>
+      <TableCell>{inmersion.profundidad_max || '-'} m</TableCell>
       <TableCell>
         <Badge variant="outline" className={getEstadoBadge(inmersion.estado)}>
           {formatEstado(inmersion.estado)}

@@ -251,7 +251,7 @@ const Inmersiones = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-zinc-600">
-                              {inmersion.profundidad_maxima}m
+                              {inmersion.profundidad_max}m
                             </TableCell>
                             <TableCell>
                               <Badge variant="secondary" className={estadoInfo.className}>

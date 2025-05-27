@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,7 +176,7 @@ export const InmersionDetails = () => {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-500">Profundidad</p>
-                    <p className="font-medium">{inmersion.profundidad_maxima} m</p>
+                    <p className="font-medium">{inmersion.profundidad_max} m</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

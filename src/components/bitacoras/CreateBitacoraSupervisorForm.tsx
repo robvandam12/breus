@@ -96,7 +96,7 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
                 <SelectContent>
                   {inmersionesCompletadas.map((inmersion) => (
                     <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
-                      {inmersion.codigo} - {inmersion.operacion_nombre}
+                      {inmersion.codigo} - {inmersion.operacion_nombre || 'Sin nombre'}
                     </SelectItem>
                   ))}
                 </SelectContent>
