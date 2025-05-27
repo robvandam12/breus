@@ -22,9 +22,25 @@ import {
   Anchor
 } from "lucide-react";
 
+interface MenuItemType {
+  title: string;
+  url?: string;
+  icon: React.ComponentType<any>;
+  roles: string[];
+  submenu?: Array<{
+    title: string;
+    url: string;
+    icon: React.ComponentType<any>;
+    roles: string[];
+  }>;
+}
+
 export function RoleBasedSidebar() {
   const { profile, user, signOut } = useAuth();
-  const { navigateTo, currentPath } = useRouter();
+  const { navigateTo } = useRouter();
+  
+  // Get current path from window.location
+  const currentPath = window.location.pathname;
 
   const handleLogout = async () => {
     try {
@@ -39,11 +55,11 @@ export function RoleBasedSidebar() {
   const getUserRole = () => {
     if (!profile) return 'guest';
     
-    if (profile.tipo_usuario === 'superuser') return 'superuser';
-    if (profile.tipo_usuario === 'admin_salmonera') return 'admin_salmonera';
-    if (profile.tipo_usuario === 'admin_servicio') return 'admin_servicio';
-    if (profile.tipo_usuario === 'supervisor') return 'supervisor';
-    if (profile.tipo_usuario === 'buzo') return 'buzo';
+    if (profile.rol === 'superuser') return 'superuser';
+    if (profile.rol === 'admin_salmonera') return 'admin_salmonera';
+    if (profile.rol === 'admin_servicio') return 'admin_servicio';
+    if (profile.rol === 'supervisor') return 'supervisor';
+    if (profile.rol === 'buzo') return 'buzo';
     
     return 'guest';
   };
@@ -51,7 +67,7 @@ export function RoleBasedSidebar() {
   const userRole = getUserRole();
 
   // Configuración de menú basada en roles
-  const getMenuItems = () => {
+  const getMenuItems = (): MenuItemType[] => {
     const baseItems = [
       {
         title: "Inicio",
@@ -61,7 +77,7 @@ export function RoleBasedSidebar() {
       }
     ];
 
-    const menuItems = [
+    const menuItems: MenuItemType[] = [
       ...baseItems,
       {
         title: "Empresas",
@@ -216,7 +232,7 @@ export function RoleBasedSidebar() {
                 </div>
               ) : (
                 <SidebarMenuButton
-                  onClick={() => navigateTo(item.url)}
+                  onClick={() => item.url && navigateTo(item.url)}
                   className={`w-full justify-start text-left ${
                     currentPath === item.url
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
@@ -238,7 +254,7 @@ export function RoleBasedSidebar() {
             {/* Información de la empresa */}
             <div className="text-center">
               <p className="text-xs text-gray-500 mb-1">
-                {profile.salmonera?.nombre || profile.servicio?.nombre || 'Sin empresa asignada'}
+                {profile.salmonera_id ? 'Salmonera' : profile.servicio_id ? 'Servicio' : 'Sin empresa asignada'}
               </p>
             </div>
 
@@ -247,12 +263,12 @@ export function RoleBasedSidebar() {
               <Avatar className="w-10 h-10">
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm font-semibold">
-                  {profile.nombres?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  {profile.nombre?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {profile.nombres} {profile.apellidos}
+                  {profile.nombre} {profile.apellido}
                 </p>
                 <Badge className={`text-xs ${roleDisplay.color}`}>
                   {roleDisplay.label}

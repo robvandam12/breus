@@ -17,7 +17,7 @@ export default function HPT() {
   const [editingHPTId, setEditingHPTId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { hpts, loading } = useHPT();
+  const { hpts, isLoading } = useHPT();
   
   const operacionId = searchParams.get('operacion');
 
@@ -117,9 +117,9 @@ export default function HPT() {
                       {hpts.map((hpt) => (
                         <div key={hpt.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div>
-                            <h4 className="font-medium">{hpt.folio}</h4>
+                            <h4 className="font-medium">{hpt.folio || hpt.codigo}</h4>
                             <p className="text-sm text-gray-600">
-                              {hpt.fecha} - {hpt.operacion?.nombre || 'Sin operación'}
+                              {hpt.fecha} - {hpt.operacion_id || 'Sin operación'}
                             </p>
                           </div>
                           <Button 

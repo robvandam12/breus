@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { HPTWizardStep2 } from "./HPTWizardStep2";
 import { HPTWizardStep3 } from "./HPTWizardStep3";
 import { HPTWizardStep4 } from "./HPTWizardStep4";
 import { HPTWizardStep5 } from "./HPTWizardStep5";
-import { HPTWizardStep6 } from "./steps/HPTStep6";
+import { HPTStep6 } from "./steps/HPTStep6";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 
@@ -65,7 +64,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
       case 1:
         return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={data} updateData={updateData} />;
+        return <HPTWizardStep2 data={data} updateData={updateData} operacionId={operacionId || ''} />;
       case 3:
         return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
@@ -73,7 +72,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
       case 5:
         return <HPTWizardStep5 data={data} updateData={updateData} />;
       case 6:
-        return <HPTWizardStep6 data={data} onUpdate={updateData} />;
+        return <HPTStep6 data={data} onUpdate={updateData} />;
       default:
         return null;
     }
