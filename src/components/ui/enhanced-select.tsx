@@ -36,11 +36,22 @@ export const EnhancedSelect = ({
   placeholder = "Seleccionar...",
   emptyMessage = "No hay opciones disponibles",
   searchPlaceholder = "Buscar...",
-  options,
+  options = [],
   disabled = false,
   className,
 }: EnhancedSelectProps) => {
   const [open, setOpen] = React.useState(false);
+
+  // Ensure options is always an array
+  const safeOptions = React.useMemo(() => {
+    return Array.isArray(options) ? options : [];
+  }, [options]);
+
+  // Find selected option safely
+  const selectedOption = React.useMemo(() => {
+    if (!value || !safeOptions.length) return null;
+    return safeOptions.find((option) => option.value === value) || null;
+  }, [value, safeOptions]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -52,9 +63,7 @@ export const EnhancedSelect = ({
           className={cn("w-full justify-between", className)}
           disabled={disabled}
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : placeholder}
+          {selectedOption ? selectedOption.label : placeholder}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -62,9 +71,9 @@ export const EnhancedSelect = ({
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
-          {options.length > 0 && (
+          {safeOptions.length > 0 && (
             <CommandGroup>
-              {options.map((option) => (
+              {safeOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}

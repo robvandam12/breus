@@ -19,7 +19,7 @@ const Command = React.forwardRef<
     )}
     {...props}
   >
-    {children || null}
+    {children}
   </CommandPrimitive>
 ))
 Command.displayName = CommandPrimitive.displayName
@@ -33,7 +33,7 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
-          {children || null}
+          {children}
         </Command>
       </DialogContent>
     </Dialog>
@@ -68,7 +68,7 @@ const CommandList = React.forwardRef<
     className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     {...props}
   >
-    {children || null}
+    {children}
   </CommandPrimitive.List>
 ))
 
@@ -101,7 +101,7 @@ const CommandGroup = React.forwardRef<
     )}
     {...props}
   >
-    {children || null}
+    {children}
   </CommandPrimitive.Group>
 ))
 
@@ -131,7 +131,7 @@ const CommandItem = React.forwardRef<
     )}
     {...props}
   >
-    {children || null}
+    {children}
   </CommandPrimitive.Item>
 ))
 
