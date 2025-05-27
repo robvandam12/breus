@@ -1,102 +1,56 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { CreateSitioForm } from "@/components/sitios/CreateSitioForm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Search, MapPin } from "lucide-react";
 import { SitioTableView } from "@/components/sitios/SitioTableView";
 import { SitioCardView } from "@/components/sitios/SitioCardView";
-import { MapPin, Plus, Table as TableIcon, Grid } from "lucide-react";
+import { CreateSitioFormAnimated } from "@/components/sitios/CreateSitioFormAnimated";
 import { useSitios } from "@/hooks/useSitios";
-import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AnimatePresence } from "framer-motion";
 
-export default function Sitios() {
-  const { sitios, isLoading, createSitio, updateSitio, deleteSitio } = useSitios();
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table'); // Default to table view
-  const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
+const Sitios = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  const { sitios, isLoading, createSitio } = useSitios();
+
+  const filteredSitios = sitios.filter(sitio => 
+    sitio.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sitio.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sitio.ubicacion?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCreateSitio = async (data: any) => {
     try {
       await createSitio(data);
-      setShowCreateForm(false);
-      toast({
-        title: "Sitio creado",
-        description: "El sitio ha sido creado exitosamente.",
-      });
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating sitio:', error);
     }
   };
 
-  const handleUpdateSitio = async (id: string, data: any) => {
-    try {
-      await updateSitio({ id, data });
-      toast({
-        title: "Sitio actualizado",
-        description: "El sitio ha sido actualizado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error updating sitio:', error);
-    }
-  };
-
-  const handleDeleteSitio = async (id: string) => {
-    try {
-      await deleteSitio(id);
-      toast({
-        title: "Sitio eliminado",
-        description: "El sitio ha sido eliminado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error deleting sitio:', error);
-    }
-  };
-
-  const filteredSitios = sitios.filter(sitio =>
-    sitio.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sitio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sitio.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   if (isLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full bg-white">
           <RoleBasedSidebar />
-          <main className="flex-1 p-6">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-32 w-full" />
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-48" />
-                ))}
-              </div>
-            </div>
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
-  if (showCreateForm) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <RoleBasedSidebar />
-          <main className="flex-1 p-6">
-            <CreateSitioForm
-              onSubmit={handleCreateSitio}
-              onCancel={() => setShowCreateForm(false)}
+          <main className="flex-1 flex flex-col bg-white">
+            <Header 
+              title="Sitios de Acuicultura" 
+              subtitle="Gestión de sitios y ubicaciones de cultivo" 
+              icon={MapPin} 
             />
+            <div className="flex-1 flex items-center justify-center bg-white">
+              <LoadingSpinner text="Cargando sitios..." />
+            </div>
           </main>
         </div>
       </SidebarProvider>
@@ -105,103 +59,107 @@ export default function Sitios() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-white">
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col">
-          <Header title="Sitios" subtitle="Gestión de sitios de trabajo" icon={MapPin}>
+        <main className="flex-1 flex flex-col bg-white">
+          <Header 
+            title="Sitios de Acuicultura" 
+            subtitle="Gestión de sitios y ubicaciones de cultivo" 
+            icon={MapPin} 
+          >
             <div className="flex items-center gap-3">
-              <div className="flex items-center bg-white rounded-lg border">
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="rounded-r-none"
-                >
-                  <TableIcon className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="rounded-l-none"
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar sitios..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
               </div>
-              <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo
-              </Button>
+
+              <AnimatePresence>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="ios-button bg-blue-600 hover:bg-blue-700 transform transition-transform hover:scale-105"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo Sitio
+                  </Button>
+                  <DialogContent className="max-w-2xl">
+                    <CreateSitioFormAnimated
+                      onSubmit={handleCreateSitio}
+                      onCancel={() => setIsCreateDialogOpen(false)}
+                      salmoneraId=""
+                    />
+                  </DialogContent>
+                </Dialog>
+              </AnimatePresence>
             </div>
           </Header>
-
-          <div className="flex-1 overflow-auto">
-            <div className="p-6 space-y-6">
-              <Card className="ios-card">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Sitios Registrados</span>
-                      <Badge variant="outline">{filteredSitios.length} sitios</Badge>
-                    </CardTitle>
+          
+          <div className="flex-1 overflow-auto bg-white">
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {sitios.length}
                   </div>
-                  <div className="flex items-center gap-4 mt-4">
-                    <Input
-                      placeholder="Buscar sitios..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-sm"
-                    />
+                  <div className="text-sm text-zinc-500">Sitios Totales</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {sitios.filter(s => s.estado === 'activo').length}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'cards')}>
-                    <TabsContent value="table">
-                      {filteredSitios.length === 0 ? (
-                        <div className="text-center py-12">
-                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
-                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
-                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Crear Primer Sitio
-                          </Button>
-                        </div>
-                      ) : (
-                        <SitioTableView
-                          sitios={filteredSitios}
-                          onEdit={handleUpdateSitio}
-                          onDelete={handleDeleteSitio}
-                        />
-                      )}
-                    </TabsContent>
+                  <div className="text-sm text-zinc-500">Sitios Activos</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {sitios.filter(s => s.capacidad_jaulas && s.capacidad_jaulas > 0).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Con Jaulas</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {sitios.filter(s => s.coordenadas_lat && s.coordenadas_lng).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Georeferenciados</div>
+                </Card>
+              </div>
 
-                    <TabsContent value="cards">
-                      {filteredSitios.length === 0 ? (
-                        <div className="text-center py-12">
-                          <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay sitios registrados</h3>
-                          <p className="text-zinc-500 mb-4">Cree el primer sitio para comenzar</p>
-                          <Button onClick={() => setShowCreateForm(true)} variant="outline">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Crear Primer Sitio
-                          </Button>
-                        </div>
-                      ) : (
-                        <SitioCardView
-                          sitios={filteredSitios}
-                          onEdit={handleUpdateSitio}
-                          onDelete={handleDeleteSitio}
-                        />
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+              {filteredSitios.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <MapPin className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-zinc-900 mb-2">
+                      {sitios.length === 0 ? "No hay sitios registrados" : "No se encontraron sitios"}
+                    </h3>
+                    <p className="text-zinc-500 mb-4">
+                      {sitios.length === 0 
+                        ? "Comience creando el primer sitio de acuicultura"
+                        : "Intenta ajustar la búsqueda"}
+                    </p>
+                    {sitios.length === 0 && (
+                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Sitio
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : viewMode === 'table' ? (
+                <SitioTableView sitios={filteredSitios} />
+              ) : (
+                <SitioCardView sitios={filteredSitios} />
+              )}
             </div>
           </div>
         </main>
       </div>
     </SidebarProvider>
   );
-}
+};
+
+export default Sitios;

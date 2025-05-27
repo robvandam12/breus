@@ -1,72 +1,72 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
-import { useRouter } from "@/hooks/useRouter";
-import { useSearchParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useHPT } from "@/hooks/useHPT";
+import { useOperacionValidation } from "@/hooks/useOperacionValidation";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EnhancedSelect } from "@/components/ui/enhanced-select";
 
-export default function HPT() {
-  const [showWizard, setShowWizard] = useState(false);
-  const [searchParams] = useSearchParams();
-  const { navigateTo } = useRouter();
+const HPTPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
-  const operacionId = searchParams.get('operacion');
+  const { hpts, isLoading } = useHPT();
+  const { 
+    operacionesConDocumentos, 
+    getOperacionesDisponiblesParaHPT,
+    validarOperacionParaDocumento 
+  } = useOperacionValidation();
 
-  useEffect(() => {
-    // Si viene con operacionId, mostrar wizard directamente
-    if (operacionId) {
-      setShowWizard(true);
+  const operacionesDisponibles = getOperacionesDisponiblesParaHPT();
+
+  const filteredHPTs = hpts.filter(hpt => 
+    hpt.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hpt.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateHPT = () => {
+    if (!selectedOperacionId) {
+      alert('Debe seleccionar una operación para crear el HPT');
+      return;
     }
-  }, [operacionId]);
-
-  const handleCreateHPT = async (hptId: string) => {
-    toast({
-      title: "HPT creado",
-      description: "La Hoja de Planificación de Tarea ha sido creada exitosamente.",
-    });
     
-    setShowWizard(false);
-    navigateTo('/operaciones');
-  };
-
-  const handleCancel = () => {
-    setShowWizard(false);
-    if (operacionId) {
-      navigateTo('/operaciones');
+    if (!validarOperacionParaDocumento(selectedOperacionId, 'hpt')) {
+      alert('Esta operación ya tiene un HPT asociado');
+      return;
     }
+    
+    setShowCreateForm(true);
   };
 
-  if (showWizard) {
+  const handleHPTComplete = () => {
+    setShowCreateForm(false);
+    setSelectedOperacionId('');
+  };
+
+  if (isLoading) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-white">
           <RoleBasedSidebar />
           <main className="flex-1 flex flex-col bg-white">
             <Header 
-              title="Crear HPT" 
-              subtitle="Hoja de Planificación de Tarea" 
+              title="Hojas de Planificación de Tarea (HPT)" 
+              subtitle="Gestión de documentos HPT para operaciones de buceo" 
               icon={FileText} 
-            >
-              <Button variant="outline" onClick={handleCancel}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
-              </Button>
-            </Header>
-            
-            <div className="flex-1 overflow-auto bg-white">
-              <div className="p-6">
-                <HPTWizard
-                  operacionId={operacionId || undefined}
-                  onComplete={handleCreateHPT}
-                  onCancel={handleCancel}
-                />
-              </div>
+            />
+            <div className="flex-1 flex items-center justify-center bg-white">
+              <LoadingSpinner text="Cargando HPTs..." />
             </div>
           </main>
         </div>
@@ -80,44 +80,216 @@ export default function HPT() {
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col bg-white">
           <Header 
-            title="HPT" 
-            subtitle="Hoja de Planificación de Tarea" 
+            title="Hojas de Planificación de Tarea (HPT)" 
+            subtitle="Gestión de documentos HPT para operaciones de buceo" 
             icon={FileText} 
           >
-            <Button onClick={() => setShowWizard(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo HPT
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar HPTs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <EnhancedSelect
+                  options={operacionesDisponibles.map(op => ({
+                    value: op.id,
+                    label: `${op.codigo} - ${op.nombre}`
+                  }))}
+                  value={selectedOperacionId}
+                  onValueChange={setSelectedOperacionId}
+                  placeholder="Seleccionar operación"
+                  className="w-64"
+                />
+                
+                <Button 
+                  onClick={handleCreateHPT}
+                  disabled={!selectedOperacionId}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo HPT
+                </Button>
+              </div>
+            </div>
           </Header>
           
           <div className="flex-1 overflow-auto bg-white">
-            <div className="p-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Crear Nueva HPT
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center py-12">
-                  <div className="space-y-4">
-                    <FileText className="w-16 h-16 text-blue-600 mx-auto" />
-                    <h3 className="text-lg font-semibold">Hoja de Planificación de Tarea</h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
-                      Cree una nueva HPT utilizando nuestro asistente paso a paso. 
-                      Planifique y documente todos los aspectos de seguridad para la tarea.
-                    </p>
-                    <Button onClick={() => setShowWizard(true)} size="lg">
-                      <Plus className="w-5 h-5 mr-2" />
-                      Crear HPT
-                    </Button>
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              {/* Alertas de validación */}
+              {operacionesDisponibles.length === 0 && (
+                <Card className="mb-6 border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <h3 className="font-medium text-orange-800">No hay operaciones disponibles</h3>
+                        <p className="text-sm text-orange-600">
+                          Todas las operaciones existentes ya tienen HPTs asociados. Crea una nueva operación para poder generar un HPT.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {hpts.length}
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="text-sm text-zinc-500">HPTs Totales</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {hpts.filter(h => h.firmado).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">HPTs Firmados</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {hpts.filter(h => h.estado === 'borrador').length}
+                  </div>
+                  <div className="text-sm text-zinc-500">En Borrador</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {operacionesDisponibles.length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Operaciones Disponibles</div>
+                </Card>
+              </div>
+
+              {filteredHPTs.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-zinc-900 mb-2">
+                      {hpts.length === 0 ? "No hay HPTs registrados" : "No se encontraron HPTs"}
+                    </h3>
+                    <p className="text-zinc-500 mb-4">
+                      {hpts.length === 0 
+                        ? "Comience creando el primer HPT seleccionando una operación"
+                        : "Intenta ajustar la búsqueda"}
+                    </p>
+                    {operacionesDisponibles.length > 0 && (
+                      <div className="flex items-center justify-center gap-2">
+                        <EnhancedSelect
+                          options={operacionesDisponibles.map(op => ({
+                            value: op.id,
+                            label: `${op.codigo} - ${op.nombre}`
+                          }))}
+                          value={selectedOperacionId}
+                          onValueChange={setSelectedOperacionId}
+                          placeholder="Seleccionar operación"
+                          className="w-64"
+                        />
+                        <Button 
+                          onClick={handleCreateHPT} 
+                          disabled={!selectedOperacionId}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nuevo HPT
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Operación</TableHead>
+                        <TableHead>Supervisor</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Progreso</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredHPTs.map((hpt) => (
+                        <TableRow key={hpt.id}>
+                          <TableCell>
+                            <div className="font-medium">{hpt.codigo || hpt.folio}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-zinc-600">
+                              {/* Aquí deberíamos mostrar info de la operación */}
+                              Operación
+                            </div>
+                          </TableCell>
+                          <TableCell>{hpt.supervisor}</TableCell>
+                          <TableCell>
+                            {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
+                              {hpt.firmado ? (
+                                <div className="flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Firmado
+                                </div>
+                              ) : (
+                                hpt.estado || 'Borrador'
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all"
+                                  style={{ width: `${hpt.progreso || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-500">{hpt.progreso || 0}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="outline" size="sm">
+                                Ver
+                              </Button>
+                              {!hpt.firmado && (
+                                <Button variant="outline" size="sm">
+                                  Editar
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
+              )}
             </div>
           </div>
+
+          {/* Modal para crear HPT */}
+          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+            <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+              <HPTWizard 
+                operacionId={selectedOperacionId}
+                onComplete={handleHPTComplete}
+                onCancel={() => setShowCreateForm(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>
   );
-}
+};
+
+export default HPTPage;
