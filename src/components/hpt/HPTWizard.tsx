@@ -1,240 +1,209 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
-import { HPTStep1 } from "./steps/HPTStep1";
-import { HPTStep2 } from "./steps/HPTStep2";
-import { HPTStep3 } from "./steps/HPTStep3";
-import { HPTStep4 } from "./steps/HPTStep4";
-import { HPTStep5 } from "./steps/HPTStep5";
-import { HPTStep6 } from "./steps/HPTStep6";
-import { useToast } from "@/hooks/use-toast";
-import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { Progress } from "@/components/ui/progress";
+import { 
+  FileText, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle,
+  Building,
+  Shield,
+  Users,
+  Wrench,
+  PenTool
+} from "lucide-react";
+import { HPTStep1 } from "./HPTWizardStep1";
+import { HPTStep2 } from "./HPTWizardStep2";
+import { HPTStep3 } from "./HPTWizardStep3";
+import { HPTStep4 } from "./HPTWizardStep4";
+import { HPTStep5 } from "./HPTWizardStep5";
+import { HPTWizardComplete } from "./HPTWizardComplete";
+
+export interface HPTWizardData {
+  // Step 1: Información General
+  operacion_id?: string;
+  folio?: string;
+  fecha?: string;
+  empresa_servicio_nombre?: string;
+  supervisor_nombre?: string;
+  centro_trabajo_nombre?: string;
+  jefe_mandante_nombre?: string;
+  descripcion_tarea?: string;
+  es_rutinaria?: boolean;
+  lugar_especifico?: string;
+  estado_puerto?: string;
+
+  // Step 2: Equipo de Protección Personal
+  hpt_epp?: any;
+  hpt_conocimiento_asistentes?: any[];
+
+  // Step 3: Evaluación de Riesgos y Controles
+  hpt_erc?: any;
+  hpt_medidas?: any;
+  hpt_riesgos_comp?: any;
+
+  // Step 4: Conocimiento y Competencias
+  hpt_conocimiento?: any;
+
+  // Step 5: Firmas y Validación
+  hpt_firmas?: any;
+  supervisor_servicio_id?: string;
+  supervisor_mandante_id?: string;
+}
 
 interface HPTWizardProps {
   operacionId?: string;
-  hptId?: string;
-  onComplete?: (hptId: string) => void;
-  onCancel?: () => void;
+  onComplete: (hptId: string) => Promise<void>;
+  onCancel: () => void;
 }
 
-export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
-  const { toast } = useToast();
-  const { operaciones } = useOperaciones();
-  
-  // Get operation data for pre-filling
-  const operacion = operaciones.find(op => op.id === operacionId);
-  
-  const {
-    currentStep,
-    data,
-    steps,
-    updateData,
-    nextStep,
-    prevStep,
-    submitHPT,
-    isFormComplete,
-    isLoading,
-    autoSaveEnabled,
-    setAutoSaveEnabled
-  } = useHPTWizard(operacionId, hptId);
+export const HPTWizard = ({ operacionId, onComplete, onCancel }: HPTWizardProps) => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [data, setData] = useState<HPTWizardData>({
+    operacion_id: operacionId,
+    fecha: new Date().toISOString().split('T')[0],
+    es_rutinaria: false,
+  });
 
-  const handleNext = () => {
-    const currentStepData = steps[currentStep - 1];
-    if (!currentStepData.isValid) {
-      toast({
-        title: "Paso incompleto",
-        description: "Complete todos los campos requeridos para continuar",
-        variant: "destructive",
-      });
-      return;
-    }
-    nextStep();
+  const totalSteps = 5;
+
+  const steps = [
+    { number: 1, title: "Información General", icon: Building },
+    { number: 2, title: "Equipo de Protección", icon: Shield },
+    { number: 3, title: "Evaluación de Riesgos", icon: Wrench },
+    { number: 4, title: "Conocimiento", icon: Users },
+    { number: 5, title: "Firmas", icon: PenTool }
+  ];
+
+  const updateData = (updates: Partial<HPTWizardData>) => {
+    setData(prev => ({ ...prev, ...updates }));
   };
 
-  const handleSubmit = async () => {
-    try {
-      const finalHptId = await submitHPT();
-      if (finalHptId && onComplete) {
-        onComplete(finalHptId);
-      }
-    } catch (error) {
-      console.error('Error submitting HPT:', error);
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const renderStep = () => {
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={data} onUpdate={updateData} operacion={operacion} />;
+        return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
+        return <HPTStep2 data={data} onUpdate={updateData} />;
       case 3:
         return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:
         return <HPTStep4 data={data} onUpdate={updateData} />;
       case 5:
         return <HPTStep5 data={data} onUpdate={updateData} />;
-      case 6:
-        return <HPTStep6 data={data} onUpdate={updateData} />;
       default:
         return null;
     }
   };
 
-  const getStepIcon = (stepNumber: number) => {
-    switch (stepNumber) {
-      case 1:
-        return <FileText className="w-5 h-5" />;
-      case 2:
-        return <Shield className="w-5 h-5" />;
-      case 3:
-        return <AlertTriangle className="w-5 h-5" />;
-      case 4:
-        return <Shield className="w-5 h-5" />;
-      case 5:
-        return <AlertTriangle className="w-5 h-5" />;
-      case 6:
-        return <FileText className="w-5 h-5" />;
-      default:
-        return <FileText className="w-5 h-5" />;
-    }
+  const getStepProgress = () => {
+    return (currentStep / totalSteps) * 100;
   };
 
-  const currentStepData = steps[currentStep - 1];
-
   return (
-    <div className="h-full max-h-[90vh] flex flex-col">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              {getStepIcon(currentStep)}
-            </div>
-            <div>
-              <CardTitle className="text-xl md:text-2xl text-gray-900">
-                Hoja de Planificación de Tarea (HPT)
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Paso {currentStep} de {steps.length}: {currentStepData?.title}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge 
-              variant={autoSaveEnabled ? "default" : "secondary"}
-              className={autoSaveEnabled ? "bg-green-100 text-green-700" : ""}
-            >
-              {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
-            </Badge>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <FileText className="w-6 h-6 text-blue-600" />
+            Crear HPT
+          </h2>
+          <p className="text-gray-600">Hoja de Planificación de Tarea</p>
         </div>
-
-        {/* Step Indicators - NO PROGRESS BAR */}
-        <div className="flex justify-between mt-6">
-          {steps.map((step, index) => (
-            <div 
-              key={step.id}
-              className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
-            >
-              <div className={`h-2 rounded-full ${
-                step.id < currentStep ? 'bg-green-500' : 
-                step.id === currentStep ? 'bg-blue-500' : 
-                'bg-gray-200'
-              }`} />
-              <div className="mt-2 text-xs text-center">
-                <span className={`${
-                  step.id === currentStep ? 'text-blue-600 font-medium' : 
-                  step.id < currentStep ? 'text-green-600' : 
-                  'text-gray-500'
-                }`}>
-                  {step.title}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Badge variant="outline">
+          Paso {currentStep} de {totalSteps}
+        </Badge>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-auto">
-        <Card className="border-0 shadow-none">
-          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-teal-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                {getStepIcon(currentStep)}
-              </div>
-              <div>
-                <CardTitle className="text-lg text-gray-900">
-                  {currentStepData?.title}
-                </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
-                  {currentStepData?.description}
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="p-6 md:p-8">
-            {renderStep()}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Navigation - Fixed at bottom */}
-      <div className="flex-shrink-0 flex justify-between items-center p-4 md:p-6 gap-4 border-t bg-white">
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isLoading}
-            className="min-w-[100px]"
+      {/* Steps Navigation */}
+      <div className="flex items-center justify-between py-4">
+        {steps.map((step) => (
+          <div
+            key={step.number}
+            className={`flex items-center ${
+              step.number < steps.length ? 'flex-1' : ''
+            }`}
           >
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                step.number === currentStep
+                  ? 'border-blue-600 bg-blue-600 text-white'
+                  : step.number < currentStep
+                  ? 'border-green-600 bg-green-600 text-white'
+                  : 'border-gray-300 bg-white text-gray-400'
+              }`}
+            >
+              {step.number < currentStep ? (
+                <CheckCircle className="w-5 h-5" />
+              ) : (
+                React.createElement(step.icon, { className: "w-5 h-5" })
+              )}
+            </div>
+            {step.number < steps.length && (
+              <div
+                className={`flex-1 h-1 mx-2 ${
+                  step.number < currentStep ? 'bg-green-600' : 'bg-gray-300'
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Step Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {React.createElement(steps[currentStep - 1].icon, { className: "w-5 h-5" })}
+            {steps[currentStep - 1].title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {renderStepContent()}
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-            disabled={isLoading}
-            className="min-w-[140px]"
-          >
-            {autoSaveEnabled ? "Desactivar" : "Activar"} Auto-guardado
-          </Button>
+          {currentStep > 1 && (
+            <Button variant="outline" onClick={prevStep}>
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Anterior
+            </Button>
+          )}
         </div>
 
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1 || isLoading}
-            className="flex items-center gap-2 min-w-[100px]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Anterior
-          </Button>
-          
-          {currentStep < steps.length ? (
-            <Button
-              onClick={handleNext}
-              disabled={!currentStepData?.isValid || isLoading}
-              className="flex items-center gap-2 min-w-[100px] bg-blue-600 hover:bg-blue-700"
-            >
+        <div>
+          {currentStep < totalSteps ? (
+            <Button onClick={nextStep}>
               Siguiente
-              <ArrowRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!isFormComplete || isLoading}
-              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
-            >
-              <Save className="w-4 h-4" />
-              {isLoading ? 'Enviando...' : 'Enviar HPT'}
-            </Button>
+            <HPTWizardComplete 
+              data={data} 
+              onComplete={onComplete}
+            />
           )}
         </div>
       </div>

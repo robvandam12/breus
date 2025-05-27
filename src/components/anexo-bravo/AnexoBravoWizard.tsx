@@ -25,6 +25,8 @@ import {
 import { useForm } from "react-hook-form";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
+import { useContratistas } from "@/hooks/useContratistas";
+import { useSitios } from "@/hooks/useSitios";
 
 interface AnexoBravoWizardProps {
   onSubmit: (data: any) => Promise<void>;
@@ -36,22 +38,26 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
   const [currentStep, setCurrentStep] = useState(1);
   const { operaciones, isLoading: loadingOperaciones } = useOperaciones();
   const { equipos } = useEquiposBuceo();
+  const { contratistas } = useContratistas();
+  const { sitios } = useSitios();
 
   // Get operation data for pre-filling
   const operacion = operaciones.find(op => op.id === defaultOperacionId);
+  const contratista = contratistas.find(c => c.id === operacion?.contratista_id);
+  const sitio = sitios.find(s => s.id === operacion?.sitio_id);
   const equipoBuceo = equipos.find(eq => eq.id === operacion?.equipo_buceo_id);
 
   const [formData, setFormData] = useState({
     informacionGeneral: {
       operacion_id: defaultOperacionId || "",
-      empresa_nombre: operacion?.contratista?.nombre || "",
-      lugar_faena: operacion?.sitio?.nombre || "",
+      empresa_nombre: contratista?.nombre || "",
+      lugar_faena: sitio?.nombre || "",
       fecha: new Date().toISOString().split('T')[0],
       jefe_centro_nombre: "",
     },
     identificacionBuzo: {
-      buzo_o_empresa_nombre: operacion?.contratista?.nombre || "",
-      asistente_buzo_nombre: "" // Text field as requested
+      buzo_o_empresa_nombre: contratista?.nombre || "",
+      asistente_buzo_nombre: ""
     },
     equipos: {},
     bitacora: {},
@@ -73,8 +79,8 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
   const informacionForm = useForm({
     defaultValues: {
       operacion_id: defaultOperacionId || "",
-      empresa_nombre: operacion?.contratista?.nombre || "",
-      lugar_faena: operacion?.sitio?.nombre || "",
+      empresa_nombre: contratista?.nombre || "",
+      lugar_faena: sitio?.nombre || "",
       fecha: new Date().toISOString().split('T')[0],
       jefe_centro_nombre: ""
     }
@@ -82,23 +88,23 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
 
   // Update form when operation data loads
   useEffect(() => {
-    if (operacion) {
-      informacionForm.setValue('empresa_nombre', operacion.contratista?.nombre || '');
-      informacionForm.setValue('lugar_faena', operacion.sitio?.nombre || '');
+    if (operacion && contratista && sitio) {
+      informacionForm.setValue('empresa_nombre', contratista.nombre || '');
+      informacionForm.setValue('lugar_faena', sitio.nombre || '');
       setFormData(prev => ({
         ...prev,
         informacionGeneral: {
           ...prev.informacionGeneral,
-          empresa_nombre: operacion.contratista?.nombre || '',
-          lugar_faena: operacion.sitio?.nombre || '',
+          empresa_nombre: contratista.nombre || '',
+          lugar_faena: sitio.nombre || '',
         },
         identificacionBuzo: {
           ...prev.identificacionBuzo,
-          buzo_o_empresa_nombre: operacion.contratista?.nombre || '',
+          buzo_o_empresa_nombre: contratista.nombre || '',
         }
       }));
     }
-  }, [operacion, informacionForm]);
+  }, [operacion, contratista, sitio, informacionForm]);
 
   const identificacionForm = useForm();
   const equiposForm = useForm();
@@ -200,8 +206,8 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...informacionForm.register('empresa_nombre')}
                 placeholder="Nombre de la empresa"
-                value={operacion?.contratista?.nombre || informacionForm.watch('empresa_nombre')}
-                readOnly={!!operacion?.contratista?.nombre}
+                value={contratista?.nombre || informacionForm.watch('empresa_nombre')}
+                readOnly={!!contratista?.nombre}
               />
             </div>
 
@@ -210,8 +216,8 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...informacionForm.register('lugar_faena')}
                 placeholder="Centro de trabajo"
-                value={operacion?.sitio?.nombre || informacionForm.watch('lugar_faena')}
-                readOnly={!!operacion?.sitio?.nombre}
+                value={sitio?.nombre || informacionForm.watch('lugar_faena')}
+                readOnly={!!sitio?.nombre}
               />
             </div>
 
@@ -241,8 +247,8 @@ export const AnexoBravoWizard = ({ onSubmit, onCancel, defaultOperacionId }: Ane
               <Input
                 {...identificacionForm.register('buzo_o_empresa_nombre')}
                 placeholder="Nombre del buzo o empresa"
-                value={operacion?.contratista?.nombre || identificacionForm.watch('buzo_o_empresa_nombre')}
-                readOnly={!!operacion?.contratista?.nombre}
+                value={contratista?.nombre || identificacionForm.watch('buzo_o_empresa_nombre')}
+                readOnly={!!contratista?.nombre}
               />
             </div>
 

@@ -18,6 +18,14 @@ export default function EquipoBuceo() {
     setShowCreateForm(false);
   };
 
+  const handleUpdateEquipo = async (id: string, data: any) => {
+    await updateEquipo({ id, data });
+  };
+
+  const handleDeleteEquipo = async (id: string) => {
+    await deleteEquipo(id);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
@@ -38,8 +46,8 @@ export default function EquipoBuceo() {
             <div className="p-6">
               <EquipoBuceoManager
                 equipos={equipos}
-                onUpdate={updateEquipo}
-                onDelete={deleteEquipo}
+                onUpdate={handleUpdateEquipo}
+                onDelete={handleDeleteEquipo}
               />
 
               {showCreateForm && (
