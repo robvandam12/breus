@@ -86,8 +86,8 @@ export const HPTStep2: React.FC<HPTStep2Props> = ({ data, onUpdate, operacionId 
               <div key={item.key} className="flex items-center space-x-2">
                 <Checkbox
                   id={item.key}
-                  checked={data.hpt_epp[item.key as keyof typeof data.hpt_epp] || false}
-                  onCheckedChange={(checked) => handleEPPChange(item.key as keyof typeof data.hpt_epp, checked as boolean)}
+                  checked={Boolean(data.hpt_epp[item.key as keyof typeof data.hpt_epp])}
+                  onCheckedChange={(checked) => handleEPPChange(item.key as keyof typeof data.hpt_epp, Boolean(checked))}
                 />
                 <Label htmlFor={item.key} className="text-sm font-medium">
                   {item.label}

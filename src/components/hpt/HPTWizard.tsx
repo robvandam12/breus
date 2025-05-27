@@ -70,13 +70,12 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
           m.rol_equipo === 'supervisor'
         );
 
-        // Generate code based on operation
-        const codigo = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        // Generate folio based on operation
+        const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
         
         updateData({
           operacion_id: operacionId,
-          codigo,
-          folio: codigo,
+          folio,
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
           supervisor_nombre: supervisor?.nombre_completo || '',
           centro_trabajo_nombre: operacion.sitios?.nombre || '',
@@ -87,7 +86,7 @@ export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizar
         console.log('Operation data populated:', {
           operacion,
           supervisor,
-          codigo
+          folio
         });
 
       } catch (error) {
