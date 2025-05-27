@@ -28,9 +28,6 @@ interface ContratistaTableViewProps {
 }
 
 export const ContratistaTableView = ({ contratistas, onEdit, onDelete, onSelect }: ContratistaTableViewProps) => {
-  const [deletingContratista, setDeletingContratista] = useState<Contratista | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const getEstadoBadge = (estado: string) => {
     const colors = {
       'activo': 'bg-green-100 text-green-700',
@@ -40,18 +37,8 @@ export const ContratistaTableView = ({ contratistas, onEdit, onDelete, onSelect 
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const handleDelete = async () => {
-    if (!deletingContratista) return;
-    
-    setIsDeleting(true);
-    try {
-      await onDelete(deletingContratista.id);
-      setDeletingContratista(null);
-    } catch (error) {
-      console.error('Error deleting contratista:', error);
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleDelete = async (id: string) => {
+    await onDelete(id);
   };
 
   return (
@@ -121,9 +108,8 @@ export const ContratistaTableView = ({ contratistas, onEdit, onDelete, onSelect 
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setDeletingContratista(contratista)}
+                    onClick={() => handleDelete(contratista.id)}
                     className="text-red-600 hover:text-red-700"
-                    disabled={isDeleting}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -133,14 +119,6 @@ export const ContratistaTableView = ({ contratistas, onEdit, onDelete, onSelect 
           ))}
         </TableBody>
       </Table>
-
-      <DeleteContratistaDialog
-        isOpen={!!deletingContratista}
-        onClose={() => setDeletingContratista(null)}
-        onConfirm={handleDelete}
-        contratistaNombre={deletingContratista?.nombre || ""}
-        isDeleting={isDeleting}
-      />
     </>
   );
 };

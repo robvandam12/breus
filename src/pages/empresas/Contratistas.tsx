@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 export default function Contratistas() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deleteContratista, setDeleteContratista] = useState<{id: string, nombre: string} | null>(null);
-  const { deleteContratista: deleteContratistaFn, isDeleting } = useContratistas();
+  const { contratistas, deleteContratista: deleteContratistaFn, isDeleting } = useContratistas();
 
   const handleDelete = async () => {
     if (!deleteContratista) return;
@@ -36,6 +36,20 @@ export default function Contratistas() {
     }
   };
 
+  const handleDeleteContratista = async (id: string) => {
+    const contratista = contratistas.find(c => c.id === id);
+    if (contratista) {
+      setDeleteContratista({
+        id: contratista.id,
+        nombre: contratista.nombre
+      });
+    }
+  };
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -44,8 +58,13 @@ export default function Contratistas() {
           <Header 
             title="Contratistas" 
             subtitle="Gestión de empresas contratistas y servicios de buceo" 
-            icon={Building} 
-          />
+            icon={Building}
+          >
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Contratista
+            </Button>
+          </Header>
           <div className="flex-1 overflow-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -55,29 +74,26 @@ export default function Contratistas() {
                     Administra las empresas contratistas y sus servicios
                   </p>
                 </div>
-                <Button onClick={() => setShowCreateForm(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Contratista
-                </Button>
               </div>
 
               <ContratistaTableView 
+                contratistas={contratistas}
                 onEdit={(contratista) => {
                   // Handle edit - could open edit form
                   console.log('Edit contratista:', contratista);
                 }}
-                onDelete={(contratista) => {
-                  setDeleteContratista({
-                    id: contratista.id,
-                    nombre: contratista.nombre
-                  });
+                onDelete={handleDeleteContratista}
+                onSelect={(contratista) => {
+                  // Handle select - could open details view
+                  console.log('Select contratista:', contratista);
                 }}
               />
 
               {/* Create Form Modal */}
               {showCreateForm && (
                 <CreateContratistaForm 
-                  onClose={() => setShowCreateForm(false)}
+                  onSuccess={handleCreateSuccess}
+                  onCancel={() => setShowCreateForm(false)}
                 />
               )}
 

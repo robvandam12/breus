@@ -9,9 +9,10 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
   icon?: React.ElementType;
+  children?: React.ReactNode;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, subtitle, icon: Icon }) => {
+export const Header: React.FC<HeaderProps> = ({ title, subtitle, icon: Icon, children }) => {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
@@ -31,7 +32,8 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, icon: Icon }) =
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        {children}
         <NotificationButton />
       </div>
     </header>
