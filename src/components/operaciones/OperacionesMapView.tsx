@@ -2,9 +2,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Users } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { supabase } from "@/integrations/supabase/client";
 
 declare global {
   interface Window {
@@ -18,27 +20,8 @@ export const OperacionesMapView = () => {
   const map = useRef<any>(null);
   const [mapboxLoaded, setMapboxLoaded] = useState(false);
   const [mapInitialized, setMapInitialized] = useState(false);
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
-  // Get Mapbox token from Supabase secrets
-  useEffect(() => {
-    const getMapboxToken = async () => {
-      try {
-        // Try to get the token from the environment through a simple approach
-        // In production, this should be configured in Supabase secrets
-        const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-        setMapboxToken(token);
-      } catch (error) {
-        console.error('Error getting Mapbox token:', error);
-        // Fallback to public token
-        setMapboxToken('pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw');
-      }
-    };
-
-    getMapboxToken();
-  }, []);
-
-  // Load Mapbox GL JS
+  // Cargar Mapbox GL JS
   useEffect(() => {
     if (window.mapboxgl) {
       setMapboxLoaded(true);
@@ -61,15 +44,16 @@ export const OperacionesMapView = () => {
     };
   }, []);
 
-  // Initialize map when Mapbox is loaded and token is available
+  // Inicializar mapa cuando Mapbox esté cargado
   useEffect(() => {
-    if (!mapboxLoaded || !mapContainer.current || mapInitialized || !mapboxToken) return;
+    if (!mapboxLoaded || !mapContainer.current || mapInitialized) return;
 
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
     try {
-      mapboxgl.accessToken = mapboxToken;
+      // Usar el token desde las variables de entorno
+      mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -80,7 +64,7 @@ export const OperacionesMapView = () => {
         pitch: 45,
       });
 
-      // Add navigation controls
+      // Agregar controles de navegación
       map.current.addControl(
         new mapboxgl.NavigationControl({
           visualizePitch: true,
@@ -88,7 +72,7 @@ export const OperacionesMapView = () => {
         'top-right'
       );
 
-      // Configure atmospheric effects
+      // Configurar efectos atmosféricos
       map.current.on('style.load', () => {
         map.current?.setFog({
           color: 'rgb(186, 210, 235)',
@@ -99,11 +83,11 @@ export const OperacionesMapView = () => {
         });
       });
 
-      // Add markers for operations
+      // Agregar marcadores para operaciones
       operaciones.forEach((operacion, index) => {
         if (!mapboxgl) return;
         
-        // Simulated coordinates for different regions of Chile
+        // Coordenadas simuladas para diferentes regiones de Chile
         const coords = [
           [-71.542969, -35.675147], // Santiago
           [-73.24776, -39.81422],   // Temuco
@@ -114,7 +98,7 @@ export const OperacionesMapView = () => {
         
         const coord = coords[index % coords.length];
         
-        // Create popup with information
+        // Crear popup con información
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
           <div class="p-2">
             <h3 class="font-bold text-sm">${operacion.nombre}</h3>
@@ -124,7 +108,7 @@ export const OperacionesMapView = () => {
           </div>
         `);
 
-        // Create marker
+        // Crear marcador
         const marker = new mapboxgl.Marker({
           color: operacion.estado === 'activa' ? '#22c55e' : '#6b7280'
         })
@@ -141,7 +125,7 @@ export const OperacionesMapView = () => {
     return () => {
       map.current?.remove();
     };
-  }, [mapboxLoaded, operaciones, mapInitialized, mapboxToken]);
+  }, [mapboxLoaded, operaciones, mapInitialized]);
 
   if (isLoading) {
     return (
