@@ -81,7 +81,7 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
                 </div>
               </TableCell>
               <TableCell>
-                {sitio.salmoneras?.nombre || 'Sin asignar'}
+                {sitio.salmonera?.nombre || 'Sin asignar'}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">

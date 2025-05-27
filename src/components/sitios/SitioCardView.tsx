@@ -68,7 +68,7 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
                 <div>
                   <CardTitle className="text-lg">{sitio.nombre}</CardTitle>
                   <p className="text-sm text-gray-500">Código: {sitio.codigo}</p>
-                  <p className="text-sm text-gray-600">{sitio.salmoneras?.nombre}</p>
+                  <p className="text-sm text-gray-600">{sitio.salmonera?.nombre || 'Sin asignar'}</p>
                 </div>
                 <Badge className={getEstadoBadge(sitio.estado)}>
                   {sitio.estado}
