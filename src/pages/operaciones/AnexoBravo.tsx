@@ -30,7 +30,6 @@ export default function AnexoBravo() {
           <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
               <FullAnexoBravoForm
-                operacionId=""
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
               />

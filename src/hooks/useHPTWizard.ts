@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -179,14 +178,14 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       title: "Equipo de Protección Personal",
       description: "Selección de EPP requerido",
       fields: ['hpt_epp'],
-      isValid: Object.values(data.hpt_epp).some(v => v === true || (typeof v === 'string' && v.length > 0))
+      isValid: Object.values(data.hpt_epp).some(v => v === true)
     },
     {
       id: 3,
       title: "Estándares de Riesgos Críticos",
       description: "Identificación de ERC aplicables",
       fields: ['hpt_erc'],
-      isValid: Object.values(data.hpt_erc).some(v => v === true || (typeof v === 'string' && v.length > 0))
+      isValid: Object.values(data.hpt_erc).some(v => v === true)
     },
     {
       id: 4,
@@ -293,8 +292,8 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       }
 
       toast({
-        title: "HPT creada",
-        description: "La Hoja de Planificación de Tarea ha sido creada como borrador. Ahora puede proceder a firmarla.",
+        title: "HPT enviada",
+        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
       });
 
       return finalHptId;

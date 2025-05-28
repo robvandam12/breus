@@ -40,8 +40,8 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     setShowHPTWizard(false);
   };
 
-  const handleAnexoComplete = async (data: any) => {
-    await createAnexoBravo(data);
+  const handleAnexoComplete = (data: any) => {
+    createAnexoBravo(data);
     setShowAnexoBravoForm(false);
   };
 

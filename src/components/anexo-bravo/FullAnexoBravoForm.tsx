@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,17 +9,13 @@ import { AnexoBravoStep3 } from './steps/AnexoBravoStep3';
 import { AnexoBravoStep4 } from './steps/AnexoBravoStep4';
 import { AnexoBravoStep5 } from './steps/AnexoBravoStep5';
 import { AnexoBravoOperationSelector } from './AnexoBravoOperationSelector';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save, Upload } from 'lucide-react';
+import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { toast } from '@/hooks/use-toast';
-import { useDropzone } from 'react-dropzone';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface FullAnexoBravoFormProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
   operacionId?: string;
   anexoId?: string;
@@ -37,8 +32,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !anexoId);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [operacionData, setOperacionData] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     // Datos generales
@@ -52,12 +45,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     buzo_matricula: '',
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
-    asistente_buzo_id: '',
     autorizacion_armada: false,
-    autorizacion_documento_url: '',
-    
-    // Centro de trabajo - del sitio de operación
-    centro_trabajo_nombre: '',
     
     // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],
@@ -93,45 +81,13 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     setShowOperacionSelector(false);
   };
 
-  // File upload handler for autorización de autoridad marítima
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg']
-    },
-    maxSize: 10 * 1024 * 1024, // 10MB
-    onDrop: async (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        const file = acceptedFiles[0];
-        try {
-          // Here you would upload to Supabase Storage
-          // For now, we'll just store the file name
-          updateFormData({
-            autorizacion_documento_url: file.name
-          });
-          
-          toast({
-            title: "Archivo subido",
-            description: `Se ha subido ${file.name} correctamente.`,
-          });
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "No se pudo subir el archivo.",
-            variant: "destructive",
-          });
-        }
-      }
-    }
-  });
-
   // Poblar datos automáticamente cuando se monta el componente
   useEffect(() => {
     const populateOperacionData = async () => {
       if (!currentOperacionId || anexoId) return; // No poblar si es edición
 
       try {
-        // Obtener datos de la operación con relaciones
+        // Obtener datos de la operación
         const { data: operacion, error: opError } = await supabase
           .from('operacion')
           .select(`
@@ -145,37 +101,26 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
         if (opError) throw opError;
 
-        setOperacionData(operacion);
-
-        // Obtener equipo de buceo asignado con miembros
-        let equipoAsignado = null;
-        let miembrosEquipo = [];
-        
-        if (operacion.equipo_buceo_id) {
-          equipoAsignado = equipos.find(eq => eq.id === operacion.equipo_buceo_id);
-          
-          if (equipoAsignado?.miembros) {
-            miembrosEquipo = equipoAsignado.miembros;
-            setTeamMembers(miembrosEquipo);
-          }
-        }
+        // Obtener equipo de buceo asignado
+        const equipoAsignado = operacion.equipo_buceo_id 
+          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
+          : null;
 
         // Crear objeto con todas las propiedades necesarias
         const autoDataUpdates: Partial<typeof formData> = {
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
           lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
-          centro_trabajo_nombre: operacion.sitios?.nombre || '',
           empresa_nombre: operacion.contratistas?.nombre || '',
           bitacora_fecha: new Date().toISOString().split('T')[0],
           bitacora_relator: ''
         };
 
         // Si hay equipo asignado, poblar datos del personal
-        if (miembrosEquipo.length > 0) {
-          const supervisor = miembrosEquipo.find(m => m.rol === 'supervisor');
-          const buzoPrincipal = miembrosEquipo.find(m => m.rol === 'buzo_principal');
-          const buzoAsistente = miembrosEquipo.find(m => m.rol === 'buzo_asistente');
+        if (equipoAsignado?.miembros) {
+          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
+          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
+          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
           
           if (supervisor) {
             autoDataUpdates.supervisor_servicio_nombre = supervisor.nombre_completo;
@@ -190,14 +135,13 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           if (buzoAsistente) {
             autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
             autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
-            autoDataUpdates.asistente_buzo_id = buzoAsistente.usuario_id || '';
           }
 
-          // Poblar trabajadores automáticamente desde el equipo de buceo
-          const trabajadores = miembrosEquipo.map((miembro, index) => ({
+          // Poblar trabajadores automáticamente
+          const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
             id: `auto-${index}`,
             nombre: miembro.nombre_completo,
-            rut: miembro.rut || '',
+            rut: '',
             cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
                    miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
             empresa: operacion.contratistas?.nombre || ''
@@ -264,21 +208,21 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       const submitData = {
         ...formData,
         operacion_id: currentOperacionId,
-        firmado: false, // Primero se crea, luego se firma
-        estado: 'borrador'
+        firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
+        estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
 
       await onSubmit(submitData);
       
       toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado como borrador. Ahora puede proceder a firmarlo.",
+        title: "Anexo Bravo enviado",
+        description: "El Anexo Bravo ha sido enviado exitosamente",
       });
     } catch (error) {
       console.error('Error submitting Anexo Bravo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el Anexo Bravo",
+        description: "No se pudo enviar el Anexo Bravo",
         variant: "destructive",
       });
     } finally {
@@ -297,134 +241,9 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <div className="space-y-6">
-            <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />
-            
-            {/* Autorización de Autoridad Marítima con Upload */}
-            <Card className="ios-card">
-              <CardHeader>
-                <CardTitle>Autorización de Autoridad Marítima</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="autorizacion_armada"
-                    checked={formData.autorizacion_armada}
-                    onChange={(e) => updateFormData({ autorizacion_armada: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="autorizacion_armada">
-                    Autorización de la Autoridad Marítima (adjuntar copia)
-                  </Label>
-                </div>
-                
-                {formData.autorizacion_armada && (
-                  <div className="space-y-4">
-                    <div
-                      {...getRootProps()}
-                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                        isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <input {...getInputProps()} />
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                      {isDragActive ? (
-                        <p className="text-blue-600">Suelta el archivo aquí...</p>
-                      ) : (
-                        <div>
-                          <p className="text-gray-600">
-                            Arrastra y suelta el archivo aquí, o{' '}
-                            <span className="text-blue-600 underline">selecciona un archivo</span>
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            PDF, PNG, JPG hasta 10MB
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {formData.autorizacion_documento_url && (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm text-green-800">
-                          📄 Archivo subido: {formData.autorizacion_documento_url}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return (
-          <div className="space-y-6">
-            <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />
-            
-            {/* Selección de Asistente de Buzo */}
-            {teamMembers.length > 0 && (
-              <Card className="ios-card">
-                <CardHeader>
-                  <CardTitle>Asistente de Buzo</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="asistente_buzo_select">Seleccionar Asistente de Buzo del Equipo</Label>
-                    <Select
-                      value={formData.asistente_buzo_id}
-                      onValueChange={(value) => {
-                        const selectedMember = teamMembers.find(m => m.usuario_id === value);
-                        if (selectedMember) {
-                          updateFormData({
-                            asistente_buzo_id: value,
-                            asistente_buzo_nombre: selectedMember.nombre_completo,
-                            asistente_buzo_matricula: selectedMember.matricula || ''
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar asistente..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teamMembers
-                          .filter(m => m.rol === 'buzo_asistente' || m.rol === 'buzo_principal')
-                          .map((member) => (
-                          <SelectItem key={member.usuario_id} value={member.usuario_id}>
-                            {member.nombre_completo} - {member.rol}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="asistente_buzo_nombre">Nombre del Asistente</Label>
-                      <Input
-                        id="asistente_buzo_nombre"
-                        value={formData.asistente_buzo_nombre}
-                        onChange={(e) => updateFormData({ asistente_buzo_nombre: e.target.value })}
-                        placeholder="Nombre completo"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="asistente_buzo_matricula">Matrícula</Label>
-                      <Input
-                        id="asistente_buzo_matricula"
-                        value={formData.asistente_buzo_matricula}
-                        onChange={(e) => updateFormData({ asistente_buzo_matricula: e.target.value })}
-                        placeholder="Número de matrícula"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        );
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
         return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
@@ -554,7 +373,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                   disabled={!isFormValid() || isLoading}
                   className="ios-button bg-green-600 hover:bg-green-700"
                 >
-                  {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
+                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
                 </Button>
               )}
             </div>
