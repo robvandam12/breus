@@ -38,13 +38,13 @@ export interface ValidationStatus {
   anexoBravoCode?: string;
 }
 
-export const useInmersiones = () => {
+export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();
 
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['inmersiones'],
+    queryKey: ['inmersiones', operacionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('inmersion')
         .select(`
           *,
@@ -53,6 +53,13 @@ export const useInmersiones = () => {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // Si se especifica operacionId, filtrar por él
+      if (operacionId) {
+        query = query.eq('operacion_id', operacionId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -212,6 +219,7 @@ export const useInmersiones = () => {
         .select('codigo, firmado')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
+        .eq('estado', 'firmado')
         .single();
 
       // Verificar Anexo Bravo
@@ -220,6 +228,7 @@ export const useInmersiones = () => {
         .select('codigo, firmado')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
+        .eq('estado', 'firmado')
         .single();
 
       const hasValidHPT = !!hptData;

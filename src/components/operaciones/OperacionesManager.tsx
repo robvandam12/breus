@@ -1,264 +1,203 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Search, Eye, Edit, Trash2, Plus, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, MapPin, Users, Search, Filter, Eye, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { EditOperacionForm } from "./EditOperacionForm";
-import OperacionDetail from "./OperacionDetail";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useContratistas } from "@/hooks/useContratistas";
+import { useSitios } from "@/hooks/useSitios";
+import { OperacionDetailModal } from "./OperacionDetailModal";
 
 export const OperacionesManager = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingOperacion, setEditingOperacion] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  const { operaciones, isLoading } = useOperaciones();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
+  const { sitios } = useSitios();
 
-  const { operaciones, isLoading, updateOperacion, deleteOperacion } = useOperaciones();
-
-  const filteredOperaciones = operaciones.filter(op =>
-    op.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    op.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleViewDetail = (operacion: any) => {
-    setSelectedOperacion(operacion);
-    setShowDetail(true);
-  };
-
-  const handleEdit = (operacion: any) => {
-    setEditingOperacion(operacion);
-    setShowEditForm(true);
-  };
-
-  const handleEditSubmit = async (data: any) => {
-    if (!editingOperacion) return;
-    
-    try {
-      await updateOperacion({ id: editingOperacion.id, data });
-      setShowEditForm(false);
-      setEditingOperacion(null);
-    } catch (error) {
-      console.error('Error updating operation:', error);
-    }
-  };
-
-  const handleDelete = async (operacionId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta operación?')) {
-      try {
-        await deleteOperacion(operacionId);
-      } catch (error) {
-        console.error('Error deleting operation:', error);
-      }
-    }
-  };
+  const filteredOperaciones = operaciones.filter(operacion => {
+    const matchesSearch = operacion.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         operacion.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || operacion.estado === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const getEstadoBadgeColor = (estado: string) => {
-    const colors: Record<string, string> = {
-      activa: 'bg-green-100 text-green-700',
-      pausada: 'bg-yellow-100 text-yellow-700',
-      completada: 'bg-blue-100 text-blue-700',
-      cancelada: 'bg-red-100 text-red-700',
-    };
-    return colors[estado] || 'bg-gray-100 text-gray-700';
+    switch (estado) {
+      case 'activa':
+        return 'bg-green-100 text-green-800';
+      case 'planificada':
+        return 'bg-blue-100 text-blue-800';
+      case 'completada':
+        return 'bg-gray-100 text-gray-800';
+      case 'cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSalmoneraName = (id: string) => {
+    return salmoneras.find(s => s.id === id)?.nombre || 'Sin asignar';
+  };
+
+  const getContratistaName = (id: string) => {
+    return contratistas.find(c => c.id === id)?.nombre || 'Sin asignar';
+  };
+
+  const getSitioName = (id: string) => {
+    return sitios.find(s => s.id === id)?.nombre || 'Sin asignar';
+  };
+
+  const handleViewDetails = (operacion: any) => {
+    setSelectedOperacion(operacion);
+    setModalOpen(true);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-gray-500">Cargando operaciones...</p>
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">Cargando operaciones...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
-      <Card className="ios-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              Gestión de Operaciones
-            </CardTitle>
-            <div className="flex items-center gap-3">
+      {/* Filtros */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Buscar operaciones..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64 ios-input"
+                  className="pl-10"
                 />
               </div>
             </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="planificada">Planificada</SelectItem>
+                <SelectItem value="activa">Activa</SelectItem>
+                <SelectItem value="completada">Completada</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {operaciones.length}
-            </div>
-            <div className="text-sm text-zinc-500">Total Operaciones</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {operaciones.filter(op => op.estado === 'activa').length}
-            </div>
-            <div className="text-sm text-zinc-500">Activas</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {operaciones.filter(op => op.estado === 'pausada').length}
-            </div>
-            <div className="text-sm text-zinc-500">Pausadas</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {operaciones.filter(op => op.estado === 'completada').length}
-            </div>
-            <div className="text-sm text-zinc-500">Completadas</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Operations Table */}
+      {/* Lista de Operaciones */}
       {filteredOperaciones.length === 0 ? (
-        <Card className="ios-card text-center py-12">
-          <CardContent>
-            <Calendar className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">
-              {operaciones.length === 0 ? "No hay operaciones registradas" : "No se encontraron operaciones"}
-            </h3>
-            <p className="text-zinc-500">
-              {operaciones.length === 0 
-                ? "Comience creando la primera operación"
-                : "Intenta ajustar la búsqueda"}
+        <Card>
+          <CardContent className="text-center py-12">
+            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No hay operaciones</h3>
+            <p className="text-gray-600 mb-6">
+              {searchTerm || statusFilter !== 'all' 
+                ? 'No se encontraron operaciones con los filtros aplicados.'
+                : 'Comience creando su primera operación de buceo.'
+              }
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="ios-card">
-          <div className="ios-table-container">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Salmonera</TableHead>
-                  <TableHead>Sitio</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha Inicio</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOperaciones.map((operacion) => (
-                  <TableRow key={operacion.id}>
-                    <TableCell>
-                      <div className="font-medium">{operacion.codigo}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{operacion.nombre}</div>
-                      {operacion.tareas && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {operacion.tareas}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {operacion.salmoneras?.nombre || 'No asignada'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {operacion.sitios?.nombre || 'No asignado'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getEstadoBadgeColor(operacion.estado)}>
-                        {operacion.estado}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetail(operacion)}
-                          className="ios-button-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(operacion)}
-                          className="ios-button-sm"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(operacion.id)}
-                          className="ios-button-sm text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredOperaciones.map((operacion) => (
+            <Card key={operacion.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{operacion.nombre}</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetails(operacion)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver Detalles
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={getEstadoBadgeColor(operacion.estado)}>
+                    {operacion.estado}
+                  </Badge>
+                  <span className="text-sm text-gray-500">{operacion.codigo}</span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {new Date(operacion.fecha_inicio).toLocaleDateString()} - 
+                    {operacion.fecha_fin ? new Date(operacion.fecha_fin).toLocaleDateString() : 'En curso'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  <span>{getSitioName(operacion.sitio_id)}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Users className="w-4 h-4" />
+                  <span>{getSalmoneraName(operacion.salmonera_id)} / {getContratistaName(operacion.contratista_id)}</span>
+                </div>
+                
+                {operacion.tareas && (
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {operacion.tareas}
+                  </p>
+                )}
+                
+                <div className="pt-3 border-t border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleViewDetails(operacion)}
+                    className="w-full"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver Detalles
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
-      {/* Detail Dialog */}
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          {selectedOperacion && (
-            <OperacionDetail operacion={selectedOperacion} />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Form Dialog */}
-      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-        <DialogContent className="max-w-2xl">
-          {editingOperacion && (
-            <EditOperacionForm
-              operacion={editingOperacion}
-              onSubmit={handleEditSubmit}
-              onCancel={() => {
-                setShowEditForm(false);
-                setEditingOperacion(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal de Detalles */}
+      {selectedOperacion && (
+        <OperacionDetailModal
+          operacion={selectedOperacion}
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+        />
+      )}
     </div>
   );
 };
