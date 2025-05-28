@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, CheckCircle, AlertCircle, Clock, Plus, Building, MapPin } from "lucide-react";
 import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
-import { EnhancedAnexoBravoForm } from "@/components/anexo-bravo/EnhancedAnexoBravoForm";
+import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { useHPT } from "@/hooks/useHPT";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 
@@ -162,10 +162,11 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   <Plus className="w-4 h-4" />
                   Nuevo Anexo Bravo
                 </Button>
-                <DialogContent className="max-w-4xl">
-                  <EnhancedAnexoBravoForm
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                  <FullAnexoBravoForm
                     onSubmit={handleCreateAnexoBravo}
                     onCancel={() => setIsAnexoDialogOpen(false)}
+                    operacionId={operacionId}
                   />
                 </DialogContent>
               </Dialog>

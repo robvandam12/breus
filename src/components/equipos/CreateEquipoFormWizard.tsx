@@ -11,7 +11,7 @@ import { Users, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useUsuarios } from "@/hooks/useUsuarios";
+import { UserSearchSelectEnhanced } from "@/components/usuarios/UserSearchSelectEnhanced";
 
 interface CreateEquipoFormWizardProps {
   onSubmit: (equipoData: any) => Promise<void>;
@@ -22,7 +22,6 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
   const { profile } = useAuth();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
-  const { usuarios } = useUsuarios();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +37,8 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
     usuario_id: string;
     rol_equipo: string;
     nombre_completo: string;
+    email?: string;
+    invitado?: boolean;
   }>>([]);
 
   // Auto-detectar empresa del usuario admin
@@ -60,21 +61,31 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
   }, [profile]);
 
   const isUserAdmin = profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio';
-  const availableUsers = usuarios.filter(u => u.rol === 'supervisor' || u.rol === 'buzo');
 
   const handleStep1Submit = () => {
     if (!equipoData.nombre || (!isUserAdmin && !equipoData.empresa_id)) return;
     setCurrentStep(2);
   };
 
-  const handleAddMember = (usuarioId: string, rol: string) => {
-    const usuario = usuarios.find(u => u.usuario_id === usuarioId);
-    if (!usuario) return;
-
+  const handleUserSelect = (user: any, role: string) => {
     const member = {
-      usuario_id: usuarioId,
-      rol_equipo: rol,
-      nombre_completo: `${usuario.nombre} ${usuario.apellido}`
+      usuario_id: user.usuario_id,
+      rol_equipo: role,
+      nombre_completo: `${user.nombre} ${user.apellido}`,
+      email: user.email,
+      invitado: false
+    };
+
+    setSelectedMembers(prev => [...prev, member]);
+  };
+
+  const handleUserInvite = (userData: any) => {
+    const member = {
+      usuario_id: crypto.randomUUID(),
+      rol_equipo: userData.rol,
+      nombre_completo: `${userData.nombre} ${userData.apellido}`,
+      email: userData.email,
+      invitado: true
     };
 
     setSelectedMembers(prev => [...prev, member]);
@@ -241,31 +252,15 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             {/* Add Member Form */}
             <div className="border rounded-lg p-4">
               <h4 className="font-medium mb-3">Agregar Nuevo Miembro</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Select onValueChange={(value) => {
-                  const [usuarioId, rol] = value.split('|');
-                  handleAddMember(usuarioId, rol);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar usuario y rol..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableUsers.map(usuario => (
-                      <optgroup key={usuario.usuario_id} label={`${usuario.nombre} ${usuario.apellido}`}>
-                        <SelectItem value={`${usuario.usuario_id}|supervisor`}>
-                          Como Supervisor
-                        </SelectItem>
-                        <SelectItem value={`${usuario.usuario_id}|buzo_principal`}>
-                          Como Buzo Principal
-                        </SelectItem>
-                        <SelectItem value={`${usuario.usuario_id}|buzo_asistente`}>
-                          Como Buzo Asistente
-                        </SelectItem>
-                      </optgroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <UserSearchSelectEnhanced
+                onUserSelect={handleUserSelect}
+                onUserInvite={handleUserInvite}
+                companyType={equipoData.tipo_empresa as 'salmonera' | 'contratista'}
+                companyId={equipoData.empresa_id}
+                allowedRoles={['supervisor', 'buzo_principal', 'buzo_asistente']}
+                placeholder="Buscar usuario para agregar al equipo..."
+                showRoleSelection={true}
+              />
             </div>
 
             {/* Selected Members */}
@@ -279,6 +274,11 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
                       <Badge variant="outline" className="ml-2">
                         {member.rol_equipo.replace('_', ' ')}
                       </Badge>
+                      {member.invitado && (
+                        <Badge variant="secondary" className="ml-2">
+                          Invitado
+                        </Badge>
+                      )}
                     </div>
                     <Button 
                       variant="outline" 

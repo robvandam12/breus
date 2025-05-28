@@ -132,6 +132,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
+        title: "Usuarios",
+        icon: Users,
+        url: "/usuarios"
+      },
+      {
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
@@ -185,6 +190,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Equipo de Buceo",
         icon: Users,
         url: "/equipo-de-buceo"
+      },
+      {
+        title: "Usuarios",
+        icon: Users,
+        url: "/usuarios"
       },
       {
         title: "Mi Empresa",
@@ -249,6 +259,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
+        title: "Usuarios",
+        icon: Users,
+        url: "/usuarios"
+      },
+      {
         title: "Mi Empresa",
         icon: Building,
         items: [
@@ -310,6 +325,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Equipo de Buceo",
         icon: Users,
         url: "/equipo-de-buceo"
+      },
+      {
+        title: "Usuarios",
+        icon: Users,
+        url: "/usuarios"
       },
       {
         title: "Empresas",
@@ -468,7 +488,7 @@ export function RoleBasedSidebar() {
             <SidebarMenu>
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.items ? (
+                  {item.items && item.items.length > 0 ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton className="w-full">
