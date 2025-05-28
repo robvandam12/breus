@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, CheckCircle, Edit, Eye } from "lucide-react";
+import { Plus, Search, Shield, CheckCircle } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
@@ -220,12 +220,10 @@ const AnexoBravoPage = () => {
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
                                   <Button variant="outline" size="sm" className="ios-button-sm">
-                                    <Eye className="w-3 h-3 mr-1" />
                                     Ver
                                   </Button>
                                   {!anexo.firmado && (
                                     <Button variant="outline" size="sm" className="ios-button-sm">
-                                      <Edit className="w-3 h-3 mr-1" />
                                       Editar
                                     </Button>
                                   )}

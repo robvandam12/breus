@@ -15,7 +15,7 @@ import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { toast } from '@/hooks/use-toast';
 
 interface FullAnexoBravoFormProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
   operacionId?: string;
   anexoId?: string;
@@ -45,9 +45,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     buzo_matricula: '',
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
-    asistente_buzo_id: '',
     autorizacion_armada: false,
-    autorizacion_armada_documento: null,
     
     // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],
@@ -67,11 +65,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     },
     
     observaciones_generales: '',
-    jefe_centro_nombre: '',
-    
-    // Estado
-    estado: 'borrador',
-    firmado: false
+    jefe_centro_nombre: ''
   });
 
   const steps = [
@@ -141,8 +135,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           if (buzoAsistente) {
             autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
             autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
-            // Use equipo_buceo_miembros id instead of usuario_id
-            autoDataUpdates.asistente_buzo_id = buzoAsistente.id;
           }
 
           // Poblar trabajadores automáticamente
@@ -216,21 +208,21 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       const submitData = {
         ...formData,
         operacion_id: currentOperacionId,
-        firmado: false,
-        estado: 'borrador'
+        firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
+        estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
 
       await onSubmit(submitData);
       
       toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado como borrador. Puede firmarlo cuando esté listo.",
+        title: "Anexo Bravo enviado",
+        description: "El Anexo Bravo ha sido enviado exitosamente",
       });
     } catch (error) {
       console.error('Error submitting Anexo Bravo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el Anexo Bravo",
+        description: "No se pudo enviar el Anexo Bravo",
         variant: "destructive",
       });
     } finally {
@@ -239,7 +231,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   };
 
   const isFormValid = () => {
-    return steps.slice(0, 4).every(step => step.isValid); // Solo validar hasta paso 4, firmas es opcional
+    return steps.every(step => step.isValid);
   };
 
   const getProgress = () => {
@@ -251,7 +243,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       case 1:
         return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} equipoData={equipos.find(eq => eq.id === currentOperacionId)} />;
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
         return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
@@ -381,14 +373,34 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                   disabled={!isFormValid() || isLoading}
                   className="ios-button bg-green-600 hover:bg-green-700"
                 >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
+                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
                 </Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Operation Selector Dialog */}
+      {showOperacionSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AnexoBravoOperationSelector 
+              onOperacionSelected={handleOperacionSelected}
+              selectedOperacionId={currentOperacionId}
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowOperacionSelector(false)}
+                className="ios-button"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

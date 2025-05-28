@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -186,8 +185,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       title: "Estándares de Riesgos Críticos",
       description: "Identificación de ERC aplicables",
       fields: ['hpt_erc'],
-      isValid: Object.entries(data.hpt_erc).some(([key, value]) => key !== 'otros' && value === true) || 
-               (data.hpt_erc.otros && data.hpt_erc.otros.trim().length > 0)
+      isValid: Object.values(data.hpt_erc).some(v => v === true)
     },
     {
       id: 4,
@@ -209,7 +207,9 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],
       isValid: !!(data.hpt_conocimiento.relator_nombre && 
-                  data.hpt_conocimiento_asistentes.length > 0)
+                  data.hpt_conocimiento_asistentes.length > 0 &&
+                  data.hpt_firmas.supervisor_servicio_url &&
+                  data.hpt_firmas.supervisor_mandante_url)
     }
   ];
 
@@ -271,22 +271,29 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       
       const hptData: HPTFormData = {
         ...data,
-        codigo,
-        firmado: false
+        codigo
       };
 
       let finalHptId = hptId;
       
       if (!finalHptId) {
         const result = await createHPT(hptData);
-        finalHptId = result?.id;
+        // finalHptId = result.id; // Assuming createHPT returns the created HPT
       } else {
         await updateHPT({ id: finalHptId, data: hptData });
       }
 
+      // Firmar HPT si ambas firmas están presentes
+      if (finalHptId && data.hpt_firmas.supervisor_servicio_url && data.hpt_firmas.supervisor_mandante_url) {
+        await signHPT({ 
+          id: finalHptId, 
+          signatures: data.hpt_firmas 
+        });
+      }
+
       toast({
-        title: "HPT creada",
-        description: "La Hoja de Planificación de Tarea ha sido creada como borrador",
+        title: "HPT enviada",
+        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
       });
 
       return finalHptId;
@@ -294,7 +301,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       console.error('Error submitting HPT:', error);
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT]);
+  }, [data, hptId, createHPT, updateHPT, signHPT]);
 
   const isFormComplete = useCallback(() => {
     return steps.every(step => step.isValid);
