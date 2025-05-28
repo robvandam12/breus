@@ -1,12 +1,18 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileText, Clock, MapPin } from 'lucide-react';
+import { FileText, Clock, MapPin, Building } from 'lucide-react';
 import { HPTWizardData } from '@/hooks/useHPTWizard';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { useEquipoBuceo } from '@/hooks/useEquipoBuceo';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+import { useSitios } from '@/hooks/useSitios';
+import { useContratistas } from '@/hooks/useContratistas';
 
 interface HPTWizardStep1Props {
   data: HPTWizardData;
@@ -14,6 +20,34 @@ interface HPTWizardStep1Props {
 }
 
 export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData }) => {
+  const { operaciones } = useOperaciones();
+  const { equipos } = useEquipoBuceo();
+  const { salmoneras } = useSalmoneras();
+  const { sitios } = useSitios();
+  const { contratistas } = useContratistas();
+
+  // Auto-populate fields when operacion_id changes
+  useEffect(() => {
+    if (data.operacion_id) {
+      const operacion = operaciones.find(op => op.id === data.operacion_id);
+      if (operacion) {
+        const salmonera = salmoneras.find(s => s.id === operacion.salmonera_id);
+        const sitio = sitios.find(s => s.id === operacion.sitio_id);
+        const contratista = contratistas.find(c => c.id === operacion.contratista_id);
+        const equipoAsignado = equipos.find(e => e.id === operacion.equipo_buceo_id);
+        const supervisor = equipoAsignado?.miembros?.find(m => m.rol_equipo === 'supervisor');
+
+        updateData({
+          empresa_servicio_nombre: contratista?.nombre || '',
+          centro_trabajo_nombre: sitio?.nombre || '',
+          supervisor_nombre: supervisor?.nombre_completo || ''
+        });
+      }
+    }
+  }, [data.operacion_id, operaciones, salmoneras, sitios, contratistas, equipos, updateData]);
+
+  const selectedOperacion = operaciones.find(op => op.id === data.operacion_id);
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -22,6 +56,42 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
           Información básica y detalles de la operación de buceo
         </p>
       </div>
+
+      {/* Operación Seleccionada */}
+      {selectedOperacion && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Building className="w-5 h-5" />
+              Operación Asignada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-blue-700">Código</p>
+                <p className="text-blue-900">{selectedOperacion.codigo}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-700">Nombre</p>
+                <p className="text-blue-900">{selectedOperacion.nombre}</p>
+              </div>
+              {selectedOperacion.salmoneras && (
+                <div>
+                  <p className="text-sm font-medium text-blue-700">Salmonera</p>
+                  <p className="text-blue-900">{selectedOperacion.salmoneras.nombre}</p>
+                </div>
+              )}
+              {selectedOperacion.sitios && (
+                <div>
+                  <p className="text-sm font-medium text-blue-700">Sitio</p>
+                  <p className="text-blue-900">{selectedOperacion.sitios.nombre}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Información Básica */}
       <Card>
@@ -93,6 +163,8 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
                 value={data.empresa_servicio_nombre}
                 onChange={(e) => updateData({ empresa_servicio_nombre: e.target.value })}
                 placeholder="Nombre de la empresa de buceo"
+                className="bg-green-50"
+                readOnly
               />
             </div>
 
@@ -103,6 +175,20 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
                 value={data.centro_trabajo_nombre}
                 onChange={(e) => updateData({ centro_trabajo_nombre: e.target.value })}
                 placeholder="Nombre del centro"
+                className="bg-green-50"
+                readOnly
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="supervisor_nombre">Supervisor</Label>
+              <Input
+                id="supervisor_nombre"
+                value={data.supervisor_nombre}
+                onChange={(e) => updateData({ supervisor_nombre: e.target.value })}
+                placeholder="Nombre del supervisor"
+                className="bg-green-50"
+                readOnly
               />
             </div>
 
@@ -117,9 +203,9 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
             </div>
           </div>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-800">
-              <strong>Nota:</strong> El supervisor se seleccionará en el siguiente paso según la operación asignada.
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-sm text-green-800">
+              <strong>Nota:</strong> Los campos de empresa de servicio, centro de trabajo y supervisor se poblan automáticamente desde la operación y equipo asignado.
             </p>
           </div>
         </CardContent>

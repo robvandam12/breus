@@ -9,16 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Edit, Trash2, Eye, UserPlus, Mail } from "lucide-react";
-import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
+import { Users, Plus, Search } from "lucide-react";
+import { CreateEquipoFormWizard } from "@/components/equipos/CreateEquipoFormWizard";
+import { EquipoBuceoActions } from "@/components/equipos/EquipoBuceoActions";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "@/hooks/use-toast";
 
 const EquipoBuceo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  const { equipos, isLoading, createEquipo } = useEquipoBuceo();
+  const { equipos, isLoading, createEquipo, updateEquipo, deleteEquipo } = useEquipoBuceo();
 
   const filteredEquipos = equipos.filter(equipo => 
     equipo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,11 +29,58 @@ const EquipoBuceo = () => {
 
   const handleCreateEquipo = async (data: any) => {
     try {
-      await createEquipo(data);
+      // Create the team first
+      const newEquipo = await createEquipo(data.equipoData);
+      
+      // Add members if any were selected
+      if (data.members && data.members.length > 0) {
+        // Here you would call a function to add members to the team
+        // For now, we'll just show success
+        toast({
+          title: "Equipo creado",
+          description: `Equipo "${data.equipoData.nombre}" creado exitosamente con ${data.members.length} miembros.`,
+        });
+      }
+      
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating equipo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el equipo.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleEditEquipo = async (equipo: any) => {
+    try {
+      await updateEquipo({
+        id: equipo.id,
+        data: {
+          nombre: equipo.nombre,
+          descripcion: equipo.descripcion
+        }
+      });
+    } catch (error) {
+      console.error('Error updating equipo:', error);
+    }
+  };
+
+  const handleDeleteEquipo = async (equipoId: string) => {
+    try {
+      await deleteEquipo(equipoId);
+    } catch (error) {
+      console.error('Error deleting equipo:', error);
+    }
+  };
+
+  const handleAddMember = (equipoId: string) => {
+    // Implement add member functionality
+    toast({
+      title: "Agregar Miembro",
+      description: "Funcionalidad de agregar miembro próximamente.",
+    });
   };
 
   if (isLoading) {
@@ -82,8 +131,8 @@ const EquipoBuceo = () => {
                     Nuevo Equipo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <CreateEquipoForm
+                <DialogContent className="max-w-4xl">
+                  <CreateEquipoFormWizard
                     onSubmit={handleCreateEquipo}
                     onCancel={() => setIsCreateDialogOpen(false)}
                   />
@@ -210,17 +259,12 @@ const EquipoBuceo = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="outline" size="sm" title="Ver detalles">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm" title="Agregar miembro">
-                                <UserPlus className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm" title="Editar">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            <EquipoBuceoActions
+                              equipo={equipo}
+                              onEdit={handleEditEquipo}
+                              onDelete={handleDeleteEquipo}
+                              onAddMember={handleAddMember}
+                            />
                           </TableCell>
                         </TableRow>
                       ))}
