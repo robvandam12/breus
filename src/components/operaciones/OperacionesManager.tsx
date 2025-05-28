@@ -11,14 +11,12 @@ import { OperacionCard } from "./OperacionCard";
 import { OperacionDetails } from "./OperacionDetails";
 import { OperacionesMapView } from "./OperacionesMapView";
 import { OperacionesCalendarView } from "./OperacionesCalendarView";
-import { EditOperacionForm } from "./EditOperacionForm";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { Calendar, Eye, MapPin, CalendarDays, Edit, Trash2, Table as TableIcon, Grid } from "lucide-react";
 
 export const OperacionesManager = () => {
-  const { operaciones, isLoading, updateOperacion } = useOperaciones();
+  const { operaciones, isLoading } = useOperaciones();
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
-  const [editingOperacion, setEditingOperacion] = useState<any>(null);
   const [activeView, setActiveView] = useState('lista');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,17 +25,6 @@ export const OperacionesManager = () => {
     operacion.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     operacion.codigo.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleEditOperacion = async (data: any) => {
-    if (!editingOperacion) return;
-    
-    try {
-      await updateOperacion({ id: editingOperacion.id, data });
-      setEditingOperacion(null);
-    } catch (error) {
-      console.error('Error updating operacion:', error);
-    }
-  };
 
   const getEstadoBadge = (estado: string) => {
     const colors = {
@@ -156,7 +143,7 @@ export const OperacionesManager = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => setEditingOperacion(operacion)}
+                                  onClick={() => {}}
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
@@ -175,10 +162,10 @@ export const OperacionesManager = () => {
                       <div key={operacion.id} className="relative">
                         <OperacionCard 
                           operacion={operacion}
-                          onEdit={() => setEditingOperacion(operacion)}
+                          onEdit={() => {}}
                           onDelete={() => {}}
                         />
-                        <div className="absolute top-2 right-2 flex gap-1">
+                        <div className="absolute top-2 right-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -187,14 +174,6 @@ export const OperacionesManager = () => {
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             Ver
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingOperacion(operacion)}
-                            className="bg-white/90 backdrop-blur-sm"
-                          >
-                            <Edit className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -228,19 +207,6 @@ export const OperacionesManager = () => {
             <OperacionDetails
               operacionId={selectedOperacion}
               onClose={() => setSelectedOperacion(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para editar operación */}
-      <Dialog open={!!editingOperacion} onOpenChange={() => setEditingOperacion(null)}>
-        <DialogContent className="max-w-2xl">
-          {editingOperacion && (
-            <EditOperacionForm
-              operacion={editingOperacion}
-              onSubmit={handleEditOperacion}
-              onCancel={() => setEditingOperacion(null)}
             />
           )}
         </DialogContent>

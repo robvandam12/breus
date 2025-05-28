@@ -1,11 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useHPTWizard } from '@/hooks/useHPTWizard';
-import { HPTOperationSelector } from './HPTOperationSelector';
 import { HPTWizardStep1 } from './HPTWizardStep1';
 import { HPTWizardStep2 } from './HPTWizardStep2';
 import { HPTWizardStep3 } from './HPTWizardStep3';
@@ -17,23 +16,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
 interface HPTWizardCompleteProps {
-  operacionId?: string;
+  operacionId: string;
   hptId?: string;
   onComplete?: (hptId: string) => void;
   onCancel?: () => void;
 }
 
 export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
-  operacionId: initialOperacionId,
+  operacionId,
   hptId,
   onComplete,
   onCancel
 }) => {
   const { permissions } = useAuthRoles();
   const { equipos } = useEquiposBuceoEnhanced();
-  const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
-  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
-
   const {
     currentStep,
     data,
@@ -49,12 +45,12 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     isLoading,
     autoSaveEnabled,
     setAutoSaveEnabled
-  } = useHPTWizard(currentOperacionId, hptId);
+  } = useHPTWizard(operacionId, hptId);
 
-  // Poblar datos automáticamente cuando se selecciona una operación
+  // Poblar datos automáticamente cuando se monta el componente
   useEffect(() => {
     const populateOperacionData = async () => {
-      if (!currentOperacionId || hptId) return; // No poblar si es edición
+      if (!operacionId || hptId) return; // No poblar si es edición
 
       try {
         // Obtener datos de la operación
@@ -66,7 +62,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
             sitios:sitio_id (nombre, ubicacion),
             contratistas:contratista_id (nombre, rut)
           `)
-          .eq('id', currentOperacionId)
+          .eq('id', operacionId)
           .single();
 
         if (opError) throw opError;
@@ -105,12 +101,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     };
 
     populateOperacionData();
-  }, [currentOperacionId, hptId, equipos, updateData]);
-
-  const handleOperacionSelected = (operacionId: string) => {
-    setCurrentOperacionId(operacionId);
-    setShowOperacionSelector(false);
-  };
+  }, [operacionId, hptId, equipos, updateData]);
 
   const handleSubmit = async () => {
     try {
@@ -159,26 +150,6 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     );
   }
 
-  // Mostrar selector de operación si no hay operación seleccionada
-  if (showOperacionSelector) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <HPTOperationSelector 
-          onOperacionSelected={handleOperacionSelected}
-          selectedOperacionId={currentOperacionId}
-        />
-        
-        {onCancel && (
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header con progreso */}
@@ -203,13 +174,6 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
                 onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
               >
                 Toggle
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowOperacionSelector(true)}
-              >
-                Cambiar Operación
               </Button>
             </div>
           </div>
