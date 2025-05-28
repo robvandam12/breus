@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -153,7 +152,7 @@ export default function Inmersiones() {
             <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <InmersionWizard
-                  operacionId={operacionId || undefined}
+                  operationId={operacionId || undefined}
                   onComplete={handleCreateInmersion}
                   onCancel={handleCancel}
                 />
@@ -281,7 +280,6 @@ export default function Inmersiones() {
             </div>
           </div>
 
-          {/* Modal para crear Bitácora de Buzo */}
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraBuzoFormEnhanced
@@ -291,7 +289,6 @@ export default function Inmersiones() {
             </DialogContent>
           </Dialog>
 
-          {/* Modal para crear Bitácora de Supervisor */}
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraSupervisorForm

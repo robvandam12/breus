@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -168,7 +167,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
             id: `auto-${index}`,
             nombre: miembro.nombre_completo,
-            rut: miembro.rut || '',
+            rut: '', // RUT not available in EquipoBuceoMiembro, leave empty for manual entry
             cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
                    miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
             empresa: operacion.contratistas?.nombre || ''

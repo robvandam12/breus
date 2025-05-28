@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,17 +98,17 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           
           if (supervisor) {
             autoUpdates.supervisor = supervisor.nombre_completo;
-            autoUpdates.supervisor_id = supervisor.usuario_id || '';
+            // supervisor_id not available in EquipoBuceoMiembro, leave empty
           }
           
           if (buzoPrincipal) {
             autoUpdates.buzo_principal = buzoPrincipal.nombre_completo;
-            autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id || '';
+            // buzo_principal_id not available in EquipoBuceoMiembro, leave empty
           }
           
           if (buzoAsistente) {
             autoUpdates.buzo_asistente = buzoAsistente.nombre_completo;
-            autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id || '';
+            // buzo_asistente_id not available in EquipoBuceoMiembro, leave empty
           }
         }
 
