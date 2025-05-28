@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Search, Eye, Edit, Trash2, Plus, Calendar } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { EditOperacionForm } from "./EditOperacionForm";
-import { OperacionDetail } from "./OperacionDetail";
+import OperacionDetail from "./OperacionDetail";
 
 export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState("");

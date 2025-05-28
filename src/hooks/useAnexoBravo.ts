@@ -75,12 +75,18 @@ export const useAnexoBravo = () => {
     mutationFn: async (data: AnexoBravoFormData) => {
       console.log('Creating anexo bravo:', data);
       
+      const currentUser = await supabase.auth.getUser();
+      
+      const insertData = {
+        ...data,
+        user_id: currentUser.data.user?.id,
+        fecha_verificacion: new Date().toISOString().split('T')[0],
+        jefe_centro: data.jefe_centro_nombre || 'No especificado'
+      };
+
       const { data: result, error } = await supabase
         .from('anexo_bravo')
-        .insert([{
-          ...data,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }])
+        .insert([insertData])
         .select()
         .single();
 
