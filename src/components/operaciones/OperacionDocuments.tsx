@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -258,7 +257,7 @@ export const OperacionDocuments = ({ operacionId }: OperacionDocumentsProps) => 
         </Card>
       )}
 
-      {/* Modal para crear Anexo Bravo con wizard completo */}
+      {/* Modal para crear Anexo Bravo - USAR EL WIZARD COMPLETO */}
       <Dialog open={showCreateAnexoBravo} onOpenChange={setShowCreateAnexoBravo}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
@@ -273,11 +272,26 @@ export const OperacionDocuments = ({ operacionId }: OperacionDocumentsProps) => 
         </DialogContent>
       </Dialog>
 
-      {/* Modal para crear HPT */}
+      {/* Modal para crear HPT con información de operación visible */}
       <Dialog open={showCreateHPT} onOpenChange={setShowCreateHPT}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo HPT</DialogTitle>
+            {operacion && (
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Operación:</strong> {operacion.codigo} - {operacion.nombre}
+                </p>
+                <p className="text-sm text-blue-700">
+                  <strong>Centro:</strong> {operacion.sitio?.nombre || 'No especificado'}
+                </p>
+                {equipoAsignado && (
+                  <p className="text-sm text-blue-700">
+                    <strong>Equipo:</strong> {equipoAsignado.nombre}
+                  </p>
+                )}
+              </div>
+            )}
           </DialogHeader>
           <CreateHPTForm
             defaultOperacionId={operacionId}
