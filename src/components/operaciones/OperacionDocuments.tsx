@@ -163,7 +163,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   Nuevo Anexo Bravo
                 </Button>
                 <DialogContent className="max-w-4xl">
-                  <EnhancedAnexoBravoForm
+                  <CreateAnexoBravoForm
                     onSubmit={handleCreateAnexoBravo}
                     onCancel={() => setIsAnexoDialogOpen(false)}
                   />

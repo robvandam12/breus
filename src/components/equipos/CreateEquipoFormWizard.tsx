@@ -80,6 +80,11 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
     setSelectedMembers(prev => [...prev, member]);
   };
 
+  const handleInviteMember = (userData: any) => {
+    // For now, just show a toast. In production, this would handle the invitation
+    console.log('Inviting member:', userData);
+  };
+
   const handleRemoveMember = (index: number) => {
     setSelectedMembers(prev => prev.filter((_, i) => i !== index));
   };
@@ -238,33 +243,32 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
               </p>
             </div>
 
-            {/* Add Member Form */}
+            {/* Add Member Form with UserSearchSelectEnhanced */}
             <div className="border rounded-lg p-4">
-              <h4 className="font-medium mb-3">Agregar Nuevo Miembro</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Select onValueChange={(value) => {
-                  const [usuarioId, rol] = value.split('|');
-                  handleAddMember(usuarioId, rol);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar usuario y rol..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableUsers.map(usuario => (
-                      <optgroup key={usuario.usuario_id} label={`${usuario.nombre} ${usuario.apellido}`}>
-                        <SelectItem value={`${usuario.usuario_id}|supervisor`}>
-                          Como Supervisor
-                        </SelectItem>
-                        <SelectItem value={`${usuario.usuario_id}|buzo_principal`}>
-                          Como Buzo Principal
-                        </SelectItem>
-                        <SelectItem value={`${usuario.usuario_id}|buzo_asistente`}>
-                          Como Buzo Asistente
-                        </SelectItem>
-                      </optgroup>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <h4 className="font-medium mb-3">Agregar Miembros</h4>
+              <div className="space-y-4">
+                <div>
+                  <Label>Rol en el Equipo</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar rol..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
+                      <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <UserSearchSelectEnhanced
+                  onSelectUser={(user) => handleAddMember(user.usuario_id, 'buzo')}
+                  onInviteUser={handleInviteMember}
+                  allowedRoles={['supervisor', 'buzo']}
+                  placeholder="Buscar usuario para agregar al equipo..."
+                  empresaId={equipoData.empresa_id}
+                  empresaType={equipoData.tipo_empresa as 'salmonera' | 'contratista'}
+                />
               </div>
             </div>
 

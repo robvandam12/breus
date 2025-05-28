@@ -10,7 +10,15 @@ import {
   Shield,
   LogOut,
   Users,
-  Building
+  Building,
+  LayoutDashboard,
+  Building as BuildingIcon,
+  MapPin,
+  Briefcase,
+  Waves,
+  FileCheck,
+  Truck,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +43,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
 
 interface MenuSubItem {
   title: string;
@@ -188,7 +197,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       },
       {
         title: "Mi Empresa",
-        icon: Building,
+        icon: BuildingIcon,
         items: [
           { title: "Información", url: "/empresas/contratistas" }
         ]
@@ -250,7 +259,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       },
       {
         title: "Mi Empresa",
-        icon: Building,
+        icon: BuildingIcon,
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" }
@@ -372,40 +381,146 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
   return [];
 };
 
-export function RoleBasedSidebar() {
-  const { profile, signOut } = useAuth();
-  const { salmoneras } = useSalmoneras();
-  const { contratistas } = useContratistas();
+export const RoleBasedSidebar = () => {
+  const location = useLocation();
+  const { profile, logout } = useAuth();
 
-  // Fix the type error by explicitly converting to boolean
-  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+  const adminSalmoneraNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: BuildingIcon, label: "Mi Salmonera", href: "/salmoneras" },
+    { icon: MapPin, label: "Sitios", href: "/sitios" },
+    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
+    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
+    { icon: Users, label: "Usuarios", href: "/usuarios" },
+    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { 
+      icon: FileText, 
+      label: "Formularios", 
+      href: "/formularios",
+      subItems: [
+        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
+        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      ]
+    },
+  ];
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roleRequired) return true;
-    return profile?.role === item.roleRequired;
-  }).map(item => ({
-    ...item,
-    items: item.items?.filter(subItem => {
-      if (!subItem.roleRequired) return true;
-      return profile?.role === subItem.roleRequired;
-    })
-  }));
+  const adminServicioNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: BuildingIcon, label: "Mi Empresa", href: "/contratistas" },
+    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
+    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
+    { icon: Users, label: "Usuarios", href: "/usuarios" },
+    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { 
+      icon: FileText, 
+      label: "Formularios", 
+      href: "/formularios",
+      subItems: [
+        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
+        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      ]
+    },
+  ];
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Error",
-        description: "Error al cerrar sesión.",
-        variant: "destructive",
-      });
+  const supervisorNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
+    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
+    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { 
+      icon: FileText, 
+      label: "Formularios", 
+      href: "/formularios",
+      subItems: [
+        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
+        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      ]
+    },
+  ];
+
+  const buzoNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: Waves, label: "Mis Inmersiones", href: "/inmersiones" },
+    { icon: FileText, label: "Mis Documentos", href: "/formularios" },
+  ];
+
+  const superuserNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: BuildingIcon, label: "Salmoneras", href: "/salmoneras" },
+    { icon: Truck, label: "Contratistas", href: "/contratistas" },
+    { icon: MapPin, label: "Sitios", href: "/sitios" },
+    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
+    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
+    { icon: Users, label: "Usuarios", href: "/usuarios" },
+    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { 
+      icon: FileText, 
+      label: "Formularios", 
+      href: "/formularios",
+      subItems: [
+        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
+        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      ]
+    },
+  ];
+
+  const getNavItems = () => {
+    if (profile?.role === 'admin_salmonera') {
+      return adminSalmoneraNavItems;
+    } else if (profile?.role === 'admin_servicio') {
+      return adminServicioNavItems;
+    } else if (profile?.role === 'supervisor') {
+      return supervisorNavItems;
+    } else if (profile?.role === 'buzo') {
+      return buzoNavItems;
+    } else if (profile?.role === 'superuser') {
+      return superuserNavItems;
+    }
+    return [];
+  };
+
+  const renderNavItem = (item: MenuItem) => {
+    if (item.items) {
+      return (
+        <Collapsible defaultOpen className="group/collapsible">
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton className="w-full">
+              <item.icon className="w-4 h-4" />
+              <span className="flex-1">{item.title}</span>
+              <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {item.items.map((subItem) => (
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton asChild>
+                    <Link to={subItem.url}>
+                      <span>{subItem.title}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </Collapsible>
+      );
+    } else {
+      return (
+        <SidebarMenuButton asChild>
+          <Link to={item.url!} className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <item.icon className="w-4 h-4" />
+              <span>{item.title}</span>
+            </div>
+            {item.badge && (
+              <Badge variant="secondary" className="h-5 text-xs">
+                {item.badge}
+              </Badge>
+            )}
+          </Link>
+        </SidebarMenuButton>
+      );
     }
   };
 
@@ -416,7 +531,7 @@ export function RoleBasedSidebar() {
     return 'Usuario';
   };
 
-  const getRoleDisplayName = (role?: string) => {
+  const getRoleLabel = (role?: string) => {
     switch (role) {
       case 'superuser':
         return 'Super Usuario';
@@ -446,97 +561,70 @@ export function RoleBasedSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans bg-white">
-      <SidebarHeader className="border-b border-border/40 p-4 bg-white">
+    <Sidebar className="border-r border-zinc-200">
+      <SidebarHeader className="border-b border-zinc-200 p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <BreusLogo size={20} />
+            <Waves className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-lg text-zinc-900">Breus</h2>
-            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
+            <h2 className="font-semibold text-zinc-900">AquaControl</h2>
+            <p className="text-xs text-zinc-500">Sistema de Buceo</p>
           </div>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="p-2 bg-white">
+
+      <SidebarContent className="p-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
-            Navegación Principal
+          <SidebarGroupLabel className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+            Navegación
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full">
-                          <item.icon className="w-4 h-4" />
-                          <span className="flex-1">{item.title}</span>
-                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.items.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild>
-                                <Link to={subItem.url}>
-                                  <span>{subItem.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild>
-                      <Link to={item.url!} className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <item.icon className="w-4 h-4" />
-                          <span>{item.title}</span>
-                        </div>
-                        {item.badge && (
-                          <Badge variant="secondary" className="h-5 text-xs">
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-1">
+              {getNavItems().map((item) => renderNavItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t border-border/40 p-4 bg-white">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
-          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-medium text-sm">
-              {getUserDisplayName().charAt(0).toUpperCase()}
-            </span>
+
+      <SidebarFooter className="border-t border-zinc-200 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center">
+            <User className="w-4 h-4 text-zinc-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
-            <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
-            {getCompanyName() && (
-              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
-            )}
+            <p className="font-medium text-sm text-zinc-900 truncate">
+              {profile?.nombre} {profile?.apellido}
+            </p>
+            <p className="text-xs text-zinc-500 truncate">
+              {getRoleLabel(profile?.role)}
+            </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="h-8 w-8 p-0"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
+        </div>
+        
+        <div className="space-y-1">
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/profile" className="flex items-center gap-3 text-zinc-700 hover:text-zinc-900">
+                <Settings className="w-4 h-4" />
+                Configuración
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <button 
+                onClick={logout}
+                className="flex items-center gap-3 text-zinc-700 hover:text-zinc-900 w-full"
+              >
+                <LogOut className="w-4 h-4" />
+                Cerrar Sesión
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </div>
       </SidebarFooter>
     </Sidebar>
   );
-}
+};
