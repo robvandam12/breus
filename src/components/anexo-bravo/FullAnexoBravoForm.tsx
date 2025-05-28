@@ -62,7 +62,8 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       jefe_centro_url: ''
     },
     
-    observaciones_generales: ''
+    observaciones_generales: '',
+    jefe_centro_nombre: ''
   });
 
   const steps = [
@@ -98,8 +99,8 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
           : null;
 
-        // Poblar datos automáticamente
-        const autoData = {
+        // Crear objeto con todas las propiedades necesarias
+        const autoDataUpdates: Partial<typeof formData> = {
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
           lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
@@ -115,18 +116,18 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
           
           if (supervisor) {
-            autoData.supervisor_servicio_nombre = supervisor.nombre_completo;
-            autoData.bitacora_relator = supervisor.nombre_completo;
+            autoDataUpdates.supervisor_servicio_nombre = supervisor.nombre_completo;
+            autoDataUpdates.bitacora_relator = supervisor.nombre_completo;
           }
           
           if (buzoPrincipal) {
-            autoData.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
-            autoData.buzo_matricula = buzoPrincipal.matricula || '';
+            autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
+            autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
           }
           
           if (buzoAsistente) {
-            autoData.asistente_buzo_nombre = buzoAsistente.nombre_completo;
-            autoData.asistente_buzo_matricula = buzoAsistente.matricula || '';
+            autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
+            autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
           }
 
           // Poblar trabajadores automáticamente
@@ -139,12 +140,12 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
             empresa: operacion.contratistas?.nombre || ''
           }));
           
-          autoData.anexo_bravo_trabajadores = trabajadores;
+          autoDataUpdates.anexo_bravo_trabajadores = trabajadores;
         }
 
-        setFormData(prev => ({ ...prev, ...autoData }));
+        setFormData(prev => ({ ...prev, ...autoDataUpdates }));
         
-        console.log('Datos de Anexo Bravo poblados automáticamente:', autoData);
+        console.log('Datos de Anexo Bravo poblados automáticamente:', autoDataUpdates);
         
         toast({
           title: "Datos cargados",
@@ -233,15 +234,15 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <AnexoBravoStep1 data={formData} updateData={updateFormData} />;
+        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return <AnexoBravoStep2 data={formData} updateData={updateFormData} />;
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
-        return <AnexoBravoStep3 data={formData} updateData={updateFormData} />;
+        return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
-        return <AnexoBravoStep4 data={formData} updateData={updateFormData} />;
+        return <AnexoBravoStep4 data={formData} onUpdate={updateFormData} />;
       case 5:
-        return <AnexoBravoStep5 data={formData} updateData={updateFormData} />;
+        return <AnexoBravoStep5 data={formData} onUpdate={updateFormData} />;
       default:
         return <div>Paso no encontrado</div>;
     }

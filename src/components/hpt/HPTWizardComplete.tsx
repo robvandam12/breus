@@ -72,8 +72,8 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
           ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
           : null;
 
-        // Poblar datos automáticamente
-        const autoData = {
+        // Crear objeto con las propiedades que existen en el tipo de datos
+        const autoDataUpdates = {
           folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
@@ -87,14 +87,14 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
         if (equipoAsignado?.miembros) {
           const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
           if (supervisor) {
-            autoData.supervisor_nombre = supervisor.nombre_completo;
-            autoData.supervisor = supervisor.nombre_completo;
+            autoDataUpdates.supervisor_nombre = supervisor.nombre_completo;
+            autoDataUpdates.supervisor = supervisor.nombre_completo;
           }
         }
 
-        updateData(autoData);
+        updateData(autoDataUpdates);
         
-        console.log('Datos poblados automáticamente:', autoData);
+        console.log('Datos poblados automáticamente:', autoDataUpdates);
       } catch (error) {
         console.error('Error populating operation data:', error);
       }
