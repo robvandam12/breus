@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,7 +141,8 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           if (buzoAsistente) {
             autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
             autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
-            autoDataUpdates.asistente_buzo_id = buzoAsistente.usuario_id;
+            // Use equipo_buceo_miembros id instead of usuario_id
+            autoDataUpdates.asistente_buzo_id = buzoAsistente.id;
           }
 
           // Poblar trabajadores automáticamente
@@ -389,27 +389,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Operation Selector Dialog */}
-      {showOperacionSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <AnexoBravoOperationSelector 
-              onOperacionSelected={handleOperacionSelected}
-              selectedOperacionId={currentOperacionId}
-            />
-            <div className="flex justify-end mt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowOperacionSelector(false)}
-                className="ios-button"
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

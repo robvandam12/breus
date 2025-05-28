@@ -54,10 +54,9 @@ export function RoleBasedSidebar() {
     );
   };
 
-  const userRole = profile?.role || 'buzo';
-  const isAdmin = userRole === 'admin' || userRole === 'superuser';
+  const userRole = profile?.rol || 'buzo';
+  const isAdmin = userRole === 'superuser' || userRole === 'admin_salmonera' || userRole === 'admin_servicio';
   const isSupervisor = userRole === 'supervisor';
-  const isJefeOperaciones = userRole === 'jefe_operaciones';
   const isBuzo = userRole === 'buzo';
 
   const menuItems = [
@@ -65,13 +64,13 @@ export function RoleBasedSidebar() {
       title: "Dashboard",
       icon: Home,
       href: "/dashboard",
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'buzo', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
     },
     {
       title: "Inmersiones",
       icon: Anchor,
       href: "/inmersiones",
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'buzo', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
     },
     {
       title: "Operaciones",
@@ -80,7 +79,7 @@ export function RoleBasedSidebar() {
         { title: "Lista de Operaciones", href: "/operaciones", icon: Building2 },
         { title: "Crear Operación", href: "/operaciones/crear", icon: UserPlus },
       ],
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor']
     },
     {
       title: "Formularios",
@@ -89,7 +88,7 @@ export function RoleBasedSidebar() {
         { title: "Hojas de Planificación (HPT)", href: "/formularios/hpt", icon: FileText },
         { title: "Anexos Bravo", href: "/formularios/anexo-bravo", icon: Shield },
       ],
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'buzo', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
     },
     {
       title: "Bitácoras",
@@ -98,7 +97,7 @@ export function RoleBasedSidebar() {
         { title: "Bitácora de Buzo", href: "/bitacoras/buzo", icon: Users },
         { title: "Bitácora de Supervisor", href: "/bitacoras/supervisor", icon: Shield },
       ],
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'buzo', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
     },
     {
       title: "Gestión",
@@ -110,19 +109,19 @@ export function RoleBasedSidebar() {
         { title: "Contratistas", href: "/contratistas", icon: Building2 },
         { title: "Sitios", href: "/sitios", icon: MapPin },
       ],
-      roles: ['admin', 'superuser']
+      roles: ['superuser']
     },
     {
       title: "Reportes",
       icon: BarChart3,
       href: "/reportes",
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor']
     },
     {
       title: "Notificaciones",
       icon: Bell,
       href: "/notificaciones",
-      roles: ['admin', 'supervisor', 'jefe_operaciones', 'buzo', 'superuser']
+      roles: ['superuser', 'admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
     },
   ];
 
@@ -208,7 +207,7 @@ export function RoleBasedSidebar() {
       <SidebarFooter className="border-t p-4">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="w-8 h-8">
-            <AvatarImage src={profile?.avatar_url} />
+            <AvatarImage src={profile?.email} />
             <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
               {profile?.nombre?.charAt(0)}{profile?.apellido?.charAt(0)}
             </AvatarFallback>
@@ -219,10 +218,10 @@ export function RoleBasedSidebar() {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs">
-                {userRole === 'admin' ? 'Administrador' :
-                 userRole === 'supervisor' ? 'Supervisor' :
-                 userRole === 'jefe_operaciones' ? 'Jefe Operaciones' :
-                 userRole === 'superuser' ? 'Super Usuario' : 'Buzo'}
+                {userRole === 'superuser' ? 'Super Usuario' :
+                 userRole === 'admin_salmonera' ? 'Admin Salmonera' :
+                 userRole === 'admin_servicio' ? 'Admin Servicio' :
+                 userRole === 'supervisor' ? 'Supervisor' : 'Buzo'}
               </Badge>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Zap, Anchor, Mountain, Home, Wrench, Hazard } from "lucide-react";
+import { AlertTriangle, Zap, Anchor, Mountain, Home, Wrench, AlertCircle } from "lucide-react";
 import { HPTWizardData } from "@/hooks/useHPTWizard";
 
 interface HPTStep3Props {
@@ -37,7 +37,7 @@ export const HPTStep3: React.FC<HPTStep3Props> = ({ data, onUpdate }) => {
     { key: 'trabajo_altura', label: 'Trabajo en Altura', icon: Mountain },
     { key: 'espacios_confinados', label: 'Espacios Confinados', icon: Home },
     { key: 'energia_peligrosa', label: 'Energía Peligrosa', icon: Zap },
-    { key: 'materiales_peligrosos', label: 'Materiales Peligrosos', icon: Hazard }
+    { key: 'materiales_peligrosos', label: 'Materiales Peligrosos', icon: AlertCircle }
   ];
 
   return (
