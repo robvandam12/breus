@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -171,6 +170,19 @@ export const useEquiposBuceoEnhanced = () => {
         throw error;
       }
 
+      // Registrar evento de dominio para trazabilidad
+      await supabase.rpc('emit_domain_event', {
+        p_event_type: 'MEMBER_ADDED',
+        p_aggregate_id: data.equipo_id,
+        p_aggregate_type: 'equipo_buceo',
+        p_event_data: {
+          usuario_id: data.usuario_id,
+          rol_equipo: data.rol_equipo,
+          nombre_completo: data.nombre_completo,
+          timestamp: new Date().toISOString()
+        }
+      });
+
       return result;
     },
     onSuccess: () => {
@@ -185,6 +197,125 @@ export const useEquiposBuceoEnhanced = () => {
       toast({
         title: "Error",
         description: "No se pudo agregar el miembro al equipo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeMiembroMutation = useMutation({
+    mutationFn: async ({ miembro_id, equipo_id }: { miembro_id: string; equipo_id: string }) => {
+      console.log('Removing miembro from equipo:', miembro_id);
+      
+      // Obtener información del miembro antes de eliminarlo
+      const { data: miembro } = await supabase
+        .from('equipo_buceo_miembros')
+        .select(`
+          *,
+          usuario:usuario_id (nombre, apellido, email)
+        `)
+        .eq('id', miembro_id)
+        .single();
+
+      const { error } = await supabase
+        .from('equipo_buceo_miembros')
+        .delete()
+        .eq('id', miembro_id);
+
+      if (error) {
+        console.error('Error removing miembro:', error);
+        throw error;
+      }
+
+      // Registrar evento de dominio para trazabilidad
+      if (miembro) {
+        await supabase.rpc('emit_domain_event', {
+          p_event_type: 'MEMBER_REMOVED',
+          p_aggregate_id: equipo_id,
+          p_aggregate_type: 'equipo_buceo',
+          p_event_data: {
+            usuario_id: miembro.usuario_id,
+            rol_equipo: miembro.rol_equipo,
+            nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Miembro removido",
+        description: "El miembro ha sido removido del equipo exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error removing miembro:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo remover el miembro del equipo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMiembroRoleMutation = useMutation({
+    mutationFn: async ({ miembro_id, nuevo_rol, equipo_id }: { miembro_id: string; nuevo_rol: string; equipo_id: string }) => {
+      console.log('Updating miembro role:', miembro_id, nuevo_rol);
+      
+      // Obtener información actual del miembro
+      const { data: miembroActual } = await supabase
+        .from('equipo_buceo_miembros')
+        .select(`
+          *,
+          usuario:usuario_id (nombre, apellido, email)
+        `)
+        .eq('id', miembro_id)
+        .single();
+
+      const { data: result, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .update({ rol_equipo: nuevo_rol })
+        .eq('id', miembro_id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating miembro role:', error);
+        throw error;
+      }
+
+      // Registrar evento de dominio para trazabilidad
+      if (miembroActual) {
+        await supabase.rpc('emit_domain_event', {
+          p_event_type: 'MEMBER_ROLE_CHANGED',
+          p_aggregate_id: equipo_id,
+          p_aggregate_type: 'equipo_buceo',
+          p_event_data: {
+            usuario_id: miembroActual.usuario_id,
+            rol_anterior: miembroActual.rol_equipo,
+            rol_nuevo: nuevo_rol,
+            nombre_completo: `${miembroActual.usuario?.nombre || ''} ${miembroActual.usuario?.apellido || ''}`.trim(),
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: "Rol actualizado",
+        description: "El rol del miembro ha sido actualizado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating miembro role:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el rol del miembro.",
         variant: "destructive",
       });
     },
@@ -262,6 +393,8 @@ export const useEquiposBuceoEnhanced = () => {
     isLoading,
     createEquipo: createEquipoMutation.mutateAsync,
     addMiembro: addMiembroMutation.mutateAsync,
+    removeMiembro: removeMiembroMutation.mutateAsync,
+    updateMiembroRole: updateMiembroRoleMutation.mutateAsync,
     inviteMember: inviteMemberMutation.mutateAsync,
     updateEquipo: updateEquipoMutation.mutateAsync,
     deleteEquipo: deleteEquipoMutation.mutateAsync,

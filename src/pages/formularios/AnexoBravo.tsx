@@ -6,19 +6,19 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle, Edit, Eye } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
+import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { EnhancedSelect } from "@/components/ui/enhanced-select";
 
 const AnexoBravoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showOperacionSelector, setShowOperacionSelector] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
   const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
@@ -36,22 +36,25 @@ const AnexoBravoPage = () => {
   );
 
   const handleCreateAnexoBravo = () => {
-    if (!selectedOperacionId) {
-      alert('Debe seleccionar una operación para crear el Anexo Bravo');
+    if (operacionesDisponibles.length === 0) {
+      alert('No hay operaciones disponibles para crear Anexo Bravo');
       return;
     }
-    
-    if (!validarOperacionParaDocumento(selectedOperacionId, 'anexo_bravo')) {
-      alert('Esta operación ya tiene un Anexo Bravo asociado');
-      return;
-    }
-    
+    setShowOperacionSelector(true);
+  };
+
+  const handleOperacionSelected = (operacionId: string) => {
+    setSelectedOperacionId(operacionId);
+    setShowOperacionSelector(false);
     setShowCreateForm(true);
   };
 
   const handleAnexoBravoComplete = async (data: any) => {
     try {
-      await createAnexoBravo(data);
+      await createAnexoBravo({
+        ...data,
+        operacion_id: selectedOperacionId
+      });
       setShowCreateForm(false);
       setSelectedOperacionId('');
     } catch (error) {
@@ -61,6 +64,7 @@ const AnexoBravoPage = () => {
 
   const handleCancel = () => {
     setShowCreateForm(false);
+    setShowOperacionSelector(false);
     setSelectedOperacionId('');
   };
 
@@ -77,6 +81,36 @@ const AnexoBravoPage = () => {
             />
             <div className="flex-1 flex items-center justify-center bg-white">
               <LoadingSpinner text="Cargando Anexos Bravo..." />
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (showOperacionSelector) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
+          <main className="flex-1 flex flex-col bg-white">
+            <Header 
+              title="Seleccionar Operación" 
+              subtitle="Seleccione la operación para crear el Anexo Bravo" 
+              icon={FileText} 
+            />
+            <div className="flex-1 overflow-auto bg-white p-4 md:p-8">
+              <div className="max-w-4xl mx-auto">
+                <AnexoBravoOperationSelector
+                  onOperacionSelected={handleOperacionSelected}
+                  selectedOperacionId={selectedOperacionId}
+                />
+                <div className="flex justify-end mt-6">
+                  <Button variant="outline" onClick={handleCancel}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
             </div>
           </main>
         </div>
@@ -129,27 +163,14 @@ const AnexoBravoPage = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <EnhancedSelect
-                  options={operacionesDisponibles.map(op => ({
-                    value: op.id,
-                    label: `${op.codigo} - ${op.nombre}`
-                  }))}
-                  value={selectedOperacionId}
-                  onValueChange={setSelectedOperacionId}
-                  placeholder="Seleccionar operación"
-                  className="w-64"
-                />
-                
-                <Button 
-                  onClick={handleCreateAnexoBravo}
-                  disabled={!selectedOperacionId}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Anexo Bravo
-                </Button>
-              </div>
+              <Button 
+                onClick={handleCreateAnexoBravo}
+                disabled={operacionesDisponibles.length === 0}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Anexo Bravo
+              </Button>
             </div>
           </Header>
           
@@ -213,26 +234,13 @@ const AnexoBravoPage = () => {
                         : "Intenta ajustar la búsqueda"}
                     </p>
                     {operacionesDisponibles.length > 0 && (
-                      <div className="flex items-center justify-center gap-2">
-                        <EnhancedSelect
-                          options={operacionesDisponibles.map(op => ({
-                            value: op.id,
-                            label: `${op.codigo} - ${op.nombre}`
-                          }))}
-                          value={selectedOperacionId}
-                          onValueChange={setSelectedOperacionId}
-                          placeholder="Seleccionar operación"
-                          className="w-64"
-                        />
-                        <Button 
-                          onClick={handleCreateAnexoBravo} 
-                          disabled={!selectedOperacionId}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Nuevo Anexo Bravo
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={handleCreateAnexoBravo}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Anexo Bravo
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
@@ -293,11 +301,11 @@ const AnexoBravoPage = () => {
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
                                 <Button variant="outline" size="sm">
-                                  Ver
+                                  <Eye className="w-4 h-4" />
                                 </Button>
                                 {!anexo.firmado && (
                                   <Button variant="outline" size="sm">
-                                    Editar
+                                    <Edit className="w-4 h-4" />
                                   </Button>
                                 )}
                               </div>
