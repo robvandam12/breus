@@ -175,7 +175,7 @@ export const OperacionesManager = () => {
                       <div key={operacion.id} className="relative">
                         <OperacionCard 
                           operacion={operacion}
-                          onEdit={(op) => setEditingOperacion(op)}
+                          onEdit={() => setEditingOperacion(operacion)}
                           onDelete={() => {}}
                         />
                         <div className="absolute top-2 right-2 flex gap-1">

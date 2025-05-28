@@ -14,9 +14,10 @@ interface EquipoBuceoActionsProps {
   equipo: any;
   onEdit: (equipo: any) => void;
   onDelete: (equipoId: string) => void;
+  onAddMember?: (equipoId: string) => void;
 }
 
-export const EquipoBuceoActions = ({ equipo, onEdit, onDelete }: EquipoBuceoActionsProps) => {
+export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: EquipoBuceoActionsProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
