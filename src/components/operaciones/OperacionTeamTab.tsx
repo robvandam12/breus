@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, UserPlus, Edit, Building, MapPin, Shield, CheckCircle, AlertTriangle } from "lucide-react";
-import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { Users, UserPlus, Edit, Building, CheckCircle, AlertTriangle } from "lucide-react";
+import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
 import { PersonnelManager } from "@/components/shared/PersonnelManager";
 
@@ -17,7 +17,7 @@ interface OperacionTeamTabProps {
 
 export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabProps) => {
   const [showTeamManager, setShowTeamManager] = useState(false);
-  const { equipos, addMemberToEquipo, removeMemberFromEquipo } = useEquiposBuceoEnhanced();
+  const { equipos } = useEquiposBuceo();
 
   // Obtener equipo asignado
   const equipoAsignado = operacion?.equipo_buceo_id 
@@ -25,23 +25,13 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
     : null;
 
   const handleAddMember = async (memberData: any) => {
-    if (!equipoAsignado) return;
-    
-    try {
-      await addMemberToEquipo(equipoAsignado.id, memberData);
-    } catch (error) {
-      console.error('Error adding member:', error);
-    }
+    console.log('Adding member:', memberData);
+    // Implementar lógica de agregar miembro
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!equipoAsignado) return;
-    
-    try {
-      await removeMemberFromEquipo(equipoAsignado.id, memberId);
-    } catch (error) {
-      console.error('Error removing member:', error);
-    }
+    console.log('Removing member:', memberId);
+    // Implementar lógica de remover miembro
   };
 
   const availableRoles = [
@@ -53,7 +43,7 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
 
   return (
     <div className="space-y-6">
-      {/* Información de la Operación - Más sutil */}
+      {/* Información de la Operación */}
       {operacion && (
         <Card className="border border-blue-100 bg-blue-50/30">
           <CardContent className="p-4">
@@ -120,41 +110,20 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
               </div>
 
               {/* Gestión de miembros usando el componente generalizado */}
-              {equipoAsignado.miembros && equipoAsignado.miembros.length > 0 ? (
-                <PersonnelManager
-                  title={`Miembros del Equipo (${equipoAsignado.miembros.length})`}
-                  description="Gestione los miembros asignados a este equipo de buceo"
-                  currentMembers={equipoAsignado.miembros}
-                  availableRoles={availableRoles}
-                  onAddMember={handleAddMember}
-                  onRemoveMember={handleRemoveMember}
-                  showInviteOption={true}
-                />
-              ) : (
-                <Alert className="border-yellow-200 bg-yellow-50">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-yellow-800">
-                    <strong>Equipo sin miembros:</strong> Este equipo no tiene miembros asignados. Agregue miembros para poder crear documentos de operación.
-                  </AlertDescription>
-                  <div className="mt-3">
-                    <PersonnelManager
-                      title="Agregar Miembros al Equipo"
-                      description="Agregue miembros para poder proceder con los documentos"
-                      currentMembers={[]}
-                      availableRoles={availableRoles}
-                      onAddMember={handleAddMember}
-                      onRemoveMember={handleRemoveMember}
-                      showInviteOption={true}
-                      className="mt-4"
-                    />
-                  </div>
-                </Alert>
-              )}
+              <PersonnelManager
+                title={`Miembros del Equipo`}
+                description="Gestione los miembros asignados a este equipo de buceo"
+                currentMembers={[]}
+                availableRoles={availableRoles}
+                onAddMember={handleAddMember}
+                onRemoveMember={handleRemoveMember}
+                showInviteOption={true}
+              />
             </div>
           ) : (
             <div className="text-center py-8">
               <Alert className="border-red-200 bg-red-50 mb-4">
-                <Shield className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-red-800">
                   <strong>Sin equipo asignado:</strong> Debe asignar un equipo de buceo a esta operación antes de crear documentos (HPT, Anexo Bravo) o inmersiones.
                 </AlertDescription>

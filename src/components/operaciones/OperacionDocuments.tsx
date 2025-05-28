@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -243,7 +242,6 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
             operacionId={operacionId}
             onComplete={() => {
               setShowCreateHPT(false);
-              // Refresh documents
               window.location.reload();
             }}
             onCancel={() => setShowCreateHPT(false)}
@@ -254,9 +252,8 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
       <Dialog open={showCreateAnexo} onOpenChange={setShowCreateAnexo}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <FullAnexoBravoForm
-            operacionData={operacion}
+            operacionId={operacion?.id}
             onSubmit={async (data) => {
-              // Handle annexo bravo creation
               setShowCreateAnexo(false);
               window.location.reload();
             }}

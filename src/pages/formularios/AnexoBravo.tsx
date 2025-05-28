@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -16,7 +15,7 @@ import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-const AnexoBravoPage = () => {
+export default function AnexoBravoPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showOperacionSelector, setShowOperacionSelector] = useState(false);
@@ -131,7 +130,7 @@ const AnexoBravoPage = () => {
               <FullAnexoBravoForm
                 onSubmit={handleAnexoBravoComplete}
                 onCancel={handleCancel}
-                operacionData={selectedOperacionData}
+                operacionId={selectedOperacionData?.id}
               />
             </div>
           </main>
@@ -191,7 +190,7 @@ const AnexoBravoPage = () => {
                 </Card>
               )}
 
-              {/* KPIs mejorados */}
+              {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="border-0 shadow-sm bg-white">
                   <CardContent className="p-4">
@@ -261,7 +260,6 @@ const AnexoBravoPage = () => {
                         <TableHead className="text-gray-600">Supervisor</TableHead>
                         <TableHead className="text-gray-600">Fecha</TableHead>
                         <TableHead className="text-gray-600">Estado</TableHead>
-                        <TableHead className="text-gray-600">Progreso</TableHead>
                         <TableHead className="text-right text-gray-600">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -293,17 +291,6 @@ const AnexoBravoPage = () => {
                                   anexo.estado || 'Borrador'
                                 )}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-blue-600 h-2 rounded-full transition-all"
-                                    style={{ width: `${anexo.progreso || 0}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-gray-500">{anexo.progreso || 0}%</span>
-                              </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
