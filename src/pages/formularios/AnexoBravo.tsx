@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -128,11 +127,21 @@ const AnexoBravoPage = () => {
               icon={FileText} 
             />
             <div className="flex-1 overflow-auto">
-              <FullAnexoBravoForm
-                onSubmit={handleAnexoBravoComplete}
-                onCancel={handleCancel}
-                operacionData={selectedOperacionData}
-              />
+              <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+                <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+                  <FullAnexoBravoForm
+                    onSubmit={async (data) => {
+                      // Handle form submission
+                      console.log('Anexo Bravo data:', data);
+                      setShowCreateForm(false);
+                      // Refresh the list
+                      window.location.reload();
+                    }}
+                    onCancel={() => setShowCreateForm(false)}
+                    operacionId={selectedOperacionData?.id}
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
           </main>
         </div>
