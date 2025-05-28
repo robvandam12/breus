@@ -73,7 +73,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
           : null;
 
         // Crear objeto con las propiedades que existen en el tipo de datos
-        const autoDataUpdates = {
+        const autoDataUpdates: any = {
           folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
