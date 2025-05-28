@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield, X } from "lucide-react";
+import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
@@ -74,11 +74,11 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           contratista_nombre: opData.contratistas?.nombre
         });
 
-        // Obtener documentos asociados y inmersiones reales
+        // Obtener documentos asociados
         const [hptData, anexoData, inmersionData] = await Promise.all([
           supabase.from('hpt').select('*').eq('operacion_id', operacionId),
           supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId),
-          supabase.from('inmersion').select('*').eq('operacion_id', operacionId).order('created_at', { ascending: false })
+          supabase.from('inmersion').select('*').eq('operacion_id', operacionId)
         ]);
 
         // Check if operation has team assigned
@@ -160,21 +160,16 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   const canCreateInmersiones = compliance?.canExecute;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">{operacion.nombre}</h2>
           <p className="text-gray-600">Código: {operacion.codigo}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge className={getStatusColor(operacion.estado)}>
-            {operacion.estado}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <Badge className={getStatusColor(operacion.estado)}>
+          {operacion.estado}
+        </Badge>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -307,8 +302,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
                       <div>
                         <p className="font-medium">{inmersion.codigo}</p>
                         <p className="text-sm text-gray-600">Fecha: {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
-                        <p className="text-sm text-gray-600">Buzo: {inmersion.buzo_principal}</p>
-                        <p className="text-sm text-gray-600">Supervisor: {inmersion.supervisor}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={inmersion.estado === 'completada' ? "default" : "secondary"}>
@@ -331,7 +324,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         </TabsContent>
       </Tabs>
 
-      {/* Dialog para crear inmersión */}
+      {/* Dialogs */}
       <Dialog open={showCreateInmersion} onOpenChange={setShowCreateInmersion}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

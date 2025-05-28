@@ -1,67 +1,78 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Shield, HardHat, Eye, Hand, AlertTriangle } from 'lucide-react';
-import { HPTFormData } from '@/hooks/useHPTWizard';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { HPTWizardData } from "@/hooks/useHPTWizard";
+import { Shield, Plus, X } from "lucide-react";
 
 interface HPTStep2Props {
-  data: HPTFormData;
-  onUpdate: (updates: Partial<HPTFormData>) => void;
+  data: HPTWizardData;
+  onUpdate: (updates: Partial<HPTWizardData>) => void;
   operacionId: string;
 }
 
 export const HPTStep2: React.FC<HPTStep2Props> = ({ data, onUpdate, operacionId }) => {
-  const handleEPPChange = (item: string, checked: boolean) => {
+  const [newAsistente, setNewAsistente] = useState('');
+
+  const handleEPPChange = (field: keyof typeof data.hpt_epp, checked: boolean) => {
     onUpdate({
       hpt_epp: {
         ...data.hpt_epp,
-        [item]: checked
+        [field]: checked
       }
     });
   };
 
-  const handleERCChange = (item: string, checked: boolean) => {
+  const handleOtrosChange = (value: string) => {
     onUpdate({
-      hpt_erc: {
-        ...data.hpt_erc,
-        [item]: checked
+      hpt_epp: {
+        ...data.hpt_epp,
+        otros: value
       }
+    });
+  };
+
+  const addAsistente = () => {
+    if (newAsistente.trim()) {
+      const currentAsistentes = data.hpt_conocimiento_asistentes || [];
+      onUpdate({
+        hpt_conocimiento_asistentes: [
+          ...currentAsistentes,
+          {
+            nombre: newAsistente.trim(),
+            rut: '',
+            empresa: data.empresa_servicio_nombre || '',
+            firma_url: ''
+          }
+        ]
+      });
+      setNewAsistente('');
+    }
+  };
+
+  const removeAsistente = (index: number) => {
+    const currentAsistentes = data.hpt_conocimiento_asistentes || [];
+    const updatedAsistentes = currentAsistentes.filter((_, i) => i !== index);
+    onUpdate({
+      hpt_conocimiento_asistentes: updatedAsistentes
     });
   };
 
   const eppItems = [
-    { key: 'casco', label: 'Casco de Seguridad', icon: HardHat },
-    { key: 'lentes', label: 'Lentes de Seguridad', icon: Eye },
-    { key: 'guantes', label: 'Guantes de Protección', icon: Hand },
-    { key: 'chaleco', label: 'Chaleco Salvavidas' },
+    { key: 'casco', label: 'Casco de Seguridad' },
+    { key: 'lentes', label: 'Lentes de Seguridad' },
+    { key: 'guantes', label: 'Guantes de Trabajo' },
     { key: 'botas', label: 'Botas de Seguridad' },
-    { key: 'respirador', label: 'Respirador' },
+    { key: 'chaleco', label: 'Chaleco Salvavidas' },
+    { key: 'respirador', label: 'Respirador/Máscaras' },
     { key: 'arnes', label: 'Arnés de Seguridad' }
-  ];
-
-  const ercItems = [
-    { key: 'izaje', label: 'Izaje y Grúas' },
-    { key: 'buceo', label: 'Buceo y Trabajo Subacuático' },
-    { key: 'navegacion', label: 'Navegación Marítima' },
-    { key: 'trabajo_altura', label: 'Trabajo en Altura' },
-    { key: 'espacios_confinados', label: 'Espacios Confinados' },
-    { key: 'energia_peligrosa', label: 'Energía Peligrosa' },
-    { key: 'materiales_peligrosos', label: 'Materiales Peligrosos' }
   ];
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Equipo de Protección Personal y Estándares de Riesgos Críticos</h2>
-        <p className="mt-2 text-gray-600">
-          Selección de EPP requerido y identificación de ERC aplicables
-        </p>
-      </div>
-
-      {/* EPP */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -69,89 +80,76 @@ export const HPTStep2: React.FC<HPTStep2Props> = ({ data, onUpdate, operacionId 
             Equipo de Protección Personal (EPP)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {eppItems.map((item) => {
-              const IconComponent = item.icon;
-              return (
-                <div key={item.key} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                  {IconComponent && <IconComponent className="w-5 h-5 text-gray-600" />}
-                  <Checkbox
-                    id={`epp_${item.key}`}
-                    checked={data.hpt_epp[item.key] || false}
-                    onCheckedChange={(checked) => handleEPPChange(item.key, checked as boolean)}
-                  />
-                  <Label htmlFor={`epp_${item.key}`} className="text-sm font-medium cursor-pointer flex-1">
-                    {item.label}
-                  </Label>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4">
-            <Label htmlFor="epp_otros">Otros EPP</Label>
-            <Input
-              id="epp_otros"
-              value={data.hpt_epp.otros || ''}
-              onChange={(e) => onUpdate({
-                hpt_epp: { ...data.hpt_epp, otros: e.target.value }
-              })}
-              placeholder="Especifique otros equipos de protección..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ERC */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            Estándares de Riesgos Críticos (ERC)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ercItems.map((item) => (
-              <div key={item.key} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+            {eppItems.map((item) => (
+              <div key={item.key} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`erc_${item.key}`}
-                  checked={data.hpt_erc[item.key] || false}
-                  onCheckedChange={(checked) => handleERCChange(item.key, checked as boolean)}
+                  id={item.key}
+                  checked={Boolean(data.hpt_epp[item.key as keyof typeof data.hpt_epp])}
+                  onCheckedChange={(checked) => handleEPPChange(item.key as keyof typeof data.hpt_epp, Boolean(checked))}
                 />
-                <Label htmlFor={`erc_${item.key}`} className="text-sm font-medium cursor-pointer flex-1">
+                <Label htmlFor={item.key} className="text-sm font-medium">
                   {item.label}
                 </Label>
               </div>
             ))}
           </div>
 
-          <div className="mt-4">
-            <Label htmlFor="erc_otros">Otros ERC</Label>
+          <div className="space-y-2">
+            <Label htmlFor="otros_epp">Otros EPP</Label>
             <Input
-              id="erc_otros"
-              value={data.hpt_erc.otros || ''}
-              onChange={(e) => onUpdate({
-                hpt_erc: { ...data.hpt_erc, otros: e.target.value }
-              })}
-              placeholder="Especifique otros estándares de riesgos críticos..."
+              id="otros_epp"
+              value={data.hpt_epp.otros || ''}
+              onChange={(e) => handleOtrosChange(e.target.value)}
+              placeholder="Especifique otros equipos de protección personal"
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Shield className="w-4 h-4 text-amber-600" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5 text-blue-600" />
+            Asistentes del Trabajo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newAsistente}
+              onChange={(e) => setNewAsistente(e.target.value)}
+              placeholder="Nombre del asistente"
+              onKeyPress={(e) => e.key === 'Enter' && addAsistente()}
+            />
+            <Button onClick={addAsistente} disabled={!newAsistente.trim()}>
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
-          <div className="text-sm text-amber-800">
-            <strong>Importante:</strong> Seleccione todos los elementos de EPP necesarios y los ERC que aplican para esta operación específica. 
-            Esta información es crítica para la evaluación de riesgos.
+
+          <div className="space-y-2">
+            {(data.hpt_conocimiento_asistentes || []).map((asistente, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">{asistente.nombre}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeAsistente(index)}
+                >
+                  <X className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
+
+          {(data.hpt_conocimiento_asistentes || []).length === 0 && (
+            <p className="text-gray-500 text-center py-4">
+              No hay asistentes agregados
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

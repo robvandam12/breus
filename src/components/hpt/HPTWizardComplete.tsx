@@ -36,9 +36,9 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 
   const {
     currentStep,
-    formData,
+    data,
     steps,
-    updateFormData,
+    updateData,
     nextStep,
     prevStep,
     goToStep,
@@ -96,7 +96,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
           }
         }
 
-        updateFormData(autoDataUpdates);
+        updateData(autoDataUpdates);
         
         console.log('Datos poblados automáticamente:', autoDataUpdates);
       } catch (error) {
@@ -105,7 +105,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     };
 
     populateOperacionData();
-  }, [currentOperacionId, hptId, equipos, updateFormData]);
+  }, [currentOperacionId, hptId, equipos, updateData]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setCurrentOperacionId(operacionId);
@@ -126,17 +126,17 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTWizardStep1 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep2 data={data} updateData={updateData} />;
       case 3:
-        return <HPTWizardStep3 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
-        return <HPTWizardStep4 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep4 data={data} updateData={updateData} />;
       case 5:
-        return <HPTWizardStep5 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       case 6:
-        return <HPTWizardStep5 data={formData} updateData={updateFormData} />;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       default:
         return <div>Paso no encontrado</div>;
     }
