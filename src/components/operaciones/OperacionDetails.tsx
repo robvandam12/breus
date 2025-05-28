@@ -382,7 +382,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
             <DialogTitle>Nueva Inmersión</DialogTitle>
           </DialogHeader>
           <CreateInmersionForm
-            operacionId={operacionId}
+            defaultOperacionId={operacionId}
             onSubmit={handleCreateInmersion}
             onCancel={() => setShowCreateInmersion(false)}
           />
