@@ -388,96 +388,6 @@ export const useEquiposBuceoEnhanced = () => {
     },
   });
 
-  const addMemberToEquipo = async (equipoId: string, memberData: any) => {
-    console.log('Adding member to equipo:', equipoId, memberData);
-    
-    const { data: result, error } = await supabase
-      .from('equipo_buceo_miembros')
-      .insert([{
-        equipo_id: equipoId,
-        usuario_id: memberData.usuario_id,
-        rol_equipo: memberData.rol,
-        disponible: true
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding member:', error);
-      throw error;
-    }
-
-    // Registrar evento de dominio para trazabilidad
-    await supabase.rpc('emit_domain_event', {
-      p_event_type: 'MEMBER_ADDED',
-      p_aggregate_id: equipoId,
-      p_aggregate_type: 'equipo_buceo',
-      p_event_data: {
-        usuario_id: memberData.usuario_id,
-        rol_equipo: memberData.rol,
-        nombre_completo: memberData.nombre_completo,
-        timestamp: new Date().toISOString()
-      }
-    });
-
-    queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-    
-    toast({
-      title: "Miembro agregado",
-      description: "El miembro ha sido agregado al equipo exitosamente.",
-    });
-
-    return result;
-  };
-
-  const removeMemberFromEquipo = async (equipoId: string, memberId: string) => {
-    console.log('Removing member from equipo:', equipoId, memberId);
-    
-    // Obtener información del miembro antes de eliminarlo
-    const { data: miembro } = await supabase
-      .from('equipo_buceo_miembros')
-      .select(`
-        *,
-        usuario:usuario_id (nombre, apellido, email)
-      `)
-      .eq('id', memberId)
-      .single();
-
-    const { error } = await supabase
-      .from('equipo_buceo_miembros')
-      .delete()
-      .eq('id', memberId);
-
-    if (error) {
-      console.error('Error removing member:', error);
-      throw error;
-    }
-
-    // Registrar evento de dominio para trazabilidad
-    if (miembro) {
-      await supabase.rpc('emit_domain_event', {
-        p_event_type: 'MEMBER_REMOVED',
-        p_aggregate_id: equipoId,
-        p_aggregate_type: 'equipo_buceo',
-        p_event_data: {
-          usuario_id: miembro.usuario_id,
-          rol_equipo: miembro.rol_equipo,
-          nombre_completo: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
-          timestamp: new Date().toISOString()
-        }
-      });
-    }
-
-    queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-    
-    toast({
-      title: "Miembro removido",
-      description: "El miembro ha sido removido del equipo exitosamente.",
-    });
-
-    return true;
-  };
-
   return {
     equipos,
     isLoading,
@@ -488,8 +398,6 @@ export const useEquiposBuceoEnhanced = () => {
     inviteMember: inviteMemberMutation.mutateAsync,
     updateEquipo: updateEquipoMutation.mutateAsync,
     deleteEquipo: deleteEquipoMutation.mutateAsync,
-    addMemberToEquipo,
-    removeMemberFromEquipo,
     isCreating: createEquipoMutation.isPending,
     isUpdating: updateEquipoMutation.isPending,
     isDeleting: deleteEquipoMutation.isPending,
