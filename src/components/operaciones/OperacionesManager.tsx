@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import { Calendar, Eye, MapPin, CalendarDays, Edit, Trash2, Table as TableIcon, 
 export const OperacionesManager = () => {
   const { operaciones, isLoading } = useOperaciones();
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
-  const [selectedOperacionForDetails, setSelectedOperacionForDetails] = useState<string | null>(null);
+  const [selectedOperacionForDetails, setSelectedOperacionForDetails] = useState<any | null>(null);
   const [activeView, setActiveView] = useState('lista');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +35,10 @@ export const OperacionesManager = () => {
       'cancelada': 'bg-red-100 text-red-700'
     };
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+  };
+
+  const handleViewOperacion = (operacion: any) => {
+    setSelectedOperacionForDetails(operacion);
   };
 
   if (isLoading) {
@@ -135,7 +140,7 @@ export const OperacionesManager = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => setSelectedOperacion(operacion.id)}
+                                  onClick={() => handleViewOperacion(operacion)}
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
                                   Ver
@@ -169,7 +174,7 @@ export const OperacionesManager = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setSelectedOperacion(operacion.id)}
+                            onClick={() => handleViewOperacion(operacion)}
                             className="bg-white/90 backdrop-blur-sm"
                           >
                             <Eye className="w-4 h-4 mr-1" />
