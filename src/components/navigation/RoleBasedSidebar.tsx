@@ -117,7 +117,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/operaciones/inmersiones",
       },
       {
         title: "Bitácoras",
@@ -171,7 +171,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/operaciones/inmersiones",
         badge: "7"
       },
       {
@@ -226,7 +226,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/operaciones/inmersiones",
         badge: "7"
       },
       {
@@ -288,7 +288,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/operaciones/inmersiones",
         badge: "18"
       },
       {
@@ -352,7 +352,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/operaciones/inmersiones",
         badge: "7"
       },
       {

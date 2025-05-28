@@ -1,344 +1,344 @@
 
-import React, { useState, useCallback } from 'react';
-import { useHPT, HPTFormData } from '@/hooks/useHPT';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
-export interface HPTWizardStep {
-  id: number;
-  title: string;
-  description: string;
-  fields: string[];
-  isValid: boolean;
-}
-
-export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
-  // Datos Generales (Paso 1)
+export interface HPTFormData {
+  // Información básica
+  codigo: string;
   folio: string;
   fecha: string;
   hora_inicio: string;
   hora_termino: string;
+  
+  // Empresa y personal
   empresa_servicio_nombre: string;
   supervisor_nombre: string;
   centro_trabajo_nombre: string;
   jefe_mandante_nombre: string;
+  
+  // Trabajo
   descripcion_tarea: string;
-  es_rutinaria: boolean;
   lugar_especifico: string;
-  estado_puerto: 'abierto' | 'cerrado';
-
-  // EPP (Paso 2)
-  hpt_epp: {
-    casco: boolean;
-    lentes: boolean;
-    guantes: boolean;
-    botas: boolean;
-    chaleco: boolean;
-    respirador: boolean;
-    arnes: boolean;
-    otros: string;
-  };
-
-  // ERC (Paso 3)
-  hpt_erc: {
-    izaje: boolean;
-    buceo: boolean;
-    navegacion: boolean;
-    trabajo_altura: boolean;
-    espacios_confinados: boolean;
-    energia_peligrosa: boolean;
-    materiales_peligrosos: boolean;
-    otros: string;
-  };
-
-  // Medidas Clave (Paso 4)
-  hpt_medidas: {
-    listas_chequeo_erc_disponibles: 'si' | 'no' | 'na';
-    personal_competente_disponible: 'si' | 'no' | 'na';
-    equipos_proteccion_disponibles: 'si' | 'no' | 'na';
-    procedimientos_emergencia_conocidos: 'si' | 'no' | 'na';
-    comunicacion_establecida: 'si' | 'no' | 'na';
-    autorizaciones_vigentes: 'si' | 'no' | 'na';
-  };
-
-  // Riesgos Complementarios (Paso 5)
-  hpt_riesgos_comp: {
-    condiciones_ambientales: { valor: 'si' | 'no' | 'na'; acciones: string };
-    estado_equipos: { valor: 'si' | 'no' | 'na'; acciones: string };
-    competencia_personal: { valor: 'si' | 'no' | 'na'; acciones: string };
-    coordinacion_actividades: { valor: 'si' | 'no' | 'na'; acciones: string };
-    comunicacion_riesgos: { valor: 'si' | 'no' | 'na'; acciones: string };
-  };
-
-  // Difusión y Firmas (Paso 6)
-  hpt_conocimiento: {
-    fecha: string;
-    hora: string;
-    duracion: number;
-    relator_nombre: string;
-    relator_cargo: string;
-    relator_firma_url?: string;
-  };
-  hpt_conocimiento_asistentes: Array<{
-    nombre: string;
-    rut: string;
-    empresa: string;
-    firma_url?: string;
-  }>;
-  hpt_firmas: {
-    supervisor_servicio_url?: string;
-    supervisor_mandante_url?: string;
-  };
+  es_rutinaria: boolean;
+  tipo_trabajo: string;
+  descripcion_trabajo: string;
+  
+  // Condiciones ambientales
+  estado_puerto: string;
+  profundidad_maxima: number;
+  temperatura: number;
+  corrientes: string;
+  visibilidad: string;
+  
+  // Secciones del HPT
+  hpt_conocimiento: any;
+  hpt_conocimiento_asistentes: any[];
+  hpt_riesgos_comp: any;
+  hpt_medidas: any;
+  hpt_erc: any;
+  hpt_epp: any;
+  
+  // Firmas
+  hpt_firmas: any;
+  
+  // Plan de emergencia
+  plan_emergencia: string;
+  hospital_cercano: string;
+  camara_hiperbarica: string;
+  
+  observaciones: string;
 }
 
-const initialData: HPTWizardData = {
-  operacion_id: '',
-  plan_trabajo: '',
-  supervisor: '',
-  folio: '',
-  fecha: new Date().toISOString().split('T')[0],
-  hora_inicio: '',
-  hora_termino: '',
-  empresa_servicio_nombre: '',
-  supervisor_nombre: '',
-  centro_trabajo_nombre: '',
-  jefe_mandante_nombre: '',
-  descripcion_tarea: '',
-  es_rutinaria: false,
-  lugar_especifico: '',
-  estado_puerto: 'abierto',
-  hpt_epp: {
-    casco: false,
-    lentes: false,
-    guantes: false,
-    botas: false,
-    chaleco: false,
-    respirador: false,
-    arnes: false,
-    otros: ''
-  },
-  hpt_erc: {
-    izaje: false,
-    buceo: false,
-    navegacion: false,
-    trabajo_altura: false,
-    espacios_confinados: false,
-    energia_peligrosa: false,
-    materiales_peligrosos: false,
-    otros: ''
-  },
-  hpt_medidas: {
-    listas_chequeo_erc_disponibles: 'na',
-    personal_competente_disponible: 'na',
-    equipos_proteccion_disponibles: 'na',
-    procedimientos_emergencia_conocidos: 'na',
-    comunicacion_establecida: 'na',
-    autorizaciones_vigentes: 'na'
-  },
-  hpt_riesgos_comp: {
-    condiciones_ambientales: { valor: 'na', acciones: '' },
-    estado_equipos: { valor: 'na', acciones: '' },
-    competencia_personal: { valor: 'na', acciones: '' },
-    coordinacion_actividades: { valor: 'na', acciones: '' },
-    comunicacion_riesgos: { valor: 'na', acciones: '' }
-  },
-  hpt_conocimiento: {
-    fecha: new Date().toISOString().split('T')[0],
-    hora: '',
-    duracion: 30,
-    relator_nombre: '',
-    relator_cargo: '',
-    relator_firma_url: ''
-  },
-  hpt_conocimiento_asistentes: [],
-  hpt_firmas: {
-    supervisor_servicio_url: '',
-    supervisor_mandante_url: ''
-  }
-};
+interface HPTWizardStep {
+  id: number;
+  title: string;
+  isValid: boolean;
+  isCompleted: boolean;
+}
 
-export const useHPTWizard = (operacionId?: string, hptId?: string) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [data, setData] = useState<HPTWizardData>({
-    ...initialData,
-    operacion_id: operacionId || ''
-  });
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+export const useHPTWizard = (operacionId?: string) => {
+  const { operaciones } = useOperaciones();
+  const { equipos } = useEquiposBuceoEnhanced();
   
-  const { createHPT, updateHPT, signHPT, isCreating, isUpdating, isSigning } = useHPT();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<HPTFormData>({
+    codigo: '',
+    folio: '',
+    fecha: new Date().toISOString().split('T')[0],
+    hora_inicio: '',
+    hora_termino: '',
+    empresa_servicio_nombre: '',
+    supervisor_nombre: '',
+    centro_trabajo_nombre: '',
+    jefe_mandante_nombre: '',
+    descripcion_tarea: '',
+    lugar_especifico: '',
+    es_rutinaria: false,
+    tipo_trabajo: '',
+    descripcion_trabajo: '',
+    estado_puerto: '',
+    profundidad_maxima: 0,
+    temperatura: 0,
+    corrientes: '',
+    visibilidad: '',
+    hpt_conocimiento: {},
+    hpt_conocimiento_asistentes: [],
+    hpt_riesgos_comp: {},
+    hpt_medidas: {},
+    hpt_erc: {},
+    hpt_epp: {},
+    hpt_firmas: {},
+    plan_emergencia: '',
+    hospital_cercano: '',
+    camara_hiperbarica: '',
+    observaciones: ''
+  });
+
+  // Auto-populate data when operation is selected
+  useEffect(() => {
+    const populateOperationData = async () => {
+      if (!operacionId) return;
+
+      try {
+        console.log('Populating HPT data for operation:', operacionId);
+        
+        // Get operation data
+        const { data: operacion, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            salmoneras:salmonera_id (nombre),
+            sitios:sitio_id (nombre),
+            contratistas:contratista_id (nombre)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (opError) throw opError;
+
+        // Get assigned diving team
+        const equipoAsignado = operacion.equipo_buceo_id 
+          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
+          : null;
+
+        console.log('Operation:', operacion);
+        console.log('Assigned team:', equipoAsignado);
+
+        // Generate unique code and folio
+        const hptCode = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        const folio = `${Date.now().toString().slice(-6)}`;
+
+        // Auto-populate form data
+        const autoUpdates: Partial<HPTFormData> = {
+          codigo: hptCode,
+          folio: folio,
+          fecha: new Date().toISOString().split('T')[0],
+          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+          centro_trabajo_nombre: operacion.sitios?.nombre || '',
+          descripcion_tarea: operacion.nombre || '',
+          lugar_especifico: operacion.sitios?.nombre || '',
+          descripcion_trabajo: operacion.tareas || '',
+          plan_emergencia: `Plan de emergencia para operación ${operacion.codigo}`,
+          hospital_cercano: 'Hospital Regional más cercano',
+          camara_hiperbarica: 'Cámara hiperbárica disponible en puerto base'
+        };
+
+        // If there's an assigned team, populate personnel
+        if (equipoAsignado?.miembros) {
+          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
+          const jefeMandante = equipoAsignado.miembros.find(m => m.rol === 'supervisor') || 
+                              equipoAsignado.miembros[0]; // Fallback to first member
+          
+          if (supervisor) {
+            autoUpdates.supervisor_nombre = supervisor.nombre_completo;
+          }
+          
+          if (jefeMandante) {
+            autoUpdates.jefe_mandante_nombre = jefeMandante.nombre_completo;
+          }
+
+          // Auto-populate asistentes from diving team
+          const asistentesData = equipoAsignado.miembros.map((miembro) => ({
+            id: miembro.id,
+            nombre: miembro.nombre_completo,
+            rut: '', // RUT not available in EquipoBuceoMiembro
+            empresa: operacion.contratistas?.nombre || '',
+            firma_url: '',
+            conocimiento_verificado: false,
+            rol: miembro.rol
+          }));
+          
+          autoUpdates.hpt_conocimiento_asistentes = asistentesData;
+        }
+
+        setFormData(prev => ({ ...prev, ...autoUpdates }));
+        
+        console.log('HPT auto-populated data:', autoUpdates);
+        
+        toast({
+          title: "Datos cargados",
+          description: "Los datos de la operación han sido cargados automáticamente.",
+        });
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    populateOperationData();
+  }, [operacionId, equipos, operaciones]);
 
   const steps: HPTWizardStep[] = [
     {
       id: 1,
-      title: "Datos Generales",
-      description: "Información básica de la tarea",
-      fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea'],
-      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea)
+      title: "Información General",
+      isValid: !!(
+        formData.codigo &&
+        formData.fecha &&
+        formData.empresa_servicio_nombre &&
+        formData.supervisor_nombre
+      ),
+      isCompleted: !!(
+        formData.codigo &&
+        formData.fecha &&
+        formData.empresa_servicio_nombre &&
+        formData.supervisor_nombre &&
+        formData.descripcion_tarea
+      )
     },
     {
       id: 2,
-      title: "Equipo de Protección Personal",
-      description: "Selección de EPP requerido",
-      fields: ['hpt_epp'],
-      isValid: Object.values(data.hpt_epp).some(v => v === true)
+      title: "Conocimiento del Trabajo",
+      isValid: Object.keys(formData.hpt_conocimiento).length > 0,
+      isCompleted: Object.keys(formData.hpt_conocimiento).length > 0 && 
+                   formData.hpt_conocimiento_asistentes?.length > 0
     },
     {
       id: 3,
       title: "Estándares de Riesgos Críticos",
-      description: "Identificación de ERC aplicables",
-      fields: ['hpt_erc'],
-      isValid: Object.values(data.hpt_erc).some(v => v === true)
+      isValid: Object.keys(formData.hpt_erc).length > 0,
+      isCompleted: Object.keys(formData.hpt_erc).length > 0
     },
     {
       id: 4,
-      title: "Medidas Clave",
-      description: "Verificación de medidas de control",
-      fields: ['hpt_medidas'],
-      isValid: Object.values(data.hpt_medidas).every(v => v !== 'na')
+      title: "Medidas de Control",
+      isValid: Object.keys(formData.hpt_medidas).length > 0,
+      isCompleted: Object.keys(formData.hpt_medidas).length > 0
     },
     {
       id: 5,
-      title: "Riesgos Complementarios",
-      description: "Análisis de riesgos adicionales",
-      fields: ['hpt_riesgos_comp'],
-      isValid: Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na')
+      title: "EPP",
+      isValid: Object.keys(formData.hpt_epp).length > 0,
+      isCompleted: Object.keys(formData.hpt_epp).length > 0
     },
     {
       id: 6,
-      title: "Difusión y Firmas",
-      description: "Registro de difusión y firmas",
-      fields: ['hpt_conocimiento', 'hpt_firmas'],
-      isValid: !!(data.hpt_conocimiento.relator_nombre && 
-                  data.hpt_conocimiento_asistentes.length > 0 &&
-                  data.hpt_firmas.supervisor_servicio_url &&
-                  data.hpt_firmas.supervisor_mandante_url)
+      title: "Firmas y Finalización",
+      isValid: Object.keys(formData.hpt_firmas).length > 0,
+      isCompleted: Object.keys(formData.hpt_firmas).length > 0
     }
   ];
 
-  const updateData = useCallback((updates: Partial<HPTWizardData>) => {
-    setData(prev => ({ ...prev, ...updates }));
-  }, []);
+  const updateFormData = (updates: Partial<HPTFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
 
-  const nextStep = useCallback(() => {
+  const nextStep = () => {
+    const currentStepData = steps[currentStep - 1];
+    if (!currentStepData.isValid) {
+      toast({
+        title: "Paso incompleto",
+        description: "Complete todos los campos requeridos antes de continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
-  }, [currentStep, steps.length]);
+  };
 
-  const prevStep = useCallback(() => {
+  const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
-  }, [currentStep]);
+  };
 
-  const goToStep = useCallback((step: number) => {
-    if (step >= 1 && step <= steps.length) {
-      setCurrentStep(step);
-    }
-  }, [steps.length]);
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+  };
 
-  const saveDraft = useCallback(async () => {
-    if (!data.operacion_id) return;
+  const getProgress = () => {
+    const completedSteps = steps.filter(step => step.isCompleted).length;
+    return Math.round((completedSteps / steps.length) * 100);
+  };
 
-    try {
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
-      
-      const hptData: HPTFormData = {
-        ...data,
-        codigo
-      };
+  const isFormValid = () => {
+    return steps.every(step => step.isValid);
+  };
 
-      if (hptId) {
-        await updateHPT({ id: hptId, data: hptData });
-      } else {
-        await createHPT(hptData);
-      }
-    } catch (error) {
-      console.error('Error saving draft:', error);
-    }
-  }, [data, hptId, updateHPT, createHPT]);
-
-  const submitHPT = useCallback(async () => {
-    if (!isFormComplete()) {
+  const submitHPT = async () => {
+    if (!isFormValid()) {
       toast({
         title: "Formulario incompleto",
-        description: "Complete todos los pasos antes de enviar",
+        description: "Complete todos los pasos antes de enviar.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
-      
-      const hptData: HPTFormData = {
-        ...data,
-        codigo
+      const hptData = {
+        ...formData,
+        operacion_id: operacionId,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        estado: 'borrador',
+        progreso: getProgress()
       };
 
-      let finalHptId = hptId;
-      
-      if (!finalHptId) {
-        const result = await createHPT(hptData);
-        // finalHptId = result.id; // Assuming createHPT returns the created HPT
-      } else {
-        await updateHPT({ id: finalHptId, data: hptData });
-      }
+      const { data, error } = await supabase
+        .from('hpt')
+        .insert([hptData])
+        .select()
+        .single();
 
-      // Firmar HPT si ambas firmas están presentes
-      if (finalHptId && data.hpt_firmas.supervisor_servicio_url && data.hpt_firmas.supervisor_mandante_url) {
-        await signHPT({ 
-          id: finalHptId, 
-          signatures: data.hpt_firmas 
-        });
-      }
+      if (error) throw error;
 
       toast({
-        title: "HPT enviada",
-        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
+        title: "HPT creado",
+        description: "El HPT ha sido creado exitosamente.",
       });
 
-      return finalHptId;
+      return data;
     } catch (error) {
-      console.error('Error submitting HPT:', error);
+      console.error('Error creating HPT:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el HPT.",
+        variant: "destructive",
+      });
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT, signHPT]);
-
-  const isFormComplete = useCallback(() => {
-    return steps.every(step => step.isValid);
-  }, [steps]);
-
-  const getCurrentStepProgress = useCallback(() => {
-    return Math.round((currentStep / steps.length) * 100);
-  }, [currentStep, steps.length]);
-
-  // Auto-save every 30 seconds
-  React.useEffect(() => {
-    if (!autoSaveEnabled) return;
-
-    const interval = setInterval(() => {
-      if (data.operacion_id) {
-        saveDraft();
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoSaveEnabled, data.operacion_id, saveDraft]);
+  };
 
   return {
     currentStep,
-    data,
+    formData,
     steps,
-    updateData,
+    updateFormData,
     nextStep,
     prevStep,
     goToStep,
-    saveDraft,
-    submitHPT,
-    isFormComplete: isFormComplete(),
-    progress: getCurrentStepProgress(),
-    isLoading: isCreating || isUpdating || isSigning,
-    autoSaveEnabled,
-    setAutoSaveEnabled
+    getProgress,
+    isFormValid,
+    submitHPT
   };
 };

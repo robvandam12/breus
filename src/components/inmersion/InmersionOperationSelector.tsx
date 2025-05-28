@@ -1,13 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Anchor, Calendar, MapPin, Building, Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { Anchor, Calendar, MapPin, Building, Users, AlertTriangle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useHPT } from "@/hooks/useHPT";
-import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 
 interface InmersionOperationSelectorProps {
   onOperacionSelected: (operacionId: string) => void;
@@ -15,48 +13,21 @@ interface InmersionOperationSelectorProps {
 }
 
 export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperacionId }: InmersionOperationSelectorProps) => {
-  const { operaciones, isLoading: operacionesLoading } = useOperaciones();
-  const { hpts } = useHPT();
-  const { anexosBravo } = useAnexoBravo();
+  const { operaciones, isLoading } = useOperaciones();
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [validationStatus, setValidationStatus] = useState<{
-    hasHPT: boolean;
-    hasAnexoBravo: boolean;
-    canProceed: boolean;
-  }>({ hasHPT: false, hasAnexoBravo: false, canProceed: false });
 
-  useEffect(() => {
-    if (selectedOperacionId) {
-      const operacion = operaciones.find(op => op.id === selectedOperacionId);
-      setSelectedOperacion(operacion);
-      validateOperation(selectedOperacionId);
-    }
-  }, [selectedOperacionId, operaciones, hpts, anexosBravo]);
-
-  const validateOperation = (operacionId: string) => {
-    const hasSignedHPT = hpts.some(hpt => 
-      hpt.operacion_id === operacionId && hpt.firmado
-    );
-    
-    const hasSignedAnexoBravo = anexosBravo.some(anexo => 
-      anexo.operacion_id === operacionId && anexo.firmado
-    );
-
-    setValidationStatus({
-      hasHPT: hasSignedHPT,
-      hasAnexoBravo: hasSignedAnexoBravo,
-      canProceed: hasSignedHPT && hasSignedAnexoBravo
-    });
-  };
+  // Filter operations that have teams and valid documents
+  const operacionesValidas = operaciones.filter(op => 
+    op.equipo_buceo_id // Must have a diving team assigned
+  );
 
   const handleOperacionChange = (operacionId: string) => {
     const operacion = operaciones.find(op => op.id === operacionId);
     setSelectedOperacion(operacion);
-    validateOperation(operacionId);
     onOperacionSelected(operacionId);
   };
 
-  if (operacionesLoading) {
+  if (isLoading) {
     return (
       <Card className="ios-card">
         <CardContent className="p-6">
@@ -87,7 +58,7 @@ export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperac
               <SelectValue placeholder="Seleccione una operación" />
             </SelectTrigger>
             <SelectContent>
-              {operaciones.map((operacion) => (
+              {operacionesValidas.map((operacion) => (
                 <SelectItem key={operacion.id} value={operacion.id}>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{operacion.codigo}</span>
@@ -101,108 +72,52 @@ export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperac
               ))}
             </SelectContent>
           </Select>
+          
+          {operacionesValidas.length === 0 && (
+            <div className="flex items-center gap-2 mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <p className="text-sm text-yellow-700">
+                No hay operaciones válidas disponibles. Las operaciones deben tener un equipo de buceo asignado.
+              </p>
+            </div>
+          )}
         </div>
 
         {selectedOperacion && (
-          <>
-            {/* Validation Status */}
-            <div className={`p-4 rounded-lg border ${
-              validationStatus.canProceed 
-                ? 'bg-green-50 border-green-200' 
-                : 'bg-yellow-50 border-yellow-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-3">
-                {validationStatus.canProceed ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                )}
-                <span className={`font-medium ${
-                  validationStatus.canProceed ? 'text-green-800' : 'text-yellow-800'
-                }`}>
-                  {validationStatus.canProceed 
-                    ? 'Operación lista para inmersión' 
-                    : 'Documentación pendiente'
-                  }
-                </span>
+          <Card className="border border-blue-200 bg-blue-50">
+            <CardHeader className="pb-2">
+              <h3 className="font-medium text-blue-900">Información de la Operación</h3>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span>Fecha inicio: {new Date(selectedOperacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
               </div>
               
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  {validationStatus.hasHPT ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={validationStatus.hasHPT ? 'text-green-700' : 'text-red-700'}>
-                    HPT {validationStatus.hasHPT ? 'Firmado' : 'Pendiente'}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {validationStatus.hasAnexoBravo ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={validationStatus.hasAnexoBravo ? 'text-green-700' : 'text-red-700'}>
-                    Anexo Bravo {validationStatus.hasAnexoBravo ? 'Firmado' : 'Pendiente'}
-                  </span>
-                </div>
-              </div>
-
-              {!validationStatus.canProceed && (
-                <p className="text-xs text-yellow-700 mt-2">
-                  Para crear una inmersión, la operación debe tener HPT y Anexo Bravo firmados.
-                </p>
-              )}
-            </div>
-
-            {/* Operation Details */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-3">Información de la Operación</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Fecha:</span>
-                  <span>{new Date(selectedOperacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Salmonera:</span>
-                  <span>{selectedOperacion.salmoneras?.nombre || 'No especificada'}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
+              {selectedOperacion.sitios && (
+                <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Sitio:</span>
-                  <span>{selectedOperacion.sitios?.nombre || 'No especificado'}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Contratista:</span>
-                  <span>{selectedOperacion.contratistas?.nombre || 'No especificado'}</span>
-                </div>
-
-                {selectedOperacion.equipo_buceo_id && (
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium">Equipo:</span>
-                    <Badge className="bg-green-100 text-green-700">Asignado</Badge>
-                  </div>
-                )}
-              </div>
-              
-              {selectedOperacion.tareas && (
-                <div className="mt-3">
-                  <span className="font-medium text-blue-800">Tareas:</span>
-                  <p className="text-blue-700 mt-1">{selectedOperacion.tareas}</p>
+                  <span>Sitio: {selectedOperacion.sitios.nombre}</span>
                 </div>
               )}
-            </div>
-          </>
+              
+              {selectedOperacion.contratistas && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Building className="w-4 h-4 text-blue-600" />
+                  <span>Contratista: {selectedOperacion.contratistas.nombre}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Equipo de buceo: {selectedOperacion.equipo_buceo_id ? 'Asignado' : 'No asignado'}</span>
+              </div>
+              
+              <Badge className="bg-blue-100 text-blue-800">
+                {selectedOperacion.estado}
+              </Badge>
+            </CardContent>
+          </Card>
         )}
       </CardContent>
     </Card>
