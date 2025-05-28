@@ -7,30 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Building, MapPin, Calendar, Users, AlertTriangle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
-import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 
-interface AnexoBravoOperationSelectorProps {
+interface InmersionOperationSelectorProps {
   onOperacionSelected: (operacionId: string) => void;
   selectedOperacionId?: string;
 }
 
-export const AnexoBravoOperationSelector = ({ 
+export const InmersionOperationSelector = ({ 
   onOperacionSelected, 
   selectedOperacionId 
-}: AnexoBravoOperationSelectorProps) => {
+}: InmersionOperationSelectorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { operaciones, isLoading } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
-  const { anexosBravo } = useAnexoBravo();
 
   const filteredOperaciones = operaciones.filter(op => {
     const matchesSearch = op.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          op.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Solo mostrar operaciones activas que no tengan anexo bravo ya creado
-    const hasAnexoBravo = anexosBravo.some(anexo => anexo.operacion_id === op.id);
-    
-    return matchesSearch && op.estado === 'activa' && !hasAnexoBravo;
+    return matchesSearch && op.estado === 'activa';
   });
 
   const getOperacionTeam = (operacionId: string) => {
@@ -53,7 +48,7 @@ export const AnexoBravoOperationSelector = ({
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Seleccionar Operación</h2>
         <p className="mt-2 text-gray-600">
-          Elija la operación para la cual desea crear el Anexo Bravo
+          Elija la operación para la cual desea crear la inmersión
         </p>
       </div>
 
@@ -77,7 +72,7 @@ export const AnexoBravoOperationSelector = ({
             <p className="text-gray-500">
               {searchTerm 
                 ? "No se encontraron operaciones que coincidan con la búsqueda"
-                : "Todas las operaciones activas ya tienen Anexos Bravo creados"
+                : "No hay operaciones activas disponibles"
               }
             </p>
           </CardContent>
