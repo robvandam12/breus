@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, AlertTriangle, CheckCircle, Settings } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
@@ -286,7 +286,7 @@ const AnexoBravoPage = () => {
           {/* Modal para crear Anexo Bravo - Solo usar el Wizard */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-              <EnhancedAnexoBravoForm 
+              <AnexoBravoWizard 
                 operacion_id={selectedOperacionId}
                 onComplete={handleAnexoBravoComplete}
                 onCancel={() => setShowCreateForm(false)}

@@ -16,6 +16,8 @@ interface UserSearchSelectProps {
   placeholder?: string;
   salmoneraId?: string;
   contratistaId?: string;
+  empresaType?: string;
+  empresaId?: string;
 }
 
 export const UserSearchSelect = ({
@@ -24,7 +26,9 @@ export const UserSearchSelect = ({
   allowedRoles = [],
   placeholder = "Buscar usuario...",
   salmoneraId,
-  contratistaId
+  contratistaId,
+  empresaType,
+  empresaId
 }: UserSearchSelectProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showInviteForm, setShowInviteForm] = useState(false);
