@@ -18,19 +18,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InmersionWizardProps {
   inmersionId?: string;
+  operacionId?: string;
   onComplete?: (inmersionId: string) => void;
   onCancel?: () => void;
 }
 
-export const InmersionWizard = ({ inmersionId, onComplete, onCancel }: InmersionWizardProps) => {
+export const InmersionWizard = ({ inmersionId, operacionId: initialOperacionId, onComplete, onCancel }: InmersionWizardProps) => {
   const { toast } = useToast();
   const { operaciones } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
   const { createInmersion, updateInmersion, isCreating, isUpdating } = useInmersion();
   
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedOperacionId, setSelectedOperacionId] = useState('');
-  const [showOperacionSelector, setShowOperacionSelector] = useState(!inmersionId);
+  const [selectedOperacionId, setSelectedOperacionId] = useState(initialOperacionId || '');
+  const [showOperacionSelector, setShowOperacionSelector] = useState(!inmersionId && !initialOperacionId);
   const [validationStatus, setValidationStatus] = useState({
     hptValidated: false,
     anexoBravoValidated: false,
