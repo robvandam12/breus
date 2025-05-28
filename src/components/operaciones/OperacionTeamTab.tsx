@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, UserPlus, Edit, Building, MapPin, Shield, CheckCircle, AlertTriangle } from "lucide-react";
+import { Users, UserPlus, Edit, MapPin, Shield, CheckCircle, AlertTriangle } from "lucide-react";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
+import { PersonnelManager } from "@/components/shared/PersonnelManager";
 
 interface OperacionTeamTabProps {
   operacionId: string;
@@ -16,6 +17,7 @@ interface OperacionTeamTabProps {
 
 export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabProps) => {
   const [showTeamManager, setShowTeamManager] = useState(false);
+  const [showPersonnelManager, setShowPersonnelManager] = useState(false);
   const { equipos } = useEquiposBuceoEnhanced();
 
   // Obtener equipo asignado
@@ -23,71 +25,63 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
     ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
     : null;
 
+  const handleAddMember = (member: any) => {
+    // Lógica para agregar miembro al equipo
+    console.log('Adding member to team:', member);
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    // Lógica para remover miembro del equipo
+    console.log('Removing member from team:', memberId);
+  };
+
+  const handleInviteUser = (inviteData: any) => {
+    // Lógica para invitar usuario
+    console.log('Inviting user:', inviteData);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Información de la Operación */}
+      {/* Información sutil de la Operación */}
       {operacion && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Building className="w-5 h-5" />
-              Operación Asignada
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Código</p>
-                <p className="text-blue-900">{operacion.codigo}</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-blue-900">Operación:</span>
+                <span className="text-blue-800">{operacion.codigo} - {operacion.nombre}</span>
               </div>
-              <div>
-                <p className="text-sm font-medium text-blue-700">Nombre</p>
-                <p className="text-blue-900">{operacion.nombre}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-blue-700">Estado</p>
-                <Badge variant="outline" className="bg-blue-100 text-blue-700">
+              <div className="flex items-center gap-4 mt-1 text-sm text-blue-700">
+                {operacion.salmoneras && (
+                  <span>📍 {operacion.salmoneras.nombre}</span>
+                )}
+                {operacion.sitios && (
+                  <span>🏭 {operacion.sitios.nombre}</span>
+                )}
+                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                   {operacion.estado}
                 </Badge>
               </div>
-              {operacion.salmoneras && (
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Salmonera</p>
-                  <p className="text-blue-900">{operacion.salmoneras.nombre}</p>
-                </div>
-              )}
-              {operacion.sitios && (
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Sitio</p>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-blue-600" />
-                    <p className="text-blue-900">{operacion.sitios.nombre}</p>
-                  </div>
-                </div>
-              )}
-              {operacion.contratistas && (
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Contratista</p>
-                  <p className="text-blue-900">{operacion.contratistas.nombre}</p>
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Equipo de Buceo Asignado */}
-      <Card>
+      <Card className="bg-white shadow-sm rounded-xl border-gray-200">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <Users className="w-5 h-5 text-blue-600" />
               Equipo de Buceo Asignado
             </CardTitle>
             <Button
               onClick={() => setShowTeamManager(true)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-gray-200 hover:bg-gray-50"
             >
               <Edit className="w-4 h-4" />
               {equipoAsignado ? 'Cambiar Equipo' : 'Asignar Equipo'}
@@ -97,10 +91,10 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
         <CardContent>
           {equipoAsignado ? (
             <div className="space-y-4">
-              <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+              <div className="p-4 border border-green-200 rounded-xl bg-green-50">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium text-green-800">{equipoAsignado.nombre}</h3>
-                  <Badge className="bg-green-100 text-green-700">
+                  <h3 className="font-semibold text-green-800">{equipoAsignado.nombre}</h3>
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Equipo Asignado
                   </Badge>
@@ -112,12 +106,25 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                 {/* Miembros del equipo */}
                 {equipoAsignado.miembros && equipoAsignado.miembros.length > 0 ? (
                   <div>
-                    <h4 className="font-medium text-green-800 mb-2">Miembros del Equipo ({equipoAsignado.miembros.length})</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-green-800">
+                        Miembros del Equipo ({equipoAsignado.miembros.length})
+                      </h4>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowPersonnelManager(true)}
+                        className="text-green-700 border-green-300 hover:bg-green-100"
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Gestionar
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {equipoAsignado.miembros.map((miembro, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded border border-green-200">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                               <span className="text-green-600 font-medium text-sm">
                                 {miembro.nombre_completo.charAt(0).toUpperCase()}
                               </span>
@@ -142,29 +149,39 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                     </div>
                   </div>
                 ) : (
-                  <Alert className="border-yellow-200 bg-yellow-50">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription className="text-yellow-800">
-                      Este equipo no tiene miembros asignados. Agregue miembros para poder crear documentos de operación.
-                    </AlertDescription>
-                  </Alert>
+                  <div className="text-center py-6">
+                    <Alert className="border-yellow-200 bg-yellow-50">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-yellow-800">
+                        Este equipo no tiene miembros asignados. 
+                        <Button
+                          variant="link"
+                          className="text-yellow-800 underline p-0 h-auto ml-1"
+                          onClick={() => setShowPersonnelManager(true)}
+                        >
+                          Agregue miembros aquí
+                        </Button>
+                        {" "}para poder crear documentos de operación.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Alert className="border-red-200 bg-red-50 mb-4">
+            <div className="text-center py-12">
+              <Alert className="border-red-200 bg-red-50 mb-6">
                 <Shield className="h-4 w-4" />
                 <AlertDescription className="text-red-800">
                   <strong>Sin equipo asignado:</strong> Debe asignar un equipo de buceo a esta operación antes de crear documentos (HPT, Anexo Bravo) o inmersiones.
                 </AlertDescription>
               </Alert>
-              <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-              <p className="text-zinc-500 mb-2">No hay equipo de buceo asignado</p>
-              <p className="text-sm text-zinc-400">Asigne un equipo de buceo para esta operación</p>
+              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-2">No hay equipo de buceo asignado</p>
+              <p className="text-sm text-gray-400 mb-6">Asigne un equipo de buceo para esta operación</p>
               <Button 
                 onClick={() => setShowTeamManager(true)}
-                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Asignar Equipo
@@ -185,6 +202,25 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
             salmoneraId={operacion?.salmonera_id}
             contratistaId={operacion?.contratista_id}
             onClose={() => setShowTeamManager(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para gestión de personal */}
+      <Dialog open={showPersonnelManager} onOpenChange={setShowPersonnelManager}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Gestionar Miembros del Equipo</DialogTitle>
+          </DialogHeader>
+          <PersonnelManager
+            title="Miembros del Equipo de Buceo"
+            description="Gestione los miembros asignados a este equipo de buceo"
+            currentMembers={equipoAsignado?.miembros || []}
+            onAddMember={handleAddMember}
+            onRemoveMember={handleRemoveMember}
+            onInviteUser={handleInviteUser}
+            memberRoleField="rol"
+            searchPlaceholder="Buscar personal por nombre o email..."
           />
         </DialogContent>
       </Dialog>
