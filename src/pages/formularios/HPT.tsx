@@ -10,11 +10,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
-import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
-import { HPTOperationSelector } from "@/components/hpt/HPTOperationSelector";
+import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EnhancedSelect } from "@/components/ui/enhanced-select";
 
 const HPTPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,26 +84,43 @@ const HPTPage = () => {
             subtitle="Gestión de documentos HPT para operaciones de buceo" 
             icon={FileText} 
           >
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar HPTs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar HPTs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <EnhancedSelect
+                  options={operacionesDisponibles.map(op => ({
+                    value: op.id,
+                    label: `${op.codigo} - ${op.nombre}`
+                  }))}
+                  value={selectedOperacionId}
+                  onValueChange={setSelectedOperacionId}
+                  placeholder="Seleccionar operación"
+                  className="w-64"
+                />
+                
+                <Button 
+                  onClick={handleCreateHPT}
+                  disabled={!selectedOperacionId}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo HPT
+                </Button>
+              </div>
             </div>
           </Header>
           
           <div className="flex-1 overflow-auto bg-white">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              {/* Selector de Operación */}
-              <HPTOperationSelector
-                selectedOperacionId={selectedOperacionId}
-                onSelectOperacion={setSelectedOperacionId}
-                onCreateHPT={handleCreateHPT}
-              />
-
               {/* Alertas de validación */}
               {operacionesDisponibles.length === 0 && (
                 <Card className="mb-6 border-orange-200 bg-orange-50">
@@ -161,6 +178,28 @@ const HPTPage = () => {
                         ? "Comience creando el primer HPT seleccionando una operación"
                         : "Intenta ajustar la búsqueda"}
                     </p>
+                    {operacionesDisponibles.length > 0 && (
+                      <div className="flex items-center justify-center gap-2">
+                        <EnhancedSelect
+                          options={operacionesDisponibles.map(op => ({
+                            value: op.id,
+                            label: `${op.codigo} - ${op.nombre}`
+                          }))}
+                          value={selectedOperacionId}
+                          onValueChange={setSelectedOperacionId}
+                          placeholder="Seleccionar operación"
+                          className="w-64"
+                        />
+                        <Button 
+                          onClick={handleCreateHPT} 
+                          disabled={!selectedOperacionId}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nuevo HPT
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
@@ -242,7 +281,7 @@ const HPTPage = () => {
           {/* Modal para crear HPT */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-              <HPTWizardComplete 
+              <HPTWizard 
                 operacionId={selectedOperacionId}
                 onComplete={handleHPTComplete}
                 onCancel={() => setShowCreateForm(false)}

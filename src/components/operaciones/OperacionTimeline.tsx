@@ -1,121 +1,178 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, FileText, Users, Calendar, CheckCircle, AlertCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Clock, CheckCircle, AlertCircle, Calendar, FileText, Users, Activity, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OperacionTimelineProps {
   operacionId: string;
 }
 
+interface TimelineEvent {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  usuario: string;
+  estado: 'completado' | 'pendiente' | 'error';
+  metadata?: any;
+}
+
 export const OperacionTimeline = ({ operacionId }: OperacionTimelineProps) => {
-  const { data: actividades = [], isLoading } = useQuery({
-    queryKey: ['operacion-timeline', operacionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  const [eventos, setEventos] = useState<TimelineEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('todos');
+
+  useEffect(() => {
+    fetchTimelineEvents();
+  }, [operacionId]);
+
+  const fetchTimelineEvents = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Obtener eventos de dominio relacionados con la operación
+      const { data: domainEvents, error: domainError } = await supabase
+        .from('domain_event')
+        .select('*')
+        .or(`aggregate_id.eq.${operacionId},event_data->>operacion_id.eq.${operacionId}`)
+        .order('created_at', { ascending: false });
+
+      if (domainError) throw domainError;
+
+      // Obtener actividades de usuario relacionadas
+      const { data: userActivities, error: activityError } = await supabase
         .from('usuario_actividad')
         .select(`
           *,
-          usuario:usuario_id (
-            nombre,
-            apellido
-          )
+          usuario:usuario_id (nombre, apellido)
         `)
         .eq('entidad_id', operacionId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
-    },
-  });
+      if (activityError) throw activityError;
 
-  const { data: domainEvents = [] } = useQuery({
-    queryKey: ['domain-events', operacionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('domain_event')
-        .select('*')
-        .eq('aggregate_id', operacionId)
-        .order('created_at', { ascending: false });
+      // Combinar y formatear eventos
+      const formattedEvents: TimelineEvent[] = [];
 
-      if (error) throw error;
-      return data || [];
-    },
-  });
+      // Agregar eventos de dominio
+      domainEvents?.forEach(event => {
+        formattedEvents.push({
+          id: event.id,
+          tipo: event.event_type,
+          titulo: getEventTitle(event.event_type),
+          descripcion: getEventDescription(event.event_type, event.event_data),
+          fecha: event.created_at,
+          usuario: 'Sistema',
+          estado: 'completado',
+          metadata: event.event_data
+        });
+      });
 
-  const getEventIcon = (accion: string) => {
-    const iconMap: Record<string, any> = {
-      'CREAR_OPERACION': Calendar,
-      'EDITAR_OPERACION': FileText,
-      'ASIGNAR_EQUIPO': Users,
-      'REMOVER_EQUIPO': Users,
-      'HPT_DONE': CheckCircle,
-      'ANEXO_DONE': CheckCircle,
-      'IMM_CREATED': FileText,
-    };
-    return iconMap[accion] || AlertCircle;
+      // Agregar actividades de usuario
+      userActivities?.forEach(activity => {
+        formattedEvents.push({
+          id: activity.id,
+          tipo: 'user_activity',
+          titulo: `Actividad: ${activity.accion}`,
+          descripcion: activity.detalle || `${activity.accion} realizada`,
+          fecha: activity.created_at,
+          usuario: activity.usuario ? `${activity.usuario.nombre} ${activity.usuario.apellido}` : 'Usuario desconocido',
+          estado: 'completado'
+        });
+      });
+
+      // Ordenar por fecha descendente
+      formattedEvents.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+      setEventos(formattedEvents);
+    } catch (error) {
+      console.error('Error fetching timeline events:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getEventColor = (accion: string) => {
-    const colorMap: Record<string, string> = {
-      'CREAR_OPERACION': 'bg-blue-100 text-blue-700',
-      'EDITAR_OPERACION': 'bg-yellow-100 text-yellow-700',
-      'ASIGNAR_EQUIPO': 'bg-green-100 text-green-700',
-      'REMOVER_EQUIPO': 'bg-red-100 text-red-700',
-      'HPT_DONE': 'bg-green-100 text-green-700',
-      'ANEXO_DONE': 'bg-green-100 text-green-700',
-      'IMM_CREATED': 'bg-purple-100 text-purple-700',
-    };
-    return colorMap[accion] || 'bg-gray-100 text-gray-700';
-  };
-
-  const getEventLabel = (accion: string) => {
-    const labelMap: Record<string, string> = {
-      'CREAR_OPERACION': 'Operación Creada',
-      'EDITAR_OPERACION': 'Operación Editada',
-      'ASIGNAR_EQUIPO': 'Equipo Asignado',
-      'REMOVER_EQUIPO': 'Equipo Removido',
-      'HPT_DONE': 'HPT Completado',
-      'ANEXO_DONE': 'Anexo Bravo Completado',
+  const getEventTitle = (eventType: string): string => {
+    const titles: Record<string, string> = {
+      'HPT_DONE': 'HPT Firmado',
+      'ANEXO_DONE': 'Anexo Bravo Firmado',
       'IMM_CREATED': 'Inmersión Creada',
+      'OPERACION_CREATED': 'Operación Creada',
+      'TEAM_ASSIGNED': 'Equipo Asignado',
+      'DOCUMENT_SIGNED': 'Documento Firmado'
     };
-    return labelMap[accion] || accion;
+    return titles[eventType] || eventType.replace('_', ' ');
   };
 
-  // Combinar actividades y eventos del dominio
-  const allEvents = [
-    ...actividades.map(act => ({
-      ...act,
-      type: 'activity',
-      timestamp: act.created_at,
-      titulo: getEventLabel(act.accion),
-      descripcion: act.detalle
-    })),
-    ...domainEvents.map(event => ({
-      ...event,
-      type: 'domain_event',
-      timestamp: event.created_at,
-      titulo: getEventLabel(event.event_type),
-      descripcion: `Evento del sistema: ${event.event_type}`,
-      accion: event.event_type
-    }))
-  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const getEventDescription = (eventType: string, eventData: any): string => {
+    switch (eventType) {
+      case 'HPT_DONE':
+        return `HPT ${eventData?.codigo || ''} ha sido firmado por ${eventData?.supervisor || 'supervisor'}`;
+      case 'ANEXO_DONE':
+        return `Anexo Bravo ${eventData?.codigo || ''} ha sido firmado por ${eventData?.supervisor || 'supervisor'}`;
+      case 'IMM_CREATED':
+        return `Nueva inmersión ${eventData?.codigo || ''} creada con buzo principal ${eventData?.buzo_principal || ''}`;
+      default:
+        return 'Evento del sistema';
+    }
+  };
+
+  const getEventIcon = (tipo: string, estado: string) => {
+    if (estado === 'completado') {
+      switch (tipo) {
+        case 'HPT_DONE':
+        case 'ANEXO_DONE':
+          return <FileText className="w-5 h-5 text-green-600" />;
+        case 'IMM_CREATED':
+          return <Activity className="w-5 h-5 text-blue-600" />;
+        case 'TEAM_ASSIGNED':
+          return <Users className="w-5 h-5 text-purple-600" />;
+        default:
+          return <CheckCircle className="w-5 h-5 text-green-600" />;
+      }
+    } else if (estado === 'pendiente') {
+      return <Clock className="w-5 h-5 text-yellow-600" />;
+    } else {
+      return <AlertCircle className="w-5 h-5 text-red-600" />;
+    }
+  };
+
+  const getEventColor = (estado: string) => {
+    switch (estado) {
+      case 'completado':
+        return 'border-green-200 bg-green-50';
+      case 'pendiente':
+        return 'border-yellow-200 bg-yellow-50';
+      default:
+        return 'border-red-200 bg-red-50';
+    }
+  };
+
+  const filteredEventos = eventos.filter(evento => {
+    if (filter === 'todos') return true;
+    if (filter === 'documentos') return evento.tipo.includes('HPT') || evento.tipo.includes('ANEXO');
+    if (filter === 'inmersiones') return evento.tipo.includes('IMM');
+    if (filter === 'equipo') return evento.tipo.includes('TEAM');
+    return true;
+  });
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            Historial de la Operación
+            <Calendar className="w-5 h-5 text-blue-600" />
+            Timeline de la Operación
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="text-center text-gray-500">
-              Cargando historial...
-            </div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="text-gray-500 ml-4">Cargando historial...</p>
           </div>
         </CardContent>
       </Card>
@@ -125,62 +182,85 @@ export const OperacionTimeline = ({ operacionId }: OperacionTimelineProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
-          Historial de la Operación
-          <Badge variant="outline" className="ml-2">
-            {allEvents.length} eventos
-          </Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            Timeline de la Operación
+            <Badge variant="outline">{filteredEventos.length} eventos</Badge>
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="text-sm border rounded px-2 py-1"
+            >
+              <option value="todos">Todos</option>
+              <option value="documentos">Documentos</option>
+              <option value="inmersiones">Inmersiones</option>
+              <option value="equipo">Equipo</option>
+            </select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {allEvents.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-medium text-gray-900 mb-2">No hay actividad registrada</h3>
-            <p className="text-sm">Las actividades aparecerán aquí cuando se realicen cambios</p>
+        {filteredEventos.length === 0 ? (
+          <div className="text-center py-8">
+            <Calendar className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+            <p className="text-zinc-500 mb-2">No hay eventos en el historial</p>
+            <p className="text-sm text-zinc-400">Los eventos aparecerán aquí conforme se realicen actividades</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {allEvents.map((event, index) => {
-              const IconComponent = getEventIcon(event.accion);
-              
-              return (
-                <div key={`${event.type}-${event.id}-${index}`} className="flex items-start gap-4">
-                  <div className={`p-2 rounded-full ${getEventColor(event.accion)}`}>
-                    <IconComponent className="w-4 h-4" />
+            {filteredEventos.map((evento, index) => (
+              <div key={evento.id} className="relative">
+                {index !== filteredEventos.length - 1 && (
+                  <div className="absolute left-6 top-12 bottom-0 w-px bg-zinc-200" />
+                )}
+                <div className={`flex gap-4 p-4 rounded-lg border-2 ${getEventColor(evento.estado)}`}>
+                  <div className="flex-shrink-0">
+                    {getEventIcon(evento.tipo, evento.estado)}
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900">{event.titulo}</h4>
-                      <time className="text-sm text-gray-500">
-                        {new Date(event.timestamp).toLocaleString('es-CL')}
-                      </time>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-zinc-900">{evento.titulo}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {evento.estado}
+                      </Badge>
                     </div>
-                    
-                    {event.descripcion && (
-                      <p className="text-sm text-gray-600 mt-1">{event.descripcion}</p>
+                    <p className="text-sm text-zinc-600 mb-2">{evento.descripcion}</p>
+                    <div className="flex items-center gap-4 text-xs text-zinc-500">
+                      <span>{new Date(evento.fecha).toLocaleString('es-CL')}</span>
+                      <span>Por: {evento.usuario}</span>
+                    </div>
+                    {evento.metadata && Object.keys(evento.metadata).length > 0 && (
+                      <div className="mt-2 p-2 bg-white rounded border text-xs">
+                        <details>
+                          <summary className="cursor-pointer text-zinc-600 hover:text-zinc-800">
+                            Ver detalles
+                          </summary>
+                          <pre className="mt-1 text-zinc-500 overflow-auto">
+                            {JSON.stringify(evento.metadata, null, 2)}
+                          </pre>
+                        </details>
+                      </div>
                     )}
-                    
-                    {event.type === 'activity' && (event as any).usuario && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Por: {(event as any).usuario.nombre} {(event as any).usuario.apellido}
-                      </p>
-                    )}
-                    
-                    <Badge 
-                      variant="outline" 
-                      className={`mt-2 text-xs ${getEventColor(event.accion)}`}
-                    >
-                      {event.type === 'activity' ? 'Actividad de Usuario' : 'Evento del Sistema'}
-                    </Badge>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
+        
+        <div className="mt-6 flex justify-center">
+          <Button 
+            variant="outline" 
+            onClick={fetchTimelineEvents}
+            className="text-sm"
+          >
+            Actualizar Historial
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
