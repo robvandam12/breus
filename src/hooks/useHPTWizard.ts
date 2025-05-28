@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +28,7 @@ export interface HPTFormData {
   es_rutinaria: boolean;
   tipo_trabajo: string;
   descripcion_trabajo: string;
+  plan_trabajo: string; // Add this missing property
   
   // Condiciones ambientales
   estado_puerto: string;
@@ -88,6 +90,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     es_rutinaria: false,
     tipo_trabajo: '',
     descripcion_trabajo: '',
+    plan_trabajo: '', // Initialize the new property
     estado_puerto: '',
     profundidad_maxima: 0,
     temperatura: 0,
@@ -310,7 +313,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
         estado: 'borrador',
         progreso: progress,
         codigo: formData.codigo || `HPT-DRAFT-${Date.now()}`,
-        plan_trabajo: formData.descripcion_tarea || 'Trabajo de buceo',
+        plan_trabajo: formData.plan_trabajo || formData.descripcion_tarea || 'Trabajo de buceo',
         supervisor: formData.supervisor_nombre || 'Por asignar',
         folio: formData.folio,
         fecha: formData.fecha,
@@ -387,7 +390,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
         progreso: 100,
         firmado: Object.keys(formData.hpt_firmas).length > 0,
         codigo: formData.codigo || `HPT-${Date.now()}`,
-        plan_trabajo: formData.descripcion_tarea || 'Trabajo de buceo',
+        plan_trabajo: formData.plan_trabajo || formData.descripcion_tarea || 'Trabajo de buceo',
         supervisor: formData.supervisor_nombre || 'Por asignar',
         folio: formData.folio,
         fecha: formData.fecha,
