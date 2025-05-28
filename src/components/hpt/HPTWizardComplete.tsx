@@ -1,211 +1,164 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { useHPTWizard } from '@/hooks/useHPTWizard';
-import { HPTWizardStep1 } from './HPTWizardStep1';
-import { HPTWizardStep2 } from './HPTWizardStep2';
-import { HPTWizardStep3 } from './HPTWizardStep3';
-import { HPTWizardStep4 } from './HPTWizardStep4';
-import { HPTWizardStep5 } from './HPTWizardStep5';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
-import { useAuthRoles } from '@/hooks/useAuthRoles';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText } from "lucide-react";
+import { useHPT } from "@/hooks/useHPT";
 
 interface HPTWizardCompleteProps {
   operacionId: string;
-  hptId?: string;
-  onComplete?: (hptId: string) => void;
-  onCancel?: () => void;
+  onComplete: (hptId: string) => void;
+  onCancel: () => void;
 }
 
-export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
-  operacionId,
-  hptId,
-  onComplete,
-  onCancel
-}) => {
-  const { permissions } = useAuthRoles();
-  const {
-    currentStep,
-    data,
-    steps,
-    updateData,
-    nextStep,
-    prevStep,
-    goToStep,
-    saveDraft,
-    submitHPT,
-    isFormComplete,
-    progress,
-    isLoading,
-    autoSaveEnabled,
-    setAutoSaveEnabled
-  } = useHPTWizard(operacionId, hptId);
+export const HPTWizardComplete = ({ operacionId, onComplete, onCancel }: HPTWizardCompleteProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createHPT } = useHPT();
+  
+  const [formData, setFormData] = useState({
+    codigo: '',
+    supervisor: '',
+    plan_trabajo: '',
+    descripcion_trabajo: '',
+    fecha: new Date().toISOString().split('T')[0],
+    hora_inicio: '',
+    hora_termino: '',
+    observaciones: ''
+  });
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
     try {
-      const finalHptId = await submitHPT();
-      if (finalHptId && onComplete) {
-        onComplete(finalHptId);
-      }
+      const hpt = await createHPT({
+        ...formData,
+        operacion_id: operacionId
+      });
+      onComplete(hpt.id);
     } catch (error) {
-      console.error('Error submitting HPT:', error);
+      console.error('Error creating HPT:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return <HPTWizardStep1 data={data} updateData={updateData} />;
-      case 2:
-        return <HPTWizardStep2 data={data} updateData={updateData} />;
-      case 3:
-        return <HPTWizardStep3 data={data} updateData={updateData} />;
-      case 4:
-        return <HPTWizardStep4 data={data} updateData={updateData} />;
-      case 5:
-        return <HPTWizardStep5 data={data} updateData={updateData} />;
-      case 6:
-        return <HPTWizardStep5 data={data} updateData={updateData} />;
-      default:
-        return <div>Paso no encontrado</div>;
-    }
+  const updateFormData = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
-  if (!permissions.create_hpt) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Acceso Denegado
-            </h3>
-            <p className="text-gray-600">
-              No tiene permisos para crear o editar HPT.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header con progreso */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-blue-600" />
+          Nuevo HPT
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <CardTitle>
-                {hptId ? 'Editar' : 'Crear'} Hoja de Planificación de Tarea (HPT)
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
-              </p>
+              <Label htmlFor="codigo">Código HPT *</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => updateFormData('codigo', e.target.value)}
+                placeholder="HPT-001"
+                required
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={autoSaveEnabled ? "default" : "secondary"}>
-                Auto-save {autoSaveEnabled ? 'ON' : 'OFF'}
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-              >
-                Toggle
-              </Button>
-            </div>
-          </div>
-          <Progress value={progress} className="mt-4" />
-        </CardHeader>
-      </Card>
-
-      {/* Navegación de pasos */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {steps.map((step) => (
-              <Button
-                key={step.id}
-                variant={step.id === currentStep ? "default" : "outline"}
-                size="sm"
-                onClick={() => goToStep(step.id)}
-                className="h-auto p-2 flex flex-col items-center gap-1"
-              >
-                <div className="flex items-center gap-1">
-                  {step.isValid ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                  <span className="font-semibold">{step.id}</span>
-                </div>
-                <span className="text-xs text-center leading-tight">
-                  {step.title}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contenido del paso actual */}
-      {renderStepContent()}
-
-      {/* Navegación inferior */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Anterior
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={saveDraft}
-                disabled={isLoading}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar Borrador'}
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              {onCancel && (
-                <Button variant="outline" onClick={onCancel}>
-                  Cancelar
-                </Button>
-              )}
-              
-              {currentStep < steps.length ? (
-                <Button
-                  onClick={nextStep}
-                  disabled={!steps[currentStep - 1]?.isValid}
-                >
-                  Siguiente
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isFormComplete || isLoading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isLoading ? 'Enviando...' : 'Completar HPT'}
-                </Button>
-              )}
+            <div>
+              <Label htmlFor="supervisor">Supervisor *</Label>
+              <Input
+                id="supervisor"
+                value={formData.supervisor}
+                onChange={(e) => updateFormData('supervisor', e.target.value)}
+                placeholder="Nombre del supervisor"
+                required
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          <div>
+            <Label htmlFor="descripcion_trabajo">Descripción del Trabajo *</Label>
+            <Textarea
+              id="descripcion_trabajo"
+              value={formData.descripcion_trabajo}
+              onChange={(e) => updateFormData('descripcion_trabajo', e.target.value)}
+              placeholder="Descripción detallada del trabajo a realizar"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="plan_trabajo">Plan de Trabajo *</Label>
+            <Textarea
+              id="plan_trabajo"
+              value={formData.plan_trabajo}
+              onChange={(e) => updateFormData('plan_trabajo', e.target.value)}
+              placeholder="Plan detallado de ejecución"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="fecha">Fecha *</Label>
+              <Input
+                id="fecha"
+                type="date"
+                value={formData.fecha}
+                onChange={(e) => updateFormData('fecha', e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="hora_inicio">Hora Inicio</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={formData.hora_inicio}
+                onChange={(e) => updateFormData('hora_inicio', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="hora_termino">Hora Término</Label>
+              <Input
+                id="hora_termino"
+                type="time"
+                value={formData.hora_termino}
+                onChange={(e) => updateFormData('hora_termino', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="observaciones">Observaciones</Label>
+            <Textarea
+              id="observaciones"
+              value={formData.observaciones}
+              onChange={(e) => updateFormData('observaciones', e.target.value)}
+              placeholder="Observaciones adicionales"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creando...' : 'Crear HPT'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

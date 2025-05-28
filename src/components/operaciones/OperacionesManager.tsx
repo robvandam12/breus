@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +16,7 @@ import { Calendar, Eye, MapPin, CalendarDays, Edit, Trash2, Table as TableIcon, 
 export const OperacionesManager = () => {
   const { operaciones, isLoading } = useOperaciones();
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
+  const [selectedOperacionForDetails, setSelectedOperacionForDetails] = useState<string | null>(null);
   const [activeView, setActiveView] = useState('lista');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -201,12 +201,12 @@ export const OperacionesManager = () => {
       </Card>
 
       {/* Dialog para detalles de operación */}
-      <Dialog open={!!selectedOperacion} onOpenChange={() => setSelectedOperacion(null)}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-          {selectedOperacion && (
+      <Dialog open={!!selectedOperacionForDetails} onOpenChange={() => setSelectedOperacionForDetails(null)}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+          {selectedOperacionForDetails && (
             <OperacionDetails
-              operacionId={selectedOperacion}
-              onClose={() => setSelectedOperacion(null)}
+              operacion={selectedOperacionForDetails}
+              onClose={() => setSelectedOperacionForDetails(null)}
             />
           )}
         </DialogContent>

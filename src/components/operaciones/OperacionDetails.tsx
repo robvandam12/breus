@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAnexoBravo } from '@/hooks/useAnexoBravo';
 import { useHPT } from '@/hooks/useHPT';
 import { FullAnexoBravoForm } from '@/components/anexo-bravo/FullAnexoBravoForm';
-import { HPTForm } from '@/components/formularios/HPTForm';
+import { HPTWizardComplete } from '@/components/hpt/HPTWizardComplete';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
 interface OperacionDetailsProps {
@@ -53,16 +53,8 @@ export const OperacionDetails = ({ operacion, onClose }: OperacionDetailsProps) 
     }
   };
 
-  const handleHPTComplete = async (data: any) => {
-    try {
-      await createHPT({
-        ...data,
-        operacion_id: operacion.id
-      });
-      setShowHPT(false);
-    } catch (error) {
-      console.error('Error al crear HPT:', error);
-    }
+  const handleHPTComplete = async (hptId: string) => {
+    setShowHPT(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -322,10 +314,10 @@ export const OperacionDetails = ({ operacion, onClose }: OperacionDetailsProps) 
           {/* Modal para crear HPT */}
           <Dialog open={showHPT} onOpenChange={setShowHPT}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <HPTForm 
-                onSubmit={handleHPTComplete}
-                onCancel={() => setShowHPT(false)}
+              <HPTWizardComplete 
                 operacionId={operacion.id}
+                onComplete={handleHPTComplete}
+                onCancel={() => setShowHPT(false)}
               />
             </DialogContent>
           </Dialog>
