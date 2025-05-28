@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { usePoolPersonal } from "@/hooks/usePoolPersonal";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { useToast } from "@/hooks/use-toast";
 
-export const PoolPersonalManager = () => {
+export const PersonalDisponibleManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -106,7 +107,7 @@ export const PoolPersonalManager = () => {
         <CardContent className="p-6">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando pool de personal...</p>
+            <p className="mt-4 text-gray-600">Cargando personal disponible...</p>
           </div>
         </CardContent>
       </Card>
@@ -117,7 +118,7 @@ export const PoolPersonalManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900">Pool de Personal</h2>
+          <h2 className="text-2xl font-bold text-zinc-900">Personal Disponible</h2>
           <p className="text-zinc-500">Gestiona supervisores y buzos de tu salmonera</p>
         </div>
         
@@ -130,14 +131,14 @@ export const PoolPersonalManager = () => {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Agregar al Pool de Personal</DialogTitle>
+              <DialogTitle>Agregar al Personal Disponible</DialogTitle>
             </DialogHeader>
             
             <UserSearchSelect
               onSelectUser={handleSelectUser}
               onInviteUser={handleInviteUser}
               allowedRoles={['supervisor', 'buzo']}
-              placeholder="Buscar personal existente o invitar nuevo..."
+              placeholder="Buscar personal existente por email o invitar nuevo..."
             />
           </DialogContent>
         </Dialog>
@@ -178,35 +179,26 @@ export const PoolPersonalManager = () => {
                 {filteredPersonal.map((person) => (
                   <TableRow key={person.usuario_id}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{person.nombre} {person.apellido}</div>
-                          <div className="text-sm text-zinc-500">{person.email}</div>
-                        </div>
+                      <div>
+                        <p className="font-medium">{person.nombre} {person.apellido}</p>
+                        <p className="text-sm text-gray-500">{person.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{getRoleBadge(person.rol)}</TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm">{person.matricula || 'N/A'}</span>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(person.disponible || false, person.invitado)}</TableCell>
+                    <TableCell>{getRoleBadge(person.rol || 'buzo')}</TableCell>
+                    <TableCell>{person.matricula || 'N/A'}</TableCell>
+                    <TableCell>{getStatusBadge(person.disponible !== false, person.invitado)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleDisponibilidad(person.usuario_id!, !person.disponible)}
+                          disabled={person.invitado}
+                        >
+                          {person.disponible ? 'Marcar Ocupado' : 'Marcar Disponible'}
+                        </Button>
                         <Button variant="outline" size="sm">
                           <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleDisponibilidad(person.usuario_id, !person.disponible)}
-                        >
-                          <UserCheck className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -232,31 +224,25 @@ export const PoolPersonalManager = () => {
                 {supervisores.map((person) => (
                   <TableRow key={person.usuario_id}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <Users className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{person.nombre} {person.apellido}</div>
-                          <div className="text-sm text-zinc-500">{person.email}</div>
-                        </div>
+                      <div>
+                        <p className="font-medium">{person.nombre} {person.apellido}</p>
+                        <p className="text-sm text-gray-500">{person.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm">{person.matricula || 'N/A'}</span>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(person.disponible || false, person.invitado)}</TableCell>
+                    <TableCell>{person.matricula || 'N/A'}</TableCell>
+                    <TableCell>{getStatusBadge(person.disponible !== false, person.invitado)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleDisponibilidad(person.usuario_id!, !person.disponible)}
+                          disabled={person.invitado}
+                        >
+                          {person.disponible ? 'Marcar Ocupado' : 'Marcar Disponible'}
+                        </Button>
                         <Button variant="outline" size="sm">
                           <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleDisponibilidad(person.usuario_id, !person.disponible)}
-                        >
-                          <UserCheck className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -282,31 +268,25 @@ export const PoolPersonalManager = () => {
                 {buzos.map((person) => (
                   <TableRow key={person.usuario_id}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                          <Users className="w-4 h-4 text-teal-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{person.nombre} {person.apellido}</div>
-                          <div className="text-sm text-zinc-500">{person.email}</div>
-                        </div>
+                      <div>
+                        <p className="font-medium">{person.nombre} {person.apellido}</p>
+                        <p className="text-sm text-gray-500">{person.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm">{person.matricula || 'N/A'}</span>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(person.disponible || false, person.invitado)}</TableCell>
+                    <TableCell>{person.matricula || 'N/A'}</TableCell>
+                    <TableCell>{getStatusBadge(person.disponible !== false, person.invitado)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleDisponibilidad(person.usuario_id!, !person.disponible)}
+                          disabled={person.invitado}
+                        >
+                          {person.disponible ? 'Marcar Ocupado' : 'Marcar Disponible'}
+                        </Button>
                         <Button variant="outline" size="sm">
                           <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleDisponibilidad(person.usuario_id, !person.disponible)}
-                        >
-                          <UserCheck className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

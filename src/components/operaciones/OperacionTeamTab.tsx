@@ -44,28 +44,15 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
     <div className="space-y-6">
       {/* Información sutil de la Operación */}
       {operacion && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-blue-900">Operación:</span>
-                <span className="text-blue-800">{operacion.codigo} - {operacion.nombre}</span>
-              </div>
-              <div className="flex items-center gap-4 mt-1 text-sm text-blue-700">
-                {operacion.salmoneras && (
-                  <span>📍 {operacion.salmoneras.nombre}</span>
-                )}
-                {operacion.sitios && (
-                  <span>🏭 {operacion.sitios.nombre}</span>
-                )}
-                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                  {operacion.estado}
-                </Badge>
-              </div>
-            </div>
+        <div className="bg-blue-50/50 border border-blue-200/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-blue-700 font-medium">Operación:</span>
+            <span className="text-blue-800">{operacion.codigo}</span>
+            <span className="text-blue-600">•</span>
+            <span className="text-blue-700">{operacion.salmoneras?.nombre}</span>
+            <Badge variant="outline" className="bg-blue-100/50 text-blue-700 border-blue-200">
+              {operacion.estado}
+            </Badge>
           </div>
         </div>
       )}
@@ -117,7 +104,7 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                         className="text-green-700 border-green-300 hover:bg-green-100"
                       >
                         <UserPlus className="w-4 h-4 mr-1" />
-                        Gestionar
+                        Gestionar Miembros
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -153,17 +140,18 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                     <Alert className="border-yellow-200 bg-yellow-50">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription className="text-yellow-800">
-                        Este equipo no tiene miembros asignados. 
-                        <Button
-                          variant="link"
-                          className="text-yellow-800 underline p-0 h-auto ml-1"
-                          onClick={() => setShowPersonnelManager(true)}
-                        >
-                          Agregue miembros aquí
-                        </Button>
-                        {" "}para poder crear documentos de operación.
+                        Este equipo no tiene miembros asignados. Es necesario agregar miembros para poder crear documentos de operación.
                       </AlertDescription>
                     </Alert>
+                    <div className="mt-4">
+                      <Button
+                        onClick={() => setShowPersonnelManager(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Agregar Miembros al Equipo
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -206,7 +194,7 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para gestión de personal */}
+      {/* Dialog para gestión de personal usando PersonnelManager generalizado */}
       <Dialog open={showPersonnelManager} onOpenChange={setShowPersonnelManager}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -214,13 +202,13 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
           </DialogHeader>
           <PersonnelManager
             title="Miembros del Equipo de Buceo"
-            description="Gestione los miembros asignados a este equipo de buceo"
+            description="Busque personal existente por email o invite nuevos usuarios. Escriba el email completo para invitar a alguien nuevo."
             currentMembers={equipoAsignado?.miembros || []}
             onAddMember={handleAddMember}
             onRemoveMember={handleRemoveMember}
             onInviteUser={handleInviteUser}
             memberRoleField="rol"
-            searchPlaceholder="Buscar personal por nombre o email..."
+            searchPlaceholder="Escriba el email completo del usuario..."
           />
         </DialogContent>
       </Dialog>

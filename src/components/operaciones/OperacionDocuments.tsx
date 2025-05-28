@@ -53,28 +53,15 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     <div className="space-y-6">
       {/* Información sutil de la Operación */}
       {operacion && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FileText className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-blue-900">Documentos para:</span>
-                <span className="text-blue-800">{operacion.codigo} - {operacion.nombre}</span>
-              </div>
-              <div className="flex items-center gap-4 mt-1 text-sm text-blue-700">
-                {operacion.salmoneras && (
-                  <span>📍 {operacion.salmoneras.nombre}</span>
-                )}
-                {operacion.sitios && (
-                  <span>🏭 {operacion.sitios.nombre}</span>
-                )}
-                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                  {operacion.estado}
-                </Badge>
-              </div>
-            </div>
+        <div className="bg-blue-50/50 border border-blue-200/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-blue-700 font-medium">Documentos para:</span>
+            <span className="text-blue-800">{operacion.codigo}</span>
+            <span className="text-blue-600">•</span>
+            <span className="text-blue-700">{operacion.salmoneras?.nombre}</span>
+            <Badge variant="outline" className="bg-blue-100/50 text-blue-700 border-blue-200">
+              {operacion.estado}
+            </Badge>
           </div>
         </div>
       )}
