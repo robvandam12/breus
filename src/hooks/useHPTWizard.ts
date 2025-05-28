@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -6,6 +5,9 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
 export interface HPTFormData {
+  // Add operacion_id to the interface
+  operacion_id?: string;
+  
   // Información básica
   codigo: string;
   folio: string;
@@ -71,6 +73,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   
   const [formData, setFormData] = useState<HPTFormData>({
+    operacion_id: operacionId || '',
     codigo: '',
     folio: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -451,9 +454,29 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     steps,
     updateFormData,
     updateData, // alias for backward compatibility
-    nextStep,
-    prevStep,
-    goToStep,
+    nextStep: () => {
+      const currentStepData = steps[currentStep - 1];
+      if (!currentStepData.isValid) {
+        toast({
+          title: "Paso incompleto",
+          description: "Complete todos los campos requeridos antes de continuar.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (currentStep < steps.length) {
+        setCurrentStep(prev => prev + 1);
+      }
+    },
+    prevStep: () => {
+      if (currentStep > 1) {
+        setCurrentStep(prev => prev - 1);
+      }
+    },
+    goToStep: (step: number) => {
+      setCurrentStep(step);
+    },
     getProgress,
     isFormValid,
     isFormComplete,
