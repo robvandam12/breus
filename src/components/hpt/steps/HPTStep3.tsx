@@ -1,180 +1,232 @@
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, Shield } from "lucide-react";
-import { HPTWizardData } from '@/hooks/useHPTWizard';
+import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 interface HPTStep3Props {
-  data: HPTWizardData;
-  onUpdate: (updates: Partial<HPTWizardData>) => void;
+  data: any;
+  onUpdate: (data: any) => void;
 }
 
-export const HPTStep3: React.FC<HPTStep3Props> = ({ data, onUpdate }) => {
-  const handleERCChange = (field: keyof typeof data.hpt_erc, checked: boolean | string) => {
+export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
+  const handleMedidasChange = (key: string, value: string) => {
+    const currentMedidas = data.hpt_medidas || {};
     onUpdate({
-      hpt_erc: {
-        ...data.hpt_erc,
-        [field]: checked
+      hpt_medidas: {
+        ...currentMedidas,
+        [key]: value
       }
     });
   };
 
-  const ercOptions = [
-    {
-      id: 'buceo',
-      label: 'Buceo',
-      description: 'Actividades de inmersión y trabajo subacuático',
-      icon: '🤿'
-    },
-    {
-      id: 'izaje',
-      label: 'Izaje y Manejo de Cargas',
-      description: 'Levantamiento y manipulación de equipos pesados',
-      icon: '🏗️'
-    },
-    {
-      id: 'navegacion',
-      label: 'Navegación',
-      description: 'Operación de embarcaciones y navegación marítima',
-      icon: '⛵'
-    },
-    {
-      id: 'trabajo_altura',
-      label: 'Trabajo en Altura',
-      description: 'Actividades realizadas sobre el nivel del mar',
-      icon: '🧗'
-    },
-    {
-      id: 'espacios_confinados',
-      label: 'Espacios Confinados',
-      description: 'Trabajo en espacios cerrados o restringidos',
-      icon: '🚪'
-    },
-    {
-      id: 'energia_peligrosa',
-      label: 'Energía Peligrosa',
-      description: 'Manejo de energía eléctrica, mecánica o hidráulica',
-      icon: '⚡'
-    },
-    {
-      id: 'materiales_peligrosos',
-      label: 'Materiales Peligrosos',
-      description: 'Manipulación de sustancias químicas o tóxicas',
-      icon: '☢️'
-    }
+  const handleRiesgosChange = (key: string, field: string, value: string) => {
+    const currentRiesgos = data.hpt_riesgos_comp || {};
+    const currentItem = currentRiesgos[key] || {};
+    
+    onUpdate({
+      hpt_riesgos_comp: {
+        ...currentRiesgos,
+        [key]: {
+          ...currentItem,
+          [field]: value
+        }
+      }
+    });
+  };
+
+  const medidasEjecucion = [
+    { key: 'listas_chequeo_erc_disponibles', label: '¿Están disponibles las listas de chequeo de ERC?' },
+    { key: 'procedimientos_trabajo_seguros', label: '¿Se cuenta con procedimientos de trabajo seguros?' },
+    { key: 'personal_capacitado', label: '¿El personal está capacitado para la tarea?' },
+    { key: 'equipos_certificados', label: '¿Los equipos tienen certificación vigente?' },
+    { key: 'permisos_trabajo_vigentes', label: '¿Los permisos de trabajo están vigentes?' },
+    { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación de emergencia?' },
+    { key: 'condiciones_ambientales_evaluadas', label: '¿Se han evaluado las condiciones ambientales?' },
+    { key: 'plan_emergencia_comunicado', label: '¿Se ha comunicado el plan de emergencia?' }
   ];
 
-  const hasSelectedERC = ercOptions.some(option => data.hpt_erc[option.id as keyof typeof data.hpt_erc]) || data.hpt_erc.otros.length > 0;
+  const riesgosComplementarios = [
+    { key: 'condiciones_ambientales', label: 'Condiciones Ambientales Adversas' },
+    { key: 'fatiga_personal', label: 'Fatiga del Personal' },
+    { key: 'equipos_defectuosos', label: 'Equipos Defectuosos o Mal Mantenidos' },
+    { key: 'comunicacion_deficiente', label: 'Comunicación Deficiente' },
+    { key: 'procedimientos_inadecuados', label: 'Procedimientos Inadecuados' },
+    { key: 'interferencia_otras_actividades', label: 'Interferencia con Otras Actividades' },
+    { key: 'acceso_restringido', label: 'Acceso Restringido o Difícil' },
+    { key: 'tiempo_limitado', label: 'Tiempo de Ejecución Limitado' }
+  ];
+
+  const renderSelectOption = (value: string) => {
+    const options = [
+      { value: 'si', label: 'Sí', icon: CheckCircle2, color: 'text-green-600' },
+      { value: 'no', label: 'No', icon: X, color: 'text-red-600' },
+      { value: 'na', label: 'N/A', icon: AlertTriangle, color: 'text-gray-600' }
+    ];
+
+    return (
+      <Select value={value || ''} onValueChange={(newValue) => newValue}>
+        <SelectTrigger>
+          <SelectValue placeholder="Seleccionar..." />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => {
+            const IconComponent = option.icon;
+            return (
+              <SelectItem key={option.value} value={option.value}>
+                <div className="flex items-center gap-2">
+                  <IconComponent className={`w-4 h-4 ${option.color}`} />
+                  {option.label}
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    );
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-4">
-          <AlertTriangle className="w-8 h-8" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Estándares de Riesgos Críticos (ERC)
-        </h2>
-        <p className="text-gray-600">
-          Identifique todos los estándares de riesgos críticos aplicables a esta operación
+        <h2 className="text-2xl font-bold text-gray-900">Medidas Claves para Ejecución y Riesgos Complementarios</h2>
+        <p className="mt-2 text-gray-600">
+          Verificación de medidas de control y identificación de riesgos adicionales
         </p>
       </div>
 
-      {!hasSelectedERC && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 mr-3" />
-            <div>
-              <h3 className="text-sm font-medium text-amber-800">
-                Selección requerida
-              </h3>
-              <p className="text-sm text-amber-700 mt-1">
-                Debe seleccionar al menos un estándar de riesgo crítico para continuar.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Card className="ios-card">
+      {/* Medidas Claves para Ejecución */}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-orange-600" />
-            Seleccione los ERC Aplicables
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            Medidas Claves para Ejecución
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {ercOptions.map((option) => {
-            const isChecked = data.hpt_erc[option.id as keyof typeof data.hpt_erc] as boolean;
-            
-            return (
-              <div
-                key={option.id}
-                className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                  isChecked
-                    ? 'border-orange-500 bg-orange-50'
-                    : 'border-gray-200 hover:border-orange-300 hover:bg-orange-25'
-                }`}
-                onClick={() => handleERCChange(option.id as keyof typeof data.hpt_erc, !isChecked)}
-              >
-                <div className="flex items-start space-x-3">
-                  <Checkbox
-                    checked={isChecked}
-                    onCheckedChange={(checked) => 
-                      handleERCChange(option.id as keyof typeof data.hpt_erc, checked as boolean)
-                    }
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">{option.icon}</span>
-                      <Label className="text-base font-medium text-gray-900 cursor-pointer">
-                        {option.label}
-                      </Label>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {option.description}
-                    </p>
-                  </div>
+        <CardContent>
+          <div className="space-y-4">
+            {medidasEjecucion.map((medida) => (
+              <div key={medida.key} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 border rounded-lg">
+                <Label className="text-sm font-medium">
+                  {medida.label}
+                </Label>
+                <div className="md:col-span-1">
+                  <Select 
+                    value={data.hpt_medidas?.[medida.key] || ''} 
+                    onValueChange={(value) => handleMedidasChange(medida.key, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="si">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          Sí
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="no">
+                        <div className="flex items-center gap-2">
+                          <X className="w-4 h-4 text-red-600" />
+                          No
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="na">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-gray-600" />
+                          N/A
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            );
-          })}
-
-          <div className="mt-6">
-            <Label htmlFor="otros_erc" className="text-base font-medium">
-              Otros ERC no listados
-            </Label>
-            <Textarea
-              id="otros_erc"
-              value={data.hpt_erc.otros}
-              onChange={(e) => handleERCChange('otros', e.target.value)}
-              className="mt-2 ios-input"
-              placeholder="Especifique otros estándares de riesgos críticos aplicables..."
-              rows={3}
-            />
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {hasSelectedERC && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex">
-            <Shield className="w-5 h-5 text-green-600 mt-0.5 mr-3" />
-            <div>
-              <h3 className="text-sm font-medium text-green-800">
-                ERC identificados correctamente
-              </h3>
-              <p className="text-sm text-green-700 mt-1">
-                Ha seleccionado los estándares de riesgos críticos aplicables. Puede continuar al siguiente paso.
-              </p>
-            </div>
+      {/* Identificación de Peligros / Riesgos Complementarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Identificación de Peligros / Riesgos Complementarios
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {riesgosComplementarios.map((riesgo) => (
+              <div key={riesgo.key} className="border rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  <Label className="text-sm font-medium">
+                    {riesgo.label}
+                  </Label>
+                  <div>
+                    <Select 
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.presente || ''} 
+                      onValueChange={(value) => handleRiesgosChange(riesgo.key, 'presente', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="¿Presente?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="si">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            Sí
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="no">
+                          <div className="flex items-center gap-2">
+                            <X className="w-4 h-4 text-red-600" />
+                            No
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="na">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-gray-600" />
+                            N/A
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {data.hpt_riesgos_comp?.[riesgo.key]?.presente === 'si' && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Acciones de Control
+                    </Label>
+                    <Textarea
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.acciones_control || ''}
+                      onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones_control', e.target.value)}
+                      placeholder="Describa las acciones de control implementadas..."
+                      rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-sm text-amber-800">
+            <strong>Importante:</strong> Para cualquier medida marcada como "No" o riesgo presente, 
+            se deben implementar acciones correctivas antes de proceder con la tarea. 
+            Documente todas las acciones de control en los campos correspondientes.
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

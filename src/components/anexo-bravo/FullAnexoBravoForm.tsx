@@ -1,35 +1,41 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Upload, File, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { AnexoBravoStep1 } from './steps/AnexoBravoStep1';
+import { AnexoBravoStep2 } from './steps/AnexoBravoStep2';
+import { AnexoBravoStep3 } from './steps/AnexoBravoStep3';
+import { AnexoBravoStep4 } from './steps/AnexoBravoStep4';
+import { AnexoBravoStep5 } from './steps/AnexoBravoStep5';
+import { AnexoBravoOperationSelector } from './AnexoBravoOperationSelector';
+import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
+import { toast } from '@/hooks/use-toast';
 
 interface FullAnexoBravoFormProps {
-  operacionId: string;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
+  operacionId?: string;
+  anexoId?: string;
 }
 
-export const FullAnexoBravoForm = ({ operacionId, onSubmit, onCancel }: FullAnexoBravoFormProps) => {
-  const { toast } = useToast();
-  const { operaciones } = useOperaciones();
+export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
+  onSubmit,
+  onCancel,
+  operacionId: initialOperacionId,
+  anexoId
+}) => {
   const { equipos } = useEquiposBuceoEnhanced();
+  const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploadedFileUrl, setUploadedFileUrl] = useState<string>('');
+  const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
+  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !anexoId);
   
   const [formData, setFormData] = useState({
+    // Datos generales
     codigo: '',
-    operacion_id: operacionId,
     fecha: new Date().toISOString().split('T')[0],
     lugar_faena: '',
     empresa_nombre: '',
@@ -40,199 +46,183 @@ export const FullAnexoBravoForm = ({ operacionId, onSubmit, onCancel }: FullAnex
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
     autorizacion_armada: false,
+    
+    // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],
     bitacora_hora_inicio: '',
     bitacora_hora_termino: '',
     bitacora_relator: '',
+    
+    // Checklist y equipos
     anexo_bravo_checklist: {},
-    anexo_bravo_trabajadores: [] as any[],
-    anexo_bravo_firmas: {},
+    anexo_bravo_trabajadores: [],
+    
+    // Firmas
+    anexo_bravo_firmas: {
+      supervisor_servicio_url: '',
+      supervisor_mandante_url: '',
+      jefe_centro_url: ''
+    },
+    
     observaciones_generales: '',
-    jefe_centro_nombre: '',
-    supervisor: '',
-    estado: 'borrador',
-    firmado: false,
+    jefe_centro_nombre: ''
   });
 
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [selectedAsistente, setSelectedAsistente] = useState('');
+  const steps = [
+    { id: 1, title: 'Datos Generales', isValid: !!(formData.codigo && formData.lugar_faena && formData.empresa_nombre) },
+    { id: 2, title: 'Personal', isValid: !!(formData.supervisor_servicio_nombre && formData.buzo_o_empresa_nombre) },
+    { id: 3, title: 'Checklist', isValid: Object.keys(formData.anexo_bravo_checklist).length > 0 },
+    { id: 4, title: 'Trabajadores', isValid: formData.anexo_bravo_trabajadores.length > 0 },
+    { id: 5, title: 'Firmas', isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) }
+  ];
 
-  // Cargar datos de la operación y poblar campos
+  const handleOperacionSelected = (operacionId: string) => {
+    setCurrentOperacionId(operacionId);
+    setShowOperacionSelector(false);
+  };
+
+  // Poblar datos automáticamente cuando se monta el componente
   useEffect(() => {
-    const loadOperationData = async () => {
-      if (!operacionId) return;
+    const populateOperacionData = async () => {
+      if (!currentOperacionId || anexoId) return; // No poblar si es edición
 
       try {
-        // Obtener datos completos de la operación
-        const { data: operationData, error } = await supabase
+        // Obtener datos de la operación
+        const { data: operacion, error: opError } = await supabase
           .from('operacion')
           .select(`
             *,
+            salmoneras:salmonera_id (nombre, rut),
             sitios:sitio_id (nombre, ubicacion),
-            contratistas:contratista_id (nombre),
-            salmoneras:salmonera_id (nombre)
+            contratistas:contratista_id (nombre, rut)
           `)
-          .eq('id', operacionId)
+          .eq('id', currentOperacionId)
           .single();
 
-        if (error) throw error;
+        if (opError) throw opError;
 
-        const operacion = operationData;
-        
-        // Encontrar equipo de buceo y sus miembros
-        let equipo = null;
-        let miembros: any[] = [];
-        let supervisor = null;
-        let buzoPrincipal = null;
+        // Obtener equipo de buceo asignado
+        const equipoAsignado = operacion.equipo_buceo_id 
+          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
+          : null;
 
-        if (operacion.equipo_buceo_id) {
-          equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-          if (equipo) {
-            miembros = equipo.miembros || [];
-            supervisor = miembros.find(m => m.rol === 'supervisor');
-            buzoPrincipal = miembros.find(m => m.rol === 'buzo_principal');
+        // Crear objeto con todas las propiedades necesarias
+        const autoDataUpdates: Partial<typeof formData> = {
+          codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
+          fecha: new Date().toISOString().split('T')[0],
+          lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
+          empresa_nombre: operacion.contratistas?.nombre || '',
+          bitacora_fecha: new Date().toISOString().split('T')[0],
+          bitacora_relator: ''
+        };
+
+        // Si hay equipo asignado, poblar datos del personal
+        if (equipoAsignado?.miembros) {
+          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
+          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
+          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
+          
+          if (supervisor) {
+            autoDataUpdates.supervisor_servicio_nombre = supervisor.nombre_completo;
+            autoDataUpdates.bitacora_relator = supervisor.nombre_completo;
           }
+          
+          if (buzoPrincipal) {
+            autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
+            autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
+          }
+          
+          if (buzoAsistente) {
+            autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
+            autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
+          }
+
+          // Poblar trabajadores automáticamente
+          const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
+            id: `auto-${index}`,
+            nombre: miembro.nombre_completo,
+            rut: '',
+            cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
+                   miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
+            empresa: operacion.contratistas?.nombre || ''
+          }));
+          
+          autoDataUpdates.anexo_bravo_trabajadores = trabajadores;
         }
 
-        setTeamMembers(miembros);
-
-        // Generar código
-        const codigo = `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        setFormData(prev => ({ ...prev, ...autoDataUpdates }));
         
-        // Poblar todos los campos con datos de la operación
-        setFormData(prev => ({
-          ...prev,
-          codigo,
-          lugar_faena: operacion.sitios?.nombre || '',
-          empresa_nombre: operacion.contratistas?.nombre || '',
-          supervisor_servicio_nombre: supervisor?.nombre_completo || '',
-          buzo_o_empresa_nombre: operacion.contratistas?.nombre || '',
-          buzo_matricula: buzoPrincipal?.matricula || '',
-          supervisor: supervisor?.nombre_completo || '',
-          jefe_centro_nombre: operacion.sitios?.nombre || '',
-          bitacora_relator: supervisor?.nombre_completo || '',
-          anexo_bravo_trabajadores: miembros.map((miembro, index) => ({
-            id: miembro.id,
-            orden: index + 1,
-            nombre: miembro.nombre_completo,
-            rut: miembro.rut || '',
-            cargo: miembro.rol,
-            empresa: operacion.contratistas?.nombre || '',
-          }))
-        }));
-
-        console.log('Operation data loaded:', {
-          operacion,
-          equipo,
-          miembros,
-          supervisor,
-          buzoPrincipal
+        console.log('Datos de Anexo Bravo poblados automáticamente:', autoDataUpdates);
+        
+        toast({
+          title: "Datos cargados",
+          description: "Los datos de la operación han sido cargados automáticamente.",
         });
-
       } catch (error) {
-        console.error('Error loading operation data:', error);
+        console.error('Error populating operation data:', error);
         toast({
           title: "Error",
-          description: "No se pudieron cargar los datos de la operación",
+          description: "No se pudieron cargar los datos de la operación.",
           variant: "destructive",
         });
       }
     };
 
-    loadOperationData();
-  }, [operacionId, equipos, toast]);
+    populateOperacionData();
+  }, [currentOperacionId, anexoId, equipos]);
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      setIsLoading(true);
-      
-      // Crear nombre único para el archivo
-      const fileName = `anexo-bravo/${operacionId}/${Date.now()}-${file.name}`;
-      
-      // Subir archivo a Supabase Storage (necesitaríamos crear el bucket primero)
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .upload(fileName, file);
+  const updateFormData = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
 
-      if (error) throw error;
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
 
-      // Obtener URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(fileName);
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
 
-      setUploadedFile(file);
-      setUploadedFileUrl(publicUrl);
-      
+  const goToStep = (step: number) => {
+    if (step >= 1 && step <= steps.length) {
+      setCurrentStep(step);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!isFormValid()) {
       toast({
-        title: "Archivo subido",
-        description: "El documento se ha subido correctamente",
-      });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo subir el archivo",
+        title: "Formulario incompleto",
+        description: "Complete todos los pasos antes de enviar",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleFileDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileUpload(file);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileUpload(file);
-    }
-  };
-
-  const removeFile = () => {
-    setUploadedFile(null);
-    setUploadedFileUrl('');
-  };
-
-  const handleAsistenteChange = (value: string) => {
-    setSelectedAsistente(value);
-    const miembro = teamMembers.find(m => m.id === value);
-    if (miembro) {
-      setFormData(prev => ({
-        ...prev,
-        asistente_buzo_nombre: miembro.nombre_completo,
-        asistente_buzo_matricula: miembro.matricula || ''
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsLoading(true);
-
     try {
       const submitData = {
         ...formData,
-        autorizacion_armada_documento: uploadedFileUrl,
+        operacion_id: currentOperacionId,
+        firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
+        estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
 
       await onSubmit(submitData);
       
       toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado como borrador exitosamente",
+        title: "Anexo Bravo enviado",
+        description: "El Anexo Bravo ha sido enviado exitosamente",
       });
     } catch (error) {
-      console.error('Error creating anexo bravo:', error);
+      console.error('Error submitting Anexo Bravo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el Anexo Bravo",
+        description: "No se pudo enviar el Anexo Bravo",
         variant: "destructive",
       });
     } finally {
@@ -240,244 +230,177 @@ export const FullAnexoBravoForm = ({ operacionId, onSubmit, onCancel }: FullAnex
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const isFormValid = () => {
+    return steps.every(step => step.isValid);
   };
 
+  const getProgress = () => {
+    return Math.round((currentStep / steps.length) * 100);
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
+      case 2:
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
+      case 3:
+        return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
+      case 4:
+        return <AnexoBravoStep4 data={formData} onUpdate={updateFormData} />;
+      case 5:
+        return <AnexoBravoStep5 data={formData} onUpdate={updateFormData} />;
+      default:
+        return <div>Paso no encontrado</div>;
+    }
+  };
+
+  // Show operation selector if no operation selected
+  if (showOperacionSelector) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <AnexoBravoOperationSelector 
+          onOperacionSelected={handleOperacionSelected}
+          selectedOperacionId={currentOperacionId}
+        />
+        
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onCancel} className="ios-button">
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-6">
+      {/* Header con progreso */}
       <Card className="ios-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" />
-            Crear Anexo Bravo
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>
+                {anexoId ? 'Editar' : 'Crear'} Anexo Bravo
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={currentOperacionId ? "default" : "secondary"}>
+                {currentOperacionId ? 'Con Operación' : 'Independiente'}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOperacionSelector(true)}
+                className="ios-button-sm"
+              >
+                Cambiar Operación
+              </Button>
+            </div>
+          </div>
+          <Progress value={getProgress()} className="mt-4" />
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Información General */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="codigo">Código</Label>
-                <Input
-                  id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => handleChange('codigo', e.target.value)}
-                  className="ios-input"
-                  readOnly
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="fecha">Fecha</Label>
-                <Input
-                  id="fecha"
-                  type="date"
-                  value={formData.fecha}
-                  onChange={(e) => handleChange('fecha', e.target.value)}
-                  className="ios-input"
-                  required
-                />
-              </div>
-            </div>
+      </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="lugar_faena">Centro de Trabajo</Label>
-                <Input
-                  id="lugar_faena"
-                  value={formData.lugar_faena}
-                  onChange={(e) => handleChange('lugar_faena', e.target.value)}
-                  className="ios-input"
-                  readOnly
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="empresa_nombre">Empresa Contratista</Label>
-                <Input
-                  id="empresa_nombre"
-                  value={formData.empresa_nombre}
-                  onChange={(e) => handleChange('empresa_nombre', e.target.value)}
-                  className="ios-input"
-                  readOnly
-                />
-              </div>
-            </div>
-
-            {/* Supervisores */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="supervisor_servicio_nombre">Supervisor de Servicio</Label>
-                <Input
-                  id="supervisor_servicio_nombre"
-                  value={formData.supervisor_servicio_nombre}
-                  onChange={(e) => handleChange('supervisor_servicio_nombre', e.target.value)}
-                  className="ios-input"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="supervisor_mandante_nombre">Supervisor Mandante</Label>
-                <Input
-                  id="supervisor_mandante_nombre"
-                  value={formData.supervisor_mandante_nombre}
-                  onChange={(e) => handleChange('supervisor_mandante_nombre', e.target.value)}
-                  className="ios-input"
-                />
-              </div>
-            </div>
-
-            {/* Información del Buzo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="buzo_matricula">Matrícula del Buzo</Label>
-                <Input
-                  id="buzo_matricula"
-                  value={formData.buzo_matricula}
-                  onChange={(e) => handleChange('buzo_matricula', e.target.value)}
-                  className="ios-input"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="asistente_buzo">Asistente de Buzo</Label>
-                <Select value={selectedAsistente} onValueChange={handleAsistenteChange}>
-                  <SelectTrigger className="ios-input">
-                    <SelectValue placeholder="Seleccionar asistente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teamMembers.filter(m => m.rol !== 'supervisor').map((miembro) => (
-                      <SelectItem key={miembro.id} value={miembro.id}>
-                        {miembro.nombre_completo} - {miembro.rol}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Autorización Marítima */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="autorizacion_armada"
-                  checked={formData.autorizacion_armada}
-                  onCheckedChange={(checked) => handleChange('autorizacion_armada', checked)}
-                />
-                <Label htmlFor="autorizacion_armada">
-                  Autorización de la Autoridad Marítima (adjuntar copia)
-                </Label>
-              </div>
-
-              {formData.autorizacion_armada && (
-                <div className="space-y-2">
-                  <Label>Documento de Autorización</Label>
-                  <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
-                    onDrop={handleFileDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
-                    {uploadedFile ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <File className="w-8 h-8 text-blue-600" />
-                        <div>
-                          <p className="font-medium">{uploadedFile.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFile();
-                          }}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-lg font-medium text-gray-900">
-                          Arrastra el archivo aquí
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          o haz clic para seleccionar
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileSelect}
-                  />
+      {/* Navegación de pasos */}
+      <Card className="ios-card">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-5 gap-2">
+            {steps.map((step) => (
+              <Button
+                key={step.id}
+                variant={step.id === currentStep ? "default" : "outline"}
+                size="sm"
+                onClick={() => goToStep(step.id)}
+                className="ios-button h-auto p-2 flex flex-col items-center gap-1"
+              >
+                <div className="flex items-center gap-1">
+                  {step.isValid ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Circle className="h-4 w-4" />
+                  )}
+                  <span className="font-semibold">{step.id}</span>
                 </div>
+                <span className="text-xs text-center leading-tight">
+                  {step.title}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contenido del paso actual */}
+      {renderStepContent()}
+
+      {/* Navegación inferior */}
+      <Card className="ios-card">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="ios-button"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onCancel} className="ios-button">
+                Cancelar
+              </Button>
+              
+              {currentStep < steps.length ? (
+                <Button
+                  onClick={nextStep}
+                  disabled={!steps[currentStep - 1]?.isValid}
+                  className="ios-button"
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isFormValid() || isLoading}
+                  className="ios-button bg-green-600 hover:bg-green-700"
+                >
+                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
+                </Button>
               )}
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Trabajadores */}
-            <div className="space-y-4">
-              <Label>Trabajadores del Equipo de Buceo</Label>
-              <div className="bg-gray-50 rounded-lg p-4">
-                {formData.anexo_bravo_trabajadores.map((trabajador, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                    <div>
-                      <p className="font-medium">{trabajador.nombre}</p>
-                      <p className="text-sm text-gray-600">{trabajador.cargo} - {trabajador.empresa}</p>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      RUT: {trabajador.rut}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Observaciones */}
-            <div>
-              <Label htmlFor="observaciones_generales">Observaciones Generales</Label>
-              <Textarea
-                id="observaciones_generales"
-                value={formData.observaciones_generales}
-                onChange={(e) => handleChange('observaciones_generales', e.target.value)}
-                className="ios-input min-h-[100px]"
-                placeholder="Ingrese observaciones generales..."
-              />
-            </div>
-
-            {/* Botones */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                disabled={isLoading}
+      {/* Operation Selector Dialog */}
+      {showOperacionSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AnexoBravoOperationSelector 
+              onOperacionSelected={handleOperacionSelected}
+              selectedOperacionId={currentOperacionId}
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowOperacionSelector(false)}
                 className="ios-button"
               >
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="ios-button bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isLoading ? 'Creando...' : 'Crear Borrador'}
-              </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
