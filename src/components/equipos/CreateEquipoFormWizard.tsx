@@ -137,9 +137,10 @@ export const CreateEquipoFormWizard = ({
     onSubmit(finalData);
   };
 
+  // Check if user is admin with company - add proper null checks
   const isUserAdminWithCompany = currentUser && 
-    (currentUser.rol === 'admin_salmonera' && currentUser.salmonera_id) ||
-    (currentUser.rol === 'admin_contratista' && currentUser.servicio_id);
+    ((currentUser.rol === 'admin_salmonera' && currentUser.salmonera_id) ||
+    (currentUser.rol === 'admin_contratista' && currentUser.servicio_id));
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -228,7 +229,7 @@ export const CreateEquipoFormWizard = ({
                 </>
               )}
 
-              {isUserAdminWithCompany && (
+              {isUserAdminWithCompany && currentUser && (
                 <div>
                   <Label>Empresa Asignada</Label>
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
