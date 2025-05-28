@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -147,7 +148,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: FileText,
         items: [
           { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" },
+          { title: "Usuarios", url: "/usuarios" }
         ]
       },
       {
@@ -214,7 +216,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: FileText,
         items: [
           { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" },
+          { title: "Usuarios", url: "/usuarios" }
         ]
       },
       {
@@ -282,7 +285,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: FileText,
         items: [
           { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" },
+          { title: "Usuarios", url: "/usuarios" }
         ]
       },
       {
@@ -351,7 +355,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: FileText,
         items: [
           { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" },
+          { title: "Usuarios", url: "/usuarios" }
         ]
       },
       {
