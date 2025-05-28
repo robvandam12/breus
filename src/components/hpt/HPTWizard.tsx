@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,6 @@ import { HPTStep3 } from "./steps/HPTStep3";
 import { HPTStep4 } from "./steps/HPTStep4";
 import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
-import { HPTOperationSelector } from "./HPTOperationSelector";
 import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -23,22 +21,12 @@ interface HPTWizardProps {
   hptId?: string;
   onComplete?: (hptId: string) => void;
   onCancel?: () => void;
-  showOperationSelector?: boolean;
 }
 
-export const HPTWizard = ({ 
-  operacionId: initialOperacionId, 
-  hptId, 
-  onComplete, 
-  onCancel,
-  showOperationSelector = false 
-}: HPTWizardProps) => {
+export const HPTWizard = ({ operacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
   const { toast } = useToast();
   const { operaciones } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
-  const [selectedOperacionId, setSelectedOperacionId] = useState<string>(initialOperacionId || '');
-  const [showSteps, setShowSteps] = useState(!showOperationSelector || !!initialOperacionId);
-
   const {
     currentStep,
     data,
@@ -52,79 +40,70 @@ export const HPTWizard = ({
     isLoading,
     autoSaveEnabled,
     setAutoSaveEnabled
-  } = useHPTWizard(selectedOperacionId, hptId);
-
-  // Handle operation selection
-  const handleOperacionSelected = (operacionId: string) => {
-    setSelectedOperacionId(operacionId);
-    setShowSteps(true);
-    populateOperationData(operacionId);
-  };
+  } = useHPTWizard(operacionId, hptId);
 
   // Pre-populate data when operation is selected
-  const populateOperationData = async (operacionId: string) => {
-    if (!operacionId) return;
-
-    try {
-      // Get operation with related data
-      const { data: opData, error } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          sitios:sitio_id (nombre, ubicacion),
-          contratistas:contratista_id (nombre),
-          salmoneras:salmonera_id (nombre)
-        `)
-        .eq('id', operacionId)
-        .single();
-
-      if (error) throw error;
-
-      const operacion = opData;
-      
-      // Find supervisor from team members if equipo is assigned
-      let supervisor = null;
-      if (operacion.equipo_buceo_id) {
-        const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-        supervisor = equipo?.miembros?.find(m => 
-          m.rol === 'supervisor'
-        );
-      }
-
-      // Generate folio based on operation
-      const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
-      
-      updateData({
-        operacion_id: operacionId,
-        folio,
-        empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-        supervisor_nombre: supervisor?.nombre_completo || '',
-        centro_trabajo_nombre: operacion.sitios?.nombre || '',
-        lugar_especifico: operacion.sitios?.ubicacion || '',
-        plan_trabajo: operacion.tareas || ''
-      });
-
-      console.log('Operation data populated:', {
-        operacion,
-        supervisor,
-        folio
-      });
-
-    } catch (error) {
-      console.error('Error populating operation data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos de la operación",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
-    if (selectedOperacionId) {
-      populateOperationData(selectedOperacionId);
-    }
-  }, [selectedOperacionId, equipos, updateData, toast]);
+    const populateOperationData = async () => {
+      if (!operacionId) return;
+
+      try {
+        // Get operation with related data
+        const { data: opData, error } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre),
+            salmoneras:salmonera_id (nombre)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (error) throw error;
+
+        const operacion = opData;
+        
+        // Find supervisor from team members if equipo is assigned
+        let supervisor = null;
+        if (operacion.equipo_buceo_id) {
+          const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
+          supervisor = equipo?.miembros?.find(m => 
+            m.rol === 'supervisor'
+          );
+        }
+
+        // Generate folio based on operation
+        const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+        
+        updateData({
+          operacion_id: operacionId,
+          folio,
+          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+          supervisor_nombre: supervisor?.nombre_completo || '',
+          centro_trabajo_nombre: operacion.sitios?.nombre || '',
+          lugar_especifico: operacion.sitios?.ubicacion || '',
+          plan_trabajo: operacion.tareas || ''
+        });
+
+        console.log('Operation data populated:', {
+          operacion,
+          supervisor,
+          folio
+        });
+
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación",
+          variant: "destructive",
+        });
+      }
+    };
+
+    populateOperationData();
+  }, [operacionId, equipos, updateData, toast]);
 
   const handleNext = () => {
     const currentStepData = steps[currentStep - 1];
@@ -155,7 +134,7 @@ export const HPTWizard = ({
       case 1:
         return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={selectedOperacionId || ''} />;
+        return <HPTStep2 data={data} onUpdate={updateData} operacionId={operacionId || ''} />;
       case 3:
         return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:
@@ -169,45 +148,24 @@ export const HPTWizard = ({
     }
   };
 
-  // Show operation selector if needed
-  if (showOperationSelector && !showSteps) {
-    return (
-      <div className="h-full max-h-[90vh] flex flex-col">
-        <div className="flex-shrink-0 p-4 md:p-6 border-b">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl md:text-2xl text-gray-900">
-                Crear Hoja de Planificación de Tarea (HPT)
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Seleccione primero la operación para la cual creará el HPT
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          <HPTOperationSelector 
-            onOperacionSelected={handleOperacionSelected}
-            selectedOperacionId={selectedOperacionId}
-          />
-        </div>
-
-        <div className="flex-shrink-0 flex justify-between items-center p-4 md:p-6 gap-4 border-t bg-white">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            className="min-w-[100px]"
-          >
-            Cancelar
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const getStepIcon = (stepNumber: number) => {
+    switch (stepNumber) {
+      case 1:
+        return <FileText className="w-5 h-5" />;
+      case 2:
+        return <Shield className="w-5 h-5" />;
+      case 3:
+        return <AlertTriangle className="w-5 h-5" />;
+      case 4:
+        return <Shield className="w-5 h-5" />;
+      case 5:
+        return <AlertTriangle className="w-5 h-5" />;
+      case 6:
+        return <FileText className="w-5 h-5" />;
+      default:
+        return <FileText className="w-5 h-5" />;
+    }
+  };
 
   const currentStepData = steps[currentStep - 1];
 

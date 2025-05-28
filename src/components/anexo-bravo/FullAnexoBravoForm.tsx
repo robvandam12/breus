@@ -10,8 +10,7 @@ import { AnexoBravoStep2 } from './steps/AnexoBravoStep2';
 import { AnexoBravoStep3 } from './steps/AnexoBravoStep3';
 import { AnexoBravoStep4 } from './steps/AnexoBravoStep4';
 import { AnexoBravoStep5 } from './steps/AnexoBravoStep5';
-import { AnexoBravoOperationSelector } from './AnexoBravoOperationSelector';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save, FileText } from 'lucide-react';
+import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { toast } from '@/hooks/use-toast';
@@ -21,19 +20,15 @@ interface FullAnexoBravoFormProps {
   onCancel: () => void;
   operacionId?: string;
   anexoId?: string;
-  showOperationSelector?: boolean;
 }
 
 export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   onSubmit,
   onCancel,
-  operacionId: initialOperacionId,
-  anexoId,
-  showOperationSelector = false
+  operacionId,
+  anexoId
 }) => {
   const { equipos } = useEquiposBuceoEnhanced();
-  const [selectedOperacionId, setSelectedOperacionId] = useState<string>(initialOperacionId || '');
-  const [showSteps, setShowSteps] = useState(!showOperationSelector || !!initialOperacionId);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -79,104 +74,95 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     { id: 5, title: 'Firmas', isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) }
   ];
 
-  // Handle operation selection
-  const handleOperacionSelected = (operacionId: string) => {
-    setSelectedOperacionId(operacionId);
-    setShowSteps(true);
-    populateOperationData(operacionId);
-  };
-
-  // Poblar datos automáticamente cuando se selecciona una operación
-  const populateOperationData = async (operacionId: string) => {
-    if (!operacionId || anexoId) return; // No poblar si es edición
-
-    try {
-      // Obtener datos de la operación
-      const { data: operacion, error: opError } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          salmoneras:salmonera_id (nombre, rut),
-          sitios:sitio_id (nombre, ubicacion),
-          contratistas:contratista_id (nombre, rut)
-        `)
-        .eq('id', operacionId)
-        .single();
-
-      if (opError) throw opError;
-
-      // Obtener equipo de buceo asignado
-      const equipoAsignado = operacion.equipo_buceo_id 
-        ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
-        : null;
-
-      // Crear objeto con todas las propiedades necesarias
-      const autoDataUpdates: Partial<typeof formData> = {
-        codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
-        fecha: new Date().toISOString().split('T')[0],
-        lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
-        empresa_nombre: operacion.contratistas?.nombre || '',
-        bitacora_fecha: new Date().toISOString().split('T')[0],
-        bitacora_relator: ''
-      };
-
-      // Si hay equipo asignado, poblar datos del personal
-      if (equipoAsignado?.miembros) {
-        const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
-        const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
-        const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
-        
-        if (supervisor) {
-          autoDataUpdates.supervisor_servicio_nombre = supervisor.nombre_completo;
-          autoDataUpdates.bitacora_relator = supervisor.nombre_completo;
-        }
-        
-        if (buzoPrincipal) {
-          autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
-          autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
-        }
-        
-        if (buzoAsistente) {
-          autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
-          autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
-        }
-
-        // Poblar trabajadores automáticamente
-        const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
-          id: `auto-${index}`,
-          nombre: miembro.nombre_completo,
-          rut: '',
-          cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
-                 miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
-          empresa: operacion.contratistas?.nombre || ''
-        }));
-        
-        autoDataUpdates.anexo_bravo_trabajadores = trabajadores;
-      }
-
-      setFormData(prev => ({ ...prev, ...autoDataUpdates }));
-      
-      console.log('Datos de Anexo Bravo poblados automáticamente:', autoDataUpdates);
-      
-      toast({
-        title: "Datos cargados",
-        description: "Los datos de la operación han sido cargados automáticamente.",
-      });
-    } catch (error) {
-      console.error('Error populating operation data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos de la operación.",
-        variant: "destructive",
-      });
-    }
-  };
-
+  // Poblar datos automáticamente cuando se monta el componente
   useEffect(() => {
-    if (selectedOperacionId) {
-      populateOperationData(selectedOperacionId);
-    }
-  }, [selectedOperacionId, anexoId, equipos]);
+    const populateOperacionData = async () => {
+      if (!operacionId || anexoId) return; // No poblar si es edición
+
+      try {
+        // Obtener datos de la operación
+        const { data: operacion, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            salmoneras:salmonera_id (nombre, rut),
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre, rut)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (opError) throw opError;
+
+        // Obtener equipo de buceo asignado
+        const equipoAsignado = operacion.equipo_buceo_id 
+          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
+          : null;
+
+        // Crear objeto con todas las propiedades necesarias
+        const autoDataUpdates: Partial<typeof formData> = {
+          codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
+          fecha: new Date().toISOString().split('T')[0],
+          lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
+          empresa_nombre: operacion.contratistas?.nombre || '',
+          bitacora_fecha: new Date().toISOString().split('T')[0],
+          bitacora_relator: ''
+        };
+
+        // Si hay equipo asignado, poblar datos del personal
+        if (equipoAsignado?.miembros) {
+          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
+          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
+          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
+          
+          if (supervisor) {
+            autoDataUpdates.supervisor_servicio_nombre = supervisor.nombre_completo;
+            autoDataUpdates.bitacora_relator = supervisor.nombre_completo;
+          }
+          
+          if (buzoPrincipal) {
+            autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
+            autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
+          }
+          
+          if (buzoAsistente) {
+            autoDataUpdates.asistente_buzo_nombre = buzoAsistente.nombre_completo;
+            autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
+          }
+
+          // Poblar trabajadores automáticamente
+          const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
+            id: `auto-${index}`,
+            nombre: miembro.nombre_completo,
+            rut: '',
+            cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
+                   miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
+            empresa: operacion.contratistas?.nombre || ''
+          }));
+          
+          autoDataUpdates.anexo_bravo_trabajadores = trabajadores;
+        }
+
+        setFormData(prev => ({ ...prev, ...autoDataUpdates }));
+        
+        console.log('Datos de Anexo Bravo poblados automáticamente:', autoDataUpdates);
+        
+        toast({
+          title: "Datos cargados",
+          description: "Los datos de la operación han sido cargados automáticamente.",
+        });
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    populateOperacionData();
+  }, [operacionId, anexoId, equipos]);
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -214,7 +200,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     try {
       const submitData = {
         ...formData,
-        operacion_id: selectedOperacionId,
+        operacion_id: operacionId,
         firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
         estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
@@ -262,46 +248,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     }
   };
 
-  // Show operation selector if needed
-  if (showOperationSelector && !showSteps) {
-    return (
-      <div className="h-full max-h-[90vh] flex flex-col">
-        <div className="flex-shrink-0 p-4 md:p-6 border-b">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl md:text-2xl text-gray-900">
-                Crear Anexo Bravo
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Seleccione primero la operación para la cual creará el Anexo Bravo
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          <AnexoBravoOperationSelector 
-            onOperacionSelected={handleOperacionSelected}
-            selectedOperacionId={selectedOperacionId}
-          />
-        </div>
-
-        <div className="flex-shrink-0 flex justify-between items-center p-4 md:p-6 gap-4 border-t bg-white">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            className="min-w-[100px]"
-          >
-            Cancelar
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header con progreso */}
@@ -316,8 +262,8 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
               </p>
             </div>
-            <Badge variant={selectedOperacionId ? "default" : "secondary"}>
-              {selectedOperacionId ? 'Con Operación' : 'Independiente'}
+            <Badge variant={operacionId ? "default" : "secondary"}>
+              {operacionId ? 'Con Operación' : 'Independiente'}
             </Badge>
           </div>
           <Progress value={getProgress()} className="mt-4" />
