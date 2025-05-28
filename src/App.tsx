@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 // Auth Pages
 import Login from '@/pages/auth/Login';
@@ -44,43 +45,45 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="/auth" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Main Application Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          
-          {/* Management Routes */}
-          <Route path="/salmoneras" element={<Salmoneras />} />
-          <Route path="/contratistas" element={<Contratistas />} />
-          <Route path="/sitios" element={<Sitios />} />
-          <Route path="/operaciones" element={<Operaciones />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          
-          {/* Equipment Routes */}
-          <Route path="/equipo-de-buceo" element={<EquipoBuceo />} />
-          
-          {/* Operations Routes */}
-          <Route path="/inmersiones" element={<Inmersiones />} />
-          
-          {/* Forms Routes */}
-          <Route path="/formularios/hpt" element={<HPTPage />} />
-          <Route path="/formularios/anexo-bravo" element={<AnexoBravoPage />} />
-          
-          {/* Details Routes */}
-          <Route path="/operacion/:id" element={<OperacionDetailPage />} />
-          <Route path="/inmersion/:id" element={<InmersionDetailPage />} />
-          
-          {/* Profile and Settings */}
-          <Route path="/profile" element={<ProfilePage />} />
-        </Routes>
-        <Toaster />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/auth" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Main Application Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* Management Routes */}
+            <Route path="/salmoneras" element={<Salmoneras />} />
+            <Route path="/contratistas" element={<Contratistas />} />
+            <Route path="/sitios" element={<Sitios />} />
+            <Route path="/operaciones" element={<Operaciones />} />
+            <Route path="/usuarios" element={<Usuarios />} />
+            
+            {/* Equipment Routes */}
+            <Route path="/equipo-de-buceo" element={<EquipoBuceo />} />
+            
+            {/* Operations Routes */}
+            <Route path="/inmersiones" element={<Inmersiones />} />
+            
+            {/* Forms Routes */}
+            <Route path="/formularios/hpt" element={<HPTPage />} />
+            <Route path="/formularios/anexo-bravo" element={<AnexoBravoPage />} />
+            
+            {/* Details Routes */}
+            <Route path="/operacion/:id" element={<OperacionDetailPage />} />
+            <Route path="/inmersion/:id" element={<InmersionDetailPage />} />
+            
+            {/* Profile and Settings */}
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
+          <Toaster />
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

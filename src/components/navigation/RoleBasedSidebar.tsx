@@ -467,15 +467,15 @@ export const RoleBasedSidebar = () => {
   ];
 
   const getNavItems = () => {
-    if (profile?.rol === 'admin_salmonera') {
+    if (profile?.role === 'admin_salmonera') {
       return adminSalmoneraNavItems;
-    } else if (profile?.rol === 'admin_servicio') {
+    } else if (profile?.role === 'admin_servicio') {
       return adminServicioNavItems;
-    } else if (profile?.rol === 'supervisor') {
+    } else if (profile?.role === 'supervisor') {
       return supervisorNavItems;
-    } else if (profile?.rol === 'buzo') {
+    } else if (profile?.role === 'buzo') {
       return buzoNavItems;
-    } else if (profile?.rol === 'superuser') {
+    } else if (profile?.role === 'superuser') {
       return superuserNavItems;
     }
     return [];
@@ -533,8 +533,8 @@ export const RoleBasedSidebar = () => {
     return 'Usuario';
   };
 
-  const getRoleLabel = (rol?: string) => {
-    switch (rol) {
+  const getRoleLabel = (role?: string) => {
+    switch (role) {
       case 'superuser':
         return 'Super Usuario';
       case 'admin_salmonera':
@@ -585,7 +585,39 @@ export const RoleBasedSidebar = () => {
             <SidebarMenu className="space-y-1">
               {getNavItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {renderNavItem(item)}
+                  {item.items ? (
+                    <Collapsible defaultOpen className="group/collapsible">
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton className="w-full">
+                          <item.icon className="w-4 h-4" />
+                          <span className="flex-1">{item.title}</span>
+                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton asChild>
+                                <Link to={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url!} className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.title}</span>
+                        </div>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -603,7 +635,7 @@ export const RoleBasedSidebar = () => {
               {profile?.nombre} {profile?.apellido}
             </p>
             <p className="text-xs text-zinc-500 truncate">
-              {getRoleLabel(profile?.rol)}
+              {getRoleLabel(profile?.role)}
             </p>
           </div>
         </div>
