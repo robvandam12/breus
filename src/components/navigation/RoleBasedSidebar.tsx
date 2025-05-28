@@ -383,97 +383,99 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
 
 export const RoleBasedSidebar = () => {
   const location = useLocation();
-  const { profile, logout } = useAuth();
+  const { profile, signOut } = useAuth();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
 
   const adminSalmoneraNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: BuildingIcon, label: "Mi Salmonera", href: "/salmoneras" },
-    { icon: MapPin, label: "Sitios", href: "/sitios" },
-    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
-    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
-    { icon: Users, label: "Usuarios", href: "/usuarios" },
-    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
+    { icon: BuildingIcon, title: "Mi Salmonera", url: "/salmoneras" },
+    { icon: MapPin, title: "Sitios", url: "/sitios" },
+    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
+    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
+    { icon: Users, title: "Usuarios", url: "/usuarios" },
+    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
     { 
       icon: FileText, 
-      label: "Formularios", 
-      href: "/formularios",
-      subItems: [
-        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
-        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      title: "Formularios", 
+      url: "/formularios",
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
       ]
     },
   ];
 
   const adminServicioNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: BuildingIcon, label: "Mi Empresa", href: "/contratistas" },
-    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
-    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
-    { icon: Users, label: "Usuarios", href: "/usuarios" },
-    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
+    { icon: BuildingIcon, title: "Mi Empresa", url: "/contratistas" },
+    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
+    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
+    { icon: Users, title: "Usuarios", url: "/usuarios" },
+    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
     { 
       icon: FileText, 
-      label: "Formularios", 
-      href: "/formularios",
-      subItems: [
-        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
-        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      title: "Formularios", 
+      url: "/formularios",
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
       ]
     },
   ];
 
   const supervisorNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
-    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
-    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
+    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
+    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
+    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
     { 
       icon: FileText, 
-      label: "Formularios", 
-      href: "/formularios",
-      subItems: [
-        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
-        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      title: "Formularios", 
+      url: "/formularios",
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
       ]
     },
   ];
 
   const buzoNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Waves, label: "Mis Inmersiones", href: "/inmersiones" },
-    { icon: FileText, label: "Mis Documentos", href: "/formularios" },
+    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
+    { icon: Waves, title: "Mis Inmersiones", url: "/inmersiones" },
+    { icon: FileText, title: "Mis Documentos", url: "/formularios" },
   ];
 
   const superuserNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: BuildingIcon, label: "Salmoneras", href: "/salmoneras" },
-    { icon: Truck, label: "Contratistas", href: "/contratistas" },
-    { icon: MapPin, label: "Sitios", href: "/sitios" },
-    { icon: Briefcase, label: "Operaciones", href: "/operaciones" },
-    { icon: Users, label: "Equipo de Buceo", href: "/equipo-de-buceo" },
-    { icon: Users, label: "Usuarios", href: "/usuarios" },
-    { icon: Waves, label: "Inmersiones", href: "/inmersiones" },
+    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
+    { icon: BuildingIcon, title: "Salmoneras", url: "/salmoneras" },
+    { icon: Truck, title: "Contratistas", url: "/contratistas" },
+    { icon: MapPin, title: "Sitios", url: "/sitios" },
+    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
+    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
+    { icon: Users, title: "Usuarios", url: "/usuarios" },
+    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
     { 
       icon: FileText, 
-      label: "Formularios", 
-      href: "/formularios",
-      subItems: [
-        { icon: Shield, label: "HPT", href: "/formularios/hpt" },
-        { icon: FileCheck, label: "Anexo Bravo", href: "/formularios/anexo-bravo" }
+      title: "Formularios", 
+      url: "/formularios",
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
       ]
     },
   ];
 
   const getNavItems = () => {
-    if (profile?.role === 'admin_salmonera') {
+    if (profile?.rol === 'admin_salmonera') {
       return adminSalmoneraNavItems;
-    } else if (profile?.role === 'admin_servicio') {
+    } else if (profile?.rol === 'admin_servicio') {
       return adminServicioNavItems;
-    } else if (profile?.role === 'supervisor') {
+    } else if (profile?.rol === 'supervisor') {
       return supervisorNavItems;
-    } else if (profile?.role === 'buzo') {
+    } else if (profile?.rol === 'buzo') {
       return buzoNavItems;
-    } else if (profile?.role === 'superuser') {
+    } else if (profile?.rol === 'superuser') {
       return superuserNavItems;
     }
     return [];
@@ -531,8 +533,8 @@ export const RoleBasedSidebar = () => {
     return 'Usuario';
   };
 
-  const getRoleLabel = (role?: string) => {
-    switch (role) {
+  const getRoleLabel = (rol?: string) => {
+    switch (rol) {
       case 'superuser':
         return 'Super Usuario';
       case 'admin_salmonera':
@@ -581,7 +583,11 @@ export const RoleBasedSidebar = () => {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {getNavItems().map((item) => renderNavItem(item))}
+              {getNavItems().map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  {renderNavItem(item)}
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -597,7 +603,7 @@ export const RoleBasedSidebar = () => {
               {profile?.nombre} {profile?.apellido}
             </p>
             <p className="text-xs text-zinc-500 truncate">
-              {getRoleLabel(profile?.role)}
+              {getRoleLabel(profile?.rol)}
             </p>
           </div>
         </div>
@@ -615,7 +621,7 @@ export const RoleBasedSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <button 
-                onClick={logout}
+                onClick={signOut}
                 className="flex items-center gap-3 text-zinc-700 hover:text-zinc-900 w-full"
               >
                 <LogOut className="w-4 h-4" />

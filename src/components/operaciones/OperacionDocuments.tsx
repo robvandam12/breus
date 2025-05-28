@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -163,7 +162,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   Nuevo Anexo Bravo
                 </Button>
                 <DialogContent className="max-w-4xl">
-                  <CreateAnexoBravoForm
+                  <EnhancedAnexoBravoForm
                     onSubmit={handleCreateAnexoBravo}
                     onCancel={() => setIsAnexoDialogOpen(false)}
                   />

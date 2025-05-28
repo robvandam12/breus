@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { useUsuarios } from "@/hooks/useUsuarios";
+import { UserSearchSelectEnhanced } from "@/components/usuarios/UserSearchSelectEnhanced";
 
 interface CreateEquipoFormWizardProps {
   onSubmit: (equipoData: any) => Promise<void>;
@@ -44,13 +45,13 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
   useEffect(() => {
     if (!profile) return;
     
-    if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
+    if (profile.rol === 'admin_salmonera' && profile.salmonera_id) {
       setEquipoData(prev => ({
         ...prev,
         empresa_id: profile.salmonera_id,
         tipo_empresa: 'salmonera'
       }));
-    } else if (profile.role === 'admin_servicio' && profile.servicio_id) {
+    } else if (profile.rol === 'admin_servicio' && profile.servicio_id) {
       setEquipoData(prev => ({
         ...prev,
         empresa_id: profile.servicio_id,
@@ -59,7 +60,7 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
     }
   }, [profile]);
 
-  const isUserAdmin = profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio';
+  const isUserAdmin = profile?.rol === 'admin_salmonera' || profile?.rol === 'admin_servicio';
   const availableUsers = usuarios.filter(u => u.rol === 'supervisor' || u.rol === 'buzo');
 
   const handleStep1Submit = () => {
@@ -202,7 +203,7 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
                   <strong>Empresa detectada automáticamente:</strong>{' '}
-                  {profile?.role === 'admin_salmonera' 
+                  {profile?.rol === 'admin_salmonera' 
                     ? salmoneras.find(s => s.id === profile.salmonera_id)?.nombre
                     : contratistas.find(c => c.id === profile.servicio_id)?.nombre
                   }
@@ -247,20 +248,6 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             <div className="border rounded-lg p-4">
               <h4 className="font-medium mb-3">Agregar Miembros</h4>
               <div className="space-y-4">
-                <div>
-                  <Label>Rol en el Equipo</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar rol..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
-                      <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
                 <UserSearchSelectEnhanced
                   onSelectUser={(user) => handleAddMember(user.usuario_id, 'buzo')}
                   onInviteUser={handleInviteMember}

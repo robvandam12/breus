@@ -66,7 +66,7 @@ export const UserSearchSelectEnhanced = ({
     const inviteDataWithCompany = {
       ...inviteData,
       empresa_id: empresaId || salmoneraId || contratistaId,
-      tipo_empresa: empresaType || (salmoneraId ? 'salmonera' : 'contratista')
+      tipo_empresa: (empresaType || (salmoneraId ? 'salmonera' : 'contratista')) as 'salmonera' | 'contratista'
     };
     
     inviteUser(inviteDataWithCompany);
