@@ -287,8 +287,8 @@ const AnexoBravoPage = () => {
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
               <AnexoBravoWizard 
-                operacion_id={selectedOperacionId}
-                onComplete={handleAnexoBravoComplete}
+                defaultOperacionId={selectedOperacionId}
+                onSubmit={handleAnexoBravoComplete}
                 onCancel={() => setShowCreateForm(false)}
               />
             </DialogContent>
