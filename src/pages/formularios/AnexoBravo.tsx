@@ -9,17 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, CheckCircle } from "lucide-react";
+import { Plus, Search, Shield, CheckCircle, Eye, Edit } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from "@/hooks/use-toast";
 
 const AnexoBravoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [showOperationSelector, setShowOperationSelector] = useState(false);
+  const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
+  const [editingAnexoId, setEditingAnexoId] = useState<string | null>(null);
   
   const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
   const { operaciones } = useOperaciones();
@@ -30,6 +32,7 @@ const AnexoBravoPage = () => {
   );
 
   const handleCreateAnexo = () => {
+    setEditingAnexoId(null);
     setShowOperationSelector(true);
   };
 
@@ -42,11 +45,39 @@ const AnexoBravoPage = () => {
   const handleAnexoComplete = () => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
+    setEditingAnexoId(null);
   };
 
   const handleSubmitAnexo = async (data: any) => {
-    await createAnexoBravo(data);
-    handleAnexoComplete();
+    try {
+      await createAnexoBravo(data);
+      toast({
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
+      });
+      handleAnexoComplete();
+    } catch (error) {
+      console.error('Error creating anexo bravo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el Anexo Bravo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewAnexo = (anexoId: string) => {
+    // TODO: Implement view functionality
+    console.log('View anexo:', anexoId);
+  };
+
+  const handleEditAnexo = (anexoId: string) => {
+    const anexo = anexosBravo.find(a => a.id === anexoId);
+    if (anexo) {
+      setEditingAnexoId(anexoId);
+      setSelectedOperacionId(anexo.operacion_id);
+      setShowCreateForm(true);
+    }
   };
 
   if (isLoading) {
@@ -219,11 +250,23 @@ const AnexoBravoPage = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
-                                  <Button variant="outline" size="sm" className="ios-button-sm">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="ios-button-sm"
+                                    onClick={() => handleViewAnexo(anexo.id)}
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
                                     Ver
                                   </Button>
                                   {!anexo.firmado && (
-                                    <Button variant="outline" size="sm" className="ios-button-sm">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="ios-button-sm"
+                                      onClick={() => handleEditAnexo(anexo.id)}
+                                    >
+                                      <Edit className="w-4 h-4 mr-1" />
                                       Editar
                                     </Button>
                                   )}
@@ -250,11 +293,12 @@ const AnexoBravoPage = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Create Form Modal */}
+          {/* Create/Edit Form Modal */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <FullAnexoBravoForm 
                 operacionId={selectedOperacionId}
+                anexoId={editingAnexoId || undefined}
                 onSubmit={handleSubmitAnexo}
                 onCancel={() => setShowCreateForm(false)}
               />

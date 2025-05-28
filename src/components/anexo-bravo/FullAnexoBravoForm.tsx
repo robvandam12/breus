@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
     autorizacion_armada: false,
+    autorizacion_documento_url: '',
     
     // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],
@@ -69,11 +71,31 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   });
 
   const steps = [
-    { id: 1, title: 'Datos Generales', isValid: !!(formData.codigo && formData.lugar_faena && formData.empresa_nombre) },
-    { id: 2, title: 'Personal', isValid: !!(formData.supervisor_servicio_nombre && formData.buzo_o_empresa_nombre) },
-    { id: 3, title: 'Checklist', isValid: Object.keys(formData.anexo_bravo_checklist).length > 0 },
-    { id: 4, title: 'Trabajadores', isValid: formData.anexo_bravo_trabajadores.length > 0 },
-    { id: 5, title: 'Firmas', isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) }
+    { 
+      id: 1, 
+      title: 'Datos Generales', 
+      isValid: !!(formData.codigo && formData.lugar_faena && formData.empresa_nombre) 
+    },
+    { 
+      id: 2, 
+      title: 'Personal', 
+      isValid: !!(formData.supervisor_servicio_nombre && formData.buzo_o_empresa_nombre) 
+    },
+    { 
+      id: 3, 
+      title: 'Checklist', 
+      isValid: Object.keys(formData.anexo_bravo_checklist).length > 0 
+    },
+    { 
+      id: 4, 
+      title: 'Trabajadores', 
+      isValid: formData.anexo_bravo_trabajadores.length > 0 
+    },
+    { 
+      id: 5, 
+      title: 'Firmas', 
+      isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) 
+    }
   ];
 
   const handleOperacionSelected = (operacionId: string) => {
@@ -81,13 +103,15 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     setShowOperacionSelector(false);
   };
 
-  // Poblar datos automáticamente cuando se monta el componente
+  // Auto-populate data when operation is selected
   useEffect(() => {
     const populateOperacionData = async () => {
-      if (!currentOperacionId || anexoId) return; // No poblar si es edición
+      if (!currentOperacionId || anexoId) return; // Don't populate if editing
 
       try {
-        // Obtener datos de la operación
+        console.log('Populating operation data for:', currentOperacionId);
+        
+        // Get operation data
         const { data: operacion, error: opError } = await supabase
           .from('operacion')
           .select(`
@@ -101,12 +125,15 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
         if (opError) throw opError;
 
-        // Obtener equipo de buceo asignado
+        // Get assigned diving team
         const equipoAsignado = operacion.equipo_buceo_id 
           ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
           : null;
 
-        // Crear objeto con todas las propiedades necesarias
+        console.log('Operation data:', operacion);
+        console.log('Assigned team:', equipoAsignado);
+
+        // Create updates object
         const autoDataUpdates: Partial<typeof formData> = {
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
@@ -116,7 +143,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           bitacora_relator: ''
         };
 
-        // Si hay equipo asignado, poblar datos del personal
+        // If there's an assigned team, populate personnel data
         if (equipoAsignado?.miembros) {
           const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
           const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
@@ -137,11 +164,11 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
             autoDataUpdates.asistente_buzo_matricula = buzoAsistente.matricula || '';
           }
 
-          // Poblar trabajadores automáticamente
+          // Auto-populate workers from diving team
           const trabajadores = equipoAsignado.miembros.map((miembro, index) => ({
             id: `auto-${index}`,
             nombre: miembro.nombre_completo,
-            rut: '',
+            rut: miembro.rut || '',
             cargo: miembro.rol === 'supervisor' ? 'Supervisor' : 
                    miembro.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente',
             empresa: operacion.contratistas?.nombre || ''
@@ -152,7 +179,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
         setFormData(prev => ({ ...prev, ...autoDataUpdates }));
         
-        console.log('Datos de Anexo Bravo poblados automáticamente:', autoDataUpdates);
+        console.log('Anexo Bravo auto-populated data:', autoDataUpdates);
         
         toast({
           title: "Datos cargados",
@@ -275,7 +302,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
-      {/* Header con progreso */}
+      {/* Header with progress */}
       <Card className="ios-card">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -305,7 +332,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Navegación de pasos */}
+      {/* Step navigation */}
       <Card className="ios-card">
         <CardContent className="p-4">
           <div className="grid grid-cols-5 gap-2">
@@ -334,10 +361,10 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         </CardContent>
       </Card>
 
-      {/* Contenido del paso actual */}
+      {/* Current step content */}
       {renderStepContent()}
 
-      {/* Navegación inferior */}
+      {/* Bottom navigation */}
       <Card className="ios-card">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">

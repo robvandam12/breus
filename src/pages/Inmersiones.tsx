@@ -101,7 +101,7 @@ export default function Inmersiones() {
             <div className="flex-1 overflow-auto bg-white">
               <div className="p-6">
                 <InmersionWizard
-                  operacionId={operacionId || undefined}
+                  operationId={operacionId || undefined}
                   onComplete={handleCreateInmersion}
                   onCancel={handleCancel}
                 />
