@@ -14,14 +14,30 @@ export interface Operacion {
   salmonera_id?: string;
   contratista_id?: string;
   sitio_id?: string;
-  supervisor_asignado?: string;
+  supervisor_asignado_id?: string;
   tareas?: string;
-  equipo_buceo_ids?: string[];
+  equipo_buceo_id?: string;
+  servicio_id?: string;
   created_at: string;
   updated_at: string;
   salmonera?: any;
   contratista?: any;
   sitio?: any;
+}
+
+export interface OperacionFormData {
+  nombre: string;
+  codigo: string;
+  descripcion?: string;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  salmonera_id: string;
+  contratista_id?: string;
+  sitio_id?: string;
+  supervisor_asignado_id?: string;
+  tareas?: string;
+  equipo_buceo_id?: string;
+  servicio_id?: string;
 }
 
 export const useOperaciones = () => {
@@ -32,12 +48,12 @@ export const useOperaciones = () => {
     queryFn: async () => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
-        .from('operaciones')
+        .from('operacion')
         .select(`
           *,
           salmonera:salmonera_id (nombre),
           contratista:contratista_id (nombre),
-          sitio:sitio_id (nombre, region, comuna)
+          sitio:sitio_id (nombre, ubicacion)
         `)
         .order('created_at', { ascending: false });
 
@@ -55,7 +71,7 @@ export const useOperaciones = () => {
       console.log('Creating operacion:', data);
       
       const { data: result, error } = await supabase
-        .from('operaciones')
+        .from('operacion')
         .insert([data])
         .select()
         .single();
@@ -89,7 +105,7 @@ export const useOperaciones = () => {
       console.log('Updating operacion:', id, data);
       
       const { data: result, error } = await supabase
-        .from('operaciones')
+        .from('operacion')
         .update(data)
         .eq('id', id)
         .select()
@@ -111,23 +127,10 @@ export const useOperaciones = () => {
     mutationFn: async ({ operacionId, equipoId }: { operacionId: string; equipoId: string }) => {
       console.log('Assigning equipo to operacion:', { operacionId, equipoId });
       
-      // Obtener la operación actual
-      const { data: operacion, error: fetchError } = await supabase
-        .from('operaciones')
-        .select('equipo_buceo_ids')
-        .eq('id', operacionId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Agregar el nuevo equipo a la lista existente
-      const currentEquipos = operacion.equipo_buceo_ids || [];
-      const updatedEquipos = [...currentEquipos, equipoId];
-
-      // Actualizar la operación
+      // Actualizar la operación con el equipo asignado
       const { data: result, error } = await supabase
-        .from('operaciones')
-        .update({ equipo_buceo_ids: updatedEquipos })
+        .from('operacion')
+        .update({ equipo_buceo_id: equipoId })
         .eq('id', operacionId)
         .select()
         .single();
@@ -157,7 +160,7 @@ export const useOperaciones = () => {
       console.log('Deleting operacion:', id);
       
       const { error } = await supabase
-        .from('operaciones')
+        .from('operacion')
         .delete()
         .eq('id', id);
 

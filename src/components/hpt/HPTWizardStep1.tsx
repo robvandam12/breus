@@ -33,7 +33,7 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
   
   // Obtener el equipo asignado a la operación
   const equipoAsignado = equipos.find(equipo => 
-    operacion?.equipo_buceo_ids?.includes(equipo.id)
+    equipo.id === operacion?.equipo_buceo_id
   );
   
   // Obtener supervisor del equipo
