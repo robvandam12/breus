@@ -13,7 +13,6 @@ import Salmoneras from "./pages/empresas/Salmoneras";
 import Sitios from "./pages/empresas/Sitios";
 import Contratistas from "./pages/empresas/Contratistas";
 import EquipoBuceo from "./pages/EquipoBuceo";
-import Usuarios from "./pages/Usuarios";
 import Operaciones from "./pages/operaciones/Operaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
@@ -87,12 +86,6 @@ const App: React.FC = () => (
             <Route path="/equipo-de-buceo" element={
               <ProtectedRoute>
                 <EquipoBuceo />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/usuarios" element={
-              <ProtectedRoute>
-                <Usuarios />
               </ProtectedRoute>
             } />
             

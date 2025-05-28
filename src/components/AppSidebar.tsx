@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -101,17 +102,39 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
-        title: "Mis Inmersiones",
+        title: "Operaciones",
+        icon: Calendar,
+        url: "/operaciones",
+        badge: "12"
+      },
+      {
+        title: "Formularios",
+        icon: FileText,
+        items: [
+          { title: "HPT", url: "/formularios/hpt" },
+          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+        ]
+      },
+      {
+        title: "Inmersiones",
         icon: Anchor,
         url: "/inmersiones",
       },
       {
-        title: "Mis Bitácoras",
+        title: "Bitácoras",
         icon: Book,
-        url: "/bitacoras/buzo",
+        items: [
+          { title: "Supervisor", url: "/bitacoras/supervisor" },
+          { title: "Buzo", url: "/bitacoras/buzo" }
+        ]
       },
       {
-        title: "Mi Perfil",
+        title: "Reportes",
+        icon: BarChart3,
+        url: "/reportes"
+      },
+      {
+        title: "Configuración",
         icon: Settings,
         url: "/configuracion",
       }
@@ -188,13 +211,6 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Información", url: "/empresas/contratistas" }
-        ]
-      },
-      {
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
@@ -228,6 +244,13 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/reportes"
       },
       {
+        title: "Mi Empresa",
+        icon: Building,
+        items: [
+          { title: "Información", url: "/empresas/contratistas" }
+        ]
+      },
+      {
         title: "Configuración",
         icon: Settings,
         url: "/configuracion"
@@ -248,14 +271,6 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Equipo de Buceo",
         icon: Users,
         url: "/equipo-de-buceo"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
       },
       {
         title: "Operaciones",
@@ -291,6 +306,15 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/reportes"
       },
       {
+        title: "Mi Empresa",
+        icon: Building,
+        items: [
+          { title: "Sitios", url: "/empresas/sitios" },
+          { title: "Contratistas", url: "/empresas/contratistas" },
+          { title: "Pool Personal", url: "/admin/salmonera" }
+        ]
+      },
+      {
         title: "Configuración",
         icon: Settings,
         url: "/configuracion"
@@ -311,15 +335,6 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Equipo de Buceo",
         icon: Users,
         url: "/equipo-de-buceo"
-      },
-      {
-        title: "Empresas",
-        icon: Folder,
-        items: [
-          { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
       },
       {
         title: "Operaciones",
@@ -353,6 +368,15 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Reportes",
         icon: BarChart3,
         url: "/reportes"
+      },
+      {
+        title: "Empresas",
+        icon: Folder,
+        items: [
+          { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
+          { title: "Sitios", url: "/empresas/sitios" },
+          { title: "Contratistas", url: "/empresas/contratistas" }
+        ]
       },
       {
         title: "Configuración",
