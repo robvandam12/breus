@@ -7,395 +7,417 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle, User } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Users, CheckCircle } from "lucide-react";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useUsuarios } from "@/hooks/useUsuarios";
-import { supabase } from "@/integrations/supabase/client";
-
-interface TeamMember {
-  id?: string;
-  usuario_id: string;
-  rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
-  nombre_completo: string;
-  email: string;
-  telefono?: string;
-  matricula?: string;
-}
+import { useAuth } from "@/hooks/useAuth";
 
 interface CreateEquipoFormWizardProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
   salmoneraId?: string;
   contratistaId?: string;
+  initialData?: any;
 }
 
 export const CreateEquipoFormWizard = ({ 
   onSubmit, 
   onCancel, 
   salmoneraId, 
-  contratistaId 
+  contratistaId,
+  initialData 
 }: CreateEquipoFormWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [teamData, setTeamData] = useState({
-    nombre: '',
-    descripcion: '',
-    empresa_id: salmoneraId || contratistaId || '',
-    tipo_empresa: salmoneraId ? 'salmonera' : contratistaId ? 'contratista' : 'salmonera'
+  const [formData, setFormData] = useState({
+    nombre: initialData?.nombre || '',
+    descripcion: initialData?.descripcion || '',
+    tipo_empresa: initialData?.tipo_empresa || '',
+    empresa_id: initialData?.empresa_id || salmoneraId || contratistaId || '',
+    activo: initialData?.activo ?? true,
+    miembros: initialData?.miembros || []
   });
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  
+  const [newMember, setNewMember] = useState({
+    nombre_completo: '',
+    email: '',
+    telefono: '',
+    rol_equipo: '',
+    matricula: ''
+  });
 
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
-  const { usuarios } = useUsuarios();
+  const { currentUser } = useAuth();
 
+  const totalSteps = 2;
+  const progress = (currentStep / totalSteps) * 100;
+
+  // Auto-detectar empresa basado en el usuario actual
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('usuario')
-          .select('*')
-          .eq('usuario_id', user.id)
-          .single();
-        
-        if (userData) {
-          setCurrentUser(userData);
-          
-          // Auto-detectar empresa del usuario
-          if (userData.salmonera_id && !salmoneraId) {
-            setTeamData(prev => ({
-              ...prev,
-              empresa_id: userData.salmonera_id,
-              tipo_empresa: 'salmonera'
-            }));
-          } else if (userData.servicio_id && !contratistaId) {
-            setTeamData(prev => ({
-              ...prev,
-              empresa_id: userData.servicio_id,
-              tipo_empresa: 'contratista'
-            }));
-          }
-        }
+    if (currentUser && !salmoneraId && !contratistaId) {
+      if (currentUser.rol === 'admin_salmonera' && currentUser.salmonera_id) {
+        setFormData(prev => ({
+          ...prev,
+          tipo_empresa: 'salmonera',
+          empresa_id: currentUser.salmonera_id
+        }));
+      } else if (currentUser.rol === 'admin_contratista' && currentUser.servicio_id) {
+        setFormData(prev => ({
+          ...prev,
+          tipo_empresa: 'contratista',
+          empresa_id: currentUser.servicio_id
+        }));
       }
-    };
+    } else if (salmoneraId) {
+      setFormData(prev => ({
+        ...prev,
+        tipo_empresa: 'salmonera',
+        empresa_id: salmoneraId
+      }));
+    } else if (contratistaId) {
+      setFormData(prev => ({
+        ...prev,
+        tipo_empresa: 'contratista',
+        empresa_id: contratistaId
+      }));
+    }
+  }, [currentUser, salmoneraId, contratistaId]);
 
-    fetchCurrentUser();
-  }, [salmoneraId, contratistaId]);
+  const handleAddMember = () => {
+    if (newMember.nombre_completo && newMember.rol_equipo) {
+      setFormData(prev => ({
+        ...prev,
+        miembros: [...prev.miembros, { ...newMember, id: Date.now().toString() }]
+      }));
+      setNewMember({
+        nombre_completo: '',
+        email: '',
+        telefono: '',
+        rol_equipo: '',
+        matricula: ''
+      });
+    }
+  };
 
-  const handleNextStep = () => {
-    if (currentStep < 2) {
+  const handleRemoveMember = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      miembros: prev.miembros.filter(m => m.id !== id)
+    }));
+  };
+
+  const canProceedToNext = () => {
+    if (currentStep === 1) {
+      return formData.nombre.trim() && formData.tipo_empresa && formData.empresa_id;
+    }
+    return true; // Paso 2 siempre puede continuar (miembros son opcionales)
+  };
+
+  const handleNext = () => {
+    if (currentStep < totalSteps && canProceedToNext()) {
       setCurrentStep(currentStep + 1);
     }
   };
 
-  const handlePrevStep = () => {
+  const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const addTeamMember = () => {
-    setTeamMembers([...teamMembers, {
-      usuario_id: '',
-      rol_equipo: 'buzo_asistente',
-      nombre_completo: '',
-      email: '',
-      telefono: '',
-      matricula: ''
-    }]);
-  };
-
-  const removeTeamMember = (index: number) => {
-    setTeamMembers(teamMembers.filter((_, i) => i !== index));
-  };
-
-  const updateTeamMember = (index: number, field: keyof TeamMember, value: string) => {
-    const newMembers = [...teamMembers];
-    newMembers[index] = { ...newMembers[index], [field]: value };
-    
-    // Si se selecciona un usuario, auto-completar datos
-    if (field === 'usuario_id' && value) {
-      const selectedUser = usuarios.find(u => u.usuario_id === value);
-      if (selectedUser) {
-        newMembers[index].nombre_completo = `${selectedUser.nombre} ${selectedUser.apellido}`;
-        newMembers[index].email = selectedUser.email || '';
-        newMembers[index].telefono = selectedUser.perfil_buzo?.telefono || '';
-        newMembers[index].matricula = selectedUser.perfil_buzo?.matricula || '';
-      }
-    }
-    
-    setTeamMembers(newMembers);
-  };
-
   const handleSubmit = () => {
-    const finalData = {
-      ...teamData,
-      miembros: teamMembers.filter(member => member.usuario_id)
-    };
-    onSubmit(finalData);
+    onSubmit(formData);
   };
 
-  // Check if user is admin with company - add proper null checks
-  const isUserAdminWithCompany = currentUser && 
-    ((currentUser.rol === 'admin_salmonera' && currentUser.salmonera_id) ||
-    (currentUser.rol === 'admin_contratista' && currentUser.servicio_id));
+  const getRolLabel = (rol: string) => {
+    const roles = {
+      supervisor: 'Supervisor',
+      buzo_principal: 'Buzo Principal',
+      buzo_asistente: 'Buzo Asistente'
+    };
+    return roles[rol as keyof typeof roles] || rol;
+  };
+
+  const getRolColor = (rol: string) => {
+    const colors = {
+      supervisor: 'bg-blue-100 text-blue-700',
+      buzo_principal: 'bg-green-100 text-green-700',
+      buzo_asistente: 'bg-yellow-100 text-yellow-700'
+    };
+    return colors[rol as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+  };
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600" />
-          Crear Nuevo Equipo de Buceo
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-            {currentStep > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
-          </div>
-          <div className={`h-1 w-16 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-            {currentStep >= 2 ? <CheckCircle className="w-4 h-4" /> : '2'}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold">Información del Equipo</h3>
-              <p className="text-gray-600">Configura los datos básicos del equipo de buceo</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Progress Header */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">
+              {initialData ? 'Editar Equipo de Buceo' : 'Crear Equipo de Buceo'}
+            </CardTitle>
+            <div className="text-sm text-gray-500">
+              Paso {currentStep} de {totalSteps}
             </div>
+          </div>
+          <div className="space-y-2">
+            <Progress value={progress} className="h-2" />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Información del Equipo</span>
+              <span>Asignar Miembros</span>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="nombre">Nombre del Equipo *</Label>
-                <Input
-                  id="nombre"
-                  value={teamData.nombre}
-                  onChange={(e) => setTeamData(prev => ({ ...prev, nombre: e.target.value }))}
-                  placeholder="Ej: Equipo Alpha"
-                  required
-                />
-              </div>
+      {/* Step Content */}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold mb-4">Información Básica del Equipo</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nombre">Nombre del Equipo *</Label>
+                  <Input
+                    id="nombre"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                    placeholder="Ej: Equipo Alpha"
+                    required
+                  />
+                </div>
 
-              {!isUserAdminWithCompany && (
-                <>
-                  <div>
-                    <Label htmlFor="tipo_empresa">Tipo de Empresa *</Label>
-                    <Select
-                      value={teamData.tipo_empresa}
-                      onValueChange={(value: 'salmonera' | 'contratista') => 
-                        setTeamData(prev => ({ ...prev, tipo_empresa: value, empresa_id: '' }))
+                <div>
+                  <Label htmlFor="tipo_empresa">Tipo de Empresa *</Label>
+                  <Select
+                    value={formData.tipo_empresa}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_empresa: value, empresa_id: '' }))}
+                    disabled={!!(salmoneraId || contratistaId)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salmonera">Salmonera</SelectItem>
+                      <SelectItem value="contratista">Contratista</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="empresa">
+                    {formData.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Contratista'} *
+                  </Label>
+                  <Select
+                    value={formData.empresa_id}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}
+                    disabled={!!(salmoneraId || contratistaId)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar empresa..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.tipo_empresa === 'salmonera' 
+                        ? salmoneras.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>
+                          ))
+                        : contratistas.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                          ))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar tipo..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="salmonera">Salmonera</SelectItem>
-                        <SelectItem value="contratista">Contratista</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                <div className="md:col-span-2">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Textarea
+                    id="descripcion"
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                    placeholder="Descripción del equipo..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold mb-4">Asignar Miembros al Equipo</h3>
+              
+              {/* Add Member Form */}
+              <Card className="p-4 bg-gray-50">
+                <h4 className="font-medium mb-3">Agregar Nuevo Miembro</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
-                    <Label htmlFor="empresa">
-                      {teamData.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Contratista'} *
-                    </Label>
+                    <Label htmlFor="nombre_miembro">Nombre Completo</Label>
+                    <Input
+                      id="nombre_miembro"
+                      value={newMember.nombre_completo}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, nombre_completo: e.target.value }))}
+                      placeholder="Nombre del miembro"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="rol_miembro">Rol en el Equipo</Label>
                     <Select
-                      value={teamData.empresa_id}
-                      onValueChange={(value) => setTeamData(prev => ({ ...prev, empresa_id: value }))}
+                      value={newMember.rol_equipo}
+                      onValueChange={(value) => setNewMember(prev => ({ ...prev, rol_equipo: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar empresa..." />
+                        <SelectValue placeholder="Seleccionar rol..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {teamData.tipo_empresa === 'salmonera' 
-                          ? salmoneras.map((salmonera) => (
-                              <SelectItem key={salmonera.id} value={salmonera.id}>
-                                {salmonera.nombre}
-                              </SelectItem>
-                            ))
-                          : contratistas.map((contratista) => (
-                              <SelectItem key={contratista.id} value={contratista.id}>
-                                {contratista.nombre}
-                              </SelectItem>
-                            ))
-                        }
+                        <SelectItem value="supervisor">Supervisor</SelectItem>
+                        <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
+                        <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </>
+                  
+                  <div>
+                    <Label htmlFor="email_miembro">Email</Label>
+                    <Input
+                      id="email_miembro"
+                      type="email"
+                      value={newMember.email}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="email@ejemplo.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="telefono_miembro">Teléfono</Label>
+                    <Input
+                      id="telefono_miembro"
+                      value={newMember.telefono}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, telefono: e.target.value }))}
+                      placeholder="+56 9 1234 5678"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="matricula_miembro">Matrícula</Label>
+                    <Input
+                      id="matricula_miembro"
+                      value={newMember.matricula}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, matricula: e.target.value }))}
+                      placeholder="Matrícula profesional"
+                    />
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      onClick={handleAddMember}
+                      disabled={!newMember.nombre_completo || !newMember.rol_equipo}
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Agregar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Members List */}
+              {formData.miembros.length > 0 && (
+                <Card className="p-4">
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Miembros del Equipo ({formData.miembros.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {formData.miembros.map((miembro) => (
+                      <div key={miembro.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="font-medium">{miembro.nombre_completo}</p>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              {miembro.email && <span>{miembro.email}</span>}
+                              {miembro.telefono && <span>• {miembro.telefono}</span>}
+                              {miembro.matricula && <span>• Mat: {miembro.matricula}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getRolColor(miembro.rol_equipo)}>
+                            {getRolLabel(miembro.rol_equipo)}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveMember(miembro.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
               )}
 
-              {isUserAdminWithCompany && currentUser && (
-                <div>
-                  <Label>Empresa Asignada</Label>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="font-medium text-blue-900">
-                      {currentUser.salmonera_id ? 'Salmonera' : 'Contratista'} (Auto-asignado)
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      {currentUser.salmonera_id 
-                        ? salmoneras.find(s => s.id === currentUser.salmonera_id)?.nombre
-                        : contratistas.find(c => c.id === currentUser.servicio_id)?.nombre
-                      }
-                    </p>
-                  </div>
+              {formData.miembros.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No hay miembros asignados al equipo</p>
+                  <p className="text-sm">Puedes agregar miembros más tarde si lo prefieres</p>
                 </div>
               )}
             </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <div>
-              <Label htmlFor="descripcion">Descripción</Label>
-              <Textarea
-                id="descripcion"
-                value={teamData.descripcion}
-                onChange={(e) => setTeamData(prev => ({ ...prev, descripcion: e.target.value }))}
-                placeholder="Descripción del equipo y sus especialidades..."
-                rows={3}
-              />
-            </div>
+      {/* Navigation */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Anterior
+            </Button>
 
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleNextStep}
-                disabled={!teamData.nombre || !teamData.empresa_id}
-                className="flex items-center gap-2"
-              >
-                Siguiente: Asignar Miembros
-                <ArrowRight className="w-4 h-4" />
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={onCancel}>
+                Cancelar
               </Button>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold">Miembros del Equipo</h3>
-              <p className="text-gray-600">Asigna buzos y supervisores al equipo</p>
-            </div>
-
-            {teamMembers.length === 0 ? (
-              <div className="text-center py-8">
-                <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No hay miembros asignados al equipo</p>
-                <Button onClick={addTeamMember} className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Agregar Primer Miembro
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {teamMembers.map((member, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">Miembro {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeTeamMember(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label>Usuario *</Label>
-                        <Select
-                          value={member.usuario_id}
-                          onValueChange={(value) => updateTeamMember(index, 'usuario_id', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar usuario..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {usuarios.filter(u => u.rol === 'buzo' || u.rol === 'supervisor').map((usuario) => (
-                              <SelectItem key={usuario.usuario_id} value={usuario.usuario_id}>
-                                {usuario.nombre} {usuario.apellido}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Rol en el Equipo *</Label>
-                        <Select
-                          value={member.rol_equipo}
-                          onValueChange={(value: 'supervisor' | 'buzo_principal' | 'buzo_asistente') => 
-                            updateTeamMember(index, 'rol_equipo', value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="supervisor">Supervisor</SelectItem>
-                            <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
-                            <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Matrícula</Label>
-                        <Input
-                          value={member.matricula || ''}
-                          onChange={(e) => updateTeamMember(index, 'matricula', e.target.value)}
-                          placeholder="Número de matrícula"
-                        />
-                      </div>
-                    </div>
-
-                    {member.usuario_id && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium">Nombre:</span> {member.nombre_completo}
-                          </div>
-                          <div>
-                            <span className="font-medium">Email:</span> {member.email}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-
-                <Button 
-                  onClick={addTeamMember} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2"
+              
+              {currentStep < totalSteps ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceedToNext()}
+                  className="flex items-center gap-2"
                 >
-                  <Plus className="w-4 h-4" />
-                  Agregar Otro Miembro
+                  Siguiente
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={handlePrevStep} className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Anterior
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={onCancel}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSubmit} className="flex items-center gap-2">
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                >
                   <CheckCircle className="w-4 h-4" />
-                  Crear Equipo
+                  {initialData ? 'Actualizar Equipo' : 'Crear Equipo'}
                 </Button>
-              </div>
+              )}
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

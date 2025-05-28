@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Users, Edit, Trash2, Eye, UserPlus } from "lucide-react";
 import { CreateEquipoFormWizard } from "@/components/equipos/CreateEquipoFormWizard";
+import { EquipoDetailsModal } from "@/components/equipos/EquipoDetailsModal";
+import { DeleteEquipoModal } from "@/components/equipos/DeleteEquipoModal";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 import { toast } from "@/hooks/use-toast";
 
@@ -18,8 +19,9 @@ export default function EquipoBuceo() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEquipo, setSelectedEquipo] = useState<any>(null);
-  const [equipoToDelete, setEquipoToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { equipos, isLoading, createEquipo, updateEquipo, deleteEquipo } = useEquipoBuceo();
 
@@ -64,9 +66,11 @@ export default function EquipoBuceo() {
 
   const handleDeleteEquipo = async () => {
     try {
-      if (equipoToDelete) {
-        await deleteEquipo(equipoToDelete);
-        setEquipoToDelete(null);
+      setIsDeleting(true);
+      if (selectedEquipo) {
+        await deleteEquipo(selectedEquipo.id);
+        setShowDeleteModal(false);
+        setSelectedEquipo(null);
         toast({
           title: "Equipo eliminado",
           description: "El equipo de buceo ha sido eliminado exitosamente.",
@@ -79,6 +83,8 @@ export default function EquipoBuceo() {
         description: "No se pudo eliminar el equipo de buceo.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -92,13 +98,14 @@ export default function EquipoBuceo() {
     setShowEditForm(true);
   };
 
-  const getRolBadgeColor = (rol: string) => {
-    const colorMap: Record<string, string> = {
-      supervisor: 'bg-blue-100 text-blue-700',
-      buzo_principal: 'bg-green-100 text-green-700',
-      buzo_asistente: 'bg-yellow-100 text-yellow-700',
-    };
-    return colorMap[rol] || 'bg-gray-100 text-gray-700';
+  const handleDeleteClick = (equipo: any) => {
+    setSelectedEquipo(equipo);
+    setShowDeleteModal(true);
+  };
+
+  const handleAddMemberFromModal = () => {
+    setShowViewModal(false);
+    setShowEditForm(true);
   };
 
   if (isLoading) {
@@ -150,7 +157,7 @@ export default function EquipoBuceo() {
                       No hay equipos de buceo registrados
                     </h3>
                     <p className="text-zinc-500 mb-4">
-                      Comience creando el primer equipo de buceo
+                      Comience creando el primer equipo de buceo con el wizard de 2 pasos
                     </p>
                     <Button onClick={() => setShowCreateForm(true)}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -203,6 +210,7 @@ export default function EquipoBuceo() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewEquipo(equipo)}
+                                title="Ver detalles"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
@@ -210,14 +218,16 @@ export default function EquipoBuceo() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleEditClick(equipo)}
+                                title="Editar equipo"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setEquipoToDelete(equipo.id)}
+                                onClick={() => handleDeleteClick(equipo)}
                                 className="text-red-600 hover:text-red-700"
+                                title="Eliminar equipo"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -230,7 +240,7 @@ export default function EquipoBuceo() {
                 </Card>
               )}
 
-              {/* Create Form Modal */}
+              {/* Create Form Modal - Wizard de 2 pasos */}
               <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <CreateEquipoFormWizard 
@@ -240,7 +250,7 @@ export default function EquipoBuceo() {
                 </DialogContent>
               </Dialog>
 
-              {/* Edit Form Modal */}
+              {/* Edit Form Modal - Wizard de 2 pasos con datos iniciales */}
               <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   {selectedEquipo && (
@@ -252,80 +262,38 @@ export default function EquipoBuceo() {
                       }}
                       salmoneraId={selectedEquipo.tipo_empresa === 'salmonera' ? selectedEquipo.empresa_id : undefined}
                       contratistaId={selectedEquipo.tipo_empresa === 'contratista' ? selectedEquipo.empresa_id : undefined}
+                      initialData={selectedEquipo}
                     />
                   )}
                 </DialogContent>
               </Dialog>
 
-              {/* View Modal */}
-              <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-blue-600" />
-                      {selectedEquipo?.nombre}
-                    </DialogTitle>
-                  </DialogHeader>
-                  {selectedEquipo && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="font-medium">Tipo:</span> {selectedEquipo.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Contratista'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Estado:</span> {selectedEquipo.activo ? 'Activo' : 'Inactivo'}
-                        </div>
-                      </div>
-                      {selectedEquipo.descripcion && (
-                        <div>
-                          <span className="font-medium">Descripción:</span>
-                          <p className="text-gray-600 mt-1">{selectedEquipo.descripcion}</p>
-                        </div>
-                      )}
-                      <div>
-                        <h4 className="font-medium mb-2">Miembros del Equipo ({selectedEquipo.miembros?.length || 0})</h4>
-                        {selectedEquipo.miembros?.length > 0 ? (
-                          <div className="space-y-2">
-                            {selectedEquipo.miembros.map((miembro: any) => (
-                              <div key={miembro.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div>
-                                  <p className="font-medium">{miembro.nombre_completo}</p>
-                                  <p className="text-sm text-gray-500">{miembro.email}</p>
-                                </div>
-                                <Badge variant="outline" className={getRolBadgeColor(miembro.rol_equipo)}>
-                                  {miembro.rol_equipo === 'supervisor' ? 'Supervisor' :
-                                   miembro.rol_equipo === 'buzo_principal' ? 'Buzo Principal' :
-                                   'Buzo Asistente'}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-gray-500">No hay miembros asignados</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </DialogContent>
-              </Dialog>
+              {/* View Modal - Modal de detalles completo */}
+              <EquipoDetailsModal
+                equipo={selectedEquipo}
+                isOpen={showViewModal}
+                onClose={() => {
+                  setShowViewModal(false);
+                  setSelectedEquipo(null);
+                }}
+                onEdit={() => {
+                  setShowViewModal(false);
+                  setShowEditForm(true);
+                }}
+                onAddMember={handleAddMemberFromModal}
+              />
 
-              {/* Delete Confirmation Modal */}
-              <AlertDialog open={!!equipoToDelete} onOpenChange={() => setEquipoToDelete(null)}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta acción no se puede deshacer. Se eliminará permanentemente el equipo de buceo y todos sus miembros asociados.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteEquipo} className="bg-red-600 hover:bg-red-700">
-                      Eliminar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {/* Delete Modal - Modal de confirmación personalizado */}
+              <DeleteEquipoModal
+                equipo={selectedEquipo}
+                isOpen={showDeleteModal}
+                onClose={() => {
+                  setShowDeleteModal(false);
+                  setSelectedEquipo(null);
+                }}
+                onConfirm={handleDeleteEquipo}
+                isDeleting={isDeleting}
+              />
             </div>
           </div>
         </main>

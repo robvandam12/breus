@@ -328,6 +328,7 @@ export const OperacionTeamManagerEnhanced = ({
                 onCancel={() => setShowEditTeam(false)}
                 salmoneraId={equipoAsignado.tipo_empresa === 'salmonera' ? equipoAsignado.empresa_id : undefined}
                 contratistaId={equipoAsignado.tipo_empresa === 'contratista' ? equipoAsignado.empresa_id : undefined}
+                initialData={equipoAsignado}
               />
             )}
           </DialogContent>
