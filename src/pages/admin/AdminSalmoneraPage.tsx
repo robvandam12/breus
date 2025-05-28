@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Users, Building, MapPin, Calendar, Bell } from "lucide-react";
-import { PoolPersonalManager } from "@/components/admin/PoolPersonalManager";
+import { PersonalDisponibleManager } from "@/components/admin/PersonalDisponibleManager";
 import { CentroNotificaciones } from "@/components/admin/CentroNotificaciones";
 import { useWorkflowNotifications } from "@/hooks/useWorkflowNotifications";
 
@@ -16,7 +16,7 @@ const AdminSalmoneraPage = () => {
 
   const statsCards = [
     {
-      title: "Pool de Personal",
+      title: "Personal Disponible",
       value: "24",
       description: "Supervisores y buzos activos",
       icon: Users,
@@ -72,7 +72,7 @@ const AdminSalmoneraPage = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                  <TabsTrigger value="pool">Pool Personal</TabsTrigger>
+                  <TabsTrigger value="personal">Personal Disponible</TabsTrigger>
                   <TabsTrigger value="sitios">Sitios</TabsTrigger>
                   <TabsTrigger value="operaciones">Operaciones</TabsTrigger>
                   <TabsTrigger value="notificaciones" className="relative">
@@ -143,7 +143,7 @@ const AdminSalmoneraPage = () => {
                             <p className="text-muted-foreground">Hace 2 horas</p>
                           </div>
                           <div className="text-sm">
-                            <p className="font-medium">Nuevo supervisor agregado al pool</p>
+                            <p className="font-medium">Nuevo supervisor agregado al personal</p>
                             <p className="text-muted-foreground">Hace 4 horas</p>
                           </div>
                           <div className="text-sm">
@@ -156,8 +156,8 @@ const AdminSalmoneraPage = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="pool" className="space-y-6">
-                  <PoolPersonalManager />
+                <TabsContent value="personal" className="space-y-6">
+                  <PersonalDisponibleManager />
                 </TabsContent>
 
                 <TabsContent value="sitios" className="space-y-6">
