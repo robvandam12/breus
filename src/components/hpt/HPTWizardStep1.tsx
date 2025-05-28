@@ -40,7 +40,9 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
         updateData({
           empresa_servicio_nombre: contratista?.nombre || '',
           centro_trabajo_nombre: sitio?.nombre || '',
-          supervisor_nombre: supervisor?.nombre_completo || ''
+          supervisor_nombre: supervisor?.nombre_completo || '',
+          descripcion_tarea: operacion.tareas || '',
+          lugar_especifico: sitio?.ubicacion || ''
         });
       }
     }

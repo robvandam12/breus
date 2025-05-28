@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Search, Eye, Edit, Trash2, Plus, Calendar } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { EditOperacionForm } from "./EditOperacionForm";
-import OperacionDetail from "./OperacionDetail";
+import OperacionDetailModal from "./OperacionDetailModal";
 
 export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -235,11 +235,11 @@ export const OperacionesManager = () => {
         </Card>
       )}
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog - Updated to not show sidebar/header */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
           {selectedOperacion && (
-            <OperacionDetail operacion={selectedOperacion} />
+            <OperacionDetailModal operacion={selectedOperacion} />
           )}
         </DialogContent>
       </Dialog>

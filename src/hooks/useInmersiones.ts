@@ -33,18 +33,19 @@ export interface Inmersion {
 export interface ValidationStatus {
   hasValidHPT: boolean;
   hasValidAnexoBravo: boolean;
+  hasTeam: boolean;
   canExecute: boolean;
   hptCode?: string;
   anexoBravoCode?: string;
 }
 
-export const useInmersiones = () => {
+export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();
 
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['inmersiones'],
+    queryKey: ['inmersiones', operacionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('inmersion')
         .select(`
           *,
@@ -53,6 +54,12 @@ export const useInmersiones = () => {
           )
         `)
         .order('created_at', { ascending: false });
+
+      if (operacionId) {
+        query = query.eq('operacion_id', operacionId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -65,9 +72,20 @@ export const useInmersiones = () => {
 
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
+      // Validate that HPT and Anexo Bravo are signed before creating inmersion
+      const validation = await validateOperationDocuments(inmersionData.operacion_id);
+      
+      if (!validation.canExecute) {
+        throw new Error('No se puede crear la inmersión: faltan documentos firmados o equipo asignado');
+      }
+
       const { data, error } = await supabase
         .from('inmersion')
-        .insert(inmersionData)
+        .insert({
+          ...inmersionData,
+          hpt_validado: validation.hasValidHPT,
+          anexo_bravo_validado: validation.hasValidAnexoBravo
+        })
         .select()
         .single();
 
@@ -85,7 +103,7 @@ export const useInmersiones = () => {
       console.error('Error creating inmersion:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la inmersión.",
+        description: error.message || "No se pudo crear la inmersión.",
         variant: "destructive",
       });
     },
@@ -206,7 +224,7 @@ export const useInmersiones = () => {
 
   const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
     try {
-      // Verificar HPT
+      // Verificar HPT firmado
       const { data: hptData } = await supabase
         .from('hpt')
         .select('codigo, firmado')
@@ -214,7 +232,7 @@ export const useInmersiones = () => {
         .eq('firmado', true)
         .single();
 
-      // Verificar Anexo Bravo
+      // Verificar Anexo Bravo firmado
       const { data: anexoData } = await supabase
         .from('anexo_bravo')
         .select('codigo, firmado')
@@ -222,13 +240,22 @@ export const useInmersiones = () => {
         .eq('firmado', true)
         .single();
 
+      // Verificar que la operación tenga equipo asignado
+      const { data: operacionData } = await supabase
+        .from('operacion')
+        .select('equipo_buceo_id')
+        .eq('id', operacionId)
+        .single();
+
       const hasValidHPT = !!hptData;
       const hasValidAnexoBravo = !!anexoData;
+      const hasTeam = !!(operacionData?.equipo_buceo_id);
 
       return {
         hasValidHPT,
         hasValidAnexoBravo,
-        canExecute: hasValidHPT && hasValidAnexoBravo,
+        hasTeam,
+        canExecute: hasValidHPT && hasValidAnexoBravo && hasTeam,
         hptCode: hptData?.codigo,
         anexoBravoCode: anexoData?.codigo
       };
@@ -237,6 +264,7 @@ export const useInmersiones = () => {
       return {
         hasValidHPT: false,
         hasValidAnexoBravo: false,
+        hasTeam: false,
         canExecute: false
       };
     }
