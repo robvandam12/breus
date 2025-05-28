@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -186,7 +185,7 @@ export default function EquiposBuceo() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Nombre</TableHead>
-                          <TableHead>Empresa</TableHead>
+                          <TableHead>Tipo</TableHead>
                           <TableHead>Miembros</TableHead>
                           <TableHead>Supervisor</TableHead>
                           <TableHead>Estado</TableHead>
@@ -208,12 +207,9 @@ export default function EquiposBuceo() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <div className="text-sm">
-                                  {equipo.empresa?.nombre || 'Sin empresa'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {equipo.tipo_empresa}
-                                </div>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                  {equipo.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Servicio'}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -227,7 +223,7 @@ export default function EquiposBuceo() {
                                 {supervisor ? (
                                   <div className="text-sm">
                                     <div className="font-medium">{supervisor.nombre_completo}</div>
-                                    <div className="text-gray-500">{supervisor.empresa}</div>
+                                    <div className="text-gray-500">{supervisor.rol}</div>
                                   </div>
                                 ) : (
                                   <span className="text-sm text-gray-400">Sin supervisor</span>

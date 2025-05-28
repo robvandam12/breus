@@ -50,8 +50,8 @@ export function RoleBasedSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
   
-  const isSupervisor = profile?.rol === 'supervisor' || profile?.rol === 'admin' || profile?.rol === 'superuser';
-  const isAdmin = profile?.rol === 'admin' || profile?.rol === 'superuser';
+  const isSupervisor = profile?.role === 'supervisor' || profile?.role === 'admin' || profile?.role === 'superuser';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superuser';
 
   const menuItems = [
     {
@@ -126,7 +126,7 @@ export function RoleBasedSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                if (item.roles[0] !== 'all' && !item.roles.includes(profile?.rol || '')) {
+                if (item.roles[0] !== 'all' && !item.roles.includes(profile?.role || '')) {
                   return null;
                 }
 
@@ -256,7 +256,7 @@ export function RoleBasedSidebar() {
             </p>
             <div className="flex items-center gap-1">
               <Badge variant="secondary" className="text-xs">
-                {profile?.rol || 'buzo'}
+                {profile?.role || 'buzo'}
               </Badge>
             </div>
           </div>

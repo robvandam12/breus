@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -270,8 +269,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       
       const hptData: HPTFormData = {
         ...data,
-        codigo,
-        estado: 'borrador' // Crear como borrador, firmar después
+        codigo
       };
 
       let finalHptId = hptId;
