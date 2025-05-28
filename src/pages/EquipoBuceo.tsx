@@ -3,22 +3,26 @@ import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Plus, Search, Edit, Trash2, Eye, UserPlus, Mail } from "lucide-react";
-import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
+import { CreateEquipoFormWizard } from "@/components/equipos/CreateEquipoFormWizard";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useToast } from "@/hooks/use-toast";
 
 const EquipoBuceo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedEquipo, setSelectedEquipo] = useState<any>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   
-  const { equipos, isLoading, createEquipo } = useEquipoBuceo();
+  const { equipos, isLoading, createEquipo, deleteEquipo } = useEquipoBuceo();
+  const { toast } = useToast();
 
   const filteredEquipos = equipos.filter(equipo => 
     equipo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,8 +33,41 @@ const EquipoBuceo = () => {
     try {
       await createEquipo(data);
       setIsCreateDialogOpen(false);
+      toast({
+        title: "Equipo creado",
+        description: "El equipo de buceo ha sido creado exitosamente.",
+      });
     } catch (error) {
       console.error('Error creating equipo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el equipo de buceo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDetails = (equipo: any) => {
+    setSelectedEquipo(equipo);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleDeleteEquipo = async (equipoId: string) => {
+    if (confirm('¿Estás seguro de que deseas eliminar este equipo?')) {
+      try {
+        await deleteEquipo(equipoId);
+        toast({
+          title: "Equipo eliminado",
+          description: "El equipo ha sido eliminado exitosamente.",
+        });
+      } catch (error) {
+        console.error('Error deleting equipo:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el equipo.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -82,8 +119,8 @@ const EquipoBuceo = () => {
                     Nuevo Equipo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <CreateEquipoForm
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <CreateEquipoFormWizard
                     onSubmit={handleCreateEquipo}
                     onCancel={() => setIsCreateDialogOpen(false)}
                   />
@@ -211,14 +248,35 @@ const EquipoBuceo = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="outline" size="sm" title="Ver detalles">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                title="Ver detalles"
+                                onClick={() => handleViewDetails(equipo)}
+                              >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button variant="outline" size="sm" title="Agregar miembro">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                title="Agregar miembro"
+                                onClick={() => {
+                                  // TODO: Implementar agregar miembro
+                                  toast({
+                                    title: "Función en desarrollo",
+                                    description: "Esta función estará disponible pronto.",
+                                  });
+                                }}
+                              >
                                 <UserPlus className="w-4 h-4" />
                               </Button>
-                              <Button variant="outline" size="sm" title="Editar">
-                                <Edit className="w-4 h-4" />
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                title="Eliminar"
+                                onClick={() => handleDeleteEquipo(equipo.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
                               </Button>
                             </div>
                           </TableCell>
@@ -230,6 +288,49 @@ const EquipoBuceo = () => {
               )}
             </div>
           </div>
+
+          {/* Modal de detalles del equipo */}
+          <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              {selectedEquipo && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Users className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h2 className="text-xl font-semibold">{selectedEquipo.nombre}</h2>
+                      <p className="text-zinc-500">{selectedEquipo.descripcion}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">Miembros del Equipo</h3>
+                    {selectedEquipo.miembros && selectedEquipo.miembros.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedEquipo.miembros.map((miembro: any) => (
+                          <div key={miembro.id} className="flex items-center justify-between p-2 border rounded">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div>
+                                <div className="font-medium">{miembro.nombre_completo}</div>
+                                <div className="text-sm text-zinc-500">{miembro.email}</div>
+                              </div>
+                            </div>
+                            <Badge variant="outline">
+                              {miembro.rol_equipo?.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-zinc-500 text-center py-4">No hay miembros asignados</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>

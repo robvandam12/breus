@@ -7,75 +7,55 @@ export interface Operacion {
   id: string;
   codigo: string;
   nombre: string;
-  sitio_id: string;
-  servicio_id: string;
-  salmonera_id: string;
-  contratista_id: string;
-  fecha_inicio: string;
+  descripcion?: string;
+  fecha_inicio?: string;
   fecha_fin?: string;
+  estado: string;
+  salmonera_id?: string;
+  contratista_id?: string;
+  sitio_id?: string;
+  supervisor_asignado?: string;
   tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
-  equipo_buceo_id?: string;
+  equipo_buceo_ids?: string[];
   created_at: string;
   updated_at: string;
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
-}
-
-export interface OperacionFormData {
-  codigo: string;
-  nombre: string;
-  sitio_id: string;
-  servicio_id: string;
-  salmonera_id: string;
-  contratista_id: string;
-  fecha_inicio: string;
-  fecha_fin?: string;
-  tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  salmonera?: any;
+  contratista?: any;
+  sitio?: any;
 }
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
-  // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
     queryFn: async () => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
-        .from('operacion')
+        .from('operaciones')
         .select(`
           *,
-          salmoneras:salmonera_id (nombre),
-          sitios:sitio_id (nombre),
-          contratistas:contratista_id (nombre)
+          salmonera:salmonera_id (nombre),
+          contratista:contratista_id (nombre),
+          sitio:sitio_id (nombre, region, comuna)
         `)
-        .order('created_at', { ascending: false }); // Las más nuevas primero
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching operaciones:', error);
         throw error;
       }
 
-      // Ensure estado values match our type
-      return (data || []).map(op => ({
-        ...op,
-        estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
-          ? op.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada'
-      })) as Operacion[];
+      return data || [];
     },
   });
 
-  // Create operacion
   const createOperacionMutation = useMutation({
-    mutationFn: async (data: OperacionFormData) => {
+    mutationFn: async (data: Partial<Operacion>) => {
       console.log('Creating operacion:', data);
       
       const { data: result, error } = await supabase
-        .from('operacion')
+        .from('operaciones')
         .insert([data])
         .select()
         .single();
@@ -104,13 +84,12 @@ export const useOperaciones = () => {
     },
   });
 
-  // Update operacion
   const updateOperacionMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Operacion> }) => {
       console.log('Updating operacion:', id, data);
       
       const { data: result, error } = await supabase
-        .from('operacion')
+        .from('operaciones')
         .update(data)
         .eq('id', id)
         .select()
@@ -128,13 +107,57 @@ export const useOperaciones = () => {
     },
   });
 
-  // Delete operacion
+  const assignEquipoToOperacionMutation = useMutation({
+    mutationFn: async ({ operacionId, equipoId }: { operacionId: string; equipoId: string }) => {
+      console.log('Assigning equipo to operacion:', { operacionId, equipoId });
+      
+      // Obtener la operación actual
+      const { data: operacion, error: fetchError } = await supabase
+        .from('operaciones')
+        .select('equipo_buceo_ids')
+        .eq('id', operacionId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Agregar el nuevo equipo a la lista existente
+      const currentEquipos = operacion.equipo_buceo_ids || [];
+      const updatedEquipos = [...currentEquipos, equipoId];
+
+      // Actualizar la operación
+      const { data: result, error } = await supabase
+        .from('operaciones')
+        .update({ equipo_buceo_ids: updatedEquipos })
+        .eq('id', operacionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Equipo asignado",
+        description: "El equipo ha sido asignado a la operación exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error assigning equipo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo asignar el equipo a la operación.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Deleting operacion:', id);
       
       const { error } = await supabase
-        .from('operacion')
+        .from('operaciones')
         .delete()
         .eq('id', id);
 
@@ -153,8 +176,11 @@ export const useOperaciones = () => {
     operaciones,
     isLoading,
     createOperacion: createOperacionMutation.mutateAsync,
-    isCreating: createOperacionMutation.isPending,
     updateOperacion: updateOperacionMutation.mutateAsync,
+    assignEquipoToOperacion: assignEquipoToOperacionMutation.mutateAsync,
     deleteOperacion: deleteOperacionMutation.mutateAsync,
+    isCreating: createOperacionMutation.isPending,
+    isUpdating: updateOperacionMutation.isPending,
+    isDeleting: deleteOperacionMutation.isPending,
   };
 };
