@@ -8,7 +8,7 @@ export interface Operacion {
   codigo: string;
   nombre: string;
   descripcion?: string;
-  fecha_inicio?: string;
+  fecha_inicio: string;
   fecha_fin?: string;
   estado: string;
   salmonera_id?: string;
@@ -31,6 +31,7 @@ export interface OperacionFormData {
   descripcion?: string;
   fecha_inicio: string;
   fecha_fin?: string;
+  estado: string;
   salmonera_id: string;
   contratista_id?: string;
   sitio_id?: string;
@@ -67,7 +68,7 @@ export const useOperaciones = () => {
   });
 
   const createOperacionMutation = useMutation({
-    mutationFn: async (data: Partial<Operacion>) => {
+    mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
       const { data: result, error } = await supabase

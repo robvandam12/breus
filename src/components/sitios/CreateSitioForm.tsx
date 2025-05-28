@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Building } from "lucide-react";
-import { MapLocationPicker } from "@/components/ui/map-location-picker";
+import { MapPicker } from "@/components/ui/map-picker";
 
 interface CreateSitioFormProps {
   onSubmit: (data: any) => void;
@@ -18,6 +18,7 @@ interface CreateSitioFormProps {
 export const CreateSitioForm = ({ onSubmit, onCancel, salmoneraId }: CreateSitioFormProps) => {
   const [formData, setFormData] = useState({
     nombre: '',
+    codigo: '',
     descripcion: '',
     ubicacion_lat: -41.4693,
     ubicacion_lng: -72.9424,
@@ -28,12 +29,11 @@ export const CreateSitioForm = ({ onSubmit, onCancel, salmoneraId }: CreateSitio
     salmonera_id: salmoneraId || ''
   });
 
-  const handleLocationChange = (lat: number, lng: number, address?: string) => {
+  const handleLocationChange = (coordinates: { lat: number; lng: number }) => {
     setFormData(prev => ({
       ...prev,
-      ubicacion_lat: lat,
-      ubicacion_lng: lng,
-      direccion: address || prev.direccion
+      ubicacion_lat: coordinates.lat,
+      ubicacion_lng: coordinates.lng
     }));
   };
 
@@ -60,15 +60,28 @@ export const CreateSitioForm = ({ onSubmit, onCancel, salmoneraId }: CreateSitio
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="nombre">Nombre del Sitio *</Label>
-            <Input
-              id="nombre"
-              value={formData.nombre}
-              onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
-              placeholder="Ej: Centro San Rafael"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre">Nombre del Sitio *</Label>
+              <Input
+                id="nombre"
+                value={formData.nombre}
+                onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                placeholder="Ej: Centro San Rafael"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="codigo">Código del Sitio *</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                placeholder="Ej: SR-001"
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -129,17 +142,11 @@ export const CreateSitioForm = ({ onSubmit, onCancel, salmoneraId }: CreateSitio
               <MapPin className="w-4 h-4 text-blue-600" />
               Ubicación en el Mapa
             </Label>
-            <div className="border rounded-lg overflow-hidden">
-              <MapLocationPicker
-                initialLat={formData.ubicacion_lat}
-                initialLng={formData.ubicacion_lng}
-                onLocationChange={handleLocationChange}
-                height="300px"
-              />
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              Haz clic en el mapa para seleccionar la ubicación exacta del sitio
-            </p>
+            <MapPicker
+              value={{ lat: formData.ubicacion_lat, lng: formData.ubicacion_lng }}
+              onChange={handleLocationChange}
+              center={{ lat: formData.ubicacion_lat, lng: formData.ubicacion_lng }}
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
