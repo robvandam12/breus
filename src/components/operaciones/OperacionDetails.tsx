@@ -8,11 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
-import { HPTWizard } from '@/components/hpt/HPTWizard';
-import { FullAnexoBravoForm } from '@/components/anexo-bravo/FullAnexoBravoForm';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
-import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
+import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
 import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
+import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
 import { useAuth } from '@/hooks/useAuth';
 
 interface OperacionDetailsProps {
@@ -32,6 +31,9 @@ interface OperacionFull {
   contratista_nombre?: string;
   equipo_buceo_id?: string;
   created_at: string;
+  salmoneras?: { nombre: string };
+  sitios?: { nombre: string };
+  contratistas?: { nombre: string };
 }
 
 interface DocumentStatus {
@@ -45,25 +47,21 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   const [operacion, setOperacion] = useState<OperacionFull | null>(null);
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCreateHPT, setShowCreateHPT] = useState(false);
-  const [showCreateAnexo, setShowCreateAnexo] = useState(false);
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
-  const [showTeamManager, setShowTeamManager] = useState(false);
-  const [showEditHPT, setShowEditHPT] = useState(false);
-  const [selectedHPTId, setSelectedHPTId] = useState<string>('');
   const [activeTab, setActiveTab] = useState('resumen');
   const { profile } = useAuth();
 
   useEffect(() => {
     const fetchOperacionDetails = async () => {
       try {
-        // Obtener datos de la operación
+        // Obtener datos de la operación con relaciones
         const { data: opData, error: opError } = await supabase
           .from('operacion')
           .select(`
             *,
-            sitio:sitio_id (nombre),
-            contratista:contratista_id (nombre)
+            salmoneras:salmonera_id (nombre),
+            sitios:sitio_id (nombre),
+            contratistas:contratista_id (nombre)
           `)
           .eq('id', operacionId)
           .single();
@@ -72,8 +70,8 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
         setOperacion({
           ...opData,
-          sitio_nombre: opData.sitio?.nombre,
-          contratista_nombre: opData.contratista?.nombre
+          sitio_nombre: opData.sitios?.nombre,
+          contratista_nombre: opData.contratistas?.nombre
         });
 
         // Obtener documentos asociados
@@ -102,36 +100,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
     fetchOperacionDetails();
   }, [operacionId]);
-
-  const handleCreateHPT = async (hptId: string) => {
-    console.log('HPT created:', hptId);
-    setShowCreateHPT(false);
-    // Refresh data
-    window.location.reload();
-  };
-
-  const handleEditHPT = (hptId: string) => {
-    setSelectedHPTId(hptId);
-    setShowEditHPT(true);
-  };
-
-  const handleCreateAnexo = async (data: any) => {
-    try {
-      const anexoData = {
-        ...data,
-        operacion_id: operacionId
-      };
-      
-      const { error } = await supabase.from('anexo_bravo').insert([anexoData]);
-      if (error) throw error;
-      
-      setShowCreateAnexo(false);
-      // Refresh data
-      window.location.reload();
-    } catch (error) {
-      console.error('Error creating Anexo Bravo:', error);
-    }
-  };
 
   const handleCreateInmersion = async (data: any) => {
     try {
@@ -189,8 +157,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   };
 
   const compliance = getComplianceStatus();
-
-  const canCreateDocuments = documentStatus?.hasTeam;
   const canCreateInmersiones = compliance?.canExecute;
 
   return (
@@ -205,16 +171,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           {operacion.estado}
         </Badge>
       </div>
-
-      {/* Team Warning */}
-      {!canCreateDocuments && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <Shield className="h-4 w-4" />
-          <AlertDescription className="text-yellow-800">
-            <strong>Equipo de buceo requerido:</strong> Debe asignar un equipo de buceo a esta operación antes de crear documentos (HPT, Anexo Bravo) o inmersiones.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5">
@@ -301,7 +257,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         </TabsContent>
 
         <TabsContent value="equipo" className="space-y-4">
-          <OperacionDocuments 
+          <OperacionTeamTab 
             operacionId={operacionId} 
             operacion={operacion}
           />
@@ -342,14 +298,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
               ) : (
                 <div className="space-y-2">
                   {documentStatus?.inmersiones.map((inmersion) => (
-                    <div key={inmersion.id} className="flex items-center justify-between p-3 border rounded">
+                    <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded">
                       <div>
                         <p className="font-medium">{inmersion.codigo}</p>
-                        <p className="text-sm text-gray-600">Fecha: {new Date(inmersion.fecha).toLocaleDateString('es-CL')}</p>
+                        <p className="text-sm text-gray-600">Fecha: {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={inmersion.completada ? "default" : "secondary"}>
-                          {inmersion.completada ? "Completada" : "En progreso"}
+                        <Badge variant={inmersion.estado === 'completada' ? "default" : "secondary"}>
+                          {inmersion.estado}
                         </Badge>
                         <Button variant="outline" size="sm">
                           Ver
@@ -364,14 +320,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         </TabsContent>
 
         <TabsContent value="historial" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Historial de Cambios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-center py-4">Historial no disponible</p>
-            </CardContent>
-          </Card>
+          <OperacionTimeline operacionId={operacionId} />
         </TabsContent>
       </Tabs>
 
@@ -385,18 +334,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
             defaultOperacionId={operacionId}
             onSubmit={handleCreateInmersion}
             onCancel={() => setShowCreateInmersion(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showTeamManager} onOpenChange={setShowTeamManager}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Gestionar Equipo de Buceo</DialogTitle>
-          </DialogHeader>
-          <OperacionTeamManager
-            operacionId={operacionId}
-            onClose={() => setShowTeamManager(false)}
           />
         </DialogContent>
       </Dialog>

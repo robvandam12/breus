@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FileText, CheckCircle, AlertCircle, Clock, Plus, Building, MapPin, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileText, CheckCircle, AlertCircle, Clock, Plus, Building, MapPin, Shield, AlertTriangle, Edit } from "lucide-react";
 import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { useHPT } from "@/hooks/useHPT";
@@ -19,7 +20,7 @@ interface OperacionDocumentsProps {
 export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocumentsProps) => {
   const [isHPTDialogOpen, setIsHPTDialogOpen] = useState(false);
   const [isAnexoDialogOpen, setIsAnexoDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('documentos');
+  const [editingHPTId, setEditingHPTId] = useState<string>('');
   
   const { hpts, createHPT } = useHPT();
   const { anexosBravo, createAnexoBravo } = useAnexoBravo();
@@ -30,29 +31,28 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
     : null;
 
-  // Mock data - En producción esto vendría de hooks
-  const documentos = [
-    {
-      tipo: 'HPT',
-      estado: 'firmado',
-      fecha: '2024-01-15',
-      url: '#'
-    },
-    {
-      tipo: 'Anexo Bravo',
-      estado: 'borrador',
-      fecha: '2024-01-16',
-      url: '#'
-    }
-  ];
+  const canCreateDocuments = equipoAsignado && equipoAsignado.miembros && equipoAsignado.miembros.length > 0;
+
+  // Filtrar documentos por operación
+  const operacionHPTs = hpts.filter(hpt => hpt.operacion_id === operacionId);
+  const operacionAnexos = anexosBravo.filter(anexo => anexo.operacion_id === operacionId);
 
   const handleCreateHPT = async (hptId: string) => {
     setIsHPTDialogOpen(false);
+    setEditingHPTId('');
+  };
+
+  const handleEditHPT = (hptId: string) => {
+    setEditingHPTId(hptId);
+    setIsHPTDialogOpen(true);
   };
 
   const handleCreateAnexoBravo = async (data: any) => {
     try {
-      await createAnexoBravo(data);
+      await createAnexoBravo({
+        ...data,
+        operacion_id: operacionId
+      });
       setIsAnexoDialogOpen(false);
     } catch (error) {
       console.error('Error creating anexo bravo:', error);
@@ -63,7 +63,10 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     setIsAnexoDialogOpen(false);
   };
 
-  const getStatusIcon = (estado: string) => {
+  const getStatusIcon = (estado: string, firmado?: boolean) => {
+    if (firmado) {
+      return <CheckCircle className="w-4 h-4 text-green-600" />;
+    }
     switch (estado) {
       case 'firmado':
         return <CheckCircle className="w-4 h-4 text-green-600" />;
@@ -74,7 +77,10 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     }
   };
 
-  const getStatusColor = (estado: string) => {
+  const getStatusColor = (estado: string, firmado?: boolean) => {
+    if (firmado) {
+      return 'bg-green-100 text-green-700';
+    }
     switch (estado) {
       case 'firmado':
         return 'bg-green-100 text-green-700';
@@ -84,130 +90,6 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         return 'bg-red-100 text-red-700';
     }
   };
-
-  if (activeTab === 'equipo') {
-    return (
-      <div className="space-y-6">
-        {/* Información de la Operación */}
-        {operacion && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-800">
-                <Building className="w-5 h-5" />
-                Operación Asignada
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Código</p>
-                  <p className="text-blue-900">{operacion.codigo}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Nombre</p>
-                  <p className="text-blue-900">{operacion.nombre}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Estado</p>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                    {operacion.estado}
-                  </Badge>
-                </div>
-                {operacion.salmoneras && (
-                  <div>
-                    <p className="text-sm font-medium text-blue-700">Salmonera</p>
-                    <p className="text-blue-900">{operacion.salmoneras.nombre}</p>
-                  </div>
-                )}
-                {operacion.sitios && (
-                  <div>
-                    <p className="text-sm font-medium text-blue-700">Sitio</p>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-blue-600" />
-                      <p className="text-blue-900">{operacion.sitios.nombre}</p>
-                    </div>
-                  </div>
-                )}
-                {operacion.contratistas && (
-                  <div>
-                    <p className="text-sm font-medium text-blue-700">Contratista</p>
-                    <p className="text-blue-900">{operacion.contratistas.nombre}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Equipo de Buceo Asignado */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Equipo de Buceo Asignado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {equipoAsignado ? (
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg bg-green-50 border-green-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium text-green-800">{equipoAsignado.nombre}</h3>
-                    <Badge className="bg-green-100 text-green-700">
-                      Equipo Asignado
-                    </Badge>
-                  </div>
-                  {equipoAsignado.descripcion && (
-                    <p className="text-sm text-green-700 mb-3">{equipoAsignado.descripcion}</p>
-                  )}
-                  
-                  {/* Miembros del equipo */}
-                  {equipoAsignado.miembros && equipoAsignado.miembros.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-green-800 mb-2">Miembros del Equipo ({equipoAsignado.miembros.length})</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {equipoAsignado.miembros.map((miembro, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-green-200">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <span className="text-green-600 font-medium text-sm">
-                                  {miembro.nombre_completo.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium text-green-800">{miembro.nombre_completo}</p>
-                                <p className="text-xs text-green-600">{miembro.rol}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {miembro.disponible ? (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <AlertCircle className="w-4 h-4 text-yellow-600" />
-                              )}
-                              <span className="text-xs text-green-600">
-                                {miembro.disponible ? 'Disponible' : 'No Disponible'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                <p className="text-zinc-500 mb-2">No hay equipo de buceo asignado</p>
-                <p className="text-sm text-zinc-400">Asigne un equipo de buceo para esta operación</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -262,78 +144,172 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         </Card>
       )}
 
-      {/* Documentos de la Operación */}
+      {/* Alerta si no hay equipo asignado */}
+      {!canCreateDocuments && (
+        <Alert className="border-red-200 bg-red-50">
+          <Shield className="h-4 w-4" />
+          <AlertDescription className="text-red-800">
+            <strong>Equipo de buceo requerido:</strong> Debe asignar un equipo de buceo con miembros a esta operación antes de crear documentos (HPT, Anexo Bravo).
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* HPT Documents */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              Documentos de la Operación
+              Hojas de Planificación de Tarea (HPT)
+              <Badge variant="outline">{operacionHPTs.length}</Badge>
             </CardTitle>
-            <div className="flex gap-2">
-              <Dialog open={isHPTDialogOpen} onOpenChange={setIsHPTDialogOpen}>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsHPTDialogOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Nuevo HPT
-                </Button>
-                <DialogContent className="max-w-5xl">
-                  <HPTWizardComplete
-                    operacionId={operacionId}
-                    onComplete={handleCreateHPT}
-                    onCancel={() => setIsHPTDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={isAnexoDialogOpen} onOpenChange={setIsAnexoDialogOpen}>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsAnexoDialogOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Nuevo Anexo Bravo
-                </Button>
-                <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto p-0">
-                  <FullAnexoBravoForm
-                    onSubmit={handleCreateAnexoBravo}
-                    onCancel={handleCancelAnexoBravo}
-                    operacionId={operacionId}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Dialog open={isHPTDialogOpen} onOpenChange={setIsHPTDialogOpen}>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setEditingHPTId('');
+                  setIsHPTDialogOpen(true);
+                }}
+                className="flex items-center gap-2"
+                disabled={!canCreateDocuments}
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo HPT
+              </Button>
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingHPTId ? 'Editar HPT' : 'Crear Nuevo HPT'}</DialogTitle>
+                </DialogHeader>
+                <HPTWizardComplete
+                  operacionId={operacionId}
+                  hptId={editingHPTId || undefined}
+                  onComplete={handleCreateHPT}
+                  onCancel={() => setIsHPTDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {documentos.length === 0 ? (
+          {operacionHPTs.length === 0 ? (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-              <p className="text-zinc-500">No hay documentos asociados</p>
+              <p className="text-zinc-500">No hay HPT creados para esta operación</p>
+              <p className="text-sm text-zinc-400 mb-4">Cree el primer HPT para comenzar</p>
+              {canCreateDocuments && (
+                <Button 
+                  onClick={() => setIsHPTDialogOpen(true)}
+                  variant="outline"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primer HPT
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {documentos.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              {operacionHPTs.map((hpt) => (
+                <div key={hpt.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    {getStatusIcon(doc.estado)}
+                    {getStatusIcon(hpt.estado, hpt.firmado)}
                     <div>
-                      <p className="font-medium">{doc.tipo}</p>
+                      <p className="font-medium">{hpt.codigo}</p>
                       <p className="text-sm text-zinc-500">
-                        {new Date(doc.fecha).toLocaleDateString('es-CL')}
+                        Creado: {new Date(hpt.created_at).toLocaleDateString('es-CL')}
                       </p>
+                      {hpt.supervisor && (
+                        <p className="text-sm text-zinc-500">Supervisor: {hpt.supervisor}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={getStatusColor(doc.estado)}>
-                      {doc.estado}
+                    <Badge className={getStatusColor(hpt.estado, hpt.firmado)}>
+                      {hpt.firmado ? 'Firmado' : hpt.estado}
+                    </Badge>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditHPT(hpt.id)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      {hpt.firmado ? 'Ver' : 'Editar'}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Anexo Bravo Documents */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-600" />
+              Anexos Bravo
+              <Badge variant="outline">{operacionAnexos.length}</Badge>
+            </CardTitle>
+            <Dialog open={isAnexoDialogOpen} onOpenChange={setIsAnexoDialogOpen}>
+              <Button 
+                variant="outline"
+                onClick={() => setIsAnexoDialogOpen(true)}
+                className="flex items-center gap-2"
+                disabled={!canCreateDocuments}
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Anexo Bravo
+              </Button>
+              <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+                <FullAnexoBravoForm
+                  onSubmit={handleCreateAnexoBravo}
+                  onCancel={handleCancelAnexoBravo}
+                  operacionId={operacionId}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {operacionAnexos.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+              <p className="text-zinc-500">No hay Anexos Bravo creados para esta operación</p>
+              <p className="text-sm text-zinc-400 mb-4">Cree el primer Anexo Bravo</p>
+              {canCreateDocuments && (
+                <Button 
+                  onClick={() => setIsAnexoDialogOpen(true)}
+                  variant="outline"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primer Anexo Bravo
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {operacionAnexos.map((anexo) => (
+                <div key={anexo.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(anexo.estado, anexo.firmado)}
+                    <div>
+                      <p className="font-medium">{anexo.codigo}</p>
+                      <p className="text-sm text-zinc-500">
+                        Creado: {new Date(anexo.created_at).toLocaleDateString('es-CL')}
+                      </p>
+                      {anexo.supervisor && (
+                        <p className="text-sm text-zinc-500">Supervisor: {anexo.supervisor}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(anexo.estado, anexo.firmado)}>
+                      {anexo.firmado ? 'Firmado' : anexo.estado}
                     </Badge>
                     <Button variant="outline" size="sm">
-                      Ver
+                      <Edit className="w-4 h-4 mr-1" />
+                      {anexo.firmado ? 'Ver' : 'Editar'}
                     </Button>
                   </div>
                 </div>

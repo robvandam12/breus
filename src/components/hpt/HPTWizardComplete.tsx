@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +12,8 @@ import { HPTWizardStep4 } from './HPTWizardStep4';
 import { HPTWizardStep5 } from './HPTWizardStep5';
 import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
+import { supabase } from '@/integrations/supabase/client';
+import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
 interface HPTWizardCompleteProps {
   operacionId: string;
@@ -27,6 +29,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   onCancel
 }) => {
   const { permissions } = useAuthRoles();
+  const { equipos } = useEquiposBuceoEnhanced();
   const {
     currentStep,
     data,
@@ -43,6 +46,62 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     autoSaveEnabled,
     setAutoSaveEnabled
   } = useHPTWizard(operacionId, hptId);
+
+  // Poblar datos automáticamente cuando se monta el componente
+  useEffect(() => {
+    const populateOperacionData = async () => {
+      if (!operacionId || hptId) return; // No poblar si es edición
+
+      try {
+        // Obtener datos de la operación
+        const { data: operacion, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            salmoneras:salmonera_id (nombre, rut),
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre, rut)
+          `)
+          .eq('id', operacionId)
+          .single();
+
+        if (opError) throw opError;
+
+        // Obtener equipo de buceo asignado
+        const equipoAsignado = operacion.equipo_buceo_id 
+          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
+          : null;
+
+        // Poblar datos automáticamente
+        const autoData = {
+          folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
+          fecha: new Date().toISOString().split('T')[0],
+          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+          centro_trabajo_nombre: operacion.sitios?.nombre || '',
+          lugar_especifico: operacion.sitios?.ubicacion || '',
+          descripcion_tarea: operacion.tareas || 'Operación de buceo comercial',
+          plan_trabajo: operacion.nombre || ''
+        };
+
+        // Si hay equipo asignado, poblar datos del supervisor
+        if (equipoAsignado?.miembros) {
+          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
+          if (supervisor) {
+            autoData.supervisor_nombre = supervisor.nombre_completo;
+            autoData.supervisor = supervisor.nombre_completo;
+          }
+        }
+
+        updateData(autoData);
+        
+        console.log('Datos poblados automáticamente:', autoData);
+      } catch (error) {
+        console.error('Error populating operation data:', error);
+      }
+    };
+
+    populateOperacionData();
+  }, [operacionId, hptId, equipos, updateData]);
 
   const handleSubmit = async () => {
     try {
