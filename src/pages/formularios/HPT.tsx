@@ -217,58 +217,60 @@ const HPTPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredHPTs.map((hpt) => (
-                        <TableRow key={hpt.id}>
-                          <TableCell>
-                            <div className="font-medium">{hpt.codigo || hpt.folio}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-zinc-600">
-                              {/* Aquí deberíamos mostrar info de la operación */}
-                              Operación
-                            </div>
-                          </TableCell>
-                          <TableCell>{hpt.supervisor}</TableCell>
-                          <TableCell>
-                            {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
-                              {hpt.firmado ? (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  Firmado
-                                </div>
-                              ) : (
-                                hpt.estado || 'Borrador'
-                              )}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full transition-all"
-                                  style={{ width: `${hpt.progreso || 0}%` }}
-                                />
+                      {filteredHPTs.map((hpt) => {
+                        const operacion = operacionesConDocumentos.find(op => op.id === hpt.operacion_id);
+                        return (
+                          <TableRow key={hpt.id}>
+                            <TableCell>
+                              <div className="font-medium">{hpt.codigo || hpt.folio}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-zinc-600">
+                                {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
                               </div>
-                              <span className="text-xs text-gray-500">{hpt.progreso || 0}%</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="outline" size="sm">
-                                Ver
-                              </Button>
-                              {!hpt.firmado && (
+                            </TableCell>
+                            <TableCell>{hpt.supervisor}</TableCell>
+                            <TableCell>
+                              {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
+                                {hpt.firmado ? (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Firmado
+                                  </div>
+                                ) : (
+                                  hpt.estado || 'Borrador'
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    style={{ width: `${hpt.progreso || 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-500">{hpt.progreso || 0}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
                                 <Button variant="outline" size="sm">
-                                  Editar
+                                  Ver
                                 </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                {!hpt.firmado && (
+                                  <Button variant="outline" size="sm">
+                                    Editar
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Card>

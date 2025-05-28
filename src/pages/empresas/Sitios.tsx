@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -131,11 +130,10 @@ const Sitios = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     Nuevo Sitio
                   </Button>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <CreateSitioFormAnimated
                       onSubmit={handleCreateSitio}
                       onCancel={() => setIsCreateDialogOpen(false)}
-                      salmoneraId=""
                     />
                   </DialogContent>
                 </Dialog>

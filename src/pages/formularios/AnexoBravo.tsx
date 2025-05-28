@@ -222,58 +222,60 @@ const AnexoBravoPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAnexos.map((anexo) => (
-                        <TableRow key={anexo.id}>
-                          <TableCell>
-                            <div className="font-medium">{anexo.codigo}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-zinc-600">
-                              {/* Aquí deberíamos mostrar info de la operación */}
-                              Operación
-                            </div>
-                          </TableCell>
-                          <TableCell>{anexo.supervisor}</TableCell>
-                          <TableCell>
-                            {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
-                              {anexo.firmado ? (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  Firmado
-                                </div>
-                              ) : (
-                                anexo.estado || 'Borrador'
-                              )}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full transition-all"
-                                  style={{ width: `${anexo.progreso || 0}%` }}
-                                />
+                      {filteredAnexos.map((anexo) => {
+                        const operacion = operacionesConDocumentos.find(op => op.id === anexo.operacion_id);
+                        return (
+                          <TableRow key={anexo.id}>
+                            <TableCell>
+                              <div className="font-medium">{anexo.codigo}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-zinc-600">
+                                {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
                               </div>
-                              <span className="text-xs text-gray-500">{anexo.progreso || 0}%</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="outline" size="sm">
-                                Ver
-                              </Button>
-                              {!anexo.firmado && (
+                            </TableCell>
+                            <TableCell>{anexo.supervisor}</TableCell>
+                            <TableCell>
+                              {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
+                                {anexo.firmado ? (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Firmado
+                                  </div>
+                                ) : (
+                                  anexo.estado || 'Borrador'
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    style={{ width: `${anexo.progreso || 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-500">{anexo.progreso || 0}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
                                 <Button variant="outline" size="sm">
-                                  Editar
+                                  Ver
                                 </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                {!anexo.firmado && (
+                                  <Button variant="outline" size="sm">
+                                    Editar
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Card>
@@ -281,13 +283,12 @@ const AnexoBravoPage = () => {
             </div>
           </div>
 
-          {/* Modal para crear Anexo Bravo */}
+          {/* Modal para crear Anexo Bravo - Solo usar el Wizard */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <AnexoBravoWizard 
-                defaultOperacionId={selectedOperacionId}
-                type="simple"
-                onSubmit={handleAnexoBravoComplete}
+            <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+              <EnhancedAnexoBravoForm 
+                operacion_id={selectedOperacionId}
+                onComplete={handleAnexoBravoComplete}
                 onCancel={() => setShowCreateForm(false)}
               />
             </DialogContent>

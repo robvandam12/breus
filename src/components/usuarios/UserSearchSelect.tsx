@@ -1,47 +1,33 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, UserPlus, Mail } from "lucide-react";
 import { useUsersByCompany } from "@/hooks/useUsersByCompany";
-
-interface User {
-  usuario_id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  rol: string;
-  empresa_nombre?: string;
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface UserSearchSelectProps {
-  onSelectUser: (user: User) => void;
-  onInviteUser: (userData: {
-    email: string;
-    nombre: string;
-    apellido: string;
-    rol: string;
-  }) => void;
+  onSelectUser: (user: any) => void;
+  onInviteUser: (userData: any) => void;
   allowedRoles?: string[];
-  empresaType?: 'salmonera' | 'contratista';
-  empresaId?: string;
   placeholder?: string;
+  salmoneraId?: string;
+  contratistaId?: string;
 }
 
 export const UserSearchSelect = ({
   onSelectUser,
   onInviteUser,
-  allowedRoles = ['supervisor', 'buzo'],
-  empresaType,
-  empresaId,
-  placeholder = "Buscar usuario..."
+  allowedRoles = [],
+  placeholder = "Buscar usuario...",
+  salmoneraId,
+  contratistaId
 }: UserSearchSelectProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteData, setInviteData] = useState({
     email: '',
     nombre: '',
@@ -49,153 +35,138 @@ export const UserSearchSelect = ({
     rol: allowedRoles[0] || 'buzo'
   });
 
-  const { usuarios } = useUsersByCompany(empresaId, empresaType);
+  // Get users from both salmonera and contratista if available
+  const { usuarios: salmoneraUsers } = useUsersByCompany(salmoneraId, 'salmonera');
+  const { usuarios: contratistaUsers } = useUsersByCompany(contratistaId, 'contratista');
+  
+  // Combine users from both companies, avoiding duplicates
+  const allUsers = [
+    ...salmoneraUsers,
+    ...contratistaUsers.filter(cu => 
+      !salmoneraUsers.some(su => su.usuario_id === cu.usuario_id)
+    )
+  ];
 
-  const filteredUsers = usuarios.filter(user => 
-    allowedRoles.includes(user.rol) &&
-    (user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     user.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredUsers = allUsers.filter(user => {
+    const matchesSearch = user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesRole = allowedRoles.length === 0 || allowedRoles.includes(user.rol);
+    
+    return matchesSearch && matchesRole;
+  });
 
-  const handleSelectUser = (user: User) => {
-    setSelectedUser(user);
-    onSelectUser(user);
-  };
-
-  const handleInviteSubmit = () => {
-    if (inviteData.nombre && inviteData.apellido && inviteData.email) {
-      onInviteUser(inviteData);
-      setInviteData({
-        email: '',
-        nombre: '',
-        apellido: '',
-        rol: allowedRoles[0] || 'buzo'
-      });
-    }
-  };
-
-  const getRoleBadgeColor = (rol: string) => {
-    const colors: Record<string, string> = {
-      admin_salmonera: 'bg-blue-100 text-blue-700',
-      admin_servicio: 'bg-purple-100 text-purple-700',
-      supervisor: 'bg-green-100 text-green-700',
-      buzo: 'bg-orange-100 text-orange-700',
-    };
-    return colors[rol] || 'bg-gray-100 text-gray-700';
+  const handleInviteSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onInviteUser(inviteData);
+    setShowInviteForm(false);
+    setInviteData({
+      email: '',
+      nombre: '',
+      apellido: '',
+      rol: allowedRoles[0] || 'buzo'
+    });
   };
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search">Buscar Existente</TabsTrigger>
-            <TabsTrigger value="invite">Invitar Nuevo</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="search" className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder={placeholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+        <Input
+          placeholder={placeholder}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
-            <div className="max-h-48 overflow-y-auto space-y-2">
-              {filteredUsers.map((user) => (
-                <div
-                  key={user.usuario_id}
-                  className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    selectedUser?.usuario_id === user.usuario_id ? 'bg-blue-50 border-blue-200' : ''
-                  }`}
-                  onClick={() => handleSelectUser(user)}
-                >
+      {searchTerm && (
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {filteredUsers.length === 0 ? (
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-zinc-500 mb-3">No se encontraron usuarios</p>
+                <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Invitar Usuario
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invitar Nuevo Usuario</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleInviteSubmit} className="space-y-4">
+                      <div>
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={inviteData.email}
+                          onChange={(e) => setInviteData(prev => ({ ...prev, email: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="nombre">Nombre *</Label>
+                          <Input
+                            id="nombre"
+                            value={inviteData.nombre}
+                            onChange={(e) => setInviteData(prev => ({ ...prev, nombre: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="apellido">Apellido *</Label>
+                          <Input
+                            id="apellido"
+                            value={inviteData.apellido}
+                            onChange={(e) => setInviteData(prev => ({ ...prev, apellido: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button type="submit" className="flex-1">
+                          Enviar Invitación
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredUsers.map((user) => (
+              <Card key={user.usuario_id} className="cursor-pointer hover:bg-zinc-50" onClick={() => onSelectUser(user)}>
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">{user.nombre} {user.apellido}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                      {user.empresa_nombre && (
-                        <div className="text-xs text-gray-400">{user.empresa_nombre}</div>
-                      )}
+                      <div className="text-sm text-zinc-500">{user.email}</div>
+                      <div className="text-xs text-zinc-400">{user.empresa_nombre}</div>
                     </div>
-                    <Badge variant="outline" className={getRoleBadgeColor(user.rol)}>
-                      {user.rol}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge variant="outline">
+                        {user.rol.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {user.empresa_tipo === 'salmonera' ? 'Salmonera' : 'Contratista'}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {filteredUsers.length === 0 && searchTerm && (
-                <div className="text-center py-8 text-gray-500">
-                  No se encontraron usuarios con ese criterio
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="invite" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input
-                  id="nombre"
-                  value={inviteData.nombre}
-                  onChange={(e) => setInviteData({...inviteData, nombre: e.target.value})}
-                  placeholder="Juan"
-                />
-              </div>
-              <div>
-                <Label htmlFor="apellido">Apellido</Label>
-                <Input
-                  id="apellido"
-                  value={inviteData.apellido}
-                  onChange={(e) => setInviteData({...inviteData, apellido: e.target.value})}
-                  placeholder="Pérez"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={inviteData.email}
-                onChange={(e) => setInviteData({...inviteData, email: e.target.value})}
-                placeholder="juan.perez@empresa.cl"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="rol">Rol</Label>
-              <select
-                id="rol"
-                value={inviteData.rol}
-                onChange={(e) => setInviteData({...inviteData, rol: e.target.value})}
-                className="w-full p-2 border rounded-md"
-              >
-                {allowedRoles.map(rol => (
-                  <option key={rol} value={rol}>
-                    {rol.charAt(0).toUpperCase() + rol.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <Button 
-              onClick={handleInviteSubmit}
-              disabled={!inviteData.nombre || !inviteData.apellido || !inviteData.email}
-              className="w-full"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Enviar Invitación
-            </Button>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 };
