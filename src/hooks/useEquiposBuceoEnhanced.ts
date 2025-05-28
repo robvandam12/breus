@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -256,15 +257,9 @@ export const useEquiposBuceoEnhanced = () => {
     },
   });
 
-  // Agregar el método getEquipoById que falta
-  const getEquipoById = (equipoId: string): EquipoBuceo | undefined => {
-    return equipos.find(equipo => equipo.id === equipoId);
-  };
-
   return {
     equipos,
     isLoading,
-    getEquipoById, // Agregar este método al return
     createEquipo: createEquipoMutation.mutateAsync,
     addMiembro: addMiembroMutation.mutateAsync,
     inviteMember: inviteMemberMutation.mutateAsync,

@@ -1,4 +1,3 @@
-
 import { 
   Calendar, 
   ChevronRight, 
@@ -133,6 +132,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
+        title: "Usuarios",
+        icon: Users,
+        url: "/usuarios"
+      },
+      {
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
@@ -188,9 +192,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
-        title: "Pool Personal",
+        title: "Usuarios",
         icon: Users,
-        url: "/personal-pool"
+        url: "/usuarios"
       },
       {
         title: "Mi Empresa",
@@ -255,9 +259,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
-        title: "Pool Personal",
+        title: "Usuarios",
         icon: Users,
-        url: "/personal-pool"
+        url: "/usuarios"
       },
       {
         title: "Mi Empresa",
@@ -323,9 +327,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/equipo-de-buceo"
       },
       {
-        title: "Pool Personal",
+        title: "Usuarios",
         icon: Users,
-        url: "/personal-pool-admin"
+        url: "/usuarios"
       },
       {
         title: "Empresas",

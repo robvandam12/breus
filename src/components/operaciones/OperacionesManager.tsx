@@ -17,7 +17,6 @@ import { Calendar, Eye, MapPin, CalendarDays, Edit, Trash2, Table as TableIcon, 
 export const OperacionesManager = () => {
   const { operaciones, isLoading } = useOperaciones();
   const [selectedOperacion, setSelectedOperacion] = useState<string | null>(null);
-  const [selectedOperacionForDetails, setSelectedOperacionForDetails] = useState<any | null>(null);
   const [activeView, setActiveView] = useState('lista');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,10 +34,6 @@ export const OperacionesManager = () => {
       'cancelada': 'bg-red-100 text-red-700'
     };
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
-  };
-
-  const handleViewOperacion = (operacion: any) => {
-    setSelectedOperacionForDetails(operacion);
   };
 
   if (isLoading) {
@@ -140,7 +135,7 @@ export const OperacionesManager = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleViewOperacion(operacion)}
+                                  onClick={() => setSelectedOperacion(operacion.id)}
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
                                   Ver
@@ -174,7 +169,7 @@ export const OperacionesManager = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleViewOperacion(operacion)}
+                            onClick={() => setSelectedOperacion(operacion.id)}
                             className="bg-white/90 backdrop-blur-sm"
                           >
                             <Eye className="w-4 h-4 mr-1" />
@@ -206,12 +201,12 @@ export const OperacionesManager = () => {
       </Card>
 
       {/* Dialog para detalles de operación */}
-      <Dialog open={!!selectedOperacionForDetails} onOpenChange={() => setSelectedOperacionForDetails(null)}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
-          {selectedOperacionForDetails && (
+      <Dialog open={!!selectedOperacion} onOpenChange={() => setSelectedOperacion(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          {selectedOperacion && (
             <OperacionDetails
-              operacion={selectedOperacionForDetails}
-              onClose={() => setSelectedOperacionForDetails(null)}
+              operacionId={selectedOperacion}
+              onClose={() => setSelectedOperacion(null)}
             />
           )}
         </DialogContent>
