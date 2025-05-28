@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Users, ArrowRight, ArrowLeft, Check } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { useUsuarios } from "@/hooks/useUsuarios";
@@ -19,7 +19,7 @@ interface CreateEquipoFormWizardProps {
 }
 
 export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormWizardProps) => {
-  const { user, userProfile } = useAuth();
+  const { profile } = useAuth();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
   const { usuarios } = useUsuarios();
@@ -41,29 +41,25 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
   }>>([]);
 
   // Auto-detectar empresa del usuario admin
-  const autoDetectEmpresa = () => {
-    if (!userProfile) return;
+  useEffect(() => {
+    if (!profile) return;
     
-    if (userProfile.rol === 'admin_salmonero' && userProfile.salmonera_id) {
+    if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
       setEquipoData(prev => ({
         ...prev,
-        empresa_id: userProfile.salmonera_id,
+        empresa_id: profile.salmonera_id,
         tipo_empresa: 'salmonera'
       }));
-    } else if (userProfile.rol === 'admin_contratista' && userProfile.servicio_id) {
+    } else if (profile.role === 'admin_servicio' && profile.servicio_id) {
       setEquipoData(prev => ({
         ...prev,
-        empresa_id: userProfile.servicio_id,
+        empresa_id: profile.servicio_id,
         tipo_empresa: 'contratista'
       }));
     }
-  };
+  }, [profile]);
 
-  useState(() => {
-    autoDetectEmpresa();
-  }, [userProfile]);
-
-  const isUserAdmin = userProfile?.rol === 'admin_salmonero' || userProfile?.rol === 'admin_contratista';
+  const isUserAdmin = profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio';
   const availableUsers = usuarios.filter(u => u.rol === 'supervisor' || u.rol === 'buzo');
 
   const handleStep1Submit = () => {
@@ -201,9 +197,9 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
                   <strong>Empresa detectada automáticamente:</strong>{' '}
-                  {userProfile?.rol === 'admin_salmonero' 
-                    ? salmoneras.find(s => s.id === userProfile.salmonera_id)?.nombre
-                    : contratistas.find(c => c.id === userProfile.servicio_id)?.nombre
+                  {profile?.role === 'admin_salmonera' 
+                    ? salmoneras.find(s => s.id === profile.salmonera_id)?.nombre
+                    : contratistas.find(c => c.id === profile.servicio_id)?.nombre
                   }
                 </p>
               </div>
