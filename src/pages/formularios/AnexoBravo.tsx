@@ -3,96 +3,110 @@ import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Plus, Eye, Edit, Download, TestTube } from "lucide-react";
+import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
-import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
-import { CreateAnexoBravoForm } from "@/components/anexo-bravo/CreateAnexoBravoForm";
-import { AnexoBravoForm } from "@/components/anexo-bravo/AnexoBravoForm";
+import { useAnexoBravo } from "@/hooks/useAnexoBravo";
+import { useOperacionValidation } from "@/hooks/useOperacionValidation";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EnhancedSelect } from "@/components/ui/enhanced-select";
 
-const AnexoBravo = () => {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
-  const [selectedForm, setSelectedForm] = useState<string>('');
+const AnexoBravoPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
+  
+  const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
+  const { 
+    operacionesConDocumentos, 
+    getOperacionesDisponiblesParaAnexoBravo,
+    validarOperacionParaDocumento 
+  } = useOperacionValidation();
 
-  const anexosBravo = [
-    {
-      id: '1',
-      codigo: 'AB-2024-001',
-      empresa: 'Constructora Marina',
-      fecha_creacion: '2024-01-15',
-      estado: 'firmado',
-      supervisor: 'Juan Pérez',
-    },
-    {
-      id: '2',
-      codigo: 'AB-2024-002',
-      empresa: 'Servicios Submarinos',
-      fecha_creacion: '2024-01-16',
-      estado: 'borrador',
-      supervisor: 'María González',
-    },
-  ];
+  const operacionesDisponibles = getOperacionesDisponiblesParaAnexoBravo();
 
-  const handleCreateAnexo = async (data: any) => {
-    console.log('Creating Anexo Bravo:', data);
-    setIsCreateDialogOpen(false);
+  const filteredAnexos = anexosBravo.filter(anexo => 
+    anexo.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    anexo.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateAnexoBravo = () => {
+    if (!selectedOperacionId) {
+      alert('Debe seleccionar una operación para crear el Anexo Bravo');
+      return;
+    }
+    
+    if (!validarOperacionParaDocumento(selectedOperacionId, 'anexo_bravo')) {
+      alert('Esta operación ya tiene un Anexo Bravo asociado');
+      return;
+    }
+    
+    setShowCreateForm(true);
   };
 
-  const getStatusColor = (estado: string) => {
-    const colors = {
-      'firmado': 'bg-green-100 text-green-700',
-      'borrador': 'bg-yellow-100 text-yellow-700',
-      'pendiente': 'bg-blue-100 text-blue-700'
-    };
-    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
-  };
-
-  const forms = [
-    { id: 'full', name: 'FullAnexoBravoForm', description: 'Formulario completo en pasos con todos los campos' },
-    { id: 'wizard', name: 'AnexoBravoWizard', description: 'Wizard anterior en pasos' },
-    { id: 'create', name: 'CreateAnexoBravoForm', description: 'Formulario básico de creación' },
-    { id: 'simple', name: 'AnexoBravoForm', description: 'Formulario simple' }
-  ];
-
-  const renderSelectedForm = () => {
-    switch (selectedForm) {
-      case 'full':
-        return (
-          <FullAnexoBravoForm
-            onSubmit={handleCreateAnexo}
-            onCancel={() => setIsTestDialogOpen(false)}
-          />
-        );
-      case 'wizard':
-        return (
-          <AnexoBravoWizard
-            onSubmit={handleCreateAnexo}
-            onCancel={() => setIsTestDialogOpen(false)}
-          />
-        );
-      case 'create':
-        return (
-          <CreateAnexoBravoForm
-            onSubmit={handleCreateAnexo}
-            onCancel={() => setIsTestDialogOpen(false)}
-          />
-        );
-      case 'simple':
-        return (
-          <AnexoBravoForm
-            onSubmit={handleCreateAnexo}
-            onCancel={() => setIsTestDialogOpen(false)}
-          />
-        );
-      default:
-        return null;
+  const handleAnexoBravoComplete = async (data: any) => {
+    try {
+      await createAnexoBravo(data);
+      setShowCreateForm(false);
+      setSelectedOperacionId('');
+    } catch (error) {
+      console.error('Error creating anexo bravo:', error);
     }
   };
+
+  const handleCancel = () => {
+    setShowCreateForm(false);
+    setSelectedOperacionId('');
+  };
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
+          <main className="flex-1 flex flex-col bg-white">
+            <Header 
+              title="Anexo Bravo" 
+              subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo" 
+              icon={FileText} 
+            />
+            <div className="flex-1 flex items-center justify-center bg-white">
+              <LoadingSpinner text="Cargando Anexos Bravo..." />
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (showCreateForm) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
+          <main className="flex-1 flex flex-col bg-white">
+            <Header 
+              title="Nuevo Anexo Bravo" 
+              subtitle="Crear nuevo anexo bravo de buceo" 
+              icon={FileText} 
+            />
+            <div className="flex-1 overflow-auto bg-white">
+              <FullAnexoBravoForm
+                onSubmit={handleAnexoBravoComplete}
+                onCancel={handleCancel}
+                operacionId={selectedOperacionId}
+              />
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -100,45 +114,126 @@ const AnexoBravo = () => {
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col bg-white">
           <Header 
-            title="Anexos Bravo" 
-            subtitle="Gestión de anexos bravo para operaciones de buceo" 
+            title="Anexo Bravo" 
+            subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo" 
             icon={FileText} 
           >
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline"
-                onClick={() => setIsTestDialogOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <TestTube className="w-4 h-4" />
-                Probar Formularios
-              </Button>
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Anexo Bravo
-              </Button>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar Anexos Bravo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <EnhancedSelect
+                  options={operacionesDisponibles.map(op => ({
+                    value: op.id,
+                    label: `${op.codigo} - ${op.nombre}`
+                  }))}
+                  value={selectedOperacionId}
+                  onValueChange={setSelectedOperacionId}
+                  placeholder="Seleccionar operación"
+                  className="w-64"
+                />
+                
+                <Button 
+                  onClick={handleCreateAnexoBravo}
+                  disabled={!selectedOperacionId}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Anexo Bravo
+                </Button>
+              </div>
             </div>
           </Header>
           
           <div className="flex-1 overflow-auto bg-white">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              {anexosBravo.length === 0 ? (
+              {/* Alertas de validación */}
+              {operacionesDisponibles.length === 0 && (
+                <Card className="mb-6 border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <h3 className="font-medium text-orange-800">No hay operaciones disponibles</h3>
+                        <p className="text-sm text-orange-600">
+                          Todas las operaciones existentes ya tienen Anexos Bravo asociados. Crea una nueva operación para poder generar un Anexo Bravo.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {anexosBravo.length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Anexos Totales</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {anexosBravo.filter(a => a.firmado).length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Anexos Firmados</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {anexosBravo.filter(a => a.estado === 'borrador').length}
+                  </div>
+                  <div className="text-sm text-zinc-500">En Borrador</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {operacionesDisponibles.length}
+                  </div>
+                  <div className="text-sm text-zinc-500">Operaciones Disponibles</div>
+                </Card>
+              </div>
+
+              {filteredAnexos.length === 0 ? (
                 <Card className="text-center py-12">
                   <CardContent>
                     <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">
-                      No hay anexos bravo registrados
+                      {anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos Bravo"}
                     </h3>
                     <p className="text-zinc-500 mb-4">
-                      Comience creando el primer anexo bravo
+                      {anexosBravo.length === 0 
+                        ? "Comience creando el primer Anexo Bravo seleccionando una operación"
+                        : "Intenta ajustar la búsqueda"}
                     </p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Crear Anexo Bravo
-                    </Button>
+                    {operacionesDisponibles.length > 0 && (
+                      <div className="flex items-center justify-center gap-2">
+                        <EnhancedSelect
+                          options={operacionesDisponibles.map(op => ({
+                            value: op.id,
+                            label: `${op.codigo} - ${op.nombre}`
+                          }))}
+                          value={selectedOperacionId}
+                          onValueChange={setSelectedOperacionId}
+                          placeholder="Seleccionar operación"
+                          className="w-64"
+                        />
+                        <Button 
+                          onClick={handleCreateAnexoBravo} 
+                          disabled={!selectedOperacionId}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nuevo Anexo Bravo
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
@@ -147,42 +242,69 @@ const AnexoBravo = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Código</TableHead>
-                        <TableHead>Empresa</TableHead>
+                        <TableHead>Operación</TableHead>
                         <TableHead>Supervisor</TableHead>
                         <TableHead>Fecha</TableHead>
                         <TableHead>Estado</TableHead>
+                        <TableHead>Progreso</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {anexosBravo.map((anexo) => (
-                        <TableRow key={anexo.id}>
-                          <TableCell className="font-medium">{anexo.codigo}</TableCell>
-                          <TableCell>{anexo.empresa}</TableCell>
-                          <TableCell>{anexo.supervisor}</TableCell>
-                          <TableCell>
-                            {new Date(anexo.fecha_creacion).toLocaleDateString('es-CL')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(anexo.estado)}>
-                              {anexo.estado}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center gap-2 justify-end">
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Download className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredAnexos.map((anexo) => {
+                        const operacion = operacionesConDocumentos.find(op => op.id === anexo.operacion_id);
+                        return (
+                          <TableRow key={anexo.id}>
+                            <TableCell>
+                              <div className="font-medium">{anexo.codigo}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-zinc-600">
+                                {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
+                              </div>
+                            </TableCell>
+                            <TableCell>{anexo.supervisor}</TableCell>
+                            <TableCell>
+                              {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
+                                {anexo.firmado ? (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Firmado
+                                  </div>
+                                ) : (
+                                  anexo.estado || 'Borrador'
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    style={{ width: `${anexo.progreso || 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-500">{anexo.progreso || 0}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button variant="outline" size="sm">
+                                  Ver
+                                </Button>
+                                {!anexo.firmado && (
+                                  <Button variant="outline" size="sm">
+                                    Editar
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Card>
@@ -191,64 +313,8 @@ const AnexoBravo = () => {
           </div>
         </main>
       </div>
-
-      {/* Dialog para crear nuevo Anexo Bravo */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
-          </DialogHeader>
-          <FullAnexoBravoForm
-            onSubmit={handleCreateAnexo}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para probar formularios */}
-      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Probar Formularios de Anexo Bravo</DialogTitle>
-          </DialogHeader>
-          {!selectedForm ? (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Selecciona un formulario para probar:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {forms.map((form) => (
-                  <Card key={form.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedForm(form.id)}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{form.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">{form.description}</p>
-                      <Button className="mt-3" size="sm">
-                        Probar este formulario
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">
-                  Probando: {forms.find(f => f.id === selectedForm)?.name}
-                </h3>
-                <Button variant="outline" onClick={() => setSelectedForm('')}>
-                  Volver a la lista
-                </Button>
-              </div>
-              {renderSelectedForm()}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   );
 };
 
-export default AnexoBravo;
+export default AnexoBravoPage;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { HPTWizard } from '@/components/hpt/HPTWizard';
-import { FullAnexoBravoForm } from '@/components/anexo-bravo/FullAnexoBravoForm';
+import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,8 +38,6 @@ interface DocumentStatus {
   anexosBravo: any[];
   inmersiones: any[];
   hasTeam: boolean;
-  teamInfo?: any;
-  teamMembers?: any[];
 }
 
 export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
@@ -63,7 +62,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           .select(`
             *,
             sitio:sitio_id (nombre),
-            contratista:contratistas (nombre)
+            contratista:contratista_id (nombre)
           `)
           .eq('id', operacionId)
           .single();
@@ -83,49 +82,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           supabase.from('inmersion').select('*').eq('operacion_id', operacionId)
         ]);
 
-        // Check if operation has team assigned and get team info
+        // Check if operation has team assigned
         const hasTeam = !!opData.equipo_buceo_id;
-        let teamInfo = null;
-        let teamMembers = [];
-
-        if (hasTeam) {
-          // Obtener información del equipo
-          const { data: teamData, error: teamError } = await supabase
-            .from('equipos_buceo')
-            .select('*')
-            .eq('id', opData.equipo_buceo_id)
-            .single();
-
-          if (!teamError && teamData) {
-            teamInfo = teamData;
-
-            // Obtener miembros del equipo
-            const { data: membersData, error: membersError } = await supabase
-              .from('equipo_buceo_miembros')
-              .select(`
-                *,
-                usuario:usuario_id (
-                  nombre,
-                  apellido,
-                  email,
-                  rol
-                )
-              `)
-              .eq('equipo_id', opData.equipo_buceo_id);
-
-            if (!membersError && membersData) {
-              teamMembers = membersData;
-            }
-          }
-        }
 
         setDocumentStatus({
           hpts: hptData.data || [],
           anexosBravo: anexoData.data || [],
           inmersiones: inmersionData.data || [],
-          hasTeam,
-          teamInfo,
-          teamMembers
+          hasTeam
         });
 
       } catch (error) {
@@ -186,6 +150,23 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-500 mt-4">Cargando detalles...</p>
+      </div>
+    );
+  }
+
+  if (!operacion) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-gray-500">No se encontró la operación</p>
+      </div>
+    );
+  }
+
   const getStatusColor = (estado: string) => {
     const colors = {
       'activa': 'bg-green-100 text-green-700',
@@ -210,23 +191,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
   const canCreateDocuments = documentStatus?.hasTeam;
   const canCreateInmersiones = compliance?.canExecute;
-
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-500 mt-4">Cargando detalles...</p>
-      </div>
-    );
-  }
-
-  if (!operacion) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-gray-500">No se encontró la operación</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -345,40 +309,8 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
               </Button>
             </CardHeader>
             <CardContent>
-              {documentStatus?.hasTeam && documentStatus?.teamInfo ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-medium text-green-800 mb-2">
-                      {documentStatus.teamInfo.nombre}
-                    </h4>
-                    <p className="text-sm text-green-600">
-                      {documentStatus.teamInfo.descripcion || 'Sin descripción'}
-                    </p>
-                  </div>
-                  
-                  {documentStatus.teamMembers && documentStatus.teamMembers.length > 0 && (
-                    <div>
-                      <h5 className="font-medium mb-3">Miembros del Equipo</h5>
-                      <div className="space-y-2">
-                        {documentStatus.teamMembers.map((member: any) => (
-                          <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <p className="font-medium">
-                                {member.usuario?.nombre} {member.usuario?.apellido}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {member.rol_equipo} • {member.usuario?.rol}
-                              </p>
-                            </div>
-                            <Badge variant={member.disponible ? "default" : "secondary"}>
-                              {member.disponible ? "Disponible" : "No disponible"}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {operacion.equipo_buceo_id ? (
+                <p className="text-green-600">✓ Equipo de buceo asignado</p>
               ) : (
                 <p className="text-yellow-600">⚠ Sin equipo de buceo asignado</p>
               )}
@@ -584,10 +516,10 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           <DialogHeader>
             <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
           </DialogHeader>
-          <FullAnexoBravoForm
+          <AnexoBravoWizard
             onSubmit={handleCreateAnexo}
             onCancel={() => setShowCreateAnexo(false)}
-            operacionId={operacionId}
+            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
