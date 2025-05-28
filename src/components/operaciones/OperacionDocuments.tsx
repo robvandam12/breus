@@ -280,7 +280,7 @@ export const OperacionDocuments = ({ operacionId }: OperacionDocumentsProps) => 
             <DialogTitle>Nuevo HPT</DialogTitle>
           </DialogHeader>
           <CreateHPTForm
-            operacionId={operacionId}
+            defaultOperacionId={operacionId}
             onSubmit={handleCreateHPT}
             onCancel={() => setShowCreateHPT(false)}
           />
