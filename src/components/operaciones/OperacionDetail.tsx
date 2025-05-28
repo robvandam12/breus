@@ -69,43 +69,41 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
             </Dialog>
           </Header>
 
-          <div className="flex-1 overflow-auto bg-white">
-            <div className="p-6 space-y-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                  <TabsTrigger value="general">General</TabsTrigger>
-                  <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
-                  <TabsTrigger value="documentos">Documentos</TabsTrigger>
-                  <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                </TabsList>
+          <div className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+                <TabsTrigger value="documentos">Documentos</TabsTrigger>
+                <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              </TabsList>
 
-                <TabsContent value="general" className="space-y-6">
-                  <OperacionInfo operacion={operacion} />
-                  <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-                </TabsContent>
+              <TabsContent value="general" className="space-y-6">
+                <OperacionInfo operacion={operacion} />
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
 
-                <TabsContent value="equipo" className="space-y-6">
-                  <OperacionTeamManagerEnhanced 
-                    operacionId={operacion.id} 
-                    salmoneraId={operacion.salmonera_id || undefined}
-                    contratistaId={operacion.contratista_id || undefined}
-                  />
-                </TabsContent>
+              <TabsContent value="equipo" className="space-y-6">
+                <OperacionTeamManagerEnhanced 
+                  operacionId={operacion.id} 
+                  salmoneraId={operacion.salmonera_id || undefined}
+                  contratistaId={operacion.contratista_id || undefined}
+                />
+              </TabsContent>
 
-                <TabsContent value="documentos" className="space-y-6">
-                  <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-                </TabsContent>
+              <TabsContent value="documentos" className="space-y-6">
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
 
-                <TabsContent value="inmersiones" className="space-y-6">
-                  <OperacionInmersiones operacionId={operacion.id} />
-                </TabsContent>
+              <TabsContent value="inmersiones" className="space-y-6">
+                <OperacionInmersiones operacionId={operacion.id} />
+              </TabsContent>
 
-                <TabsContent value="timeline" className="space-y-6">
-                  <OperacionTimeline operacionId={operacion.id} />
-                </TabsContent>
-              </Tabs>
-            </div>
+              <TabsContent value="timeline" className="space-y-6">
+                <OperacionTimeline operacionId={operacion.id} />
+              </TabsContent>
+            </Tabs>
           </div>
         </motion.main>
       </div>

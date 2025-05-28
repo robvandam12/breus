@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { HPTWizard } from '@/components/hpt/HPTWizard';
-import { FullAnexoBravoForm } from '@/components/anexo-bravo/FullAnexoBravoForm';
+import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 import { OperacionTeamManager } from '@/components/operaciones/OperacionTeamManager';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,7 +38,6 @@ interface DocumentStatus {
   anexosBravo: any[];
   inmersiones: any[];
   hasTeam: boolean;
-  teamData?: any;
 }
 
 export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
@@ -82,36 +82,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
           supabase.from('inmersion').select('*').eq('operacion_id', operacionId)
         ]);
 
-        // Check if operation has team assigned and get team data
-        let teamData = null;
+        // Check if operation has team assigned
         const hasTeam = !!opData.equipo_buceo_id;
-        
-        if (hasTeam) {
-          const { data: equipoData } = await supabase
-            .from('equipo_buceo')
-            .select(`
-              *,
-              equipo_buceo_usuarios (
-                usuario:usuario_id (
-                  usuario_id,
-                  nombre,
-                  apellido,
-                  rol
-                )
-              )
-            `)
-            .eq('id', opData.equipo_buceo_id)
-            .single();
-          
-          teamData = equipoData;
-        }
 
         setDocumentStatus({
           hpts: hptData.data || [],
           anexosBravo: anexoData.data || [],
           inmersiones: inmersionData.data || [],
-          hasTeam,
-          teamData
+          hasTeam
         });
 
       } catch (error) {
@@ -138,6 +116,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
   const handleCreateAnexo = async (data: any) => {
     try {
+      const anexoData = {
+        ...data,
+        operacion_id: operacionId
+      };
+      
+      const { error } = await supabase.from('anexo_bravo').insert([anexoData]);
+      if (error) throw error;
+      
       setShowCreateAnexo(false);
       // Refresh data
       window.location.reload();
@@ -202,6 +188,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   };
 
   const compliance = getComplianceStatus();
+
   const canCreateDocuments = documentStatus?.hasTeam;
   const canCreateInmersiones = compliance?.canExecute;
 
@@ -322,40 +309,10 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
               </Button>
             </CardHeader>
             <CardContent>
-              {documentStatus?.hasTeam && documentStatus?.teamData ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-medium">Equipo: {documentStatus.teamData.nombre}</span>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Miembros del Equipo:</h4>
-                    <div className="space-y-2">
-                      {documentStatus.teamData.equipo_buceo_usuarios?.map((miembro: any, index: number) => (
-                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 text-sm font-medium">
-                              {miembro.usuario?.nombre?.charAt(0)?.toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{miembro.usuario?.nombre} {miembro.usuario?.apellido}</p>
-                            <Badge variant="outline" className="text-xs">
-                              {miembro.usuario?.rol}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              {operacion.equipo_buceo_id ? (
+                <p className="text-green-600">✓ Equipo de buceo asignado</p>
               ) : (
-                <div className="text-center py-8">
-                  <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                  <p className="text-yellow-600 font-medium">Sin equipo de buceo asignado</p>
-                  <p className="text-gray-500 text-sm">Asigne un equipo para poder crear documentos e inmersiones</p>
-                </div>
+                <p className="text-yellow-600">⚠ Sin equipo de buceo asignado</p>
               )}
             </CardContent>
           </Card>
@@ -466,7 +423,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         </TabsContent>
 
         <TabsContent value="inmersiones" className="space-y-4">
-          {/* Inmersiones */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Inmersiones ({documentStatus?.inmersiones.length || 0})</CardTitle>
@@ -556,11 +512,14 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
       </Dialog>
 
       <Dialog open={showCreateAnexo} onOpenChange={setShowCreateAnexo}>
-        <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto p-0">
-          <FullAnexoBravoForm
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
+          </DialogHeader>
+          <AnexoBravoWizard
             onSubmit={handleCreateAnexo}
             onCancel={() => setShowCreateAnexo(false)}
-            operacionId={operacionId}
+            defaultOperacionId={operacionId}
           />
         </DialogContent>
       </Dialog>
