@@ -28,7 +28,7 @@ export const OperacionesTable = ({ operaciones, onDelete }: OperacionesTableProp
   };
 
   const handleViewDetails = (operacion: any) => {
-    router.navigate(`/operaciones/${operacion.id}`);
+    router.navigateTo(`/operaciones/${operacion.id}`);
   };
 
   return (

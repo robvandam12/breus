@@ -163,9 +163,9 @@ export const OperacionTimeline = ({ operacionId }: OperacionTimelineProps) => {
                       <p className="text-sm text-gray-600 mt-1">{event.descripcion}</p>
                     )}
                     
-                    {event.type === 'activity' && event.usuario && (
+                    {event.type === 'activity' && (event as any).usuario && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Por: {event.usuario.nombre} {event.usuario.apellido}
+                        Por: {(event as any).usuario.nombre} {(event as any).usuario.apellido}
                       </p>
                     )}
                     
