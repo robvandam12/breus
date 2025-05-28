@@ -51,6 +51,10 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     }
   };
 
+  const handleCancelAnexoBravo = () => {
+    setIsAnexoDialogOpen(false);
+  };
+
   const getStatusIcon = (estado: string) => {
     switch (estado) {
       case 'firmado':
@@ -162,10 +166,10 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   <Plus className="w-4 h-4" />
                   Nuevo Anexo Bravo
                 </Button>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto p-0">
                   <FullAnexoBravoForm
                     onSubmit={handleCreateAnexoBravo}
-                    onCancel={() => setIsAnexoDialogOpen(false)}
+                    onCancel={handleCancelAnexoBravo}
                     operacionId={operacionId}
                   />
                 </DialogContent>

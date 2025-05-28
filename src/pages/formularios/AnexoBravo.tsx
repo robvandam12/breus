@@ -10,7 +10,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
-import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
+import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -59,6 +59,11 @@ const AnexoBravoPage = () => {
     }
   };
 
+  const handleCancel = () => {
+    setShowCreateForm(false);
+    setSelectedOperacionId('');
+  };
+
   if (isLoading) {
     return (
       <SidebarProvider>
@@ -72,6 +77,30 @@ const AnexoBravoPage = () => {
             />
             <div className="flex-1 flex items-center justify-center bg-white">
               <LoadingSpinner text="Cargando Anexos Bravo..." />
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (showCreateForm) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-white">
+          <RoleBasedSidebar />
+          <main className="flex-1 flex flex-col bg-white">
+            <Header 
+              title="Nuevo Anexo Bravo" 
+              subtitle="Crear nuevo anexo bravo de buceo" 
+              icon={FileText} 
+            />
+            <div className="flex-1 overflow-auto bg-white">
+              <FullAnexoBravoForm
+                onSubmit={handleAnexoBravoComplete}
+                onCancel={handleCancel}
+                operacionId={selectedOperacionId}
+              />
             </div>
           </main>
         </div>
@@ -282,17 +311,6 @@ const AnexoBravoPage = () => {
               )}
             </div>
           </div>
-
-          {/* Modal para crear Anexo Bravo - Solo usar el Wizard */}
-          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-              <AnexoBravoWizard 
-                defaultOperacionId={selectedOperacionId}
-                onSubmit={handleAnexoBravoComplete}
-                onCancel={() => setShowCreateForm(false)}
-              />
-            </DialogContent>
-          </Dialog>
         </main>
       </div>
     </SidebarProvider>
