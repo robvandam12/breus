@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnexoBravoStep1 } from './steps/AnexoBravoStep1';
 import { AnexoBravoStep2 } from './steps/AnexoBravoStep2';
 import { AnexoBravoStep3 } from './steps/AnexoBravoStep3';
 import { AnexoBravoStep4 } from './steps/AnexoBravoStep4';
 import { AnexoBravoStep5 } from './steps/AnexoBravoStep5';
+import { AnexoBravoOperationSelector } from './AnexoBravoOperationSelector';
 import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
@@ -25,12 +24,15 @@ interface FullAnexoBravoFormProps {
 export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   onSubmit,
   onCancel,
-  operacionId,
+  operacionId: initialOperacionId,
   anexoId
 }) => {
   const { equipos } = useEquiposBuceoEnhanced();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
+  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !anexoId);
+  
   const [formData, setFormData] = useState({
     // Datos generales
     codigo: '',
@@ -74,10 +76,15 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     { id: 5, title: 'Firmas', isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) }
   ];
 
+  const handleOperacionSelected = (operacionId: string) => {
+    setCurrentOperacionId(operacionId);
+    setShowOperacionSelector(false);
+  };
+
   // Poblar datos automáticamente cuando se monta el componente
   useEffect(() => {
     const populateOperacionData = async () => {
-      if (!operacionId || anexoId) return; // No poblar si es edición
+      if (!currentOperacionId || anexoId) return; // No poblar si es edición
 
       try {
         // Obtener datos de la operación
@@ -89,7 +96,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
             sitios:sitio_id (nombre, ubicacion),
             contratistas:contratista_id (nombre, rut)
           `)
-          .eq('id', operacionId)
+          .eq('id', currentOperacionId)
           .single();
 
         if (opError) throw opError;
@@ -162,7 +169,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     };
 
     populateOperacionData();
-  }, [operacionId, anexoId, equipos]);
+  }, [currentOperacionId, anexoId, equipos]);
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -200,7 +207,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     try {
       const submitData = {
         ...formData,
-        operacion_id: operacionId,
+        operacion_id: currentOperacionId,
         firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
         estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
@@ -248,10 +255,28 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     }
   };
 
+  // Show operation selector if no operation selected
+  if (showOperacionSelector) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <AnexoBravoOperationSelector 
+          onOperacionSelected={handleOperacionSelected}
+          selectedOperacionId={currentOperacionId}
+        />
+        
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onCancel} className="ios-button">
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header con progreso */}
-      <Card>
+      <Card className="ios-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -262,16 +287,26 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
               </p>
             </div>
-            <Badge variant={operacionId ? "default" : "secondary"}>
-              {operacionId ? 'Con Operación' : 'Independiente'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={currentOperacionId ? "default" : "secondary"}>
+                {currentOperacionId ? 'Con Operación' : 'Independiente'}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOperacionSelector(true)}
+                className="ios-button-sm"
+              >
+                Cambiar Operación
+              </Button>
+            </div>
           </div>
           <Progress value={getProgress()} className="mt-4" />
         </CardHeader>
       </Card>
 
       {/* Navegación de pasos */}
-      <Card>
+      <Card className="ios-card">
         <CardContent className="p-4">
           <div className="grid grid-cols-5 gap-2">
             {steps.map((step) => (
@@ -280,7 +315,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 variant={step.id === currentStep ? "default" : "outline"}
                 size="sm"
                 onClick={() => goToStep(step.id)}
-                className="h-auto p-2 flex flex-col items-center gap-1"
+                className="ios-button h-auto p-2 flex flex-col items-center gap-1"
               >
                 <div className="flex items-center gap-1">
                   {step.isValid ? (
@@ -303,7 +338,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       {renderStepContent()}
 
       {/* Navegación inferior */}
-      <Card>
+      <Card className="ios-card">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
@@ -311,6 +346,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 1}
+                className="ios-button"
               >
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Anterior
@@ -318,7 +354,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onCancel}>
+              <Button variant="outline" onClick={onCancel} className="ios-button">
                 Cancelar
               </Button>
               
@@ -326,6 +362,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 <Button
                   onClick={nextStep}
                   disabled={!steps[currentStep - 1]?.isValid}
+                  className="ios-button"
                 >
                   Siguiente
                   <ChevronRight className="h-4 w-4 ml-2" />
@@ -334,7 +371,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                 <Button
                   onClick={handleSubmit}
                   disabled={!isFormValid() || isLoading}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="ios-button bg-green-600 hover:bg-green-700"
                 >
                   {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
                 </Button>
@@ -343,6 +380,27 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Operation Selector Dialog */}
+      {showOperacionSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AnexoBravoOperationSelector 
+              onOperacionSelected={handleOperacionSelected}
+              selectedOperacionId={currentOperacionId}
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowOperacionSelector(false)}
+                className="ios-button"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

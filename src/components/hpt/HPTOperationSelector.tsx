@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Calendar, MapPin, Building } from "lucide-react";
-import { useOperacionValidation } from "@/hooks/useOperacionValidation";
+import { FileText, Calendar, MapPin, Building, Users, AlertTriangle } from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useHPT } from "@/hooks/useHPT";
 
 interface HPTOperationSelectorProps {
   onOperacionSelected: (operacionId: string) => void;
@@ -13,27 +14,31 @@ interface HPTOperationSelectorProps {
 }
 
 export const HPTOperationSelector = ({ onOperacionSelected, selectedOperacionId }: HPTOperationSelectorProps) => {
-  const { operacionesConDocumentos, getOperacionesDisponiblesParaHPT, isLoading } = useOperacionValidation();
+  const { operaciones, isLoading: operacionesLoading } = useOperaciones();
+  const { hpts, isLoading: hptsLoading } = useHPT();
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
 
-  const operacionesDisponibles = getOperacionesDisponiblesParaHPT();
+  // Filter operations that don't have HPT
+  const operacionesDisponibles = operaciones.filter(op => 
+    !hpts.some(hpt => hpt.operacion_id === op.id)
+  );
 
   useEffect(() => {
     if (selectedOperacionId) {
-      const operacion = operacionesConDocumentos.find(op => op.id === selectedOperacionId);
+      const operacion = operaciones.find(op => op.id === selectedOperacionId);
       setSelectedOperacion(operacion);
     }
-  }, [selectedOperacionId, operacionesConDocumentos]);
+  }, [selectedOperacionId, operaciones]);
 
   const handleOperacionChange = (operacionId: string) => {
-    const operacion = operacionesConDocumentos.find(op => op.id === operacionId);
+    const operacion = operaciones.find(op => op.id === operacionId);
     setSelectedOperacion(operacion);
     onOperacionSelected(operacionId);
   };
 
-  if (isLoading) {
+  if (operacionesLoading || hptsLoading) {
     return (
-      <Card>
+      <Card className="ios-card">
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -45,7 +50,7 @@ export const HPTOperationSelector = ({ onOperacionSelected, selectedOperacionId 
   }
 
   return (
-    <Card>
+    <Card className="ios-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-blue-600" />
@@ -54,11 +59,11 @@ export const HPTOperationSelector = ({ onOperacionSelected, selectedOperacionId 
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-2 text-gray-700">
             Operación <span className="text-red-500">*</span>
           </label>
           <Select value={selectedOperacion?.id || ''} onValueChange={handleOperacionChange}>
-            <SelectTrigger>
+            <SelectTrigger className="ios-input">
               <SelectValue placeholder="Seleccione una operación" />
             </SelectTrigger>
             <SelectContent>
@@ -78,9 +83,12 @@ export const HPTOperationSelector = ({ onOperacionSelected, selectedOperacionId 
           </Select>
           
           {operacionesDisponibles.length === 0 && (
-            <p className="text-sm text-gray-500 mt-2">
-              No hay operaciones disponibles para crear HPT. Todas las operaciones ya tienen HPT asignado.
-            </p>
+            <div className="flex items-center gap-2 mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <p className="text-sm text-yellow-700">
+                No hay operaciones disponibles para crear HPT. Todas las operaciones ya tienen HPT asignado.
+              </p>
+            </div>
           )}
         </div>
 
@@ -111,6 +119,14 @@ export const HPTOperationSelector = ({ onOperacionSelected, selectedOperacionId 
                 <span className="font-medium">Contratista:</span>
                 <span>{selectedOperacion.contratistas?.nombre || 'No especificado'}</span>
               </div>
+
+              {selectedOperacion.equipo_buceo_id && (
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium">Equipo:</span>
+                  <Badge className="bg-green-100 text-green-700">Asignado</Badge>
+                </div>
+              )}
             </div>
             
             {selectedOperacion.tareas && (
