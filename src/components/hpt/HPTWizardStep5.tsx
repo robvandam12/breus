@@ -3,11 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignatureCapture } from '@/components/signatures/SignatureCapture';
 import { FileText, AlertCircle } from 'lucide-react';
-import { HPTWizardData } from '@/hooks/useHPTWizard';
+import { HPTFormData } from '@/hooks/useHPTWizard';
 
 interface HPTWizardStep5Props {
-  data: HPTWizardData;
-  updateData: (updates: Partial<HPTWizardData>) => void;
+  data: HPTFormData;
+  updateData: (updates: Partial<HPTFormData>) => void;
 }
 
 export const HPTWizardStep5: React.FC<HPTWizardStep5Props> = ({ data, updateData }) => {

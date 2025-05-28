@@ -13,7 +13,7 @@ import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
 import { HPTOperationSelector } from "./HPTOperationSelector";
 import { useToast } from "@/hooks/use-toast";
-import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
+import { useHPTWizard, HPTFormData } from "@/hooks/useHPTWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,9 +34,9 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
 
   const {
     currentStep,
-    data,
+    formData,
     steps,
-    updateData,
+    updateFormData,
     nextStep,
     prevStep,
     submitHPT,
@@ -81,7 +81,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
         // Generate folio based on operation
         const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
         
-        updateData({
+        updateFormData({
           operacion_id: currentOperacionId,
           folio,
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
@@ -109,7 +109,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
     };
 
     populateOperationData();
-  }, [currentOperacionId, equipos, updateData, toast, hptId]);
+  }, [currentOperacionId, equipos, updateFormData, toast, hptId]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setCurrentOperacionId(operacionId);
@@ -143,17 +143,17 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={data} onUpdate={updateData} />;
+        return <HPTStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={currentOperacionId || ''} />;
+        return <HPTStep2 data={formData} onUpdate={updateFormData} operacionId={currentOperacionId || ''} />;
       case 3:
-        return <HPTStep3 data={data} onUpdate={updateData} />;
+        return <HPTStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
-        return <HPTStep4 data={data} onUpdate={updateData} />;
+        return <HPTStep4 data={formData} onUpdate={updateFormData} />;
       case 5:
-        return <HPTStep5 data={data} onUpdate={updateData} />;
+        return <HPTStep5 data={formData} onUpdate={updateFormData} />;
       case 6:
-        return <HPTStep6 data={data} onUpdate={updateData} />;
+        return <HPTStep6 data={formData} onUpdate={updateFormData} />;
       default:
         return null;
     }

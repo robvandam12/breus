@@ -52,6 +52,9 @@ export interface HPTFormData {
   observaciones: string;
 }
 
+// Export alias for backward compatibility
+export type HPTWizardData = HPTFormData;
+
 interface HPTWizardStep {
   id: number;
   title: string;
@@ -59,11 +62,14 @@ interface HPTWizardStep {
   isCompleted: boolean;
 }
 
-export const useHPTWizard = (operacionId?: string) => {
+export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   const { operaciones } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
   
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  
   const [formData, setFormData] = useState<HPTFormData>({
     codigo: '',
     folio: '',
@@ -215,32 +221,26 @@ export const useHPTWizard = (operacionId?: string) => {
     },
     {
       id: 2,
+      title: "EPP y ERC",
+      isValid: Object.keys(formData.hpt_epp).length > 0 && Object.keys(formData.hpt_erc).length > 0,
+      isCompleted: Object.keys(formData.hpt_epp).length > 0 && Object.keys(formData.hpt_erc).length > 0
+    },
+    {
+      id: 3,
+      title: "Medidas y Riesgos",
+      isValid: Object.keys(formData.hpt_medidas).length > 0,
+      isCompleted: Object.keys(formData.hpt_medidas).length > 0
+    },
+    {
+      id: 4,
       title: "Conocimiento del Trabajo",
       isValid: Object.keys(formData.hpt_conocimiento).length > 0,
       isCompleted: Object.keys(formData.hpt_conocimiento).length > 0 && 
                    formData.hpt_conocimiento_asistentes?.length > 0
     },
     {
-      id: 3,
-      title: "Estándares de Riesgos Críticos",
-      isValid: Object.keys(formData.hpt_erc).length > 0,
-      isCompleted: Object.keys(formData.hpt_erc).length > 0
-    },
-    {
-      id: 4,
-      title: "Medidas de Control",
-      isValid: Object.keys(formData.hpt_medidas).length > 0,
-      isCompleted: Object.keys(formData.hpt_medidas).length > 0
-    },
-    {
       id: 5,
-      title: "EPP",
-      isValid: Object.keys(formData.hpt_epp).length > 0,
-      isCompleted: Object.keys(formData.hpt_epp).length > 0
-    },
-    {
-      id: 6,
-      title: "Firmas y Finalización",
+      title: "Firmas",
       isValid: Object.keys(formData.hpt_firmas).length > 0,
       isCompleted: Object.keys(formData.hpt_firmas).length > 0
     }
@@ -249,6 +249,10 @@ export const useHPTWizard = (operacionId?: string) => {
   const updateFormData = (updates: Partial<HPTFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
+
+  // Aliases for backward compatibility
+  const data = formData;
+  const updateData = updateFormData;
 
   const nextStep = () => {
     const currentStepData = steps[currentStep - 1];
@@ -285,6 +289,79 @@ export const useHPTWizard = (operacionId?: string) => {
     return steps.every(step => step.isValid);
   };
 
+  const isFormComplete = () => {
+    return steps.every(step => step.isCompleted);
+  };
+
+  const progress = getProgress();
+
+  const saveDraft = async () => {
+    setIsLoading(true);
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('No user found');
+
+      const draftData = {
+        operacion_id: operacionId,
+        user_id: user.data.user.id,
+        estado: 'borrador',
+        progreso: progress,
+        codigo: formData.codigo || `HPT-DRAFT-${Date.now()}`,
+        plan_trabajo: formData.descripcion_tarea || 'Trabajo de buceo',
+        supervisor: formData.supervisor_nombre || 'Por asignar',
+        folio: formData.folio,
+        fecha: formData.fecha,
+        hora_inicio: formData.hora_inicio,
+        hora_termino: formData.hora_termino,
+        empresa_servicio_nombre: formData.empresa_servicio_nombre,
+        supervisor_nombre: formData.supervisor_nombre,
+        centro_trabajo_nombre: formData.centro_trabajo_nombre,
+        jefe_mandante_nombre: formData.jefe_mandante_nombre,
+        descripcion_tarea: formData.descripcion_tarea,
+        lugar_especifico: formData.lugar_especifico,
+        es_rutinaria: formData.es_rutinaria,
+        tipo_trabajo: formData.tipo_trabajo,
+        descripcion_trabajo: formData.descripcion_trabajo,
+        estado_puerto: formData.estado_puerto,
+        profundidad_maxima: formData.profundidad_maxima,
+        temperatura: formData.temperatura,
+        corrientes: formData.corrientes,
+        visibilidad: formData.visibilidad,
+        hpt_conocimiento: formData.hpt_conocimiento,
+        hpt_conocimiento_asistentes: formData.hpt_conocimiento_asistentes,
+        hpt_riesgos_comp: formData.hpt_riesgos_comp,
+        hpt_medidas: formData.hpt_medidas,
+        hpt_erc: formData.hpt_erc,
+        hpt_epp: formData.hpt_epp,
+        hpt_firmas: formData.hpt_firmas,
+        plan_emergencia: formData.plan_emergencia,
+        hospital_cercano: formData.hospital_cercano,
+        camara_hiperbarica: formData.camara_hiperbarica,
+        observaciones: formData.observaciones
+      };
+
+      const { error } = await supabase
+        .from('hpt')
+        .upsert([draftData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Borrador guardado",
+        description: "Los cambios han sido guardados como borrador.",
+      });
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el borrador.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const submitHPT = async () => {
     if (!isFormValid()) {
       toast({
@@ -295,16 +372,52 @@ export const useHPTWizard = (operacionId?: string) => {
       return;
     }
 
+    setIsLoading(true);
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('No user found');
+
       const hptData = {
-        ...formData,
         operacion_id: operacionId,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        estado: 'borrador',
-        progreso: getProgress()
+        user_id: user.data.user.id,
+        estado: 'completo',
+        progreso: 100,
+        firmado: Object.keys(formData.hpt_firmas).length > 0,
+        codigo: formData.codigo || `HPT-${Date.now()}`,
+        plan_trabajo: formData.descripcion_tarea || 'Trabajo de buceo',
+        supervisor: formData.supervisor_nombre || 'Por asignar',
+        folio: formData.folio,
+        fecha: formData.fecha,
+        hora_inicio: formData.hora_inicio,
+        hora_termino: formData.hora_termino,
+        empresa_servicio_nombre: formData.empresa_servicio_nombre,
+        supervisor_nombre: formData.supervisor_nombre,
+        centro_trabajo_nombre: formData.centro_trabajo_nombre,
+        jefe_mandante_nombre: formData.jefe_mandante_nombre,
+        descripcion_tarea: formData.descripcion_tarea,
+        lugar_especifico: formData.lugar_especifico,
+        es_rutinaria: formData.es_rutinaria,
+        tipo_trabajo: formData.tipo_trabajo,
+        descripcion_trabajo: formData.descripcion_trabajo,
+        estado_puerto: formData.estado_puerto,
+        profundidad_maxima: formData.profundidad_maxima,
+        temperatura: formData.temperatura,
+        corrientes: formData.corrientes,
+        visibilidad: formData.visibilidad,
+        hpt_conocimiento: formData.hpt_conocimiento,
+        hpt_conocimiento_asistentes: formData.hpt_conocimiento_asistentes,
+        hpt_riesgos_comp: formData.hpt_riesgos_comp,
+        hpt_medidas: formData.hpt_medidas,
+        hpt_erc: formData.hpt_erc,
+        hpt_epp: formData.hpt_epp,
+        hpt_firmas: formData.hpt_firmas,
+        plan_emergencia: formData.plan_emergencia,
+        hospital_cercano: formData.hospital_cercano,
+        camara_hiperbarica: formData.camara_hiperbarica,
+        observaciones: formData.observaciones
       };
 
-      const { data, error } = await supabase
+      const { data: result, error } = await supabase
         .from('hpt')
         .insert([hptData])
         .select()
@@ -317,7 +430,7 @@ export const useHPTWizard = (operacionId?: string) => {
         description: "El HPT ha sido creado exitosamente.",
       });
 
-      return data;
+      return result.id;
     } catch (error) {
       console.error('Error creating HPT:', error);
       toast({
@@ -326,19 +439,29 @@ export const useHPTWizard = (operacionId?: string) => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     currentStep,
     formData,
+    data, // alias for backward compatibility
     steps,
     updateFormData,
+    updateData, // alias for backward compatibility
     nextStep,
     prevStep,
     goToStep,
     getProgress,
     isFormValid,
+    isFormComplete,
+    progress,
+    isLoading,
+    autoSaveEnabled,
+    setAutoSaveEnabled,
+    saveDraft,
     submitHPT
   };
 };

@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Shield, HardHat, Eye, Hand, AlertTriangle } from 'lucide-react';
-import { HPTWizardData } from '@/hooks/useHPTWizard';
+import { HPTFormData } from '@/hooks/useHPTWizard';
 
 interface HPTWizardStep2Props {
-  data: HPTWizardData;
-  updateData: (updates: Partial<HPTWizardData>) => void;
+  data: HPTFormData;
+  updateData: (updates: Partial<HPTFormData>) => void;
 }
 
 export const HPTWizardStep2: React.FC<HPTWizardStep2Props> = ({ data, updateData }) => {

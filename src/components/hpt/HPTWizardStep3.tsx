@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, X, AlertTriangle } from 'lucide-react';
-import { HPTWizardData } from '@/hooks/useHPTWizard';
+import { HPTFormData } from '@/hooks/useHPTWizard';
 
 interface HPTWizardStep3Props {
-  data: HPTWizardData;
-  updateData: (updates: Partial<HPTWizardData>) => void;
+  data: HPTFormData;
+  updateData: (updates: Partial<HPTFormData>) => void;
 }
 
 export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData }) => {
