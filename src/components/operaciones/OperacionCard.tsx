@@ -1,145 +1,99 @@
 
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, MapPin, Building, MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Users, MapPin, Building, Clock, Edit, Trash2, Eye } from "lucide-react";
+import { Operacion } from "@/hooks/useOperaciones";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface OperacionCardProps {
-  operacion: any;
-  onView?: (operacion: any) => void;
-  onEdit?: (operacion: any) => void;
-  onDelete?: (operacion: any) => void;
+  operacion: Operacion;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export const OperacionCard = ({ operacion, onView, onEdit, onDelete }: OperacionCardProps) => {
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case 'activa':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'completada':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'pausada':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'cancelada':
-        return 'bg-red-100 text-red-700 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
+export const OperacionCard = ({ operacion, onEdit, onDelete }: OperacionCardProps) => {
+  const getEstadoBadge = (estado: string) => {
+    const estadoMap: Record<string, { className: string; label: string }> = {
+      activa: { className: "bg-green-100 text-green-700", label: "Activa" },
+      pausada: { className: "bg-yellow-100 text-yellow-700", label: "Pausada" },
+      completada: { className: "bg-blue-100 text-blue-700", label: "Completada" },
+      cancelada: { className: "bg-red-100 text-red-700", label: "Cancelada" }
+    };
+    return estadoMap[estado] || estadoMap.activa;
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'No definida';
     try {
-      return new Date(dateString).toLocaleDateString('es-CL');
+      return format(new Date(dateString), "dd/MM/yyyy", { locale: es });
     } catch {
-      return 'Fecha inválida';
+      return dateString;
     }
   };
 
+  const estadoInfo = getEstadoBadge(operacion.estado);
+
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">{operacion.nombre}</h3>
-                <Badge variant="outline" className="text-xs">
-                  {operacion.codigo}
-                </Badge>
-              </div>
-              <Badge className={`${getStatusColor(operacion.estado)} text-xs`}>
-                {operacion.estado?.charAt(0).toUpperCase() + operacion.estado?.slice(1)}
-              </Badge>
+    <Card className="ios-card hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Building className="w-6 h-6 text-blue-600" />
             </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onView?.(operacion)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Ver Detalle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit?.(operacion)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => onDelete?.(operacion)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div>
+              <CardTitle className="text-lg text-zinc-900">{operacion.codigo}</CardTitle>
+              <p className="text-sm text-zinc-500">{operacion.nombre}</p>
+            </div>
           </div>
-
-          {/* Details */}
-          <div className="space-y-2">
-            {operacion.salmonera && (
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <Building className="w-4 h-4" />
-                <span>{operacion.salmonera.nombre}</span>
-              </div>
-            )}
-            
-            {operacion.sitio && (
-              <div className="flex items-center gap-2 text-sm text-zinc-600">
-                <MapPin className="w-4 h-4" />
-                <span>{operacion.sitio.nombre}</span>
-              </div>
-            )}
-            
+          <Badge variant="secondary" className={estadoInfo.className}>
+            {estadoInfo.label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-2 text-sm text-zinc-600">
+            <Building className="w-4 h-4" />
+            <span>{operacion.salmoneras?.nombre || "Sin salmonera"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-zinc-600">
+            <MapPin className="w-4 h-4" />
+            <span>{operacion.sitios?.nombre || "Sin sitio"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-zinc-600">
+            <Calendar className="w-4 h-4" />
+            <span>{formatDate(operacion.fecha_inicio)}</span>
+          </div>
+          {operacion.fecha_fin && (
             <div className="flex items-center gap-2 text-sm text-zinc-600">
-              <Calendar className="w-4 h-4" />
-              <span>
-                {formatDate(operacion.fecha_inicio)}
-                {operacion.fecha_fin && ` - ${formatDate(operacion.fecha_fin)}`}
-              </span>
+              <Clock className="w-4 h-4" />
+              <span>Hasta {formatDate(operacion.fecha_fin)}</span>
             </div>
-
-            {operacion.contratista && (
-              <div className="text-sm text-zinc-600">
-                <span className="font-medium">Contratista: </span>
-                <span>{operacion.contratista.nombre}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          {operacion.tareas && (
-            <p className="text-sm text-zinc-600 line-clamp-2">
-              {operacion.tareas}
-            </p>
           )}
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onView?.(operacion)}
-              className="flex-1"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Ver Detalle
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onEdit?.(operacion)}
-            >
+          {operacion.contratistas && (
+            <div className="flex items-center gap-2 text-sm text-zinc-600">
+              <Users className="w-4 h-4" />
+              <span>{operacion.contratistas.nombre}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" size="sm">
+            <Eye className="w-4 h-4" />
+          </Button>
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={onEdit}>
               <Edit className="w-4 h-4" />
             </Button>
-          </div>
+          )}
+          {onDelete && (
+            <Button variant="outline" size="sm" onClick={onDelete}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

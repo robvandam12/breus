@@ -151,7 +151,7 @@ export const CreateOperacionForm = ({
               <Label htmlFor="estado">Estado</Label>
               <Select 
                 value={formData.estado} 
-                onValueChange={(value) => updateFormData("estado", value)}
+                onValueChange={(value) => updateFormData("estado", value as "activa" | "pausada" | "completada" | "cancelada")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />

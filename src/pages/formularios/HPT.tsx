@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -5,15 +6,13 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
-import { CreateHPTForm } from "@/components/hpt/CreateHPTForm";
+import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperacionValidation } from "@/hooks/useOperacionValidation";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EnhancedSelect } from "@/components/ui/enhanced-select";
 
@@ -22,9 +21,7 @@ const HPTPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
-  const { hpts, isLoading, createHPT } = useHPT();
-  const { operaciones } = useOperaciones();
-  const { equipos } = useEquipoBuceo();
+  const { hpts, isLoading } = useHPT();
   const { 
     operacionesConDocumentos, 
     getOperacionesDisponiblesParaHPT,
@@ -32,10 +29,6 @@ const HPTPage = () => {
   } = useOperacionValidation();
 
   const operacionesDisponibles = getOperacionesDisponiblesParaHPT();
-  const selectedOperacion = operaciones.find(op => op.id === selectedOperacionId);
-  const equipoAsignado = selectedOperacion?.equipo_buceo_id 
-    ? equipos.find(e => e.id === selectedOperacion.equipo_buceo_id)
-    : null;
 
   const filteredHPTs = hpts.filter(hpt => 
     hpt.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,23 +49,9 @@ const HPTPage = () => {
     setShowCreateForm(true);
   };
 
-  const handleHPTComplete = async (data: any) => {
-    try {
-      // Auto-poblar campos basados en la operación y equipo
-      const enrichedData = {
-        ...data,
-        operacion_id: selectedOperacionId,
-        empresa_servicio_nombre: selectedOperacion?.salmonera?.nombre || '',
-        centro_trabajo_nombre: selectedOperacion?.sitio?.nombre || '',
-        supervisor_nombre: equipoAsignado?.miembros?.find(m => m.rol_equipo === 'supervisor')?.nombre_completo || '',
-      };
-
-      await createHPT(enrichedData);
-      setShowCreateForm(false);
-      setSelectedOperacionId('');
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-    }
+  const handleHPTComplete = () => {
+    setShowCreateForm(false);
+    setSelectedOperacionId('');
   };
 
   if (isLoading) {
@@ -299,57 +278,12 @@ const HPTPage = () => {
             </div>
           </div>
 
-          {/* Modal para crear HPT con información completa de operación */}
+          {/* Modal para crear HPT */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Nuevo HPT</DialogTitle>
-                {selectedOperacion && (
-                  <div className="mt-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-blue-900">Operación Seleccionada</h4>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                          {selectedOperacion.codigo}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="font-medium text-blue-800">Nombre:</span>
-                          <span className="ml-2 text-blue-700">{selectedOperacion.nombre}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-blue-800">Centro:</span>
-                          <span className="ml-2 text-blue-700">{selectedOperacion.sitio?.nombre || 'No especificado'}</span>
-                        </div>
-                        {selectedOperacion.salmonera && (
-                          <div>
-                            <span className="font-medium text-blue-800">Salmonera:</span>
-                            <span className="ml-2 text-blue-700">{selectedOperacion.salmonera.nombre}</span>
-                          </div>
-                        )}
-                        {equipoAsignado && (
-                          <div>
-                            <span className="font-medium text-blue-800">Equipo:</span>
-                            <span className="ml-2 text-blue-700">{equipoAsignado.nombre}</span>
-                          </div>
-                        )}
-                      </div>
-                      {equipoAsignado?.miembros?.length > 0 && (
-                        <div className="mt-3 pt-2 border-t border-blue-200">
-                          <span className="font-medium text-blue-800 text-sm">Supervisor asignado:</span>
-                          <span className="ml-2 text-blue-700 text-sm">
-                            {equipoAsignado.miembros.find(m => m.rol_equipo === 'supervisor')?.nombre_completo || 'No asignado'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </DialogHeader>
-              <CreateHPTForm
-                defaultOperacionId={selectedOperacionId}
-                onSubmit={handleHPTComplete}
+            <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+              <HPTWizard 
+                operacionId={selectedOperacionId}
+                onComplete={handleHPTComplete}
                 onCancel={() => setShowCreateForm(false)}
               />
             </DialogContent>

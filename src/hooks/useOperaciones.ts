@@ -7,43 +7,39 @@ export interface Operacion {
   id: string;
   codigo: string;
   nombre: string;
-  descripcion?: string;
+  sitio_id: string;
+  servicio_id: string;
+  salmonera_id: string;
+  contratista_id: string;
   fecha_inicio: string;
   fecha_fin?: string;
-  estado: string;
-  salmonera_id?: string;
-  contratista_id?: string;
-  sitio_id?: string;
-  supervisor_asignado_id?: string;
   tareas?: string;
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
   equipo_buceo_id?: string;
-  servicio_id?: string;
   created_at: string;
   updated_at: string;
-  salmonera?: any;
-  contratista?: any;
-  sitio?: any;
+  salmoneras?: { nombre: string };
+  sitios?: { nombre: string };
+  contratistas?: { nombre: string };
 }
 
 export interface OperacionFormData {
-  nombre: string;
   codigo: string;
-  descripcion?: string;
+  nombre: string;
+  sitio_id: string;
+  servicio_id: string;
+  salmonera_id: string;
+  contratista_id: string;
   fecha_inicio: string;
   fecha_fin?: string;
-  estado: string;
-  salmonera_id: string;
-  contratista_id?: string;
-  sitio_id?: string;
-  supervisor_asignado_id?: string;
   tareas?: string;
-  equipo_buceo_id?: string;
-  servicio_id?: string;
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
 }
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
+  // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
     queryFn: async () => {
@@ -52,21 +48,28 @@ export const useOperaciones = () => {
         .from('operacion')
         .select(`
           *,
-          salmonera:salmonera_id (nombre),
-          contratista:contratista_id (nombre),
-          sitio:sitio_id (nombre, ubicacion)
+          salmoneras:salmonera_id (nombre),
+          sitios:sitio_id (nombre),
+          contratistas:contratista_id (nombre)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }); // Las más nuevas primero
 
       if (error) {
         console.error('Error fetching operaciones:', error);
         throw error;
       }
 
-      return data || [];
+      // Ensure estado values match our type
+      return (data || []).map(op => ({
+        ...op,
+        estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
+          ? op.estado 
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada'
+      })) as Operacion[];
     },
   });
 
+  // Create operacion
   const createOperacionMutation = useMutation({
     mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
@@ -101,8 +104,9 @@ export const useOperaciones = () => {
     },
   });
 
+  // Update operacion
   const updateOperacionMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Operacion> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
       console.log('Updating operacion:', id, data);
       
       const { data: result, error } = await supabase
@@ -124,38 +128,7 @@ export const useOperaciones = () => {
     },
   });
 
-  const assignEquipoToOperacionMutation = useMutation({
-    mutationFn: async ({ operacionId, equipoId }: { operacionId: string; equipoId: string }) => {
-      console.log('Assigning equipo to operacion:', { operacionId, equipoId });
-      
-      // Actualizar la operación con el equipo asignado
-      const { data: result, error } = await supabase
-        .from('operacion')
-        .update({ equipo_buceo_id: equipoId })
-        .eq('id', operacionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
-      toast({
-        title: "Equipo asignado",
-        description: "El equipo ha sido asignado a la operación exitosamente.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error assigning equipo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo asignar el equipo a la operación.",
-        variant: "destructive",
-      });
-    },
-  });
-
+  // Delete operacion
   const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Deleting operacion:', id);
@@ -180,11 +153,8 @@ export const useOperaciones = () => {
     operaciones,
     isLoading,
     createOperacion: createOperacionMutation.mutateAsync,
-    updateOperacion: updateOperacionMutation.mutateAsync,
-    assignEquipoToOperacion: assignEquipoToOperacionMutation.mutateAsync,
-    deleteOperacion: deleteOperacionMutation.mutateAsync,
     isCreating: createOperacionMutation.isPending,
-    isUpdating: updateOperacionMutation.isPending,
-    isDeleting: deleteOperacionMutation.isPending,
+    updateOperacion: updateOperacionMutation.mutateAsync,
+    deleteOperacion: deleteOperacionMutation.mutateAsync,
   };
 };

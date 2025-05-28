@@ -1,21 +1,16 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Calendar, ListChecks, Users, Edit } from "lucide-react";
+import { Calendar, ListChecks, Users } from "lucide-react";
 import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
 import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
 import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
 import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
-import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface OperacionDetailProps {
   operacion: any;
@@ -23,17 +18,6 @@ interface OperacionDetailProps {
 
 const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
   const [activeTab, setActiveTab] = useState("general");
-  const [showEditForm, setShowEditForm] = useState(false);
-  const { updateOperacion } = useOperaciones();
-
-  const handleEditOperacion = async (data: any) => {
-    try {
-      await updateOperacion({ id: operacion.id, data });
-      setShowEditForm(false);
-    } catch (error) {
-      console.error('Error updating operacion:', error);
-    }
-  };
 
   return (
     <SidebarProvider>
@@ -49,14 +33,9 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
             title={operacion.nombre}
             subtitle={`Detalles de la operación ${operacion.codigo}`}
             icon={Calendar}
-          >
-            <Button onClick={() => setShowEditForm(true)} variant="outline">
-              <Edit className="w-4 h-4 mr-2" />
-              Editar Operación
-            </Button>
-          </Header>
+          />
 
-          <div className="flex-1 overflow-auto bg-white p-6">
+          <div className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="general">General</TabsTrigger>
@@ -92,17 +71,6 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
               </TabsContent>
             </Tabs>
           </div>
-
-          {/* Edit Form Modal */}
-          <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <EditOperacionForm
-                operacion={operacion}
-                onSubmit={handleEditOperacion}
-                onCancel={() => setShowEditForm(false)}
-              />
-            </DialogContent>
-          </Dialog>
         </motion.main>
       </div>
     </SidebarProvider>
