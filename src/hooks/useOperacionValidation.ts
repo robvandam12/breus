@@ -10,7 +10,12 @@ export const useOperacionValidation = () => {
       
       const { data: operaciones, error: opError } = await supabase
         .from('operacion')
-        .select('*')
+        .select(`
+          *,
+          salmoneras:salmonera_id (nombre, rut),
+          sitios:sitio_id (nombre, ubicacion),
+          contratistas:contratista_id (nombre, rut)
+        `)
         .order('created_at', { ascending: false });
 
       if (opError) throw opError;
