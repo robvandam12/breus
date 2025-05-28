@@ -11,30 +11,37 @@ import { Users, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { UserSearchSelectEnhanced } from "@/components/usuarios/UserSearchSelectEnhanced";
+import { useUsuarios } from "@/hooks/useUsuarios";
 
 interface CreateEquipoFormWizardProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (equipoData: any) => Promise<void>;
   onCancel: () => void;
 }
 
 export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormWizardProps) => {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
+  const { usuarios } = useUsuarios();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [equipoData, setEquipoData] = useState({
     nombre: '',
     descripcion: '',
     empresa_id: '',
     tipo_empresa: ''
   });
-  const [selectedMembers, setSelectedMembers] = useState<any[]>([]);
+  
+  const [selectedMembers, setSelectedMembers] = useState<Array<{
+    usuario_id: string;
+    rol_equipo: string;
+    nombre_completo: string;
+  }>>([]);
 
   // Auto-detectar empresa del usuario admin
-  const autoDetectEmpresa = () => {
+  useEffect(() => {
     if (!profile) return;
     
     if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
@@ -50,27 +57,26 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
         tipo_empresa: 'contratista'
       }));
     }
-  };
-
-  useEffect(() => {
-    autoDetectEmpresa();
   }, [profile]);
 
   const isUserAdmin = profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio';
+  const availableUsers = usuarios.filter(u => u.rol === 'supervisor' || u.rol === 'buzo');
 
   const handleStep1Submit = () => {
     if (!equipoData.nombre || (!isUserAdmin && !equipoData.empresa_id)) return;
     setCurrentStep(2);
   };
 
-  const handleAddMember = (usuarioData: any, rol: string) => {
+  const handleAddMember = (usuarioId: string, rol: string) => {
+    const usuario = usuarios.find(u => u.usuario_id === usuarioId);
+    if (!usuario) return;
+
     const member = {
-      usuario_id: usuarioData.id,
+      usuario_id: usuarioId,
       rol_equipo: rol,
-      nombre_completo: `${usuarioData.nombre} ${usuarioData.apellido}`,
-      email: usuarioData.email
+      nombre_completo: `${usuario.nombre} ${usuario.apellido}`
     };
-    
+
     setSelectedMembers(prev => [...prev, member]);
   };
 
@@ -94,7 +100,7 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Progress indicator */}
+      {/* Progress Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -109,10 +115,12 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             2
           </div>
         </div>
-        <Badge variant="outline">Paso {currentStep} de 2</Badge>
+        <Badge variant="outline">
+          Paso {currentStep} de 2
+        </Badge>
       </div>
 
-      {/* Step 1: Basic Info */}
+      {/* Step 1: Create Team */}
       {currentStep === 1 && (
         <Card>
           <CardHeader>
@@ -146,12 +154,12 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             {!isUserAdmin && (
               <div>
                 <Label>Tipo de Empresa *</Label>
-                <Select 
-                  value={equipoData.tipo_empresa} 
-                  onValueChange={(value) => setEquipoData(prev => ({ ...prev, tipo_empresa: value, empresa_id: '' }))}
+                <Select
+                  value={equipoData.tipo_empresa}
+                  onValueChange={(value) => setEquipoData(prev => ({ ...prev, tipo_empresa: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el tipo de empresa" />
+                    <SelectValue placeholder="Seleccionar tipo..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="salmonera">Salmonera</SelectItem>
@@ -164,24 +172,20 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             {!isUserAdmin && equipoData.tipo_empresa && (
               <div>
                 <Label>Empresa *</Label>
-                <Select 
-                  value={equipoData.empresa_id} 
+                <Select
+                  value={equipoData.empresa_id}
                   onValueChange={(value) => setEquipoData(prev => ({ ...prev, empresa_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona la empresa" />
+                    <SelectValue placeholder="Seleccionar empresa..." />
                   </SelectTrigger>
                   <SelectContent>
                     {equipoData.tipo_empresa === 'salmonera' 
-                      ? salmoneras.map((salmonera) => (
-                          <SelectItem key={salmonera.id} value={salmonera.id}>
-                            {salmonera.nombre}
-                          </SelectItem>
+                      ? salmoneras.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>
                         ))
-                      : contratistas.map((contratista) => (
-                          <SelectItem key={contratista.id} value={contratista.id}>
-                            {contratista.nombre}
-                          </SelectItem>
+                      : contratistas.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                         ))
                     }
                   </SelectContent>
@@ -190,26 +194,28 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
             )}
 
             {isUserAdmin && (
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>Empresa:</strong> {profile?.role === 'admin_salmonera' 
-                    ? salmoneras.find(s => s.id === profile.salmonera_id)?.nombre 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Empresa detectada automáticamente:</strong>{' '}
+                  {profile?.role === 'admin_salmonera' 
+                    ? salmoneras.find(s => s.id === profile.salmonera_id)?.nombre
                     : contratistas.find(c => c.id === profile.servicio_id)?.nombre
                   }
                 </p>
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={onCancel}>
-                Cancelar
-              </Button>
+            <div className="flex gap-3 pt-4">
               <Button 
                 onClick={handleStep1Submit}
                 disabled={!equipoData.nombre || (!isUserAdmin && !equipoData.empresa_id)}
+                className="flex-1"
               >
-                Siguiente
+                Siguiente: Agregar Miembros
                 <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button variant="outline" onClick={onCancel}>
+                Cancelar
               </Button>
             </div>
           </CardContent>
@@ -221,51 +227,83 @@ export const CreateEquipoFormWizard = ({ onSubmit, onCancel }: CreateEquipoFormW
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-green-600" />
               Agregar Miembros al Equipo
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <UserSearchSelectEnhanced
-              onUserSelect={(user, role) => handleAddMember(user, role)}
-              companyType={equipoData.tipo_empresa as 'salmonera' | 'contratista'}
-              companyId={equipoData.empresa_id}
-            />
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-800">
+                <strong>Equipo:</strong> {equipoData.nombre}
+              </p>
+            </div>
 
+            {/* Add Member Form */}
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-3">Agregar Nuevo Miembro</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Select onValueChange={(value) => {
+                  const [usuarioId, rol] = value.split('|');
+                  handleAddMember(usuarioId, rol);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar usuario y rol..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map(usuario => (
+                      <optgroup key={usuario.usuario_id} label={`${usuario.nombre} ${usuario.apellido}`}>
+                        <SelectItem value={`${usuario.usuario_id}|supervisor`}>
+                          Como Supervisor
+                        </SelectItem>
+                        <SelectItem value={`${usuario.usuario_id}|buzo_principal`}>
+                          Como Buzo Principal
+                        </SelectItem>
+                        <SelectItem value={`${usuario.usuario_id}|buzo_asistente`}>
+                          Como Buzo Asistente
+                        </SelectItem>
+                      </optgroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Selected Members */}
             {selectedMembers.length > 0 && (
               <div className="space-y-2">
-                <Label>Miembros Seleccionados ({selectedMembers.length})</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {selectedMembers.map((member, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium">{member.nombre_completo}</div>
-                        <div className="text-sm text-gray-500">{member.email}</div>
-                        <Badge variant="outline" className="mt-1">
-                          {member.rol_equipo}
-                        </Badge>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleRemoveMember(index)}
-                      >
-                        Remover
-                      </Button>
+                <h4 className="font-medium">Miembros Seleccionados ({selectedMembers.length})</h4>
+                {selectedMembers.map((member, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{member.nombre_completo}</span>
+                      <Badge variant="outline" className="ml-2">
+                        {member.rol_equipo.replace('_', ' ')}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleRemoveMember(index)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setCurrentStep(1)}>
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={() => setCurrentStep(1)}
+                variant="outline"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Anterior
               </Button>
               <Button 
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
+                className="flex-1"
               >
                 {isSubmitting ? 'Creando...' : 'Crear Equipo'}
               </Button>

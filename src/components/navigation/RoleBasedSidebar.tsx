@@ -10,15 +10,7 @@ import {
   Shield,
   LogOut,
   Users,
-  Building,
-  LayoutDashboard,
-  Building as BuildingIcon,
-  MapPin,
-  Briefcase,
-  Waves,
-  FileCheck,
-  Truck,
-  User
+  Building
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,7 +35,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
-import { useLocation } from "react-router-dom";
 
 interface MenuSubItem {
   title: string;
@@ -197,7 +188,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       },
       {
         title: "Mi Empresa",
-        icon: BuildingIcon,
+        icon: Building,
         items: [
           { title: "Información", url: "/empresas/contratistas" }
         ]
@@ -259,7 +250,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       },
       {
         title: "Mi Empresa",
-        icon: BuildingIcon,
+        icon: Building,
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" }
@@ -381,148 +372,40 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
   return [];
 };
 
-export const RoleBasedSidebar = () => {
-  const location = useLocation();
+export function RoleBasedSidebar() {
   const { profile, signOut } = useAuth();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
 
-  const adminSalmoneraNavItems = [
-    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
-    { icon: BuildingIcon, title: "Mi Salmonera", url: "/salmoneras" },
-    { icon: MapPin, title: "Sitios", url: "/sitios" },
-    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
-    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
-    { icon: Users, title: "Usuarios", url: "/usuarios" },
-    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
-    { 
-      icon: FileText, 
-      title: "Formularios", 
-      url: "/formularios",
-      items: [
-        { title: "HPT", url: "/formularios/hpt" },
-        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-      ]
-    },
-  ];
+  // Fix the type error by explicitly converting to boolean
+  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
+  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
 
-  const adminServicioNavItems = [
-    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
-    { icon: BuildingIcon, title: "Mi Empresa", url: "/contratistas" },
-    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
-    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
-    { icon: Users, title: "Usuarios", url: "/usuarios" },
-    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
-    { 
-      icon: FileText, 
-      title: "Formularios", 
-      url: "/formularios",
-      items: [
-        { title: "HPT", url: "/formularios/hpt" },
-        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-      ]
-    },
-  ];
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roleRequired) return true;
+    return profile?.role === item.roleRequired;
+  }).map(item => ({
+    ...item,
+    items: item.items?.filter(subItem => {
+      if (!subItem.roleRequired) return true;
+      return profile?.role === subItem.roleRequired;
+    })
+  }));
 
-  const supervisorNavItems = [
-    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
-    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
-    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
-    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
-    { 
-      icon: FileText, 
-      title: "Formularios", 
-      url: "/formularios",
-      items: [
-        { title: "HPT", url: "/formularios/hpt" },
-        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-      ]
-    },
-  ];
-
-  const buzoNavItems = [
-    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
-    { icon: Waves, title: "Mis Inmersiones", url: "/inmersiones" },
-    { icon: FileText, title: "Mis Documentos", url: "/formularios" },
-  ];
-
-  const superuserNavItems = [
-    { icon: LayoutDashboard, title: "Dashboard", url: "/dashboard" },
-    { icon: BuildingIcon, title: "Salmoneras", url: "/salmoneras" },
-    { icon: Truck, title: "Contratistas", url: "/contratistas" },
-    { icon: MapPin, title: "Sitios", url: "/sitios" },
-    { icon: Briefcase, title: "Operaciones", url: "/operaciones" },
-    { icon: Users, title: "Equipo de Buceo", url: "/equipo-de-buceo" },
-    { icon: Users, title: "Usuarios", url: "/usuarios" },
-    { icon: Waves, title: "Inmersiones", url: "/inmersiones" },
-    { 
-      icon: FileText, 
-      title: "Formularios", 
-      url: "/formularios",
-      items: [
-        { title: "HPT", url: "/formularios/hpt" },
-        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-      ]
-    },
-  ];
-
-  const getNavItems = () => {
-    if (profile?.role === 'admin_salmonera') {
-      return adminSalmoneraNavItems;
-    } else if (profile?.role === 'admin_servicio') {
-      return adminServicioNavItems;
-    } else if (profile?.role === 'supervisor') {
-      return supervisorNavItems;
-    } else if (profile?.role === 'buzo') {
-      return buzoNavItems;
-    } else if (profile?.role === 'superuser') {
-      return superuserNavItems;
-    }
-    return [];
-  };
-
-  const renderNavItem = (item: MenuItem) => {
-    if (item.items) {
-      return (
-        <Collapsible defaultOpen className="group/collapsible">
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton className="w-full">
-              <item.icon className="w-4 h-4" />
-              <span className="flex-1">{item.title}</span>
-              <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <SidebarMenuSub>
-              {item.items.map((subItem) => (
-                <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton asChild>
-                    <Link to={subItem.url}>
-                      <span>{subItem.title}</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        </Collapsible>
-      );
-    } else {
-      return (
-        <SidebarMenuButton asChild>
-          <Link to={item.url!} className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <item.icon className="w-4 h-4" />
-              <span>{item.title}</span>
-            </div>
-            {item.badge && (
-              <Badge variant="secondary" className="h-5 text-xs">
-                {item.badge}
-              </Badge>
-            )}
-          </Link>
-        </SidebarMenuButton>
-      );
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -533,7 +416,7 @@ export const RoleBasedSidebar = () => {
     return 'Usuario';
   };
 
-  const getRoleLabel = (role?: string) => {
+  const getRoleDisplayName = (role?: string) => {
     switch (role) {
       case 'superuser':
         return 'Super Usuario';
@@ -563,27 +446,27 @@ export const RoleBasedSidebar = () => {
   };
 
   return (
-    <Sidebar className="border-r border-zinc-200">
-      <SidebarHeader className="border-b border-zinc-200 p-4">
+    <Sidebar className="border-r border-border/40 font-sans bg-white">
+      <SidebarHeader className="border-b border-border/40 p-4 bg-white">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Waves className="w-5 h-5 text-white" />
+            <BreusLogo size={20} />
           </div>
           <div>
-            <h2 className="font-semibold text-zinc-900">AquaControl</h2>
-            <p className="text-xs text-zinc-500">Sistema de Buceo</p>
+            <h2 className="font-semibold text-lg text-zinc-900">Breus</h2>
+            <p className="text-xs text-zinc-500">Gestión de Buceo</p>
           </div>
         </div>
       </SidebarHeader>
-
-      <SidebarContent className="p-4">
+      
+      <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Navegación
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
+            Navegación Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {getNavItems().map((item) => (
+            <SidebarMenu>
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
@@ -615,6 +498,11 @@ export const RoleBasedSidebar = () => {
                           <item.icon className="w-4 h-4" />
                           <span>{item.title}</span>
                         </div>
+                        {item.badge && (
+                          <Badge variant="secondary" className="h-5 text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   )}
@@ -624,45 +512,31 @@ export const RoleBasedSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-zinc-200 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-zinc-600" />
+      
+      <SidebarFooter className="border-t border-border/40 p-4 bg-white">
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
+          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-medium text-sm">
+              {getUserDisplayName().charAt(0).toUpperCase()}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-zinc-900 truncate">
-              {profile?.nombre} {profile?.apellido}
-            </p>
-            <p className="text-xs text-zinc-500 truncate">
-              {getRoleLabel(profile?.role)}
-            </p>
+            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+            <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
+            {getCompanyName() && (
+              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
+            )}
           </div>
-        </div>
-        
-        <div className="space-y-1">
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/profile" className="flex items-center gap-3 text-zinc-700 hover:text-zinc-900">
-                <Settings className="w-4 h-4" />
-                Configuración
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <button 
-                onClick={signOut}
-                className="flex items-center gap-3 text-zinc-700 hover:text-zinc-900 w-full"
-              >
-                <LogOut className="w-4 h-4" />
-                Cerrar Sesión
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="h-8 w-8 p-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
   );
-};
+}
