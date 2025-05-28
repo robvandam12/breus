@@ -31,6 +31,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
   const { equipos } = useEquiposBuceoEnhanced();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const {
     currentStep,
@@ -69,18 +70,30 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
 
         const operacion = opData;
         
-        // Find supervisor from team members if equipo is assigned
-        let supervisor = null;
+        // Find team members if equipo is assigned
+        let miembrosEquipo = [];
         if (operacion.equipo_buceo_id) {
           const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-          supervisor = equipo?.miembros?.find(m => 
-            m.rol === 'supervisor'
-          );
+          miembrosEquipo = equipo?.miembros || [];
+          setTeamMembers(miembrosEquipo);
         }
+
+        // Find supervisor from team members
+        const supervisor = miembrosEquipo.find(m => m.rol === 'supervisor');
+        const buzoPrincipal = miembrosEquipo.find(m => m.rol === 'buzo_principal');
+        const buzoAsistente = miembrosEquipo.find(m => m.rol === 'buzo_asistente');
 
         // Generate folio based on operation
         const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
         
+        // Auto-populate assistant team members for HPT knowledge section
+        const asistentesHPT = miembrosEquipo.map(miembro => ({
+          nombre: miembro.nombre_completo,
+          rut: miembro.rut || '',
+          empresa: operacion.contratistas?.nombre || '',
+          firma_url: ''
+        }));
+
         updateData({
           operacion_id: currentOperacionId,
           folio,
@@ -89,13 +102,27 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
           centro_trabajo_nombre: operacion.sitios?.nombre || '',
           lugar_especifico: operacion.sitios?.ubicacion || '',
           plan_trabajo: operacion.tareas || '',
-          descripcion_tarea: operacion.nombre || 'Operación de buceo comercial'
+          descripcion_tarea: operacion.nombre || 'Operación de buceo comercial',
+          supervisor: supervisor?.nombre_completo || '',
+          // Pre-populate assistants with team members
+          hpt_conocimiento_asistentes: asistentesHPT,
+          hpt_conocimiento: {
+            ...data.hpt_conocimiento,
+            relator_nombre: supervisor?.nombre_completo || '',
+            relator_cargo: 'Supervisor'
+          }
         });
 
-        console.log('Operation data populated:', {
+        console.log('Operation data populated for HPT:', {
           operacion,
-          supervisor,
-          folio
+          miembrosEquipo,
+          folio,
+          asistentesHPT
+        });
+
+        toast({
+          title: "Datos cargados",
+          description: "Los datos de la operación han sido cargados automáticamente.",
         });
 
       } catch (error) {
@@ -145,7 +172,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
       case 1:
         return <HPTStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={currentOperacionId || ''} />;
+        return <HPTStep2 data={data} onUpdate={updateData} operacionId={currentOperacionId || ''} teamMembers={teamMembers} />;
       case 3:
         return <HPTStep3 data={data} onUpdate={updateData} />;
       case 4:
@@ -312,7 +339,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
               className="ios-button flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
               <Save className="w-4 h-4" />
-              {isLoading ? 'Enviando...' : 'Crear HPT'}
+              {isLoading ? 'Creando...' : 'Crear HPT'}
             </Button>
           )}
         </div>

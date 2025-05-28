@@ -38,54 +38,20 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
 
   const medidasEjecucion = [
     { key: 'listas_chequeo_erc_disponibles', label: '¿Están disponibles las listas de chequeo de ERC?' },
-    { key: 'procedimientos_trabajo_seguros', label: '¿Se cuenta con procedimientos de trabajo seguros?' },
-    { key: 'personal_capacitado', label: '¿El personal está capacitado para la tarea?' },
-    { key: 'equipos_certificados', label: '¿Los equipos tienen certificación vigente?' },
-    { key: 'permisos_trabajo_vigentes', label: '¿Los permisos de trabajo están vigentes?' },
-    { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación de emergencia?' },
-    { key: 'condiciones_ambientales_evaluadas', label: '¿Se han evaluado las condiciones ambientales?' },
-    { key: 'plan_emergencia_comunicado', label: '¿Se ha comunicado el plan de emergencia?' }
+    { key: 'personal_competente_disponible', label: '¿Se cuenta con personal competente disponible?' },
+    { key: 'equipos_proteccion_disponibles', label: '¿Se cuenta con equipos de protección disponibles?' },
+    { key: 'procedimientos_emergencia_conocidos', label: '¿Se conocen los procedimientos de emergencia?' },
+    { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación?' },
+    { key: 'autorizaciones_vigentes', label: '¿Se tienen autorizaciones vigentes?' }
   ];
 
   const riesgosComplementarios = [
     { key: 'condiciones_ambientales', label: 'Condiciones Ambientales Adversas' },
-    { key: 'fatiga_personal', label: 'Fatiga del Personal' },
-    { key: 'equipos_defectuosos', label: 'Equipos Defectuosos o Mal Mantenidos' },
-    { key: 'comunicacion_deficiente', label: 'Comunicación Deficiente' },
-    { key: 'procedimientos_inadecuados', label: 'Procedimientos Inadecuados' },
-    { key: 'interferencia_otras_actividades', label: 'Interferencia con Otras Actividades' },
-    { key: 'acceso_restringido', label: 'Acceso Restringido o Difícil' },
-    { key: 'tiempo_limitado', label: 'Tiempo de Ejecución Limitado' }
+    { key: 'estado_equipos', label: 'Estado de Equipos' },
+    { key: 'competencia_personal', label: 'Competencia del Personal' },
+    { key: 'coordinacion_actividades', label: 'Coordinación de Actividades' },
+    { key: 'comunicacion_riesgos', label: 'Comunicación de Riesgos' }
   ];
-
-  const renderSelectOption = (value: string) => {
-    const options = [
-      { value: 'si', label: 'Sí', icon: CheckCircle2, color: 'text-green-600' },
-      { value: 'no', label: 'No', icon: X, color: 'text-red-600' },
-      { value: 'na', label: 'N/A', icon: AlertTriangle, color: 'text-gray-600' }
-    ];
-
-    return (
-      <Select value={value || ''} onValueChange={(newValue) => newValue}>
-        <SelectTrigger>
-          <SelectValue placeholder="Seleccionar..." />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => {
-            const IconComponent = option.icon;
-            return (
-              <SelectItem key={option.value} value={option.value}>
-                <div className="flex items-center gap-2">
-                  <IconComponent className={`w-4 h-4 ${option.color}`} />
-                  {option.label}
-                </div>
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -165,8 +131,8 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                   </Label>
                   <div>
                     <Select 
-                      value={data.hpt_riesgos_comp?.[riesgo.key]?.presente || ''} 
-                      onValueChange={(value) => handleRiesgosChange(riesgo.key, 'presente', value)}
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.valor || ''} 
+                      onValueChange={(value) => handleRiesgosChange(riesgo.key, 'valor', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="¿Presente?" />
@@ -195,14 +161,14 @@ export const HPTStep3 = ({ data, onUpdate }: HPTStep3Props) => {
                   </div>
                 </div>
                 
-                {data.hpt_riesgos_comp?.[riesgo.key]?.presente === 'si' && (
+                {data.hpt_riesgos_comp?.[riesgo.key]?.valor === 'si' && (
                   <div className="mt-4">
                     <Label className="text-sm font-medium text-gray-700">
                       Acciones de Control
                     </Label>
                     <Textarea
-                      value={data.hpt_riesgos_comp?.[riesgo.key]?.acciones_control || ''}
-                      onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones_control', e.target.value)}
+                      value={data.hpt_riesgos_comp?.[riesgo.key]?.acciones || ''}
+                      onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones', e.target.value)}
                       placeholder="Describa las acciones de control implementadas..."
                       rows={3}
                       className="mt-2"

@@ -310,7 +310,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Pool Personal", url: "/admin/salmonera" }
+          { title: "Personal Disponible", url: "/admin/salmonera" }
         ]
       },
       {
@@ -459,12 +459,9 @@ export function RoleBasedSidebar() {
 
   const getCompanyName = () => {
     if (profile?.salmonera_id) {
-      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
-      return salmonera?.nombre || 'Empresa no encontrada';
-    }
-    if (profile?.servicio_id) {
-      const contratista = contratistas.find(c => c.id === profile.servicio_id);
-      return contratista?.nombre || 'Empresa no encontrada';
+      return salmoneras.find(salmonera => salmonera.id === profile?.salmonera_id)?.nombre;
+    } else if (profile?.servicio_id) {
+      return contratistas.find(contratista => contratista.id === profile?.servicio_id)?.nombre;
     }
     return null;
   };
@@ -492,7 +489,7 @@ export function RoleBasedSidebar() {
             <SidebarMenu>
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.items && item.items.length > 0 ? (
+                  {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton className="w-full">
