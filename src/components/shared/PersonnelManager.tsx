@@ -205,8 +205,9 @@ export const PersonnelManager = ({
                 Buscar Usuario
               </label>
               <UserSearchSelect
-                onUserSelect={setSelectedUser}
-                selectedUser={selectedUser}
+                onSelectUser={setSelectedUser}
+                onInviteUser={onInviteUser || (() => {})}
+                allowedRoles={availableRoles.map(role => role.value)}
                 placeholder="Buscar por nombre o email..."
               />
             </div>

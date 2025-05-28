@@ -195,7 +195,6 @@ export default function SalmoneraAdmin() {
                 <Card className="border-0 shadow-sm bg-white">
                   <CardContent className="p-4">
                     <div className="text-2xl font-bold text-yellow-600 mb-1">
-                      {/* Add dynamic value here */}
                       0
                     </div>
                     <div className="text-sm text-gray-600">Operaciones Activas</div>
@@ -231,12 +230,14 @@ export default function SalmoneraAdmin() {
                           <p className="text-gray-900">{salmonera.descripcion || 'Sin descripción'}</p>
                         </div>
                       ) : (
-                        <Alert className="border-amber-200 bg-amber-50">
-                          <Info className="h-4 w-4" />
-                          <AlertDescription className="text-amber-800">
-                            No se ha asignado una salmonera a este perfil. Contacte al administrador.
-                          </AlertDescription>
-                        </Alert>
+                        <div className="border-amber-200 bg-amber-50 p-4 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Info className="h-4 w-4 text-amber-600 mt-0.5" />
+                            <p className="text-amber-800 text-sm">
+                              No se ha asignado una salmonera a este perfil. Contacte al administrador.
+                            </p>
+                          </div>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
