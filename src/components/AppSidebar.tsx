@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -310,7 +311,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Personal Disponible", url: "/admin/salmonera" }
+          { title: "Pool Personal", url: "/admin/salmonera" }
         ]
       },
       {

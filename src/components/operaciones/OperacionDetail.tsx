@@ -19,10 +19,9 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface OperacionDetailProps {
   operacion: any;
-  showLayout?: boolean; // Prop para controlar si mostrar layout
 }
 
-const OperacionDetail = ({ operacion, showLayout = true }: OperacionDetailProps) => {
+const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
@@ -36,83 +35,16 @@ const OperacionDetail = ({ operacion, showLayout = true }: OperacionDetailProps)
     }
   };
 
-  const content = (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{operacion.nombre}</h1>
-          <p className="text-gray-600">Detalles de la operación {operacion.codigo}</p>
-        </div>
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <Button 
-            variant="outline"
-            onClick={() => setIsEditDialogOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Editar Operación
-          </Button>
-          <DialogContent className="max-w-3xl">
-            <EditOperacionForm
-              operacion={operacion}
-              onSubmit={handleEditOperacion}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos</TabsTrigger>
-          <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-6">
-          <OperacionInfo operacion={operacion} />
-          <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-        </TabsContent>
-
-        <TabsContent value="equipo" className="space-y-6">
-          <OperacionTeamManagerEnhanced 
-            operacionId={operacion.id} 
-            salmoneraId={operacion.salmonera_id || undefined}
-            contratistaId={operacion.contratista_id || undefined}
-          />
-        </TabsContent>
-
-        <TabsContent value="documentos" className="space-y-6">
-          <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-        </TabsContent>
-
-        <TabsContent value="inmersiones" className="space-y-6">
-          <OperacionInmersiones operacionId={operacion.id} />
-        </TabsContent>
-
-        <TabsContent value="timeline" className="space-y-6">
-          <OperacionTimeline operacionId={operacion.id} />
-        </TabsContent>
-      </Tabs>
-    </motion.div>
-  );
-
-  if (!showLayout) {
-    return content;
-  }
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col bg-white">
+        <motion.main
+          className="flex-1 flex flex-col bg-white"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           <Header
             title={operacion.nombre}
             subtitle={`Detalles de la operación ${operacion.codigo}`}
@@ -137,10 +69,43 @@ const OperacionDetail = ({ operacion, showLayout = true }: OperacionDetailProps)
             </Dialog>
           </Header>
 
-          <div className="flex-1 overflow-auto bg-white p-6">
-            {content}
+          <div className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+                <TabsTrigger value="documentos">Documentos</TabsTrigger>
+                <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-6">
+                <OperacionInfo operacion={operacion} />
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
+
+              <TabsContent value="equipo" className="space-y-6">
+                <OperacionTeamManagerEnhanced 
+                  operacionId={operacion.id} 
+                  salmoneraId={operacion.salmonera_id || undefined}
+                  contratistaId={operacion.contratista_id || undefined}
+                />
+              </TabsContent>
+
+              <TabsContent value="documentos" className="space-y-6">
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
+
+              <TabsContent value="inmersiones" className="space-y-6">
+                <OperacionInmersiones operacionId={operacion.id} />
+              </TabsContent>
+
+              <TabsContent value="timeline" className="space-y-6">
+                <OperacionTimeline operacionId={operacion.id} />
+              </TabsContent>
+            </Tabs>
           </div>
-        </main>
+        </motion.main>
       </div>
     </SidebarProvider>
   );
