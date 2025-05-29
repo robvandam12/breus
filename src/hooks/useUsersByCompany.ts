@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -99,10 +100,15 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
       return mappedUsers;
     },
     enabled: !!profile,
+    retry: (failureCount, error: any) => {
+      // No reintentar si es un error de políticas RLS
+      if (error?.code === '42P17') {
+        console.error('RLS policy error, not retrying:', error);
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
-
-  // Log para debugging
-  console.log('useUsersByCompany result:', { usuarios, isLoading, error, profile });
 
   const inviteUserMutation = useMutation({
     mutationFn: async (inviteData: {
@@ -131,6 +137,13 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
       toast({
         title: 'Invitación enviada',
         description: 'La invitación ha sido enviada exitosamente.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Error al enviar invitación: ${error.message}`,
+        variant: 'destructive',
       });
     },
   });
@@ -168,6 +181,13 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
       toast({
         title: 'Usuario creado',
         description: 'El usuario ha sido creado exitosamente.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Error al crear usuario: ${error.message}`,
+        variant: 'destructive',
       });
     },
   });
