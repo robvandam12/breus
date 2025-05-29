@@ -37,8 +37,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras(nombre),
-          contratista:contratistas(nombre)
+          salmonera:salmoneras(nombre)
         `);
 
       // Si no se especifica empresa, usar la empresa del usuario actual
@@ -58,22 +57,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         if (profile?.role === 'superuser') {
           // Superuser ve todos los usuarios
         } else if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
-          // Admin salmonera ve sus usuarios + contratistas asociados
-          const { data: associations } = await supabase
-            .from('salmonera_contratista')
-            .select('contratista_id')
-            .eq('salmonera_id', profile.salmonera_id)
-            .eq('estado', 'activa');
-          
-          const contratistaIds = associations?.map(a => a.contratista_id) || [];
-          
-          if (contratistaIds.length > 0) {
-            query = query.or(
-              `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
-            );
-          } else {
-            query = query.eq('salmonera_id', profile.salmonera_id);
-          }
+          query = query.eq('salmonera_id', profile.salmonera_id);
         } else if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
           query = query.eq('servicio_id', profile.servicio_id);
         } else {
@@ -100,8 +84,8 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
           empresaNombre = String(user.salmonera.nombre);
           empresaTipoActual = 'salmonera';
-        } else if (user.contratista && typeof user.contratista === 'object' && 'nombre' in user.contratista) {
-          empresaNombre = String(user.contratista.nombre);
+        } else if (user.servicio_id) {
+          empresaNombre = 'Empresa de servicio';
           empresaTipoActual = 'contratista';
         }
 
