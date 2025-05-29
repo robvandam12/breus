@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,10 +17,18 @@ const AdminSalmoneraPage = () => {
   const { profile } = useAuth();
   
   // Obtener usuarios asociados a esta salmonera
-  const { usuarios, createUser, inviteUser } = useUsersByCompany(
+  const { usuarios, createUser, inviteUser, isLoading, error } = useUsersByCompany(
     profile?.salmonera_id,
     'salmonera'
   );
+
+  // Debug logging
+  useEffect(() => {
+    console.log('AdminSalmoneraPage - Profile:', profile);
+    console.log('AdminSalmoneraPage - Usuarios:', usuarios);
+    console.log('AdminSalmoneraPage - isLoading:', isLoading);
+    console.log('AdminSalmoneraPage - error:', error);
+  }, [profile, usuarios, isLoading, error]);
 
   const statsCards = [
     {
@@ -119,7 +126,10 @@ const AdminSalmoneraPage = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                  <TabsTrigger value="personal-disponible">Personal Disponible</TabsTrigger>
+                  <TabsTrigger value="personal-disponible">
+                    Personal Disponible
+                    {isLoading && <span className="ml-1 text-xs">(cargando...)</span>}
+                  </TabsTrigger>
                   <TabsTrigger value="sitios">Sitios</TabsTrigger>
                   <TabsTrigger value="operaciones">Operaciones</TabsTrigger>
                   <TabsTrigger value="notificaciones" className="relative">
@@ -206,6 +216,20 @@ const AdminSalmoneraPage = () => {
                 <TabsContent value="personal-disponible" className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-bold text-zinc-900 mb-6">Gestión de Personal Disponible</h2>
+                    
+                    {/* Debug info */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+                        <p><strong>Debug Info:</strong></p>
+                        <p>Profile ID: {profile?.id}</p>
+                        <p>Salmonera ID: {profile?.salmonera_id}</p>
+                        <p>Role: {profile?.role}</p>
+                        <p>Usuarios encontrados: {usuarios.length}</p>
+                        <p>Loading: {isLoading ? 'Sí' : 'No'}</p>
+                        {error && <p>Error: {JSON.stringify(error)}</p>}
+                      </div>
+                    )}
+                    
                     <PersonalManager
                       title="Personal Disponible"
                       description="Gestione el personal disponible para operaciones de buceo"

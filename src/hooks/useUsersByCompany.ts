@@ -23,10 +23,15 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: usuarios = [], isLoading } = useQuery({
+  const { data: usuarios = [], isLoading, error } = useQuery({
     queryKey: ['users-by-company', empresaId, empresaTipo, profile?.role],
     queryFn: async () => {
-      console.log('Fetching users by company...', { empresaId, empresaTipo, userRole: profile?.role });
+      console.log('Fetching users by company...', { 
+        empresaId, 
+        empresaTipo, 
+        userRole: profile?.role,
+        userSalmoneraId: profile?.salmonera_id 
+      });
       
       let query = supabase
         .from('usuario')
@@ -36,13 +41,24 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           contratista:contratistas(nombre)
         `);
 
-      // Si no se especifica empresa, buscar todos los usuarios según permisos
-      if (!empresaId) {
-        // Apply filters based on user role
+      // Si no se especifica empresa, usar la empresa del usuario actual
+      const targetEmpresaId = empresaId || profile?.salmonera_id || profile?.servicio_id;
+      const targetEmpresaTipo = empresaTipo || (profile?.salmonera_id ? 'salmonera' : 'contratista');
+
+      console.log('Target empresa:', { targetEmpresaId, targetEmpresaTipo });
+
+      if (targetEmpresaId) {
+        if (targetEmpresaTipo === 'salmonera') {
+          query = query.eq('salmonera_id', targetEmpresaId);
+        } else if (targetEmpresaTipo === 'contratista') {
+          query = query.eq('servicio_id', targetEmpresaId);
+        }
+      } else {
+        // Si no hay empresa específica, aplicar filtros según permisos
         if (profile?.role === 'superuser') {
-          // Superuser sees all users - no additional filter needed
-        } else if (profile?.role === 'admin_salmonera') {
-          // Admin salmonera sees their own users + associated contractors
+          // Superuser ve todos los usuarios
+        } else if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+          // Admin salmonera ve sus usuarios + contratistas asociados
           const { data: associations } = await supabase
             .from('salmonera_contratista')
             .select('contratista_id')
@@ -52,23 +68,17 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           const contratistaIds = associations?.map(a => a.contratista_id) || [];
           
           if (contratistaIds.length > 0) {
-            // Filter users from this salmonera or associated contractors
             query = query.or(
               `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
             );
           } else {
             query = query.eq('salmonera_id', profile.salmonera_id);
           }
-        } else if (profile?.role === 'admin_servicio') {
-          // Admin servicio sees only their own users
+        } else if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
           query = query.eq('servicio_id', profile.servicio_id);
-        }
-      } else {
-        // Filtrar por empresa específica
-        if (empresaTipo === 'salmonera') {
-          query = query.eq('salmonera_id', empresaId);
-        } else if (empresaTipo === 'contratista') {
-          query = query.eq('servicio_id', empresaId);
+        } else {
+          // Usuario sin permisos específicos, no devolver nada
+          return [];
         }
       }
 
@@ -81,9 +91,9 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         throw error;
       }
 
-      console.log('Fetched users:', data);
+      console.log('Raw data from Supabase:', data);
 
-      return (data || []).map(user => {
+      const mappedUsers = (data || []).map(user => {
         let empresaNombre = 'Sin asignar';
         let empresaTipoActual: 'salmonera' | 'contratista' = 'salmonera';
 
@@ -101,9 +111,15 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           empresa_tipo: empresaTipoActual
         };
       }) as UserByCompany[];
+
+      console.log('Mapped users:', mappedUsers);
+      return mappedUsers;
     },
     enabled: !!profile,
   });
+
+  // Log para debugging
+  console.log('useUsersByCompany result:', { usuarios, isLoading, error, profile });
 
   const inviteUserMutation = useMutation({
     mutationFn: async (inviteData: {
@@ -176,6 +192,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
   return {
     usuarios,
     isLoading,
+    error,
     inviteUser: inviteUserMutation.mutate,
     createUser: createUserMutation.mutate,
     isInviting: inviteUserMutation.isPending,
