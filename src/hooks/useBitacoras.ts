@@ -40,6 +40,16 @@ export interface BitacoraSupervisorFormData {
   observaciones_generales_texto: string;
   validacion_contratista: boolean;
   comentarios_validacion: string;
+  // Campos adicionales para BitacoraStep3
+  profundidad_trabajo_mts?: number;
+  profundidad_maxima_mts?: number;
+  gestprev_eval_riesgos_actualizada?: boolean;
+  gestprev_procedimientos_disponibles_conocidos?: boolean;
+  gestprev_capacitacion_previa_realizada?: boolean;
+  gestprev_identif_peligros_control_riesgos_subacuaticos_realizados?: boolean;
+  gestprev_registro_incidentes_reportados?: boolean;
+  medidas_correctivas_texto?: string;
+  supervisor_buceo_firma?: string;
   diving_records?: {
     id: string;
     buzo_id: string;
@@ -54,6 +64,9 @@ export interface BitacoraSupervisorFormData {
     gas_usado: string;
   }[];
 }
+
+// Export BitacoraSupervisorData as an alias for compatibility
+export type BitacoraSupervisorData = BitacoraSupervisorFormData;
 
 export interface BitacoraBuzoFormData {
   inmersion_id: string;

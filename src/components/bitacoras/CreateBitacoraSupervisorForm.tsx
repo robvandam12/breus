@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +53,23 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
         evaluacion_general: data.evaluacion_general,
-        fecha: new Date().toISOString().split('T')[0]
+        fecha: new Date().toISOString().split('T')[0],
+        // Initialize additional required fields with default values
+        fecha_inicio_faena: new Date().toISOString().split('T')[0],
+        hora_inicio_faena: '',
+        hora_termino_faena: '',
+        lugar_trabajo: '',
+        supervisor_nombre_matricula: data.supervisor,
+        estado_mar: '',
+        visibilidad_fondo: 0,
+        inmersiones_buzos: [],
+        equipos_utilizados: [],
+        trabajo_a_realizar: '',
+        descripcion_trabajo: '',
+        embarcacion_apoyo: '',
+        observaciones_generales_texto: '',
+        validacion_contratista: false,
+        comentarios_validacion: ''
       };
       await onSubmit(formData);
     } catch (error) {

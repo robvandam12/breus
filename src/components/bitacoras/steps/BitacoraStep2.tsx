@@ -10,8 +10,8 @@ import { Users, Plus, Trash2 } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 
 interface BuzoInmersion {
-  id: string;
-  nombre: string;
+  buzo_id: string;
+  buzo_nombre: string;
   profundidad_maxima: number;
   hora_dejo_superficie: string;
   hora_llego_superficie: string;
@@ -30,25 +30,25 @@ interface BitacoraStep2Props {
 export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
   const [activeTab, setActiveTab] = useState<string>('');
   const [inmersionesBuzos, setInmersionesBuzos] = useState<BuzoInmersion[]>(() => {
-    // Inicializar con los buzos del equipo si existen
-    return data.bs_personal?.map((buzo, index) => ({
-      id: `buzo-${index}`,
-      nombre: buzo.nombre,
-      profundidad_maxima: 0,
-      hora_dejo_superficie: '',
-      hora_llego_superficie: '',
-      tiempo_descenso: 0,
-      tiempo_fondo: 0,
-      tiempo_ascenso: 0,
-      tabulacion_usada: '',
-      tiempo_usado: 0
+    // Initialize with existing data or empty array
+    return data.inmersiones_buzos?.map((buzo, index) => ({
+      buzo_id: buzo.buzo_id || `buzo-${index}`,
+      buzo_nombre: buzo.buzo_nombre || '',
+      profundidad_maxima: buzo.profundidad_maxima || 0,
+      hora_dejo_superficie: buzo.hora_dejo_superficie || '',
+      hora_llego_superficie: buzo.hora_llego_superficie || '',
+      tiempo_descenso: buzo.tiempo_descenso || 0,
+      tiempo_fondo: buzo.tiempo_fondo || 0,
+      tiempo_ascenso: buzo.tiempo_ascenso || 0,
+      tabulacion_usada: buzo.tabulacion_usada || '',
+      tiempo_usado: buzo.tiempo_usado || 0
     })) || [];
   });
 
   const agregarBuzo = () => {
     const nuevoBuzo: BuzoInmersion = {
-      id: `buzo-${Date.now()}`,
-      nombre: '',
+      buzo_id: `buzo-${Date.now()}`,
+      buzo_nombre: '',
       profundidad_maxima: 0,
       hora_dejo_superficie: '',
       hora_llego_superficie: '',
@@ -61,19 +61,19 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
     
     const nuevasInmersiones = [...inmersionesBuzos, nuevoBuzo];
     setInmersionesBuzos(nuevasInmersiones);
-    setActiveTab(nuevoBuzo.id);
+    setActiveTab(nuevoBuzo.buzo_id);
     
     // Actualizar el estado principal
     onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
   const eliminarBuzo = (buzoId: string) => {
-    const nuevasInmersiones = inmersionesBuzos.filter(buzo => buzo.id !== buzoId);
+    const nuevasInmersiones = inmersionesBuzos.filter(buzo => buzo.buzo_id !== buzoId);
     setInmersionesBuzos(nuevasInmersiones);
     
     // Si eliminamos el tab activo, cambiar a otro
     if (activeTab === buzoId && nuevasInmersiones.length > 0) {
-      setActiveTab(nuevasInmersiones[0].id);
+      setActiveTab(nuevasInmersiones[0].buzo_id);
     }
     
     onUpdate({ inmersiones_buzos: nuevasInmersiones });
@@ -81,7 +81,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
 
   const actualizarBuzo = (buzoId: string, campo: keyof BuzoInmersion, valor: any) => {
     const nuevasInmersiones = inmersionesBuzos.map(buzo => 
-      buzo.id === buzoId ? { ...buzo, [campo]: valor } : buzo
+      buzo.buzo_id === buzoId ? { ...buzo, [campo]: valor } : buzo
     );
     setInmersionesBuzos(nuevasInmersiones);
     onUpdate({ inmersiones_buzos: nuevasInmersiones });
@@ -94,7 +94,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
 
   // Si hay buzos pero no hay tab activo, seleccionar el primero
   if (inmersionesBuzos.length > 0 && !activeTab) {
-    setActiveTab(inmersionesBuzos[0].id);
+    setActiveTab(inmersionesBuzos[0].buzo_id);
   }
 
   return (
@@ -133,16 +133,16 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-auto">
                 {inmersionesBuzos.map((buzo, index) => (
-                  <TabsTrigger key={buzo.id} value={buzo.id} className="relative">
+                  <TabsTrigger key={buzo.buzo_id} value={buzo.buzo_id} className="relative">
                     <div className="flex items-center gap-2">
-                      <span>{buzo.nombre || `Buzo ${index + 1}`}</span>
+                      <span>{buzo.buzo_nombre || `Buzo ${index + 1}`}</span>
                       {inmersionesBuzos.length > 1 && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            eliminarBuzo(buzo.id);
+                            eliminarBuzo(buzo.buzo_id);
                           }}
                           className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
                         >
@@ -155,100 +155,100 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
               </TabsList>
 
               {inmersionesBuzos.map((buzo) => (
-                <TabsContent key={buzo.id} value={buzo.id} className="mt-6">
+                <TabsContent key={buzo.buzo_id} value={buzo.buzo_id} className="mt-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor={`nombre-${buzo.id}`}>Nombre del Buzo</Label>
+                      <Label htmlFor={`nombre-${buzo.buzo_id}`}>Nombre del Buzo</Label>
                       <Input
-                        id={`nombre-${buzo.id}`}
-                        value={buzo.nombre}
-                        onChange={(e) => actualizarBuzo(buzo.id, 'nombre', e.target.value)}
+                        id={`nombre-${buzo.buzo_id}`}
+                        value={buzo.buzo_nombre}
+                        onChange={(e) => actualizarBuzo(buzo.buzo_id, 'buzo_nombre', e.target.value)}
                         placeholder="Nombre completo del buzo"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor={`profundidad-${buzo.id}`}>Profundidad Máxima (metros)</Label>
+                        <Label htmlFor={`profundidad-${buzo.buzo_id}`}>Profundidad Máxima (metros)</Label>
                         <Input
-                          id={`profundidad-${buzo.id}`}
+                          id={`profundidad-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.profundidad_maxima}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'profundidad_maxima', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'profundidad_maxima', parseFloat(e.target.value) || 0)}
                           placeholder="0"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`hora-salida-${buzo.id}`}>Hora Dejó Superficie</Label>
+                        <Label htmlFor={`hora-salida-${buzo.buzo_id}`}>Hora Dejó Superficie</Label>
                         <Input
-                          id={`hora-salida-${buzo.id}`}
+                          id={`hora-salida-${buzo.buzo_id}`}
                           type="time"
                           value={buzo.hora_dejo_superficie}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'hora_dejo_superficie', e.target.value)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'hora_dejo_superficie', e.target.value)}
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`hora-llegada-${buzo.id}`}>Hora Llegó Superficie</Label>
+                        <Label htmlFor={`hora-llegada-${buzo.buzo_id}`}>Hora Llegó Superficie</Label>
                         <Input
-                          id={`hora-llegada-${buzo.id}`}
+                          id={`hora-llegada-${buzo.buzo_id}`}
                           type="time"
                           value={buzo.hora_llego_superficie}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'hora_llego_superficie', e.target.value)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'hora_llego_superficie', e.target.value)}
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`tiempo-descenso-${buzo.id}`}>Tiempo de Descenso (min)</Label>
+                        <Label htmlFor={`tiempo-descenso-${buzo.buzo_id}`}>Tiempo de Descenso (min)</Label>
                         <Input
-                          id={`tiempo-descenso-${buzo.id}`}
+                          id={`tiempo-descenso-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.tiempo_descenso}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_descenso', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tiempo_descenso', parseFloat(e.target.value) || 0)}
                           placeholder="0"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`tiempo-fondo-${buzo.id}`}>Tiempo en Fondo (min)</Label>
+                        <Label htmlFor={`tiempo-fondo-${buzo.buzo_id}`}>Tiempo en Fondo (min)</Label>
                         <Input
-                          id={`tiempo-fondo-${buzo.id}`}
+                          id={`tiempo-fondo-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.tiempo_fondo}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_fondo', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tiempo_fondo', parseFloat(e.target.value) || 0)}
                           placeholder="0"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`tiempo-ascenso-${buzo.id}`}>Tiempo de Ascenso (min)</Label>
+                        <Label htmlFor={`tiempo-ascenso-${buzo.buzo_id}`}>Tiempo de Ascenso (min)</Label>
                         <Input
-                          id={`tiempo-ascenso-${buzo.id}`}
+                          id={`tiempo-ascenso-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.tiempo_ascenso}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_ascenso', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tiempo_ascenso', parseFloat(e.target.value) || 0)}
                           placeholder="0"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`tabulacion-${buzo.id}`}>Tabulación Usada</Label>
+                        <Label htmlFor={`tabulacion-${buzo.buzo_id}`}>Tabulación Usada</Label>
                         <Input
-                          id={`tabulacion-${buzo.id}`}
+                          id={`tabulacion-${buzo.buzo_id}`}
                           value={buzo.tabulacion_usada}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'tabulacion_usada', e.target.value)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tabulacion_usada', e.target.value)}
                           placeholder="Tipo de tabla de descompresión"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor={`tiempo-usado-${buzo.id}`}>Tiempo Usado Total (min)</Label>
+                        <Label htmlFor={`tiempo-usado-${buzo.buzo_id}`}>Tiempo Usado Total (min)</Label>
                         <Input
-                          id={`tiempo-usado-${buzo.id}`}
+                          id={`tiempo-usado-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.tiempo_usado}
-                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_usado', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tiempo_usado', parseFloat(e.target.value) || 0)}
                           placeholder="0"
                           className="bg-gray-50"
                           readOnly
@@ -258,7 +258,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-sm text-blue-800">
-                        <strong>Resumen:</strong> {buzo.nombre || 'Este buzo'} realizó una inmersión a {buzo.profundidad_maxima} metros
+                        <strong>Resumen:</strong> {buzo.buzo_nombre || 'Este buzo'} realizó una inmersión a {buzo.profundidad_maxima} metros
                         {buzo.hora_dejo_superficie && buzo.hora_llego_superficie && 
                           ` desde las ${buzo.hora_dejo_superficie} hasta las ${buzo.hora_llego_superficie}`}
                       </p>
