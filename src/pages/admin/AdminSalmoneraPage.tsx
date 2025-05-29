@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -8,15 +9,24 @@ import { Crown, Users, Building, MapPin, Calendar, Bell } from "lucide-react";
 import { PersonalManager } from "@/components/shared/PersonalManager";
 import { CentroNotificaciones } from "@/components/admin/CentroNotificaciones";
 import { useWorkflowNotifications } from "@/hooks/useWorkflowNotifications";
+import { useUsersByCompany } from "@/hooks/useUsersByCompany";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminSalmoneraPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { notifications, unreadCount } = useWorkflowNotifications();
+  const { profile } = useAuth();
+  
+  // Obtener usuarios asociados a esta salmonera
+  const { usuarios, createUser, inviteUser } = useUsersByCompany(
+    profile?.salmonera_id,
+    'salmonera'
+  );
 
   const statsCards = [
     {
       title: "Personal Disponible",
-      value: "24",
+      value: usuarios.length.toString(),
       description: "Supervisores y buzos activos",
       icon: Users,
       color: "bg-blue-100 text-blue-600"
@@ -43,6 +53,44 @@ const AdminSalmoneraPage = () => {
       color: "bg-orange-100 text-orange-600"
     }
   ];
+
+  const handleAddMember = async (memberData: any) => {
+    try {
+      if (memberData.usuario_id) {
+        // Usuario existente
+        await createUser({
+          email: memberData.email,
+          nombre: memberData.nombre,
+          apellido: memberData.apellido,
+          rol: memberData.rol,
+          empresa_id: profile?.salmonera_id,
+          tipo_empresa: 'salmonera'
+        });
+      } else {
+        // Invitar nuevo usuario
+        await inviteUser({
+          email: memberData.email,
+          nombre: memberData.nombre,
+          apellido: memberData.apellido,
+          rol: memberData.rol,
+          empresa_id: profile?.salmonera_id,
+          tipo_empresa: 'salmonera'
+        });
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    console.log('Removing member:', memberId);
+    // Implementar lógica para remover miembro
+  };
+
+  const handleUpdateRole = async (memberId: string, newRole: string) => {
+    console.log('Updating role:', memberId, newRole);
+    // Implementar lógica para actualizar rol
+  };
 
   return (
     <SidebarProvider>
@@ -161,18 +209,23 @@ const AdminSalmoneraPage = () => {
                     <PersonalManager
                       title="Personal Disponible"
                       description="Gestione el personal disponible para operaciones de buceo"
-                      personal={[]}
-                      onAddMember={async (memberData) => {
-                        console.log('Adding member:', memberData);
-                      }}
-                      onRemoveMember={async (memberId) => {
-                        console.log('Removing member:', memberId);
-                      }}
-                      onUpdateRole={async (memberId, newRole) => {
-                        console.log('Updating role:', memberId, newRole);
-                      }}
-                      allowedRoles={['supervisor', 'buzo_principal', 'buzo_asistente']}
-                      emptyStateMessage="No hay personal registrado"
+                      personal={usuarios.map(usuario => ({
+                        id: usuario.usuario_id,
+                        nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
+                        nombre: usuario.nombre,
+                        apellido: usuario.apellido,
+                        email: usuario.email,
+                        rol: usuario.rol,
+                        rol_equipo: usuario.rol,
+                        disponible: true,
+                        empresa_nombre: usuario.empresa_nombre,
+                        empresa_tipo: usuario.empresa_tipo
+                      }))}
+                      onAddMember={handleAddMember}
+                      onRemoveMember={handleRemoveMember}
+                      onUpdateRole={handleUpdateRole}
+                      allowedRoles={['admin_salmonera', 'supervisor', 'buzo']}
+                      emptyStateMessage="No hay personal registrado en esta salmonera"
                       addButtonText="Agregar Personal"
                     />
                   </div>
