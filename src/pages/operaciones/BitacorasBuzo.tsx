@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -17,8 +18,8 @@ import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Use the enhanced type for consistency
-import type { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+// Use the consistent type from useBitacoras
+import type { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 
 const BitacorasBuzo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -27,10 +28,10 @@ const BitacorasBuzo = () => {
   const { 
     bitacorasBuzo, 
     loading, 
+    createBitacoraBuzo,
     refreshBitacoras 
   } = useBitacoras();
   
-  const { createBitacoraBuzo } = useBitacoraEnhanced();
   const { signBitacoraBuzo } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
@@ -38,6 +39,7 @@ const BitacorasBuzo = () => {
 
   const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
     try {
+      console.log('Creating bitácora buzo with data:', data);
       await createBitacoraBuzo(data);
       setIsCreateDialogOpen(false);
       refreshBitacoras();

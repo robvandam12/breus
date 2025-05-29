@@ -49,6 +49,7 @@ export const InmersionWizard = ({ onComplete, onCancel, operationId }: Inmersion
     buzo_principal_id: '',
     buzo_asistente: '',
     buzo_asistente_id: '',
+    equipo_buceo_id: '',
     estado: 'planificada'
   });
 
@@ -64,7 +65,8 @@ export const InmersionWizard = ({ onComplete, onCancel, operationId }: Inmersion
         // Auto-populate objetivo with operation name
         setFormData(prev => ({ 
           ...prev, 
-          objetivo: `Inmersión para ${operation.nombre}` 
+          objetivo: `Inmersión para ${operation.nombre}`,
+          equipo_buceo_id: operation.equipo_buceo_id || ''
         }));
         
         console.log('Populating inmersion data for operation:', formData.operacion_id);
@@ -105,6 +107,25 @@ export const InmersionWizard = ({ onComplete, onCancel, operationId }: Inmersion
   };
 
   const handleSubmit = () => {
+    // Validar que hay al menos un supervisor y un buzo principal
+    if (!team.find(member => member.rol === 'supervisor')) {
+      toast({
+        title: "Error",
+        description: "Debe asignar al menos un supervisor al equipo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!team.find(member => member.rol === 'buzo_principal')) {
+      toast({
+        title: "Error",
+        description: "Debe asignar al menos un buzo principal al equipo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log('Inmersion form data:', formData);
     
     // Ensure all required UUID fields have valid values or null
@@ -113,6 +134,8 @@ export const InmersionWizard = ({ onComplete, onCancel, operationId }: Inmersion
       supervisor_id: formData.supervisor_id || null,
       buzo_principal_id: formData.buzo_principal_id || null,
       buzo_asistente_id: formData.buzo_asistente_id || null,
+      equipo_buceo_id: formData.equipo_buceo_id || null,
+      team_members: team
     };
     
     // Remove empty string UUIDs
