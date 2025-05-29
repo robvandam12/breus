@@ -1,26 +1,30 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Save, FileText, Users } from "lucide-react";
 import { BitacoraStep1 } from "./steps/BitacoraStep1";
 import { BitacoraStep2 } from "./steps/BitacoraStep2";
 import { BitacoraStep3 } from "./steps/BitacoraStep3";
-import { useToast } from "@/hooks/use-toast";
+import { BitacoraStep4 } from "./steps/BitacoraStep4";
+import { BitacoraStep5 } from "./steps/BitacoraStep5";
+import { CheckCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface BitacoraSupervisorData {
-  // 1. Identificación de la Faena
+  // Paso 1 - Información General
   fecha_inicio_faena: string;
-  hora_inicio_faena: string;
   fecha_termino_faena: string;
+  hora_inicio_faena: string;
   hora_termino_faena: string;
   lugar_trabajo: string;
   tipo_trabajo: string;
   supervisor_nombre_matricula: string;
-  
-  // 2. Buzos y Asistentes (hasta 6)
+  observaciones_previas: string;
+  estado_mar: string;
+  visibilidad_fondo: string;
+
+  // Paso 2 - Personal y Equipos
   bs_personal: Array<{
     nombre: string;
     matricula: string;
@@ -28,262 +32,241 @@ export interface BitacoraSupervisorData {
     serie_profundimetro: string;
     color_profundimetro: string;
   }>;
-  
-  // 3. Equipos Usados (hasta 3 bloques)
   bs_equipos_usados: Array<{
     equipo: string;
     numero_registro: string;
   }>;
-  
-  // 4. Observaciones condiciones físicas previas
-  observaciones_previas: string;
-  
-  // 5. Embarcación de Apoyo
   embarcacion_nombre_matricula: string;
-  
-  // 6. Tiempo de Buceo
   tiempo_total_buceo: string;
-  incluye_descompresion: boolean;
-  
-  // 7. Contratista de Buceo
   contratista_nombre: string;
-  
-  // 8. Datos del Buzo Principal
   buzo_principal_datos: {
     apellido_paterno: string;
     apellido_materno: string;
     nombres: string;
     run: string;
   };
-  
-  // 9. Profundidades
-  profundidad_trabajo_mts: number;
-  profundidad_maxima_mts: number;
-  requiere_camara_hiperbarica: boolean;
-  
-  // 10. Gestión Preventiva Según Decreto N°44
-  gestprev_eval_riesgos_actualizada: boolean;
-  gestprev_procedimientos_disponibles_conocidos: boolean;
-  gestprev_capacitacion_previa_realizada: boolean;
-  gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: boolean;
-  gestprev_registro_incidentes_reportados: boolean;
-  
-  // 11. Medidas Correctivas Implementadas
-  medidas_correctivas_texto: string;
-  
-  // 12. Observaciones Generales
-  observaciones_generales_texto: string;
-  
-  // 13. Firma
-  supervisor_buceo_firma: string | null;
-  inmersion_id?: string;
+
+  // Paso 2 - Registros de Inmersión (nuevo)
+  registros_inmersion: Array<{
+    buzo_id: string;
+    buzo_nombre: string;
+    profundidad_maxima: number;
+    hora_dejo_superficie: string;
+    hora_llego_superficie: string;
+    tiempo_descenso: number;
+    tiempo_fondo: number;
+    tiempo_ascenso: number;
+    tabulacion_usada: string;
+    tiempo_usado: number;
+  }>;
+
+  // Paso 3 - Inmersiones
+  inmersiones: Array<{
+    codigo: string;
+    buzo: string;
+    profundidad: number;
+    tiempo: string;
+    observaciones: string;
+  }>;
+
+  // Paso 4 - Datos Técnicos (nuevo)
+  equipos_utilizados: string[];
+  matricula_equipo: string;
+  vigencia_equipo: string;
+  trabajo_realizar: string;
+  embarcacion_apoyo: string;
+
+  // Paso 5 - Cierre y Validación (nuevo)
+  validacion_contratista: boolean;
+
+  // Otros campos
+  operacion_id: string;
+  inmersion_id: string;
 }
 
 interface BitacoraWizardProps {
-  onSubmit: (data: BitacoraSupervisorData) => void;
+  data: BitacoraSupervisorData;
+  onUpdate: (data: Partial<BitacoraSupervisorData>) => void;
+  onSubmit: () => void;
   onCancel: () => void;
-  initialData?: Partial<BitacoraSupervisorData>;
-  inmersionId?: string;
+  operacionId?: string;
 }
 
-export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }: BitacoraWizardProps) => {
+export const BitacoraWizard = ({ 
+  data, 
+  onUpdate, 
+  onSubmit, 
+  onCancel,
+  operacionId 
+}: BitacoraWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  
-  const [data, setData] = useState<BitacoraSupervisorData>({
-    fecha_inicio_faena: "",
-    hora_inicio_faena: "",
-    fecha_termino_faena: "",
-    hora_termino_faena: "",
-    lugar_trabajo: "",
-    tipo_trabajo: "",
-    supervisor_nombre_matricula: "",
-    bs_personal: [],
-    bs_equipos_usados: [],
-    observaciones_previas: "",
-    embarcacion_nombre_matricula: "",
-    tiempo_total_buceo: "",
-    incluye_descompresion: false,
-    contratista_nombre: "",
-    buzo_principal_datos: {
-      apellido_paterno: "",
-      apellido_materno: "",
-      nombres: "",
-      run: ""
+
+  const steps = [
+    { 
+      id: 1, 
+      title: 'Información General', 
+      isValid: !!(data.fecha_inicio_faena && data.lugar_trabajo && data.supervisor_nombre_matricula) 
     },
-    profundidad_trabajo_mts: 0,
-    profundidad_maxima_mts: 0,
-    requiere_camara_hiperbarica: false,
-    gestprev_eval_riesgos_actualizada: false,
-    gestprev_procedimientos_disponibles_conocidos: false,
-    gestprev_capacitacion_previa_realizada: false,
-    gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: false,
-    gestprev_registro_incidentes_reportados: false,
-    medidas_correctivas_texto: "",
-    observaciones_generales_texto: "",
-    supervisor_buceo_firma: null,
-    inmersion_id: inmersionId,
-    ...initialData,
-  });
-
-  const totalSteps = 3;
-  const progressPercentage = (currentStep / totalSteps) * 100;
-
-  const updateData = (stepData: Partial<BitacoraSupervisorData>) => {
-    setData(prev => ({ ...prev, ...stepData }));
-  };
-
-  const canProceedToNext = () => {
-    switch (currentStep) {
-      case 1:
-        return data.fecha_inicio_faena && data.lugar_trabajo && data.tipo_trabajo;
-      case 2:
-        return data.bs_personal.length > 0 && data.contratista_nombre;
-      case 3:
-        return data.supervisor_buceo_firma && data.observaciones_generales_texto;
-      default:
-        return true;
+    { 
+      id: 2, 
+      title: 'Registro de Inmersión', 
+      isValid: data.registros_inmersion && data.registros_inmersion.length > 0 
+    },
+    { 
+      id: 3, 
+      title: 'Inmersiones', 
+      isValid: data.inmersiones && data.inmersiones.length > 0 
+    },
+    { 
+      id: 4, 
+      title: 'Datos Técnicos', 
+      isValid: !!(data.equipos_utilizados && data.trabajo_realizar) 
+    },
+    { 
+      id: 5, 
+      title: 'Cierre y Validación', 
+      isValid: true 
     }
-  };
+  ];
 
-  const handleNext = () => {
-    if (canProceedToNext() && currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+  const nextStep = useCallback(() => {
+    if (currentStep < steps.length) {
+      setCurrentStep(prev => prev + 1);
     }
-  };
+  }, [currentStep, steps.length]);
 
-  const handlePrevious = () => {
+  const prevStep = useCallback(() => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
+  }, [currentStep]);
+
+  const goToStep = useCallback((step: number) => {
+    if (step >= 1 && step <= steps.length) {
+      setCurrentStep(step);
+    }
+  }, [steps.length]);
+
+  const getProgress = () => {
+    return Math.round((currentStep / steps.length) * 100);
   };
 
-  const handleSubmit = async () => {
-    if (!canProceedToNext()) {
-      toast({
-        title: "Error",
-        description: "Complete todos los campos requeridos para finalizar la bitácora",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSubmit(data);
-      toast({
-        title: "Bitácora Finalizada",
-        description: "La Bitácora de Supervisor ha sido creada exitosamente",
-      });
-    } catch (error) {
-      console.error('Error submitting bitácora:', error);
-      toast({
-        title: "Error",
-        description: "Error al finalizar la bitácora. Intente nuevamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const renderStep = () => {
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <BitacoraStep1 data={data} onUpdate={updateData} />;
+        return <BitacoraStep1 data={data} onUpdate={onUpdate} />;
       case 2:
-        return <BitacoraStep2 data={data} onUpdate={updateData} />;
+        return <BitacoraStep2 data={data} onUpdate={onUpdate} />;
       case 3:
-        return <BitacoraStep3 data={data} onUpdate={updateData} />;
+        return <BitacoraStep3 data={data} onUpdate={onUpdate} />;
+      case 4:
+        return <BitacoraStep4 data={data} onUpdate={onUpdate} />;
+      case 5:
+        return <BitacoraStep5 data={data} onUpdate={onUpdate} />;
       default:
-        return null;
+        return <div>Paso no encontrado</div>;
     }
   };
 
-  const getStepTitle = () => {
-    const titles = [
-      "Identificación y Personal",
-      "Equipos y Condiciones",
-      "Gestión Preventiva y Firmas"
-    ];
-    return titles[currentStep - 1];
+  const isFormValid = () => {
+    return steps.every(step => step.isValid);
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <Card className="mb-6 shadow-lg">
-        <CardHeader className="pb-4">
+    <div className="max-w-4xl mx-auto space-y-6 p-6">
+      {/* Header with progress */}
+      <Card className="ios-card">
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <CardTitle className="text-xl md:text-2xl">Bitácora de Supervisor</CardTitle>
-                <p className="text-sm text-zinc-500">
-                  Paso {currentStep} de {totalSteps}: {getStepTitle()}
-                </p>
-              </div>
+            <div>
+              <CardTitle>Crear Bitácora de Supervisor</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
+              </p>
             </div>
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-              Auto-guardado
+            <Badge variant={operacionId ? "default" : "secondary"}>
+              {operacionId ? 'Con Operación' : 'Independiente'}
             </Badge>
           </div>
-          <Progress value={progressPercentage} className="mt-4 h-2" />
+          <Progress value={getProgress()} className="mt-4" />
         </CardHeader>
       </Card>
 
-      <Card className="shadow-lg">
-        <CardContent className="p-6 md:p-8">
-          {renderStep()}
+      {/* Step navigation */}
+      <Card className="ios-card">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-5 gap-2">
+            {steps.map((step) => (
+              <Button
+                key={step.id}
+                variant={step.id === currentStep ? "default" : "outline"}
+                size="sm"
+                onClick={() => goToStep(step.id)}
+                className="ios-button h-auto p-2 flex flex-col items-center gap-1"
+              >
+                <div className="flex items-center gap-1">
+                  {step.isValid ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Circle className="h-4 w-4" />
+                  )}
+                  <span className="font-semibold">{step.id}</span>
+                </div>
+                <span className="text-xs text-center leading-tight">
+                  {step.title}
+                </span>
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center mt-6 gap-4">
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="min-w-[100px]"
-          >
-            Cancelar
-          </Button>
-        </div>
+      {/* Current step content */}
+      {renderStepContent()}
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1 || isSubmitting}
-            className="flex items-center gap-2 min-w-[100px]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Anterior
-          </Button>
-          
-          {currentStep < totalSteps ? (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2 min-w-[100px] bg-purple-600 hover:bg-purple-700"
-            >
-              Siguiente
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canProceedToNext() || isSubmitting}
-              className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
-            >
-              <FileText className="w-4 h-4" />
-              {isSubmitting ? 'Finalizando...' : 'Finalizar Bitácora'}
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Bottom navigation */}
+      <Card className="ios-card">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="ios-button"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onCancel} className="ios-button">
+                Cancelar
+              </Button>
+              
+              {currentStep < steps.length ? (
+                <Button
+                  onClick={nextStep}
+                  disabled={!steps[currentStep - 1]?.isValid}
+                  className="ios-button"
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={onSubmit}
+                  disabled={!isFormValid()}
+                  className="ios-button bg-green-600 hover:bg-green-700"
+                >
+                  Completar Bitácora
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

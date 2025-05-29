@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { FileText, Plus, LayoutGrid, LayoutList, Pen } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
@@ -15,6 +15,7 @@ import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast";
 
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -37,14 +38,38 @@ const BitacorasSupervisor = () => {
       await createBitacoraSupervisor(data);
       setIsCreateDialogOpen(false);
       refreshBitacoras();
+      
+      toast({
+        title: "Bitácora creada",
+        description: "La bitácora de supervisor ha sido creada exitosamente. Ahora puede firmarla desde la lista.",
+      });
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora de supervisor.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleSignSupervisor = async (id: string) => {
-    await signBitacoraSupervisor(id);
-    refreshBitacoras();
+    try {
+      await signBitacoraSupervisor(id);
+      refreshBitacoras();
+      
+      toast({
+        title: "Bitácora firmada",
+        description: "La bitácora de supervisor ha sido firmada exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error signing bitácora supervisor:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar la bitácora de supervisor.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -177,7 +202,7 @@ const BitacorasSupervisor = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {bitacorasSupervisor.length === 0 
-                        ? "Comienza creando tu primera bitácora de supervisor"
+                        ? "Comience creando su primera bitácora de supervisor"
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
@@ -203,12 +228,43 @@ const BitacorasSupervisor = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredBitacorasSupervisor.map((bitacora) => (
-                        <BitacoraTableRow
-                          key={bitacora.id}
-                          bitacora={bitacora}
-                          type="supervisor"
-                          onSign={handleSignSupervisor}
-                        />
+                        <tr key={bitacora.id} className="hover:bg-gray-50">
+                          <td className="font-medium">{bitacora.codigo}</td>
+                          <td className="text-sm text-gray-600">
+                            {bitacora.inmersion_id ? `Inmersión ${bitacora.inmersion_id}` : 'Sin inmersión'}
+                          </td>
+                          <td>{bitacora.supervisor}</td>
+                          <td>
+                            {bitacora.fecha ? new Date(bitacora.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                          </td>
+                          <td>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              bitacora.firmado 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {bitacora.firmado ? 'Firmado' : 'Por Firmar'}
+                            </span>
+                          </td>
+                          <td className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {!bitacora.firmado && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleSignSupervisor(bitacora.id)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Pen className="w-3 h-3" />
+                                  Firmar
+                                </Button>
+                              )}
+                              <Button variant="outline" size="sm">
+                                Ver
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
                       ))}
                     </TableBody>
                   </Table>
@@ -218,7 +274,7 @@ const BitacorasSupervisor = () => {
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent variant="form" className="p-0">
+            <DialogContent variant="form" className="p-0 max-w-6xl max-h-[90vh] overflow-y-auto">
               <BitacoraSupervisorFormEnhanced
                 onSubmit={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}

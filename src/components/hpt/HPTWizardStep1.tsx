@@ -235,12 +235,12 @@ export const HPTWizardStep1: React.FC<HPTWizardStep1Props> = ({ data, updateData
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="lugar_especifico">Lugar Específico</Label>
+              <Label htmlFor="lugar_especifico">Lugar Específico *</Label>
               <Input
                 id="lugar_especifico"
                 value={data.lugar_especifico}
                 onChange={(e) => updateData({ lugar_especifico: e.target.value })}
-                placeholder="Ubicación exacta del trabajo"
+                placeholder="Ubicación exacta donde se realizará el trabajo"
               />
             </div>
 

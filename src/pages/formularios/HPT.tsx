@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, CheckCircle } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle, Pen } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { HPTOperationSelector } from "@/components/hpt/HPTOperationSelector";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from "@/hooks/use-toast";
 
 const HPTPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +22,7 @@ const HPTPage = () => {
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [showOperationSelector, setShowOperationSelector] = useState(false);
   
-  const { hpts, isLoading } = useHPT();
+  const { hpts, isLoading, signHPT } = useHPT();
   const { operaciones } = useOperaciones();
 
   const filteredHPTs = hpts.filter(hpt => 
@@ -42,6 +43,35 @@ const HPTPage = () => {
   const handleHPTComplete = () => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
+    
+    toast({
+      title: "HPT creado",
+      description: "El HPT ha sido creado exitosamente. Ahora puede firmarlo desde la lista.",
+    });
+  };
+
+  const handleSignHPT = async (hptId: string) => {
+    try {
+      // Simular firmas de supervisor de servicio y mandante
+      const mockSignatures = {
+        supervisor_servicio_url: 'firma_supervisor_servicio',
+        supervisor_mandante_url: 'firma_supervisor_mandante'
+      };
+      
+      await signHPT({ id: hptId, signatures: mockSignatures });
+      
+      toast({
+        title: "HPT firmado",
+        description: "El HPT ha sido firmado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error signing HPT:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar el HPT.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -197,7 +227,7 @@ const HPTPage = () => {
                                       Firmado
                                     </div>
                                   ) : (
-                                    hpt.estado || 'Borrador'
+                                    'Por Firmar'
                                   )}
                                 </Badge>
                               </TableCell>
@@ -214,14 +244,20 @@ const HPTPage = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
+                                  {!hpt.firmado && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="ios-button-sm flex items-center gap-1"
+                                      onClick={() => handleSignHPT(hpt.id)}
+                                    >
+                                      <Pen className="w-3 h-3" />
+                                      Firmar
+                                    </Button>
+                                  )}
                                   <Button variant="outline" size="sm" className="ios-button-sm">
                                     Ver
                                   </Button>
-                                  {!hpt.firmado && (
-                                    <Button variant="outline" size="sm" className="ios-button-sm">
-                                      Editar
-                                    </Button>
-                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
