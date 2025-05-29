@@ -4,10 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Waves, Plus, AlertTriangle, CheckCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Waves, Plus, AlertTriangle, CheckCircle, LayoutGrid, LayoutList } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateInmersionForm } from "@/components/inmersiones/CreateInmersionForm";
+import { InmersionActions } from "@/components/inmersion/InmersionActions";
 
 interface OperacionInmersionesProps {
   operacionId: string;
@@ -24,6 +26,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   const [inmersiones, setInmersiones] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus>({
     hasValidHPT: false,
     hasValidAnexoBravo: false,
@@ -31,46 +34,46 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
     canCreateInmersiones: false
   });
 
+  const fetchInmersiones = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch inmersiones for this operation
+      const { data: inmersionesData, error: inmersionesError } = await supabase
+        .from('inmersion')
+        .select('*')
+        .eq('operacion_id', operacionId)
+        .order('created_at', { ascending: false });
+
+      if (inmersionesError) throw inmersionesError;
+
+      // Check document validation status
+      const [hptData, anexoData, operacionData] = await Promise.all([
+        supabase.from('hpt').select('*').eq('operacion_id', operacionId).eq('firmado', true),
+        supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId).eq('firmado', true),
+        supabase.from('operacion').select('equipo_buceo_id').eq('id', operacionId).single()
+      ]);
+
+      const hasValidHPT = hptData.data && hptData.data.length > 0;
+      const hasValidAnexoBravo = anexoData.data && anexoData.data.length > 0;
+      const hasTeam = !!(operacionData.data?.equipo_buceo_id);
+      const canCreateInmersiones = hasValidHPT && hasValidAnexoBravo && hasTeam;
+
+      setInmersiones(inmersionesData || []);
+      setDocumentStatus({
+        hasValidHPT,
+        hasValidAnexoBravo,
+        hasTeam,
+        canCreateInmersiones
+      });
+    } catch (error) {
+      console.error('Error fetching inmersiones:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchInmersiones = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Fetch inmersiones for this operation
-        const { data: inmersionesData, error: inmersionesError } = await supabase
-          .from('inmersion')
-          .select('*')
-          .eq('operacion_id', operacionId)
-          .order('created_at', { ascending: false });
-
-        if (inmersionesError) throw inmersionesError;
-
-        // Check document validation status
-        const [hptData, anexoData, operacionData] = await Promise.all([
-          supabase.from('hpt').select('*').eq('operacion_id', operacionId).eq('firmado', true),
-          supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId).eq('firmado', true),
-          supabase.from('operacion').select('equipo_buceo_id').eq('id', operacionId).single()
-        ]);
-
-        const hasValidHPT = hptData.data && hptData.data.length > 0;
-        const hasValidAnexoBravo = anexoData.data && anexoData.data.length > 0;
-        const hasTeam = !!(operacionData.data?.equipo_buceo_id);
-        const canCreateInmersiones = hasValidHPT && hasValidAnexoBravo && hasTeam;
-
-        setInmersiones(inmersionesData || []);
-        setDocumentStatus({
-          hasValidHPT,
-          hasValidAnexoBravo,
-          hasTeam,
-          canCreateInmersiones
-        });
-      } catch (error) {
-        console.error('Error fetching inmersiones:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchInmersiones();
   }, [operacionId]);
 
@@ -85,14 +88,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
       if (error) throw error;
       
       setShowCreateInmersion(false);
-      // Refresh inmersiones
-      const { data: updatedInmersiones } = await supabase
-        .from('inmersion')
-        .select('*')
-        .eq('operacion_id', operacionId)
-        .order('created_at', { ascending: false });
-      
-      setInmersiones(updatedInmersiones || []);
+      fetchInmersiones(); // Refresh list
     } catch (error) {
       console.error('Error creating inmersion:', error);
     }
@@ -131,14 +127,37 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
               <Waves className="w-5 h-5 text-blue-600" />
               Inmersiones de la Operación ({inmersiones.length})
             </CardTitle>
-            <Button 
-              size="sm"
-              onClick={() => setShowCreateInmersion(true)}
-              disabled={!documentStatus.canCreateInmersiones}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Inmersión
-            </Button>
+            <div className="flex items-center gap-2">
+              {inmersiones.length > 0 && (
+                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              
+              <Button 
+                size="sm"
+                onClick={() => setShowCreateInmersion(true)}
+                disabled={!documentStatus.canCreateInmersiones}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Inmersión
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -197,7 +216,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
                 </Button>
               )}
             </div>
-          ) : (
+          ) : viewMode === 'cards' ? (
             <div className="space-y-3">
               {inmersiones.map((inmersion) => (
                 <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -219,13 +238,50 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
                     <Badge className={getStatusColor(inmersion.estado)}>
                       {inmersion.estado}
                     </Badge>
-                    <Button variant="outline" size="sm">
-                      Ver Detalles
-                    </Button>
+                    <InmersionActions 
+                      inmersionId={inmersion.inmersion_id} 
+                      onRefresh={fetchInmersiones}
+                    />
                   </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Buzo Principal</TableHead>
+                  <TableHead>Supervisor</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Profundidad</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inmersiones.map((inmersion) => (
+                  <TableRow key={inmersion.inmersion_id}>
+                    <TableCell className="font-medium">{inmersion.codigo}</TableCell>
+                    <TableCell>{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</TableCell>
+                    <TableCell>{inmersion.buzo_principal}</TableCell>
+                    <TableCell>{inmersion.supervisor}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(inmersion.estado)}>
+                        {inmersion.estado}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{inmersion.profundidad_max}m</TableCell>
+                    <TableCell className="text-right">
+                      <InmersionActions 
+                        inmersionId={inmersion.inmersion_id} 
+                        onRefresh={fetchInmersiones}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
