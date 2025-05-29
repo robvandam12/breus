@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -7,23 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock, Eye, FileText, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
-import { InmersionActions } from "@/components/inmersion/InmersionActions";
+import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useBitacoras } from "@/hooks/useBitacoras";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [selectedInmersion, setSelectedInmersion] = useState<string | null>(null);
+  const [showBitacoraBuzoForm, setShowBitacoraBuzoForm] = useState(false);
+  const [showBitacoraSupervisorForm, setShowBitacoraSupervisorForm] = useState(false);
+  const [selectedInmersionForBitacora, setSelectedInmersionForBitacora] = useState<string>('');
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
+  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoras();
   
   const operacionId = searchParams.get('operacion');
 
@@ -35,6 +39,7 @@ export default function Inmersiones() {
 
   const handleCreateInmersion = async (data: any) => {
     try {
+      // Crear inmersión sin validación de documentos
       await createInmersion(data);
       
       toast({
@@ -86,16 +91,56 @@ export default function Inmersiones() {
     }
   };
 
-  const handleViewInmersion = (inmersion: any) => {
-    navigateTo(`/inmersiones/${inmersion.inmersion_id}`);
+  const handleViewInmersion = (inmersionId: string) => {
+    navigateTo(`/inmersiones/${inmersionId}`);
   };
 
-  const handleEditInmersion = (inmersion: any) => {
-    // TODO: Implementar edición de inmersión
-    toast({
-      title: "Función en desarrollo",
-      description: "La edición de inmersiones estará disponible pronto.",
-    });
+  const handleCreateBitacoraBuzo = (inmersionId: string) => {
+    setSelectedInmersionForBitacora(inmersionId);
+    setShowBitacoraBuzoForm(true);
+  };
+
+  const handleCreateBitacoraSupervisor = (inmersionId: string) => {
+    setSelectedInmersionForBitacora(inmersionId);
+    setShowBitacoraSupervisorForm(true);
+  };
+
+  const handleBitacoraBuzoSubmit = async (data: any) => {
+    try {
+      await createBitacoraBuzo({ ...data, inmersion_id: selectedInmersionForBitacora });
+      toast({
+        title: "Bitácora de buzo creada",
+        description: "La bitácora ha sido creada exitosamente.",
+      });
+      setShowBitacoraBuzoForm(false);
+      setSelectedInmersionForBitacora('');
+    } catch (error) {
+      console.error('Error creating bitacora buzo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBitacoraSupervisorSubmit = async (data: any) => {
+    try {
+      await createBitacoraSupervisor({ ...data, inmersion_id: selectedInmersionForBitacora });
+      toast({
+        title: "Bitácora de supervisor creada",
+        description: "La bitácora ha sido creada exitosamente.",
+      });
+      setShowBitacoraSupervisorForm(false);
+      setSelectedInmersionForBitacora('');
+    } catch (error) {
+      console.error('Error creating bitacora supervisor:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (showWizard) {
@@ -125,100 +170,6 @@ export default function Inmersiones() {
     );
   }
 
-  const renderCardsView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {inmersiones.map((inmersion) => {
-        const operacion = getOperacionData(inmersion.operacion_id);
-        return (
-          <Card key={inmersion.inmersion_id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                    {inmersion.estado}
-                  </Badge>
-                  <InmersionActions
-                    inmersion={inmersion}
-                    onEdit={handleEditInmersion}
-                    onView={handleViewInmersion}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {operacion && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>{operacion.nombre}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User className="w-4 h-4" />
-                <span>{inmersion.buzo_principal}</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-
-  const renderTableView = () => (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Operación</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Buzo Principal</TableHead>
-            <TableHead>Supervisor</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inmersiones.map((inmersion) => {
-            const operacion = getOperacionData(inmersion.operacion_id);
-            return (
-              <TableRow key={inmersion.inmersion_id}>
-                <TableCell className="font-medium">{inmersion.codigo}</TableCell>
-                <TableCell>{operacion?.nombre || 'Sin operación'}</TableCell>
-                <TableCell>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</TableCell>
-                <TableCell>{inmersion.buzo_principal}</TableCell>
-                <TableCell>{inmersion.supervisor}</TableCell>
-                <TableCell>
-                  <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                    {inmersion.estado}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <InmersionActions
-                    inmersion={inmersion}
-                    onEdit={handleEditInmersion}
-                    onView={handleViewInmersion}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </Card>
-  );
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
@@ -229,30 +180,10 @@ export default function Inmersiones() {
             subtitle="Gestión de inmersiones de buceo" 
             icon={Anchor} 
           >
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="h-8 px-3"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 px-3"
-                >
-                  <LayoutList className="w-4 h-4" />
-                </Button>
-              </div>
-              <Button onClick={handleShowWizard}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Inmersión
-              </Button>
-            </div>
+            <Button onClick={handleShowWizard}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Inmersión
+            </Button>
           </Header>
           
           <div className="flex-1 overflow-auto bg-white">
@@ -277,10 +208,102 @@ export default function Inmersiones() {
                   </CardContent>
                 </Card>
               ) : (
-                viewMode === 'cards' ? renderCardsView() : renderTableView()
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {inmersiones.map((inmersion) => {
+                    const operacion = getOperacionData(inmersion.operacion_id);
+                    return (
+                      <Card key={inmersion.inmersion_id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
+                            <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                              {inmersion.estado}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {operacion && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Calendar className="w-4 h-4" />
+                              <span>{operacion.nombre}</span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Calendar className="w-4 h-4" />
+                            <span>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <User className="w-4 h-4" />
+                            <span>{inmersion.buzo_principal}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="w-4 h-4" />
+                            <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
+                          </div>
+                          
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="flex gap-2 mb-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewInmersion(inmersion.inmersion_id)}
+                                className="flex-1"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Ver
+                              </Button>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
+                                className="flex-1 text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Bit. Buzo
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
+                                className="flex-1 text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Bit. Sup.
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
+
+          <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <CreateBitacoraBuzoFormEnhanced
+                onSubmit={handleBitacoraBuzoSubmit}
+                onCancel={() => setShowBitacoraBuzoForm(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <CreateBitacoraSupervisorForm
+                inmersionId={selectedInmersionForBitacora}
+                onSubmit={handleBitacoraSupervisorSubmit}
+                onCancel={() => setShowBitacoraSupervisorForm(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>

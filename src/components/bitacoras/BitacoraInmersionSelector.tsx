@@ -61,13 +61,10 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
           <div className="text-center py-8">
             <Waves className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-zinc-900 mb-2">
-              {searchTerm ? "No se encontraron inmersiones" : "No hay inmersiones completadas"}
+              No hay inmersiones completadas
             </h3>
             <p className="text-zinc-500">
-              {searchTerm 
-                ? "Intenta ajustar los términos de búsqueda" 
-                : "No se encontraron inmersiones completadas disponibles para crear bitácoras"
-              }
+              No se encontraron inmersiones completadas disponibles para crear bitácoras
             </p>
           </div>
         ) : (
@@ -113,16 +110,15 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
           </div>
         )}
 
-        {selectedInmersionId && (
-          <div className="flex justify-end pt-4 border-t">
-            <Button 
-              onClick={() => onInmersionSelected(selectedInmersionId)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Continuar con Inmersión Seleccionada
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-end pt-4 border-t">
+          <Button 
+            onClick={() => selectedInmersionId && onInmersionSelected(selectedInmersionId)}
+            disabled={!selectedInmersionId}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Continuar con Inmersión Seleccionada
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 
 const formSchema = z.object({
   inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
@@ -22,7 +23,7 @@ const formSchema = z.object({
 
 interface CreateBitacoraSupervisorFormProps {
   inmersionId: string;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: BitacoraSupervisorFormData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -49,7 +50,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      const formData = {
+      const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: data.supervisor,

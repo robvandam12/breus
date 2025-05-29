@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -25,7 +24,6 @@ export interface Inmersion {
   observaciones?: string;
   hpt_validado: boolean;
   anexo_bravo_validado: boolean;
-  equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
   operacion_nombre?: string;
@@ -73,29 +71,18 @@ export const useInmersiones = (operacionId?: string) => {
 
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
-      // Limpiar campos UUID vacíos para evitar error de sintaxis
-      const cleanedData = {
-        ...inmersionData,
-        supervisor_id: inmersionData.supervisor_id || null,
-        buzo_principal_id: inmersionData.buzo_principal_id || null,
-        buzo_asistente_id: inmersionData.buzo_asistente_id || null,
-        equipo_buceo_id: inmersionData.equipo_buceo_id || null,
-        hpt_validado: false,
-        anexo_bravo_validado: false
-      };
-
-      console.log('Creating inmersion with cleaned data:', cleanedData);
-
+      // Eliminar validación de documentos para permitir crear inmersiones sin documentos firmados
       const { data, error } = await supabase
         .from('inmersion')
-        .insert(cleanedData)
+        .insert({
+          ...inmersionData,
+          hpt_validado: false,
+          anexo_bravo_validado: false
+        })
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating inmersion:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
@@ -117,18 +104,9 @@ export const useInmersiones = (operacionId?: string) => {
 
   const updateInmersionMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Inmersion> }) => {
-      // Limpiar campos UUID vacíos
-      const cleanedData = {
-        ...data,
-        supervisor_id: data.supervisor_id || null,
-        buzo_principal_id: data.buzo_principal_id || null,
-        buzo_asistente_id: data.buzo_asistente_id || null,
-        equipo_buceo_id: data.equipo_buceo_id || null,
-      };
-
       const { data: updatedData, error } = await supabase
         .from('inmersion')
-        .update(cleanedData)
+        .update(data)
         .eq('inmersion_id', id)
         .select()
         .single();

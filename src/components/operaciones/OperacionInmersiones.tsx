@@ -4,12 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Waves, Plus, AlertTriangle, CheckCircle, LayoutGrid, LayoutList } from "lucide-react";
+import { Waves, Plus, AlertTriangle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateInmersionForm } from "@/components/inmersiones/CreateInmersionForm";
-import { InmersionActions } from "@/components/inmersion/InmersionActions";
 
 interface OperacionInmersionesProps {
   operacionId: string;
@@ -26,7 +24,6 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   const [inmersiones, setInmersiones] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus>({
     hasValidHPT: false,
     hasValidAnexoBravo: false,
@@ -114,16 +111,6 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
     }
   };
 
-  const handleViewInmersion = (inmersion: any) => {
-    // TODO: Implement view inmersion
-    console.log('View inmersion:', inmersion);
-  };
-
-  const handleEditInmersion = (inmersion: any) => {
-    // TODO: Implement edit inmersion
-    console.log('Edit inmersion:', inmersion);
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -135,80 +122,6 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
     );
   }
 
-  const renderCardsView = () => (
-    <div className="grid gap-3">
-      {inmersiones.map((inmersion) => (
-        <Card key={inmersion.inmersion_id} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Waves className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="font-medium">{inmersion.codigo}</p>
-                  <p className="text-sm text-zinc-500">
-                    {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')} - {inmersion.profundidad_max}m
-                  </p>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-xs text-zinc-600">Buzo: {inmersion.buzo_principal}</span>
-                    <span className="text-xs text-zinc-600">Supervisor: {inmersion.supervisor}</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mt-1">{inmersion.objetivo}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className={getStatusColor(inmersion.estado)}>
-                  {inmersion.estado}
-                </Badge>
-                <InmersionActions
-                  inmersion={inmersion}
-                  onEdit={handleEditInmersion}
-                  onView={handleViewInmersion}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-
-  const renderTableView = () => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Código</TableHead>
-          <TableHead>Fecha</TableHead>
-          <TableHead>Buzo Principal</TableHead>
-          <TableHead>Supervisor</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {inmersiones.map((inmersion) => (
-          <TableRow key={inmersion.inmersion_id}>
-            <TableCell className="font-medium">{inmersion.codigo}</TableCell>
-            <TableCell>{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</TableCell>
-            <TableCell>{inmersion.buzo_principal}</TableCell>
-            <TableCell>{inmersion.supervisor}</TableCell>
-            <TableCell>
-              <Badge className={getStatusColor(inmersion.estado)}>
-                {inmersion.estado}
-              </Badge>
-            </TableCell>
-            <TableCell className="text-right">
-              <InmersionActions
-                inmersion={inmersion}
-                onEdit={handleEditInmersion}
-                onView={handleViewInmersion}
-              />
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-
   return (
     <>
       <Card>
@@ -218,34 +131,14 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
               <Waves className="w-5 h-5 text-blue-600" />
               Inmersiones de la Operación ({inmersiones.length})
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="h-8 px-3"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 px-3"
-                >
-                  <LayoutList className="w-4 h-4" />
-                </Button>
-              </div>
-              <Button 
-                size="sm"
-                onClick={() => setShowCreateInmersion(true)}
-                disabled={!documentStatus.canCreateInmersiones}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Inmersión
-              </Button>
-            </div>
+            <Button 
+              size="sm"
+              onClick={() => setShowCreateInmersion(true)}
+              disabled={!documentStatus.canCreateInmersiones}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Inmersión
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -305,7 +198,34 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
               )}
             </div>
           ) : (
-            viewMode === 'cards' ? renderCardsView() : renderTableView()
+            <div className="space-y-3">
+              {inmersiones.map((inmersion) => (
+                <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Waves className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">{inmersion.codigo}</p>
+                      <p className="text-sm text-zinc-500">
+                        {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')} - {inmersion.profundidad_max}m
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-xs text-zinc-600">Buzo: {inmersion.buzo_principal}</span>
+                        <span className="text-xs text-zinc-600">Supervisor: {inmersion.supervisor}</span>
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-1">{inmersion.objetivo}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(inmersion.estado)}>
+                      {inmersion.estado}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      Ver Detalles
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
