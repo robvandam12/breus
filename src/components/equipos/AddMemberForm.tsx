@@ -27,7 +27,7 @@ export const AddMemberForm = ({ equipoId, onSubmit, onCancel }: AddMemberFormPro
     // Manejar invitación de usuario
     const memberData = {
       usuario_id: null,
-      nombre_completo: userData.nombre_completo,
+      nombre_completo: `${userData.nombre} ${userData.apellido}`,
       email: userData.email,
       rol_equipo: selectedRole,
       invitado: true
@@ -40,7 +40,7 @@ export const AddMemberForm = ({ equipoId, onSubmit, onCancel }: AddMemberFormPro
 
     const memberData = {
       usuario_id: selectedUser.usuario_id,
-      nombre_completo: selectedUser.nombre_completo,
+      nombre_completo: selectedUser.nombre_completo || `${selectedUser.nombre} ${selectedUser.apellido}`,
       email: selectedUser.email,
       rol_equipo: selectedRole,
       invitado: false
@@ -89,7 +89,9 @@ export const AddMemberForm = ({ equipoId, onSubmit, onCancel }: AddMemberFormPro
                 <Users className="w-5 h-5 text-green-600" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-green-800">{selectedUser.nombre_completo}</p>
+                <p className="font-medium text-green-800">
+                  {selectedUser.nombre_completo || `${selectedUser.nombre} ${selectedUser.apellido}`}
+                </p>
                 <p className="text-sm text-green-600">{selectedUser.email}</p>
               </div>
               <Badge className="bg-green-100 text-green-700">

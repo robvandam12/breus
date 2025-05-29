@@ -40,7 +40,7 @@ export const UserSearchSelect = ({
     rol: allowedRoles[0] || 'buzo'
   });
 
-  // Buscar TODOS los usuarios sin restricciones de empresa para poder encontrarlos
+  // Buscar usuarios con la query corregida (sin contratistas join)
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users-search'],
     queryFn: async () => {
@@ -50,8 +50,7 @@ export const UserSearchSelect = ({
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras(nombre),
-          contratista:contratistas(nombre)
+          salmonera:salmoneras(nombre)
         `)
         .order('nombre', { ascending: true });
 
@@ -69,13 +68,14 @@ export const UserSearchSelect = ({
         if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
           empresaNombre = String(user.salmonera.nombre);
           empresaTipoActual = 'salmonera';
-        } else if (user.contratista && typeof user.contratista === 'object' && 'nombre' in user.contratista) {
-          empresaNombre = String(user.contratista.nombre);
+        } else if (user.servicio_id) {
+          empresaNombre = 'Empresa de servicio';
           empresaTipoActual = 'contratista';
         }
 
         return {
           ...user,
+          nombre_completo: `${user.nombre} ${user.apellido}`,
           empresa_nombre: empresaNombre,
           empresa_tipo: empresaTipoActual
         };
