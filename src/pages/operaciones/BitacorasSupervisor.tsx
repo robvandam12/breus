@@ -6,27 +6,22 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, FileText } from "lucide-react";
-import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
-import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBitacoras } from "@/hooks/useBitacoras";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function BitacorasSupervisor() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { bitacorasSupervisor, isLoading, signBitacoraSupervisor } = useBitacoras();
+  const { bitacorasSupervisor, loading, createBitacoraSupervisor } = useBitacoras();
 
   const handleCreateBitacora = async (data: any) => {
-    console.log('Creating bitacora supervisor:', data);
-    setShowCreateForm(false);
-  };
-
-  const handleSignBitacora = async (id: string, signatureData: string) => {
     try {
-      await signBitacoraSupervisor(id, signatureData);
+      console.log('Creating bitacora supervisor:', data);
+      await createBitacoraSupervisor(data);
+      setShowCreateForm(false);
     } catch (error) {
-      console.error('Error signing bitacora:', error);
+      console.error('Error creating bitacora:', error);
     }
   };
 
@@ -48,14 +43,12 @@ export default function BitacorasSupervisor() {
           
           <div className="flex-1 overflow-auto bg-white">
             <div className="p-6 space-y-6">
-              <BitacoraStats />
-              
               <Card>
                 <CardHeader>
                   <CardTitle>Bitácoras de Supervisor</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isLoading ? (
+                  {loading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Cargando bitácoras...</p>
@@ -86,14 +79,18 @@ export default function BitacorasSupervisor() {
                       </TableHeader>
                       <TableBody>
                         {bitacorasSupervisor.map((bitacora) => (
-                          <BitacoraTableRow
-                            key={bitacora.bitacora_id}
-                            bitacora={bitacora}
-                            type="supervisor"
-                            onSign={handleSignBitacora}
-                            currentUserName="Supervisor"
-                            currentUserRole="Supervisor"
-                          />
+                          <TableRow key={bitacora.bitacora_id}>
+                            <td className="font-medium">{bitacora.codigo}</td>
+                            <td>{bitacora.inmersion_codigo || 'N/A'}</td>
+                            <td>{bitacora.supervisor_nombre}</td>
+                            <td>{new Date(bitacora.fecha_registro).toLocaleDateString()}</td>
+                            <td>{bitacora.estado}</td>
+                            <td className="text-right">
+                              <Button variant="outline" size="sm">
+                                Ver
+                              </Button>
+                            </td>
+                          </TableRow>
                         ))}
                       </TableBody>
                     </Table>
@@ -108,9 +105,8 @@ export default function BitacorasSupervisor() {
               <DialogHeader>
                 <DialogTitle>Nueva Bitácora de Supervisor</DialogTitle>
               </DialogHeader>
-              <BitacoraWizard
-                type="supervisor"
-                onComplete={handleCreateBitacora}
+              <CreateBitacoraSupervisorForm
+                onSubmit={handleCreateBitacora}
                 onCancel={() => setShowCreateForm(false)}
               />
             </DialogContent>

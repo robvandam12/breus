@@ -11,7 +11,6 @@ import { Shield, Plus, PenTool, Eye, CheckCircle } from "lucide-react";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { AnexoBravoStep5 } from "@/components/anexo-bravo/steps/AnexoBravoStep5";
 import { useRouter } from "@/hooks/useRouter";
-import { toast } from "@/hooks/use-toast";
 
 export default function AnexoBravoList() {
   const [selectedAnexo, setSelectedAnexo] = useState<any>(null);

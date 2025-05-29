@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import Login from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
+import Index from '@/pages/Index';
 import HPTList from '@/pages/formularios/HPTList';
 import AnexoBravoList from '@/pages/formularios/AnexoBravoList';
 import BitacorasSupervisor from '@/pages/operaciones/BitacorasSupervisor';
@@ -41,7 +42,7 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <Index />
                   </ProtectedRoute>
                 }
               />

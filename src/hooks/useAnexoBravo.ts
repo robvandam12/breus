@@ -45,6 +45,40 @@ export const useAnexoBravo = () => {
     },
   });
 
+  const createAnexoBravoMutation = useMutation({
+    mutationFn: async (anexoData: Omit<AnexoBravo, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating Anexo Bravo:', anexoData);
+      const { data, error } = await supabase
+        .from('anexo_bravo')
+        .insert(anexoData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating Anexo Bravo:', error);
+        throw error;
+      }
+
+      console.log('Anexo Bravo created:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['anexos-bravo'] });
+      toast({
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating Anexo Bravo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el Anexo Bravo. Intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const signAnexoBravoMutation = useMutation({
     mutationFn: async ({ id, signatures }: { id: string; signatures: any }) => {
       console.log('Signing Anexo Bravo:', id, signatures);
@@ -89,7 +123,9 @@ export const useAnexoBravo = () => {
     anexosBravo,
     isLoading,
     error,
+    createAnexoBravo: createAnexoBravoMutation.mutateAsync,
     signAnexoBravo: signAnexoBravoMutation.mutateAsync,
     isSigning: signAnexoBravoMutation.isPending,
+    isCreating: createAnexoBravoMutation.isPending,
   };
 };

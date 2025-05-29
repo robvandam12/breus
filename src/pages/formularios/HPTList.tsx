@@ -11,7 +11,6 @@ import { FileText, Plus, PenTool, Eye, CheckCircle } from "lucide-react";
 import { useHPT } from "@/hooks/useHPT";
 import { HPTStep6 } from "@/components/hpt/steps/HPTStep6";
 import { useRouter } from "@/hooks/useRouter";
-import { toast } from "@/hooks/use-toast";
 
 export default function HPTList() {
   const [selectedHPT, setSelectedHPT] = useState<any>(null);
@@ -100,7 +99,7 @@ export default function HPTList() {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="text-sm text-gray-600">
-                          <p><strong>Supervisor:</strong> {hpt.supervisor}</p>
+                          <p><strong>Supervisor:</strong> {hpt.supervisor_servicio_nombre || 'Sin especificar'}</p>
                           <p><strong>Fecha:</strong> {hpt.fecha_programada || hpt.fecha || 'Sin fecha'}</p>
                           <p><strong>Estado:</strong> {hpt.estado}</p>
                         </div>
