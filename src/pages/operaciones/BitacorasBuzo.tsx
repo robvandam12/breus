@@ -15,11 +15,8 @@ import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Use the consistent type from useBitacoras
-import type { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 
 const BitacorasBuzo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -28,10 +25,10 @@ const BitacorasBuzo = () => {
   const { 
     bitacorasBuzo, 
     loading, 
-    createBitacoraBuzo,
     refreshBitacoras 
   } = useBitacoras();
   
+  const { createBitacoraBuzo } = useBitacoraEnhanced();
   const { signBitacoraBuzo } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
@@ -39,7 +36,6 @@ const BitacorasBuzo = () => {
 
   const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
     try {
-      console.log('Creating bitácora buzo with data:', data);
       await createBitacoraBuzo(data);
       setIsCreateDialogOpen(false);
       refreshBitacoras();
@@ -197,7 +193,7 @@ const BitacorasBuzo = () => {
                     <TableBody>
                       {filteredBitacorasBuzo.map((bitacora) => (
                         <BitacoraTableRow
-                          key={bitacora.bitacora_id}
+                          key={bitacora.id}
                           bitacora={bitacora}
                           type="buzo"
                           onSign={handleSignBuzo}

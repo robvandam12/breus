@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -9,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Plus, Anchor, Calendar, User, Clock, Eye, FileText, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
-import { InmersionActions } from "@/components/inmersion/InmersionActions";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
 import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { useInmersiones } from "@/hooks/useInmersiones";
@@ -41,17 +39,12 @@ export default function Inmersiones() {
 
   const handleCreateInmersion = async (data: any) => {
     try {
-      // Crear inmersión con equipo de buceo asociado
-      const inmersionData = {
-        ...data,
-        equipo_buceo_id: data.equipo_buceo_id || null
-      };
-      
-      await createInmersion(inmersionData);
+      // Crear inmersión sin validación de documentos
+      await createInmersion(data);
       
       toast({
         title: "Inmersión creada",
-        description: "La inmersión ha sido creada exitosamente con el equipo de buceo asociado.",
+        description: "La inmersión ha sido creada exitosamente.",
       });
       setShowWizard(false);
       
@@ -114,18 +107,10 @@ export default function Inmersiones() {
 
   const handleBitacoraBuzoSubmit = async (data: any) => {
     try {
-      // Asociar bitácora con equipo de buceo de la inmersión
-      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionForBitacora);
-      const bitacoraData = {
-        ...data,
-        inmersion_id: selectedInmersionForBitacora,
-        equipo_buceo_id: inmersion?.equipo_buceo_id || null
-      };
-      
-      await createBitacoraBuzo(bitacoraData);
+      await createBitacoraBuzo({ ...data, inmersion_id: selectedInmersionForBitacora });
       toast({
         title: "Bitácora de buzo creada",
-        description: "La bitácora ha sido creada exitosamente asociada al equipo de buceo.",
+        description: "La bitácora ha sido creada exitosamente.",
       });
       setShowBitacoraBuzoForm(false);
       setSelectedInmersionForBitacora('');
@@ -141,18 +126,10 @@ export default function Inmersiones() {
 
   const handleBitacoraSupervisorSubmit = async (data: any) => {
     try {
-      // Asociar bitácora con equipo de buceo de la inmersión
-      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionForBitacora);
-      const bitacoraData = {
-        ...data,
-        inmersion_id: selectedInmersionForBitacora,
-        equipo_buceo_id: inmersion?.equipo_buceo_id || null
-      };
-      
-      await createBitacoraSupervisor(bitacoraData);
+      await createBitacoraSupervisor({ ...data, inmersion_id: selectedInmersionForBitacora });
       toast({
         title: "Bitácora de supervisor creada",
-        description: "La bitácora ha sido creada exitosamente asociada al equipo de buceo.",
+        description: "La bitácora ha sido creada exitosamente.",
       });
       setShowBitacoraSupervisorForm(false);
       setSelectedInmersionForBitacora('');
@@ -203,7 +180,7 @@ export default function Inmersiones() {
             subtitle="Gestión de inmersiones de buceo" 
             icon={Anchor} 
           >
-            <Button onClick={() => setShowWizard(true)}>
+            <Button onClick={handleShowWizard}>
               <Plus className="w-4 h-4 mr-2" />
               Nueva Inmersión
             </Button>
@@ -224,7 +201,7 @@ export default function Inmersiones() {
                     <p className="text-gray-600 mb-6">
                       Comience creando su primera inmersión de buceo.
                     </p>
-                    <Button onClick={() => setShowWizard(true)}>
+                    <Button onClick={handleShowWizard}>
                       <Plus className="w-4 h-4 mr-2" />
                       Nueva Inmersión
                     </Button>
@@ -233,28 +210,15 @@ export default function Inmersiones() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {inmersiones.map((inmersion) => {
-                    const operacion = operaciones.find(op => op.id === inmersion.operacion_id);
+                    const operacion = getOperacionData(inmersion.operacion_id);
                     return (
                       <Card key={inmersion.inmersion_id} className="hover:shadow-lg transition-shadow">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                                {inmersion.estado}
-                              </Badge>
-                              <InmersionActions
-                                inmersion={inmersion}
-                                onView={handleViewInmersion}
-                                onCreateBitacora={(id, type) => {
-                                  if (type === 'buzo') {
-                                    handleCreateBitacoraBuzo(id);
-                                  } else {
-                                    handleCreateBitacoraSupervisor(id);
-                                  }
-                                }}
-                              />
-                            </div>
+                            <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                              {inmersion.estado}
+                            </Badge>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -279,13 +243,40 @@ export default function Inmersiones() {
                             <Clock className="w-4 h-4" />
                             <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
                           </div>
-
-                          {inmersion.equipo_buceo_id && (
-                            <div className="flex items-center gap-2 text-sm text-green-600">
-                              <User className="w-4 h-4" />
-                              <span>Equipo asignado</span>
+                          
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="flex gap-2 mb-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewInmersion(inmersion.inmersion_id)}
+                                className="flex-1"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Ver
+                              </Button>
                             </div>
-                          )}
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
+                                className="flex-1 text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Bit. Buzo
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
+                                className="flex-1 text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Bit. Sup.
+                              </Button>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     );
