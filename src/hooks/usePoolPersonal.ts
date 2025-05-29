@@ -91,15 +91,20 @@ export const usePoolPersonal = () => {
           empresaTipo = 'contratista';
         }
 
+        // Safely parse perfil_buzo JSON
+        const perfilBuzo = user.perfil_buzo && typeof user.perfil_buzo === 'object' && user.perfil_buzo !== null
+          ? user.perfil_buzo as Record<string, any>
+          : {};
+
         return {
           usuario_id: user.usuario_id,
           email: user.email || '',
           nombre: user.nombre,
           apellido: user.apellido,
           rol: user.rol as 'supervisor' | 'buzo',
-          matricula: user.perfil_buzo?.matricula || '',
-          especialidades: user.perfil_buzo?.especialidades || [],
-          certificaciones: user.perfil_buzo?.certificaciones || [],
+          matricula: perfilBuzo.matricula || '',
+          especialidades: Array.isArray(perfilBuzo.especialidades) ? perfilBuzo.especialidades : [],
+          certificaciones: Array.isArray(perfilBuzo.certificaciones) ? perfilBuzo.certificaciones : [],
           disponible: true, // Por ahora siempre true, se puede agregar lógica más adelante
           empresa_nombre: empresaNombre,
           empresa_tipo: empresaTipo

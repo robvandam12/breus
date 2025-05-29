@@ -66,7 +66,7 @@ export const PoolPersonalManager = () => {
 
   const handleToggleDisponibilidad = async (personalId: string, disponible: boolean) => {
     try {
-      await updateDisponibilidad(personalId, disponible);
+      await updateDisponibilidad({ personalId, disponible });
       toast({
         title: "Disponibilidad actualizada",
         description: `La disponibilidad ha sido ${disponible ? 'activada' : 'desactivada'}.`,
