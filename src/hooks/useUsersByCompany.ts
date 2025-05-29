@@ -36,22 +36,13 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           servicio:contratistas(nombre)
         `);
 
-      // Apply filters based on user role
-      if (profile?.role === 'superuser') {
-        // Superuser sees all users
-        if (empresaId && empresaTipo) {
-          if (empresaTipo === 'salmonera') {
-            query = query.eq('salmonera_id', empresaId);
-          } else {
-            query = query.eq('servicio_id', empresaId);
-          }
-        }
-      } else if (profile?.role === 'admin_salmonera') {
-        // Admin salmonera sees their own users + associated contractors
-        if (empresaTipo === 'salmonera') {
-          query = query.eq('salmonera_id', empresaId);
-        } else {
-          // Show contractors associated with this salmonera
+      // Si no se especifica empresa, buscar todos los usuarios según permisos
+      if (!empresaId) {
+        // Apply filters based on user role
+        if (profile?.role === 'superuser') {
+          // Superuser sees all users - no additional filter needed
+        } else if (profile?.role === 'admin_salmonera') {
+          // Admin salmonera sees their own users + associated contractors
           const { data: associations } = await supabase
             .from('salmonera_contratista')
             .select('contratista_id')
@@ -59,15 +50,22 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
             .eq('estado', 'activa');
           
           const contratistaIds = associations?.map(a => a.contratista_id) || [];
-          if (contratistaIds.length > 0) {
-            query = query.in('servicio_id', contratistaIds);
-          } else {
-            return [];
-          }
+          
+          // Filter users from this salmonera or associated contractors
+          query = query.or(
+            `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
+          );
+        } else if (profile?.role === 'admin_servicio') {
+          // Admin servicio sees only their own users
+          query = query.eq('servicio_id', profile.servicio_id);
         }
-      } else if (profile?.role === 'admin_servicio') {
-        // Admin servicio sees only their own users
-        query = query.eq('servicio_id', profile.servicio_id);
+      } else {
+        // Filtrar por empresa específica
+        if (empresaTipo === 'salmonera') {
+          query = query.eq('salmonera_id', empresaId);
+        } else if (empresaTipo === 'contratista') {
+          query = query.eq('servicio_id', empresaId);
+        }
       }
 
       query = query.order('created_at', { ascending: false });
@@ -78,6 +76,8 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         console.error('Error fetching users:', error);
         throw error;
       }
+
+      console.log('Fetched users:', data);
 
       return (data || []).map(user => {
         let empresaNombre = 'Sin asignar';

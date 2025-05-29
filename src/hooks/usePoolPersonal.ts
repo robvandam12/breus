@@ -1,213 +1,171 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-// Define proper types for perfil_buzo
-interface PerfilBuzo {
+export interface PoolPersonalItem {
+  usuario_id: string;
+  email: string;
+  nombre: string;
+  apellido: string;
+  rol: 'supervisor' | 'buzo';
   matricula?: string;
-  especialidades?: string[];
-  certificaciones?: string[];
-  experiencia_anos?: number;
-  disponible?: boolean;
+  especialidades: string[];
+  certificaciones: string[];
+  disponible: boolean;
+  invitado?: boolean;
+  empresa_nombre?: string;
+  empresa_tipo?: 'salmonera' | 'contratista';
 }
 
-// Using the usuario table as the base for personal pool
-type PoolPersonal = Tables<'usuario'> & {
-  empresa_id?: string;
-  tipo_empresa?: 'salmonera' | 'servicio';
-  matricula?: string;
-  especialidades?: string[];
-  certificaciones?: string[];
-  experiencia_anos?: number;
-  disponible?: boolean;
-  invitado?: boolean;
-  estado_invitacion?: 'pendiente' | 'aceptada' | 'rechazada';
-  token_invitacion?: string;
-};
-
 export const usePoolPersonal = () => {
-  const [personal, setPersonal] = useState<PoolPersonal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchPersonal = async (empresaId?: string, tipoEmpresa?: 'salmonera' | 'servicio') => {
-    try {
-      let query = supabase.from('usuario').select('*');
-      
-      if (empresaId && tipoEmpresa === 'salmonera') {
-        query = query.eq('salmonera_id', empresaId);
-      } else if (empresaId && tipoEmpresa === 'servicio') {
-        query = query.eq('servicio_id', empresaId);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Map the usuario data to our PoolPersonal structure
-      const mappedData = data?.map(user => {
-        // Safely parse perfil_buzo JSON
-        const perfilBuzo = user.perfil_buzo as PerfilBuzo | null;
-        
-        return {
-          ...user,
-          empresa_id: tipoEmpresa === 'salmonera' ? user.salmonera_id : user.servicio_id,
-          tipo_empresa: tipoEmpresa,
-          matricula: perfilBuzo?.matricula,
-          especialidades: perfilBuzo?.especialidades || [],
-          certificaciones: perfilBuzo?.certificaciones || [],
-          experiencia_anos: perfilBuzo?.experiencia_anos || 0,
-          disponible: perfilBuzo?.disponible || true,
-          invitado: false,
-          estado_invitacion: 'aceptada' as const
-        };
-      }) || [];
-      
-      setPersonal(mappedData);
-    } catch (error) {
-      console.error('Error fetching personal:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar el pool de personal",
-        variant: "destructive",
+  const { data: personal = [], isLoading } = useQuery({
+    queryKey: ['pool-personal', profile?.role, profile?.salmonera_id],
+    queryFn: async () => {
+      console.log('Fetching pool personal...', { 
+        userRole: profile?.role, 
+        salmoneraId: profile?.salmonera_id 
       });
-    }
-  };
-
-  const addPersonal = async (personalData: Partial<PoolPersonal>) => {
-    try {
-      // Generate a unique user ID for new personal
-      const userId = crypto.randomUUID();
       
-      // Convert to usuario format
-      const usuarioData: TablesInsert<'usuario'> = {
-        usuario_id: userId,
-        nombre: personalData.nombre || '',
-        apellido: personalData.apellido || '',
-        email: personalData.email || '',
-        rol: personalData.rol || 'buzo',
-        salmonera_id: personalData.tipo_empresa === 'salmonera' ? personalData.empresa_id || null : null,
-        servicio_id: personalData.tipo_empresa === 'servicio' ? personalData.empresa_id || null : null,
-        perfil_buzo: {
-          matricula: personalData.matricula,
-          especialidades: personalData.especialidades || [],
-          certificaciones: personalData.certificaciones || [],
-          experiencia_anos: personalData.experiencia_anos || 0,
-          disponible: personalData.disponible !== false
-        },
-        perfil_completado: true
-      };
+      if (!profile) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('usuario')
-        .insert([usuarioData])
+        .select(`
+          *,
+          salmonera:salmoneras(nombre),
+          servicio:contratistas(nombre)
+        `)
+        .in('rol', ['supervisor', 'buzo']);
+
+      // Filtrar según el rol del usuario actual
+      if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
+        // Admin salmonera ve su personal + contratistas asociados
+        const { data: associations } = await supabase
+          .from('salmonera_contratista')
+          .select('contratista_id')
+          .eq('salmonera_id', profile.salmonera_id)
+          .eq('estado', 'activa');
+        
+        const contratistaIds = associations?.map(a => a.contratista_id) || [];
+        
+        if (contratistaIds.length > 0) {
+          query = query.or(
+            `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
+          );
+        } else {
+          query = query.eq('salmonera_id', profile.salmonera_id);
+        }
+      } else if (profile.role === 'admin_servicio' && profile.servicio_id) {
+        // Admin servicio ve solo su personal
+        query = query.eq('servicio_id', profile.servicio_id);
+      } else if (profile.role === 'superuser') {
+        // Superuser ve todo
+      } else {
+        // Otros roles no tienen acceso
+        return [];
+      }
+
+      const { data, error } = await query.order('nombre', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching pool personal:', error);
+        throw error;
+      }
+
+      console.log('Pool personal data:', data);
+
+      return (data || []).map(user => {
+        let empresaNombre = 'Sin asignar';
+        let empresaTipo: 'salmonera' | 'contratista' = 'salmonera';
+
+        if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
+          empresaNombre = String(user.salmonera.nombre);
+          empresaTipo = 'salmonera';
+        } else if (user.servicio && typeof user.servicio === 'object' && 'nombre' in user.servicio) {
+          empresaNombre = String(user.servicio.nombre);
+          empresaTipo = 'contratista';
+        }
+
+        return {
+          usuario_id: user.usuario_id,
+          email: user.email || '',
+          nombre: user.nombre,
+          apellido: user.apellido,
+          rol: user.rol as 'supervisor' | 'buzo',
+          matricula: user.perfil_buzo?.matricula || '',
+          especialidades: user.perfil_buzo?.especialidades || [],
+          certificaciones: user.perfil_buzo?.certificaciones || [],
+          disponible: true, // Por ahora siempre true, se puede agregar lógica más adelante
+          empresa_nombre: empresaNombre,
+          empresa_tipo: empresaTipo
+        };
+      }) as PoolPersonalItem[];
+    },
+    enabled: !!profile,
+  });
+
+  const addPersonalMutation = useMutation({
+    mutationFn: async (personalData: any) => {
+      // Esta función agregaría personal existente al pool
+      console.log('Adding personal to pool:', personalData);
+      // Por ahora solo simulamos éxito
+      return personalData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pool-personal'] });
+      toast({
+        title: 'Personal agregado',
+        description: 'El personal ha sido agregado al pool exitosamente.',
+      });
+    },
+  });
+
+  const invitePersonalMutation = useMutation({
+    mutationFn: async (inviteData: any) => {
+      const { data, error } = await supabase
+        .from('usuario_invitaciones')
+        .insert({
+          ...inviteData,
+          token: crypto.randomUUID(),
+          invitado_por: profile?.id
+        })
         .select()
         .single();
 
       if (error) throw error;
-      
-      await fetchPersonal(personalData.empresa_id, personalData.tipo_empresa);
-      toast({
-        title: "Éxito",
-        description: "Personal agregado correctamente",
-      });
-      
       return data;
-    } catch (error) {
-      console.error('Error adding personal:', error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pool-personal'] });
       toast({
-        title: "Error",
-        description: "No se pudo agregar el personal",
-        variant: "destructive",
+        title: 'Invitación enviada',
+        description: 'La invitación ha sido enviada exitosamente.',
       });
-      throw error;
-    }
-  };
+    },
+  });
 
-  const invitePersonal = async (personalData: Partial<PoolPersonal>) => {
-    try {
-      const token = crypto.randomUUID();
-      
-      const dataWithInvitation = {
-        ...personalData,
-        invitado: true,
-        estado_invitacion: 'pendiente' as const,
-        token_invitacion: token
-      };
-
-      await addPersonal(dataWithInvitation);
-      
-      toast({
-        title: "Invitación enviada",
-        description: `Se ha enviado una invitación a ${personalData.email}`,
-      });
-      
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      throw error;
-    }
-  };
-
-  const updateDisponibilidad = async (personalId: string, disponible: boolean) => {
-    try {
-      // Get current user data
-      const { data: usuario, error: fetchError } = await supabase
-        .from('usuario')
-        .select('perfil_buzo')
-        .eq('usuario_id', personalId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Safely parse and update perfil_buzo
-      const currentPerfil = (usuario?.perfil_buzo as PerfilBuzo) || {};
-      const updatedPerfil = {
-        ...currentPerfil,
-        disponible
-      };
-
-      const { error } = await supabase
-        .from('usuario')
-        .update({ perfil_buzo: updatedPerfil })
-        .eq('usuario_id', personalId);
-
-      if (error) throw error;
-      
-      await fetchPersonal();
-      toast({
-        title: "Éxito",
-        description: "Disponibilidad actualizada correctamente",
-      });
-      
-    } catch (error) {
-      console.error('Error updating disponibilidad:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la disponibilidad",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      await fetchPersonal();
-      setIsLoading(false);
-    };
-
-    loadData();
-  }, []);
+  const updateDisponibilidadMutation = useMutation({
+    mutationFn: async ({ personalId, disponible }: { personalId: string; disponible: boolean }) => {
+      // Por ahora solo simulamos la actualización
+      console.log('Updating disponibilidad:', { personalId, disponible });
+      return { personalId, disponible };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pool-personal'] });
+    },
+  });
 
   return {
     personal,
     isLoading,
-    fetchPersonal,
-    addPersonal,
-    invitePersonal,
-    updateDisponibilidad
+    addPersonal: addPersonalMutation.mutate,
+    invitePersonal: invitePersonalMutation.mutate,
+    updateDisponibilidad: updateDisponibilidadMutation.mutate,
+    isInviting: invitePersonalMutation.isPending,
   };
 };

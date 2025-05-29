@@ -39,27 +39,34 @@ export const UserSearchSelect = ({
     rol: allowedRoles[0] || 'buzo'
   });
 
-  // Get users from both salmonera and contratista if available
-  const { usuarios: salmoneraUsers } = useUsersByCompany(salmoneraId, 'salmonera');
-  const { usuarios: contratistaUsers } = useUsersByCompany(contratistaId, 'contratista');
+  // Obtener todos los usuarios disponibles (sin filtrar por empresa específica)
+  const { usuarios: allUsers } = useUsersByCompany();
   
-  // Combine users from both companies, avoiding duplicates
-  const allUsers = [
-    ...salmoneraUsers,
-    ...contratistaUsers.filter(cu => 
-      !salmoneraUsers.some(su => su.usuario_id === cu.usuario_id)
-    )
-  ];
+  console.log('UserSearchSelect - All users:', allUsers);
+  console.log('UserSearchSelect - Search term:', searchTerm);
+  console.log('UserSearchSelect - Allowed roles:', allowedRoles);
 
   const filteredUsers = allUsers.filter(user => {
+    if (!searchTerm || searchTerm.length < 2) return false;
+    
     const matchesSearch = user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = allowedRoles.length === 0 || allowedRoles.includes(user.rol);
     
+    console.log('UserSearchSelect - Filtering user:', {
+      user: `${user.nombre} ${user.apellido}`,
+      email: user.email,
+      rol: user.rol,
+      matchesSearch,
+      matchesRole
+    });
+    
     return matchesSearch && matchesRole;
   });
+
+  console.log('UserSearchSelect - Filtered users:', filteredUsers);
 
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,12 +92,14 @@ export const UserSearchSelect = ({
         />
       </div>
 
-      {searchTerm && (
+      {searchTerm && searchTerm.length >= 2 && (
         <div className="max-h-60 overflow-y-auto space-y-2">
           {filteredUsers.length === 0 ? (
             <Card>
               <CardContent className="p-4 text-center">
-                <p className="text-zinc-500 mb-3">No se encontraron usuarios</p>
+                <p className="text-zinc-500 mb-3">
+                  No se encontraron usuarios que coincidan con "{searchTerm}"
+                </p>
                 <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
@@ -133,6 +142,24 @@ export const UserSearchSelect = ({
                           />
                         </div>
                       </div>
+                      {allowedRoles.length > 0 && (
+                        <div>
+                          <Label htmlFor="rol">Rol *</Label>
+                          <select
+                            id="rol"
+                            value={inviteData.rol}
+                            onChange={(e) => setInviteData(prev => ({ ...prev, rol: e.target.value }))}
+                            className="w-full p-2 border rounded-md"
+                            required
+                          >
+                            {allowedRoles.map(role => (
+                              <option key={role} value={role}>
+                                {role.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div className="flex gap-3">
                         <Button type="submit" className="flex-1">
                           Enviar Invitación
@@ -169,6 +196,12 @@ export const UserSearchSelect = ({
               </Card>
             ))
           )}
+        </div>
+      )}
+
+      {searchTerm && searchTerm.length < 2 && (
+        <div className="text-center text-sm text-zinc-500 py-4">
+          Escribe al menos 2 caracteres para buscar usuarios
         </div>
       )}
     </div>

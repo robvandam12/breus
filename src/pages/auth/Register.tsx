@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -91,7 +90,7 @@ export const Register = () => {
         });
         
         // Redirect to email confirmation page
-        navigate(`/auth/email-confirmation?email=${encodeURIComponent(formData.email)}`);
+        navigate(`/email-confirmation?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (error: any) {
       console.error('Error during registration:', error);
