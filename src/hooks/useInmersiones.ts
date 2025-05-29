@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -72,19 +71,13 @@ export const useInmersiones = (operacionId?: string) => {
 
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
-      // Validate that HPT and Anexo Bravo are signed before creating inmersion
-      const validation = await validateOperationDocuments(inmersionData.operacion_id);
-      
-      if (!validation.canExecute) {
-        throw new Error('No se puede crear la inmersión: faltan documentos firmados o equipo asignado');
-      }
-
+      // Eliminar validación de documentos para permitir crear inmersiones sin documentos firmados
       const { data, error } = await supabase
         .from('inmersion')
         .insert({
           ...inmersionData,
-          hpt_validado: validation.hasValidHPT,
-          anexo_bravo_validado: validation.hasValidAnexoBravo
+          hpt_validado: false,
+          anexo_bravo_validado: false
         })
         .select()
         .single();

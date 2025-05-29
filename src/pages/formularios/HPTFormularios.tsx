@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FileText, CheckCircle, PenTool } from "lucide-react";
@@ -198,7 +198,7 @@ const HPTFormulariosPage = () => {
                                   {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
                                 </div>
                               </TableCell>
-                              <TableCell>{hpt.supervisor}</TableCell>
+                              <TableCell>{hpt.supervisor || hpt.supervisor_nombre}</TableCell>
                               <TableCell>
                                 {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
                               </TableCell>
@@ -246,6 +246,7 @@ const HPTFormulariosPage = () => {
           {/* Operation Selector Dialog */}
           <Dialog open={showOperationSelector} onOpenChange={setShowOperationSelector}>
             <DialogContent className="max-w-4xl">
+              <DialogTitle>Seleccionar Operación</DialogTitle>
               <HPTOperationSelector 
                 onOperacionSelected={handleOperationSelected}
                 selectedOperacionId={selectedOperacionId}
@@ -256,6 +257,7 @@ const HPTFormulariosPage = () => {
           {/* Create Form Modal */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogTitle>Crear Nuevo HPT</DialogTitle>
               <HPTWizard 
                 operacionId={selectedOperacionId}
                 onComplete={handleHPTComplete}

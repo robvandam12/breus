@@ -19,6 +19,8 @@ import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import Inmersiones from "./pages/operaciones/Inmersiones";
 import BitacorasSupervisor from "./pages/operaciones/BitacorasSupervisor";
 import BitacorasBuzo from "./pages/operaciones/BitacorasBuzo";
+import HPTFormularios from "./pages/formularios/HPTFormularios";
+import AnexoBravoFormularios from "./pages/formularios/AnexoBravoFormularios";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -97,11 +99,23 @@ const App: React.FC = () => (
             
             <Route path="/formularios/hpt" element={
               <ProtectedRoute>
-                <HPT />
+                <HPTFormularios />
               </ProtectedRoute>
             } />
             
             <Route path="/formularios/anexo-bravo" element={
+              <ProtectedRoute>
+                <AnexoBravoFormularios />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/operaciones/hpt" element={
+              <ProtectedRoute>
+                <HPT />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/operaciones/anexo-bravo" element={
               <ProtectedRoute>
                 <AnexoBravo />
               </ProtectedRoute>

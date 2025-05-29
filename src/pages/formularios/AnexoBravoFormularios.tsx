@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, CheckCircle, PenTool } from "lucide-react";
@@ -22,7 +22,7 @@ const AnexoBravoFormulariosPage = () => {
   const [showOperationSelector, setShowOperationSelector] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
-  const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
+  const { anexosBravo, isLoading, createAnexoBravo, signAnexoBravo } = useAnexoBravo();
   const { operaciones } = useOperaciones();
 
   const filteredAnexos = anexosBravo.filter(anexo => 
@@ -65,7 +65,13 @@ const AnexoBravoFormulariosPage = () => {
 
   const handleSignAnexo = async (anexoId: string) => {
     try {
-      // Implementar lógica de firma
+      await signAnexoBravo({ 
+        id: anexoId, 
+        signatures: {
+          supervisor_url: 'signed',
+          jefe_centro_url: 'signed'
+        }
+      });
       toast({
         title: "Anexo firmado",
         description: "El Anexo Bravo ha sido firmado exitosamente.",
@@ -263,6 +269,7 @@ const AnexoBravoFormulariosPage = () => {
           {/* Operation Selector Dialog */}
           <Dialog open={showOperationSelector} onOpenChange={setShowOperationSelector}>
             <DialogContent className="max-w-4xl">
+              <DialogTitle>Seleccionar Operación</DialogTitle>
               <AnexoBravoOperationSelector 
                 onOperacionSelected={handleOperationSelected}
                 selectedOperacionId={selectedOperacionId}
@@ -273,6 +280,7 @@ const AnexoBravoFormulariosPage = () => {
           {/* Create/Edit Form Modal */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
               <FullAnexoBravoForm 
                 operacionId={selectedOperacionId}
                 onSubmit={handleSubmitAnexo}

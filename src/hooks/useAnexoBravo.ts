@@ -19,6 +19,9 @@ export interface AnexoBravo {
   progreso: number;
   created_at: string;
   updated_at: string;
+  user_id: string;
+  fecha_verificacion: string;
+  jefe_centro: string;
 }
 
 export interface AnexoBravoFormData {
@@ -78,7 +81,30 @@ export const useAnexoBravo = () => {
       const currentUser = await supabase.auth.getUser();
       
       const insertData = {
-        ...data,
+        codigo: data.codigo,
+        operacion_id: data.operacion_id,
+        fecha: data.fecha,
+        lugar_faena: data.lugar_faena,
+        empresa_nombre: data.empresa_nombre,
+        supervisor_servicio_nombre: data.supervisor_servicio_nombre,
+        supervisor_mandante_nombre: data.supervisor_mandante_nombre,
+        buzo_o_empresa_nombre: data.buzo_o_empresa_nombre,
+        buzo_matricula: data.buzo_matricula,
+        asistente_buzo_nombre: data.asistente_buzo_nombre,
+        asistente_buzo_matricula: data.asistente_buzo_matricula,
+        autorizacion_armada: data.autorizacion_armada,
+        bitacora_fecha: data.bitacora_fecha,
+        bitacora_hora_inicio: data.bitacora_hora_inicio,
+        bitacora_hora_termino: data.bitacora_hora_termino,
+        bitacora_relator: data.bitacora_relator,
+        anexo_bravo_checklist: data.anexo_bravo_checklist,
+        anexo_bravo_trabajadores: data.anexo_bravo_trabajadores,
+        anexo_bravo_firmas: data.anexo_bravo_firmas,
+        observaciones_generales: data.observaciones_generales,
+        jefe_centro_nombre: data.jefe_centro_nombre,
+        supervisor: data.supervisor,
+        estado: data.estado || 'borrador',
+        firmado: data.firmado || false,
         user_id: currentUser.data.user?.id,
         fecha_verificacion: new Date().toISOString().split('T')[0],
         jefe_centro: data.jefe_centro_nombre || 'No especificado'
