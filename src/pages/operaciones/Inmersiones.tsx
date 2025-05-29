@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Anchor, Calendar, User, Clock, Eye, FileText, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
@@ -288,6 +288,12 @@ export default function Inmersiones() {
 
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nueva Bitácora de Buzo</DialogTitle>
+                <DialogDescription>
+                  Crear una nueva bitácora de buzo para la inmersión seleccionada
+                </DialogDescription>
+              </DialogHeader>
               <CreateBitacoraBuzoFormEnhanced
                 onSubmit={handleBitacoraBuzoSubmit}
                 onCancel={() => setShowBitacoraBuzoForm(false)}
@@ -297,6 +303,12 @@ export default function Inmersiones() {
 
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nueva Bitácora de Supervisor</DialogTitle>
+                <DialogDescription>
+                  Crear una nueva bitácora de supervisor para la inmersión seleccionada
+                </DialogDescription>
+              </DialogHeader>
               <CreateBitacoraSupervisorForm
                 onSubmit={handleBitacoraSupervisorSubmit}
                 onCancel={() => setShowBitacoraSupervisorForm(false)}

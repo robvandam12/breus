@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { FileText, X } from "lucide-react";
+import { FileText, X, Users } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { useOperaciones } from "@/hooks/useOperaciones";
 import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 
 const formSchema = z.object({
@@ -29,7 +31,12 @@ interface CreateBitacoraSupervisorFormProps {
 
 export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
   const [loading, setLoading] = useState(false);
+  const [selectedInmersion, setSelectedInmersion] = useState<any>(null);
+  const [availableBuzos, setAvailableBuzos] = useState<any[]>([]);
+  
   const { inmersiones } = useInmersiones();
+  const { equipos } = useEquiposBuceoEnhanced();
+  const { operaciones } = useOperaciones();
 
   const {
     register,
@@ -43,6 +50,35 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
       incidentes: ""
     }
   });
+
+  const selectedInmersionId = watch('inmersion_id');
+
+  // Obtener buzos del equipo cuando se selecciona una inmersión
+  useEffect(() => {
+    if (selectedInmersionId) {
+      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionId);
+      if (inmersion) {
+        setSelectedInmersion(inmersion);
+        
+        // Buscar la operación asociada
+        const operacion = operaciones.find(op => op.id === inmersion.operacion_id);
+        if (operacion && operacion.equipo_buceo_id) {
+          // Buscar el equipo de buceo
+          const equipo = equipos.find(eq => eq.id === operacion.equipo_buceo_id);
+          if (equipo && equipo.miembros) {
+            // Filtrar solo los buzos del equipo
+            const buzos = equipo.miembros.filter(miembro => 
+              miembro.rol === 'buzo_principal' || miembro.rol === 'buzo_asistente'
+            );
+            setAvailableBuzos(buzos);
+          }
+        }
+      }
+    } else {
+      setSelectedInmersion(null);
+      setAvailableBuzos([]);
+    }
+  }, [selectedInmersionId, inmersiones, operaciones, equipos]);
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
@@ -58,16 +94,20 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
         fecha_inicio_faena: new Date().toISOString().split('T')[0],
         hora_inicio_faena: '',
         hora_termino_faena: '',
-        lugar_trabajo: '',
+        lugar_trabajo: selectedInmersion?.objetivo || '',
         supervisor_nombre_matricula: data.supervisor,
         estado_mar: '',
         visibilidad_fondo: 0,
-        inmersiones_buzos: [],
+        inmersiones_buzos: availableBuzos.map(buzo => ({
+          nombre: buzo.nombre_completo,
+          rol: buzo.rol,
+          tiempo_inmersion: 0
+        })),
         equipos_utilizados: [],
-        trabajo_a_realizar: '',
-        descripcion_trabajo: '',
+        trabajo_a_realizar: selectedInmersion?.objetivo || '',
+        descripcion_trabajo: data.desarrollo_inmersion,
         embarcacion_apoyo: '',
-        observaciones_generales_texto: '',
+        observaciones_generales_texto: data.incidentes,
         validacion_contratista: false,
         comentarios_validacion: ''
       };
@@ -135,6 +175,50 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
               )}
             </div>
           </div>
+
+          {/* Información de la inmersión seleccionada */}
+          {selectedInmersion && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Información de la Inmersión
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <strong>Buzo Principal:</strong> {selectedInmersion.buzo_principal}
+                  </div>
+                  <div>
+                    <strong>Fecha:</strong> {new Date(selectedInmersion.fecha_inmersion).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <strong>Objetivo:</strong> {selectedInmersion.objetivo}
+                  </div>
+                  <div>
+                    <strong>Profundidad Máx:</strong> {selectedInmersion.profundidad_max}m
+                  </div>
+                </div>
+                
+                {availableBuzos.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-blue-300">
+                    <strong className="text-sm">Buzos del Equipo:</strong>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {availableBuzos.map((buzo, index) => (
+                        <span 
+                          key={index}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs"
+                        >
+                          {buzo.nombre_completo} ({buzo.rol})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión</Label>
