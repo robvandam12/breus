@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ export interface Inmersion {
   observaciones?: string;
   hpt_validado: boolean;
   anexo_bravo_validado: boolean;
+  equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
   operacion_nombre?: string;
