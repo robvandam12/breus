@@ -11,7 +11,7 @@ import { BitacoraStep5 } from "./steps/BitacoraStep5";
 import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 
 export interface BitacoraSupervisorData extends BitacoraSupervisorFormData {
-  // Propiedades adicionales para el wizard
+  // Interface that extends the form data with additional wizard-specific properties
 }
 
 interface BitacoraWizardProps {
@@ -28,7 +28,24 @@ export const BitacoraWizard = ({ onSubmit, onCancel }: BitacoraWizardProps) => {
     desarrollo_inmersion: '',
     incidentes: '',
     evaluacion_general: '',
-    fecha: new Date().toISOString().split('T')[0]
+    fecha: new Date().toISOString().split('T')[0],
+    // Initialize additional fields
+    fecha_inicio_faena: new Date().toISOString().split('T')[0],
+    hora_inicio_faena: '',
+    hora_termino_faena: '',
+    lugar_trabajo: '',
+    supervisor_nombre_matricula: '',
+    estado_mar: '',
+    visibilidad_fondo: 0,
+    inmersiones_buzos: [],
+    equipos_utilizados: [],
+    trabajo_a_realizar: '',
+    descripcion_trabajo: '',
+    embarcacion_apoyo: '',
+    observaciones_generales_texto: '',
+    validacion_contratista: false,
+    comentarios_validacion: '',
+    diving_records: []
   });
 
   const steps = [

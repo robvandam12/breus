@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, FileText } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 
@@ -33,34 +34,99 @@ export const BitacoraStep1 = ({ data, onUpdate }: BitacoraStep1Props) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="codigo">Código</Label>
-            <Input
-              id="codigo"
-              value={data.codigo}
-              onChange={(e) => handleInputChange('codigo', e.target.value)}
-              placeholder="Código de la bitácora"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="codigo">Código</Label>
+              <Input
+                id="codigo"
+                value={data.codigo}
+                onChange={(e) => handleInputChange('codigo', e.target.value)}
+                placeholder="Código de la bitácora"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="fecha_inicio_faena">Fecha de Inicio</Label>
+              <Input
+                id="fecha_inicio_faena"
+                type="date"
+                value={data.fecha_inicio_faena || ''}
+                onChange={(e) => handleInputChange('fecha_inicio_faena', e.target.value)}
+              />
+            </div>
           </div>
-          
+
           <div>
-            <Label htmlFor="fecha">Fecha</Label>
+            <Label htmlFor="lugar_trabajo">Lugar de Trabajo</Label>
             <Input
-              id="fecha"
-              type="date"
-              value={data.fecha}
-              onChange={(e) => handleInputChange('fecha', e.target.value)}
+              id="lugar_trabajo"
+              value={data.lugar_trabajo || ''}
+              onChange={(e) => handleInputChange('lugar_trabajo', e.target.value)}
+              placeholder="Ubicación donde se realiza el trabajo"
             />
           </div>
 
           <div>
-            <Label htmlFor="supervisor">Supervisor</Label>
+            <Label htmlFor="supervisor_nombre_matricula">Supervisor (Nombre y Matrícula)</Label>
             <Input
-              id="supervisor"
-              value={data.supervisor}
-              onChange={(e) => handleInputChange('supervisor', e.target.value)}
-              placeholder="Nombre del supervisor"
+              id="supervisor_nombre_matricula"
+              value={data.supervisor_nombre_matricula || ''}
+              onChange={(e) => handleInputChange('supervisor_nombre_matricula', e.target.value)}
+              placeholder="Nombre completo y matrícula del supervisor"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="estado_mar">Estado del Mar</Label>
+              <Select 
+                value={data.estado_mar || ''}
+                onValueChange={(value) => handleInputChange('estado_mar', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado del mar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="calmo">Calmo</SelectItem>
+                  <SelectItem value="moderado">Moderado</SelectItem>
+                  <SelectItem value="agitado">Agitado</SelectItem>
+                  <SelectItem value="muy-agitado">Muy Agitado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="visibilidad_fondo">Visibilidad del Fondo (m)</Label>
+              <Input
+                id="visibilidad_fondo"
+                type="number"
+                value={data.visibilidad_fondo || 0}
+                onChange={(e) => handleInputChange('visibilidad_fondo', Number(e.target.value))}
+                placeholder="Visibilidad en metros"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="hora_inicio_faena">Hora de Inicio</Label>
+              <Input
+                id="hora_inicio_faena"
+                type="time"
+                value={data.hora_inicio_faena || ''}
+                onChange={(e) => handleInputChange('hora_inicio_faena', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="hora_termino_faena">Hora de Término</Label>
+              <Input
+                id="hora_termino_faena"
+                type="time"
+                value={data.hora_termino_faena || ''}
+                onChange={(e) => handleInputChange('hora_termino_faena', e.target.value)}
+              />
+            </div>
           </div>
 
           <div>

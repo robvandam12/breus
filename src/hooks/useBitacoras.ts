@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -44,6 +43,23 @@ export interface BitacoraSupervisorFormData {
   desarrollo_inmersion: string;
   incidentes?: string;
   evaluacion_general: string;
+  // Campos adicionales del wizard
+  fecha_inicio_faena?: string;
+  hora_inicio_faena?: string;
+  hora_termino_faena?: string;
+  lugar_trabajo?: string;
+  supervisor_nombre_matricula?: string;
+  estado_mar?: string;
+  visibilidad_fondo?: number;
+  inmersiones_buzos?: any[];
+  equipos_utilizados?: any[];
+  trabajo_a_realizar?: string;
+  descripcion_trabajo?: string;
+  embarcacion_apoyo?: string;
+  observaciones_generales_texto?: string;
+  validacion_contratista?: boolean;
+  comentarios_validacion?: string;
+  diving_records?: any[];
 }
 
 export interface BitacoraBuzoFormData {
@@ -55,6 +71,52 @@ export interface BitacoraBuzoFormData {
   observaciones_tecnicas?: string;
   estado_fisico_post: string;
   profundidad_maxima: number;
+  // Campos adicionales del formulario completo
+  folio?: string;
+  codigo_verificacion?: string;
+  empresa_nombre?: string;
+  centro_nombre?: string;
+  buzo_rut?: string;
+  supervisor_nombre?: string;
+  supervisor_rut?: string;
+  supervisor_correo?: string;
+  jefe_centro_correo?: string;
+  contratista_nombre?: string;
+  contratista_rut?: string;
+  // Condiciones ambientales
+  condamb_estado_puerto?: string;
+  condamb_estado_mar?: string;
+  condamb_temp_aire_c?: number;
+  condamb_temp_agua_c?: number;
+  condamb_visibilidad_fondo_mts?: number;
+  condamb_corriente_fondo_nudos?: number;
+  // Datos técnicos del buceo
+  datostec_equipo_usado?: string;
+  datostec_traje?: string;
+  datostec_hora_dejo_superficie?: string;
+  datostec_hora_llegada_fondo?: string;
+  datostec_hora_salida_fondo?: string;
+  datostec_hora_llegada_superficie?: string;
+  // Tiempos y tabulación
+  tiempos_total_fondo?: string;
+  tiempos_total_descompresion?: string;
+  tiempos_total_buceo?: string;
+  tiempos_tabulacion_usada?: string;
+  tiempos_intervalo_superficie?: string;
+  tiempos_nitrogeno_residual?: string;
+  tiempos_grupo_repetitivo_anterior?: string;
+  tiempos_nuevo_grupo_repetitivo?: string;
+  // Objetivo del buceo
+  objetivo_proposito?: string;
+  objetivo_tipo_area?: string;
+  objetivo_caracteristicas_dimensiones?: string;
+  // Condiciones y certificaciones
+  condcert_buceo_altitud?: boolean;
+  condcert_certificados_equipos_usados?: boolean;
+  condcert_buceo_areas_confinadas?: boolean;
+  condcert_observaciones?: string;
+  // Firma final
+  validador_nombre?: string;
 }
 
 export const useBitacoras = () => {
