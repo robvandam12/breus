@@ -1,3 +1,6 @@
+import { operacionCompletaMockup, operacion, equipoBuceo, hpt, anexoBravo, inmersiones, bitacorasSupervisor, bitacorasBuzo } from './operacion-completa';
+import { usuariosMockup } from './usuarios-mockup';
+import { empresasMockup } from './empresas-mockup';
 
 // Export centralizado de todos los datos mockup
 export { operacionCompletaMockup, operacion, equipoBuceo, hpt, anexoBravo, inmersiones, bitacorasSupervisor, bitacorasBuzo } from './operacion-completa';
