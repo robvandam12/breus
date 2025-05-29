@@ -1,181 +1,194 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EnhancedSelect } from '@/components/ui/enhanced-select';
-import { useInmersiones } from '@/hooks/useInmersiones';
-import { useEquiposBuceo } from '@/hooks/useEquiposBuceo';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { FileText, X } from "lucide-react";
+import { useInmersiones } from "@/hooks/useInmersiones";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+
+const formSchema = z.object({
+  inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
+  supervisor: z.string().min(1, "El supervisor es requerido"),
+  desarrollo_inmersion: z.string().min(10, "Debe describir el desarrollo de la inmersión"),
+  incidentes: z.string().optional().default(""),
+  evaluacion_general: z.string().min(10, "La evaluación general es requerida"),
+});
 
 interface CreateBitacoraSupervisorFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: BitacoraSupervisorFormData) => Promise<void>;
   onCancel: () => void;
 }
 
 export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
-  const [selectedInmersion, setSelectedInmersion] = useState('');
-  const [selectedBuzos, setSelectedBuzos] = useState<string[]>([]);
-  const [observaciones, setObservaciones] = useState('');
-  const [condicionesAmbientales, setCondicionesAmbientales] = useState('');
-  
-  const { inmersiones, isLoading: loadingInmersiones } = useInmersiones();
-  const { equipos, isLoading: loadingEquipos } = useEquiposBuceo();
+  const [loading, setLoading] = useState(false);
+  const { inmersiones } = useInmersiones();
 
-  // Get team members from the selected inmersion's operation
-  const getTeamMembers = () => {
-    if (!selectedInmersion) return [];
-    
-    const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersion);
-    if (!inmersion) return [];
-
-    // Find team for this operation
-    const operationTeam = equipos.find(e => e.operacion_id === inmersion.operacion_id);
-    if (!operationTeam || !operationTeam.miembros) return [];
-
-    return operationTeam.miembros.map(member => ({
-      value: member.usuario_id,
-      label: `${member.nombre} ${member.apellido} - ${member.rol}`
-    }));
-  };
-
-  const handleBuzoToggle = (buzoId: string) => {
-    setSelectedBuzos(prev => 
-      prev.includes(buzoId) 
-        ? prev.filter(id => id !== buzoId)
-        : [...prev, buzoId]
-    );
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedInmersion) {
-      alert('Debe seleccionar una inmersión');
-      return;
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors }
+  } = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      incidentes: ""
     }
+  });
 
-    // Get selected team members details
-    const teamMembers = getTeamMembers();
-    const selectedMembersData = selectedBuzos.map(buzoId => {
-      const member = teamMembers.find(tm => tm.value === buzoId);
-      return {
-        buzo_id: buzoId,
-        buzo_nombre: member?.label.split(' - ')[0] || '',
-        profundidad_maxima: 0,
-        hora_dejo_superficie: '',
-        hora_llego_superficie: '',
-        tiempo_descenso: 0,
-        tiempo_fondo: 0,
-        tiempo_ascenso: 0,
-        tabulacion_usada: '',
-        tiempo_usado: 0
+  const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
+    try {
+      const formData: BitacoraSupervisorFormData = {
+        inmersion_id: data.inmersion_id,
+        supervisor: data.supervisor,
+        desarrollo_inmersion: data.desarrollo_inmersion,
+        incidentes: data.incidentes || "",
+        evaluacion_general: data.evaluacion_general,
+        fecha: new Date().toISOString().split('T')[0],
+        // Initialize additional required fields with default values
+        fecha_inicio_faena: new Date().toISOString().split('T')[0],
+        hora_inicio_faena: '',
+        hora_termino_faena: '',
+        lugar_trabajo: '',
+        supervisor_nombre_matricula: data.supervisor,
+        estado_mar: '',
+        visibilidad_fondo: 0,
+        inmersiones_buzos: [],
+        equipos_utilizados: [],
+        trabajo_a_realizar: '',
+        descripcion_trabajo: '',
+        embarcacion_apoyo: '',
+        observaciones_generales_texto: '',
+        validacion_contratista: false,
+        comentarios_validacion: ''
       };
-    });
-
-    const formData = {
-      inmersion_id: selectedInmersion,
-      observaciones,
-      condiciones_ambientales: condicionesAmbientales,
-      bitacora_supervisor_buzos: selectedMembersData,
-    };
-
-    onSubmit(formData);
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error creating bitácora supervisor:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const inmersionOptions = inmersiones.map(inmersion => ({
-    value: inmersion.inmersion_id,
-    label: `${inmersion.codigo} - ${inmersion.buzo_principal}`
-  }));
-
-  const teamMembers = getTeamMembers();
+  // Filtrar inmersiones completadas
+  const inmersionesCompletadas = inmersiones.filter(i => i.estado === 'completada');
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Seleccionar Inmersión</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="inmersion">Inmersión</Label>
-            <EnhancedSelect
-              value={selectedInmersion}
-              onValueChange={setSelectedInmersion}
-              options={inmersionOptions}
-              placeholder="Seleccione una inmersión..."
-              disabled={loadingInmersiones}
-            />
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Nueva Bitácora de Supervisor</CardTitle>
+              <p className="text-sm text-zinc-500">Registro de supervisión de inmersión</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardHeader>
 
-      {selectedInmersion && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Equipo de Buceo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {teamMembers.length > 0 ? (
-              <div className="space-y-2">
-                {teamMembers.map((member) => (
-                  <div key={member.value} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={member.value}
-                      checked={selectedBuzos.includes(member.value)}
-                      onChange={() => handleBuzoToggle(member.value)}
-                      className="w-4 h-4"
-                    />
-                    <Label htmlFor={member.value}>{member.label}</Label>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No hay equipo asignado a esta operación</p>
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="inmersion_id">Inmersión</Label>
+              <Select onValueChange={(value) => setValue('inmersion_id', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar inmersión..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {inmersionesCompletadas.map((inmersion) => (
+                    <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
+                      {inmersion.codigo} - {inmersion.operacion_nombre || 'Sin nombre'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.inmersion_id && (
+                <p className="text-sm text-red-600">{errors.inmersion_id.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supervisor">Supervisor</Label>
+              <Input
+                id="supervisor"
+                {...register('supervisor')}
+                placeholder="Nombre del supervisor"
+              />
+              {errors.supervisor && (
+                <p className="text-sm text-red-600">{errors.supervisor.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión</Label>
+            <Textarea
+              id="desarrollo_inmersion"
+              {...register('desarrollo_inmersion')}
+              placeholder="Describa cómo se desarrolló la inmersión..."
+              className="min-h-[100px]"
+            />
+            {errors.desarrollo_inmersion && (
+              <p className="text-sm text-red-600">{errors.desarrollo_inmersion.message}</p>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalles de la Bitácora</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="condiciones">Condiciones Ambientales</Label>
+          <div className="space-y-2">
+            <Label htmlFor="incidentes">Incidentes (Opcional)</Label>
             <Textarea
-              id="condiciones"
-              value={condicionesAmbientales}
-              onChange={(e) => setCondicionesAmbientales(e.target.value)}
-              placeholder="Describa las condiciones ambientales..."
-              rows={3}
+              id="incidentes"
+              {...register('incidentes')}
+              placeholder="Describa cualquier incidente ocurrido durante la inmersión..."
+              className="min-h-[80px]"
             />
           </div>
 
-          <div>
-            <Label htmlFor="observaciones">Observaciones</Label>
+          <div className="space-y-2">
+            <Label htmlFor="evaluacion_general">Evaluación General</Label>
             <Textarea
-              id="observaciones"
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Observaciones generales..."
-              rows={4}
+              id="evaluacion_general"
+              {...register('evaluacion_general')}
+              placeholder="Evaluación general de la inmersión..."
+              className="min-h-[100px]"
             />
+            {errors.evaluacion_general && (
+              <p className="text-sm text-red-600">{errors.evaluacion_general.message}</p>
+            )}
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit">
-          Crear Bitácora
-        </Button>
-      </div>
-    </form>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700">
+              {loading ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Creando...
+                </>
+              ) : (
+                "Crear Bitácora"
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

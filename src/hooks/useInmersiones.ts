@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -71,15 +72,19 @@ export const useInmersiones = (operacionId?: string) => {
 
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
-      // Simplemente crear inmersión sin validación de documentos
-      console.log('Creating inmersion without document validation:', inmersionData);
+      // Validate that HPT and Anexo Bravo are signed before creating inmersion
+      const validation = await validateOperationDocuments(inmersionData.operacion_id);
       
+      if (!validation.canExecute) {
+        throw new Error('No se puede crear la inmersión: faltan documentos firmados o equipo asignado');
+      }
+
       const { data, error } = await supabase
         .from('inmersion')
         .insert({
           ...inmersionData,
-          hpt_validado: false, // No requerimos validación
-          anexo_bravo_validado: false // No requerimos validación
+          hpt_validado: validation.hasValidHPT,
+          anexo_bravo_validado: validation.hasValidAnexoBravo
         })
         .select()
         .single();
@@ -218,13 +223,51 @@ export const useInmersiones = (operacionId?: string) => {
   });
 
   const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
-    // Simplificamos validación - siempre permite crear
-    return {
-      hasValidHPT: false,
-      hasValidAnexoBravo: false,
-      hasTeam: true,
-      canExecute: true // Siempre puede ejecutar
-    };
+    try {
+      // Verificar HPT firmado
+      const { data: hptData } = await supabase
+        .from('hpt')
+        .select('codigo, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .single();
+
+      // Verificar Anexo Bravo firmado
+      const { data: anexoData } = await supabase
+        .from('anexo_bravo')
+        .select('codigo, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .single();
+
+      // Verificar que la operación tenga equipo asignado
+      const { data: operacionData } = await supabase
+        .from('operacion')
+        .select('equipo_buceo_id')
+        .eq('id', operacionId)
+        .single();
+
+      const hasValidHPT = !!hptData;
+      const hasValidAnexoBravo = !!anexoData;
+      const hasTeam = !!(operacionData?.equipo_buceo_id);
+
+      return {
+        hasValidHPT,
+        hasValidAnexoBravo,
+        hasTeam,
+        canExecute: hasValidHPT && hasValidAnexoBravo && hasTeam,
+        hptCode: hptData?.codigo,
+        anexoBravoCode: anexoData?.codigo
+      };
+    } catch (error) {
+      console.error('Error validating documents:', error);
+      return {
+        hasValidHPT: false,
+        hasValidAnexoBravo: false,
+        hasTeam: false,
+        canExecute: false
+      };
+    }
   };
 
   return {
