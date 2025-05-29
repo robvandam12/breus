@@ -221,6 +221,10 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   const nextStep = useCallback(() => {
     if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
+      // Auto-save when reaching step 3 or higher
+      if (currentStep >= 2) {
+        saveDraft();
+      }
     }
   }, [currentStep, steps.length]);
 
@@ -233,11 +237,15 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   const goToStep = useCallback((step: number) => {
     if (step >= 1 && step <= steps.length) {
       setCurrentStep(step);
+      // Auto-save when navigating to step 3 or higher
+      if (step >= 3) {
+        saveDraft();
+      }
     }
   }, [steps.length]);
 
   const saveDraft = useCallback(async () => {
-    if (!data.operacion_id) return;
+    if (!data.operacion_id || currentStep < 3) return;
 
     try {
       const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
@@ -255,7 +263,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  }, [data, hptId, updateHPT, createHPT]);
+  }, [data, hptId, updateHPT, createHPT, currentStep]);
 
   const submitHPT = useCallback(async () => {
     if (!isFormComplete()) {
@@ -279,22 +287,13 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       
       if (!finalHptId) {
         const result = await createHPT(hptData);
-        // finalHptId = result.id; // Assuming createHPT returns the created HPT
       } else {
         await updateHPT({ id: finalHptId, data: hptData });
       }
 
-      // Firmar HPT si ambas firmas están presentes
-      if (finalHptId && data.hpt_firmas.supervisor_servicio_url && data.hpt_firmas.supervisor_mandante_url) {
-        await signHPT({ 
-          id: finalHptId, 
-          signatures: data.hpt_firmas 
-        });
-      }
-
       toast({
-        title: "HPT enviada",
-        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
+        title: "HPT creada",
+        description: "La Hoja de Planificación de Tarea ha sido creada exitosamente. Ahora debe ser firmada.",
       });
 
       return finalHptId;
@@ -302,7 +301,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       console.error('Error submitting HPT:', error);
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT, signHPT]);
+  }, [data, hptId, createHPT, updateHPT]);
 
   const isFormComplete = useCallback(() => {
     return steps.every(step => step.isValid);
@@ -311,19 +310,6 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   const getCurrentStepProgress = useCallback(() => {
     return Math.round((currentStep / steps.length) * 100);
   }, [currentStep, steps.length]);
-
-  // Auto-save every 30 seconds
-  React.useEffect(() => {
-    if (!autoSaveEnabled) return;
-
-    const interval = setInterval(() => {
-      if (data.operacion_id) {
-        saveDraft();
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoSaveEnabled, data.operacion_id, saveDraft]);
 
   return {
     currentStep,

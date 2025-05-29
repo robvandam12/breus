@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Plus, Trash2, Anchor, Settings } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Plus, Trash2, User } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 
 interface BitacoraStep2Props {
@@ -12,345 +13,202 @@ interface BitacoraStep2Props {
 }
 
 export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
-  const personal = data.bs_personal || [];
-  const equipos = data.bs_equipos_usados || [];
+  const registrosInmersion = data.registros_inmersion || [];
 
-  const addPersonal = () => {
-    const newPersonal = [
-      ...personal,
+  const addRegistroInmersion = () => {
+    const newRegistros = [
+      ...registrosInmersion,
       {
-        nombre: '',
-        matricula: '',
-        cargo: '',
-        serie_profundimetro: '',
-        color_profundimetro: ''
+        buzo_nombre: '',
+        profundidad_maxima: 0,
+        hora_dejo_superficie: '',
+        hora_llego_superficie: '',
+        tiempo_descenso: '',
+        tiempo_en_fondo: '',
+        tiempo_ascenso: '',
+        tabulacion_usada: '',
+        tiempo_usado: ''
       }
     ];
-    onUpdate({ bs_personal: newPersonal });
+    onUpdate({ registros_inmersion: newRegistros });
   };
 
-  const removePersonal = (index: number) => {
-    const newPersonal = personal.filter((_, i) => i !== index);
-    onUpdate({ bs_personal: newPersonal });
+  const removeRegistroInmersion = (index: number) => {
+    const newRegistros = registrosInmersion.filter((_, i) => i !== index);
+    onUpdate({ registros_inmersion: newRegistros });
   };
 
-  const updatePersonal = (index: number, field: string, value: string) => {
-    const newPersonal = [...personal];
-    newPersonal[index] = { ...newPersonal[index], [field]: value };
-    onUpdate({ bs_personal: newPersonal });
-  };
-
-  const addEquipo = () => {
-    const newEquipos = [
-      ...equipos,
-      { equipo: '', numero_registro: '' }
-    ];
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
-
-  const removeEquipo = (index: number) => {
-    const newEquipos = equipos.filter((_, i) => i !== index);
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
-
-  const updateEquipo = (index: number, field: string, value: string) => {
-    const newEquipos = [...equipos];
-    newEquipos[index] = { ...newEquipos[index], [field]: value };
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
-
-  const handleBuzoPrincipalChange = (field: string, value: string) => {
-    onUpdate({
-      buzo_principal_datos: {
-        ...data.buzo_principal_datos,
-        [field]: value
-      }
-    });
+  const updateRegistroInmersion = (index: number, field: string, value: any) => {
+    const newRegistros = [...registrosInmersion];
+    newRegistros[index] = { ...newRegistros[index], [field]: value };
+    onUpdate({ registros_inmersion: newRegistros });
   };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Personal y Equipos</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Registro de Inmersión</h2>
         <p className="mt-2 text-gray-600">
-          Registro del personal participante y equipos utilizados
+          Registro detallado por cada buzo del equipo de buceo
         </p>
       </div>
 
-      {/* Buzos y Asistentes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Buzos y Asistentes (Máximo 6)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Registros de Inmersión por Buzo
+            </CardTitle>
+            <Button onClick={addRegistroInmersion} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Agregar Buzo
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {personal.length === 0 ? (
-            <div className="text-center py-6">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No hay personal registrado</p>
-              <Button onClick={addPersonal} className="flex items-center gap-2">
+        <CardContent>
+          {registrosInmersion.length === 0 ? (
+            <div className="text-center py-8">
+              <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">No hay registros de inmersión</p>
+              <Button onClick={addRegistroInmersion} className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
-                Agregar Personal
+                Agregar Primer Registro
               </Button>
             </div>
           ) : (
-            <>
-              <div className="space-y-3">
-                {personal.map((persona, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Personal {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePersonal(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div>
-                        <Label htmlFor={`nombre-${index}`}>Nombre</Label>
-                        <Input
-                          id={`nombre-${index}`}
-                          value={persona.nombre}
-                          onChange={(e) => updatePersonal(index, 'nombre', e.target.value)}
-                          placeholder="Nombre completo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`matricula-${index}`}>Matrícula y Cargo</Label>
-                        <Input
-                          id={`matricula-${index}`}
-                          value={persona.matricula}
-                          onChange={(e) => updatePersonal(index, 'matricula', e.target.value)}
-                          placeholder="N° matrícula y cargo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`cargo-${index}`}>Cargo</Label>
-                        <Input
-                          id={`cargo-${index}`}
-                          value={persona.cargo}
-                          onChange={(e) => updatePersonal(index, 'cargo', e.target.value)}
-                          placeholder="Buzo, Asistente, etc."
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`serie-${index}`}>N° Serie Profundímetro</Label>
-                        <Input
-                          id={`serie-${index}`}
-                          value={persona.serie_profundimetro}
-                          onChange={(e) => updatePersonal(index, 'serie_profundimetro', e.target.value)}
-                          placeholder="Número de serie"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`color-${index}`}>Color Profundímetro</Label>
-                        <Input
-                          id={`color-${index}`}
-                          value={persona.color_profundimetro}
-                          onChange={(e) => updatePersonal(index, 'color_profundimetro', e.target.value)}
-                          placeholder="Color identificatorio"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            <Tabs defaultValue="0" className="w-full">
+              <TabsList className="grid w-full grid-cols-auto">
+                {registrosInmersion.map((_, index) => (
+                  <TabsTrigger key={index} value={index.toString()}>
+                    Buzo {index + 1}
+                  </TabsTrigger>
                 ))}
-              </div>
-
-              {personal.length < 6 && (
-                <Button 
-                  onClick={addPersonal} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar Personal ({personal.length}/6)
-                </Button>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Equipos Usados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-green-600" />
-            Equipos Usados (Máximo 3 bloques)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {equipos.length === 0 ? (
-            <div className="text-center py-6">
-              <Settings className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No hay equipos registrados</p>
-              <Button onClick={addEquipo} className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Agregar Equipo
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {equipos.map((equipo, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Equipo {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeEquipo(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor={`equipo-${index}`}>Equipo Usado</Label>
-                        <Input
-                          id={`equipo-${index}`}
-                          value={equipo.equipo}
-                          onChange={(e) => updateEquipo(index, 'equipo', e.target.value)}
-                          placeholder="Descripción del equipo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`registro-${index}`}>Número de Registro</Label>
-                        <Input
-                          id={`registro-${index}`}
-                          value={equipo.numero_registro}
-                          onChange={(e) => updateEquipo(index, 'numero_registro', e.target.value)}
-                          placeholder="N° de registro o identificación"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {equipos.length < 3 && (
-                <Button 
-                  onClick={addEquipo} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar Equipo ({equipos.length}/3)
-                </Button>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Información Adicional */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Anchor className="w-5 h-5 text-blue-600" />
-              Embarcación y Tiempos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="embarcacion">Embarcación de Apoyo</Label>
-              <Input
-                id="embarcacion"
-                value={data.embarcacion_nombre_matricula}
-                onChange={(e) => onUpdate({ embarcacion_nombre_matricula: e.target.value })}
-                placeholder="Nombre y matrícula de la embarcación"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="tiempo_buceo">Tiempo Total de Buceo</Label>
-              <Input
-                id="tiempo_buceo"
-                value={data.tiempo_total_buceo}
-                onChange={(e) => onUpdate({ tiempo_total_buceo: e.target.value })}
-                placeholder="Incluir si contempla descompresión"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="contratista">Contratista de Buceo</Label>
-              <Input
-                id="contratista"
-                value={data.contratista_nombre}
-                onChange={(e) => onUpdate({ contratista_nombre: e.target.value })}
-                placeholder="Nombre del contratista"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-600" />
-              Datos del Buzo Principal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="apellido_paterno">Apellido Paterno</Label>
-                <Input
-                  id="apellido_paterno"
-                  value={data.buzo_principal_datos.apellido_paterno}
-                  onChange={(e) => handleBuzoPrincipalChange('apellido_paterno', e.target.value)}
-                  placeholder="Apellido paterno"
-                />
-              </div>
+              </TabsList>
               
-              <div>
-                <Label htmlFor="apellido_materno">Apellido Materno</Label>
-                <Input
-                  id="apellido_materno"
-                  value={data.buzo_principal_datos.apellido_materno}
-                  onChange={(e) => handleBuzoPrincipalChange('apellido_materno', e.target.value)}
-                  placeholder="Apellido materno"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="nombres">Nombres</Label>
-              <Input
-                id="nombres"
-                value={data.buzo_principal_datos.nombres}
-                onChange={(e) => handleBuzoPrincipalChange('nombres', e.target.value)}
-                placeholder="Nombres completos"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="run">RUN</Label>
-              <Input
-                id="run"
-                value={data.buzo_principal_datos.run}
-                onChange={(e) => handleBuzoPrincipalChange('run', e.target.value)}
-                placeholder="12.345.678-9"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              {registrosInmersion.map((registro, index) => (
+                <TabsContent key={index} value={index.toString()}>
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Registro Buzo {index + 1}</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeRegistroInmersion(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor={`buzo_nombre_${index}`}>Nombre del Buzo</Label>
+                        <Input
+                          id={`buzo_nombre_${index}`}
+                          value={registro.buzo_nombre}
+                          onChange={(e) => updateRegistroInmersion(index, 'buzo_nombre', e.target.value)}
+                          placeholder="Nombre completo del buzo"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`profundidad_${index}`}>Profundidad Máxima (mts)</Label>
+                        <Input
+                          id={`profundidad_${index}`}
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={registro.profundidad_maxima}
+                          onChange={(e) => updateRegistroInmersion(index, 'profundidad_maxima', parseFloat(e.target.value) || 0)}
+                          placeholder="0.0"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`hora_dejo_${index}`}>Hora Dejó Superficie</Label>
+                          <Input
+                            id={`hora_dejo_${index}`}
+                            type="time"
+                            value={registro.hora_dejo_superficie}
+                            onChange={(e) => updateRegistroInmersion(index, 'hora_dejo_superficie', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`hora_llego_${index}`}>Hora Llegó Superficie</Label>
+                          <Input
+                            id={`hora_llego_${index}`}
+                            type="time"
+                            value={registro.hora_llego_superficie}
+                            onChange={(e) => updateRegistroInmersion(index, 'hora_llego_superficie', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor={`tiempo_descenso_${index}`}>Tiempo de Descenso</Label>
+                          <Input
+                            id={`tiempo_descenso_${index}`}
+                            value={registro.tiempo_descenso}
+                            onChange={(e) => updateRegistroInmersion(index, 'tiempo_descenso', e.target.value)}
+                            placeholder="ej: 5 min"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`tiempo_fondo_${index}`}>Tiempo en Fondo</Label>
+                          <Input
+                            id={`tiempo_fondo_${index}`}
+                            value={registro.tiempo_en_fondo}
+                            onChange={(e) => updateRegistroInmersion(index, 'tiempo_en_fondo', e.target.value)}
+                            placeholder="ej: 30 min"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`tiempo_ascenso_${index}`}>Tiempo de Ascenso</Label>
+                          <Input
+                            id={`tiempo_ascenso_${index}`}
+                            value={registro.tiempo_ascenso}
+                            onChange={(e) => updateRegistroInmersion(index, 'tiempo_ascenso', e.target.value)}
+                            placeholder="ej: 10 min"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`tabulacion_${index}`}>Tabulación Usada</Label>
+                          <Input
+                            id={`tabulacion_${index}`}
+                            value={registro.tabulacion_usada}
+                            onChange={(e) => updateRegistroInmersion(index, 'tabulacion_usada', e.target.value)}
+                            placeholder="ej: PADI RDP"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor={`tiempo_usado_${index}`}>Tiempo Usado</Label>
+                          <Input
+                            id={`tiempo_usado_${index}`}
+                            value={registro.tiempo_usado}
+                            onChange={(e) => updateRegistroInmersion(index, 'tiempo_usado', e.target.value)}
+                            placeholder="ej: 45 min total"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
