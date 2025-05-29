@@ -6,12 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FileText, Plus, LayoutGrid, LayoutList, Signature } from "lucide-react";
+import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
-import { EnhancedDigitalSignature } from "@/components/signatures/EnhancedDigitalSignature";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
@@ -20,8 +19,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [showSignature, setShowSignature] = useState(false);
-  const [signingBitacora, setSigningBitacora] = useState<any>(null);
   
   const { 
     bitacorasSupervisor, 
@@ -46,24 +43,8 @@ const BitacorasSupervisor = () => {
   };
 
   const handleSignSupervisor = async (id: string) => {
-    const bitacora = bitacorasSupervisor.find(b => b.bitacora_id === id);
-    if (bitacora) {
-      setSigningBitacora(bitacora);
-      setShowSignature(true);
-    }
-  };
-
-  const handleSignatureComplete = async (signatureData: { signature: string; signerName: string; timestamp: string }) => {
-    if (!signingBitacora) return;
-
-    try {
-      await signBitacoraSupervisor(signingBitacora.bitacora_id);
-      setShowSignature(false);
-      setSigningBitacora(null);
-      refreshBitacoras();
-    } catch (error) {
-      console.error('Error signing bitácora:', error);
-    }
+    await signBitacoraSupervisor(id);
+    refreshBitacoras();
   };
 
   if (loading) {
@@ -223,7 +204,7 @@ const BitacorasSupervisor = () => {
                     <TableBody>
                       {filteredBitacorasSupervisor.map((bitacora) => (
                         <BitacoraTableRow
-                          key={bitacora.bitacora_id}
+                          key={bitacora.id}
                           bitacora={bitacora}
                           type="supervisor"
                           onSign={handleSignSupervisor}
@@ -242,29 +223,6 @@ const BitacorasSupervisor = () => {
                 onSubmit={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />
-            </DialogContent>
-          </Dialog>
-
-          {/* Signature Dialog */}
-          <Dialog open={showSignature} onOpenChange={setShowSignature}>
-            <DialogContent className="max-w-2xl">
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900">Firmar Bitácora de Supervisor</h2>
-                  <p className="mt-2 text-gray-600">
-                    Código: {signingBitacora?.codigo}
-                  </p>
-                </div>
-                <EnhancedDigitalSignature
-                  title="Firma del Supervisor"
-                  role="Supervisor de Buceo"
-                  isSigned={false}
-                  onSign={handleSignatureComplete}
-                  onReset={() => {}}
-                  iconColor="text-purple-600"
-                  requireSignerName={true}
-                />
-              </div>
             </DialogContent>
           </Dialog>
         </main>
