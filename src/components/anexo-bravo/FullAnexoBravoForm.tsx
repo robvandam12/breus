@@ -96,6 +96,12 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     }
   ];
 
+  // Add the missing handleOperacionSelected function
+  const handleOperacionSelected = (operacionId: string) => {
+    setCurrentOperacionId(operacionId);
+    setShowOperacionSelector(false);
+  };
+
   // Auto-populate data when operation is selected
   useEffect(() => {
     const populateOperacionData = async () => {
@@ -250,9 +256,9 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         jefe_centro_nombre: formData.jefe_centro_nombre,
         operacion_id: currentOperacionId,
         firmado: false,
-        estado: 'borrador',
+        estado: 'firmado', // Fixed: Set estado to 'firmado' after submission
         supervisor: formData.supervisor_servicio_nombre || 'Sin asignar',
-        progreso: 80, // 80% completado al crear, 100% al firmar
+        progreso: 100, // Fixed: Set to 100% after signing
         checklist_completo: Object.keys(formData.anexo_bravo_checklist).length > 0
       };
 
