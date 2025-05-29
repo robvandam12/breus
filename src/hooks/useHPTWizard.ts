@@ -171,8 +171,8 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       id: 1,
       title: "Datos Generales",
       description: "Información básica de la tarea",
-      fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea'],
-      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea)
+      fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea', 'lugar_especifico'],
+      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea && data.lugar_especifico)
     },
     {
       id: 2,
@@ -208,9 +208,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],
       isValid: !!(data.hpt_conocimiento.relator_nombre && 
-                  data.hpt_conocimiento_asistentes.length > 0 &&
-                  data.hpt_firmas.supervisor_servicio_url &&
-                  data.hpt_firmas.supervisor_mandante_url)
+                  data.hpt_conocimiento_asistentes.length > 0)
     }
   ];
 
@@ -237,7 +235,8 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   }, [steps.length]);
 
   const saveDraft = useCallback(async () => {
-    if (!data.operacion_id) return;
+    // Solo guardar draft si se ha avanzado hasta el paso 3 o más
+    if (!data.operacion_id || currentStep < 3) return;
 
     try {
       const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
@@ -255,7 +254,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  }, [data, hptId, updateHPT, createHPT]);
+  }, [data, hptId, updateHPT, createHPT, currentStep]);
 
   const submitHPT = useCallback(async () => {
     if (!isFormComplete()) {
@@ -284,17 +283,9 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
         await updateHPT({ id: finalHptId, data: hptData });
       }
 
-      // Firmar HPT si ambas firmas están presentes
-      if (finalHptId && data.hpt_firmas.supervisor_servicio_url && data.hpt_firmas.supervisor_mandante_url) {
-        await signHPT({ 
-          id: finalHptId, 
-          signatures: data.hpt_firmas 
-        });
-      }
-
       toast({
-        title: "HPT enviada",
-        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
+        title: "HPT creado",
+        description: "La Hoja de Planificación de Tarea ha sido creada exitosamente. Ahora puede firmarla.",
       });
 
       return finalHptId;
@@ -302,7 +293,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       console.error('Error submitting HPT:', error);
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT, signHPT]);
+  }, [data, hptId, createHPT, updateHPT]);
 
   const isFormComplete = useCallback(() => {
     return steps.every(step => step.isValid);
@@ -312,9 +303,9 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     return Math.round((currentStep / steps.length) * 100);
   }, [currentStep, steps.length]);
 
-  // Auto-save every 30 seconds
+  // Auto-save every 30 seconds, but only if we're past step 3
   React.useEffect(() => {
-    if (!autoSaveEnabled) return;
+    if (!autoSaveEnabled || currentStep < 3) return;
 
     const interval = setInterval(() => {
       if (data.operacion_id) {
@@ -323,7 +314,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoSaveEnabled, data.operacion_id, saveDraft]);
+  }, [autoSaveEnabled, data.operacion_id, saveDraft, currentStep]);
 
   return {
     currentStep,

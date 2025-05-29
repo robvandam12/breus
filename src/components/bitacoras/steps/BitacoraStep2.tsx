@@ -1,10 +1,26 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Users, Plus, Trash2, Anchor, Settings } from "lucide-react";
+import { Users, Plus, Trash2 } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
+
+interface BuzoInmersion {
+  id: string;
+  nombre: string;
+  profundidad_maxima: number;
+  hora_dejo_superficie: string;
+  hora_llego_superficie: string;
+  tiempo_descenso: number;
+  tiempo_fondo: number;
+  tiempo_ascenso: number;
+  tabulacion_usada: string;
+  tiempo_usado: number;
+}
 
 interface BitacoraStep2Props {
   data: BitacoraSupervisorData;
@@ -12,344 +28,268 @@ interface BitacoraStep2Props {
 }
 
 export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
-  const personal = data.bs_personal || [];
-  const equipos = data.bs_equipos_usados || [];
+  const [activeTab, setActiveTab] = useState<string>('');
+  const [inmersionesBuzos, setInmersionesBuzos] = useState<BuzoInmersion[]>(() => {
+    // Inicializar con los buzos del equipo si existen
+    return data.bs_personal?.map((buzo, index) => ({
+      id: `buzo-${index}`,
+      nombre: buzo.nombre,
+      profundidad_maxima: 0,
+      hora_dejo_superficie: '',
+      hora_llego_superficie: '',
+      tiempo_descenso: 0,
+      tiempo_fondo: 0,
+      tiempo_ascenso: 0,
+      tabulacion_usada: '',
+      tiempo_usado: 0
+    })) || [];
+  });
 
-  const addPersonal = () => {
-    const newPersonal = [
-      ...personal,
-      {
-        nombre: '',
-        matricula: '',
-        cargo: '',
-        serie_profundimetro: '',
-        color_profundimetro: ''
-      }
-    ];
-    onUpdate({ bs_personal: newPersonal });
+  const agregarBuzo = () => {
+    const nuevoBuzo: BuzoInmersion = {
+      id: `buzo-${Date.now()}`,
+      nombre: '',
+      profundidad_maxima: 0,
+      hora_dejo_superficie: '',
+      hora_llego_superficie: '',
+      tiempo_descenso: 0,
+      tiempo_fondo: 0,
+      tiempo_ascenso: 0,
+      tabulacion_usada: '',
+      tiempo_usado: 0
+    };
+    
+    const nuevasInmersiones = [...inmersionesBuzos, nuevoBuzo];
+    setInmersionesBuzos(nuevasInmersiones);
+    setActiveTab(nuevoBuzo.id);
+    
+    // Actualizar el estado principal
+    onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
-  const removePersonal = (index: number) => {
-    const newPersonal = personal.filter((_, i) => i !== index);
-    onUpdate({ bs_personal: newPersonal });
+  const eliminarBuzo = (buzoId: string) => {
+    const nuevasInmersiones = inmersionesBuzos.filter(buzo => buzo.id !== buzoId);
+    setInmersionesBuzos(nuevasInmersiones);
+    
+    // Si eliminamos el tab activo, cambiar a otro
+    if (activeTab === buzoId && nuevasInmersiones.length > 0) {
+      setActiveTab(nuevasInmersiones[0].id);
+    }
+    
+    onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
-  const updatePersonal = (index: number, field: string, value: string) => {
-    const newPersonal = [...personal];
-    newPersonal[index] = { ...newPersonal[index], [field]: value };
-    onUpdate({ bs_personal: newPersonal });
+  const actualizarBuzo = (buzoId: string, campo: keyof BuzoInmersion, valor: any) => {
+    const nuevasInmersiones = inmersionesBuzos.map(buzo => 
+      buzo.id === buzoId ? { ...buzo, [campo]: valor } : buzo
+    );
+    setInmersionesBuzos(nuevasInmersiones);
+    onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
-  const addEquipo = () => {
-    const newEquipos = [
-      ...equipos,
-      { equipo: '', numero_registro: '' }
-    ];
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
+  // Si no hay ningún buzo y no hay tab activo, crear el primer buzo
+  if (inmersionesBuzos.length === 0) {
+    agregarBuzo();
+  }
 
-  const removeEquipo = (index: number) => {
-    const newEquipos = equipos.filter((_, i) => i !== index);
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
-
-  const updateEquipo = (index: number, field: string, value: string) => {
-    const newEquipos = [...equipos];
-    newEquipos[index] = { ...newEquipos[index], [field]: value };
-    onUpdate({ bs_equipos_usados: newEquipos });
-  };
-
-  const handleBuzoPrincipalChange = (field: string, value: string) => {
-    onUpdate({
-      buzo_principal_datos: {
-        ...data.buzo_principal_datos,
-        [field]: value
-      }
-    });
-  };
+  // Si hay buzos pero no hay tab activo, seleccionar el primero
+  if (inmersionesBuzos.length > 0 && !activeTab) {
+    setActiveTab(inmersionesBuzos[0].id);
+  }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Personal y Equipos</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Registro de Inmersión</h2>
         <p className="mt-2 text-gray-600">
-          Registro del personal participante y equipos utilizados
+          Registro individual por cada buzo del equipo
         </p>
       </div>
 
-      {/* Buzos y Asistentes */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Buzos y Asistentes (Máximo 6)
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Inmersiones por Buzo
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {inmersionesBuzos.length} {inmersionesBuzos.length === 1 ? 'Buzo' : 'Buzos'}
+              </Badge>
+              <Button
+                onClick={agregarBuzo}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar Buzo
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {personal.length === 0 ? (
-            <div className="text-center py-6">
+        <CardContent>
+          {inmersionesBuzos.length > 0 ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-auto">
+                {inmersionesBuzos.map((buzo, index) => (
+                  <TabsTrigger key={buzo.id} value={buzo.id} className="relative">
+                    <div className="flex items-center gap-2">
+                      <span>{buzo.nombre || `Buzo ${index + 1}`}</span>
+                      {inmersionesBuzos.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            eliminarBuzo(buzo.id);
+                          }}
+                          className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {inmersionesBuzos.map((buzo) => (
+                <TabsContent key={buzo.id} value={buzo.id} className="mt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor={`nombre-${buzo.id}`}>Nombre del Buzo</Label>
+                      <Input
+                        id={`nombre-${buzo.id}`}
+                        value={buzo.nombre}
+                        onChange={(e) => actualizarBuzo(buzo.id, 'nombre', e.target.value)}
+                        placeholder="Nombre completo del buzo"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor={`profundidad-${buzo.id}`}>Profundidad Máxima (metros)</Label>
+                        <Input
+                          id={`profundidad-${buzo.id}`}
+                          type="number"
+                          value={buzo.profundidad_maxima}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'profundidad_maxima', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`hora-salida-${buzo.id}`}>Hora Dejó Superficie</Label>
+                        <Input
+                          id={`hora-salida-${buzo.id}`}
+                          type="time"
+                          value={buzo.hora_dejo_superficie}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'hora_dejo_superficie', e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`hora-llegada-${buzo.id}`}>Hora Llegó Superficie</Label>
+                        <Input
+                          id={`hora-llegada-${buzo.id}`}
+                          type="time"
+                          value={buzo.hora_llego_superficie}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'hora_llego_superficie', e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`tiempo-descenso-${buzo.id}`}>Tiempo de Descenso (min)</Label>
+                        <Input
+                          id={`tiempo-descenso-${buzo.id}`}
+                          type="number"
+                          value={buzo.tiempo_descenso}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_descenso', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`tiempo-fondo-${buzo.id}`}>Tiempo en Fondo (min)</Label>
+                        <Input
+                          id={`tiempo-fondo-${buzo.id}`}
+                          type="number"
+                          value={buzo.tiempo_fondo}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_fondo', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`tiempo-ascenso-${buzo.id}`}>Tiempo de Ascenso (min)</Label>
+                        <Input
+                          id={`tiempo-ascenso-${buzo.id}`}
+                          type="number"
+                          value={buzo.tiempo_ascenso}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_ascenso', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`tabulacion-${buzo.id}`}>Tabulación Usada</Label>
+                        <Input
+                          id={`tabulacion-${buzo.id}`}
+                          value={buzo.tabulacion_usada}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'tabulacion_usada', e.target.value)}
+                          placeholder="Tipo de tabla de descompresión"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`tiempo-usado-${buzo.id}`}>Tiempo Usado Total (min)</Label>
+                        <Input
+                          id={`tiempo-usado-${buzo.id}`}
+                          type="number"
+                          value={buzo.tiempo_usado}
+                          onChange={(e) => actualizarBuzo(buzo.id, 'tiempo_usado', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="bg-gray-50"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>Resumen:</strong> {buzo.nombre || 'Este buzo'} realizó una inmersión a {buzo.profundidad_maxima} metros
+                        {buzo.hora_dejo_superficie && buzo.hora_llego_superficie && 
+                          ` desde las ${buzo.hora_dejo_superficie} hasta las ${buzo.hora_llego_superficie}`}
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          ) : (
+            <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No hay personal registrado</p>
-              <Button onClick={addPersonal} className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Agregar Personal
+              <p className="text-gray-500 mb-4">No hay buzos registrados</p>
+              <Button onClick={agregarBuzo}>
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Primer Buzo
               </Button>
             </div>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {personal.map((persona, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Personal {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePersonal(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div>
-                        <Label htmlFor={`nombre-${index}`}>Nombre</Label>
-                        <Input
-                          id={`nombre-${index}`}
-                          value={persona.nombre}
-                          onChange={(e) => updatePersonal(index, 'nombre', e.target.value)}
-                          placeholder="Nombre completo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`matricula-${index}`}>Matrícula y Cargo</Label>
-                        <Input
-                          id={`matricula-${index}`}
-                          value={persona.matricula}
-                          onChange={(e) => updatePersonal(index, 'matricula', e.target.value)}
-                          placeholder="N° matrícula y cargo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`cargo-${index}`}>Cargo</Label>
-                        <Input
-                          id={`cargo-${index}`}
-                          value={persona.cargo}
-                          onChange={(e) => updatePersonal(index, 'cargo', e.target.value)}
-                          placeholder="Buzo, Asistente, etc."
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`serie-${index}`}>N° Serie Profundímetro</Label>
-                        <Input
-                          id={`serie-${index}`}
-                          value={persona.serie_profundimetro}
-                          onChange={(e) => updatePersonal(index, 'serie_profundimetro', e.target.value)}
-                          placeholder="Número de serie"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`color-${index}`}>Color Profundímetro</Label>
-                        <Input
-                          id={`color-${index}`}
-                          value={persona.color_profundimetro}
-                          onChange={(e) => updatePersonal(index, 'color_profundimetro', e.target.value)}
-                          placeholder="Color identificatorio"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {personal.length < 6 && (
-                <Button 
-                  onClick={addPersonal} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar Personal ({personal.length}/6)
-                </Button>
-              )}
-            </>
           )}
         </CardContent>
       </Card>
 
-      {/* Equipos Usados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-green-600" />
-            Equipos Usados (Máximo 3 bloques)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {equipos.length === 0 ? (
-            <div className="text-center py-6">
-              <Settings className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No hay equipos registrados</p>
-              <Button onClick={addEquipo} className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Agregar Equipo
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {equipos.map((equipo, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Equipo {index + 1}</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeEquipo(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor={`equipo-${index}`}>Equipo Usado</Label>
-                        <Input
-                          id={`equipo-${index}`}
-                          value={equipo.equipo}
-                          onChange={(e) => updateEquipo(index, 'equipo', e.target.value)}
-                          placeholder="Descripción del equipo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`registro-${index}`}>Número de Registro</Label>
-                        <Input
-                          id={`registro-${index}`}
-                          value={equipo.numero_registro}
-                          onChange={(e) => updateEquipo(index, 'numero_registro', e.target.value)}
-                          placeholder="N° de registro o identificación"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {equipos.length < 3 && (
-                <Button 
-                  onClick={addEquipo} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar Equipo ({equipos.length}/3)
-                </Button>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Información Adicional */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Anchor className="w-5 h-5 text-blue-600" />
-              Embarcación y Tiempos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="embarcacion">Embarcación de Apoyo</Label>
-              <Input
-                id="embarcacion"
-                value={data.embarcacion_nombre_matricula}
-                onChange={(e) => onUpdate({ embarcacion_nombre_matricula: e.target.value })}
-                placeholder="Nombre y matrícula de la embarcación"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="tiempo_buceo">Tiempo Total de Buceo</Label>
-              <Input
-                id="tiempo_buceo"
-                value={data.tiempo_total_buceo}
-                onChange={(e) => onUpdate({ tiempo_total_buceo: e.target.value })}
-                placeholder="Incluir si contempla descompresión"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="contratista">Contratista de Buceo</Label>
-              <Input
-                id="contratista"
-                value={data.contratista_nombre}
-                onChange={(e) => onUpdate({ contratista_nombre: e.target.value })}
-                placeholder="Nombre del contratista"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-600" />
-              Datos del Buzo Principal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="apellido_paterno">Apellido Paterno</Label>
-                <Input
-                  id="apellido_paterno"
-                  value={data.buzo_principal_datos.apellido_paterno}
-                  onChange={(e) => handleBuzoPrincipalChange('apellido_paterno', e.target.value)}
-                  placeholder="Apellido paterno"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="apellido_materno">Apellido Materno</Label>
-                <Input
-                  id="apellido_materno"
-                  value={data.buzo_principal_datos.apellido_materno}
-                  onChange={(e) => handleBuzoPrincipalChange('apellido_materno', e.target.value)}
-                  placeholder="Apellido materno"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="nombres">Nombres</Label>
-              <Input
-                id="nombres"
-                value={data.buzo_principal_datos.nombres}
-                onChange={(e) => handleBuzoPrincipalChange('nombres', e.target.value)}
-                placeholder="Nombres completos"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="run">RUN</Label>
-              <Input
-                id="run"
-                value={data.buzo_principal_datos.run}
-                onChange={(e) => handleBuzoPrincipalChange('run', e.target.value)}
-                placeholder="12.345.678-9"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Users className="w-4 h-4 text-green-600" />
+          </div>
+          <div className="text-sm text-green-800">
+            <strong>Información:</strong> Los buzos provienen del equipo de buceo asignado a la operación. 
+            Puede agregar buzos adicionales si es necesario.
+          </div>
+        </div>
       </div>
     </div>
   );

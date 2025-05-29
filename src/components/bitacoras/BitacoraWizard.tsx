@@ -7,20 +7,51 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Users } from "lucide-react";
 import { BitacoraStep1 } from "./steps/BitacoraStep1";
 import { BitacoraStep2 } from "./steps/BitacoraStep2";
-import { BitacoraStep3 } from "./steps/BitacoraStep3";
+import { BitacoraStep4 } from "./steps/BitacoraStep4";
+import { BitacoraStep5 } from "./steps/BitacoraStep5";
 import { useToast } from "@/hooks/use-toast";
 
 export interface BitacoraSupervisorData {
-  // 1. Identificación de la Faena
+  // 1. Información General de la Faena
   fecha_inicio_faena: string;
   hora_inicio_faena: string;
-  fecha_termino_faena: string;
   hora_termino_faena: string;
   lugar_trabajo: string;
-  tipo_trabajo: string;
   supervisor_nombre_matricula: string;
+  estado_mar: string;
+  visibilidad_fondo: number;
   
-  // 2. Buzos y Asistentes (hasta 6)
+  // 2. Registro de Inmersión por Buzo
+  inmersiones_buzos: Array<{
+    id: string;
+    nombre: string;
+    profundidad_maxima: number;
+    hora_dejo_superficie: string;
+    hora_llego_superficie: string;
+    tiempo_descenso: number;
+    tiempo_fondo: number;
+    tiempo_ascenso: number;
+    tabulacion_usada: string;
+    tiempo_usado: number;
+  }>;
+  
+  // 3. Datos Técnicos de la Faena
+  equipos_utilizados: Array<{
+    id: string;
+    nombre: string;
+    matricula: string;
+    vigencia: string;
+  }>;
+  trabajo_a_realizar: string;
+  descripcion_trabajo: string;
+  embarcacion_apoyo: string;
+  
+  // 4. Cierre y Validación
+  observaciones_generales_texto: string;
+  validacion_contratista: boolean;
+  comentarios_validacion: string;
+  
+  // Campos técnicos
   bs_personal: Array<{
     nombre: string;
     matricula: string;
@@ -28,53 +59,30 @@ export interface BitacoraSupervisorData {
     serie_profundimetro: string;
     color_profundimetro: string;
   }>;
-  
-  // 3. Equipos Usados (hasta 3 bloques)
   bs_equipos_usados: Array<{
     equipo: string;
     numero_registro: string;
   }>;
-  
-  // 4. Observaciones condiciones físicas previas
   observaciones_previas: string;
-  
-  // 5. Embarcación de Apoyo
   embarcacion_nombre_matricula: string;
-  
-  // 6. Tiempo de Buceo
   tiempo_total_buceo: string;
   incluye_descompresion: boolean;
-  
-  // 7. Contratista de Buceo
   contratista_nombre: string;
-  
-  // 8. Datos del Buzo Principal
   buzo_principal_datos: {
     apellido_paterno: string;
     apellido_materno: string;
     nombres: string;
     run: string;
   };
-  
-  // 9. Profundidades
   profundidad_trabajo_mts: number;
   profundidad_maxima_mts: number;
   requiere_camara_hiperbarica: boolean;
-  
-  // 10. Gestión Preventiva Según Decreto N°44
   gestprev_eval_riesgos_actualizada: boolean;
   gestprev_procedimientos_disponibles_conocidos: boolean;
   gestprev_capacitacion_previa_realizada: boolean;
   gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: boolean;
   gestprev_registro_incidentes_reportados: boolean;
-  
-  // 11. Medidas Correctivas Implementadas
   medidas_correctivas_texto: string;
-  
-  // 12. Observaciones Generales
-  observaciones_generales_texto: string;
-  
-  // 13. Firma
   supervisor_buceo_firma: string | null;
   inmersion_id?: string;
 }
@@ -94,11 +102,19 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
   const [data, setData] = useState<BitacoraSupervisorData>({
     fecha_inicio_faena: "",
     hora_inicio_faena: "",
-    fecha_termino_faena: "",
     hora_termino_faena: "",
     lugar_trabajo: "",
-    tipo_trabajo: "",
     supervisor_nombre_matricula: "",
+    estado_mar: "",
+    visibilidad_fondo: 0,
+    inmersiones_buzos: [],
+    equipos_utilizados: [],
+    trabajo_a_realizar: "",
+    descripcion_trabajo: "",
+    embarcacion_apoyo: "",
+    observaciones_generales_texto: "",
+    validacion_contratista: false,
+    comentarios_validacion: "",
     bs_personal: [],
     bs_equipos_usados: [],
     observaciones_previas: "",
@@ -121,13 +137,13 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
     gestprev_identif_peligros_control_riesgos_subacuaticos_realizados: false,
     gestprev_registro_incidentes_reportados: false,
     medidas_correctivas_texto: "",
-    observaciones_generales_texto: "",
     supervisor_buceo_firma: null,
     inmersion_id: inmersionId,
     ...initialData,
   });
 
-  const totalSteps = 3;
+  const totalSteps = 4; // Paso 1, 2, 4, 5 (saltamos el 3)
+  const stepMapping = [1, 2, 4, 5]; // Mapeo de pasos mostrados a pasos reales
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const updateData = (stepData: Partial<BitacoraSupervisorData>) => {
@@ -137,11 +153,13 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
   const canProceedToNext = () => {
     switch (currentStep) {
       case 1:
-        return data.fecha_inicio_faena && data.lugar_trabajo && data.tipo_trabajo;
+        return data.fecha_inicio_faena && data.lugar_trabajo && data.supervisor_nombre_matricula && data.estado_mar;
       case 2:
-        return data.bs_personal.length > 0 && data.contratista_nombre;
-      case 3:
-        return data.supervisor_buceo_firma && data.observaciones_generales_texto;
+        return data.inmersiones_buzos.length > 0;
+      case 3: // Paso 4 real
+        return data.equipos_utilizados.length > 0 && data.trabajo_a_realizar;
+      case 4: // Paso 5 real
+        return data.observaciones_generales_texto.trim().length > 0;
       default:
         return true;
     }
@@ -173,14 +191,14 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
     try {
       await onSubmit(data);
       toast({
-        title: "Bitácora Finalizada",
-        description: "La Bitácora de Supervisor ha sido creada exitosamente",
+        title: "Bitácora Creada",
+        description: "La Bitácora de Supervisor ha sido creada exitosamente. Ahora puede firmarla desde la lista.",
       });
     } catch (error) {
       console.error('Error submitting bitácora:', error);
       toast({
         title: "Error",
-        description: "Error al finalizar la bitácora. Intente nuevamente.",
+        description: "Error al crear la bitácora. Intente nuevamente.",
         variant: "destructive",
       });
     } finally {
@@ -189,13 +207,16 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
   };
 
   const renderStep = () => {
-    switch (currentStep) {
+    const realStep = stepMapping[currentStep - 1];
+    switch (realStep) {
       case 1:
         return <BitacoraStep1 data={data} onUpdate={updateData} />;
       case 2:
         return <BitacoraStep2 data={data} onUpdate={updateData} />;
-      case 3:
-        return <BitacoraStep3 data={data} onUpdate={updateData} />;
+      case 4:
+        return <BitacoraStep4 data={data} onUpdate={updateData} />;
+      case 5:
+        return <BitacoraStep5 data={data} onUpdate={updateData} />;
       default:
         return null;
     }
@@ -203,9 +224,10 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
 
   const getStepTitle = () => {
     const titles = [
-      "Identificación y Personal",
-      "Equipos y Condiciones",
-      "Gestión Preventiva y Firmas"
+      "Información General",
+      "Registro de Inmersión",
+      "Datos Técnicos",
+      "Cierre y Validación"
     ];
     return titles[currentStep - 1];
   };
@@ -279,7 +301,7 @@ export const BitacoraWizard = ({ onSubmit, onCancel, initialData, inmersionId }:
               className="flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
             >
               <FileText className="w-4 h-4" />
-              {isSubmitting ? 'Finalizando...' : 'Finalizar Bitácora'}
+              {isSubmitting ? 'Creando...' : 'Crear Bitácora'}
             </Button>
           )}
         </div>

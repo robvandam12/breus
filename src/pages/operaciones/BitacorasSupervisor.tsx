@@ -10,7 +10,7 @@ import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
+import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
@@ -34,7 +34,11 @@ const BitacorasSupervisor = () => {
 
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
-      await createBitacoraSupervisor(data);
+      await createBitacoraSupervisor({
+        ...data,
+        firmado: false, // Se crea sin firmar
+        estado: 'borrador'
+      });
       setIsCreateDialogOpen(false);
       refreshBitacoras();
     } catch (error) {
@@ -218,8 +222,8 @@ const BitacorasSupervisor = () => {
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent variant="form" className="p-0">
-              <BitacoraSupervisorFormEnhanced
+            <DialogContent variant="form" className="p-0 max-w-6xl max-h-[90vh] overflow-y-auto">
+              <BitacoraWizard
                 onSubmit={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />

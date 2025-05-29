@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,11 +38,11 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     // Datos generales
     codigo: '',
     fecha: new Date().toISOString().split('T')[0],
-    lugar_faena: '',
-    empresa_nombre: '',
+    lugar_faena: '', // Debe ser sitio de operación
+    empresa_nombre: '', // Debe ser la salmonera
     supervisor_servicio_nombre: '',
     supervisor_mandante_nombre: '',
-    buzo_o_empresa_nombre: '',
+    buzo_o_empresa_nombre: '', // Debe ser empresa contratista
     buzo_matricula: '',
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
@@ -93,7 +94,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     { 
       id: 5, 
       title: 'Firmas', 
-      isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) 
+      isValid: false // Se firma después de crear
     }
   ];
 
@@ -136,8 +137,9 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         const autoDataUpdates: Partial<typeof formData> = {
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
-          lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
-          empresa_nombre: operacion.contratistas?.nombre || '',
+          lugar_faena: operacion.sitios?.nombre || operacion.sitios?.ubicacion || '', // Sitio de operación
+          empresa_nombre: operacion.salmoneras?.nombre || '', // Salmonera
+          buzo_o_empresa_nombre: operacion.contratistas?.nombre || '', // Empresa contratista
           bitacora_fecha: new Date().toISOString().split('T')[0],
           bitacora_relator: ''
         };
@@ -154,7 +156,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           }
           
           if (buzoPrincipal) {
-            autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
             autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
           }
           
@@ -234,21 +235,21 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       const submitData = {
         ...formData,
         operacion_id: currentOperacionId,
-        firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
-        estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
+        firmado: false, // Se creará sin firmar
+        estado: 'borrador'
       };
 
       await onSubmit(submitData);
       
       toast({
-        title: "Anexo Bravo enviado",
-        description: "El Anexo Bravo ha sido enviado exitosamente",
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente. Ahora puede firmarlo desde la lista.",
       });
     } catch (error) {
       console.error('Error submitting Anexo Bravo:', error);
       toast({
         title: "Error",
-        description: "No se pudo enviar el Anexo Bravo",
+        description: "No se pudo crear el Anexo Bravo",
         variant: "destructive",
       });
     } finally {
@@ -257,7 +258,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   };
 
   const isFormValid = () => {
-    return steps.every(step => step.isValid);
+    return steps.slice(0, 4).every(step => step.isValid); // Solo validar hasta paso 4, no firmas
   };
 
   const getProgress = () => {
@@ -399,7 +400,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                   disabled={!isFormValid() || isLoading}
                   className="ios-button bg-green-600 hover:bg-green-700"
                 >
-                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
+                  {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
                 </Button>
               )}
             </div>
