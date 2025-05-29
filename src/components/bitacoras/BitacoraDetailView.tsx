@@ -29,6 +29,14 @@ export const BitacoraDetailView = ({ bitacora, type, onClose, onSign }: Bitacora
     );
   };
 
+  const getPersonName = () => {
+    if (type === 'supervisor') {
+      return (bitacora as BitacoraSupervisor).supervisor;
+    } else {
+      return (bitacora as BitacoraBuzo).buzo;
+    }
+  };
+
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
@@ -62,8 +70,7 @@ export const BitacoraDetailView = ({ bitacora, type, onClose, onSign }: Bitacora
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-zinc-500" />
                 <span className="text-sm text-zinc-600">
-                  {type === 'supervisor' ? 'Supervisor:' : 'Buzo:'} {' '}
-                  {type === 'supervisor' ? bitacora.supervisor : (bitacora as BitacoraBuzo).buzo}
+                  {type === 'supervisor' ? 'Supervisor:' : 'Buzo:'} {getPersonName()}
                 </span>
               </div>
               

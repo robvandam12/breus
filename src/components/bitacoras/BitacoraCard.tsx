@@ -29,6 +29,14 @@ export const BitacoraCard = ({ bitacora, type, onView, onSign }: BitacoraCardPro
     );
   };
 
+  const getPersonName = () => {
+    if (type === 'supervisor') {
+      return (bitacora as BitacoraSupervisor).supervisor;
+    } else {
+      return (bitacora as BitacoraBuzo).buzo;
+    }
+  };
+
   return (
     <Card className="ios-card hover:shadow-md transition-all duration-200">
       <CardHeader className="pb-3">
@@ -44,9 +52,7 @@ export const BitacoraCard = ({ bitacora, type, onView, onSign }: BitacoraCardPro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-zinc-600">
             <User className="w-4 h-4" />
-            <span>
-              {type === 'supervisor' ? bitacora.supervisor : (bitacora as BitacoraBuzo).buzo}
-            </span>
+            <span>{getPersonName()}</span>
           </div>
           
           <div className="flex items-center gap-2 text-zinc-600">
