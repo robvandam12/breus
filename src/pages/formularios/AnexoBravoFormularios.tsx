@@ -22,7 +22,7 @@ const AnexoBravoFormulariosPage = () => {
   const [showOperationSelector, setShowOperationSelector] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   
-  const { anexosBravo, isLoading, createAnexoBravo, signAnexoBravo } = useAnexoBravo();
+  const { anexosBravo, isLoading, createAnexoBravo, signAnexoBravo, isSigning } = useAnexoBravo();
   const { operaciones } = useOperaciones();
 
   const filteredAnexos = anexosBravo.filter(anexo => 
@@ -65,11 +65,13 @@ const AnexoBravoFormulariosPage = () => {
 
   const handleSignAnexo = async (anexoId: string) => {
     try {
+      console.log('Attempting to sign anexo:', anexoId);
       await signAnexoBravo({ 
         id: anexoId, 
         signatures: {
           supervisor_url: 'signed',
-          jefe_centro_url: 'signed'
+          jefe_centro_url: 'signed',
+          timestamp: new Date().toISOString()
         }
       });
       toast({
@@ -78,6 +80,11 @@ const AnexoBravoFormulariosPage = () => {
       });
     } catch (error) {
       console.error('Error signing anexo:', error);
+      toast({
+        title: "Error al firmar",
+        description: "No se pudo firmar el Anexo Bravo. Verifique que todos los campos estén completos.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -243,10 +250,11 @@ const AnexoBravoFormulariosPage = () => {
                                     <Button 
                                       onClick={() => handleSignAnexo(anexo.id)}
                                       size="sm" 
+                                      disabled={isSigning}
                                       className="ios-button-sm bg-blue-600 hover:bg-blue-700"
                                     >
                                       <PenTool className="w-3 h-3 mr-1" />
-                                      Firmar
+                                      {isSigning ? 'Firmando...' : 'Firmar'}
                                     </Button>
                                   ) : (
                                     <Button variant="outline" size="sm" className="ios-button-sm">

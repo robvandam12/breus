@@ -164,17 +164,30 @@ export const useAnexoBravo = () => {
     },
   });
 
-  // Sign anexo bravo - arreglado para usar estado válido
+  // Sign anexo bravo - corregido para usar el estado correcto
   const signAnexoBravoMutation = useMutation({
     mutationFn: async ({ id, signatures }: { id: string; signatures: any }) => {
       console.log('Signing anexo bravo:', id, signatures);
       
+      // Primero verificamos si el anexo existe y obtenemos sus datos actuales
+      const { data: currentAnexo, error: fetchError } = await supabase
+        .from('anexo_bravo')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching anexo bravo:', fetchError);
+        throw fetchError;
+      }
+
+      // Ahora actualizamos con el estado correcto
       const { data: result, error } = await supabase
         .from('anexo_bravo')
         .update({
           anexo_bravo_firmas: signatures,
           firmado: true,
-          estado: 'firmado' // Cambiar a estado válido
+          estado: 'firmado' // Usamos 'firmado' que debe ser un estado válido
         })
         .eq('id', id)
         .select()
