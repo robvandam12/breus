@@ -1436,6 +1436,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_user_profile: {
+        Args: {
+          user_id: string
+          user_email: string
+          user_nombre: string
+          user_apellido: string
+          user_rol?: string
+          user_salmonera_id?: string
+          user_servicio_id?: string
+        }
+        Returns: undefined
+      }
       emit_domain_event: {
         Args: {
           p_event_type: string

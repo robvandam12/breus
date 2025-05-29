@@ -1,115 +1,142 @@
 
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, ArrowLeft, RotateCcw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { AuthLayout } from './AuthLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 
-export const EmailConfirmation = () => {
-  const [isResending, setIsResending] = useState(false);
+const BreusLogo = ({ size = 64 }: { size?: number }) => (
+  <svg 
+    version="1.2" 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 500 305" 
+    width={size} 
+    height={(size * 305) / 500}
+    className="fill-blue-600"
+  >
+    <path d="m355.2 201.7c-33.7 40.1-84.1 67.3-135.9 73.1-4.5 0.6-8.4 4.5-7.7 9.7 0.6 4.5 4.5 7.8 8.4 7.8h0.6c55.7-5.9 111.3-35 147.5-79 3.2-3.8 2.6-9-1.3-12.2-2.6-3.3-8.4-3.3-11.6 0.6z"/>
+    <path d="m276.3 68.5h-0.7l-64-45.3c-2-1.3-4.5-1.9-6.5-1.3-1.9 0.7-4.5 2-5.2 3.9l-19.4 29.7c-77.6 8.5-146.1 62.1-170.1 114.5 0 0.7 0 1.3-0.6 2 0 0.6 0 1.3 0 1.3 0 0.6 0 1.2 0 1.2 0 0.7 0 1.3 0.6 2 16.2 35.6 60.8 80.2 116.5 102.2l9.7-15.6 69.8-103.4c2.6-3.9 1.3-9.7-2.6-12.3-3.9-2.6-9.7-1.3-12.3 2.6l-68.5 103.4-3.3 3.9c-43.9-20-76.3-53-91.1-84 23.9-48.6 88.6-97.1 161.6-101.6l20.1-29.1 18.1 12.9 33 25.3c40.7 14.2 73.7 40.1 93.8 64.6 3.2 3.9 8.4 4.6 12.2 1.3 3.9-3.2 4.6-8.4 1.3-12.3-20.7-25.2-53-51-92.4-65.9z"/>
+    <path d="m486.4 84.6c-3.2-3.2-9-3.2-12.2 0l-82.8 82.8c-2 2-2.6 3.9-2.6 5.9 0 2.5 0.6 4.5 2.6 6.4l82.8 82.8c1.9 1.9 3.8 2.6 6.4 2.6 2.6 0 4.6-0.7 6.5-2.6 3.2-3.2 3.2-9.1 0-12.3l-77.6-76.9 76.9-76.4c3.3-3.2 3.3-9 0-12.3z"/>
+    <path fillRule="evenodd" d="m112.6 162.3c-8.9 0-16.1-7.3-16.1-16.2 0-9 7.2-16.2 16.1-16.2 9 0 16.2 7.2 16.2 16.2 0 8.9-7.2 16.2-16.2 16.2z"/>
+    <path d="m218.1 202.4l28.4-42.7c2.6-3.9 1.3-9.7-2.6-12.3-3.9-2.6-9.7-1.3-12.3 2.6l-0.6 0.6-26.5 41.4-12.3 18.8c-2.6 3.8-1.3 9.7 2.6 12.3 3.8 2.5 9.7 1.2 12.3-2.6l11-18.1c0-0.7 0 0 0 0z"/>
+  </svg>
+);
+
+export default function EmailConfirmation() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const email = searchParams.get('email') || '';
 
-  const handleResendEmail = async () => {
-    if (!email) {
-      toast({
-        title: "Error",
-        description: "No se encontró la dirección de email",
-        variant: "destructive",
-      });
-      return;
+  useEffect(() => {
+    // Check if the user was redirected from email confirmation
+    const hashParams = new URLSearchParams(window.location.hash.substr(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'signup') {
+      setIsConfirmed(true);
     }
+  }, []);
 
-    setIsResending(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
+  if (isConfirmed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <BreusLogo size={80} />
+            </div>
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+              ¡Cuenta Confirmada!
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Sistema de Gestión de Buceo
+            </p>
+          </div>
 
-      if (error) throw error;
-
-      toast({
-        title: "Email reenviado",
-        description: "Se ha enviado un nuevo email de confirmación",
-      });
-    } catch (error: any) {
-      console.error('Error resending email:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Error al reenviar el email",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResending(false);
-    }
-  };
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    ¡Bienvenido a Breus!
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Tu cuenta ha sido confirmada exitosamente. Ya puedes acceder al sistema.
+                  </p>
+                </div>
+                <div className="pt-4">
+                  <Link to="/login">
+                    <Button className="w-full">
+                      Iniciar Sesión
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <AuthLayout 
-      title="Confirma tu email" 
-      subtitle="Te hemos enviado un enlace de confirmación"
-    >
-      <Card className="w-full max-w-md mx-auto mt-8">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-8 h-8 text-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <BreusLogo size={80} />
           </div>
-          <CardTitle className="text-xl">Revisa tu email</CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          <div className="text-center space-y-2">
-            <p className="text-gray-600">
-              Hemos enviado un enlace de confirmación a:
-            </p>
-            <p className="font-medium text-gray-900">{email}</p>
-          </div>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Confirma tu Email
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Sistema de Gestión de Buceo
+          </p>
+        </div>
 
-          <div className="space-y-3">
-            <p className="text-sm text-gray-500 text-center">
-              Haz clic en el enlace del email para activar tu cuenta. 
-              Si no ves el email, revisa tu carpeta de spam.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Button 
-              onClick={handleResendEmail}
-              disabled={isResending}
-              variant="outline"
-              className="w-full"
-            >
-              {isResending ? (
-                <>
-                  <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
-                  Reenviando...
-                </>
-              ) : (
-                <>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Reenviar email
-                </>
-              )}
-            </Button>
-
-            <Button 
-              onClick={() => navigate('/login')}
-              variant="ghost"
-              className="w-full"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver al login
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </AuthLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Revisa tu email</CardTitle>
+            <CardDescription>
+              Te hemos enviado un enlace de confirmación
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Mail className="w-8 h-8 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">
+                  Hemos enviado un enlace de confirmación a:
+                </p>
+                <p className="font-medium text-gray-900 mt-1">
+                  {email}
+                </p>
+              </div>
+              <div className="text-sm text-gray-500">
+                <p>
+                  Haz clic en el enlace del email para activar tu cuenta.
+                </p>
+                <p className="mt-2">
+                  Si no ves el email, revisa tu carpeta de spam.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Link to="/login">
+                  <Button variant="outline" className="w-full">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver al login
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
-};
-
-export default EmailConfirmation;
+}
