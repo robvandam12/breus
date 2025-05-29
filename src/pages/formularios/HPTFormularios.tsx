@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText, CheckCircle, PenTool } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Search, FileText, CheckCircle, PenTool, Trash2 } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { HPTOperationSelector } from "@/components/hpt/HPTOperationSelector";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from "@/hooks/use-toast";
 
 const HPTFormulariosPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +23,7 @@ const HPTFormulariosPage = () => {
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [showOperationSelector, setShowOperationSelector] = useState(false);
   
-  const { hpts, isLoading, signHPT } = useHPT();
+  const { hpts, isLoading, signHPT, deleteHPT } = useHPT();
   const { operaciones } = useOperaciones();
 
   const filteredHPTs = hpts.filter(hpt => 
@@ -53,8 +55,34 @@ const HPTFormulariosPage = () => {
           supervisor_mandante_url: 'signed'
         }
       });
+      toast({
+        title: "HPT firmado",
+        description: "El documento ha sido firmado exitosamente.",
+      });
     } catch (error) {
       console.error('Error signing HPT:', error);
+      toast({
+        title: "Error al firmar",
+        description: "No se pudo firmar el HPT.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteHPT = async (hptId: string) => {
+    try {
+      await deleteHPT(hptId);
+      toast({
+        title: "HPT eliminado",
+        description: "El documento ha sido eliminado exitosamente.",
+      });
+    } catch (error: any) {
+      console.error('Error deleting HPT:', error);
+      toast({
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el HPT.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -217,14 +245,44 @@ const HPTFormulariosPage = () => {
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
                                   {!hpt.firmado ? (
-                                    <Button 
-                                      onClick={() => handleSignHPT(hpt.id)}
-                                      size="sm" 
-                                      className="ios-button-sm bg-blue-600 hover:bg-blue-700"
-                                    >
-                                      <PenTool className="w-3 h-3 mr-1" />
-                                      Firmar
-                                    </Button>
+                                    <>
+                                      <Button 
+                                        onClick={() => handleSignHPT(hpt.id)}
+                                        size="sm" 
+                                        className="ios-button-sm bg-blue-600 hover:bg-blue-700"
+                                      >
+                                        <PenTool className="w-3 h-3 mr-1" />
+                                        Firmar
+                                      </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="ios-button-sm text-red-600 hover:text-red-700"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar HPT?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Esta acción no se puede deshacer. Se eliminará permanentemente el HPT "{hpt.codigo || hpt.folio}".
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                              onClick={() => handleDeleteHPT(hpt.id)}
+                                              className="bg-red-600 hover:bg-red-700"
+                                            >
+                                              Eliminar
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </>
                                   ) : (
                                     <Button variant="outline" size="sm" className="ios-button-sm">
                                       Ver

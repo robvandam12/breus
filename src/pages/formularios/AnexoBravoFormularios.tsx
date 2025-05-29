@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, CheckCircle, PenTool } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Search, Shield, CheckCircle, PenTool, Trash2 } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
@@ -19,10 +20,10 @@ import { toast } from "@/hooks/use-toast";
 const AnexoBravoFormulariosPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showOperationSelector, setShowOperationSelector] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
+  const [showOperationSelector, setShowOperationSelector] = useState(false);
   
-  const { anexosBravo, isLoading, createAnexoBravo, signAnexoBravo, isSigning } = useAnexoBravo();
+  const { anexosBravo, isLoading, signAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
   const { operaciones } = useOperaciones();
 
   const filteredAnexos = anexosBravo.filter(anexo => 
@@ -40,49 +41,54 @@ const AnexoBravoFormulariosPage = () => {
     setShowCreateForm(true);
   };
 
-  const handleAnexoComplete = () => {
+  const handleAnexoComplete = (data: any) => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
-  };
-
-  const handleSubmitAnexo = async (data: any) => {
-    try {
-      await createAnexoBravo(data);
-      toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente.",
-      });
-      handleAnexoComplete();
-    } catch (error) {
-      console.error('Error creating anexo bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el Anexo Bravo.",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleSignAnexo = async (anexoId: string) => {
     try {
       console.log('Attempting to sign anexo:', anexoId);
+      
+      const signatures = {
+        supervisor_url: 'signed',
+        jefe_centro_url: 'signed',
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('Signing anexo bravo:', anexoId, signatures);
+      
       await signAnexoBravo({ 
         id: anexoId, 
-        signatures: {
-          supervisor_url: 'signed',
-          jefe_centro_url: 'signed',
-          timestamp: new Date().toISOString()
-        }
+        signatures: signatures
       });
+      
       toast({
-        title: "Anexo firmado",
-        description: "El Anexo Bravo ha sido firmado exitosamente.",
+        title: "Anexo Bravo firmado",
+        description: "El documento ha sido firmado exitosamente.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing anexo:', error);
       toast({
         title: "Error al firmar",
-        description: "No se pudo firmar el Anexo Bravo. Verifique que todos los campos estén completos.",
+        description: "No se pudo firmar el Anexo Bravo: " + (error.message || 'Error desconocido'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAnexo = async (anexoId: string) => {
+    try {
+      await deleteAnexoBravo(anexoId);
+      toast({
+        title: "Anexo Bravo eliminado",
+        description: "El documento ha sido eliminado exitosamente.",
+      });
+    } catch (error: any) {
+      console.error('Error deleting anexo:', error);
+      toast({
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el Anexo Bravo.",
         variant: "destructive",
       });
     }
@@ -100,7 +106,7 @@ const AnexoBravoFormulariosPage = () => {
               icon={Shield} 
             />
             <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
             </div>
           </main>
         </div>
@@ -122,7 +128,7 @@ const AnexoBravoFormulariosPage = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar Anexos..."
+                  placeholder="Buscar Anexos Bravo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-64 ios-input"
@@ -131,7 +137,7 @@ const AnexoBravoFormulariosPage = () => {
 
               <Button 
                 onClick={handleCreateAnexo}
-                className="ios-button bg-blue-600 hover:bg-blue-700"
+                className="ios-button bg-green-600 hover:bg-green-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Anexo Bravo
@@ -145,7 +151,7 @@ const AnexoBravoFormulariosPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="ios-card">
                   <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-green-600">
                       {anexosBravo.length}
                     </div>
                     <div className="text-sm text-zinc-500">Anexos Totales</div>
@@ -185,7 +191,7 @@ const AnexoBravoFormulariosPage = () => {
                   <CardContent>
                     <Shield className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-zinc-900 mb-2">
-                      {anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos"}
+                      {anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos Bravo"}
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {anexosBravo.length === 0 
@@ -194,7 +200,7 @@ const AnexoBravoFormulariosPage = () => {
                     </p>
                     <Button 
                       onClick={handleCreateAnexo}
-                      className="ios-button bg-blue-600 hover:bg-blue-700"
+                      className="ios-button bg-green-600 hover:bg-green-700"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Nuevo Anexo Bravo
@@ -247,15 +253,44 @@ const AnexoBravoFormulariosPage = () => {
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
                                   {!anexo.firmado ? (
-                                    <Button 
-                                      onClick={() => handleSignAnexo(anexo.id)}
-                                      size="sm" 
-                                      disabled={isSigning}
-                                      className="ios-button-sm bg-blue-600 hover:bg-blue-700"
-                                    >
-                                      <PenTool className="w-3 h-3 mr-1" />
-                                      {isSigning ? 'Firmando...' : 'Firmar'}
-                                    </Button>
+                                    <>
+                                      <Button 
+                                        onClick={() => handleSignAnexo(anexo.id)}
+                                        size="sm" 
+                                        className="ios-button-sm bg-green-600 hover:bg-green-700"
+                                      >
+                                        <PenTool className="w-3 h-3 mr-1" />
+                                        Firmar
+                                      </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="ios-button-sm text-red-600 hover:text-red-700"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar Anexo Bravo?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Esta acción no se puede deshacer. Se eliminará permanentemente el Anexo Bravo "{anexo.codigo}".
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                              onClick={() => handleDeleteAnexo(anexo.id)}
+                                              className="bg-red-600 hover:bg-red-700"
+                                            >
+                                              Eliminar
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </>
                                   ) : (
                                     <Button variant="outline" size="sm" className="ios-button-sm">
                                       Ver
@@ -285,13 +320,13 @@ const AnexoBravoFormulariosPage = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Create/Edit Form Modal */}
+          {/* Create Form Modal */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
               <FullAnexoBravoForm 
                 operacionId={selectedOperacionId}
-                onSubmit={handleSubmitAnexo}
+                onSubmit={handleAnexoComplete}
                 onCancel={() => setShowCreateForm(false)}
               />
             </DialogContent>
