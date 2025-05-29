@@ -232,7 +232,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
     setIsLoading(true);
     try {
-      // Prepare clean data for submission - only include existing columns
+      // Prepare clean data for submission - solo incluir columnas existentes
       const submitData = {
         codigo: formData.codigo,
         fecha: formData.fecha,
@@ -255,16 +255,18 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         observaciones_generales: formData.observaciones_generales,
         jefe_centro_nombre: formData.jefe_centro_nombre,
         operacion_id: currentOperacionId,
-        firmado: false, // Se creará sin firmar
+        firmado: false,
         estado: 'borrador',
-        supervisor: formData.supervisor_servicio_nombre || 'Sin asignar'
+        supervisor: formData.supervisor_servicio_nombre || 'Sin asignar',
+        progreso: 80, // 80% completado al crear, 100% al firmar
+        checklist_completo: Object.keys(formData.anexo_bravo_checklist).length > 0
       };
 
       await onSubmit(submitData);
       
       toast({
         title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente. Ahora puede firmarlo desde la lista.",
+        description: "El Anexo Bravo ha sido creado exitosamente. Complete las firmas para finalizar.",
       });
     } catch (error) {
       console.error('Error submitting Anexo Bravo:', error);

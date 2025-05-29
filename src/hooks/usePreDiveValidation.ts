@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -26,63 +25,63 @@ export const usePreDiveValidation = () => {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // Verificar HPT
+      // Verificar HPT con validación más estricta
       const { data: hptData, error: hptError } = await supabase
         .from('hpt')
         .select('id, firmado, estado, progreso')
-        .eq('operacion_id', operationId);
+        .eq('operacion_id', operationId)
+        .eq('firmado', true)
+        .eq('estado', 'firmado');
 
       if (hptError) throw hptError;
 
       let hptStatus: 'missing' | 'pending' | 'signed' = 'missing';
       if (hptData && hptData.length > 0) {
-        const hpt = hptData[0];
-        if (hpt.firmado && hpt.estado === 'firmado') {
-          hptStatus = 'signed';
-        } else {
-          hptStatus = 'pending';
-          if (hpt.progreso < 100) {
-            warnings.push(`HPT incompleto (${hpt.progreso}% completado)`);
-          }
-        }
+        hptStatus = 'signed';
       } else {
-        errors.push('HPT no encontrado para esta operación');
+        // Verificar si existe pero no está firmado
+        const { data: hptPending } = await supabase
+          .from('hpt')
+          .select('id, estado, progreso')
+          .eq('operacion_id', operationId);
+        
+        if (hptPending && hptPending.length > 0) {
+          hptStatus = 'pending';
+          errors.push('HPT existe pero no está firmado');
+        } else {
+          errors.push('HPT no encontrado para esta operación');
+        }
       }
 
-      // Verificar Anexo Bravo
+      // Verificar Anexo Bravo con validación más estricta
       const { data: anexoData, error: anexoError } = await supabase
         .from('anexo_bravo')
         .select('id, firmado, estado, progreso, checklist_completo')
-        .eq('operacion_id', operationId);
+        .eq('operacion_id', operationId)
+        .eq('firmado', true)
+        .eq('estado', 'firmado');
 
       if (anexoError) throw anexoError;
 
       let anexoBravoStatus: 'missing' | 'pending' | 'signed' = 'missing';
       if (anexoData && anexoData.length > 0) {
-        const anexo = anexoData[0];
-        if (anexo.firmado && anexo.estado === 'firmado') {
-          anexoBravoStatus = 'signed';
-        } else {
-          anexoBravoStatus = 'pending';
-          if (anexo.progreso < 100) {
-            warnings.push(`Anexo Bravo incompleto (${anexo.progreso}% completado)`);
-          }
-          if (!anexo.checklist_completo) {
-            warnings.push('Checklist de equipos no completado');
-          }
-        }
+        anexoBravoStatus = 'signed';
       } else {
-        errors.push('Anexo Bravo no encontrado para esta operación');
-      }
-
-      // Validaciones adicionales
-      if (hptStatus === 'signed' && anexoBravoStatus === 'signed') {
-        // Verificar que las fechas sean coherentes
-        const hpt = hptData[0];
-        const anexo = anexoData[0];
+        // Verificar si existe pero no está firmado
+        const { data: anexoPending } = await supabase
+          .from('anexo_bravo')
+          .select('id, estado, progreso, checklist_completo')
+          .eq('operacion_id', operationId);
         
-        // Aquí podrías agregar más validaciones específicas
-        // como verificar fechas, equipos, personal, etc.
+        if (anexoPending && anexoPending.length > 0) {
+          anexoBravoStatus = 'pending';
+          errors.push('Anexo Bravo existe pero no está firmado');
+          if (!anexoPending[0].checklist_completo) {
+            errors.push('Checklist de equipos no está completo');
+          }
+        } else {
+          errors.push('Anexo Bravo no encontrado para esta operación');
+        }
       }
 
       const isValid = hptStatus === 'signed' && anexoBravoStatus === 'signed' && errors.length === 0;
@@ -154,6 +153,8 @@ export const usePreDiveValidation = () => {
   };
 
   const createImmersionWithValidation = async (immersionData: any) => {
+    console.log('Validating operation before creating immersion:', immersionData.operacion_id);
+    
     const validation = await validateOperation(immersionData.operacion_id);
     
     if (!validation.isValid) {
@@ -178,6 +179,12 @@ export const usePreDiveValidation = () => {
       .single();
 
     if (error) throw error;
+    
+    toast({
+      title: "Inmersión validada",
+      description: "Los documentos han sido validados exitosamente.",
+    });
+    
     return data;
   };
 

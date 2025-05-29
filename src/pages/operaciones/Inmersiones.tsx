@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Plus, Anchor, Calendar, User, Clock, Eye, FileText } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock, Eye, FileText, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
 import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useBitacoras } from "@/hooks/useBitacoras";
+import { usePreDiveValidation } from "@/hooks/usePreDiveValidation";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ export default function Inmersiones() {
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
   const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoras();
+  const { createImmersionWithValidation } = usePreDiveValidation();
   
   const operacionId = searchParams.get('operacion');
 
@@ -39,7 +41,9 @@ export default function Inmersiones() {
 
   const handleCreateInmersion = async (data: any) => {
     try {
-      await createInmersion(data);
+      // Usar la validación pre-inmersión para verificar documentos
+      await createImmersionWithValidation(data);
+      
       toast({
         title: "Inmersión creada",
         description: "La inmersión ha sido creada exitosamente.",
@@ -49,14 +53,37 @@ export default function Inmersiones() {
       if (operacionId) {
         navigateTo('/operaciones');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating inmersion:', error);
+      
+      // Mostrar mensaje específico si es por validación de documentos
+      if (error.message.includes('No se puede crear la inmersión')) {
+        toast({
+          title: "Documentos requeridos",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo crear la inmersión.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleShowWizard = () => {
+    // Mostrar advertencia si se intenta crear inmersión sin operación específica
+    if (!operacionId) {
       toast({
-        title: "Error",
-        description: "No se pudo crear la inmersión.",
+        title: "Seleccione una operación",
+        description: "Para crear una inmersión, primero debe seleccionar una operación con documentos firmados.",
         variant: "destructive",
       });
+      return;
     }
+    setShowWizard(true);
   };
 
   const handleCancel = () => {
@@ -174,7 +201,7 @@ export default function Inmersiones() {
             subtitle="Gestión de inmersiones de buceo" 
             icon={Anchor} 
           >
-            <Button onClick={() => setShowWizard(true)}>
+            <Button onClick={handleShowWizard}>
               <Plus className="w-4 h-4 mr-2" />
               Nueva Inmersión
             </Button>
@@ -182,6 +209,22 @@ export default function Inmersiones() {
           
           <div className="flex-1 overflow-auto bg-white">
             <div className="p-6">
+              {/* Mostrar advertencia sobre validación de documentos */}
+              <Card className="mb-6 border-orange-200 bg-orange-50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-orange-800">Validación de Documentos</h3>
+                      <p className="text-sm text-orange-700 mt-1">
+                        Para crear inmersiones, las operaciones deben tener HPT y Anexo Bravo firmados. 
+                        El sistema validará automáticamente estos requisitos.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {isLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -193,9 +236,9 @@ export default function Inmersiones() {
                     <Anchor className="w-16 h-16 text-blue-600 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No hay inmersiones</h3>
                     <p className="text-gray-600 mb-6">
-                      Comience creando su primera inmersión de buceo.
+                      Comience creando su primera inmersión de buceo desde una operación con documentos firmados.
                     </p>
-                    <Button onClick={() => setShowWizard(true)}>
+                    <Button onClick={handleShowWizard}>
                       <Plus className="w-4 h-4 mr-2" />
                       Nueva Inmersión
                     </Button>

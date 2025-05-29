@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -192,18 +191,12 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       id: 4,
       title: "Medidas Clave",
       description: "Verificación de medidas de control",
-      fields: ['hpt_medidas'],
-      isValid: Object.values(data.hpt_medidas).every(v => v !== 'na')
+      fields: ['hpt_medidas', 'hpt_riesgos_comp'],
+      isValid: Object.values(data.hpt_medidas).every(v => v !== 'na') && 
+               Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na')
     },
     {
       id: 5,
-      title: "Riesgos Complementarios",
-      description: "Análisis de riesgos adicionales",
-      fields: ['hpt_riesgos_comp'],
-      isValid: Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na')
-    },
-    {
-      id: 6,
       title: "Difusión y Firmas",
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],
@@ -235,27 +228,25 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   }, [steps.length]);
 
   const saveDraft = useCallback(async () => {
-    // Solo guardar draft si se ha avanzado hasta el paso 3 o más
-    if (!data.operacion_id || currentStep < 3 || hptId) return; // No guardar si ya existe HPT
+    // Solo guardar draft si se ha avanzado hasta el paso 3 o más y no existe HPT
+    if (!data.operacion_id || currentStep < 3 || hptId) return;
 
     try {
-      // Generar código único con timestamp más específico
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-8)}-${Math.random().toString(36).substr(2, 4)}`;
+      // Generar código único más robusto
+      const timestamp = Date.now().toString();
+      const random = Math.random().toString(36).substr(2, 6);
+      const codigo = data.folio || `HPT-${timestamp.slice(-6)}-${random}`;
       
       const hptData: HPTFormData = {
         ...data,
         codigo
       };
 
-      if (hptId) {
-        await updateHPT({ id: hptId, data: hptData });
-      } else {
-        await createHPT(hptData);
-      }
+      await createHPT(hptData);
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  }, [data, hptId, updateHPT, createHPT, currentStep]);
+  }, [data, hptId, createHPT, currentStep]);
 
   const submitHPT = useCallback(async () => {
     if (!isFormComplete()) {
@@ -268,8 +259,10 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     }
 
     try {
-      // Generar código único con timestamp más específico
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-8)}-${Math.random().toString(36).substr(2, 4)}`;
+      // Generar código único más robusto
+      const timestamp = Date.now().toString();
+      const random = Math.random().toString(36).substr(2, 6);
+      const codigo = data.folio || `HPT-${timestamp.slice(-6)}-${random}`;
       
       const hptData: HPTFormData = {
         ...data,
