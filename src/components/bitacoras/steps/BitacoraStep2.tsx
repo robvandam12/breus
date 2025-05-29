@@ -14,7 +14,6 @@ interface BitacoraStep2Props {
 
 export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
   const registrosInmersion = data.registros_inmersion || [];
-  const personal = data.bs_personal || [];
 
   const addRegistroInmersion = () => {
     const newRegistros = [

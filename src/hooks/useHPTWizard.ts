@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -23,7 +22,7 @@ export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
   jefe_mandante_nombre: string;
   descripcion_tarea: string;
   es_rutinaria: boolean;
-  lugar_especifico: string;
+  lugar_especifico: string; // Nuevo campo agregado
   estado_puerto: 'abierto' | 'cerrado';
 
   // EPP (Paso 2)
