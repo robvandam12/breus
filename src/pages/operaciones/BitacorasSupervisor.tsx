@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -197,7 +198,7 @@ const BitacorasSupervisor = () => {
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
-                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
+                      <Button onClick={handleNewBitacora} className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Nueva Bitácora Supervisor
                       </Button>
@@ -220,7 +221,7 @@ const BitacorasSupervisor = () => {
                     <TableBody>
                       {filteredBitacorasSupervisor.map((bitacora) => (
                         <BitacoraTableRow
-                          key={bitacora.id}
+                          key={bitacora.bitacora_id}
                           bitacora={bitacora}
                           type="supervisor"
                           onSign={handleSignSupervisor}

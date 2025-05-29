@@ -6,8 +6,10 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Anchor, Calendar, User, Clock, Eye, FileText } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
+import { InmersionActions } from "@/components/inmersion/InmersionActions";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
@@ -16,10 +18,10 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
-  const [selectedInmersion, setSelectedInmersion] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { inmersiones, isLoading, createInmersion } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, refreshInmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
@@ -78,12 +80,8 @@ export default function Inmersiones() {
     }
   };
 
-  const handleViewInmersion = (inmersionId: string) => {
-    navigateTo(`/inmersiones/${inmersionId}`);
-  };
-
-  const handleCreateBitacora = (inmersionId: string, tipo: 'supervisor' | 'buzo') => {
-    navigateTo(`/bitacoras/${tipo}/new?inmersion=${inmersionId}`);
+  const handleRefresh = () => {
+    refreshInmersiones();
   };
 
   if (showWizard) {
@@ -123,10 +121,31 @@ export default function Inmersiones() {
             subtitle="Gestión de inmersiones de buceo" 
             icon={Anchor} 
           >
-            <Button onClick={() => setShowWizard(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Inmersión
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-zinc-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-3"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-3"
+                >
+                  <LayoutList className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <Button onClick={() => setShowWizard(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Inmersión
+              </Button>
+            </div>
           </Header>
           
           <div className="flex-1 overflow-auto bg-white">
@@ -150,7 +169,7 @@ export default function Inmersiones() {
                     </Button>
                   </CardContent>
                 </Card>
-              ) : (
+              ) : viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {inmersiones.map((inmersion) => {
                     const operacion = getOperacionData(inmersion.operacion_id);
@@ -159,9 +178,15 @@ export default function Inmersiones() {
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
-                            <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                              {inmersion.estado}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                                {inmersion.estado}
+                              </Badge>
+                              <InmersionActions 
+                                inmersionId={inmersion.inmersion_id} 
+                                onRefresh={handleRefresh}
+                              />
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -187,32 +212,58 @@ export default function Inmersiones() {
                             <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
                           </div>
                           
-                          <div className="pt-3 border-t border-gray-200">
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleViewInmersion(inmersion.inmersion_id)}
-                                className="flex-1"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Ver
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleCreateBitacora(inmersion.inmersion_id, 'supervisor')}
-                              >
-                                <FileText className="w-4 h-4 mr-1" />
-                                Bitácora
-                              </Button>
-                            </div>
+                          <div className="text-sm text-gray-600">
+                            <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
+                            <p><strong>Profundidad:</strong> {inmersion.profundidad_max}m</p>
                           </div>
                         </CardContent>
                       </Card>
                     );
                   })}
                 </div>
+              ) : (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Operación</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Buzo Principal</TableHead>
+                        <TableHead>Supervisor</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Profundidad</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {inmersiones.map((inmersion) => {
+                        const operacion = getOperacionData(inmersion.operacion_id);
+                        return (
+                          <TableRow key={inmersion.inmersion_id}>
+                            <TableCell className="font-medium">{inmersion.codigo}</TableCell>
+                            <TableCell>{operacion?.nombre || 'Sin operación'}</TableCell>
+                            <TableCell>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</TableCell>
+                            <TableCell>{inmersion.buzo_principal}</TableCell>
+                            <TableCell>{inmersion.supervisor}</TableCell>
+                            <TableCell>
+                              <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                                {inmersion.estado}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{inmersion.profundidad_max}m</TableCell>
+                            <TableCell className="text-right">
+                              <InmersionActions 
+                                inmersionId={inmersion.inmersion_id} 
+                                onRefresh={handleRefresh}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </Card>
               )}
             </div>
           </div>

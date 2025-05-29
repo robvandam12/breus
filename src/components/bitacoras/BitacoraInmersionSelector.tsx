@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Waves } from "lucide-react";
+import { Search, Waves, CheckCircle } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 
 interface BitacoraInmersionSelectorProps {
@@ -41,7 +41,7 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
           </div>
           <div>
             <CardTitle>Seleccionar Inmersión</CardTitle>
-            <p className="text-sm text-zinc-500">Elige la inmersión para crear la bitácora</p>
+            <p className="text-sm text-zinc-500">Elige la inmersión completada para crear la bitácora</p>
           </div>
         </div>
       </CardHeader>
@@ -50,7 +50,7 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
           <Input
-            placeholder="Buscar inmersiones..."
+            placeholder="Buscar inmersiones completadas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -64,7 +64,11 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
               No hay inmersiones completadas
             </h3>
             <p className="text-zinc-500">
-              No se encontraron inmersiones completadas disponibles para crear bitácoras
+              {inmersiones.length === 0 
+                ? "No se encontraron inmersiones en el sistema"
+                : searchTerm 
+                  ? "No se encontraron inmersiones que coincidan con la búsqueda"
+                  : "No hay inmersiones completadas disponibles para crear bitácoras"}
             </p>
           </div>
         ) : (
@@ -72,8 +76,10 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
             {inmersionesCompletadas.map((inmersion) => (
               <Card 
                 key={inmersion.inmersion_id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedInmersionId === inmersion.inmersion_id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                className={`cursor-pointer transition-all hover:shadow-md border-2 ${
+                  selectedInmersionId === inmersion.inmersion_id 
+                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    : 'border-transparent hover:border-blue-200'
                 }`}
                 onClick={() => onInmersionSelected(inmersion.inmersion_id)}
               >
@@ -82,9 +88,12 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-medium">{inmersion.codigo}</h4>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="bg-green-100 text-green-700">
                           {inmersion.estado}
                         </Badge>
+                        {selectedInmersionId === inmersion.inmersion_id && (
+                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                        )}
                       </div>
                       <p className="text-sm text-zinc-600 mb-1">
                         <strong>Operación:</strong> {inmersion.operacion_nombre || 'Sin nombre'}
@@ -102,6 +111,9 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
                     <div className="text-right text-sm text-zinc-500">
                       <p><strong>Prof. Máx:</strong> {inmersion.profundidad_max}m</p>
                       <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
+                      {inmersion.hora_inicio && (
+                        <p><strong>Hora:</strong> {inmersion.hora_inicio}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -110,15 +122,16 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
           </div>
         )}
 
-        <div className="flex justify-end pt-4 border-t">
-          <Button 
-            onClick={() => selectedInmersionId && onInmersionSelected(selectedInmersionId)}
-            disabled={!selectedInmersionId}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Continuar con Inmersión Seleccionada
-          </Button>
-        </div>
+        {selectedInmersionId && (
+          <div className="flex justify-end pt-4 border-t">
+            <Button 
+              onClick={() => onInmersionSelected(selectedInmersionId)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Continuar con Inmersión Seleccionada
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
