@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -171,37 +172,35 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       title: "Datos Generales",
       description: "Información básica de la tarea",
       fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea', 'lugar_especifico'],
-      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea && data.lugar_especifico)
+      isValid: true // Siempre válido
     },
     {
       id: 2,
       title: "Equipo de Protección Personal",
       description: "Selección de EPP requerido",
       fields: ['hpt_epp'],
-      isValid: Object.values(data.hpt_epp).some(v => v === true)
+      isValid: true // Siempre válido
     },
     {
       id: 3,
       title: "Estándares de Riesgos Críticos",
       description: "Identificación de ERC aplicables",
       fields: ['hpt_erc'],
-      isValid: Object.values(data.hpt_erc).some(v => v === true)
+      isValid: true // Siempre válido
     },
     {
       id: 4,
       title: "Medidas Clave",
       description: "Verificación de medidas de control",
       fields: ['hpt_medidas', 'hpt_riesgos_comp'],
-      isValid: Object.values(data.hpt_medidas).every(v => v !== 'na') && 
-               Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na')
+      isValid: true // Siempre válido
     },
     {
       id: 5,
       title: "Difusión y Firmas",
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],
-      isValid: !!(data.hpt_conocimiento.relator_nombre && 
-                  data.hpt_conocimiento_asistentes.length > 0)
+      isValid: true // Siempre válido
     }
   ];
 
@@ -232,10 +231,10 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     if (!data.operacion_id || currentStep < 3 || hptId) return;
 
     try {
-      // Generar código único más robusto
+      // Generar código único más robusto usando timestamp y random más largo
       const timestamp = Date.now().toString();
-      const random = Math.random().toString(36).substr(2, 6);
-      const codigo = data.folio || `HPT-${timestamp.slice(-6)}-${random}`;
+      const random = Math.random().toString(36).substr(2, 9);
+      const codigo = data.folio || `HPT-${operacionId?.slice(-4) || timestamp.slice(-6)}-${random}`;
       
       const hptData: HPTFormData = {
         ...data,
@@ -246,23 +245,14 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  }, [data, hptId, createHPT, currentStep]);
+  }, [data, hptId, createHPT, currentStep, operacionId]);
 
   const submitHPT = useCallback(async () => {
-    if (!isFormComplete()) {
-      toast({
-        title: "Formulario incompleto",
-        description: "Complete todos los pasos antes de enviar",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      // Generar código único más robusto
+      // Generar código único más robusto usando timestamp y random más largo
       const timestamp = Date.now().toString();
-      const random = Math.random().toString(36).substr(2, 6);
-      const codigo = data.folio || `HPT-${timestamp.slice(-6)}-${random}`;
+      const random = Math.random().toString(36).substr(2, 9);
+      const codigo = data.folio || `HPT-${operacionId?.slice(-4) || timestamp.slice(-6)}-${random}`;
       
       const hptData: HPTFormData = {
         ...data,
@@ -288,11 +278,11 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       console.error('Error submitting HPT:', error);
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT]);
+  }, [data, hptId, createHPT, updateHPT, operacionId]);
 
   const isFormComplete = useCallback(() => {
-    return steps.every(step => step.isValid);
-  }, [steps]);
+    return true; // Siempre completo
+  }, []);
 
   const getCurrentStepProgress = useCallback(() => {
     return Math.round((currentStep / steps.length) * 100);

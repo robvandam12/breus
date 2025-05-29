@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,11 +95,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       isValid: false // Se firma después de crear
     }
   ];
-
-  const handleOperacionSelected = (operacionId: string) => {
-    setCurrentOperacionId(operacionId);
-    setShowOperacionSelector(false);
-  };
 
   // Auto-populate data when operation is selected
   useEffect(() => {
