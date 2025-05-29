@@ -17,15 +17,18 @@ export const useEquiposBuceoMockup = () => {
       return [
         {
           ...mockupData.equipoBuceo,
-          miembros: mockupData.equipoBuceo.miembros.map(miembro => ({
-            ...miembro,
-            usuario: mockupData.usuarios.find(u => u.usuario_id === miembro.usuario_id),
-            nombre_completo: `${miembro.usuario?.nombre} ${miembro.usuario?.apellido}`,
-            email: miembro.usuario?.email,
-            matricula: miembro.usuario?.perfil_buzo?.matricula,
-            telefono: miembro.usuario?.telefono || null,
-            rol: miembro.rol_equipo
-          }))
+          miembros: mockupData.equipoBuceo.miembros.map(miembro => {
+            const usuario = mockupData.usuarios.find(u => u.usuario_id === miembro.usuario_id);
+            return {
+              ...miembro,
+              usuario: usuario,
+              nombre_completo: usuario ? `${usuario.nombre} ${usuario.apellido}` : `${miembro.nombre} ${miembro.apellido}`,
+              email: usuario?.email || miembro.email,
+              matricula: usuario?.perfil_buzo?.matricula || null,
+              telefono: usuario?.telefono || null,
+              rol: miembro.rol_equipo
+            };
+          })
         }
       ];
     },
