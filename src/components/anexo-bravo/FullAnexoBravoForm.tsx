@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +46,6 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
     autorizacion_armada: false,
-    autorizacion_documento_url: '',
     
     // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],

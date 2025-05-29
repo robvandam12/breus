@@ -52,6 +52,10 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
     { key: 'comunicacion_riesgos', label: 'Comunicación de Riesgos' }
   ];
 
+  // Check validation status
+  const medidasValidation = Object.values(data.hpt_medidas).every(v => v !== '' && v !== 'na');
+  const riesgosValidation = Object.values(data.hpt_riesgos_comp).every(r => r.valor !== '' && r.valor !== 'na');
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -59,6 +63,23 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
         <p className="mt-2 text-gray-600">
           Verificación de medidas de control y análisis de riesgos adicionales
         </p>
+      </div>
+
+      {/* Validation Status */}
+      <div className={`p-4 rounded-lg border ${medidasValidation && riesgosValidation ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+        <div className="flex items-center gap-2">
+          {medidasValidation && riesgosValidation ? (
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 text-yellow-600" />
+          )}
+          <span className={`font-medium ${medidasValidation && riesgosValidation ? 'text-green-800' : 'text-yellow-800'}`}>
+            {medidasValidation && riesgosValidation 
+              ? 'Todas las medidas y riesgos han sido evaluados'
+              : 'Complete todas las evaluaciones para continuar'
+            }
+          </span>
+        </div>
       </div>
 
       {/* Medidas Clave */}
@@ -97,12 +118,6 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
                           No
                         </div>
                       </SelectItem>
-                      <SelectItem value="na">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-gray-600" />
-                          N/A
-                        </div>
-                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -139,7 +154,6 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
                       <SelectContent>
                         <SelectItem value="si">Sí</SelectItem>
                         <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="na">N/A</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
