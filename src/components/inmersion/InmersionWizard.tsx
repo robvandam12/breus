@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,17 +98,17 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           
           if (supervisor) {
             autoUpdates.supervisor = supervisor.nombre_completo;
-            autoUpdates.supervisor_id = supervisor.usuario_id || '';
+            // supervisor_id not available in EquipoBuceoMiembro, leave empty
           }
           
           if (buzoPrincipal) {
             autoUpdates.buzo_principal = buzoPrincipal.nombre_completo;
-            autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id || '';
+            // buzo_principal_id not available in EquipoBuceoMiembro, leave empty
           }
           
           if (buzoAsistente) {
             autoUpdates.buzo_asistente = buzoAsistente.nombre_completo;
-            autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id || '';
+            // buzo_asistente_id not available in EquipoBuceoMiembro, leave empty
           }
         }
 
@@ -155,16 +154,11 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
     setIsLoading(true);
     try {
-      // Limpiar campos UUID vacíos - convertir strings vacíos a null
       const submitData = {
         ...formData,
-        operacion_id: selectedOperacionId,
-        supervisor_id: formData.supervisor_id || null,
-        buzo_principal_id: formData.buzo_principal_id || null,
-        buzo_asistente_id: formData.buzo_asistente_id || null,
+        operacion_id: selectedOperacionId
       };
 
-      console.log('Submitting inmersion data:', submitData);
       await onComplete(submitData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -327,41 +321,31 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                   placeholder="Nombre del buzo principal"
                   disabled={!!assignedTeam}
                 />
-                {assignedTeam && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Auto-poblado desde el equipo asignado
-                  </p>
-                )}
               </div>
 
               <div>
-                <Label htmlFor="buzo_asistente">Buzo Asistente (Opcional)</Label>
+                <Label htmlFor="buzo_asistente">Buzo Asistente</Label>
                 <Input
                   id="buzo_asistente"
                   value={formData.buzo_asistente}
                   onChange={(e) => handleInputChange('buzo_asistente', e.target.value)}
-                  placeholder="Nombre del buzo asistente"
+                  placeholder="Nombre del buzo asistente (opcional)"
                   disabled={!!assignedTeam}
                 />
-                {assignedTeam && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Auto-poblado desde el equipo asignado
-                  </p>
-                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Technical Details */}
+          {/* Conditions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-purple-600" />
-                Detalles Técnicos
+                Condiciones
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="profundidad_max">Profundidad Máx. (m)</Label>
                   <Input
@@ -373,7 +357,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="temperatura_agua">Temp. Agua (°C)</Label>
+                  <Label htmlFor="temperatura_agua">Temperatura (°C)</Label>
                   <Input
                     id="temperatura_agua"
                     type="number"
@@ -382,9 +366,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                     placeholder="0"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="visibilidad">Visibilidad (m)</Label>
                   <Input
@@ -395,23 +376,24 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                     placeholder="0"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="corriente">Corriente</Label>
-                  <Select
-                    value={formData.corriente}
-                    onValueChange={(value) => handleInputChange('corriente', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sin_corriente">Sin corriente</SelectItem>
-                      <SelectItem value="ligera">Ligera</SelectItem>
-                      <SelectItem value="moderada">Moderada</SelectItem>
-                      <SelectItem value="fuerte">Fuerte</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="corriente">Corriente</Label>
+                <Select
+                  value={formData.corriente}
+                  onValueChange={(value) => handleInputChange('corriente', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione condición de corriente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sin_corriente">Sin corriente</SelectItem>
+                    <SelectItem value="corriente_leve">Corriente leve</SelectItem>
+                    <SelectItem value="corriente_moderada">Corriente moderada</SelectItem>
+                    <SelectItem value="corriente_fuerte">Corriente fuerte</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -419,50 +401,34 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           {/* Observations */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-orange-600" />
-                Observaciones
-              </CardTitle>
+              <CardTitle>Observaciones</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="hora_fin">Hora Fin (Opcional)</Label>
-                <Input
-                  id="hora_fin"
-                  type="time"
-                  value={formData.hora_fin}
-                  onChange={(e) => handleInputChange('hora_fin', e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="observaciones">Observaciones Adicionales</Label>
-                <Textarea
-                  id="observaciones"
-                  value={formData.observaciones}
-                  onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                  placeholder="Observaciones adicionales sobre la inmersión..."
-                  rows={3}
-                />
-              </div>
+            <CardContent>
+              <Textarea
+                value={formData.observaciones}
+                onChange={(e) => handleInputChange('observaciones', e.target.value)}
+                placeholder="Observaciones adicionales sobre la inmersión"
+                rows={4}
+              />
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex justify-between pt-6 border-t">
+        {/* Actions */}
+        <div className="flex justify-between">
           <Button variant="outline" onClick={() => setCurrentStep(1)}>
-            Volver
+            Cambiar Operación
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
             <Button 
-              onClick={handleSubmit} 
+              onClick={handleSubmit}
               disabled={!isFormValid() || isLoading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isLoading ? "Creando..." : "Crear Inmersión"}
+              {isLoading ? 'Creando...' : 'Crear Inmersión'}
             </Button>
           </div>
         </div>
@@ -470,9 +436,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     );
   };
 
-  if (currentStep === 1) {
-    return renderOperationSelector();
-  }
-
-  return renderInmersionForm();
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 p-6">
+      {currentStep === 1 ? renderOperationSelector() : renderInmersionForm()}
+    </div>
+  );
 };

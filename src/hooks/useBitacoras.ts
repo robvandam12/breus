@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -166,22 +165,9 @@ export const useBitacoras = () => {
     mutationFn: async (data: BitacoraSupervisorFormData) => {
       console.log('Creating bitácora supervisor:', data);
       
-      // Filtrar solo los campos que existen en la tabla
-      const insertData = {
-        codigo: data.codigo,
-        inmersion_id: data.inmersion_id,
-        supervisor: data.supervisor,
-        fecha: data.fecha,
-        desarrollo_inmersion: data.desarrollo_inmersion,
-        incidentes: data.incidentes || "",
-        evaluacion_general: data.evaluacion_general,
-        firmado: false,
-        estado_aprobacion: 'pendiente'
-      };
-
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .insert([insertData])
+        .insert([data])
         .select()
         .single();
 
@@ -214,23 +200,9 @@ export const useBitacoras = () => {
     mutationFn: async (data: BitacoraBuzoFormData) => {
       console.log('Creating bitácora buzo:', data);
       
-      // Filtrar solo los campos que existen en la tabla
-      const insertData = {
-        codigo: data.codigo,
-        inmersion_id: data.inmersion_id,
-        buzo: data.buzo,
-        fecha: data.fecha,
-        trabajos_realizados: data.trabajos_realizados,
-        observaciones_tecnicas: data.observaciones_tecnicas || "",
-        estado_fisico_post: data.estado_fisico_post,
-        profundidad_maxima: data.profundidad_maxima,
-        firmado: false,
-        estado_aprobacion: 'pendiente'
-      };
-
       const { data: result, error } = await supabase
         .from('bitacora_buzo')
-        .insert([insertData])
+        .insert([data])
         .select()
         .single();
 
