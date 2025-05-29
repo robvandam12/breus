@@ -37,17 +37,16 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     // Datos generales
     codigo: '',
     fecha: new Date().toISOString().split('T')[0],
-    lugar_faena: '', // Auto-poblado desde sitio de operación
-    empresa_nombre: '', // Auto-poblado desde salmonera
+    lugar_faena: '',
+    empresa_nombre: '',
     supervisor_servicio_nombre: '',
     supervisor_mandante_nombre: '',
-    buzo_o_empresa_nombre: '', // Auto-poblado desde empresa contratista
+    buzo_o_empresa_nombre: '',
     buzo_matricula: '',
     asistente_buzo_nombre: '',
     asistente_buzo_matricula: '',
     autorizacion_armada: false,
     autorizacion_documento_url: '',
-    supervisor: '', // Agregado para cumplir con AnexoBravoFormData
     
     // Bitácora
     bitacora_fecha: new Date().toISOString().split('T')[0],
@@ -94,7 +93,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
     { 
       id: 5, 
       title: 'Firmas', 
-      isValid: true // Firmas ahora se hacen después de crear el anexo
+      isValid: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url) 
     }
   ];
 
@@ -133,14 +132,12 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         console.log('Operation data:', operacion);
         console.log('Assigned team:', equipoAsignado);
 
-        // Create updates object - implementando las observaciones del usuario
+        // Create updates object
         const autoDataUpdates: Partial<typeof formData> = {
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           fecha: new Date().toISOString().split('T')[0],
-          lugar_faena: operacion.sitios?.nombre || operacion.sitios?.ubicacion || '', // Sitio de operación
-          empresa_nombre: operacion.salmoneras?.nombre || '', // Salmonera
-          buzo_o_empresa_nombre: operacion.contratistas?.nombre || '', // Empresa contratista
-          supervisor: operacion.contratistas?.nombre || '', // Para cumplir con el tipo
+          lugar_faena: operacion.sitios?.ubicacion || operacion.sitios?.nombre || '',
+          empresa_nombre: operacion.contratistas?.nombre || '',
           bitacora_fecha: new Date().toISOString().split('T')[0],
           bitacora_relator: ''
         };
@@ -157,6 +154,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           }
           
           if (buzoPrincipal) {
+            autoDataUpdates.buzo_o_empresa_nombre = buzoPrincipal.nombre_completo;
             autoDataUpdates.buzo_matricula = buzoPrincipal.matricula || '';
           }
           
@@ -236,21 +234,21 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       const submitData = {
         ...formData,
         operacion_id: currentOperacionId,
-        firmado: false, // Se firma después de crear
-        estado: 'borrador'
+        firmado: !!(formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url),
+        estado: formData.anexo_bravo_firmas.supervisor_servicio_url && formData.anexo_bravo_firmas.supervisor_mandante_url ? 'firmado' : 'borrador'
       };
 
       await onSubmit(submitData);
       
       toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente. Ahora puede firmarlo desde la lista de Anexos Bravo.",
+        title: "Anexo Bravo enviado",
+        description: "El Anexo Bravo ha sido enviado exitosamente",
       });
     } catch (error) {
       console.error('Error submitting Anexo Bravo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el Anexo Bravo",
+        description: "No se pudo enviar el Anexo Bravo",
         variant: "destructive",
       });
     } finally {
@@ -259,9 +257,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
   };
 
   const isFormValid = () => {
-    // Para envío final, no requiere firmas (se firman después)
-    const requiredSteps = steps.slice(0, 4); // Solo los primeros 4 pasos
-    return requiredSteps.every(step => step.isValid);
+    return steps.every(step => step.isValid);
   };
 
   const getProgress = () => {
@@ -403,7 +399,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
                   disabled={!isFormValid() || isLoading}
                   className="ios-button bg-green-600 hover:bg-green-700"
                 >
-                  {isLoading ? 'Creando...' : 'Crear Anexo Bravo'}
+                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
                 </Button>
               )}
             </div>

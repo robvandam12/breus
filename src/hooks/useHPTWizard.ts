@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -22,7 +23,7 @@ export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
   jefe_mandante_nombre: string;
   descripcion_tarea: string;
   es_rutinaria: boolean;
-  lugar_especifico: string; // Nuevo campo agregado
+  lugar_especifico: string;
   estado_puerto: 'abierto' | 'cerrado';
 
   // EPP (Paso 2)
@@ -103,7 +104,7 @@ const initialData: HPTWizardData = {
   jefe_mandante_nombre: '',
   descripcion_tarea: '',
   es_rutinaria: false,
-  lugar_especifico: '', // Nuevo campo agregado
+  lugar_especifico: '',
   estado_puerto: 'abierto',
   hpt_epp: {
     casco: false,
@@ -170,8 +171,8 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       id: 1,
       title: "Datos Generales",
       description: "Información básica de la tarea",
-      fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea', 'lugar_especifico'],
-      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea && data.lugar_especifico)
+      fields: ['folio', 'fecha', 'hora_inicio', 'descripcion_tarea'],
+      isValid: !!(data.folio && data.fecha && data.hora_inicio && data.descripcion_tarea)
     },
     {
       id: 2,
@@ -207,7 +208,9 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],
       isValid: !!(data.hpt_conocimiento.relator_nombre && 
-                  data.hpt_conocimiento_asistentes.length > 0)
+                  data.hpt_conocimiento_asistentes.length > 0 &&
+                  data.hpt_firmas.supervisor_servicio_url &&
+                  data.hpt_firmas.supervisor_mandante_url)
     }
   ];
 
@@ -234,8 +237,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
   }, [steps.length]);
 
   const saveDraft = useCallback(async () => {
-    // Solo guardar draft si se ha avanzado hasta el paso 3 o más
-    if (!data.operacion_id || currentStep < 3) return;
+    if (!data.operacion_id) return;
 
     try {
       const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
@@ -253,7 +255,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  }, [data, hptId, updateHPT, createHPT, currentStep]);
+  }, [data, hptId, updateHPT, createHPT]);
 
   const submitHPT = useCallback(async () => {
     if (!isFormComplete()) {
@@ -282,9 +284,17 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
         await updateHPT({ id: finalHptId, data: hptData });
       }
 
+      // Firmar HPT si ambas firmas están presentes
+      if (finalHptId && data.hpt_firmas.supervisor_servicio_url && data.hpt_firmas.supervisor_mandante_url) {
+        await signHPT({ 
+          id: finalHptId, 
+          signatures: data.hpt_firmas 
+        });
+      }
+
       toast({
-        title: "HPT creado",
-        description: "La Hoja de Planificación de Tarea ha sido creada exitosamente. Ahora puede firmarla desde la lista de HPTs.",
+        title: "HPT enviada",
+        description: "La Hoja de Planificación de Tarea ha sido enviada exitosamente",
       });
 
       return finalHptId;
@@ -292,21 +302,19 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       console.error('Error submitting HPT:', error);
       throw error;
     }
-  }, [data, hptId, createHPT, updateHPT]);
+  }, [data, hptId, createHPT, updateHPT, signHPT]);
 
   const isFormComplete = useCallback(() => {
-    // Para envío final, no requiere firmas (se firman después)
-    const requiredSteps = steps.slice(0, 5); // Solo los primeros 5 pasos
-    return requiredSteps.every(step => step.isValid);
+    return steps.every(step => step.isValid);
   }, [steps]);
 
   const getCurrentStepProgress = useCallback(() => {
     return Math.round((currentStep / steps.length) * 100);
   }, [currentStep, steps.length]);
 
-  // Auto-save cada 30 segundos, pero solo si está en paso 3 o más
+  // Auto-save every 30 seconds
   React.useEffect(() => {
-    if (!autoSaveEnabled || currentStep < 3) return;
+    if (!autoSaveEnabled) return;
 
     const interval = setInterval(() => {
       if (data.operacion_id) {
@@ -315,7 +323,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoSaveEnabled, data.operacion_id, saveDraft, currentStep]);
+  }, [autoSaveEnabled, data.operacion_id, saveDraft]);
 
   return {
     currentStep,

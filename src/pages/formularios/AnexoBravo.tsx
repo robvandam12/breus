@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, CheckCircle, Eye, Edit, Pen } from "lucide-react";
+import { Plus, Search, Shield, CheckCircle, Eye, Edit } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
@@ -23,7 +23,7 @@ const AnexoBravoPage = () => {
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [editingAnexoId, setEditingAnexoId] = useState<string | null>(null);
   
-  const { anexosBravo, isLoading, createAnexoBravo, signAnexoBravo } = useAnexoBravo();
+  const { anexosBravo, isLoading, createAnexoBravo } = useAnexoBravo();
   const { operaciones } = useOperaciones();
 
   const filteredAnexos = anexosBravo.filter(anexo => 
@@ -46,47 +46,21 @@ const AnexoBravoPage = () => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
     setEditingAnexoId(null);
-    
-    toast({
-      title: "Anexo Bravo creado",
-      description: "El Anexo Bravo ha sido creado exitosamente. Ahora puede firmarlo desde la lista.",
-    });
   };
 
   const handleSubmitAnexo = async (data: any) => {
     try {
       await createAnexoBravo(data);
+      toast({
+        title: "Anexo Bravo creado",
+        description: "El Anexo Bravo ha sido creado exitosamente.",
+      });
       handleAnexoComplete();
     } catch (error) {
       console.error('Error creating anexo bravo:', error);
       toast({
         title: "Error",
         description: "No se pudo crear el Anexo Bravo.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSignAnexo = async (anexoId: string) => {
-    try {
-      // Simular firmas de supervisor de servicio, mandante y jefe de centro
-      const mockSignatures = {
-        supervisor_servicio_url: 'firma_supervisor_servicio',
-        supervisor_mandante_url: 'firma_supervisor_mandante',
-        jefe_centro_url: 'firma_jefe_centro'
-      };
-      
-      await signAnexoBravo({ id: anexoId, signatures: mockSignatures });
-      
-      toast({
-        title: "Anexo Bravo firmado",
-        description: "El Anexo Bravo ha sido firmado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error signing anexo bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo firmar el Anexo Bravo.",
         variant: "destructive",
       });
     }
@@ -259,7 +233,7 @@ const AnexoBravoPage = () => {
                                       Firmado
                                     </div>
                                   ) : (
-                                    'Por Firmar'
+                                    anexo.estado || 'Borrador'
                                   )}
                                 </Badge>
                               </TableCell>
@@ -276,17 +250,6 @@ const AnexoBravoPage = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
-                                  {!anexo.firmado && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="ios-button-sm flex items-center gap-1"
-                                      onClick={() => handleSignAnexo(anexo.id)}
-                                    >
-                                      <Pen className="w-3 h-3" />
-                                      Firmar
-                                    </Button>
-                                  )}
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
@@ -296,6 +259,17 @@ const AnexoBravoPage = () => {
                                     <Eye className="w-4 h-4 mr-1" />
                                     Ver
                                   </Button>
+                                  {!anexo.firmado && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="ios-button-sm"
+                                      onClick={() => handleEditAnexo(anexo.id)}
+                                    >
+                                      <Edit className="w-4 h-4 mr-1" />
+                                      Editar
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
