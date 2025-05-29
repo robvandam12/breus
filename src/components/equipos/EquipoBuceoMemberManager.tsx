@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Users, UserPlus, Edit, Trash2, History, AlertTriangle } from "lucide-react";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
@@ -22,19 +22,25 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [newRole, setNewRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>('buzo_principal');
   
   const { addMiembro, removeMiembro, updateMiembroRole } = useEquiposBuceoEnhanced();
 
   const handleAddMember = async (memberData: any) => {
     try {
-      await addMiembro({
+      // Asegurar que el rol_equipo esté presente
+      const finalMemberData = {
         equipo_id: equipoId,
         usuario_id: memberData.usuario_id,
-        rol_equipo: memberData.rol_equipo,
+        rol_equipo: selectedRole, // Usar el rol seleccionado del estado local
         nombre_completo: memberData.nombre_completo,
         email: memberData.email,
         invitado: memberData.invitado || false
-      });
+      };
+
+      console.log('Adding member with data:', finalMemberData);
+      
+      await addMiembro(finalMemberData);
       
       setShowAddDialog(false);
       toast({
@@ -49,6 +55,26 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
         variant: "destructive",
       });
     }
+  };
+
+  const handleSelectUser = (user: any) => {
+    const memberData = {
+      usuario_id: user.usuario_id,
+      nombre_completo: user.nombre_completo || `${user.nombre} ${user.apellido}`,
+      email: user.email,
+      invitado: false
+    };
+    handleAddMember(memberData);
+  };
+
+  const handleInviteUser = (userData: any) => {
+    const memberData = {
+      usuario_id: null,
+      nombre_completo: `${userData.nombre} ${userData.apellido}`,
+      email: userData.email,
+      invitado: true
+    };
+    handleAddMember(memberData);
   };
 
   const handleEditRole = async () => {
@@ -210,12 +236,29 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
           <DialogHeader>
             <DialogTitle>Agregar Miembro al Equipo</DialogTitle>
           </DialogHeader>
-          <UserSearchSelect
-            onSelectUser={handleAddMember}
-            onInviteUser={handleAddMember}
-            allowedRoles={['supervisor', 'buzo']}
-            placeholder="Buscar usuario para agregar al equipo..."
-          />
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="block text-sm font-medium mb-2">Rol en el Equipo</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="supervisor">Supervisor</SelectItem>
+                  <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
+                  <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <UserSearchSelect
+              onSelectUser={handleSelectUser}
+              onInviteUser={handleInviteUser}
+              allowedRoles={['supervisor', 'buzo']}
+              placeholder="Buscar usuario para agregar al equipo..."
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
