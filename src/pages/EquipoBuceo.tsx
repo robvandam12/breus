@@ -165,7 +165,7 @@ const EquipoBuceo = () => {
                 </Card>
                 <Card className="p-4">
                   <div className="text-2xl font-bold text-gray-600">
-                    {equipos.reduce((total, equipo) => total + (equipo.miembros?.filter(m => m.rol_equipo.includes('buzo')).length || 0), 0)}
+                    {equipos.reduce((total, equipo) => total + (equipo.miembros?.filter(m => m.rol_equipo && m.rol_equipo.includes('buzo')).length || 0), 0)}
                   </div>
                   <div className="text-sm text-zinc-500">Buzos</div>
                 </Card>
