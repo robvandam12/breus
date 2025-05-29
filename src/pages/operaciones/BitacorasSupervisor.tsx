@@ -10,7 +10,7 @@ import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
-import { useBitacoras, BitacoraSupervisorData } from "@/hooks/useBitacoras";
+import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,12 +31,9 @@ const BitacorasSupervisor = () => {
 
   const filteredBitacorasSupervisor = filterBitacoras(bitacorasSupervisor);
 
-  const handleCreateSupervisor = async (data: BitacoraSupervisorData) => {
+  const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
-      await createBitacoraSupervisor({
-        ...data,
-        estado: 'borrador'
-      });
+      await createBitacoraSupervisor(data);
       setIsCreateDialogOpen(false);
       refreshBitacoras();
     } catch (error) {
