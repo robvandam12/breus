@@ -22,10 +22,10 @@ export const useEquiposBuceoMockup = () => {
             return {
               ...miembro,
               usuario: usuario,
-              nombre_completo: usuario ? `${usuario.nombre} ${usuario.apellido}` : `${miembro.nombre} ${miembro.apellido}`,
-              email: usuario?.email || miembro.email,
+              nombre_completo: usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario no encontrado',
+              email: usuario?.email || 'Sin email',
               matricula: usuario?.perfil_buzo?.matricula || null,
-              telefono: usuario?.telefono || null,
+              telefono: null, // No existe en la estructura actual
               rol: miembro.rol_equipo
             };
           })
