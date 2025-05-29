@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -11,7 +10,7 @@ import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
-import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+import { useBitacoras, BitacoraSupervisorData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,11 +31,10 @@ const BitacorasSupervisor = () => {
 
   const filteredBitacorasSupervisor = filterBitacoras(bitacorasSupervisor);
 
-  const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
+  const handleCreateSupervisor = async (data: BitacoraSupervisorData) => {
     try {
       await createBitacoraSupervisor({
         ...data,
-        firmado: false, // Se crea sin firmar
         estado: 'borrador'
       });
       setIsCreateDialogOpen(false);

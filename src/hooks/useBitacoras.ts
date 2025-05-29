@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export interface BitacoraSupervisorFormData {
@@ -7,6 +8,38 @@ export interface BitacoraSupervisorFormData {
   incidentes: string;
   evaluacion_general: string;
   fecha: string;
+  // Nuevos campos para el wizard completo
+  fecha_inicio_faena: string;
+  hora_inicio_faena: string;
+  hora_termino_faena: string;
+  lugar_trabajo: string;
+  supervisor_nombre_matricula: string;
+  estado_mar: string;
+  visibilidad_fondo: number;
+  inmersiones_buzos: Array<{
+    buzo_id: string;
+    buzo_nombre: string;
+    profundidad_maxima: number;
+    hora_dejo_superficie: string;
+    hora_llego_superficie: string;
+    tiempo_descenso: number;
+    tiempo_fondo: number;
+    tiempo_ascenso: number;
+    tabulacion_usada: string;
+    tiempo_usado: number;
+  }>;
+  equipos_utilizados: Array<{
+    id: string;
+    nombre: string;
+    matricula: string;
+    vigencia: string;
+  }>;
+  trabajo_a_realizar: string;
+  descripcion_trabajo: string;
+  embarcacion_apoyo: string;
+  observaciones_generales_texto: string;
+  validacion_contratista: boolean;
+  comentarios_validacion: string;
   diving_records?: {
     id: string;
     buzo_id: string;
@@ -92,6 +125,7 @@ export interface BitacoraSupervisor {
   created_at: string;
   updated_at: string;
   supervisor_firma?: string;
+  estado?: string;
 }
 
 export interface BitacoraBuzo {
