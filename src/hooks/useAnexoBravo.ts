@@ -103,8 +103,8 @@ export const useAnexoBravo = () => {
         observaciones_generales: data.observaciones_generales,
         jefe_centro_nombre: data.jefe_centro_nombre,
         supervisor: data.supervisor,
-        estado: data.estado || 'borrador',
-        firmado: data.firmado || false,
+        estado: 'borrador',
+        firmado: false,
         user_id: currentUser.data.user?.id,
         fecha_verificacion: new Date().toISOString().split('T')[0],
         jefe_centro: data.jefe_centro_nombre || 'No especificado'
@@ -164,7 +164,7 @@ export const useAnexoBravo = () => {
     },
   });
 
-  // Sign anexo bravo
+  // Sign anexo bravo - arreglado para usar estado válido
   const signAnexoBravoMutation = useMutation({
     mutationFn: async ({ id, signatures }: { id: string; signatures: any }) => {
       console.log('Signing anexo bravo:', id, signatures);
@@ -174,13 +174,16 @@ export const useAnexoBravo = () => {
         .update({
           anexo_bravo_firmas: signatures,
           firmado: true,
-          estado: 'firmado'
+          estado: 'firmado' // Cambiar a estado válido
         })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error signing anexo bravo:', error);
+        throw error;
+      }
       return result;
     },
     onSuccess: () => {
@@ -188,6 +191,14 @@ export const useAnexoBravo = () => {
       toast({
         title: "Anexo Bravo firmado",
         description: "El Anexo Bravo ha sido firmado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error signing anexo bravo:', error);
+      toast({
+        title: "Error al firmar",
+        description: "No se pudo firmar el Anexo Bravo.",
+        variant: "destructive",
       });
     },
   });

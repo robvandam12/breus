@@ -52,14 +52,13 @@ export const useOperaciones = () => {
           sitios:sitio_id (nombre),
           contratistas:contratista_id (nombre)
         `)
-        .order('created_at', { ascending: false }); // Las más nuevas primero
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching operaciones:', error);
         throw error;
       }
 
-      // Ensure estado values match our type
       return (data || []).map(op => ({
         ...op,
         estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
@@ -74,10 +73,31 @@ export const useOperaciones = () => {
     mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
+      // Validar datos requeridos
+      if (!data.codigo || !data.nombre || !data.salmonera_id || !data.contratista_id || !data.sitio_id) {
+        throw new Error('Faltan campos requeridos para crear la operación');
+      }
+
       const { data: result, error } = await supabase
         .from('operacion')
-        .insert([data])
-        .select()
+        .insert([{
+          codigo: data.codigo,
+          nombre: data.nombre,
+          sitio_id: data.sitio_id,
+          servicio_id: data.servicio_id,
+          salmonera_id: data.salmonera_id,
+          contratista_id: data.contratista_id,
+          fecha_inicio: data.fecha_inicio,
+          fecha_fin: data.fecha_fin,
+          tareas: data.tareas,
+          estado: data.estado || 'activa'
+        }])
+        .select(`
+          *,
+          salmoneras:salmonera_id (nombre),
+          sitios:sitio_id (nombre),
+          contratistas:contratista_id (nombre)
+        `)
         .single();
 
       if (error) {
@@ -98,7 +118,7 @@ export const useOperaciones = () => {
       console.error('Error creating operacion:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la operación.",
+        description: error.message || "No se pudo crear la operación.",
         variant: "destructive",
       });
     },
@@ -113,10 +133,18 @@ export const useOperaciones = () => {
         .from('operacion')
         .update(data)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          salmoneras:salmonera_id (nombre),
+          sitios:sitio_id (nombre),
+          contratistas:contratista_id (nombre)
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating operacion:', error);
+        throw error;
+      }
       return result;
     },
     onSuccess: () => {
@@ -124,6 +152,14 @@ export const useOperaciones = () => {
       toast({
         title: "Operación actualizada",
         description: "La operación ha sido actualizada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating operacion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la operación.",
+        variant: "destructive",
       });
     },
   });
@@ -138,13 +174,24 @@ export const useOperaciones = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting operacion:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       toast({
         title: "Operación eliminada",
         description: "La operación ha sido eliminada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting operacion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la operación.",
+        variant: "destructive",
       });
     },
   });
@@ -156,5 +203,6 @@ export const useOperaciones = () => {
     isCreating: createOperacionMutation.isPending,
     updateOperacion: updateOperacionMutation.mutateAsync,
     deleteOperacion: deleteOperacionMutation.mutateAsync,
+    isUpdating: updateOperacionMutation.isPending,
   };
 };

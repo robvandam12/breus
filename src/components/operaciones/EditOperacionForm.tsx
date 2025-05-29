@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useOperaciones, OperacionFormData } from "@/hooks/useOperaciones";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useContratistas } from "@/hooks/useContratistas";
+import { useSitios } from "@/hooks/useSitios";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditOperacionFormProps {
@@ -17,7 +20,11 @@ interface EditOperacionFormProps {
 
 export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperacionFormProps) => {
   const { toast } = useToast();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
+  const { sitios } = useSitios();
   const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState<OperacionFormData>({
     codigo: operacion.codigo || '',
     nombre: operacion.nombre || '',
@@ -31,11 +38,18 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
     estado: operacion.estado || 'activa'
   });
 
+  console.log('Editing operacion:', operacion);
+  console.log('Form data:', formData);
+  console.log('Available salmoneras:', salmoneras);
+  console.log('Available contratistas:', contratistas);
+  console.log('Available sitios:', sitios);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      console.log('Submitting operacion update:', formData);
       await onSubmit(formData);
       toast({
         title: "Operación actualizada",
@@ -107,6 +121,67 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
               className="ios-input"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="salmonera_id">Salmonera *</Label>
+              <Select
+                value={formData.salmonera_id}
+                onValueChange={(value) => handleChange('salmonera_id', value)}
+              >
+                <SelectTrigger className="ios-input">
+                  <SelectValue placeholder="Seleccionar salmonera" />
+                </SelectTrigger>
+                <SelectContent>
+                  {salmoneras.map((salmonera) => (
+                    <SelectItem key={salmonera.id} value={salmonera.id}>
+                      {salmonera.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="contratista_id">Contratista *</Label>
+              <Select
+                value={formData.contratista_id}
+                onValueChange={(value) => handleChange('contratista_id', value)}
+              >
+                <SelectTrigger className="ios-input">
+                  <SelectValue placeholder="Seleccionar contratista" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contratistas.map((contratista) => (
+                    <SelectItem key={contratista.id} value={contratista.id}>
+                      {contratista.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="sitio_id">Sitio *</Label>
+            <Select
+              value={formData.sitio_id}
+              onValueChange={(value) => handleChange('sitio_id', value)}
+            >
+              <SelectTrigger className="ios-input">
+                <SelectValue placeholder="Seleccionar sitio" />
+              </SelectTrigger>
+              <SelectContent>
+                {sitios
+                  .filter(sitio => sitio.salmonera_id === formData.salmonera_id)
+                  .map((sitio) => (
+                    <SelectItem key={sitio.id} value={sitio.id}>
+                      {sitio.nombre}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

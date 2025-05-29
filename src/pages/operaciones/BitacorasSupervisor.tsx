@@ -4,12 +4,13 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { BitacoraInmersionSelector } from "@/components/bitacoras/BitacoraInmersionSelector";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
@@ -18,6 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showInmersionSelector, setShowInmersionSelector] = useState(false);
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
   
   const { 
     bitacorasSupervisor, 
@@ -33,8 +36,11 @@ const BitacorasSupervisor = () => {
 
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
+      console.log('Creating bitácora supervisor with data:', data);
       await createBitacoraSupervisor(data);
       setIsCreateDialogOpen(false);
+      setShowInmersionSelector(false);
+      setSelectedInmersionId('');
       refreshBitacoras();
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
@@ -44,6 +50,17 @@ const BitacorasSupervisor = () => {
   const handleSignSupervisor = async (id: string) => {
     await signBitacoraSupervisor(id);
     refreshBitacoras();
+  };
+
+  const handleInmersionSelected = (inmersionId: string) => {
+    console.log('Inmersion selected:', inmersionId);
+    setSelectedInmersionId(inmersionId);
+    setShowInmersionSelector(false);
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleNewBitacora = () => {
+    setShowInmersionSelector(true);
   };
 
   if (loading) {
@@ -131,7 +148,7 @@ const BitacorasSupervisor = () => {
                 </div>
 
                 <Button
-                  onClick={() => setIsCreateDialogOpen(true)}
+                  onClick={handleNewBitacora}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -216,12 +233,31 @@ const BitacorasSupervisor = () => {
             </div>
           </div>
 
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent variant="form" className="p-0 max-w-6xl max-h-[90vh] overflow-y-auto">
-              <BitacoraWizard
-                onSubmit={handleCreateSupervisor}
-                onCancel={() => setIsCreateDialogOpen(false)}
+          {/* Inmersion Selector Dialog */}
+          <Dialog open={showInmersionSelector} onOpenChange={setShowInmersionSelector}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogTitle>Seleccionar Inmersión para Bitácora</DialogTitle>
+              <BitacoraInmersionSelector 
+                onInmersionSelected={handleInmersionSelected}
+                selectedInmersionId={selectedInmersionId}
               />
+            </DialogContent>
+          </Dialog>
+
+          {/* Create Form Dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogTitle>Crear Nueva Bitácora de Supervisor</DialogTitle>
+              {selectedInmersionId && (
+                <CreateBitacoraSupervisorForm
+                  inmersionId={selectedInmersionId}
+                  onSubmit={handleCreateSupervisor}
+                  onCancel={() => {
+                    setIsCreateDialogOpen(false);
+                    setSelectedInmersionId('');
+                  }}
+                />
+              )}
             </DialogContent>
           </Dialog>
         </main>

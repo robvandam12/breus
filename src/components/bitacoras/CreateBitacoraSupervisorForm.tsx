@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
@@ -23,23 +22,27 @@ const formSchema = z.object({
 });
 
 interface CreateBitacoraSupervisorFormProps {
+  inmersionId: string;
   onSubmit: (data: BitacoraSupervisorFormData) => Promise<void>;
   onCancel: () => void;
 }
 
-export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
+export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
   const [loading, setLoading] = useState(false);
   const { inmersiones } = useInmersiones();
+
+  // Encontrar la inmersión seleccionada
+  const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors }
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      inmersion_id: inmersionId,
+      supervisor: selectedInmersion?.supervisor || "",
       incidentes: ""
     }
   });
@@ -48,14 +51,16 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
     setLoading(true);
     try {
       const formData: BitacoraSupervisorFormData = {
+        codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: data.supervisor,
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
         evaluacion_general: data.evaluacion_general,
         fecha: new Date().toISOString().split('T')[0],
-        codigo: `BIT-SUP-${Date.now()}`,
       };
+
+      console.log('Submitting bitácora supervisor:', formData);
       await onSubmit(formData);
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
@@ -63,9 +68,6 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
       setLoading(false);
     }
   };
-
-  // Filtrar inmersiones completadas
-  const inmersionesCompletadas = inmersiones.filter(i => i.estado === 'completada');
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -87,38 +89,37 @@ export const CreateBitacoraSupervisorForm = ({ onSubmit, onCancel }: CreateBitac
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="inmersion_id">Inmersión</Label>
-              <Select onValueChange={(value) => setValue('inmersion_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar inmersión..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {inmersionesCompletadas.map((inmersion) => (
-                    <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
-                      {inmersion.codigo} - {inmersion.operacion_nombre || 'Sin nombre'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.inmersion_id && (
-                <p className="text-sm text-red-600">{errors.inmersion_id.message}</p>
-              )}
-            </div>
+        {selectedInmersion && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Inmersión Seleccionada</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Código:</strong> {selectedInmersion.codigo}</p>
+                  <p><strong>Operación:</strong> {selectedInmersion.operacion_nombre || 'Sin nombre'}</p>
+                  <p><strong>Fecha:</strong> {new Date(selectedInmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
+                </div>
+                <div>
+                  <p><strong>Buzo Principal:</strong> {selectedInmersion.buzo_principal}</p>
+                  <p><strong>Supervisor:</strong> {selectedInmersion.supervisor}</p>
+                  <p><strong>Profundidad Máx:</strong> {selectedInmersion.profundidad_max}m</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <div className="space-y-2">
-              <Label htmlFor="supervisor">Supervisor</Label>
-              <Input
-                id="supervisor"
-                {...register('supervisor')}
-                placeholder="Nombre del supervisor"
-              />
-              {errors.supervisor && (
-                <p className="text-sm text-red-600">{errors.supervisor.message}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="supervisor">Supervisor</Label>
+            <Input
+              id="supervisor"
+              {...register('supervisor')}
+              placeholder="Nombre del supervisor"
+            />
+            {errors.supervisor && (
+              <p className="text-sm text-red-600">{errors.supervisor.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
