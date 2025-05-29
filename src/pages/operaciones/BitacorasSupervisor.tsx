@@ -1,17 +1,19 @@
+
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { BitacoraInmersionSelector } from "@/components/bitacoras/BitacoraInmersionSelector";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
-import { BitacoraInmersionSelector } from "@/components/bitacoras/BitacoraInmersionSelector";
-import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,14 +21,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [showInmersionSelector, setShowInmersionSelector] = useState(false);
   const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
+  const [showInmersionSelector, setShowInmersionSelector] = useState(false);
   
   const { 
     bitacorasSupervisor, 
     loading, 
-    createBitacoraSupervisor, 
-    refreshBitacoras 
+    refreshBitacoras,
+    createBitacoraSupervisor 
   } = useBitacoras();
   
   const { signBitacoraSupervisor } = useBitacoraActions();
@@ -34,12 +36,10 @@ const BitacorasSupervisor = () => {
 
   const filteredBitacorasSupervisor = filterBitacoras(bitacorasSupervisor);
 
-  const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
+  const handleCreateSupervisor = async (data: any) => {
     try {
-      console.log('Creating bitácora supervisor with data:', data);
       await createBitacoraSupervisor(data);
       setIsCreateDialogOpen(false);
-      setShowInmersionSelector(false);
       setSelectedInmersionId('');
       refreshBitacoras();
     } catch (error) {
@@ -53,7 +53,6 @@ const BitacorasSupervisor = () => {
   };
 
   const handleInmersionSelected = (inmersionId: string) => {
-    console.log('Inmersion selected:', inmersionId);
     setSelectedInmersionId(inmersionId);
     setShowInmersionSelector(false);
     setIsCreateDialogOpen(true);
@@ -69,18 +68,11 @@ const BitacorasSupervisor = () => {
         <div className="min-h-screen flex w-full bg-gray-50">
           <AppSidebar />
           <main className="flex-1 flex flex-col">
-            <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-              <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-                <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-zinc-600" />
-                  <div>
-                    <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
-                    <p className="text-sm text-zinc-500">Registro de supervisión de inmersiones</p>
-                  </div>
-                </div>
-              </div>
-            </header>
+            <Header 
+              title="Bitácoras Supervisor" 
+              subtitle="Registro de supervisión de inmersiones" 
+              icon={FileText} 
+            />
             <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -92,18 +84,6 @@ const BitacorasSupervisor = () => {
                   </Card>
                 ))}
               </div>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-40" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </main>
         </div>
@@ -116,47 +96,40 @@ const BitacorasSupervisor = () => {
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="ios-blur border-b border-border/20 sticky top-0 z-50">
-            <div className="flex h-16 md:h-18 items-center px-4 md:px-8">
-              <SidebarTrigger className="mr-4 touch-target ios-button p-2 rounded-xl hover:bg-gray-100 transition-colors" />
-              <div className="flex items-center gap-3">
-                <FileText className="w-6 h-6 text-zinc-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
-                  <p className="text-sm text-zinc-500">Registro de supervisión de inmersiones</p>
-                </div>
-              </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-zinc-100 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('cards')}
-                    className="h-8 px-3"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'table' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('table')}
-                    className="h-8 px-3"
-                  >
-                    <LayoutList className="w-4 h-4" />
-                  </Button>
-                </div>
-
+          <Header 
+            title="Bitácoras Supervisor" 
+            subtitle="Registro de supervisión de inmersiones" 
+            icon={FileText} 
+          >
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-zinc-100 rounded-lg p-1">
                 <Button
-                  onClick={handleNewBitacora}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-3"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Bitácora Supervisor
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-3"
+                >
+                  <LayoutList className="w-4 h-4" />
                 </Button>
               </div>
+
+              <Button
+                onClick={handleNewBitacora}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Bitácora Supervisor
+              </Button>
             </div>
-          </header>
+          </Header>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -197,7 +170,7 @@ const BitacorasSupervisor = () => {
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
-                      <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
+                      <Button onClick={handleNewBitacora} className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Nueva Bitácora Supervisor
                       </Button>
@@ -233,21 +206,17 @@ const BitacorasSupervisor = () => {
             </div>
           </div>
 
-          {/* Inmersion Selector Dialog */}
           <Dialog open={showInmersionSelector} onOpenChange={setShowInmersionSelector}>
-            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Seleccionar Inmersión para Bitácora</DialogTitle>
-              <BitacoraInmersionSelector 
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+              <BitacoraInmersionSelector
                 onInmersionSelected={handleInmersionSelected}
                 selectedInmersionId={selectedInmersionId}
               />
             </DialogContent>
           </Dialog>
 
-          {/* Create Form Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Crear Nueva Bitácora de Supervisor</DialogTitle>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
               {selectedInmersionId && (
                 <CreateBitacoraSupervisorForm
                   inmersionId={selectedInmersionId}

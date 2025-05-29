@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,8 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     visibilidad: 0,
     corriente: '',
     observaciones: '',
-    estado: 'planificada'
+    estado: 'planificada',
+    equipo_buceo_id: ''
   });
 
   // Auto-populate data when operation is selected
@@ -72,7 +74,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
         if (opError) throw opError;
 
-        // Get assigned diving team
+        // Get assigned diving team with members
         const equipoAsignado = operacion.equipo_buceo_id 
           ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
           : null;
@@ -87,10 +89,11 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
         const autoUpdates: Partial<typeof formData> = {
           codigo: inmersionCode,
           objetivo: `Inmersión para ${operacion.nombre}`,
-          observaciones: `Sitio: ${operacion.sitios?.nombre || 'No especificado'}`
+          observaciones: `Sitio: ${operacion.sitios?.nombre || 'No especificado'}`,
+          equipo_buceo_id: operacion.equipo_buceo_id || ''
         };
 
-        // If there's an assigned team, populate personnel
+        // If there's an assigned team, populate personnel with IDs
         if (equipoAsignado?.miembros) {
           const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
           const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
@@ -98,17 +101,17 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           
           if (supervisor) {
             autoUpdates.supervisor = supervisor.nombre_completo;
-            // supervisor_id not available in EquipoBuceoMiembro, leave empty
+            autoUpdates.supervisor_id = supervisor.usuario_id || '';
           }
           
           if (buzoPrincipal) {
             autoUpdates.buzo_principal = buzoPrincipal.nombre_completo;
-            // buzo_principal_id not available in EquipoBuceoMiembro, leave empty
+            autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id || '';
           }
           
           if (buzoAsistente) {
             autoUpdates.buzo_asistente = buzoAsistente.nombre_completo;
-            // buzo_asistente_id not available in EquipoBuceoMiembro, leave empty
+            autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id || '';
           }
         }
 
@@ -156,9 +159,15 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     try {
       const submitData = {
         ...formData,
-        operacion_id: selectedOperacionId
+        operacion_id: selectedOperacionId,
+        // Limpiar strings vacíos para UUIDs
+        supervisor_id: formData.supervisor_id || null,
+        buzo_principal_id: formData.buzo_principal_id || null,
+        buzo_asistente_id: formData.buzo_asistente_id || null,
+        equipo_buceo_id: formData.equipo_buceo_id || null
       };
 
+      console.log('Submitting inmersion data:', submitData);
       await onComplete(submitData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -229,6 +238,11 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
                 <Anchor className="w-5 h-5" />
                 Operación: {selectedOperation.codigo} - {selectedOperation.nombre}
               </CardTitle>
+              {assignedTeam && (
+                <p className="text-sm text-blue-600">
+                  Equipo asignado: {assignedTeam.nombre}
+                </p>
+              )}
             </CardHeader>
           </Card>
         )}
