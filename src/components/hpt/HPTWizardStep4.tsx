@@ -2,9 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Plus, X, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import { HPTWizardData } from '@/hooks/useHPTWizard';
 
 interface HPTWizardStep4Props {
@@ -13,198 +13,180 @@ interface HPTWizardStep4Props {
 }
 
 export const HPTWizardStep4: React.FC<HPTWizardStep4Props> = ({ data, updateData }) => {
-  const handleConocimientoChange = (field: string, value: any) => {
+  const handleMedidasChange = (key: string, value: string) => {
     updateData({
-      hpt_conocimiento: {
-        ...data.hpt_conocimiento,
-        [field]: value
+      hpt_medidas: {
+        ...data.hpt_medidas,
+        [key]: value as 'si' | 'no' | 'na'
       }
     });
   };
 
-  const handleAsistenteChange = (index: number, field: string, value: string) => {
-    const updatedAsistentes = [...data.hpt_conocimiento_asistentes];
-    if (!updatedAsistentes[index]) {
-      updatedAsistentes[index] = { nombre: '', rut: '', empresa: '', firma_url: '' };
-    }
-    updatedAsistentes[index] = {
-      ...updatedAsistentes[index],
-      [field]: value
-    };
-    updateData({ hpt_conocimiento_asistentes: updatedAsistentes });
-  };
-
-  const addAsistente = () => {
+  const handleRiesgosChange = (key: string, field: string, value: string) => {
+    const currentItem = data.hpt_riesgos_comp[key] || { valor: 'na', acciones: '' };
     updateData({
-      hpt_conocimiento_asistentes: [
-        ...data.hpt_conocimiento_asistentes,
-        { nombre: '', rut: '', empresa: '', firma_url: '' }
-      ]
+      hpt_riesgos_comp: {
+        ...data.hpt_riesgos_comp,
+        [key]: {
+          ...currentItem,
+          [field]: value
+        }
+      }
     });
   };
 
-  const removeAsistente = (index: number) => {
-    const updatedAsistentes = data.hpt_conocimiento_asistentes.filter((_, i) => i !== index);
-    updateData({ hpt_conocimiento_asistentes: updatedAsistentes });
-  };
+  const medidasItems = [
+    { key: 'listas_chequeo_erc_disponibles', label: '¿Están disponibles las listas de chequeo de ERC?' },
+    { key: 'personal_competente_disponible', label: '¿El personal competente está disponible?' },
+    { key: 'equipos_proteccion_disponibles', label: '¿Los equipos de protección están disponibles?' },
+    { key: 'procedimientos_emergencia_conocidos', label: '¿Se conocen los procedimientos de emergencia?' },
+    { key: 'comunicacion_establecida', label: '¿Se ha establecido la comunicación?' },
+    { key: 'autorizaciones_vigentes', label: '¿Las autorizaciones están vigentes?' }
+  ];
+
+  const riesgosItems = [
+    { key: 'condiciones_ambientales', label: 'Condiciones Ambientales' },
+    { key: 'estado_equipos', label: 'Estado de Equipos' },
+    { key: 'competencia_personal', label: 'Competencia del Personal' },
+    { key: 'coordinacion_actividades', label: 'Coordinación de Actividades' },
+    { key: 'comunicacion_riesgos', label: 'Comunicación de Riesgos' }
+  ];
+
+  // Check validation status
+  const medidasValidation = Object.values(data.hpt_medidas).every(v => v !== 'na');
+  const riesgosValidation = Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na');
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Registro de Toma de Conocimiento</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Medidas Clave y Riesgos Complementarios</h2>
         <p className="mt-2 text-gray-600">
-          Documentación de la sesión de difusión y participantes
+          Verificación de medidas de control y análisis de riesgos adicionales
         </p>
       </div>
 
-      {/* Información de la Difusión */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Información de la Difusión
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fecha_difusion">Fecha</Label>
-              <Input
-                id="fecha_difusion"
-                type="date"
-                value={data.hpt_conocimiento.fecha}
-                onChange={(e) => handleConocimientoChange('fecha', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="hora_difusion">Hora</Label>
-              <Input
-                id="hora_difusion"
-                type="time"
-                value={data.hpt_conocimiento.hora}
-                onChange={(e) => handleConocimientoChange('hora', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="duracion_difusion">Duración (minutos)</Label>
-              <Input
-                id="duracion_difusion"
-                type="number"
-                value={data.hpt_conocimiento.duracion}
-                onChange={(e) => handleConocimientoChange('duracion', parseInt(e.target.value) || 0)}
-                placeholder="30"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="relator_nombre">Nombre del Relator</Label>
-              <Input
-                id="relator_nombre"
-                value={data.hpt_conocimiento.relator_nombre}
-                onChange={(e) => handleConocimientoChange('relator_nombre', e.target.value)}
-                placeholder="Nombre completo del relator"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label htmlFor="relator_cargo">Cargo del Relator</Label>
-              <Input
-                id="relator_cargo"
-                value={data.hpt_conocimiento.relator_cargo}
-                onChange={(e) => handleConocimientoChange('relator_cargo', e.target.value)}
-                placeholder="Cargo o posición del relator"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Lista de Asistentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-purple-600" />
-            Lista de Asistentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {data.hpt_conocimiento_asistentes.map((asistente, index) => (
-            <div key={index} className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium">Asistente #{index + 1}</h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAsistente(index)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor={`asistente_nombre_${index}`}>Nombre</Label>
-                  <Input
-                    id={`asistente_nombre_${index}`}
-                    value={asistente.nombre}
-                    onChange={(e) => handleAsistenteChange(index, 'nombre', e.target.value)}
-                    placeholder="Nombre completo"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor={`asistente_rut_${index}`}>RUT</Label>
-                  <Input
-                    id={`asistente_rut_${index}`}
-                    value={asistente.rut}
-                    onChange={(e) => handleAsistenteChange(index, 'rut', e.target.value)}
-                    placeholder="12.345.678-9"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor={`asistente_empresa_${index}`}>Empresa</Label>
-                  <Input
-                    id={`asistente_empresa_${index}`}
-                    value={asistente.empresa}
-                    onChange={(e) => handleAsistenteChange(index, 'empresa', e.target.value)}
-                    placeholder="Nombre de la empresa"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-
-          <Button
-            onClick={addAsistente}
-            variant="outline"
-            className="w-full border-2 border-dashed"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Asistente
-          </Button>
-
-          {data.hpt_conocimiento_asistentes.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
-              <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>No hay asistentes registrados</p>
-              <p className="text-sm">Agregue al menos un asistente para continuar</p>
-            </div>
+      {/* Validation Status */}
+      <div className={`p-4 rounded-lg border ${medidasValidation && riesgosValidation ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+        <div className="flex items-center gap-2">
+          {medidasValidation && riesgosValidation ? (
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 text-yellow-600" />
           )}
+          <span className={`font-medium ${medidasValidation && riesgosValidation ? 'text-green-800' : 'text-yellow-800'}`}>
+            {medidasValidation && riesgosValidation 
+              ? 'Todas las medidas y riesgos han sido evaluados'
+              : 'Complete todas las evaluaciones para continuar'
+            }
+          </span>
+        </div>
+      </div>
+
+      {/* Medidas Clave */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            Medidas Clave para Ejecución
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {medidasItems.map((medida) => (
+              <div key={medida.key} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 border rounded-lg">
+                <Label className="text-sm font-medium">
+                  {medida.label}
+                </Label>
+                <div>
+                  <Select 
+                    value={data.hpt_medidas[medida.key] || ''} 
+                    onValueChange={(value) => handleMedidasChange(medida.key, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="si">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          Sí
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="no">
+                        <div className="flex items-center gap-2">
+                          <X className="w-4 h-4 text-red-600" />
+                          No
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Users className="w-4 h-4 text-blue-600" />
+      {/* Riesgos Complementarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Riesgos Complementarios
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {riesgosItems.map((riesgo) => (
+              <div key={riesgo.key} className="border rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  <Label className="text-sm font-medium">
+                    {riesgo.label}
+                  </Label>
+                  <div>
+                    <Select 
+                      value={data.hpt_riesgos_comp[riesgo.key]?.valor || ''} 
+                      onValueChange={(value) => handleRiesgosChange(riesgo.key, 'valor', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="¿Presente?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="si">Sí</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {data.hpt_riesgos_comp[riesgo.key]?.valor === 'si' && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Acciones de Control
+                    </Label>
+                    <Textarea
+                      value={data.hpt_riesgos_comp[riesgo.key]?.acciones || ''}
+                      onChange={(e) => handleRiesgosChange(riesgo.key, 'acciones', e.target.value)}
+                      placeholder="Describa las acciones de control implementadas..."
+                      rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="text-sm text-blue-800">
-            <strong>Importante:</strong> Es obligatorio registrar al menos un asistente en la sesión de difusión. 
-            Todos los participantes deben estar informados sobre los riesgos y medidas de control.
+        </CardContent>
+      </Card>
+
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="text-sm text-red-800">
+            <strong>Crítico:</strong> Para cualquier medida marcada como "No" o riesgo presente, 
+            se deben implementar acciones correctivas antes de proceder. Documente todas las acciones en los campos correspondientes.
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,9 +132,10 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
         console.log('Operation data:', operacion);
         console.log('Assigned team:', equipoAsignado);
 
-        // Create updates object
+        // Create updates object with unique code
+        const uniqueCode = `AB-${operacion.codigo}-${Date.now().toString().slice(-6)}`;
         const autoDataUpdates: Partial<typeof formData> = {
-          codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
+          codigo: uniqueCode,
           fecha: new Date().toISOString().split('T')[0],
           lugar_faena: operacion.sitios?.nombre || operacion.sitios?.ubicacion || '', // Sitio de operación
           empresa_nombre: operacion.salmoneras?.nombre || '', // Salmonera
@@ -230,11 +232,32 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
 
     setIsLoading(true);
     try {
+      // Prepare clean data for submission - only include existing columns
       const submitData = {
-        ...formData,
+        codigo: formData.codigo,
+        fecha: formData.fecha,
+        lugar_faena: formData.lugar_faena,
+        empresa_nombre: formData.empresa_nombre,
+        supervisor_servicio_nombre: formData.supervisor_servicio_nombre,
+        supervisor_mandante_nombre: formData.supervisor_mandante_nombre,
+        buzo_o_empresa_nombre: formData.buzo_o_empresa_nombre,
+        buzo_matricula: formData.buzo_matricula,
+        asistente_buzo_nombre: formData.asistente_buzo_nombre,
+        asistente_buzo_matricula: formData.asistente_buzo_matricula,
+        autorizacion_armada: formData.autorizacion_armada,
+        bitacora_fecha: formData.bitacora_fecha,
+        bitacora_hora_inicio: formData.bitacora_hora_inicio,
+        bitacora_hora_termino: formData.bitacora_hora_termino,
+        bitacora_relator: formData.bitacora_relator,
+        anexo_bravo_checklist: formData.anexo_bravo_checklist,
+        anexo_bravo_trabajadores: formData.anexo_bravo_trabajadores,
+        anexo_bravo_firmas: formData.anexo_bravo_firmas,
+        observaciones_generales: formData.observaciones_generales,
+        jefe_centro_nombre: formData.jefe_centro_nombre,
         operacion_id: currentOperacionId,
         firmado: false, // Se creará sin firmar
-        estado: 'borrador'
+        estado: 'borrador',
+        supervisor: formData.supervisor_servicio_nombre || 'Sin asignar'
       };
 
       await onSubmit(submitData);

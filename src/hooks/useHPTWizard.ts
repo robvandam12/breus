@@ -236,10 +236,11 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
 
   const saveDraft = useCallback(async () => {
     // Solo guardar draft si se ha avanzado hasta el paso 3 o más
-    if (!data.operacion_id || currentStep < 3) return;
+    if (!data.operacion_id || currentStep < 3 || hptId) return; // No guardar si ya existe HPT
 
     try {
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
+      // Generar código único con timestamp más específico
+      const codigo = data.folio || `HPT-${Date.now().toString().slice(-8)}-${Math.random().toString(36).substr(2, 4)}`;
       
       const hptData: HPTFormData = {
         ...data,
@@ -267,7 +268,8 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     }
 
     try {
-      const codigo = data.folio || `HPT-${Date.now().toString().slice(-6)}`;
+      // Generar código único con timestamp más específico
+      const codigo = data.folio || `HPT-${Date.now().toString().slice(-8)}-${Math.random().toString(36).substr(2, 4)}`;
       
       const hptData: HPTFormData = {
         ...data,
@@ -303,9 +305,9 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     return Math.round((currentStep / steps.length) * 100);
   }, [currentStep, steps.length]);
 
-  // Auto-save every 30 seconds, but only if we're past step 3
+  // Auto-save every 30 seconds, but only if we're past step 3 and no HPT exists
   React.useEffect(() => {
-    if (!autoSaveEnabled || currentStep < 3) return;
+    if (!autoSaveEnabled || currentStep < 3 || hptId) return;
 
     const interval = setInterval(() => {
       if (data.operacion_id) {
@@ -314,7 +316,7 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoSaveEnabled, data.operacion_id, saveDraft, currentStep]);
+  }, [autoSaveEnabled, data.operacion_id, saveDraft, currentStep, hptId]);
 
   return {
     currentStep,
