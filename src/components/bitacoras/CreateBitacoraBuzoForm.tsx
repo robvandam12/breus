@@ -19,6 +19,7 @@ interface CreateBitacoraBuzoFormProps {
 
 export const CreateBitacoraBuzoForm = ({ onSubmit, onCancel, initialData, isEditing }: CreateBitacoraBuzoFormProps) => {
   const [formData, setFormData] = useState<BitacoraBuzoFormData>({
+    codigo: `BIT-BUZ-${Date.now()}`,
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
     buzo: '',

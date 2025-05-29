@@ -98,6 +98,7 @@ export const BitacoraSupervisorFormEnhanced = ({ onSubmit, onCancel }: BitacoraS
     try {
       const supervisor = usuarios.find(u => u.usuario_id === data.supervisor_id);
       const formData: BitacoraSupervisorFormData = {
+        codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: supervisor ? `${supervisor.nombre} ${supervisor.apellido}` : '',
         desarrollo_inmersion: data.desarrollo_inmersion,

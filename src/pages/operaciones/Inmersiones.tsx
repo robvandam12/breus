@@ -298,6 +298,7 @@ export default function Inmersiones() {
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraSupervisorForm
+                inmersionId={selectedInmersionForBitacora}
                 onSubmit={handleBitacoraSupervisorSubmit}
                 onCancel={() => setShowBitacoraSupervisorForm(false)}
               />
