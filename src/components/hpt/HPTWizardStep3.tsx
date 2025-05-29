@@ -53,8 +53,8 @@ export const HPTWizardStep3: React.FC<HPTWizardStep3Props> = ({ data, updateData
   ];
 
   // Check validation status
-  const medidasValidation = Object.values(data.hpt_medidas).every(v => v !== '' && v !== 'na');
-  const riesgosValidation = Object.values(data.hpt_riesgos_comp).every(r => r.valor !== '' && r.valor !== 'na');
+  const medidasValidation = Object.values(data.hpt_medidas).every(v => v !== 'na');
+  const riesgosValidation = Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na');
 
   return (
     <div className="space-y-6">

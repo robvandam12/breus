@@ -193,14 +193,14 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
       title: "Medidas Clave",
       description: "Verificación de medidas de control",
       fields: ['hpt_medidas'],
-      isValid: Object.values(data.hpt_medidas).every(v => v !== '' && v !== 'na')
+      isValid: Object.values(data.hpt_medidas).every(v => v !== 'na')
     },
     {
       id: 5,
       title: "Riesgos Complementarios",
       description: "Análisis de riesgos adicionales",
       fields: ['hpt_riesgos_comp'],
-      isValid: Object.values(data.hpt_riesgos_comp).every(r => r.valor !== '' && r.valor !== 'na')
+      isValid: Object.values(data.hpt_riesgos_comp).every(r => r.valor !== 'na')
     },
     {
       id: 6,
