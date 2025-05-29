@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -15,8 +14,11 @@ import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Use the enhanced type for consistency
+import type { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 
 const BitacorasBuzo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -193,7 +195,7 @@ const BitacorasBuzo = () => {
                     <TableBody>
                       {filteredBitacorasBuzo.map((bitacora) => (
                         <BitacoraTableRow
-                          key={bitacora.id}
+                          key={bitacora.bitacora_id}
                           bitacora={bitacora}
                           type="buzo"
                           onSign={handleSignBuzo}
