@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, UserPlus, Mail } from "lucide-react";
-import { useUsersByCompany } from "@/hooks/useUsersByCompany";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface UserSearchSelectProps {
@@ -39,8 +40,48 @@ export const UserSearchSelect = ({
     rol: allowedRoles[0] || 'buzo'
   });
 
-  // Obtener todos los usuarios disponibles (sin filtrar por empresa específica)
-  const { usuarios: allUsers } = useUsersByCompany();
+  // Buscar TODOS los usuarios sin restricciones de empresa para poder encontrarlos
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['all-users-search'],
+    queryFn: async () => {
+      console.log('Fetching all users for search...');
+      
+      const { data, error } = await supabase
+        .from('usuario')
+        .select(`
+          *,
+          salmonera:salmoneras(nombre),
+          contratista:contratistas(nombre)
+        `)
+        .order('nombre', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching all users:', error);
+        throw error;
+      }
+
+      console.log('All users fetched:', data);
+
+      return (data || []).map(user => {
+        let empresaNombre = 'Sin asignar';
+        let empresaTipoActual: 'salmonera' | 'contratista' = 'salmonera';
+
+        if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
+          empresaNombre = String(user.salmonera.nombre);
+          empresaTipoActual = 'salmonera';
+        } else if (user.contratista && typeof user.contratista === 'object' && 'nombre' in user.contratista) {
+          empresaNombre = String(user.contratista.nombre);
+          empresaTipoActual = 'contratista';
+        }
+
+        return {
+          ...user,
+          empresa_nombre: empresaNombre,
+          empresa_tipo: empresaTipoActual
+        };
+      });
+    },
+  });
   
   console.log('UserSearchSelect - All users:', allUsers);
   console.log('UserSearchSelect - Search term:', searchTerm);
@@ -60,7 +101,9 @@ export const UserSearchSelect = ({
       email: user.email,
       rol: user.rol,
       matchesSearch,
-      matchesRole
+      matchesRole,
+      searchTermLower: searchTerm.toLowerCase(),
+      emailIncludes: user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     });
     
     return matchesSearch && matchesRole;

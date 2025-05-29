@@ -33,7 +33,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         .select(`
           *,
           salmonera:salmoneras(nombre),
-          servicio:contratistas(nombre)
+          contratista:contratistas(nombre)
         `);
 
       // Si no se especifica empresa, buscar todos los usuarios según permisos
@@ -51,10 +51,14 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           
           const contratistaIds = associations?.map(a => a.contratista_id) || [];
           
-          // Filter users from this salmonera or associated contractors
-          query = query.or(
-            `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
-          );
+          if (contratistaIds.length > 0) {
+            // Filter users from this salmonera or associated contractors
+            query = query.or(
+              `salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`
+            );
+          } else {
+            query = query.eq('salmonera_id', profile.salmonera_id);
+          }
         } else if (profile?.role === 'admin_servicio') {
           // Admin servicio sees only their own users
           query = query.eq('servicio_id', profile.servicio_id);
@@ -86,8 +90,8 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
           empresaNombre = String(user.salmonera.nombre);
           empresaTipoActual = 'salmonera';
-        } else if (user.servicio && typeof user.servicio === 'object' && 'nombre' in user.servicio) {
-          empresaNombre = String(user.servicio.nombre);
+        } else if (user.contratista && typeof user.contratista === 'object' && 'nombre' in user.contratista) {
+          empresaNombre = String(user.contratista.nombre);
           empresaTipoActual = 'contratista';
         }
 
