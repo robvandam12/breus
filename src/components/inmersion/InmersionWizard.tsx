@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,8 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     visibilidad: 0,
     corriente: '',
     observaciones: '',
-    estado: 'planificada'
+    estado: 'planificada',
+    equipo_buceo_id: ''
   });
 
   // Auto-populate data when operation is selected
@@ -88,27 +88,28 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
         const autoUpdates: Partial<typeof formData> = {
           codigo: inmersionCode,
           objetivo: `Inmersión para ${operacion.nombre}`,
-          observaciones: `Sitio: ${operacion.sitios?.nombre || 'No especificado'}`
+          observaciones: `Sitio: ${operacion.sitios?.nombre || 'No especificado'}`,
+          equipo_buceo_id: operacion.equipo_buceo_id || ''
         };
 
         // If there's an assigned team, populate personnel
         if (equipoAsignado?.miembros) {
-          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
-          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol === 'buzo_principal');
-          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol === 'buzo_asistente');
+          const supervisor = equipoAsignado.miembros.find(m => m.rol_equipo === 'supervisor');
+          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol_equipo === 'buzo_principal');
+          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol_equipo === 'buzo_asistente');
           
           if (supervisor) {
-            autoUpdates.supervisor = supervisor.nombre_completo;
+            autoUpdates.supervisor = supervisor.nombre_completo || '';
             autoUpdates.supervisor_id = supervisor.usuario_id || '';
           }
           
           if (buzoPrincipal) {
-            autoUpdates.buzo_principal = buzoPrincipal.nombre_completo;
+            autoUpdates.buzo_principal = buzoPrincipal.nombre_completo || '';
             autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id || '';
           }
           
           if (buzoAsistente) {
-            autoUpdates.buzo_asistente = buzoAsistente.nombre_completo;
+            autoUpdates.buzo_asistente = buzoAsistente.nombre_completo || '';
             autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id || '';
           }
         }
@@ -162,6 +163,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
         supervisor_id: formData.supervisor_id || null,
         buzo_principal_id: formData.buzo_principal_id || null,
         buzo_asistente_id: formData.buzo_asistente_id || null,
+        equipo_buceo_id: formData.equipo_buceo_id || null,
       };
 
       console.log('Submitting inmersion data:', submitData);
