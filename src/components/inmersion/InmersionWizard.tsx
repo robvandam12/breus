@@ -73,7 +73,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
         if (opError) throw opError;
 
-        // Get assigned diving team
+        // Get assigned diving team with members
         const equipoAsignado = operacion.equipo_buceo_id 
           ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
           : null;
@@ -92,24 +92,25 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           equipo_buceo_id: operacion.equipo_buceo_id || ''
         };
 
-        // If there's an assigned team, populate personnel
-        if (equipoAsignado?.miembros) {
-          const supervisor = equipoAsignado.miembros.find(m => m.rol_equipo === 'supervisor');
-          const buzoPrincipal = equipoAsignado.miembros.find(m => m.rol_equipo === 'buzo_principal');
-          const buzoAsistente = equipoAsignado.miembros.find(m => m.rol_equipo === 'buzo_asistente');
+        // If there's an assigned team, populate personnel from miembros
+        if (equipoAsignado?.miembros && Array.isArray(equipoAsignado.miembros)) {
+          // Find team members by role using the correct property names from the database
+          const supervisor = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'supervisor');
+          const buzoPrincipal = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_principal');
+          const buzoAsistente = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_asistente');
           
           if (supervisor) {
-            autoUpdates.supervisor = supervisor.nombre_completo || '';
+            autoUpdates.supervisor = supervisor.nombre_completo || supervisor.nombre || '';
             autoUpdates.supervisor_id = supervisor.usuario_id || '';
           }
           
           if (buzoPrincipal) {
-            autoUpdates.buzo_principal = buzoPrincipal.nombre_completo || '';
+            autoUpdates.buzo_principal = buzoPrincipal.nombre_completo || buzoPrincipal.nombre || '';
             autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id || '';
           }
           
           if (buzoAsistente) {
-            autoUpdates.buzo_asistente = buzoAsistente.nombre_completo || '';
+            autoUpdates.buzo_asistente = buzoAsistente.nombre_completo || buzoAsistente.nombre || '';
             autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id || '';
           }
         }
