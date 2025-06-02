@@ -39,35 +39,47 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Tipo simplificado para la operación para evitar recursión
+// Tipos simplificados para evitar recursión
+interface SalmoneraInfo {
+  nombre: string;
+}
+
+interface ContratistaInfo {
+  nombre: string;
+}
+
+interface SitioInfo {
+  nombre: string;
+}
+
+interface UsuarioInfo {
+  nombre: string;
+  apellido: string;
+  rol: string;
+}
+
+interface MiembroEquipo {
+  id: string;
+  rol_equipo: string;
+  usuario_id: string;
+  usuario: UsuarioInfo;
+}
+
+interface EquipoBuceoInfo {
+  id: string;
+  nombre: string;
+  equipo_buceo_miembros: MiembroEquipo[];
+}
+
 interface OperacionInfo {
   id: string;
   codigo: string;
   nombre: string;
   equipo_buceo_id?: string;
-  salmoneras?: {
-    nombre: string;
-  };
-  contratistas?: {
-    nombre: string;
-  };
-  sitios?: {
-    nombre: string;
-  };
-  equipos_buceo?: {
-    id: string;
-    nombre: string;
-    equipo_buceo_miembros: Array<{
-      id: string;
-      rol_equipo: string;
-      usuario_id: string;
-      usuario: {
-        nombre: string;
-        apellido: string;
-        rol: string;
-      };
-    }>;
-  };
+  salmoneras?: SalmoneraInfo;
+  contratistas?: ContratistaInfo;
+  sitios?: SitioInfo;
+  equipos_buceo?: EquipoBuceoInfo;
 }
 
 export interface InmersionCompleta {
@@ -176,7 +188,7 @@ export interface BitacoraBuzoFormData {
   bitacora_supervisor_id?: string;
 }
 
-// Nuevo hook mejorado para manejar bitácoras con equipos
+// Hook mejorado para manejar bitácoras con equipos
 export const useBitacoras = () => {
   const queryClient = useQueryClient();
 
