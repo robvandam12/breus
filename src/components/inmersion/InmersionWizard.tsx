@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,48 +95,48 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
         // If there's an assigned team, get user details for each member
         if (equipoAsignado?.miembros && Array.isArray(equipoAsignado.miembros)) {
-          // Find team members by role
+          // Find team members by role - using bracket notation for type safety
           const supervisor = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'supervisor');
           const buzoPrincipal = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_principal');
           const buzoAsistente = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_asistente');
           
           // Get user details for each role from the usuario table
-          if (supervisor?.usuario_id) {
+          if (supervisor?.['usuario_id']) {
             const { data: userData } = await supabase
               .from('usuario')
               .select('nombre, apellido')
-              .eq('usuario_id', supervisor.usuario_id)
+              .eq('usuario_id', supervisor['usuario_id'])
               .single();
             
             if (userData) {
               autoUpdates.supervisor = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.supervisor_id = supervisor.usuario_id;
+              autoUpdates.supervisor_id = supervisor['usuario_id'];
             }
           }
           
-          if (buzoPrincipal?.usuario_id) {
+          if (buzoPrincipal?.['usuario_id']) {
             const { data: userData } = await supabase
               .from('usuario')
               .select('nombre, apellido')
-              .eq('usuario_id', buzoPrincipal.usuario_id)
+              .eq('usuario_id', buzoPrincipal['usuario_id'])
               .single();
             
             if (userData) {
               autoUpdates.buzo_principal = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.buzo_principal_id = buzoPrincipal.usuario_id;
+              autoUpdates.buzo_principal_id = buzoPrincipal['usuario_id'];
             }
           }
           
-          if (buzoAsistente?.usuario_id) {
+          if (buzoAsistente?.['usuario_id']) {
             const { data: userData } = await supabase
               .from('usuario')
               .select('nombre, apellido')
-              .eq('usuario_id', buzoAsistente.usuario_id)
+              .eq('usuario_id', buzoAsistente['usuario_id'])
               .single();
             
             if (userData) {
               autoUpdates.buzo_asistente = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.buzo_asistente_id = buzoAsistente.usuario_id;
+              autoUpdates.buzo_asistente_id = buzoAsistente['usuario_id'];
             }
           }
         }
