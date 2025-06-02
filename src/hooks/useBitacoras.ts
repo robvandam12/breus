@@ -40,46 +40,28 @@ export interface BitacoraBuzo {
 }
 
 // Tipos simplificados para evitar recursión
-interface SalmoneraInfo {
-  nombre: string;
-}
-
-interface ContratistaInfo {
-  nombre: string;
-}
-
-interface SitioInfo {
-  nombre: string;
-}
-
-interface UsuarioInfo {
-  nombre: string;
-  apellido: string;
-  rol: string;
-}
-
-interface MiembroEquipo {
-  id: string;
-  rol_equipo: string;
-  usuario_id: string;
-  usuario: UsuarioInfo;
-}
-
-interface EquipoBuceoInfo {
-  id: string;
-  nombre: string;
-  equipo_buceo_miembros: MiembroEquipo[];
-}
-
-interface OperacionInfo {
+interface SimpleOperacion {
   id: string;
   codigo: string;
   nombre: string;
   equipo_buceo_id?: string;
-  salmoneras?: SalmoneraInfo;
-  contratistas?: ContratistaInfo;
-  sitios?: SitioInfo;
-  equipos_buceo?: EquipoBuceoInfo;
+  salmoneras?: { nombre: string };
+  contratistas?: { nombre: string };
+  sitios?: { nombre: string };
+  equipos_buceo?: {
+    id: string;
+    nombre: string;
+    equipo_buceo_miembros?: Array<{
+      id: string;
+      rol_equipo: string;
+      usuario_id: string;
+      usuario?: {
+        nombre: string;
+        apellido: string;
+        rol: string;
+      };
+    }>;
+  };
 }
 
 export interface InmersionCompleta {
@@ -96,7 +78,7 @@ export interface InmersionCompleta {
   visibilidad: number;
   corriente: string;
   equipo_buceo_id?: string;
-  operacion: OperacionInfo;
+  operacion: SimpleOperacion;
 }
 
 export interface BitacoraSupervisorFormData {
@@ -195,7 +177,7 @@ export const useBitacoras = () => {
   // Obtener inmersiones con información completa del equipo
   const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery({
     queryKey: ['inmersiones-con-equipos'],
-    queryFn: async () => {
+    queryFn: async (): Promise<InmersionCompleta[]> => {
       const { data, error } = await supabase
         .from('inmersion')
         .select(`
@@ -226,7 +208,7 @@ export const useBitacoras = () => {
 
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery({
     queryKey: ['bitacoras-supervisor'],
-    queryFn: async () => {
+    queryFn: async (): Promise<BitacoraSupervisor[]> => {
       const { data, error } = await supabase
         .from('bitacora_supervisor')
         .select('*')
@@ -239,7 +221,7 @@ export const useBitacoras = () => {
 
   const { data: bitacorasBuzo = [], isLoading: loadingBuzo } = useQuery({
     queryKey: ['bitacoras-buzo'],
-    queryFn: async () => {
+    queryFn: async (): Promise<BitacoraBuzo[]> => {
       const { data, error } = await supabase
         .from('bitacora_buzo')
         .select('*')
