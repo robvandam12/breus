@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, FileText, Eye } from "lucide-react";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
-import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
+import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
+import { CreateBitacoraBuzoFormComplete } from "@/components/bitacoras/CreateBitacoraBuzoFormComplete";
 import { InmersionWizard } from "./InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useBitacoras } from "@/hooks/useBitacoras";
@@ -57,7 +57,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
   const handleCreateBitacoraSupervisor = async (data: any) => {
     try {
-      await createBitacoraSupervisor({ ...data, inmersion_id: inmersionId });
+      await createBitacoraSupervisor(data);
       setShowBitacoraSupervisorDialog(false);
       toast({
         title: "Bitácora creada",
@@ -70,7 +70,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
   const handleCreateBitacoraBuzo = async (data: any) => {
     try {
-      await createBitacoraBuzo({ ...data, inmersion_id: inmersionId });
+      await createBitacoraBuzo(data);
       setShowBitacoraBuzoDialog(false);
       toast({
         title: "Bitácora creada",
@@ -153,8 +153,8 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
       {/* Bitácora Supervisor Dialog */}
       <Dialog open={showBitacoraSupervisorDialog} onOpenChange={setShowBitacoraSupervisorDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <CreateBitacoraSupervisorForm
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+          <CreateBitacoraSupervisorFormComplete
             inmersionId={inmersionId}
             onSubmit={handleCreateBitacoraSupervisor}
             onCancel={() => setShowBitacoraSupervisorDialog(false)}
@@ -164,8 +164,8 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
       {/* Bitácora Buzo Dialog */}
       <Dialog open={showBitacoraBuzoDialog} onOpenChange={setShowBitacoraBuzoDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <CreateBitacoraBuzoFormEnhanced
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+          <CreateBitacoraBuzoFormComplete
             onSubmit={handleCreateBitacoraBuzo}
             onCancel={() => setShowBitacoraBuzoDialog(false)}
           />

@@ -263,57 +263,174 @@ export type Database = {
           bitacora_id: string
           buzo: string
           buzo_firma: string | null
+          buzo_rut: string | null
+          centro_nombre: string | null
           codigo: string
+          codigo_verificacion: string | null
           comentarios_aprobacion: string | null
+          condamb_corriente_fondo_nudos: number | null
+          condamb_estado_mar: string | null
+          condamb_estado_puerto: string | null
+          condamb_temp_agua_c: number | null
+          condamb_temp_aire_c: number | null
+          condamb_visibilidad_fondo_mts: number | null
+          condcert_buceo_altitud: boolean | null
+          condcert_buceo_areas_confinadas: boolean | null
+          condcert_certificados_equipos_usados: boolean | null
+          condcert_observaciones: string | null
+          contratista_nombre: string | null
+          contratista_rut: string | null
           created_at: string
+          datostec_equipo_usado: string | null
+          datostec_hora_dejo_superficie: string | null
+          datostec_hora_llegada_fondo: string | null
+          datostec_hora_llegada_superficie: string | null
+          datostec_hora_salida_fondo: string | null
+          datostec_traje: string | null
+          empresa_nombre: string | null
           estado_aprobacion: string | null
           estado_fisico_post: string
           fecha: string
           fecha_aprobacion: string | null
           firmado: boolean
+          folio: string | null
           inmersion_id: string
+          jefe_centro_correo: string | null
+          objetivo_caracteristicas_dimensiones: string | null
+          objetivo_proposito: string | null
+          objetivo_tipo_area: string | null
           observaciones_tecnicas: string | null
           profundidad_maxima: number
+          supervisor_correo: string | null
+          supervisor_nombre: string | null
+          supervisor_rut: string | null
+          tiempos_grupo_repetitivo_anterior: string | null
+          tiempos_intervalo_superficie: string | null
+          tiempos_nitrogeno_residual: string | null
+          tiempos_nuevo_grupo_repetitivo: string | null
+          tiempos_tabulacion_usada: string | null
+          tiempos_total_buceo: string | null
+          tiempos_total_descompresion: string | null
+          tiempos_total_fondo: string | null
           trabajos_realizados: string
           updated_at: string
+          validador_nombre: string | null
         }
         Insert: {
           aprobada_por?: string | null
           bitacora_id?: string
           buzo: string
           buzo_firma?: string | null
+          buzo_rut?: string | null
+          centro_nombre?: string | null
           codigo: string
+          codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          condamb_corriente_fondo_nudos?: number | null
+          condamb_estado_mar?: string | null
+          condamb_estado_puerto?: string | null
+          condamb_temp_agua_c?: number | null
+          condamb_temp_aire_c?: number | null
+          condamb_visibilidad_fondo_mts?: number | null
+          condcert_buceo_altitud?: boolean | null
+          condcert_buceo_areas_confinadas?: boolean | null
+          condcert_certificados_equipos_usados?: boolean | null
+          condcert_observaciones?: string | null
+          contratista_nombre?: string | null
+          contratista_rut?: string | null
           created_at?: string
+          datostec_equipo_usado?: string | null
+          datostec_hora_dejo_superficie?: string | null
+          datostec_hora_llegada_fondo?: string | null
+          datostec_hora_llegada_superficie?: string | null
+          datostec_hora_salida_fondo?: string | null
+          datostec_traje?: string | null
+          empresa_nombre?: string | null
           estado_aprobacion?: string | null
           estado_fisico_post: string
           fecha: string
           fecha_aprobacion?: string | null
           firmado?: boolean
+          folio?: string | null
           inmersion_id: string
+          jefe_centro_correo?: string | null
+          objetivo_caracteristicas_dimensiones?: string | null
+          objetivo_proposito?: string | null
+          objetivo_tipo_area?: string | null
           observaciones_tecnicas?: string | null
           profundidad_maxima: number
+          supervisor_correo?: string | null
+          supervisor_nombre?: string | null
+          supervisor_rut?: string | null
+          tiempos_grupo_repetitivo_anterior?: string | null
+          tiempos_intervalo_superficie?: string | null
+          tiempos_nitrogeno_residual?: string | null
+          tiempos_nuevo_grupo_repetitivo?: string | null
+          tiempos_tabulacion_usada?: string | null
+          tiempos_total_buceo?: string | null
+          tiempos_total_descompresion?: string | null
+          tiempos_total_fondo?: string | null
           trabajos_realizados: string
           updated_at?: string
+          validador_nombre?: string | null
         }
         Update: {
           aprobada_por?: string | null
           bitacora_id?: string
           buzo?: string
           buzo_firma?: string | null
+          buzo_rut?: string | null
+          centro_nombre?: string | null
           codigo?: string
+          codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          condamb_corriente_fondo_nudos?: number | null
+          condamb_estado_mar?: string | null
+          condamb_estado_puerto?: string | null
+          condamb_temp_agua_c?: number | null
+          condamb_temp_aire_c?: number | null
+          condamb_visibilidad_fondo_mts?: number | null
+          condcert_buceo_altitud?: boolean | null
+          condcert_buceo_areas_confinadas?: boolean | null
+          condcert_certificados_equipos_usados?: boolean | null
+          condcert_observaciones?: string | null
+          contratista_nombre?: string | null
+          contratista_rut?: string | null
           created_at?: string
+          datostec_equipo_usado?: string | null
+          datostec_hora_dejo_superficie?: string | null
+          datostec_hora_llegada_fondo?: string | null
+          datostec_hora_llegada_superficie?: string | null
+          datostec_hora_salida_fondo?: string | null
+          datostec_traje?: string | null
+          empresa_nombre?: string | null
           estado_aprobacion?: string | null
           estado_fisico_post?: string
           fecha?: string
           fecha_aprobacion?: string | null
           firmado?: boolean
+          folio?: string | null
           inmersion_id?: string
+          jefe_centro_correo?: string | null
+          objetivo_caracteristicas_dimensiones?: string | null
+          objetivo_proposito?: string | null
+          objetivo_tipo_area?: string | null
           observaciones_tecnicas?: string | null
           profundidad_maxima?: number
+          supervisor_correo?: string | null
+          supervisor_nombre?: string | null
+          supervisor_rut?: string | null
+          tiempos_grupo_repetitivo_anterior?: string | null
+          tiempos_intervalo_superficie?: string | null
+          tiempos_nitrogeno_residual?: string | null
+          tiempos_nuevo_grupo_repetitivo?: string | null
+          tiempos_tabulacion_usada?: string | null
+          tiempos_total_buceo?: string | null
+          tiempos_total_descompresion?: string | null
+          tiempos_total_fondo?: string | null
           trabajos_realizados?: string
           updated_at?: string
+          validador_nombre?: string | null
         }
         Relationships: [
           {
@@ -336,56 +453,116 @@ export type Database = {
         Row: {
           aprobada_por: string | null
           bitacora_id: string
+          centro_nombre: string | null
           codigo: string
+          codigo_verificacion: string | null
           comentarios_aprobacion: string | null
+          comentarios_validacion: string | null
           created_at: string
           desarrollo_inmersion: string
+          descripcion_trabajo: string | null
+          diving_records: Json | null
+          embarcacion_apoyo: string | null
+          empresa_nombre: string | null
+          equipos_utilizados: Json | null
           estado_aprobacion: string | null
+          estado_mar: string | null
           evaluacion_general: string
           fecha: string
           fecha_aprobacion: string | null
+          fecha_inicio_faena: string | null
           firmado: boolean
+          folio: string | null
+          hora_inicio_faena: string | null
+          hora_termino_faena: string | null
           incidentes: string | null
           inmersion_id: string
+          inmersiones_buzos: Json | null
+          lugar_trabajo: string | null
+          observaciones_generales_texto: string | null
           supervisor: string
           supervisor_firma: string | null
+          supervisor_nombre_matricula: string | null
+          trabajo_a_realizar: string | null
           updated_at: string
+          validacion_contratista: boolean | null
+          visibilidad_fondo: number | null
         }
         Insert: {
           aprobada_por?: string | null
           bitacora_id?: string
+          centro_nombre?: string | null
           codigo: string
+          codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          comentarios_validacion?: string | null
           created_at?: string
           desarrollo_inmersion: string
+          descripcion_trabajo?: string | null
+          diving_records?: Json | null
+          embarcacion_apoyo?: string | null
+          empresa_nombre?: string | null
+          equipos_utilizados?: Json | null
           estado_aprobacion?: string | null
+          estado_mar?: string | null
           evaluacion_general: string
           fecha: string
           fecha_aprobacion?: string | null
+          fecha_inicio_faena?: string | null
           firmado?: boolean
+          folio?: string | null
+          hora_inicio_faena?: string | null
+          hora_termino_faena?: string | null
           incidentes?: string | null
           inmersion_id: string
+          inmersiones_buzos?: Json | null
+          lugar_trabajo?: string | null
+          observaciones_generales_texto?: string | null
           supervisor: string
           supervisor_firma?: string | null
+          supervisor_nombre_matricula?: string | null
+          trabajo_a_realizar?: string | null
           updated_at?: string
+          validacion_contratista?: boolean | null
+          visibilidad_fondo?: number | null
         }
         Update: {
           aprobada_por?: string | null
           bitacora_id?: string
+          centro_nombre?: string | null
           codigo?: string
+          codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          comentarios_validacion?: string | null
           created_at?: string
           desarrollo_inmersion?: string
+          descripcion_trabajo?: string | null
+          diving_records?: Json | null
+          embarcacion_apoyo?: string | null
+          empresa_nombre?: string | null
+          equipos_utilizados?: Json | null
           estado_aprobacion?: string | null
+          estado_mar?: string | null
           evaluacion_general?: string
           fecha?: string
           fecha_aprobacion?: string | null
+          fecha_inicio_faena?: string | null
           firmado?: boolean
+          folio?: string | null
+          hora_inicio_faena?: string | null
+          hora_termino_faena?: string | null
           incidentes?: string | null
           inmersion_id?: string
+          inmersiones_buzos?: Json | null
+          lugar_trabajo?: string | null
+          observaciones_generales_texto?: string | null
           supervisor?: string
           supervisor_firma?: string | null
+          supervisor_nombre_matricula?: string | null
+          trabajo_a_realizar?: string | null
           updated_at?: string
+          validacion_contratista?: boolean | null
+          visibilidad_fondo?: number | null
         }
         Relationships: [
           {

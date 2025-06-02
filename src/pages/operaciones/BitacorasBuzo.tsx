@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -8,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
-import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
+import { CreateBitacoraBuzoFormComplete } from "@/components/bitacoras/CreateBitacoraBuzoFormComplete";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BitacorasBuzo = () => {
@@ -25,10 +24,10 @@ const BitacorasBuzo = () => {
   const { 
     bitacorasBuzo, 
     loading, 
+    createBitacoraBuzo,
     refreshBitacoras 
   } = useBitacoras();
   
-  const { createBitacoraBuzo } = useBitacoraEnhanced();
   const { signBitacoraBuzo } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
@@ -97,7 +96,7 @@ const BitacorasBuzo = () => {
         <main className="flex-1 flex flex-col">
           <Header 
             title="Bitácoras Buzo" 
-            subtitle="Registro personal de inmersiones" 
+            subtitle="Registro completo personal de inmersiones" 
             icon={FileText} 
           >
             <div className="flex items-center gap-2">
@@ -165,7 +164,7 @@ const BitacorasBuzo = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {bitacorasBuzo.length === 0 
-                        ? "Comienza creando tu primera bitácora de buzo"
+                        ? "Comienza creando tu primera bitácora de buzo completa"
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasBuzo.length === 0 && (
@@ -193,7 +192,7 @@ const BitacorasBuzo = () => {
                     <TableBody>
                       {filteredBitacorasBuzo.map((bitacora) => (
                         <BitacoraTableRow
-                          key={bitacora.id}
+                          key={bitacora.bitacora_id}
                           bitacora={bitacora}
                           type="buzo"
                           onSign={handleSignBuzo}
@@ -207,8 +206,8 @@ const BitacorasBuzo = () => {
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent variant="form" className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
-              <CreateBitacoraBuzoFormEnhanced
+            <DialogContent variant="form" className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+              <CreateBitacoraBuzoFormComplete
                 onSubmit={handleCreateBuzo}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />

@@ -10,7 +10,7 @@ import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { BitacoraInmersionSelector } from "@/components/bitacoras/BitacoraInmersionSelector";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
@@ -124,7 +124,7 @@ const BitacorasSupervisor = () => {
                 <FileText className="w-6 h-6 text-zinc-600" />
                 <div>
                   <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
-                  <p className="text-sm text-zinc-500">Registro de supervisión de inmersiones</p>
+                  <p className="text-sm text-zinc-500">Registro completo de supervisión de inmersiones</p>
                 </div>
               </div>
               <div className="flex-1" />
@@ -194,7 +194,7 @@ const BitacorasSupervisor = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {bitacorasSupervisor.length === 0 
-                        ? "Comienza creando tu primera bitácora de supervisor"
+                        ? "Comienza creando tu primera bitácora de supervisor completa"
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
@@ -247,10 +247,10 @@ const BitacorasSupervisor = () => {
 
           {/* Create Form Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Crear Nueva Bitácora de Supervisor</DialogTitle>
+            <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+              <DialogTitle className="sr-only">Crear Nueva Bitácora de Supervisor</DialogTitle>
               {selectedInmersionId && (
-                <CreateBitacoraSupervisorForm
+                <CreateBitacoraSupervisorFormComplete
                   inmersionId={selectedInmersionId}
                   onSubmit={handleCreateSupervisor}
                   onCancel={() => {
