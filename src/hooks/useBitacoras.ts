@@ -39,6 +39,37 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
+// Tipo simplificado para la operación para evitar recursión
+interface OperacionInfo {
+  id: string;
+  codigo: string;
+  nombre: string;
+  equipo_buceo_id?: string;
+  salmoneras?: {
+    nombre: string;
+  };
+  contratistas?: {
+    nombre: string;
+  };
+  sitios?: {
+    nombre: string;
+  };
+  equipos_buceo?: {
+    id: string;
+    nombre: string;
+    equipo_buceo_miembros: Array<{
+      id: string;
+      rol_equipo: string;
+      usuario_id: string;
+      usuario: {
+        nombre: string;
+        apellido: string;
+        rol: string;
+      };
+    }>;
+  };
+}
+
 export interface InmersionCompleta {
   inmersion_id: string;
   codigo: string;
@@ -53,35 +84,7 @@ export interface InmersionCompleta {
   visibilidad: number;
   corriente: string;
   equipo_buceo_id?: string;
-  operacion: {
-    id: string;
-    codigo: string;
-    nombre: string;
-    equipo_buceo_id?: string;
-    salmoneras?: {
-      nombre: string;
-    };
-    contratistas?: {
-      nombre: string;
-    };
-    sitios?: {
-      nombre: string;
-    };
-    equipos_buceo?: {
-      id: string;
-      nombre: string;
-      equipo_buceo_miembros: Array<{
-        id: string;
-        rol_equipo: string;
-        usuario_id: string;
-        usuario: {
-          nombre: string;
-          apellido: string;
-          rol: string;
-        };
-      }>;
-    };
-  };
+  operacion: OperacionInfo;
 }
 
 export interface BitacoraSupervisorFormData {
@@ -214,16 +217,7 @@ export const useBitacoras = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bitacora_supervisor')
-        .select(`
-          *,
-          inmersion:inmersion_id(
-            *,
-            operacion:operacion_id(
-              *,
-              equipos_buceo(*)
-            )
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -236,16 +230,7 @@ export const useBitacoras = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bitacora_buzo')
-        .select(`
-          *,
-          inmersion:inmersion_id(
-            *,
-            operacion:operacion_id(
-              *,
-              equipos_buceo(*)
-            )
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
