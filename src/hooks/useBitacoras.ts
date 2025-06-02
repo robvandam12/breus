@@ -1,10 +1,10 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 // Tipos para las bitácoras basados en la estructura de la base de datos
 export interface BitacoraSupervisor {
   bitacora_id: string;
+  codigo: string;
   inmersion_id: string;
   supervisor: string;
   desarrollo_inmersion: string;
@@ -19,6 +19,7 @@ export interface BitacoraSupervisor {
 
 export interface BitacoraBuzo {
   bitacora_id: string;
+  codigo: string;
   inmersion_id: string;
   buzo: string;
   fecha: string;

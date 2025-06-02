@@ -50,6 +50,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
     setLoading(true);
     try {
       const formData: BitacoraSupervisorFormData = {
+        codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: data.supervisor,
         desarrollo_inmersion: data.desarrollo_inmersion,
