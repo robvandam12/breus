@@ -28,7 +28,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
   const [formData, setFormData] = useState<Partial<BitacoraSupervisorFormData>>({
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
-    supervisor: profile?.nombre + ' ' + profile?.apellido || '',
     desarrollo_inmersion: '',
     incidentes: '',
     evaluacion_general: ''
@@ -42,8 +41,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
         setFormData(prev => ({
           ...prev,
           inmersion_id: selectedInmersionId,
-          fecha: inmersion.fecha_inmersion,
-          supervisor: inmersion.supervisor
+          fecha: inmersion.fecha_inmersion
         }));
       }
     }
@@ -58,28 +56,28 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     const submitData: BitacoraSupervisorFormData = {
       codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: formData.inmersion_id!,
-      supervisor: formData.supervisor!,
+      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
       desarrollo_inmersion: formData.desarrollo_inmersion,
       incidentes: formData.incidentes || '',
       evaluacion_general: formData.evaluacion_general,
       fecha: formData.fecha!,
       firmado: false,
       estado_aprobacion: 'pendiente',
-      fecha_inicio_faena: formData.fecha_inicio_faena || '',
-      hora_inicio_faena: formData.hora_inicio_faena || '',
-      hora_termino_faena: formData.hora_termino_faena || '',
-      lugar_trabajo: formData.lugar_trabajo || '',
-      supervisor_nombre_matricula: formData.supervisor_nombre_matricula || '',
-      estado_mar: formData.estado_mar || '',
-      visibilidad_fondo: formData.visibilidad_fondo || 0,
-      inmersiones_buzos: formData.inmersiones_buzos || [],
-      equipos_utilizados: formData.equipos_utilizados || [],
-      trabajo_a_realizar: formData.trabajo_a_realizar || '',
-      descripcion_trabajo: formData.descripcion_trabajo || '',
-      embarcacion_apoyo: formData.embarcacion_apoyo || '',
-      observaciones_generales_texto: formData.observaciones_generales_texto || '',
-      validacion_contratista: formData.validacion_contratista || false,
-      comentarios_validacion: formData.comentarios_validacion || '',
+      fecha_inicio_faena: '',
+      hora_inicio_faena: '',
+      hora_termino_faena: '',
+      lugar_trabajo: '',
+      supervisor_nombre_matricula: '',
+      estado_mar: '',
+      visibilidad_fondo: 0,
+      inmersiones_buzos: [],
+      equipos_utilizados: [],
+      trabajo_a_realizar: '',
+      descripcion_trabajo: '',
+      embarcacion_apoyo: '',
+      observaciones_generales_texto: '',
+      validacion_contratista: false,
+      comentarios_validacion: '',
       diving_records: []
     };
 

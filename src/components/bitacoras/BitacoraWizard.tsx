@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,9 @@ import { BitacoraStep2 } from './steps/BitacoraStep2';
 import { BitacoraStep4 } from './steps/BitacoraStep4';
 import { BitacoraStep5 } from './steps/BitacoraStep5';
 import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
+
+// Export the type for the step components
+export type BitacoraSupervisorData = BitacoraSupervisorFormData;
 
 interface BitacoraWizardProps {
   onComplete: (data: BitacoraSupervisorFormData) => void;
@@ -69,13 +73,13 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <BitacoraStep1 data={formData} onChange={updateFormData} />;
+        return <BitacoraStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return <BitacoraStep2 data={formData} onChange={updateFormData} />;
+        return <BitacoraStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
-        return <BitacoraStep4 data={formData} onChange={updateFormData} />;
+        return <BitacoraStep4 data={formData} onUpdate={updateFormData} />;
       case 4:
-        return <BitacoraStep5 data={formData} onChange={updateFormData} />;
+        return <BitacoraStep5 data={formData} onUpdate={updateFormData} />;
       default:
         return null;
     }
