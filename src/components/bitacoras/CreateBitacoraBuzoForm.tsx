@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,8 @@ export const CreateBitacoraBuzoForm = ({ onSubmit, onCancel, initialData, isEdit
     trabajos_realizados: '',
     estado_fisico_post: '',
     observaciones_tecnicas: '',
+    firmado: false,
+    estado_aprobacion: 'pendiente',
     // Additional fields for complete form
     folio: '',
     codigo_verificacion: '',
@@ -139,7 +140,6 @@ export const CreateBitacoraBuzoForm = ({ onSubmit, onCancel, initialData, isEdit
                     <SelectValue placeholder="Seleccionar inmersión" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* This would be populated with actual inmersions */}
                     <SelectItem value="imm1">Inmersión 001</SelectItem>
                     <SelectItem value="imm2">Inmersión 002</SelectItem>
                   </SelectContent>

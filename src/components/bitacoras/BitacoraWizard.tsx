@@ -1,27 +1,21 @@
-
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
-import { BitacoraStep1 } from "./steps/BitacoraStep1";
-import { BitacoraStep2 } from "./steps/BitacoraStep2";
-import { BitacoraStep4 } from "./steps/BitacoraStep4";
-import { BitacoraStep5 } from "./steps/BitacoraStep5";
-import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
-
-export interface BitacoraSupervisorData extends BitacoraSupervisorFormData {
-  // Interface that extends the form data with additional wizard-specific properties
-}
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { BitacoraStep1 } from './steps/BitacoraStep1';
+import { BitacoraStep2 } from './steps/BitacoraStep2';
+import { BitacoraStep4 } from './steps/BitacoraStep4';
+import { BitacoraStep5 } from './steps/BitacoraStep5';
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
 
 interface BitacoraWizardProps {
-  onSubmit: (data: BitacoraSupervisorData) => void;
+  onComplete: (data: BitacoraSupervisorFormData) => void;
   onCancel: () => void;
 }
 
-export const BitacoraWizard = ({ onSubmit, onCancel }: BitacoraWizardProps) => {
+export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [data, setData] = useState<BitacoraSupervisorData>({
+  const [formData, setFormData] = useState<BitacoraSupervisorFormData>({
     codigo: `BIT-SUP-${Date.now()}`,
     inmersion_id: '',
     supervisor: '',
@@ -29,8 +23,9 @@ export const BitacoraWizard = ({ onSubmit, onCancel }: BitacoraWizardProps) => {
     incidentes: '',
     evaluacion_general: '',
     fecha: new Date().toISOString().split('T')[0],
-    // Initialize additional fields
-    fecha_inicio_faena: new Date().toISOString().split('T')[0],
+    firmado: false,
+    estado_aprobacion: 'pendiente',
+    fecha_inicio_faena: '',
     hora_inicio_faena: '',
     hora_termino_faena: '',
     lugar_trabajo: '',
@@ -48,96 +43,83 @@ export const BitacoraWizard = ({ onSubmit, onCancel }: BitacoraWizardProps) => {
     diving_records: []
   });
 
-  const steps = [
-    { id: 1, title: "Información General", component: BitacoraStep1 },
-    { id: 2, title: "Registro de Inmersión", component: BitacoraStep2 },
-    { id: 4, title: "Datos Técnicos", component: BitacoraStep4 },
-    { id: 5, title: "Cierre y Validación", component: BitacoraStep5 }
-  ];
+  const totalSteps = 4;
+  const progress = (currentStep / totalSteps) * 100;
 
-  const currentStepData = steps.find(step => step.id === currentStep);
-  const CurrentStepComponent = currentStepData?.component;
-
-  const updateData = (updates: Partial<BitacoraSupervisorData>) => {
-    setData(prev => ({ ...prev, ...updates }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < steps.length) {
-      const nextStepIndex = steps.findIndex(step => step.id === currentStep) + 1;
-      if (nextStepIndex < steps.length) {
-        setCurrentStep(steps[nextStepIndex].id);
-      }
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const prevStep = () => {
+  const handlePrevious = () => {
     if (currentStep > 1) {
-      const currentStepIndex = steps.findIndex(step => step.id === currentStep);
-      if (currentStepIndex > 0) {
-        setCurrentStep(steps[currentStepIndex - 1].id);
-      }
+      setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleSubmit = () => {
-    onSubmit(data);
+  const handleComplete = () => {
+    onComplete(formData);
   };
 
-  const progress = (steps.findIndex(step => step.id === currentStep) + 1) / steps.length * 100;
+  const updateFormData = (updates: Partial<BitacoraSupervisorFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <BitacoraStep1 data={formData} onChange={updateFormData} />;
+      case 2:
+        return <BitacoraStep2 data={formData} onChange={updateFormData} />;
+      case 3:
+        return <BitacoraStep4 data={formData} onChange={updateFormData} />;
+      case 4:
+        return <BitacoraStep5 data={formData} onChange={updateFormData} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-purple-600" />
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardContent className="p-6">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-semibold">
+              Paso {currentStep} de {totalSteps}
+            </h2>
+            <span className="text-sm text-gray-500">{Math.round(progress)}% completado</span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Nueva Bitácora de Supervisor</h1>
-            <p className="text-gray-600">Paso {steps.findIndex(step => step.id === currentStep) + 1} de {steps.length}: {currentStepData?.title}</p>
-          </div>
+          <Progress value={progress} className="w-full" />
         </div>
-        
-        <Progress value={progress} className="h-2" />
-      </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 min-h-[500px]">
-        {CurrentStepComponent && (
-          <CurrentStepComponent data={data} onUpdate={updateData} />
-        )}
-      </div>
+        {renderStep()}
 
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={currentStep === 1 ? onCancel : prevStep}
-          className="flex items-center gap-2"
-        >
-          {currentStep === 1 ? (
-            "Cancelar"
+        <div className="flex justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            Anterior
+          </Button>
+
+          <Button variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+
+          {currentStep === totalSteps ? (
+            <Button onClick={handleComplete}>
+              Completar
+            </Button>
           ) : (
-            <>
-              <ChevronLeft className="w-4 h-4" />
-              Anterior
-            </>
-          )}
-        </Button>
-
-        <Button
-          onClick={currentStep === steps[steps.length - 1].id ? handleSubmit : nextStep}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
-        >
-          {currentStep === steps[steps.length - 1].id ? (
-            "Crear Bitácora"
-          ) : (
-            <>
+            <Button onClick={handleNext}>
               Siguiente
-              <ChevronRight className="w-4 h-4" />
-            </>
+            </Button>
           )}
-        </Button>
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

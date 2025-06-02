@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,6 +57,8 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
         incidentes: data.incidentes || "",
         evaluacion_general: data.evaluacion_general,
         fecha: new Date().toISOString().split('T')[0],
+        firmado: false,
+        estado_aprobacion: 'pendiente'
       };
 
       console.log('Submitting bitácora supervisor:', formData);
