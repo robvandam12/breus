@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Plus, Anchor, Calendar, User, Clock, Eye, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock, Eye, FileText } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useBitacoras } from "@/hooks/useBitacoras";
@@ -20,7 +20,6 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
-  const [selectedInmersion, setSelectedInmersion] = useState<string | null>(null);
   const [showBitacoraBuzoForm, setShowBitacoraBuzoForm] = useState(false);
   const [showBitacoraSupervisorForm, setShowBitacoraSupervisorForm] = useState(false);
   const [selectedInmersionForBitacora, setSelectedInmersionForBitacora] = useState<string>('');
@@ -28,7 +27,7 @@ export default function Inmersiones() {
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
-  const { createBitacoraBuzo, createBitacoraSupervisor, inmersiones: inmersionesConEquipos } = useBitacoras();
+  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoras();
   
   const operacionId = searchParams.get('operacion');
 
@@ -40,7 +39,6 @@ export default function Inmersiones() {
 
   const handleCreateInmersion = async (data: any) => {
     try {
-      // Crear inmersión sin validación de documentos
       await createInmersion(data);
       
       toast({
@@ -142,11 +140,6 @@ export default function Inmersiones() {
         variant: "destructive",
       });
     }
-  };
-
-  // Obtener datos de inmersión con equipo
-  const getInmersionWithTeamData = (inmersionId: string) => {
-    return inmersionesConEquipos.find(i => i.inmersion_id === inmersionId);
   };
 
   if (showWizard) {
@@ -292,6 +285,7 @@ export default function Inmersiones() {
             </div>
           </div>
 
+          {/* Usando los forms enhanced en lugar de los básicos */}
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraBuzoFormEnhanced
@@ -303,30 +297,10 @@ export default function Inmersiones() {
 
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              {selectedInmersionForBitacora && (() => {
-                const inmersionData = getInmersionWithTeamData(selectedInmersionForBitacora);
-                if (inmersionData) {
-                  return (
-                    <CreateBitacoraSupervisorForm
-                      inmersionData={{
-                        inmersion_id: inmersionData.inmersion_id,
-                        codigo: inmersionData.codigo,
-                        fecha_inmersion: inmersionData.fecha_inmersion,
-                        objetivo: inmersionData.objetivo,
-                        supervisor: inmersionData.supervisor,
-                        buzo_principal: inmersionData.buzo_principal,
-                        hora_inicio: inmersionData.hora_inicio,
-                        hora_fin: inmersionData.hora_fin,
-                        operacion: inmersionData.operacion,
-                        equipo_buceo_id: inmersionData.operacion?.equipo_buceo_id
-                      }}
-                      onSubmit={handleBitacoraSupervisorSubmit}
-                      onCancel={() => setShowBitacoraSupervisorForm(false)}
-                    />
-                  );
-                }
-                return <div>Error: No se pudo cargar la información de la inmersión</div>;
-              })()}
+              <BitacoraSupervisorFormEnhanced
+                onSubmit={handleBitacoraSupervisorSubmit}
+                onCancel={() => setShowBitacoraSupervisorForm(false)}
+              />
             </DialogContent>
           </Dialog>
         </main>

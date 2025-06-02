@@ -39,7 +39,7 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Tipos simplificados para evitar recursión
+// Tipos simplificados para evitar recursión infinita
 export interface InmersionCompleta {
   inmersion_id: string;
   codigo: string;
@@ -59,28 +59,18 @@ export interface InmersionCompleta {
     codigo: string;
     nombre: string;
     equipo_buceo_id?: string;
-    salmoneras?: { nombre: string };
-    contratistas?: { nombre: string };
-    sitios?: { nombre: string };
+    salmoneras?: { nombre: string } | null;
+    contratistas?: { nombre: string } | null;
+    sitios?: { nombre: string } | null;
     equipos_buceo?: {
       id: string;
       nombre: string;
-      equipo_buceo_miembros?: Array<{
-        id: string;
-        rol_equipo: string;
-        usuario_id: string;
-        usuario?: {
-          nombre: string;
-          apellido: string;
-          rol: string;
-        };
-      }>;
-    };
+    } | null;
   };
 }
 
 export interface BitacoraSupervisorFormData {
-  codigo: string;
+  codigo: string; // Agregada la propiedad faltante
   inmersion_id: string;
   supervisor: string;
   desarrollo_inmersion: string;
@@ -187,20 +177,14 @@ export const useBitacoras = () => {
             sitios(nombre),
             equipos_buceo(
               id,
-              nombre,
-              equipo_buceo_miembros(
-                id,
-                rol_equipo,
-                usuario_id,
-                usuario:usuario_id(nombre, apellido, rol)
-              )
+              nombre
             )
           )
         `)
         .order('fecha_inmersion', { ascending: false });
       
       if (error) throw error;
-      return data as InmersionCompleta[];
+      return data || [];
     }
   });
 
@@ -213,7 +197,7 @@ export const useBitacoras = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as BitacoraSupervisor[];
+      return data || [];
     }
   });
 
@@ -226,7 +210,7 @@ export const useBitacoras = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as BitacoraBuzo[];
+      return data || [];
     }
   });
 

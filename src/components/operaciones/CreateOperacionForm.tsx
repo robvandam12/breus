@@ -1,32 +1,32 @@
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OperacionFormData, Operacion } from "@/hooks/useOperaciones";
+import { OperacionFormData, useOperaciones } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useSitios } from "@/hooks/useSitios";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateOperacionFormProps {
-  onSubmit?: (data: OperacionFormData) => Promise<void>;
-  onCancel?: () => void;
   onClose?: () => void;
-  initialData?: Operacion;
+  initialData?: any;
   isEditing?: boolean;
 }
 
 export const CreateOperacionForm = ({ 
-  onSubmit: externalOnSubmit, 
-  onCancel, 
   onClose,
   initialData,
   isEditing = false
 }: CreateOperacionFormProps) => {
+  const { createOperacion, isCreating, updateOperacion } = useOperaciones();
+  const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
+  const { sitios, isLoading: loadingSitios } = useSitios();
+  const { contratistas, isLoading: loadingContratistas } = useContratistas();
+
   const [formData, setFormData] = useState<OperacionFormData>({
     codigo: initialData?.codigo || "",
     nombre: initialData?.nombre || "",
@@ -39,10 +39,6 @@ export const CreateOperacionForm = ({
     servicio_id: initialData?.servicio_id || "",
     tareas: initialData?.tareas || "",
   });
-
-  const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
-  const { sitios, isLoading: loadingSitios } = useSitios();
-  const { contratistas, isLoading: loadingContratistas } = useContratistas();
 
   // Filter out any items with empty or invalid IDs
   const validSalmoneras = (salmoneras || []).filter(item => 
@@ -70,26 +66,17 @@ export const CreateOperacionForm = ({
     }
 
     try {
-      if (externalOnSubmit) {
-        await externalOnSubmit(formData);
+      if (isEditing && initialData?.id) {
+        await updateOperacion({ id: initialData.id, data: formData });
+      } else {
+        await createOperacion(formData);
       }
       
-      // Call the appropriate close handler
       onClose?.();
-      onCancel?.();
     } catch (error) {
       console.error("Error with operation:", error);
-      toast({
-        title: "Error",
-        description: `Error al ${isEditing ? 'actualizar' : 'crear'} la operación`,
-        variant: "destructive",
-      });
+      // El error ya se maneja en el hook
     }
-  };
-
-  const handleCancel = () => {
-    onCancel?.();
-    onClose?.();
   };
 
   const updateFormData = (field: keyof OperacionFormData, value: string) => {
@@ -242,13 +229,13 @@ export const CreateOperacionForm = ({
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            {(onCancel || onClose) && (
-              <Button type="button" variant="outline" onClick={handleCancel}>
+            {onClose && (
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
             )}
-            <Button type="submit">
-              {isEditing ? "Actualizar Operación" : "Crear Operación"}
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? "Creando..." : (isEditing ? "Actualizar Operación" : "Crear Operación")}
             </Button>
           </div>
         </form>

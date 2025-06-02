@@ -14,7 +14,7 @@ export interface Operacion {
   fecha_inicio: string;
   fecha_fin?: string;
   tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada';
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
@@ -33,13 +33,13 @@ export interface OperacionFormData {
   fecha_inicio: string;
   fecha_fin?: string;
   tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada';
 }
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
-  // Fetch operaciones
+  // Fetch operaciones (excluyendo las eliminadas por defecto)
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
     queryFn: async () => {
@@ -52,6 +52,7 @@ export const useOperaciones = () => {
           sitios:sitio_id (nombre),
           contratistas:contratista_id (nombre)
         `)
+        .neq('estado', 'eliminada') // Excluir las eliminadas
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -61,9 +62,9 @@ export const useOperaciones = () => {
 
       return (data || []).map(op => ({
         ...op,
-        estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
+        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada'
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
       })) as Operacion[];
     },
   });
@@ -74,8 +75,8 @@ export const useOperaciones = () => {
       console.log('Creating operacion:', data);
       
       // Validar datos requeridos
-      if (!data.codigo || !data.nombre || !data.salmonera_id || !data.contratista_id || !data.sitio_id) {
-        throw new Error('Faltan campos requeridos para crear la operación');
+      if (!data.codigo || !data.nombre) {
+        throw new Error('Código y nombre son campos requeridos');
       }
 
       const { data: result, error } = await supabase
@@ -83,13 +84,13 @@ export const useOperaciones = () => {
         .insert([{
           codigo: data.codigo,
           nombre: data.nombre,
-          sitio_id: data.sitio_id,
-          servicio_id: data.servicio_id,
-          salmonera_id: data.salmonera_id,
-          contratista_id: data.contratista_id,
+          sitio_id: data.sitio_id || null,
+          servicio_id: data.servicio_id || null,
+          salmonera_id: data.salmonera_id || null,
+          contratista_id: data.contratista_id || null,
           fecha_inicio: data.fecha_inicio,
-          fecha_fin: data.fecha_fin,
-          tareas: data.tareas,
+          fecha_fin: data.fecha_fin || null,
+          tareas: data.tareas || null,
           estado: data.estado || 'activa'
         }])
         .select(`
@@ -164,18 +165,18 @@ export const useOperaciones = () => {
     },
   });
 
-  // Delete operacion
-  const deleteOperacionMutation = useMutation({
+  // Cambiar estado a eliminada en lugar de eliminar físicamente
+  const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting operacion:', id);
+      console.log('Marking operacion as deleted:', id);
       
       const { error } = await supabase
         .from('operacion')
-        .delete()
+        .update({ estado: 'eliminada' })
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting operacion:', error);
+        console.error('Error marking operacion as deleted:', error);
         throw error;
       }
     },
@@ -183,11 +184,11 @@ export const useOperaciones = () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       toast({
         title: "Operación eliminada",
-        description: "La operación ha sido eliminada exitosamente.",
+        description: "La operación ha sido marcada como eliminada. Los documentos asociados se mantienen para trazabilidad.",
       });
     },
     onError: (error) => {
-      console.error('Error deleting operacion:', error);
+      console.error('Error marking operacion as deleted:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la operación.",
@@ -202,7 +203,8 @@ export const useOperaciones = () => {
     createOperacion: createOperacionMutation.mutateAsync,
     isCreating: createOperacionMutation.isPending,
     updateOperacion: updateOperacionMutation.mutateAsync,
-    deleteOperacion: deleteOperacionMutation.mutateAsync,
+    markAsDeleted: markAsDeletedMutation.mutateAsync, // Cambio de deleteOperacion a markAsDeleted
     isUpdating: updateOperacionMutation.isPending,
+    isDeleting: markAsDeletedMutation.isPending,
   };
 };
