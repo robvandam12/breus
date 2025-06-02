@@ -15,6 +15,8 @@ export interface BitacoraSupervisor {
   estado_aprobacion: string;
   created_at: string;
   updated_at: string;
+  equipo_buceo_id?: string;
+  operacion_id?: string;
 }
 
 export interface BitacoraBuzo {
@@ -31,6 +33,9 @@ export interface BitacoraBuzo {
   estado_aprobacion: string;
   created_at: string;
   updated_at: string;
+  equipo_buceo_id?: string;
+  operacion_id?: string;
+  bitacora_supervisor_id?: string;
 }
 
 export interface InmersionCompleta {
@@ -42,6 +47,11 @@ export interface InmersionCompleta {
   buzo_principal: string;
   hora_inicio: string;
   hora_fin?: string;
+  profundidad_max: number;
+  temperatura_agua: number;
+  visibilidad: number;
+  corriente: string;
+  equipo_buceo_id?: string;
   operacion: {
     codigo: string;
     nombre: string;
@@ -87,6 +97,8 @@ export interface BitacoraSupervisorFormData {
   codigo_verificacion?: string;
   empresa_nombre?: string;
   centro_nombre?: string;
+  equipo_buceo_id?: string;
+  operacion_id?: string;
 }
 
 export interface BitacoraBuzoFormData {
@@ -139,17 +151,62 @@ export interface BitacoraBuzoFormData {
   condcert_buceo_areas_confinadas: boolean;
   condcert_observaciones: string;
   validador_nombre: string;
+  equipo_buceo_id?: string;
+  operacion_id?: string;
+  bitacora_supervisor_id?: string;
 }
 
+// Nuevo hook mejorado para manejar bitácoras con equipos
 export const useBitacoras = () => {
   const queryClient = useQueryClient();
+
+  // Obtener inmersiones con información completa del equipo
+  const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery({
+    queryKey: ['inmersiones-con-equipos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inmersion')
+        .select(`
+          *,
+          operacion:operacion(
+            *,
+            salmoneras(nombre),
+            contratistas(nombre),
+            sitios(nombre),
+            equipos_buceo(
+              id,
+              nombre,
+              equipo_buceo_miembros(
+                id,
+                rol_equipo,
+                usuario_id,
+                usuario:usuario_id(nombre, apellido, rol)
+              )
+            )
+          )
+        `)
+        .order('fecha_inmersion', { ascending: false });
+      
+      if (error) throw error;
+      return data as any[];
+    }
+  });
 
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery({
     queryKey: ['bitacoras-supervisor'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bitacora_supervisor')
-        .select('*')
+        .select(`
+          *,
+          inmersion:inmersion_id(
+            *,
+            operacion:operacion_id(
+              *,
+              equipos_buceo(*)
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -162,7 +219,16 @@ export const useBitacoras = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bitacora_buzo')
-        .select('*')
+        .select(`
+          *,
+          inmersion:inmersion_id(
+            *,
+            operacion:operacion_id(
+              *,
+              equipos_buceo(*)
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -172,9 +238,30 @@ export const useBitacoras = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (data: BitacoraSupervisorFormData) => {
+      // Obtener información del equipo y operación si viene de inmersión
+      let equipoId = data.equipo_buceo_id;
+      let operacionId = data.operacion_id;
+
+      if (data.inmersion_id && !equipoId) {
+        const { data: inmersion } = await supabase
+          .from('inmersion')
+          .select('operacion:operacion_id(id, equipo_buceo_id)')
+          .eq('inmersion_id', data.inmersion_id)
+          .single();
+        
+        if (inmersion?.operacion) {
+          equipoId = inmersion.operacion.equipo_buceo_id;
+          operacionId = inmersion.operacion.id;
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .insert([data])
+        .insert([{
+          ...data,
+          equipo_buceo_id: equipoId,
+          operacion_id: operacionId
+        }])
         .select()
         .single();
       
@@ -188,9 +275,46 @@ export const useBitacoras = () => {
 
   const createBitacoraBuzo = useMutation({
     mutationFn: async (data: BitacoraBuzoFormData) => {
+      // Obtener información del equipo y operación si viene de inmersión
+      let equipoId = data.equipo_buceo_id;
+      let operacionId = data.operacion_id;
+      let bitacoraSupervisorId = data.bitacora_supervisor_id;
+
+      if (data.inmersion_id && !equipoId) {
+        const { data: inmersion } = await supabase
+          .from('inmersion')
+          .select('operacion:operacion_id(id, equipo_buceo_id)')
+          .eq('inmersion_id', data.inmersion_id)
+          .single();
+        
+        if (inmersion?.operacion) {
+          equipoId = inmersion.operacion.equipo_buceo_id;
+          operacionId = inmersion.operacion.id;
+        }
+      }
+
+      // Buscar bitácora de supervisor del mismo equipo para esta inmersión
+      if (equipoId && data.inmersion_id && !bitacoraSupervisorId) {
+        const { data: supervisorBitacora } = await supabase
+          .from('bitacora_supervisor')
+          .select('bitacora_id')
+          .eq('inmersion_id', data.inmersion_id)
+          .eq('equipo_buceo_id', equipoId)
+          .single();
+        
+        if (supervisorBitacora) {
+          bitacoraSupervisorId = supervisorBitacora.bitacora_id;
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('bitacora_buzo')
-        .insert([data])
+        .insert([{
+          ...data,
+          equipo_buceo_id: equipoId,
+          operacion_id: operacionId,
+          bitacora_supervisor_id: bitacoraSupervisorId
+        }])
         .select()
         .single();
       
@@ -205,14 +329,17 @@ export const useBitacoras = () => {
   const refreshBitacoras = () => {
     queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
     queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
+    queryClient.invalidateQueries({ queryKey: ['inmersiones-con-equipos'] });
   };
 
   return {
+    inmersiones,
     bitacorasSupervisor,
     bitacorasBuzo,
+    loadingInmersiones,
     loadingSupervisor,
     loadingBuzo,
-    loading: loadingSupervisor || loadingBuzo,
+    loading: loadingSupervisor || loadingBuzo || loadingInmersiones,
     createBitacoraSupervisor,
     createBitacoraBuzo,
     refreshBitacoras

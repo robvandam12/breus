@@ -1,10 +1,12 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, FileText, Eye } from "lucide-react";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
 import { CreateBitacoraBuzoFormComplete } from "@/components/bitacoras/CreateBitacoraBuzoFormComplete";
+import { BitacoraInmersionSelectorEnhanced } from "@/components/bitacoras/BitacoraInmersionSelectorEnhanced";
 import { InmersionWizard } from "./InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useBitacoras } from "@/hooks/useBitacoras";
@@ -15,16 +17,31 @@ interface InmersionActionsProps {
   onRefresh?: () => void;
 }
 
+interface InmersionData {
+  inmersion_id: string;
+  codigo: string;
+  fecha_inmersion: string;
+  objetivo: string;
+  supervisor: string;
+  buzo_principal: string;
+  hora_inicio: string;
+  hora_fin?: string;
+  operacion: any;
+  equipo_buceo_id?: string;
+}
+
 export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBitacoraSupervisorDialog, setShowBitacoraSupervisorDialog] = useState(false);
   const [showBitacoraBuzoDialog, setShowBitacoraBuzoDialog] = useState(false);
+  const [selectedInmersionForBitacora, setSelectedInmersionForBitacora] = useState<InmersionData | null>(null);
 
   const { updateInmersion, deleteInmersion, inmersiones } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoras();
+  const { createBitacoraSupervisor, createBitacoraBuzo, inmersiones: inmersionesConEquipos } = useBitacoras();
 
   const inmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
+  const inmersionConEquipo = inmersionesConEquipos.find(i => i.inmersion_id === inmersionId);
 
   const handleEdit = async (data: any) => {
     try {
@@ -58,6 +75,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
     try {
       await createBitacoraSupervisor.mutateAsync(data);
       setShowBitacoraSupervisorDialog(false);
+      setSelectedInmersionForBitacora(null);
       toast({
         title: "Bitácora creada",
         description: "La bitácora de supervisor ha sido creada exitosamente.",
@@ -80,6 +98,25 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
     }
   };
 
+  const handleBitacoraSupervisorClick = () => {
+    if (inmersionConEquipo) {
+      const inmersionData: InmersionData = {
+        inmersion_id: inmersionConEquipo.inmersion_id,
+        codigo: inmersionConEquipo.codigo,
+        fecha_inmersion: inmersionConEquipo.fecha_inmersion,
+        objetivo: inmersionConEquipo.objetivo,
+        supervisor: inmersionConEquipo.supervisor,
+        buzo_principal: inmersionConEquipo.buzo_principal,
+        hora_inicio: inmersionConEquipo.hora_inicio,
+        hora_fin: inmersionConEquipo.hora_fin,
+        operacion: inmersionConEquipo.operacion,
+        equipo_buceo_id: inmersionConEquipo.operacion?.equipo_buceo_id
+      };
+      setSelectedInmersionForBitacora(inmersionData);
+      setShowBitacoraSupervisorDialog(true);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -93,7 +130,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
             <Edit className="w-4 h-4 mr-2" />
             Editar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowBitacoraSupervisorDialog(true)}>
+          <DropdownMenuItem onClick={handleBitacoraSupervisorClick}>
             <FileText className="w-4 h-4 mr-2" />
             Bitácora Supervisor
           </DropdownMenuItem>
@@ -152,12 +189,22 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
       {/* Bitácora Supervisor Dialog */}
       <Dialog open={showBitacoraSupervisorDialog} onOpenChange={setShowBitacoraSupervisorDialog}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
-          <CreateBitacoraSupervisorFormComplete
-            inmersionId={inmersionId}
-            onSubmit={handleCreateBitacoraSupervisor}
-            onCancel={() => setShowBitacoraSupervisorDialog(false)}
-          />
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-6">
+          <DialogHeader>
+            <DialogTitle>Bitácora de Supervisor</DialogTitle>
+          </DialogHeader>
+          {selectedInmersionForBitacora ? (
+            <CreateBitacoraSupervisorForm
+              inmersionData={selectedInmersionForBitacora}
+              onSubmit={handleCreateBitacoraSupervisor}
+              onCancel={() => {
+                setShowBitacoraSupervisorDialog(false);
+                setSelectedInmersionForBitacora(null);
+              }}
+            />
+          ) : (
+            <p>Error: No se pudo cargar la información de la inmersión</p>
+          )}
         </DialogContent>
       </Dialog>
 

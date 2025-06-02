@@ -9,18 +9,31 @@ import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
-import { BitacoraInmersionSelector } from "@/components/bitacoras/BitacoraInmersionSelector";
+import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { BitacoraInmersionSelectorEnhanced } from "@/components/bitacoras/BitacoraInmersionSelectorEnhanced";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface InmersionData {
+  inmersion_id: string;
+  codigo: string;
+  fecha_inmersion: string;
+  objetivo: string;
+  supervisor: string;
+  buzo_principal: string;
+  hora_inicio: string;
+  hora_fin?: string;
+  operacion: any;
+  equipo_buceo_id?: string;
+}
+
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showInmersionSelector, setShowInmersionSelector] = useState(false);
-  const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
+  const [selectedInmersionData, setSelectedInmersionData] = useState<InmersionData | null>(null);
   
   const { 
     bitacorasSupervisor, 
@@ -40,7 +53,7 @@ const BitacorasSupervisor = () => {
       await createBitacoraSupervisor.mutateAsync(data);
       setIsCreateDialogOpen(false);
       setShowInmersionSelector(false);
-      setSelectedInmersionId('');
+      setSelectedInmersionData(null);
       refreshBitacoras();
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
@@ -52,9 +65,9 @@ const BitacorasSupervisor = () => {
     refreshBitacoras();
   };
 
-  const handleInmersionSelected = (inmersionId: string) => {
-    console.log('Inmersion selected:', inmersionId);
-    setSelectedInmersionId(inmersionId);
+  const handleInmersionSelected = (inmersionData: InmersionData) => {
+    console.log('Inmersion selected:', inmersionData);
+    setSelectedInmersionData(inmersionData);
     setShowInmersionSelector(false);
     setIsCreateDialogOpen(true);
   };
@@ -123,7 +136,7 @@ const BitacorasSupervisor = () => {
                 <FileText className="w-6 h-6 text-zinc-600" />
                 <div>
                   <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
-                  <p className="text-sm text-zinc-500">Registro completo de supervisión de inmersiones</p>
+                  <p className="text-sm text-zinc-500">Registro completo de supervisión con equipos de buceo</p>
                 </div>
               </div>
               <div className="flex-1" />
@@ -193,7 +206,7 @@ const BitacorasSupervisor = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {bitacorasSupervisor.length === 0 
-                        ? "Comienza creando tu primera bitácora de supervisor completa"
+                        ? "Comience creando bitácoras asociadas a equipos de buceo"
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
@@ -236,25 +249,26 @@ const BitacorasSupervisor = () => {
           {/* Inmersion Selector Dialog */}
           <Dialog open={showInmersionSelector} onOpenChange={setShowInmersionSelector}>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Seleccionar Inmersión para Bitácora</DialogTitle>
-              <BitacoraInmersionSelector 
+              <DialogTitle>Seleccionar Inmersión para Bitácora de Supervisor</DialogTitle>
+              <BitacoraInmersionSelectorEnhanced 
                 onInmersionSelected={handleInmersionSelected}
-                selectedInmersionId={selectedInmersionId}
+                title="Seleccionar Inmersión para Bitácora de Supervisor"
+                description="Seleccione la inmersión para crear la bitácora de supervisor. La bitácora incluirá automáticamente información del equipo de buceo asignado."
               />
             </DialogContent>
           </Dialog>
 
           {/* Create Form Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+            <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-6">
               <DialogTitle className="sr-only">Crear Nueva Bitácora de Supervisor</DialogTitle>
-              {selectedInmersionId && (
-                <CreateBitacoraSupervisorFormComplete
-                  inmersionId={selectedInmersionId}
+              {selectedInmersionData && (
+                <CreateBitacoraSupervisorForm
+                  inmersionData={selectedInmersionData}
                   onSubmit={handleCreateSupervisor}
                   onCancel={() => {
                     setIsCreateDialogOpen(false);
-                    setSelectedInmersionId('');
+                    setSelectedInmersionData(null);
                   }}
                 />
               )}

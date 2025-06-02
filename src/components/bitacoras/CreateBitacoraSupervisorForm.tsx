@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,50 +8,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { FileText, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileText, X, Users, Building, Calendar, Clock } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 
 const formSchema = z.object({
-  inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
   supervisor: z.string().min(1, "El supervisor es requerido"),
   desarrollo_inmersion: z.string().min(10, "Debe describir el desarrollo de la inmersión"),
   incidentes: z.string().optional().default(""),
   evaluacion_general: z.string().min(10, "La evaluación general es requerida"),
 });
 
+interface InmersionData {
+  inmersion_id: string;
+  codigo: string;
+  fecha_inmersion: string;
+  objetivo: string;
+  supervisor: string;
+  buzo_principal: string;
+  hora_inicio: string;
+  hora_fin?: string;
+  operacion: any;
+  equipo_buceo_id?: string;
+}
+
 interface CreateBitacoraSupervisorFormProps {
-  inmersionId: string;
+  inmersionData: InmersionData;
   onSubmit: (data: BitacoraSupervisorFormData) => Promise<void>;
   onCancel: () => void;
 }
 
-export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
+export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
   const [loading, setLoading] = useState(false);
-  const { inmersiones } = useInmersiones();
-
-  // Encontrar la inmersión seleccionada
-  const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
+    setValue
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      inmersion_id: inmersionId,
-      supervisor: selectedInmersion?.supervisor || "",
+      supervisor: inmersionData.supervisor || "",
       incidentes: ""
     }
   });
+
+  // Pre-populate equipo information if available
+  useEffect(() => {
+    if (inmersionData.supervisor) {
+      setValue('supervisor', inmersionData.supervisor);
+    }
+  }, [inmersionData, setValue]);
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
       const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
-        inmersion_id: data.inmersion_id,
+        inmersion_id: inmersionData.inmersion_id,
         supervisor: data.supervisor,
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
@@ -59,6 +75,11 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
         fecha: new Date().toISOString().split('T')[0],
         firmado: false,
         estado_aprobacion: 'pendiente',
+        // Pre-populate with inmersion and operation data
+        equipo_buceo_id: inmersionData.equipo_buceo_id,
+        operacion_id: inmersionData.operacion?.id,
+        empresa_nombre: inmersionData.operacion?.salmoneras?.nombre || inmersionData.operacion?.contratistas?.nombre || '',
+        centro_nombre: inmersionData.operacion?.sitios?.nombre || '',
         fecha_inicio_faena: '',
         hora_inicio_faena: '',
         hora_termino_faena: '',
@@ -77,7 +98,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
         diving_records: []
       };
 
-      console.log('Submitting bitácora supervisor:', formData);
+      console.log('Submitting bitácora supervisor with team data:', formData);
       await onSubmit(formData);
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
@@ -106,25 +127,51 @@ export const CreateBitacoraSupervisorForm = ({ inmersionId, onSubmit, onCancel }
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {selectedInmersion && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <h4 className="font-medium text-blue-900 mb-2">Inmersión Seleccionada</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p><strong>Código:</strong> {selectedInmersion.codigo}</p>
-                  <p><strong>Operación:</strong> {selectedInmersion.operacion_nombre || 'Sin nombre'}</p>
-                  <p><strong>Fecha:</strong> {new Date(selectedInmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
+        {/* Información de la Inmersión y Equipo */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h4 className="font-medium text-blue-900 mb-2">Información de Contexto</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span><strong>Inmersión:</strong> {inmersionData.codigo}</span>
                 </div>
-                <div>
-                  <p><strong>Buzo Principal:</strong> {selectedInmersion.buzo_principal}</p>
-                  <p><strong>Supervisor:</strong> {selectedInmersion.supervisor}</p>
-                  <p><strong>Profundidad Máx:</strong> {selectedInmersion.profundidad_max}m</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <span><strong>Fecha:</strong> {new Date(inmersionData.fecha_inmersion).toLocaleDateString('es-CL')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span><strong>Horario:</strong> {inmersionData.hora_inicio} - {inmersionData.hora_fin || 'En curso'}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-blue-600" />
+                  <span><strong>Operación:</strong> {inmersionData.operacion?.nombre || 'Sin operación'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span><strong>Buzo Principal:</strong> {inmersionData.buzo_principal}</span>
+                </div>
+                {inmersionData.operacion?.equipos_buceo && (
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span><strong>Equipo:</strong> {inmersionData.operacion.equipos_buceo.nombre}</span>
+                    <Badge variant="outline" className="bg-green-100 text-green-700 text-xs">
+                      Equipo Asignado
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-3">
+              <span className="font-medium">Objetivo:</span>
+              <p className="text-sm text-blue-800 mt-1">{inmersionData.objetivo}</p>
+            </div>
+          </CardContent>
+        </Card>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="space-y-2">
