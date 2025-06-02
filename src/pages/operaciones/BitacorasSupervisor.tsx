@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -38,7 +37,7 @@ const BitacorasSupervisor = () => {
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
       console.log('Creating bitácora supervisor with data:', data);
-      await createBitacoraSupervisor(data);
+      await createBitacoraSupervisor.mutateAsync(data);
       setIsCreateDialogOpen(false);
       setShowInmersionSelector(false);
       setSelectedInmersionId('');

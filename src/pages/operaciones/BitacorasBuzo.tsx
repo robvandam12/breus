@@ -35,7 +35,7 @@ const BitacorasBuzo = () => {
 
   const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
     try {
-      await createBitacoraBuzo(data);
+      await createBitacoraBuzo.mutateAsync(data);
       setIsCreateDialogOpen(false);
       refreshBitacoras();
     } catch (error) {

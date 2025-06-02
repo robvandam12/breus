@@ -1,7 +1,36 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { BitacoraBuzo, BitacoraSupervisor } from '@/integrations/supabase/types';
+
+// Tipos para las bitácoras basados en la estructura de la base de datos
+export interface BitacoraSupervisor {
+  bitacora_id: string;
+  inmersion_id: string;
+  supervisor: string;
+  desarrollo_inmersion: string;
+  incidentes: string;
+  evaluacion_general: string;
+  fecha: string;
+  firmado: boolean;
+  estado_aprobacion: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BitacoraBuzo {
+  bitacora_id: string;
+  inmersion_id: string;
+  buzo: string;
+  fecha: string;
+  profundidad_maxima: number;
+  trabajos_realizados: string;
+  estado_fisico_post: string;
+  observaciones_tecnicas: string;
+  firmado: boolean;
+  estado_aprobacion: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface InmersionCompleta {
   inmersion_id: string;
@@ -172,12 +201,19 @@ export const useBitacoras = () => {
     }
   });
 
+  const refreshBitacoras = () => {
+    queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+    queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
+  };
+
   return {
     bitacorasSupervisor,
     bitacorasBuzo,
     loadingSupervisor,
     loadingBuzo,
+    loading: loadingSupervisor || loadingBuzo,
     createBitacoraSupervisor,
-    createBitacoraBuzo
+    createBitacoraBuzo,
+    refreshBitacoras
   };
 };

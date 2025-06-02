@@ -107,7 +107,7 @@ export default function Inmersiones() {
 
   const handleBitacoraBuzoSubmit = async (data: any) => {
     try {
-      await createBitacoraBuzo({ ...data, inmersion_id: selectedInmersionForBitacora });
+      await createBitacoraBuzo.mutateAsync({ ...data, inmersion_id: selectedInmersionForBitacora });
       toast({
         title: "Bitácora de buzo creada",
         description: "La bitácora ha sido creada exitosamente.",
@@ -126,7 +126,7 @@ export default function Inmersiones() {
 
   const handleBitacoraSupervisorSubmit = async (data: any) => {
     try {
-      await createBitacoraSupervisor({ ...data, inmersion_id: selectedInmersionForBitacora });
+      await createBitacoraSupervisor.mutateAsync({ ...data, inmersion_id: selectedInmersionForBitacora });
       toast({
         title: "Bitácora de supervisor creada",
         description: "La bitácora ha sido creada exitosamente.",

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -57,7 +56,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
   const handleCreateBitacoraSupervisor = async (data: any) => {
     try {
-      await createBitacoraSupervisor(data);
+      await createBitacoraSupervisor.mutateAsync(data);
       setShowBitacoraSupervisorDialog(false);
       toast({
         title: "Bitácora creada",
@@ -70,7 +69,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
   const handleCreateBitacoraBuzo = async (data: any) => {
     try {
-      await createBitacoraBuzo(data);
+      await createBitacoraBuzo.mutateAsync(data);
       setShowBitacoraBuzoDialog(false);
       toast({
         title: "Bitácora creada",
