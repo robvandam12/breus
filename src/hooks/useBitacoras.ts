@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -53,8 +54,10 @@ export interface InmersionCompleta {
   corriente: string;
   equipo_buceo_id?: string;
   operacion: {
+    id: string;
     codigo: string;
     nombre: string;
+    equipo_buceo_id?: string;
     salmoneras?: {
       nombre: string;
     };
@@ -63,6 +66,20 @@ export interface InmersionCompleta {
     };
     sitios?: {
       nombre: string;
+    };
+    equipos_buceo?: {
+      id: string;
+      nombre: string;
+      equipo_buceo_miembros: Array<{
+        id: string;
+        rol_equipo: string;
+        usuario_id: string;
+        usuario: {
+          nombre: string;
+          apellido: string;
+          rol: string;
+        };
+      }>;
     };
   };
 }
@@ -168,7 +185,7 @@ export const useBitacoras = () => {
         .from('inmersion')
         .select(`
           *,
-          operacion:operacion(
+          operacion:operacion_id(
             *,
             salmoneras(nombre),
             contratistas(nombre),
@@ -188,7 +205,7 @@ export const useBitacoras = () => {
         .order('fecha_inmersion', { ascending: false });
       
       if (error) throw error;
-      return data as any[];
+      return data as InmersionCompleta[];
     }
   });
 

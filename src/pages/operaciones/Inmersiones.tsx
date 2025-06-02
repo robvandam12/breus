@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -27,7 +28,7 @@ export default function Inmersiones() {
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
-  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoras();
+  const { createBitacoraBuzo, createBitacoraSupervisor, inmersiones: inmersionesConEquipos } = useBitacoras();
   
   const operacionId = searchParams.get('operacion');
 
@@ -141,6 +142,11 @@ export default function Inmersiones() {
         variant: "destructive",
       });
     }
+  };
+
+  // Obtener datos de inmersión con equipo
+  const getInmersionWithTeamData = (inmersionId: string) => {
+    return inmersionesConEquipos.find(i => i.inmersion_id === inmersionId);
   };
 
   if (showWizard) {
@@ -297,11 +303,30 @@ export default function Inmersiones() {
 
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <CreateBitacoraSupervisorForm
-                inmersionId={selectedInmersionForBitacora}
-                onSubmit={handleBitacoraSupervisorSubmit}
-                onCancel={() => setShowBitacoraSupervisorForm(false)}
-              />
+              {selectedInmersionForBitacora && (() => {
+                const inmersionData = getInmersionWithTeamData(selectedInmersionForBitacora);
+                if (inmersionData) {
+                  return (
+                    <CreateBitacoraSupervisorForm
+                      inmersionData={{
+                        inmersion_id: inmersionData.inmersion_id,
+                        codigo: inmersionData.codigo,
+                        fecha_inmersion: inmersionData.fecha_inmersion,
+                        objetivo: inmersionData.objetivo,
+                        supervisor: inmersionData.supervisor,
+                        buzo_principal: inmersionData.buzo_principal,
+                        hora_inicio: inmersionData.hora_inicio,
+                        hora_fin: inmersionData.hora_fin,
+                        operacion: inmersionData.operacion,
+                        equipo_buceo_id: inmersionData.operacion?.equipo_buceo_id
+                      }}
+                      onSubmit={handleBitacoraSupervisorSubmit}
+                      onCancel={() => setShowBitacoraSupervisorForm(false)}
+                    />
+                  );
+                }
+                return <div>Error: No se pudo cargar la información de la inmersión</div>;
+              })()}
             </DialogContent>
           </Dialog>
         </main>
