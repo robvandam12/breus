@@ -143,19 +143,19 @@ export const BitacoraInmersionSelectorEnhanced = ({
                     </div>
                   </div>
 
-                  {inmersion.operacion?.equipos_buceo && (
+                  {inmersion.operacion?.equipo_buceo_id && (
                     <div className="mt-3 p-2 bg-green-50 rounded border border-green-200">
                       <div className="flex items-center gap-1 text-xs text-green-700">
                         <Users className="w-3 h-3" />
-                        <span><strong>Equipo de Buceo:</strong> {inmersion.operacion.equipos_buceo.nombre}</span>
+                        <span><strong>Equipo de Buceo ID:</strong> {inmersion.operacion.equipo_buceo_id}</span>
                       </div>
                     </div>
                   )}
 
-                  {inmersion.operacion?.sitios && (
+                  {inmersion.operacion?.salmoneras?.nombre && (
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <MapPin className="w-3 h-3" />
-                      <span><strong>Sitio:</strong> {inmersion.operacion.sitios.nombre}</span>
+                      <span><strong>Empresa:</strong> {inmersion.operacion.salmoneras.nombre}</span>
                     </div>
                   )}
                 </div>

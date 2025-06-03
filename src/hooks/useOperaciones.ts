@@ -3,7 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Tipos básicos simplificados
+// Interfaces simplificadas para evitar recursión
+interface SalmoneraBasic {
+  nombre: string;
+}
+
+interface SitioBasic {
+  nombre: string;
+}
+
+interface ContratistaBasic {
+  nombre: string;
+}
+
+// Tipo principal de operación
 export interface Operacion {
   id: string;
   codigo: string;
@@ -19,9 +32,9 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
+  salmoneras?: SalmoneraBasic;
+  sitios?: SitioBasic;
+  contratistas?: ContratistaBasic;
 }
 
 export interface OperacionFormData {
@@ -43,7 +56,7 @@ export const useOperaciones = () => {
   // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Operacion[]> => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
         .from('operacion')
@@ -66,7 +79,7 @@ export const useOperaciones = () => {
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
           : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
-      })) as Operacion[];
+      }));
     },
   });
 
@@ -115,7 +128,7 @@ export const useOperaciones = () => {
         description: "La operación ha sido creada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error creating operacion:', error);
       toast({
         title: "Error",
@@ -155,7 +168,7 @@ export const useOperaciones = () => {
         description: "La operación ha sido actualizada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error updating operacion:', error);
       toast({
         title: "Error",
@@ -233,7 +246,7 @@ export const useOperaciones = () => {
         description: "La operación ha sido eliminada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting operacion:', error);
       toast({
         title: "Error",
@@ -265,7 +278,7 @@ export const useOperaciones = () => {
         description: "La operación ha sido marcada como eliminada. Los documentos asociados se mantienen para trazabilidad.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error marking operacion as deleted:', error);
       toast({
         title: "Error",

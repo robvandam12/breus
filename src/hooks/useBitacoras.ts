@@ -140,7 +140,12 @@ export const useBitacoras = () => {
         .from('inmersion')
         .select(`
           *,
-          operacion:operacion_id(*)
+          operacion:operacion_id(
+            *,
+            salmoneras:salmonera_id(nombre),
+            sitios:sitio_id(nombre),
+            contratistas:contratista_id(nombre)
+          )
         `)
         .order('fecha_inmersion', { ascending: false });
       
