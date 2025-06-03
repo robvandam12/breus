@@ -162,14 +162,14 @@ export interface BitacoraBuzoFormData {
   bitacora_supervisor_id?: string;
 }
 
-// Hook mejorado para manejar bitácoras con equipos
+// Hook simplificado para manejar bitácoras
 export const useBitacoras = () => {
   const queryClient = useQueryClient();
 
-  // Obtener inmersiones con información completa del equipo
+  // Obtener inmersiones con información básica del equipo
   const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery({
     queryKey: ['inmersiones-con-equipos'],
-    queryFn: async (): Promise<InmersionCompleta[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('inmersion')
         .select(`
@@ -188,7 +188,7 @@ export const useBitacoras = () => {
         .order('fecha_inmersion', { ascending: false });
       
       if (error) throw error;
-      return (data || []) as InmersionCompleta[];
+      return data || [];
     }
   });
 
