@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Plus, Anchor, Calendar, User, Clock, Eye, FileText } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
 import { CreateBitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
@@ -17,6 +16,7 @@ import { useBitacoras } from "@/hooks/useBitacoras";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { InmersionesActions } from "./InmersionesActions";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
@@ -57,17 +57,6 @@ export default function Inmersiones() {
         description: "No se pudo crear la inmersión.",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleShowWizard = () => {
-    setShowWizard(true);
-  };
-
-  const handleCancel = () => {
-    setShowWizard(false);
-    if (operacionId) {
-      navigateTo('/operaciones');
     }
   };
 
@@ -159,7 +148,12 @@ export default function Inmersiones() {
                 <InmersionWizard
                   operationId={operacionId || undefined}
                   onComplete={handleCreateInmersion}
-                  onCancel={handleCancel}
+                  onCancel={() => {
+                    setShowWizard(false);
+                    if (operacionId) {
+                      navigateTo('/operaciones');
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -179,7 +173,7 @@ export default function Inmersiones() {
             subtitle="Gestión de inmersiones de buceo" 
             icon={Anchor} 
           >
-            <Button onClick={handleShowWizard}>
+            <Button onClick={() => setShowWizard(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Nueva Inmersión
             </Button>
@@ -200,7 +194,7 @@ export default function Inmersiones() {
                     <p className="text-gray-600 mb-6">
                       Comience creando su primera inmersión de buceo.
                     </p>
-                    <Button onClick={handleShowWizard}>
+                    <Button onClick={() => setShowWizard(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Nueva Inmersión
                     </Button>
@@ -243,39 +237,12 @@ export default function Inmersiones() {
                             <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
                           </div>
                           
-                          <div className="pt-3 border-t border-gray-200">
-                            <div className="flex gap-2 mb-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleViewInmersion(inmersion.inmersion_id)}
-                                className="flex-1"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Ver
-                              </Button>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
-                                className="flex-1 text-xs"
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                Bit. Buzo
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
-                                className="flex-1 text-xs"
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                Bit. Sup.
-                              </Button>
-                            </div>
-                          </div>
+                          <InmersionesActions
+                            inmersionId={inmersion.inmersion_id}
+                            onView={handleViewInmersion}
+                            onCreateBitacoraBuzo={handleCreateBitacoraBuzo}
+                            onCreateBitacoraSupervisor={handleCreateBitacoraSupervisor}
+                          />
                         </CardContent>
                       </Card>
                     );
@@ -285,7 +252,7 @@ export default function Inmersiones() {
             </div>
           </div>
 
-          {/* Usando solo los forms completos/enhanced */}
+          {/* Dialogs */}
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraBuzoFormEnhanced

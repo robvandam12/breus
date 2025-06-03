@@ -1,16 +1,15 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Search, Eye, Edit, Trash2, Plus, Calendar, AlertTriangle } from "lucide-react";
+import { Search, Calendar, AlertTriangle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { EditOperacionForm } from "./EditOperacionForm";
 import OperacionDetailModal from "./OperacionDetailModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { OperacionesKPIs } from "./OperacionesKPIs";
+import { OperacionesTable } from "./OperacionesTable";
 
 export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,16 +49,13 @@ export const OperacionesManager = () => {
 
   const handleDelete = async (operacionId: string) => {
     try {
-      // Verificar si se puede eliminar
       const { canDelete, reason } = await checkCanDelete(operacionId);
       
       if (canDelete) {
-        // Se puede eliminar físicamente
         if (window.confirm('¿Está seguro de que desea eliminar esta operación? Esta acción no se puede deshacer.')) {
           await deleteOperacion(operacionId);
         }
       } else {
-        // Solo se puede marcar como eliminada
         const confirmMessage = `No se puede eliminar físicamente esta operación porque ${reason}. ¿Desea marcarla como eliminada? Los documentos asociados se mantendrán para trazabilidad.`;
         if (window.confirm(confirmMessage)) {
           await markAsDeleted(operacionId);
@@ -68,17 +64,6 @@ export const OperacionesManager = () => {
     } catch (error) {
       console.error('Error handling operation deletion:', error);
     }
-  };
-
-  const getEstadoBadgeColor = (estado: string) => {
-    const colors: Record<string, string> = {
-      activa: 'bg-green-100 text-green-700',
-      pausada: 'bg-yellow-100 text-yellow-700',
-      completada: 'bg-blue-100 text-blue-700',
-      cancelada: 'bg-red-100 text-red-700',
-      eliminada: 'bg-gray-100 text-gray-700',
-    };
-    return colors[estado] || 'bg-gray-100 text-gray-700';
   };
 
   if (isLoading) {
@@ -124,40 +109,7 @@ export const OperacionesManager = () => {
       </Alert>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {operaciones.length}
-            </div>
-            <div className="text-sm text-zinc-500">Total Operaciones</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {operaciones.filter(op => op.estado === 'activa').length}
-            </div>
-            <div className="text-sm text-zinc-500">Activas</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {operaciones.filter(op => op.estado === 'pausada').length}
-            </div>
-            <div className="text-sm text-zinc-500">Pausadas</div>
-          </CardContent>
-        </Card>
-        <Card className="ios-card">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {operaciones.filter(op => op.estado === 'completada').length}
-            </div>
-            <div className="text-sm text-zinc-500">Completadas</div>
-          </CardContent>
-        </Card>
-      </div>
+      <OperacionesKPIs operaciones={operaciones} />
 
       {/* Operations Table */}
       {filteredOperaciones.length === 0 ? (
@@ -176,88 +128,16 @@ export const OperacionesManager = () => {
         </Card>
       ) : (
         <Card className="ios-card">
-          <div className="ios-table-container">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Salmonera</TableHead>
-                  <TableHead>Sitio</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha Inicio</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOperaciones.map((operacion) => (
-                  <TableRow key={operacion.id}>
-                    <TableCell>
-                      <div className="font-medium">{operacion.codigo}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{operacion.nombre}</div>
-                      {operacion.tareas && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {operacion.tareas}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {operacion.salmoneras?.nombre || 'No asignada'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {operacion.sitios?.nombre || 'No asignado'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getEstadoBadgeColor(operacion.estado)}>
-                        {operacion.estado}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetail(operacion)}
-                          className="ios-button-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(operacion)}
-                          className="ios-button-sm"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(operacion.id)}
-                          className="ios-button-sm text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <OperacionesTable
+            operaciones={filteredOperaciones}
+            onViewDetail={handleViewDetail}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </Card>
       )}
 
-      {/* Detail Dialog - Updated to not show sidebar/header */}
+      {/* Dialogs */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
           {selectedOperacion && (

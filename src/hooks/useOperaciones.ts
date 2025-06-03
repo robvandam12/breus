@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Tipos básicos sin referencias circulares
+// Tipos básicos simplificados
 export interface Operacion {
   id: string;
   codigo: string;
@@ -40,7 +40,7 @@ export interface OperacionFormData {
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
-  // Fetch operaciones (excluyendo las eliminadas por defecto)
+  // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
     queryFn: async () => {
@@ -53,7 +53,7 @@ export const useOperaciones = () => {
           sitios:sitio_id (nombre),
           contratistas:contratista_id (nombre)
         `)
-        .neq('estado', 'eliminada') // Excluir las eliminadas
+        .neq('estado', 'eliminada')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -75,7 +75,6 @@ export const useOperaciones = () => {
     mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
-      // Validar datos requeridos
       if (!data.codigo || !data.nombre) {
         throw new Error('Código y nombre son campos requeridos');
       }
@@ -206,7 +205,7 @@ export const useOperaciones = () => {
     }
   };
 
-  // Eliminar o marcar como eliminada según corresponda
+  // Eliminar físicamente
   const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Checking if operacion can be deleted:', id);
@@ -217,7 +216,6 @@ export const useOperaciones = () => {
         throw new Error(reason || 'No se puede eliminar la operación');
       }
 
-      // Si no tiene documentos, se puede eliminar físicamente
       const { error } = await supabase
         .from('operacion')
         .delete()
@@ -245,7 +243,7 @@ export const useOperaciones = () => {
     },
   });
 
-  // Marcar como eliminada solo si tiene documentos
+  // Marcar como eliminada
   const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);
@@ -283,9 +281,9 @@ export const useOperaciones = () => {
     createOperacion: createOperacionMutation.mutateAsync,
     isCreating: createOperacionMutation.isPending,
     updateOperacion: updateOperacionMutation.mutateAsync,
-    deleteOperacion: deleteOperacionMutation.mutateAsync, // Eliminación física
-    markAsDeleted: markAsDeletedMutation.mutateAsync, // Marcado como eliminada
-    checkCanDelete, // Función para verificar si se puede eliminar
+    deleteOperacion: deleteOperacionMutation.mutateAsync,
+    markAsDeleted: markAsDeletedMutation.mutateAsync,
+    checkCanDelete,
     isUpdating: updateOperacionMutation.isPending,
     isDeleting: deleteOperacionMutation.isPending,
   };

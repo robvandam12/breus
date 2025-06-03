@@ -1,16 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Shield, Calendar, Users, Building, MapPin, Plus, ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
+import { FileText, Shield, Building, MapPin, ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { useHPT } from "@/hooks/useHPT";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { DocumentCreationButton } from "./DocumentCreationButton";
+import { DocumentCard } from "./DocumentCard";
 
 interface OperacionDocumentsProps {
   operacionId: string;
@@ -30,7 +31,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
   const operacionHPTs = hpts.filter(hpt => hpt.operacion_id === operacionId);
   const operacionAnexos = anexosBravo.filter(anexo => anexo.operacion_id === operacionId);
 
-  // Check if operation has required team - refrescar cuando cambie la operación
+  // Check if operation has required team
   useEffect(() => {
     const checkTeamAssignment = () => {
       if (operacion?.equipo_buceo_id) {
@@ -43,23 +44,6 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     checkTeamAssignment();
   }, [operacion, operacion?.equipo_buceo_id]);
 
-  const handleCreateHPT = () => {
-    setShowHPTWizard(true);
-  };
-
-  const handleCreateAnexoBravo = () => {
-    setShowAnexoBravoForm(true);
-  };
-
-  const handleHPTComplete = () => {
-    setShowHPTWizard(false);
-  };
-
-  const handleAnexoComplete = (data: any) => {
-    createAnexoBravo(data);
-    setShowAnexoBravoForm(false);
-  };
-
   const handleDocumentDeleteAttempt = (documentType: string) => {
     toast({
       title: "Eliminación no permitida",
@@ -70,7 +54,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
 
   return (
     <div className="space-y-6">
-      {/* Información de la Operación - Sutil y Colapsible */}
+      {/* Información de la Operación */}
       {operacion && (
         <Card className="border-blue-100 bg-blue-25">
           <CardHeader className="pb-3">
@@ -81,9 +65,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   Documentos para: {operacion.codigo} - {operacion.nombre}
                 </CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => setShowOperacionInfo(!showOperacionInfo)}
                 className="text-blue-600 hover:text-blue-700 p-1"
               >
@@ -92,7 +74,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                 ) : (
                   <ChevronDown className="w-4 h-4" />
                 )}
-              </Button>
+              </button>
             </div>
           </CardHeader>
           {showOperacionInfo && (
@@ -131,7 +113,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         </Card>
       )}
 
-      {/* Alert if no team assigned */}
+      {/* Alerts */}
       {!hasTeamAssigned && (
         <Alert className="border-yellow-200 bg-yellow-50">
           <AlertTriangle className="h-4 w-4" />
@@ -141,7 +123,6 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         </Alert>
       )}
 
-      {/* Alert about document deletion policy */}
       <Alert className="border-blue-200 bg-blue-50">
         <Info className="h-4 w-4" />
         <AlertDescription className="text-blue-800">
@@ -159,52 +140,26 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                 <FileText className="w-5 h-5 text-blue-600" />
                 Hojas de Planificación (HPT)
               </CardTitle>
-              <Button 
-                onClick={handleCreateHPT}
+              <DocumentCreationButton
+                onClick={() => setShowHPTWizard(true)}
                 disabled={!hasTeamAssigned}
                 className="ios-button bg-blue-600 hover:bg-blue-700"
-                size="sm"
               >
-                <Plus className="w-4 h-4 mr-2" />
                 Crear HPT
-              </Button>
+              </DocumentCreationButton>
             </div>
           </CardHeader>
           <CardContent>
-            {operacionHPTs.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                <p className="text-zinc-500 mb-2">No hay HPTs creados</p>
-                <p className="text-sm text-zinc-400">Cree el primer HPT para esta operación</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {operacionHPTs.map((hpt) => (
-                  <div key={hpt.id} className="p-3 border rounded-lg bg-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{hpt.codigo || hpt.folio}</h4>
-                        <p className="text-sm text-gray-600">Supervisor: {hpt.supervisor}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
-                          {hpt.firmado ? 'Firmado' : hpt.estado || 'Borrador'}
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleDocumentDeleteAttempt('HPT')}
-                          className="text-gray-400 cursor-not-allowed p-1"
-                          disabled
-                        >
-                          <Info className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <DocumentCard
+              documents={operacionHPTs}
+              title="HPT"
+              icon={<FileText className="w-5 h-5 text-blue-600" />}
+              emptyIcon={<FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />}
+              emptyMessage="No hay HPTs creados"
+              emptySubMessage="Cree el primer HPT para esta operación"
+              onDocumentDeleteAttempt={handleDocumentDeleteAttempt}
+              documentType="HPT"
+            />
           </CardContent>
         </Card>
 
@@ -216,73 +171,49 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                 <Shield className="w-5 h-5 text-green-600" />
                 Anexos Bravo
               </CardTitle>
-              <Button 
-                onClick={handleCreateAnexoBravo}
+              <DocumentCreationButton
+                onClick={() => setShowAnexoBravoForm(true)}
                 disabled={!hasTeamAssigned}
                 className="ios-button bg-green-600 hover:bg-green-700"
-                size="sm"
               >
-                <Plus className="w-4 h-4 mr-2" />
                 Crear Anexo Bravo
-              </Button>
+              </DocumentCreationButton>
             </div>
           </CardHeader>
           <CardContent>
-            {operacionAnexos.length === 0 ? (
-              <div className="text-center py-8">
-                <Shield className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                <p className="text-zinc-500 mb-2">No hay Anexos Bravo creados</p>
-                <p className="text-sm text-zinc-400">Cree el primer Anexo Bravo para esta operación</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {operacionAnexos.map((anexo) => (
-                  <div key={anexo.id} className="p-3 border rounded-lg bg-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{anexo.codigo}</h4>
-                        <p className="text-sm text-gray-600">Supervisor: {anexo.supervisor}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
-                          {anexo.firmado ? 'Firmado' : anexo.estado || 'Borrador'}
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleDocumentDeleteAttempt('Anexo Bravo')}
-                          className="text-gray-400 cursor-not-allowed p-1"
-                          disabled
-                        >
-                          <Info className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <DocumentCard
+              documents={operacionAnexos}
+              title="Anexo Bravo"
+              icon={<Shield className="w-5 h-5 text-green-600" />}
+              emptyIcon={<Shield className="w-12 h-12 text-zinc-300 mx-auto mb-4" />}
+              emptyMessage="No hay Anexos Bravo creados"
+              emptySubMessage="Cree el primer Anexo Bravo para esta operación"
+              onDocumentDeleteAttempt={handleDocumentDeleteAttempt}
+              documentType="Anexo Bravo"
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* HPT Wizard Dialog */}
+      {/* Dialogs */}
       <Dialog open={showHPTWizard} onOpenChange={setShowHPTWizard}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <HPTWizard
             operacionId={operacionId}
-            onComplete={handleHPTComplete}
+            onComplete={() => setShowHPTWizard(false)}
             onCancel={() => setShowHPTWizard(false)}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Anexo Bravo Form Dialog */}
       <Dialog open={showAnexoBravoForm} onOpenChange={setShowAnexoBravoForm}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <FullAnexoBravoForm
             operacionId={operacionId}
-            onSubmit={handleAnexoComplete}
+            onSubmit={(data) => {
+              createAnexoBravo(data);
+              setShowAnexoBravoForm(false);
+            }}
             onCancel={() => setShowAnexoBravoForm(false)}
           />
         </DialogContent>
