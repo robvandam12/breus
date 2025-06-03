@@ -39,7 +39,7 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Tipos para inmersiones
+// Tipos para inmersiones - simplificados
 export interface InmersionCompleta {
   inmersion_id: string;
   codigo: string;
