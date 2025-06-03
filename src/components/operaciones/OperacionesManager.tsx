@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Search, Eye, Edit, Trash2, Plus, Calendar } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Calendar, AlertTriangle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { EditOperacionForm } from "./EditOperacionForm";
 import OperacionDetailModal from "./OperacionDetailModal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const OperacionesManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,7 +19,7 @@ export const OperacionesManager = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingOperacion, setEditingOperacion] = useState<any>(null);
 
-  const { operaciones, isLoading, updateOperacion, markAsDeleted } = useOperaciones();
+  const { operaciones, isLoading, updateOperacion, deleteOperacion, markAsDeleted, checkCanDelete } = useOperaciones();
 
   const filteredOperaciones = operaciones.filter(op =>
     op.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,12 +49,24 @@ export const OperacionesManager = () => {
   };
 
   const handleDelete = async (operacionId: string) => {
-    if (window.confirm('¿Está seguro de que desea marcar esta operación como eliminada? Los documentos asociados se mantendrán para trazabilidad.')) {
-      try {
-        await markAsDeleted(operacionId);
-      } catch (error) {
-        console.error('Error marking operation as deleted:', error);
+    try {
+      // Verificar si se puede eliminar
+      const { canDelete, reason } = await checkCanDelete(operacionId);
+      
+      if (canDelete) {
+        // Se puede eliminar físicamente
+        if (window.confirm('¿Está seguro de que desea eliminar esta operación? Esta acción no se puede deshacer.')) {
+          await deleteOperacion(operacionId);
+        }
+      } else {
+        // Solo se puede marcar como eliminada
+        const confirmMessage = `No se puede eliminar físicamente esta operación porque ${reason}. ¿Desea marcarla como eliminada? Los documentos asociados se mantendrán para trazabilidad.`;
+        if (window.confirm(confirmMessage)) {
+          await markAsDeleted(operacionId);
+        }
       }
+    } catch (error) {
+      console.error('Error handling operation deletion:', error);
     }
   };
 
@@ -62,6 +76,7 @@ export const OperacionesManager = () => {
       pausada: 'bg-yellow-100 text-yellow-700',
       completada: 'bg-blue-100 text-blue-700',
       cancelada: 'bg-red-100 text-red-700',
+      eliminada: 'bg-gray-100 text-gray-700',
     };
     return colors[estado] || 'bg-gray-100 text-gray-700';
   };
@@ -99,6 +114,14 @@ export const OperacionesManager = () => {
           </div>
         </CardHeader>
       </Card>
+
+      {/* Info Alert */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription className="text-blue-800">
+          <strong>Política de eliminación:</strong> Las operaciones sin documentos asociados (HPT, Anexo Bravo, bitácoras) pueden eliminarse completamente. Las operaciones con documentos solo pueden marcarse como eliminadas para mantener la trazabilidad.
+        </AlertDescription>
+      </Alert>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -243,7 +266,6 @@ export const OperacionesManager = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Form Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
         <DialogContent className="max-w-2xl">
           {editingOperacion && (

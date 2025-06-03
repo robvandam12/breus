@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -284,7 +285,7 @@ export default function Inmersiones() {
             </div>
           </div>
 
-          {/* Usando los forms enhanced en lugar de los básicos */}
+          {/* Usando solo los forms completos/enhanced */}
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <CreateBitacoraBuzoFormEnhanced

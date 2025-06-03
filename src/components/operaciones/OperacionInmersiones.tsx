@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Waves, Plus, AlertTriangle, CheckCircle, LayoutGrid, LayoutList } from "lucide-react";
+import { Waves, Plus, AlertTriangle, CheckCircle, LayoutGrid, LayoutList, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateInmersionForm } from "@/components/inmersiones/CreateInmersionForm";
 import { InmersionActions } from "@/components/inmersion/InmersionActions";
+import { toast } from "@/hooks/use-toast";
 
 interface OperacionInmersionesProps {
   operacionId: string;
@@ -91,6 +92,57 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
       fetchInmersiones(); // Refresh list
     } catch (error) {
       console.error('Error creating inmersion:', error);
+    }
+  };
+
+  const handleDeleteInmersion = async (inmersionId: string) => {
+    try {
+      // Verificar si tiene bitácoras asociadas
+      const { data: bitacorasSupervisor } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      const { data: bitacorasBuzo } = await supabase
+        .from('bitacora_buzo')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      const hasBitacoras = (bitacorasSupervisor && bitacorasSupervisor.length > 0) || 
+                          (bitacorasBuzo && bitacorasBuzo.length > 0);
+
+      if (hasBitacoras) {
+        toast({
+          title: "Eliminación no permitida",
+          description: "No se puede eliminar la inmersión porque tiene bitácoras asociadas. Las bitácoras deben mantenerse por trazabilidad.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Si no tiene bitácoras, se puede eliminar
+      if (window.confirm('¿Está seguro de que desea eliminar esta inmersión? Esta acción no se puede deshacer.')) {
+        const { error } = await supabase
+          .from('inmersion')
+          .delete()
+          .eq('inmersion_id', inmersionId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Inmersión eliminada",
+          description: "La inmersión ha sido eliminada exitosamente.",
+        });
+
+        fetchInmersiones(); // Refresh list
+      }
+    } catch (error) {
+      console.error('Error deleting inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la inmersión.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -238,10 +290,20 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
                     <Badge className={getStatusColor(inmersion.estado)}>
                       {inmersion.estado}
                     </Badge>
-                    <InmersionActions 
-                      inmersionId={inmersion.inmersion_id} 
-                      onRefresh={fetchInmersiones}
-                    />
+                    <div className="flex gap-1">
+                      <InmersionActions 
+                        inmersionId={inmersion.inmersion_id} 
+                        onRefresh={fetchInmersiones}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteInmersion(inmersion.inmersion_id)}
+                        className="text-red-600 hover:text-red-700 p-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -273,10 +335,20 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
                     </TableCell>
                     <TableCell>{inmersion.profundidad_max}m</TableCell>
                     <TableCell className="text-right">
-                      <InmersionActions 
-                        inmersionId={inmersion.inmersion_id} 
-                        onRefresh={fetchInmersiones}
-                      />
+                      <div className="flex justify-end gap-1">
+                        <InmersionActions 
+                          inmersionId={inmersion.inmersion_id} 
+                          onRefresh={fetchInmersiones}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteInmersion(inmersion.inmersion_id)}
+                          className="text-red-600 hover:text-red-700 p-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

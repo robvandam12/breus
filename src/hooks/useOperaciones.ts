@@ -165,7 +165,86 @@ export const useOperaciones = () => {
     },
   });
 
-  // Cambiar estado a eliminada en lugar de eliminar físicamente
+  // Verificar si la operación puede ser eliminada
+  const checkCanDelete = async (operacionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
+    try {
+      // Verificar HPTs
+      const { data: hpts } = await supabase
+        .from('hpt')
+        .select('id')
+        .eq('operacion_id', operacionId);
+
+      if (hpts && hpts.length > 0) {
+        return { canDelete: false, reason: 'La operación tiene documentos HPT asociados' };
+      }
+
+      // Verificar Anexos Bravo
+      const { data: anexos } = await supabase
+        .from('anexo_bravo')
+        .select('id')
+        .eq('operacion_id', operacionId);
+
+      if (anexos && anexos.length > 0) {
+        return { canDelete: false, reason: 'La operación tiene documentos Anexo Bravo asociados' };
+      }
+
+      // Verificar Bitácoras
+      const { data: bitacoras } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('operacion_id', operacionId);
+
+      if (bitacoras && bitacoras.length > 0) {
+        return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
+      }
+
+      return { canDelete: true };
+    } catch (error) {
+      console.error('Error checking if operation can be deleted:', error);
+      return { canDelete: false, reason: 'Error al verificar documentos asociados' };
+    }
+  };
+
+  // Eliminar o marcar como eliminada según corresponda
+  const deleteOperacionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Checking if operacion can be deleted:', id);
+      
+      const { canDelete, reason } = await checkCanDelete(id);
+
+      if (!canDelete) {
+        throw new Error(reason || 'No se puede eliminar la operación');
+      }
+
+      // Si no tiene documentos, se puede eliminar físicamente
+      const { error } = await supabase
+        .from('operacion')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting operacion:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Operación eliminada",
+        description: "La operación ha sido eliminada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting operacion:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la operación.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Marcar como eliminada solo si tiene documentos
   const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);
@@ -183,7 +262,7 @@ export const useOperaciones = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       toast({
-        title: "Operación eliminada",
+        title: "Operación marcada como eliminada",
         description: "La operación ha sido marcada como eliminada. Los documentos asociados se mantienen para trazabilidad.",
       });
     },
@@ -191,7 +270,7 @@ export const useOperaciones = () => {
       console.error('Error marking operacion as deleted:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar la operación.",
+        description: "No se pudo marcar la operación como eliminada.",
         variant: "destructive",
       });
     },
@@ -203,8 +282,10 @@ export const useOperaciones = () => {
     createOperacion: createOperacionMutation.mutateAsync,
     isCreating: createOperacionMutation.isPending,
     updateOperacion: updateOperacionMutation.mutateAsync,
-    markAsDeleted: markAsDeletedMutation.mutateAsync, // Cambio de deleteOperacion a markAsDeleted
+    deleteOperacion: deleteOperacionMutation.mutateAsync, // Eliminación física
+    markAsDeleted: markAsDeletedMutation.mutateAsync, // Marcado como eliminada
+    checkCanDelete, // Función para verificar si se puede eliminar
     isUpdating: updateOperacionMutation.isPending,
-    isDeleting: markAsDeletedMutation.isPending,
+    isDeleting: deleteOperacionMutation.isPending,
   };
 };

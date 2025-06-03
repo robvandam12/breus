@@ -1,11 +1,10 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Shield, Calendar, Users, Building, MapPin, Plus, ChevronDown, ChevronUp, AlertTriangle, Trash2 } from "lucide-react";
+import { FileText, Shield, Calendar, Users, Building, MapPin, Plus, ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { useHPT } from "@/hooks/useHPT";
@@ -22,13 +21,27 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
   const [showHPTWizard, setShowHPTWizard] = useState(false);
   const [showAnexoBravoForm, setShowAnexoBravoForm] = useState(false);
   const [showOperacionInfo, setShowOperacionInfo] = useState(false);
+  const [hasTeamAssigned, setHasTeamAssigned] = useState(false);
   
-  const { hpts, createHPT, deleteHPT } = useHPT();
-  const { anexosBravo, createAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
+  const { hpts, createHPT } = useHPT();
+  const { anexosBravo, createAnexoBravo } = useAnexoBravo();
 
   // Filter documents for this operation
   const operacionHPTs = hpts.filter(hpt => hpt.operacion_id === operacionId);
   const operacionAnexos = anexosBravo.filter(anexo => anexo.operacion_id === operacionId);
+
+  // Check if operation has required team - refrescar cuando cambie la operación
+  useEffect(() => {
+    const checkTeamAssignment = () => {
+      if (operacion?.equipo_buceo_id) {
+        setHasTeamAssigned(true);
+      } else {
+        setHasTeamAssigned(false);
+      }
+    };
+
+    checkTeamAssignment();
+  }, [operacion, operacion?.equipo_buceo_id]);
 
   const handleCreateHPT = () => {
     setShowHPTWizard(true);
@@ -47,42 +60,13 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     setShowAnexoBravoForm(false);
   };
 
-  const handleDeleteHPT = async (hptId: string) => {
-    try {
-      await deleteHPT(hptId);
-      toast({
-        title: "HPT eliminado",
-        description: "El documento ha sido eliminado exitosamente.",
-      });
-    } catch (error: any) {
-      console.error('Error deleting HPT:', error);
-      toast({
-        title: "Error al eliminar",
-        description: "No se pudo eliminar el HPT.",
-        variant: "destructive",
-      });
-    }
+  const handleDocumentDeleteAttempt = (documentType: string) => {
+    toast({
+      title: "Eliminación no permitida",
+      description: `Los documentos ${documentType} no se pueden eliminar por trazabilidad. Solo pueden ser editados o reemplazados.`,
+      variant: "destructive",
+    });
   };
-
-  const handleDeleteAnexo = async (anexoId: string) => {
-    try {
-      await deleteAnexoBravo(anexoId);
-      toast({
-        title: "Anexo Bravo eliminado",
-        description: "El documento ha sido eliminado exitosamente.",
-      });
-    } catch (error: any) {
-      console.error('Error deleting anexo:', error);
-      toast({
-        title: "Error al eliminar",
-        description: "No se pudo eliminar el Anexo Bravo.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Check if operation has required team
-  const hasTeamAssigned = operacion?.equipo_buceo_id;
 
   return (
     <div className="space-y-6">
@@ -157,6 +141,14 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         </Alert>
       )}
 
+      {/* Alert about document deletion policy */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-blue-800">
+          <strong>Política de documentos:</strong> Los documentos HPT, Anexo Bravo y bitácoras no pueden eliminarse por trazabilidad. Solo pueden ser editados o reemplazados.
+        </AlertDescription>
+      </Alert>
+
       {/* Documents Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* HPT Section */}
@@ -198,36 +190,15 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                         <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
                           {hpt.firmado ? 'Firmado' : hpt.estado || 'Borrador'}
                         </Badge>
-                        {!hpt.firmado && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-red-600 hover:text-red-700 p-1"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar HPT?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Se eliminará permanentemente el HPT "{hpt.codigo || hpt.folio}".
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteHPT(hpt.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDocumentDeleteAttempt('HPT')}
+                          className="text-gray-400 cursor-not-allowed p-1"
+                          disabled
+                        >
+                          <Info className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -276,36 +247,15 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                         <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
                           {anexo.firmado ? 'Firmado' : anexo.estado || 'Borrador'}
                         </Badge>
-                        {!anexo.firmado && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-red-600 hover:text-red-700 p-1"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar Anexo Bravo?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Se eliminará permanentemente el Anexo Bravo "{anexo.codigo}".
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteAnexo(anexo.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDocumentDeleteAttempt('Anexo Bravo')}
+                          className="text-gray-400 cursor-not-allowed p-1"
+                          disabled
+                        >
+                          <Info className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>
