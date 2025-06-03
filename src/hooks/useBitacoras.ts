@@ -39,35 +39,7 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Tipos simplificados para evitar recursión
-export interface EquipoBuceoBasico {
-  id: string;
-  nombre: string;
-}
-
-export interface SalmoneraBasico {
-  nombre: string;
-}
-
-export interface ContratistaBasico {
-  nombre: string;
-}
-
-export interface SitioBasico {
-  nombre: string;
-}
-
-export interface OperacionBasica {
-  id: string;
-  codigo: string;
-  nombre: string;
-  equipo_buceo_id?: string;
-  salmoneras?: SalmoneraBasico | null;
-  contratistas?: ContratistaBasico | null;
-  sitios?: SitioBasico | null;
-  equipos_buceo?: EquipoBuceoBasico | null;
-}
-
+// Tipos para inmersiones
 export interface InmersionCompleta {
   inmersion_id: string;
   codigo: string;
@@ -82,7 +54,16 @@ export interface InmersionCompleta {
   visibilidad: number;
   corriente: string;
   equipo_buceo_id?: string;
-  operacion: OperacionBasica;
+  operacion: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    equipo_buceo_id?: string;
+    salmoneras?: { nombre: string } | null;
+    contratistas?: { nombre: string } | null;
+    sitios?: { nombre: string } | null;
+    equipos_buceo?: { id: string; nombre: string } | null;
+  };
 }
 
 export interface BitacoraSupervisorFormData {
@@ -320,6 +301,36 @@ export const useBitacoras = () => {
     }
   });
 
+  // Función para verificar si una inmersión puede ser eliminada
+  const checkCanDeleteInmersion = async (inmersionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
+    try {
+      // Verificar bitácoras de supervisor
+      const { data: bitacorasSup } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      if (bitacorasSup && bitacorasSup.length > 0) {
+        return { canDelete: false, reason: 'La inmersión tiene bitácoras de supervisor asociadas' };
+      }
+
+      // Verificar bitácoras de buzo
+      const { data: bitacorasBuz } = await supabase
+        .from('bitacora_buzo')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      if (bitacorasBuz && bitacorasBuz.length > 0) {
+        return { canDelete: false, reason: 'La inmersión tiene bitácoras de buzo asociadas' };
+      }
+
+      return { canDelete: true };
+    } catch (error) {
+      console.error('Error checking if immersion can be deleted:', error);
+      return { canDelete: false, reason: 'Error al verificar bitácoras asociadas' };
+    }
+  };
+
   const refreshBitacoras = () => {
     queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
     queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo'] });
@@ -336,6 +347,7 @@ export const useBitacoras = () => {
     loading: loadingSupervisor || loadingBuzo || loadingInmersiones,
     createBitacoraSupervisor,
     createBitacoraBuzo,
+    checkCanDeleteInmersion,
     refreshBitacoras
   };
 };
