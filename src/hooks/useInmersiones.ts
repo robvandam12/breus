@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -38,6 +39,40 @@ export interface ValidationStatus {
   anexoBravoCode?: string;
 }
 
+export interface OperationData {
+  id: string;
+  codigo: string;
+  nombre: string;
+  equipo_buceo_id?: string;
+  salmoneras?: { nombre: string };
+  sitios?: { nombre: string };
+  contratistas?: { nombre: string };
+}
+
+export interface HPTData {
+  id: string;
+  codigo: string;
+  supervisor: string;
+  firmado: boolean;
+}
+
+export interface AnexoBravoData {
+  id: string;
+  codigo: string;
+  supervisor: string;
+  firmado: boolean;
+}
+
+export interface EquipoBuceoData {
+  id: string;
+  nombre: string;
+  miembros: Array<{
+    usuario_id: string;
+    rol_equipo: string;
+    nombre?: string;
+  }>;
+}
+
 export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();
 
@@ -69,13 +104,125 @@ export const useInmersiones = (operacionId?: string) => {
     },
   });
 
+  // Nueva función para obtener datos completos de la operación
+  const getOperationCompleteData = async (operacionId: string) => {
+    try {
+      // Obtener datos de la operación
+      const { data: operacionData, error: operacionError } = await supabase
+        .from('operacion')
+        .select(`
+          *,
+          salmoneras:salmonera_id(nombre),
+          sitios:sitio_id(nombre),
+          contratistas:contratista_id(nombre)
+        `)
+        .eq('id', operacionId)
+        .single();
+
+      if (operacionError) throw operacionError;
+
+      // Obtener HPT firmado de la operación
+      const { data: hptData } = await supabase
+        .from('hpt')
+        .select('id, codigo, supervisor, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .maybeSingle();
+
+      // Obtener Anexo Bravo firmado de la operación
+      const { data: anexoBravoData } = await supabase
+        .from('anexo_bravo')
+        .select('id, codigo, supervisor, firmado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .maybeSingle();
+
+      // Obtener datos del equipo de buceo si está asignado
+      let equipoBuceoData = null;
+      if (operacionData.equipo_buceo_id) {
+        const { data: equipoData } = await supabase
+          .from('equipos_buceo')
+          .select(`
+            id,
+            nombre,
+            equipo_buceo_miembros (
+              usuario_id,
+              rol_equipo,
+              usuario:usuario_id (
+                nombre,
+                apellido
+              )
+            )
+          `)
+          .eq('id', operacionData.equipo_buceo_id)
+          .single();
+
+        if (equipoData) {
+          equipoBuceoData = {
+            ...equipoData,
+            miembros: equipoData.equipo_buceo_miembros?.map((miembro: any) => ({
+              usuario_id: miembro.usuario_id,
+              rol_equipo: miembro.rol_equipo,
+              nombre: miembro.usuario ? `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : ''
+            })) || []
+          };
+        }
+      }
+
+      return {
+        operacion: operacionData as OperationData,
+        hpt: hptData as HPTData | null,
+        anexoBravo: anexoBravoData as AnexoBravoData | null,
+        equipoBuceo: equipoBuceoData as EquipoBuceoData | null
+      };
+    } catch (error) {
+      console.error('Error getting operation complete data:', error);
+      return null;
+    }
+  };
+
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
-      // Eliminar validación de documentos para permitir crear inmersiones sin documentos firmados
+      // Obtener datos completos de la operación para poblar campos automáticamente
+      const operationData = await getOperationCompleteData(inmersionData.operacion_id);
+      
+      let finalData = { ...inmersionData };
+
+      if (operationData) {
+        // Poblar supervisor desde HPT o Anexo Bravo
+        if (!finalData.supervisor && operationData.hpt?.supervisor) {
+          finalData.supervisor = operationData.hpt.supervisor;
+        } else if (!finalData.supervisor && operationData.anexoBravo?.supervisor) {
+          finalData.supervisor = operationData.anexoBravo.supervisor;
+        }
+
+        // Poblar buzos desde el equipo de buceo
+        if (operationData.equipoBuceo?.miembros) {
+          const buzoPrincipal = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'supervisor');
+          const buzoAsistente = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_asistente' || m.rol_equipo === 'buzo');
+
+          if (!finalData.buzo_principal && buzoPrincipal?.nombre) {
+            finalData.buzo_principal = buzoPrincipal.nombre;
+            finalData.buzo_principal_id = buzoPrincipal.usuario_id;
+          }
+
+          if (!finalData.buzo_asistente && buzoAsistente?.nombre) {
+            finalData.buzo_asistente = buzoAsistente.nombre;
+            finalData.buzo_asistente_id = buzoAsistente.usuario_id;
+          }
+        }
+
+        // Generar código automático si no se proporciona
+        if (!finalData.codigo) {
+          const timestamp = Date.now().toString().slice(-6);
+          finalData.codigo = `INM-${operationData.operacion.codigo}-${timestamp}`;
+        }
+      }
+
       const { data, error } = await supabase
         .from('inmersion')
         .insert({
-          ...inmersionData,
+          ...finalData,
           hpt_validado: false,
           anexo_bravo_validado: false
         })
@@ -89,7 +236,7 @@ export const useInmersiones = (operacionId?: string) => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
         title: "Inmersión creada",
-        description: "La inmersión ha sido creada exitosamente.",
+        description: "La inmersión ha sido creada exitosamente con datos auto-poblados.",
       });
     },
     onError: (error) => {
@@ -273,6 +420,7 @@ export const useInmersiones = (operacionId?: string) => {
     executeInmersion: executeInmersionMutation.mutateAsync,
     completeInmersion: completeInmersionMutation.mutateAsync,
     validateOperationDocuments,
+    getOperationCompleteData,
     refreshInmersiones: refetch,
     isCreating: createInmersionMutation.isPending,
     isUpdating: updateInmersionMutation.isPending,

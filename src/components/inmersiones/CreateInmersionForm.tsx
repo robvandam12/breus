@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EnhancedSelect } from "@/components/ui/enhanced-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Anchor } from "lucide-react";
+import { Anchor, Users, FileText, CheckCircle } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useInmersiones } from "@/hooks/useInmersiones";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateInmersionFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -17,10 +19,14 @@ interface CreateInmersionFormProps {
 
 export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: CreateInmersionFormProps) => {
   const { operaciones } = useOperaciones();
+  const { getOperationCompleteData } = useInmersiones();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [operationData, setOperationData] = useState<any>(null);
+  const [loadingOperationData, setLoadingOperationData] = useState(false);
+  
   const [formData, setFormData] = useState({
     operacion_id: defaultOperacionId || "",
-    codigo: `INM-${Date.now()}`,
+    codigo: "",
     buzo_principal: "",
     buzo_asistente: "",
     supervisor: "",
@@ -34,6 +40,63 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
     objetivo: "",
     observaciones: ""
   });
+
+  // Cargar datos automáticamente cuando se selecciona una operación
+  useEffect(() => {
+    if (formData.operacion_id) {
+      loadOperationData(formData.operacion_id);
+    }
+  }, [formData.operacion_id]);
+
+  const loadOperationData = async (operacionId: string) => {
+    setLoadingOperationData(true);
+    try {
+      const data = await getOperationCompleteData(operacionId);
+      if (data) {
+        setOperationData(data);
+        
+        // Auto-poblar campos
+        const updatedFormData = { ...formData };
+        
+        // Poblar supervisor desde HPT o Anexo Bravo
+        if (data.hpt?.supervisor && !updatedFormData.supervisor) {
+          updatedFormData.supervisor = data.hpt.supervisor;
+        } else if (data.anexoBravo?.supervisor && !updatedFormData.supervisor) {
+          updatedFormData.supervisor = data.anexoBravo.supervisor;
+        }
+
+        // Poblar buzos desde el equipo de buceo
+        if (data.equipoBuceo?.miembros) {
+          const buzoPrincipal = data.equipoBuceo.miembros.find(m => 
+            m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'supervisor'
+          );
+          const buzoAsistente = data.equipoBuceo.miembros.find(m => 
+            m.rol_equipo === 'buzo_asistente' || m.rol_equipo === 'buzo'
+          );
+
+          if (buzoPrincipal?.nombre && !updatedFormData.buzo_principal) {
+            updatedFormData.buzo_principal = buzoPrincipal.nombre;
+          }
+
+          if (buzoAsistente?.nombre && !updatedFormData.buzo_asistente) {
+            updatedFormData.buzo_asistente = buzoAsistente.nombre;
+          }
+        }
+
+        // Generar código automático
+        if (!updatedFormData.codigo) {
+          const timestamp = Date.now().toString().slice(-6);
+          updatedFormData.codigo = `INM-${data.operacion.codigo}-${timestamp}`;
+        }
+
+        setFormData(updatedFormData);
+      }
+    } catch (error) {
+      console.error('Error loading operation data:', error);
+    } finally {
+      setLoadingOperationData(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +130,8 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Selección de Operación */}
           <div>
             <Label htmlFor="operacion_id">Operación *</Label>
             <EnhancedSelect
@@ -79,6 +143,55 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
             />
           </div>
 
+          {/* Información de la operación cargada */}
+          {loadingOperationData && (
+            <Alert>
+              <AlertDescription>Cargando datos de la operación...</AlertDescription>
+            </Alert>
+          )}
+
+          {operationData && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <div><strong>Operación:</strong> {operationData.operacion?.nombre}</div>
+                  {operationData.hpt && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-green-600" />
+                      <span>HPT: {operationData.hpt.codigo} (Firmado)</span>
+                    </div>
+                  )}
+                  {operationData.anexoBravo && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-green-600" />
+                      <span>Anexo Bravo: {operationData.anexoBravo.codigo} (Firmado)</span>
+                    </div>
+                  )}
+                  {operationData.equipoBuceo && (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-600" />
+                      <span>Equipo: {operationData.equipoBuceo.nombre} ({operationData.equipoBuceo.miembros?.length || 0} miembros)</span>
+                    </div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Código generado automáticamente */}
+          <div>
+            <Label htmlFor="codigo">Código</Label>
+            <Input
+              id="codigo"
+              value={formData.codigo}
+              onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+              placeholder="Se generará automáticamente"
+              className="bg-gray-50"
+            />
+          </div>
+
+          {/* Personal (poblado automáticamente) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="buzo_principal">Buzo Principal *</Label>
@@ -86,7 +199,7 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
                 id="buzo_principal"
                 value={formData.buzo_principal}
                 onChange={(e) => setFormData(prev => ({ ...prev, buzo_principal: e.target.value }))}
-                placeholder="Nombre del buzo principal"
+                placeholder="Se poblará desde el equipo de buceo"
                 required
               />
             </div>
@@ -97,7 +210,7 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
                 id="buzo_asistente"
                 value={formData.buzo_asistente}
                 onChange={(e) => setFormData(prev => ({ ...prev, buzo_asistente: e.target.value }))}
-                placeholder="Nombre del buzo asistente"
+                placeholder="Se poblará desde el equipo de buceo"
               />
             </div>
           </div>
@@ -108,11 +221,12 @@ export const CreateInmersionForm = ({ onSubmit, onCancel, defaultOperacionId }: 
               id="supervisor"
               value={formData.supervisor}
               onChange={(e) => setFormData(prev => ({ ...prev, supervisor: e.target.value }))}
-              placeholder="Nombre del supervisor"
+              placeholder="Se poblará desde HPT/Anexo Bravo"
               required
             />
           </div>
 
+          {/* Resto de campos del formulario */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="fecha_inmersion">Fecha de Inmersión</Label>

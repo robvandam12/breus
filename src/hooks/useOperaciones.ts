@@ -236,7 +236,7 @@ export const useOperaciones = () => {
   };
 
   // Eliminar físicamente con tipos explícitos
-  const deleteOperacionMutation = useMutation<void, Error, string>({
+  const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Checking if operacion can be deleted:', id);
       
@@ -274,7 +274,7 @@ export const useOperaciones = () => {
   });
 
   // Marcar como eliminada con tipos explícitos
-  const markAsDeletedMutation = useMutation<void, Error, string>({
+  const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);
       
