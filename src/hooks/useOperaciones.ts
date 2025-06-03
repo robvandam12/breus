@@ -85,7 +85,7 @@ export const useOperaciones = () => {
 
   // Create operacion con tipos explícitos
   const createOperacionMutation = useMutation<Operacion, Error, OperacionFormData>({
-    mutationFn: async (data: OperacionFormData) => {
+    mutationFn: async (data: OperacionFormData): Promise<Operacion> => {
       console.log('Creating operacion:', data);
       
       if (!data.codigo || !data.nombre) {
@@ -119,7 +119,15 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return result;
+      // Asegurar el tipo correcto del estado
+      const operacion: Operacion = {
+        ...result,
+        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
+          ? result.estado 
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
+      };
+
+      return operacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -140,7 +148,7 @@ export const useOperaciones = () => {
 
   // Update operacion con tipos explícitos
   const updateOperacionMutation = useMutation<Operacion, Error, { id: string; data: Partial<OperacionFormData> }>({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
+    mutationFn: async ({ id, data }): Promise<Operacion> => {
       console.log('Updating operacion:', id, data);
       
       const { data: result, error } = await supabase
@@ -159,7 +167,16 @@ export const useOperaciones = () => {
         console.error('Error updating operacion:', error);
         throw error;
       }
-      return result;
+
+      // Asegurar el tipo correcto del estado
+      const operacion: Operacion = {
+        ...result,
+        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
+          ? result.estado 
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
+      };
+
+      return operacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
