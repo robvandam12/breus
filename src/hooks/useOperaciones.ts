@@ -53,8 +53,8 @@ export interface OperacionFormData {
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
-  // Fetch operaciones
-  const { data: operaciones = [], isLoading } = useQuery({
+  // Fetch operaciones con tipos explícitos
+  const { data: operaciones = [], isLoading } = useQuery<Operacion[]>({
     queryKey: ['operaciones'],
     queryFn: async (): Promise<Operacion[]> => {
       console.log('Fetching operaciones...');
@@ -83,8 +83,8 @@ export const useOperaciones = () => {
     },
   });
 
-  // Create operacion
-  const createOperacionMutation = useMutation({
+  // Create operacion con tipos explícitos
+  const createOperacionMutation = useMutation<Operacion, Error, OperacionFormData>({
     mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
@@ -138,8 +138,8 @@ export const useOperaciones = () => {
     },
   });
 
-  // Update operacion
-  const updateOperacionMutation = useMutation({
+  // Update operacion con tipos explícitos
+  const updateOperacionMutation = useMutation<Operacion, Error, { id: string; data: Partial<OperacionFormData> }>({
     mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
       console.log('Updating operacion:', id, data);
       
@@ -218,8 +218,8 @@ export const useOperaciones = () => {
     }
   };
 
-  // Eliminar físicamente
-  const deleteOperacionMutation = useMutation({
+  // Eliminar físicamente con tipos explícitos
+  const deleteOperacionMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       console.log('Checking if operacion can be deleted:', id);
       
@@ -256,8 +256,8 @@ export const useOperaciones = () => {
     },
   });
 
-  // Marcar como eliminada
-  const markAsDeletedMutation = useMutation({
+  // Marcar como eliminada con tipos explícitos
+  const markAsDeletedMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);
       

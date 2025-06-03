@@ -133,7 +133,7 @@ export const useBitacoras = () => {
   const queryClient = useQueryClient();
 
   // Obtener inmersiones con información básica
-  const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery({
+  const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery<any[]>({
     queryKey: ['inmersiones-con-equipos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -154,7 +154,7 @@ export const useBitacoras = () => {
     }
   });
 
-  const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery({
+  const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor } = useQuery<BitacoraSupervisor[]>({
     queryKey: ['bitacoras-supervisor'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -167,7 +167,7 @@ export const useBitacoras = () => {
     }
   });
 
-  const { data: bitacorasBuzo = [], isLoading: loadingBuzo } = useQuery({
+  const { data: bitacorasBuzo = [], isLoading: loadingBuzo } = useQuery<BitacoraBuzo[]>({
     queryKey: ['bitacoras-buzo'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -180,7 +180,7 @@ export const useBitacoras = () => {
     }
   });
 
-  const createBitacoraSupervisor = useMutation({
+  const createBitacoraSupervisor = useMutation<BitacoraSupervisor, Error, BitacoraSupervisorFormData>({
     mutationFn: async (data: BitacoraSupervisorFormData) => {
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
@@ -196,7 +196,7 @@ export const useBitacoras = () => {
     }
   });
 
-  const createBitacoraBuzo = useMutation({
+  const createBitacoraBuzo = useMutation<BitacoraBuzo, Error, BitacoraBuzoFormData>({
     mutationFn: async (data: BitacoraBuzoFormData) => {
       const { data: result, error } = await supabase
         .from('bitacora_buzo')
