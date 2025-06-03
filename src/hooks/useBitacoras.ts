@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Tipos para las bitácoras basados en la estructura de la base de datos
+// Tipos básicos sin referencias circulares
 export interface BitacoraSupervisor {
   bitacora_id: string;
   codigo: string;
@@ -39,21 +39,33 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Tipos simplificados para evitar recursión infinita
-export interface EquipoBuceoInfo {
+// Tipos simplificados para evitar recursión
+export interface EquipoBuceoBasico {
   id: string;
   nombre: string;
 }
 
-export interface OperacionInfo {
+export interface SalmoneraBasico {
+  nombre: string;
+}
+
+export interface ContratistaBasico {
+  nombre: string;
+}
+
+export interface SitioBasico {
+  nombre: string;
+}
+
+export interface OperacionBasica {
   id: string;
   codigo: string;
   nombre: string;
   equipo_buceo_id?: string;
-  salmoneras?: { nombre: string } | null;
-  contratistas?: { nombre: string } | null;
-  sitios?: { nombre: string } | null;
-  equipos_buceo?: EquipoBuceoInfo | null;
+  salmoneras?: SalmoneraBasico | null;
+  contratistas?: ContratistaBasico | null;
+  sitios?: SitioBasico | null;
+  equipos_buceo?: EquipoBuceoBasico | null;
 }
 
 export interface InmersionCompleta {
@@ -70,7 +82,7 @@ export interface InmersionCompleta {
   visibilidad: number;
   corriente: string;
   equipo_buceo_id?: string;
-  operacion: OperacionInfo;
+  operacion: OperacionBasica;
 }
 
 export interface BitacoraSupervisorFormData {
