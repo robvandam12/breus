@@ -149,11 +149,6 @@ export const BitacoraInmersionSelectorEnhanced = ({
                         <Users className="w-3 h-3" />
                         <span><strong>Equipo de Buceo:</strong> {inmersion.operacion.equipos_buceo.nombre}</span>
                       </div>
-                      {inmersion.operacion.equipos_buceo.equipo_buceo_miembros && (
-                        <div className="mt-1 text-xs text-green-600">
-                          {inmersion.operacion.equipos_buceo.equipo_buceo_miembros.length} miembros asignados
-                        </div>
-                      )}
                     </div>
                   )}
 

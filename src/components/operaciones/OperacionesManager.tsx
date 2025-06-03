@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ export const OperacionesManager = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingOperacion, setEditingOperacion] = useState<any>(null);
 
-  const { operaciones, isLoading, updateOperacion, deleteOperacion } = useOperaciones();
+  const { operaciones, isLoading, updateOperacion, markAsDeleted } = useOperaciones();
 
   const filteredOperaciones = operaciones.filter(op =>
     op.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,11 +47,11 @@ export const OperacionesManager = () => {
   };
 
   const handleDelete = async (operacionId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta operación?')) {
+    if (window.confirm('¿Está seguro de que desea marcar esta operación como eliminada? Los documentos asociados se mantendrán para trazabilidad.')) {
       try {
-        await deleteOperacion(operacionId);
+        await markAsDeleted(operacionId);
       } catch (error) {
-        console.error('Error deleting operation:', error);
+        console.error('Error marking operation as deleted:', error);
       }
     }
   };

@@ -40,6 +40,22 @@ export interface BitacoraBuzo {
 }
 
 // Tipos simplificados para evitar recursión infinita
+export interface EquipoBuceoInfo {
+  id: string;
+  nombre: string;
+}
+
+export interface OperacionInfo {
+  id: string;
+  codigo: string;
+  nombre: string;
+  equipo_buceo_id?: string;
+  salmoneras?: { nombre: string } | null;
+  contratistas?: { nombre: string } | null;
+  sitios?: { nombre: string } | null;
+  equipos_buceo?: EquipoBuceoInfo | null;
+}
+
 export interface InmersionCompleta {
   inmersion_id: string;
   codigo: string;
@@ -54,23 +70,11 @@ export interface InmersionCompleta {
   visibilidad: number;
   corriente: string;
   equipo_buceo_id?: string;
-  operacion: {
-    id: string;
-    codigo: string;
-    nombre: string;
-    equipo_buceo_id?: string;
-    salmoneras?: { nombre: string } | null;
-    contratistas?: { nombre: string } | null;
-    sitios?: { nombre: string } | null;
-    equipos_buceo?: {
-      id: string;
-      nombre: string;
-    } | null;
-  };
+  operacion: OperacionInfo;
 }
 
 export interface BitacoraSupervisorFormData {
-  codigo: string; // Agregada la propiedad faltante
+  codigo: string;
   inmersion_id: string;
   supervisor: string;
   desarrollo_inmersion: string;
@@ -165,7 +169,7 @@ export const useBitacoras = () => {
   // Obtener inmersiones con información completa del equipo
   const { data: inmersiones = [], isLoading: loadingInmersiones } = useQuery({
     queryKey: ['inmersiones-con-equipos'],
-    queryFn: async () => {
+    queryFn: async (): Promise<InmersionCompleta[]> => {
       const { data, error } = await supabase
         .from('inmersion')
         .select(`
@@ -184,7 +188,7 @@ export const useBitacoras = () => {
         .order('fecha_inmersion', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as InmersionCompleta[];
     }
   });
 

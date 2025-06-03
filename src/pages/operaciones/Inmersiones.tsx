@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -10,7 +9,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Plus, Anchor, Calendar, User, Clock, Eye, FileText } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
-import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
+import { CreateBitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useBitacoras } from "@/hooks/useBitacoras";
@@ -297,7 +296,7 @@ export default function Inmersiones() {
 
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <BitacoraSupervisorFormEnhanced
+              <CreateBitacoraSupervisorFormEnhanced
                 onSubmit={handleBitacoraSupervisorSubmit}
                 onCancel={() => setShowBitacoraSupervisorForm(false)}
               />
