@@ -29,6 +29,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
     desarrollo_inmersion: '',
+    supervisor_id: '',
     incidentes: '',
     evaluacion_general: ''
   });
@@ -78,7 +79,11 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       observaciones_generales_texto: '',
       validacion_contratista: false,
       comentarios_validacion: '',
-      diving_records: []
+      diving_records: [],
+      supervisor_id: profile?.id || '',
+      desarrollo_inmersion: formData.desarrollo_inmersion,
+      incidentes: formData.incidentes,
+      evaluacion_general: formData.evaluacion_general
     };
 
     onSubmit(submitData);
