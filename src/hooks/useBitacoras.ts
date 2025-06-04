@@ -1,6 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 // Tipos básicos simplificados
 export interface BitacoraSupervisor {
@@ -43,12 +43,9 @@ export interface BitacoraSupervisorFormData {
   codigo: string;
   inmersion_id: string;
   supervisor: string;
-  desarrollo_inmersion: string;
-  incidentes: string;
-  evaluacion_general: string;
   fecha: string;
   firmado: boolean;
-  estado_aprobacion: string;
+  estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
   fecha_inicio_faena: string;
   hora_inicio_faena: string;
   hora_termino_faena: string;
@@ -65,68 +62,22 @@ export interface BitacoraSupervisorFormData {
   validacion_contratista: boolean;
   comentarios_validacion: string;
   diving_records: any[];
-  folio?: string;
-  codigo_verificacion?: string;
-  empresa_nombre?: string;
-  centro_nombre?: string;
-  equipo_buceo_id?: string;
-  operacion_id?: string;
-  supervisor_id?: string;
+  supervisor_id: string;
+  desarrollo_inmersion: string;
+  incidentes: string;
+  evaluacion_general: string;
 }
 
 export interface BitacoraBuzoFormData {
   codigo: string;
   inmersion_id: string;
-  fecha: string;
   buzo: string;
+  fecha: string;
   profundidad_maxima: number;
   trabajos_realizados: string;
   estado_fisico_post: string;
-  observaciones_tecnicas: string;
+  observaciones_tecnicas?: string;
   firmado: boolean;
-  estado_aprobacion: string;
-  folio: string;
-  codigo_verificacion: string;
-  empresa_nombre: string;
-  centro_nombre: string;
-  buzo_rut: string;
-  supervisor_nombre: string;
-  supervisor_rut: string;
-  supervisor_correo: string;
-  jefe_centro_correo: string;
-  contratista_nombre: string;
-  contratista_rut: string;
-  condamb_estado_puerto: string;
-  condamb_estado_mar: string;
-  condamb_temp_aire_c: number;
-  condamb_temp_agua_c: number;
-  condamb_visibilidad_fondo_mts: number;
-  condamb_corriente_fondo_nudos: number;
-  datostec_equipo_usado: string;
-  datostec_traje: string;
-  datostec_hora_dejo_superficie: string;
-  datostec_hora_llegada_fondo: string;
-  datostec_hora_salida_fondo: string;
-  datostec_hora_llegada_superficie: string;
-  tiempos_total_fondo: string;
-  tiempos_total_descompresion: string;
-  tiempos_total_buceo: string;
-  tiempos_tabulacion_usada: string;
-  tiempos_intervalo_superficie: string;
-  tiempos_nitrogeno_residual: string;
-  tiempos_grupo_repetitivo_anterior: string;
-  tiempos_nuevo_grupo_repetitivo: string;
-  objetivo_proposito: string;
-  objetivo_tipo_area: string;
-  objetivo_caracteristicas_dimensiones: string;
-  condcert_buceo_altitud: boolean;
-  condcert_certificados_equipos_usados: boolean;
-  condcert_buceo_areas_confinadas: boolean;
-  condcert_observaciones: string;
-  validador_nombre: string;
-  equipo_buceo_id?: string;
-  operacion_id?: string;
-  bitacora_supervisor_id?: string;
 }
 
 // Hook simplificado para manejar bitácoras

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileText, Plus, LayoutGrid, LayoutList, Users } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
@@ -15,7 +16,6 @@ import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, Users } from "lucide-react";
 
 interface InmersionData {
   inmersion_id: string;

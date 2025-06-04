@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -18,7 +19,7 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  // Relaciones básicas
+  // Relaciones básicas simplificadas
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
   contratistas?: { nombre: string };
@@ -61,7 +62,7 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return (data || []).map((op: any) => ({
+      return (data || []).map((op: any): Operacion => ({
         ...op,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
