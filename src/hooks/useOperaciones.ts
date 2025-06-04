@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Tipos básicos para evitar recursión
-export interface Operacion {
+// Tipos básicos simplificados para evitar recursión
+export interface OperacionBasica {
   id: string;
   codigo: string;
   nombre: string;
@@ -19,7 +19,9 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  // Relaciones básicas simplificadas
+}
+
+export interface OperacionConRelaciones extends OperacionBasica {
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
   contratistas?: { nombre: string };
@@ -62,7 +64,7 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return (data || []).map((op: any): Operacion => ({
+      return (data || []).map((op: any): OperacionConRelaciones => ({
         ...op,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
@@ -112,7 +114,7 @@ export const useOperaciones = () => {
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
           : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
-      };
+      } as OperacionConRelaciones;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -158,7 +160,7 @@ export const useOperaciones = () => {
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
           : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
-      };
+      } as OperacionConRelaciones;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });

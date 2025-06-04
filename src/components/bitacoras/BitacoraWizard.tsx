@@ -23,6 +23,7 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
     codigo: `BIT-SUP-${Date.now()}`,
     inmersion_id: '',
     supervisor: '',
+    supervisor_id: '', // Agregado campo requerido
     desarrollo_inmersion: '',
     incidentes: '',
     evaluacion_general: '',
