@@ -21,14 +21,15 @@ export interface OperacionBasica {
   updated_at: string;
 }
 
-// Alias para compatibilidad hacia atrás
-export type Operacion = OperacionBasica;
-
+// Tipo con relaciones para uso en componentes
 export interface OperacionConRelaciones extends OperacionBasica {
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
   contratistas?: { nombre: string };
 }
+
+// Alias para compatibilidad hacia atrás (usa el tipo con relaciones)
+export type Operacion = OperacionConRelaciones;
 
 export interface OperacionFormData {
   codigo: string;
@@ -49,7 +50,7 @@ export const useOperaciones = () => {
   // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
-    queryFn: async () => {
+    queryFn: async (): Promise<OperacionConRelaciones[]> => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
         .from('operacion')
@@ -67,11 +68,26 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return (data || []).map((op: any) => ({
-        ...op,
+      return (data || []).map((op: any): OperacionConRelaciones => ({
+        id: op.id,
+        codigo: op.codigo,
+        nombre: op.nombre,
+        sitio_id: op.sitio_id,
+        servicio_id: op.servicio_id,
+        salmonera_id: op.salmonera_id,
+        contratista_id: op.contratista_id,
+        fecha_inicio: op.fecha_inicio,
+        fecha_fin: op.fecha_fin,
+        tareas: op.tareas,
+        equipo_buceo_id: op.equipo_buceo_id,
+        created_at: op.created_at,
+        updated_at: op.updated_at,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
-          : 'activa')
+          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada',
+        salmoneras: op.salmoneras,
+        sitios: op.sitios,
+        contratistas: op.contratistas
       }));
     },
   });
