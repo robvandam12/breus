@@ -218,11 +218,15 @@ export const useOperaciones = () => {
         return { canDelete: false, reason: 'La operación tiene documentos Anexo Bravo asociados' };
       }
 
-      // Verificar Bitácoras
-      const { data: bitacoras } = await supabase
+      // Verificar Bitácoras - Simplificado para evitar problemas de tipos
+      const { data: bitacoras, error } = await supabase
         .from('bitacora_supervisor')
         .select('bitacora_id')
         .eq('operacion_id', operacionId);
+
+      if (error) {
+        console.error('Error checking bitacoras:', error);
+      }
 
       if (bitacoras && bitacoras.length > 0) {
         return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
