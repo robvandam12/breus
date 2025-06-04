@@ -219,10 +219,10 @@ export const useOperaciones = () => {
       }
 
       // Verificar Bitácoras
-      const { data: bitacoras } = await (supabase
+      const { data: bitacoras } = await supabase
         .from('bitacora_supervisor')
         .select('bitacora_id')
-        .eq('operacion_id', operacionId) as any);
+        .eq('operacion_id', operacionId);
 
       if (bitacoras && bitacoras.length > 0) {
         return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
@@ -235,7 +235,7 @@ export const useOperaciones = () => {
     }
   };
 
-  // Eliminar físicamente con tipos explícitos
+  // Eliminar físicamente con tipos simplificados
   const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Checking if operacion can be deleted:', id);
@@ -273,7 +273,7 @@ export const useOperaciones = () => {
     },
   });
 
-  // Marcar como eliminada con tipos explícitos
+  // Marcar como eliminada con tipos simplificados
   const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);

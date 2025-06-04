@@ -71,6 +71,7 @@ export interface BitacoraSupervisorFormData {
   centro_nombre?: string;
   equipo_buceo_id?: string;
   operacion_id?: string;
+  supervisor_id?: string;
 }
 
 export interface BitacoraBuzoFormData {
