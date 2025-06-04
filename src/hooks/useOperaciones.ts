@@ -3,12 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Interfaces básicas para evitar recursión
-interface BasicEntity {
-  nombre: string;
-}
-
-// Tipo principal de operación simplificado
+// Tipos básicos para evitar recursión
 export interface Operacion {
   id: string;
   codigo: string;
@@ -24,9 +19,9 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  salmoneras?: BasicEntity;
-  sitios?: BasicEntity;
-  contratistas?: BasicEntity;
+  salmoneras?: { nombre: string };
+  sitios?: { nombre: string };
+  contratistas?: { nombre: string };
 }
 
 export interface OperacionFormData {
@@ -45,7 +40,7 @@ export interface OperacionFormData {
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
-  // Fetch operaciones con tipos explícitos
+  // Fetch operaciones
   const { data: operaciones = [], isLoading } = useQuery<Operacion[]>({
     queryKey: ['operaciones'],
     queryFn: async (): Promise<Operacion[]> => {
@@ -204,15 +199,11 @@ export const useOperaciones = () => {
         return { canDelete: false, reason: 'La operación tiene documentos Anexo Bravo asociados' };
       }
 
-      // Verificar Bitácoras - Tipo básico para evitar recursión
-      const { data: bitacoras, error } = await supabase
+      // Verificar Bitácoras
+      const { data: bitacoras } = await supabase
         .from('bitacora_supervisor')
         .select('bitacora_id')
         .eq('operacion_id', operacionId);
-
-      if (error) {
-        console.error('Error checking bitacoras:', error);
-      }
 
       if (bitacoras && bitacoras.length > 0) {
         return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
