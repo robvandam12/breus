@@ -3,20 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Interfaces simplificadas para evitar recursión
-interface SalmoneraBasic {
+// Interfaces básicas para evitar recursión
+interface BasicEntity {
   nombre: string;
 }
 
-interface SitioBasic {
-  nombre: string;
-}
-
-interface ContratistaBasic {
-  nombre: string;
-}
-
-// Tipo principal de operación
+// Tipo principal de operación simplificado
 export interface Operacion {
   id: string;
   codigo: string;
@@ -32,9 +24,9 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  salmoneras?: SalmoneraBasic;
-  sitios?: SitioBasic;
-  contratistas?: ContratistaBasic;
+  salmoneras?: BasicEntity;
+  sitios?: BasicEntity;
+  contratistas?: BasicEntity;
 }
 
 export interface OperacionFormData {
@@ -83,7 +75,7 @@ export const useOperaciones = () => {
     },
   });
 
-  // Create operacion con tipos explícitos
+  // Create operacion
   const createOperacionMutation = useMutation<Operacion, Error, OperacionFormData>({
     mutationFn: async (data: OperacionFormData): Promise<Operacion> => {
       console.log('Creating operacion:', data);
@@ -119,15 +111,12 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      // Asegurar el tipo correcto del estado
-      const operacion: Operacion = {
+      return {
         ...result,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
           : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
       };
-
-      return operacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -146,7 +135,7 @@ export const useOperaciones = () => {
     },
   });
 
-  // Update operacion con tipos explícitos
+  // Update operacion
   const updateOperacionMutation = useMutation<Operacion, Error, { id: string; data: Partial<OperacionFormData> }>({
     mutationFn: async ({ id, data }): Promise<Operacion> => {
       console.log('Updating operacion:', id, data);
@@ -168,15 +157,12 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      // Asegurar el tipo correcto del estado
-      const operacion: Operacion = {
+      return {
         ...result,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
           : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
       };
-
-      return operacion;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -218,7 +204,7 @@ export const useOperaciones = () => {
         return { canDelete: false, reason: 'La operación tiene documentos Anexo Bravo asociados' };
       }
 
-      // Verificar Bitácoras - Simplificado para evitar problemas de tipos
+      // Verificar Bitácoras - Tipo básico para evitar recursión
       const { data: bitacoras, error } = await supabase
         .from('bitacora_supervisor')
         .select('bitacora_id')
@@ -239,7 +225,7 @@ export const useOperaciones = () => {
     }
   };
 
-  // Eliminar físicamente con tipos simplificados
+  // Eliminar físicamente
   const deleteOperacionMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Checking if operacion can be deleted:', id);
@@ -277,7 +263,7 @@ export const useOperaciones = () => {
     },
   });
 
-  // Marcar como eliminada con tipos simplificados
+  // Marcar como eliminada
   const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log('Marking operacion as deleted:', id);
