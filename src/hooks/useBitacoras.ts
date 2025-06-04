@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ export interface BitacoraSupervisorFormData {
   codigo: string;
   inmersion_id: string;
   supervisor: string;
+  supervisor_id: string;
   fecha: string;
   firmado: boolean;
   estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
@@ -62,7 +64,6 @@ export interface BitacoraSupervisorFormData {
   validacion_contratista: boolean;
   comentarios_validacion: string;
   diving_records: any[];
-  supervisor_id: string;
   desarrollo_inmersion: string;
   incidentes: string;
   evaluacion_general: string;
@@ -72,6 +73,7 @@ export interface BitacoraSupervisorFormData {
   empresa_nombre?: string;
   centro_nombre?: string;
   equipo_buceo_id?: string;
+  operacion_id?: string;
 }
 
 export interface BitacoraBuzoFormData {

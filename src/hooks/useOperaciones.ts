@@ -21,6 +21,9 @@ export interface OperacionBasica {
   updated_at: string;
 }
 
+// Alias para compatibilidad hacia atrás
+export type Operacion = OperacionBasica;
+
 export interface OperacionConRelaciones extends OperacionBasica {
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
@@ -64,11 +67,11 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return (data || []).map((op: any): OperacionConRelaciones => ({
+      return (data || []).map((op: any) => ({
         ...op,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
+          : 'activa')
       }));
     },
   });
@@ -113,8 +116,8 @@ export const useOperaciones = () => {
         ...result,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
-      } as OperacionConRelaciones;
+          : 'activa')
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -159,8 +162,8 @@ export const useOperaciones = () => {
         ...result,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
           ? result.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada'
-      } as OperacionConRelaciones;
+          : 'activa')
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
