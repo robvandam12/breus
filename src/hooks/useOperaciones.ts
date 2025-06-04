@@ -19,6 +19,7 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
+  // Propiedades relacionadas simplificadas
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
   contratistas?: { nombre: string };
