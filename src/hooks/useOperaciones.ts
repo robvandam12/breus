@@ -219,10 +219,10 @@ export const useOperaciones = () => {
       }
 
       // Verificar Bitácoras
-      const { data: bitacoras } = await supabase
+      const { data: bitacoras } = await (supabase
         .from('bitacora_supervisor')
         .select('bitacora_id')
-        .eq('operacion_id', operacionId);
+        .eq('operacion_id', operacionId) as any);
 
       if (bitacoras && bitacoras.length > 0) {
         return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
