@@ -1,9 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Tipos básicos simplificados para evitar recursión
+// Tipos básicos para evitar recursión
 export interface Operacion {
   id: string;
   codigo: string;
@@ -19,7 +18,7 @@ export interface Operacion {
   equipo_buceo_id?: string;
   created_at: string;
   updated_at: string;
-  // Propiedades relacionadas simplificadas
+  // Relaciones básicas
   salmoneras?: { nombre: string };
   sitios?: { nombre: string };
   contratistas?: { nombre: string };
@@ -42,9 +41,9 @@ export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
   // Fetch operaciones
-  const { data: operaciones = [], isLoading } = useQuery<Operacion[]>({
+  const { data: operaciones = [], isLoading } = useQuery({
     queryKey: ['operaciones'],
-    queryFn: async (): Promise<Operacion[]> => {
+    queryFn: async () => {
       console.log('Fetching operaciones...');
       const { data, error } = await supabase
         .from('operacion')
@@ -62,7 +61,7 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      return (data || []).map(op => ({
+      return (data || []).map((op: any) => ({
         ...op,
         estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
           ? op.estado 
@@ -72,8 +71,8 @@ export const useOperaciones = () => {
   });
 
   // Create operacion
-  const createOperacionMutation = useMutation<Operacion, Error, OperacionFormData>({
-    mutationFn: async (data: OperacionFormData): Promise<Operacion> => {
+  const createOperacionMutation = useMutation({
+    mutationFn: async (data: OperacionFormData) => {
       console.log('Creating operacion:', data);
       
       if (!data.codigo || !data.nombre) {
@@ -132,8 +131,8 @@ export const useOperaciones = () => {
   });
 
   // Update operacion
-  const updateOperacionMutation = useMutation<Operacion, Error, { id: string; data: Partial<OperacionFormData> }>({
-    mutationFn: async ({ id, data }): Promise<Operacion> => {
+  const updateOperacionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
       console.log('Updating operacion:', id, data);
       
       const { data: result, error } = await supabase

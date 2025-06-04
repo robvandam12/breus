@@ -15,6 +15,7 @@ import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, Users } from "lucide-react";
 
 interface InmersionData {
   inmersion_id: string;
@@ -135,8 +136,8 @@ const BitacorasSupervisor = () => {
               <div className="flex items-center gap-3">
                 <FileText className="w-6 h-6 text-zinc-600" />
                 <div>
-                  <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor</h1>
-                  <p className="text-sm text-zinc-500">Registro completo de supervisión con equipos de buceo</p>
+                  <h1 className="text-xl font-semibold text-zinc-900">Bitácoras Supervisor Completas</h1>
+                  <p className="text-sm text-zinc-500">Registro completo de supervisión con equipos de buceo y datos de inmersión</p>
                 </div>
               </div>
               <div className="flex-1" />
@@ -165,7 +166,7 @@ const BitacorasSupervisor = () => {
                   className="bg-purple-600 hover:bg-purple-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Nueva Bitácora Supervisor
+                  Nueva Bitácora Supervisor Completa
                 </Button>
               </div>
             </div>
@@ -173,6 +174,16 @@ const BitacorasSupervisor = () => {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto">
+              {/* Information Alert */}
+              <Alert className="mb-6 border-purple-200 bg-purple-50">
+                <Users className="w-4 h-4 text-purple-600" />
+                <AlertDescription className="text-purple-800">
+                  <strong>Bitácoras Completas de Supervisor:</strong> Estas bitácoras incluyen todos los 
+                  datos de inmersión del equipo de buceo, incluyendo buzos de emergencia. Los datos aquí 
+                  registrados son la base para crear las bitácoras individuales de cada buzo.
+                </AlertDescription>
+              </Alert>
+
               <BitacoraStats 
                 bitacorasSupervisor={bitacorasSupervisor}
                 bitacorasBuzo={[]}
@@ -206,13 +217,13 @@ const BitacorasSupervisor = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {bitacorasSupervisor.length === 0 
-                        ? "Comience creando bitácoras asociadas a equipos de buceo"
+                        ? "Comience creando bitácoras completas de supervisor con equipos de buceo"
                         : "Intenta ajustar los filtros de búsqueda"}
                     </p>
                     {bitacorasSupervisor.length === 0 && (
                       <Button onClick={handleNewBitacora} className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="w-4 h-4 mr-2" />
-                        Nueva Bitácora Supervisor
+                        Nueva Bitácora Supervisor Completa
                       </Button>
                     )}
                   </CardContent>

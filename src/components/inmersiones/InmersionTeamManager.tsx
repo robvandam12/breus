@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, UserPlus, Edit, Trash2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, UserPlus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 
 interface TeamMember {
@@ -12,8 +13,9 @@ interface TeamMember {
   usuario_id: string;
   nombre: string;
   apellido: string;
-  rol: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
+  rol: 'supervisor' | 'buzo_principal' | 'buzo_asistente' | 'buzo_emergencia';
   email: string;
+  es_emergencia?: boolean;
 }
 
 interface InmersionTeamManagerProps {
@@ -32,7 +34,7 @@ export const InmersionTeamManager = ({
   onInviteUser
 }: InmersionTeamManagerProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'supervisor' | 'buzo_principal' | 'buzo_asistente'>('buzo_principal');
+  const [selectedRole, setSelectedRole] = useState<'supervisor' | 'buzo_principal' | 'buzo_asistente' | 'buzo_emergencia'>('buzo_principal');
 
   const handleSelectUser = (user: any) => {
     onAddMember({
@@ -40,7 +42,8 @@ export const InmersionTeamManager = ({
       nombre: user.nombre,
       apellido: user.apellido,
       rol: selectedRole,
-      email: user.email
+      email: user.email,
+      es_emergencia: selectedRole === 'buzo_emergencia'
     });
     setIsAddDialogOpen(false);
   };
@@ -48,12 +51,17 @@ export const InmersionTeamManager = ({
   const handleInviteUser = (userData: any) => {
     onInviteUser({
       ...userData,
-      rol: selectedRole
+      rol: selectedRole,
+      es_emergencia: selectedRole === 'buzo_emergencia'
     });
     setIsAddDialogOpen(false);
   };
 
-  const getRoleBadgeColor = (rol: string) => {
+  const getRoleBadgeColor = (rol: string, esEmergencia?: boolean) => {
+    if (esEmergencia || rol === 'buzo_emergencia') {
+      return 'bg-orange-100 text-orange-700 border-orange-300';
+    }
+    
     const colors: Record<string, string> = {
       supervisor: 'bg-purple-100 text-purple-700',
       buzo_principal: 'bg-blue-100 text-blue-700',
@@ -62,7 +70,11 @@ export const InmersionTeamManager = ({
     return colors[rol] || 'bg-gray-100 text-gray-700';
   };
 
-  const getRoleLabel = (rol: string) => {
+  const getRoleLabel = (rol: string, esEmergencia?: boolean) => {
+    if (esEmergencia || rol === 'buzo_emergencia') {
+      return 'Buzo Emergencia';
+    }
+    
     const labels: Record<string, string> = {
       supervisor: 'Supervisor',
       buzo_principal: 'Buzo Principal',
@@ -70,6 +82,9 @@ export const InmersionTeamManager = ({
     };
     return labels[rol] || rol;
   };
+
+  const emergencyDivers = team.filter(member => member.es_emergencia || member.rol === 'buzo_emergencia');
+  const activeDivers = team.filter(member => !member.es_emergencia && member.rol !== 'buzo_emergencia');
 
   return (
     <Card>
@@ -79,8 +94,13 @@ export const InmersionTeamManager = ({
             <Users className="w-5 h-5 text-blue-600" />
             Equipo de Inmersión
             <Badge variant="outline" className="ml-2">
-              {team.length} miembros
+              {activeDivers.length} activos
             </Badge>
+            {emergencyDivers.length > 0 && (
+              <Badge variant="outline" className="bg-orange-100 text-orange-700">
+                {emergencyDivers.length} emergencia
+              </Badge>
+            )}
           </CardTitle>
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -106,7 +126,16 @@ export const InmersionTeamManager = ({
                     <option value="supervisor">Supervisor</option>
                     <option value="buzo_principal">Buzo Principal</option>
                     <option value="buzo_asistente">Buzo Asistente</option>
+                    <option value="buzo_emergencia">Buzo de Emergencia</option>
                   </select>
+                  {selectedRole === 'buzo_emergencia' && (
+                    <Alert className="mt-2 border-orange-200 bg-orange-50">
+                      <AlertTriangle className="w-4 h-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800 text-xs">
+                        El buzo de emergencia no realiza inmersión efectiva y no generará bitácora individual.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
 
                 <UserSearchSelect
@@ -133,37 +162,89 @@ export const InmersionTeamManager = ({
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {team.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{member.nombre} {member.apellido}</div>
-                    <div className="text-sm text-zinc-500">{member.email}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={getRoleBadgeColor(member.rol)}>
-                    {getRoleLabel(member.rol)}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onRemoveMember(member.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+          <div className="space-y-4">
+            {/* Active Team Members */}
+            {activeDivers.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm text-gray-700 mb-3">Equipo Activo</h4>
+                <div className="space-y-3">
+                  {activeDivers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{member.nombre} {member.apellido}</div>
+                          <div className="text-sm text-zinc-500">{member.email}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={getRoleBadgeColor(member.rol, member.es_emergencia)}>
+                          {getRoleLabel(member.rol, member.es_emergencia)}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRemoveMember(member.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Emergency Team Members */}
+            {emergencyDivers.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm text-orange-700 mb-3 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Buzos de Emergencia
+                </h4>
+                <div className="space-y-3">
+                  {emergencyDivers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-3 border border-orange-200 bg-orange-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                          <AlertTriangle className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{member.nombre} {member.apellido}</div>
+                          <div className="text-sm text-orange-600">{member.email}</div>
+                          <div className="text-xs text-orange-700">No realiza inmersión - Solo registro</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={getRoleBadgeColor(member.rol, member.es_emergencia)}>
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          {getRoleLabel(member.rol, member.es_emergencia)}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRemoveMember(member.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
