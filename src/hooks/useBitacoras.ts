@@ -40,36 +40,34 @@ export interface BitacoraBuzo {
   bitacora_supervisor_id?: string;
 }
 
-// Interfaz que coincide exactamente con el esquema de la base de datos
 export interface BitacoraSupervisorFormData {
   codigo: string;
   inmersion_id: string;
   supervisor: string;
-  desarrollo_inmersion: string;
-  incidentes: string;
-  evaluacion_general: string;
+  supervisor_id: string;
   fecha: string;
   firmado: boolean;
   estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
-  // Campos requeridos por la base de datos
-  fecha_inicio_faena?: string;
-  hora_inicio_faena?: string;
-  hora_termino_faena?: string;
-  lugar_trabajo?: string;
-  supervisor_nombre_matricula?: string;
-  estado_mar?: string;
-  visibilidad_fondo?: number;
-  inmersiones_buzos?: any[];
-  equipos_utilizados?: any[];
-  trabajo_a_realizar?: string;
-  descripcion_trabajo?: string;
-  embarcacion_apoyo?: string;
-  observaciones_generales_texto?: string;
-  validacion_contratista?: boolean;
-  comentarios_validacion?: string;
-  diving_records?: any[];
-  // Campos adicionales para compatibilidad
-  supervisor_id?: string;
+  fecha_inicio_faena: string;
+  hora_inicio_faena: string;
+  hora_termino_faena: string;
+  lugar_trabajo: string;
+  supervisor_nombre_matricula: string;
+  estado_mar: string;
+  visibilidad_fondo: number;
+  inmersiones_buzos: any[];
+  equipos_utilizados: any[];
+  trabajo_a_realizar: string;
+  descripcion_trabajo: string;
+  embarcacion_apoyo: string;
+  observaciones_generales_texto: string;
+  validacion_contratista: boolean;
+  comentarios_validacion: string;
+  diving_records: any[];
+  desarrollo_inmersion: string;
+  incidentes: string;
+  evaluacion_general: string;
+  // Campos adicionales para compatibilidad con formularios completos
   folio?: string;
   codigo_verificacion?: string;
   empresa_nombre?: string;
@@ -191,38 +189,9 @@ export const useBitacoras = () => {
 
   const createBitacoraSupervisor = useMutation<BitacoraSupervisor, Error, BitacoraSupervisorFormData>({
     mutationFn: async (data: BitacoraSupervisorFormData) => {
-      // Preparar los datos para la inserción, asegurando que todos los campos requeridos estén presentes
-      const insertData = {
-        codigo: data.codigo,
-        inmersion_id: data.inmersion_id,
-        supervisor: data.supervisor,
-        desarrollo_inmersion: data.desarrollo_inmersion,
-        incidentes: data.incidentes || '',
-        evaluacion_general: data.evaluacion_general,
-        fecha: data.fecha,
-        firmado: data.firmado,
-        estado_aprobacion: data.estado_aprobacion,
-        fecha_inicio_faena: data.fecha_inicio_faena || '',
-        hora_inicio_faena: data.hora_inicio_faena || '',
-        hora_termino_faena: data.hora_termino_faena || '',
-        lugar_trabajo: data.lugar_trabajo || '',
-        supervisor_nombre_matricula: data.supervisor_nombre_matricula || '',
-        estado_mar: data.estado_mar || '',
-        visibilidad_fondo: data.visibilidad_fondo || 0,
-        inmersiones_buzos: data.inmersiones_buzos || [],
-        equipos_utilizados: data.equipos_utilizados || [],
-        trabajo_a_realizar: data.trabajo_a_realizar || '',
-        descripcion_trabajo: data.descripcion_trabajo || '',
-        embarcacion_apoyo: data.embarcacion_apoyo || '',
-        observaciones_generales_texto: data.observaciones_generales_texto || '',
-        validacion_contratista: data.validacion_contratista || false,
-        comentarios_validacion: data.comentarios_validacion || '',
-        diving_records: data.diving_records || []
-      };
-
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .insert([insertData])
+        .insert([data])
         .select()
         .single();
       

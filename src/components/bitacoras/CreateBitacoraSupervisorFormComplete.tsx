@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,6 @@ import { FileText, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
   inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
@@ -52,7 +52,6 @@ export const CreateBitacoraSupervisorFormComplete = ({
   onSubmit, 
   onCancel 
 }: CreateBitacoraSupervisorFormCompleteProps) => {
-  const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
@@ -90,7 +89,6 @@ export const CreateBitacoraSupervisorFormComplete = ({
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: data.supervisor,
-        supervisor_id: profile?.id || '',
         fecha: new Date().toISOString().split('T')[0],
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",

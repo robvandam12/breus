@@ -1,5 +1,10 @@
 
-import { useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MapPin, Navigation } from 'lucide-react';
 
 interface SimpleMapProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -14,90 +19,106 @@ export const SimpleMap = ({
   initialLng = -70.6693,
   height = "400px" 
 }: SimpleMapProps) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [lat, setLat] = useState(initialLat);
+  const [lng, setLng] = useState(initialLng);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
+  const handleSetLocation = () => {
+    onLocationSelect(lat, lng);
+  };
 
-    // Create a simple interactive map using OpenStreetMap
-    const mapHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style>
-          body { margin: 0; padding: 0; }
-          #map { height: 100vh; width: 100%; }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          const map = L.map('map').setView([${initialLat}, ${initialLng}], 10);
-          
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(map);
-
-          let marker = L.marker([${initialLat}, ${initialLng}]).addTo(map);
-
-          map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
-            
-            if (marker) {
-              map.removeLayer(marker);
-            }
-            
-            marker = L.marker([lat, lng]).addTo(map);
-            
-            // Send coordinates to parent
-            window.parent.postMessage({
-              type: 'map-click',
-              lat: lat,
-              lng: lng
-            }, '*');
-          });
-        </script>
-      </body>
-      </html>
-    `;
-
-    if (iframeRef.current) {
-      const blob = new Blob([mapHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      iframeRef.current.src = url;
-
-      return () => URL.revokeObjectURL(url);
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const newLat = position.coords.latitude;
+          const newLng = position.coords.longitude;
+          setLat(newLat);
+          setLng(newLng);
+          onLocationSelect(newLat, newLng);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
     }
-  }, [initialLat, initialLng]);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'map-click') {
-        onLocationSelect(event.data.lat, event.data.lng);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [onLocationSelect]);
+  };
 
   return (
-    <div ref={mapRef} style={{ height, width: '100%' }}>
-      <iframe
-        ref={iframeRef}
-        style={{ 
-          width: '100%', 
-          height: '100%', 
-          border: 'none',
-          borderRadius: '0.5rem'
-        }}
-        title="Mapa interactivo"
-      />
-    </div>
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            <span className="font-medium">Seleccionar Ubicación</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleGetCurrentLocation}
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            Mi Ubicación
+          </Button>
+        </div>
+
+        <div 
+          className="w-full bg-gradient-to-br from-blue-100 to-green-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center"
+          style={{ height }}
+        >
+          <div className="text-center p-8">
+            <MapPin className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Vista de Mapa</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Use los campos de coordenadas para establecer la ubicación exacta
+            </p>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-xs text-gray-600">Coordenadas actuales:</p>
+              <p className="font-mono text-sm">
+                {lat.toFixed(6)}, {lng.toFixed(6)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="latitude">Latitud</Label>
+            <Input
+              id="latitude"
+              type="number"
+              step="any"
+              value={lat}
+              onChange={(e) => setLat(parseFloat(e.target.value) || 0)}
+              placeholder="-33.4489"
+            />
+          </div>
+          <div>
+            <Label htmlFor="longitude">Longitud</Label>
+            <Input
+              id="longitude"
+              type="number"
+              step="any"
+              value={lng}
+              onChange={(e) => setLng(parseFloat(e.target.value) || 0)}
+              placeholder="-70.6693"
+            />
+          </div>
+        </div>
+
+        <Button 
+          type="button"
+          onClick={handleSetLocation}
+          className="w-full"
+        >
+          <MapPin className="w-4 h-4 mr-2" />
+          Establecer Ubicación
+        </Button>
+
+        <p className="text-xs text-gray-500 text-center">
+          Ingrese las coordenadas manualmente o use "Mi Ubicación" para obtener su posición actual
+        </p>
+      </CardContent>
+    </Card>
   );
 };

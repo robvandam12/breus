@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X } from 'lucide-react';
-import { useBitacoraEnhanced, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
-import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
+import { useBitacoraEnhanced, BitacoraSupervisorFormData, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
@@ -30,7 +30,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
     desarrollo_inmersion: '',
-    supervisor_id: profile?.id || '',
+    supervisor_id: '',
     incidentes: '',
     evaluacion_general: ''
   });
@@ -59,9 +59,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: formData.inmersion_id!,
       supervisor: profile?.nombre + ' ' + profile?.apellido || '',
-      desarrollo_inmersion: formData.desarrollo_inmersion,
-      incidentes: formData.incidentes || '',
-      evaluacion_general: formData.evaluacion_general,
       fecha: formData.fecha!,
       firmado: false,
       estado_aprobacion: 'pendiente',
@@ -81,7 +78,10 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       validacion_contratista: false,
       comentarios_validacion: '',
       diving_records: [],
-      supervisor_id: profile?.id || ''
+      supervisor_id: profile?.id || '',
+      desarrollo_inmersion: formData.desarrollo_inmersion,
+      incidentes: formData.incidentes || '',
+      evaluacion_general: formData.evaluacion_general
     };
 
     onSubmit(submitData);
