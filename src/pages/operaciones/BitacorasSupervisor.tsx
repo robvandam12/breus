@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -275,7 +276,7 @@ const BitacorasSupervisor = () => {
               <DialogTitle className="sr-only">Crear Nueva Bitácora de Supervisor</DialogTitle>
               {selectedInmersionData && (
                 <CreateBitacoraSupervisorFormComplete
-                  inmersionData={selectedInmersionData}
+                  inmersionId={selectedInmersionData.inmersion_id}
                   onSubmit={handleCreateSupervisor}
                   onCancel={() => {
                     setIsCreateDialogOpen(false);
