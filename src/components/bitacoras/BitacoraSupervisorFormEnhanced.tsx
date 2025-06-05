@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
     desarrollo_inmersion: '',
-    supervisor_id: '',
+    supervisor_id: profile?.id || '',
     incidentes: '',
     evaluacion_general: ''
   });
@@ -56,7 +55,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     }
 
     const submitData: BitacoraSupervisorFormData = {
-      codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: formData.inmersion_id!,
       supervisor: profile?.nombre + ' ' + profile?.apellido || '',
       fecha: formData.fecha!,
