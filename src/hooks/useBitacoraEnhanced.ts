@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -12,6 +11,10 @@ export interface InmersionCompleta {
   buzo_principal: string;
   hora_inicio: string;
   hora_fin?: string;
+  profundidad_max: number;
+  temperatura_agua: number;
+  visibilidad: number;
+  corriente: string;
   operacion: {
     id: string;
     nombre: string;
@@ -59,6 +62,16 @@ export interface BitacoraBuzoCompleta {
   updated_at: string;
   inmersion?: InmersionCompleta;
   bitacora_supervisor_id?: string;
+}
+
+export interface BitacoraBuzoFormData {
+  inmersion_id: string;
+  buzo_id: string;
+  fecha: string;
+  profundidad_maxima: number;
+  trabajos_realizados: string;
+  estado_fisico_post: string;
+  observaciones_tecnicas: string;
 }
 
 export const useBitacoraEnhanced = () => {

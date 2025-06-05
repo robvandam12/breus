@@ -32,6 +32,9 @@ export interface OperacionConRelaciones extends BasicOperacion {
   usuario_supervisor?: { nombre: string; apellido: string };
 }
 
+// Alias para compatibilidad
+export type Operacion = OperacionConRelaciones;
+
 export interface OperacionFormData {
   nombre: string;
   codigo: string;
@@ -102,6 +105,48 @@ export const useOperaciones = () => {
 
     if (error) throw error;
     return data;
+  };
+
+  const checkCanDelete = async (operacionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
+    try {
+      // Verificar si hay HPTs asociados
+      const { data: hpts } = await supabase
+        .from('hpt')
+        .select('id')
+        .eq('operacion_id', operacionId)
+        .limit(1);
+
+      if (hpts && hpts.length > 0) {
+        return { canDelete: false, reason: 'tiene documentos HPT asociados' };
+      }
+
+      // Verificar si hay Anexos Bravo asociados
+      const { data: anexos } = await supabase
+        .from('anexo_bravo')
+        .select('id')
+        .eq('operacion_id', operacionId)
+        .limit(1);
+
+      if (anexos && anexos.length > 0) {
+        return { canDelete: false, reason: 'tiene documentos Anexo Bravo asociados' };
+      }
+
+      // Verificar si hay inmersiones asociadas
+      const { data: inmersiones } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .eq('operacion_id', operacionId)
+        .limit(1);
+
+      if (inmersiones && inmersiones.length > 0) {
+        return { canDelete: false, reason: 'tiene inmersiones registradas' };
+      }
+
+      return { canDelete: true };
+    } catch (error) {
+      console.error('Error checking if operation can be deleted:', error);
+      return { canDelete: false, reason: 'error al verificar dependencias' };
+    }
   };
 
   const createMutation = useMutation({
@@ -194,14 +239,45 @@ export const useOperaciones = () => {
     },
   });
 
+  const markAsDeletedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('operacion')
+        .update({ 
+          estado: 'cancelada',
+          estado_aprobacion: 'eliminada' 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Operación marcada como eliminada",
+        description: "La operación ha sido marcada como eliminada para mantener trazabilidad.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error marking operacion as deleted:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo marcar la operación como eliminada.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     operaciones,
     operacionDetail,
     isLoading,
     getOperacionById,
+    checkCanDelete,
     createOperacion: createMutation.mutateAsync,
     updateOperacion: updateMutation.mutateAsync,
     deleteOperacion: deleteMutation.mutateAsync,
+    markAsDeleted: markAsDeletedMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,

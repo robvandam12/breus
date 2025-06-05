@@ -92,7 +92,20 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      // Asegurar que todos los campos requeridos estén presentes
+      const sitioData: SitioFormData = {
+        nombre: data.nombre,
+        codigo: data.codigo,
+        salmonera_id: data.salmonera_id,
+        ubicacion: data.ubicacion,
+        estado: data.estado,
+        profundidad_maxima: data.profundidad_maxima,
+        coordenadas_lat: data.coordenadas_lat,
+        coordenadas_lng: data.coordenadas_lng,
+        capacidad_jaulas: data.capacidad_jaulas,
+        observaciones: data.observaciones,
+      };
+      await onSubmit(sitioData);
     } catch (error) {
       console.error('Error creating sitio:', error);
     } finally {
