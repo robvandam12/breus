@@ -74,6 +74,101 @@ export interface BitacoraBuzoFormData {
   observaciones_tecnicas: string;
 }
 
+// Interfaz completa para Bitácora Supervisor con todos los campos requeridos
+export interface BitacoraSupervisorFormData {
+  codigo: string;
+  inmersion_id: string;
+  supervisor: string;
+  supervisor_id: string;
+  fecha: string;
+  
+  // 1. Identificación de la Faena
+  fecha_inicio_faena: string;
+  hora_inicio_faena: string;
+  fecha_termino_faena?: string;
+  hora_termino_faena?: string;
+  lugar_trabajo: string;
+  tipo_trabajo: string;
+  supervisor_nombre_matricula: string;
+  
+  // 2. Buzos y Asistentes (hasta 6 personas)
+  buzos_asistentes: Array<{
+    nombre: string;
+    matricula: string;
+    cargo: string;
+    numero_serie_profundimetro: string;
+    color_profundimetro: string;
+  }>;
+  
+  // 3. Equipos Usados
+  equipos_utilizados: Array<{
+    equipo_usado: string;
+    numero_registro: string;
+  }>;
+  
+  // 4. Observaciones
+  condiciones_fisicas_previas: string;
+  incidentes_menores: string;
+  
+  // 5. Embarcación de Apoyo
+  embarcacion_nombre: string;
+  embarcacion_matricula: string;
+  
+  // 6. Tiempo de Buceo
+  tiempo_total_buceo: string;
+  incluye_descompresion: boolean;
+  
+  // 7. Contratista de Buceo
+  contratista_nombre: string;
+  
+  // 8. Datos del Buzo Principal
+  buzo_apellido_paterno: string;
+  buzo_apellido_materno: string;
+  buzo_nombres: string;
+  buzo_run: string;
+  
+  // 9. Profundidades
+  profundidad_trabajo: number;
+  profundidad_maxima: number;
+  camara_hiperbarica_requerida: boolean;
+  
+  // 10. Gestión Preventiva Según Decreto N°44
+  evaluacion_riesgos_actualizada: boolean;
+  procedimientos_escritos_disponibles: boolean;
+  capacitacion_previa_realizada: boolean;
+  identificacion_peligros_realizada: boolean;
+  registro_incidentes_reportados: boolean;
+  
+  // 11. Medidas Correctivas Implementadas
+  medidas_correctivas: string;
+  
+  // 12. Observaciones Generales
+  observaciones_generales: string;
+  
+  // Campos existentes para compatibilidad
+  desarrollo_inmersion: string;
+  incidentes: string;
+  evaluacion_general: string;
+  firmado: boolean;
+  estado_aprobacion: string;
+  
+  // Campos opcionales existentes
+  folio?: string;
+  codigo_verificacion?: string;
+  empresa_nombre?: string;
+  centro_nombre?: string;
+  estado_mar?: string;
+  visibilidad_fondo?: number;
+  trabajo_a_realizar?: string;
+  descripcion_trabajo?: string;
+  embarcacion_apoyo?: string;
+  observaciones_generales_texto?: string;
+  validacion_contratista?: boolean;
+  comentarios_validacion?: string;
+  inmersiones_buzos?: any[];
+  diving_records?: any[];
+}
+
 export const useBitacoraEnhanced = () => {
   const queryClient = useQueryClient();
 
