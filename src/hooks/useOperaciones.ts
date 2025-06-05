@@ -2,143 +2,128 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
-// Tipos básicos simplificados para evitar recursión
-export interface OperacionBasica {
+// Tipos básicos para evitar recursión infinita
+export interface BasicOperacion {
   id: string;
   codigo: string;
   nombre: string;
-  sitio_id: string;
-  servicio_id: string;
-  salmonera_id: string;
-  contratista_id: string;
+  tareas?: string;
   fecha_inicio: string;
   fecha_fin?: string;
-  tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada';
+  estado: string;
+  estado_aprobacion?: string;
+  salmonera_id?: string;
+  contratista_id?: string;
+  sitio_id?: string;
+  servicio_id?: string;
   equipo_buceo_id?: string;
+  supervisor_asignado_id?: string;
   created_at: string;
   updated_at: string;
 }
 
-// Tipos simples para las relaciones
-interface RelacionSimple {
-  nombre: string;
+export interface OperacionConRelaciones extends BasicOperacion {
+  salmoneras?: { nombre: string };
+  contratistas?: { nombre: string };
+  sitios?: { nombre: string };
+  equipos_buceo?: { nombre: string };
+  usuario_supervisor?: { nombre: string; apellido: string };
 }
-
-// Tipo con relaciones para uso en componentes
-export interface OperacionConRelaciones extends OperacionBasica {
-  salmoneras?: RelacionSimple;
-  sitios?: RelacionSimple;
-  contratistas?: RelacionSimple;
-}
-
-// Alias para compatibilidad hacia atrás
-export type Operacion = OperacionConRelaciones;
 
 export interface OperacionFormData {
-  codigo: string;
   nombre: string;
-  sitio_id: string;
-  servicio_id: string;
-  salmonera_id: string;
-  contratista_id: string;
+  codigo: string;
+  tareas?: string;
   fecha_inicio: string;
   fecha_fin?: string;
-  tareas?: string;
-  estado: 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada';
+  estado: 'activa' | 'completada' | 'cancelada' | 'pausada';
+  salmonera_id?: string;
+  contratista_id?: string;
+  sitio_id?: string;
+  servicio_id?: string;
+  equipo_buceo_id?: string;
+  supervisor_asignado_id?: string;
 }
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
 
-  // Fetch operaciones
-  const { data: operaciones = [], isLoading } = useQuery({
+  const { data: operaciones = [], isLoading } = useQuery<OperacionConRelaciones[]>({
     queryKey: ['operaciones'],
-    queryFn: async (): Promise<OperacionConRelaciones[]> => {
-      console.log('Fetching operaciones...');
-      const { data, error } = await supabase
+    queryFn: async () => {
+      let query = supabase
         .from('operacion')
         .select(`
           *,
-          salmoneras:salmonera_id (nombre),
-          sitios:sitio_id (nombre),
-          contratistas:contratista_id (nombre)
+          salmoneras:salmonera_id(nombre),
+          contratistas:contratista_id(nombre),
+          sitios:sitio_id(nombre),
+          equipos_buceo:equipo_buceo_id(nombre),
+          usuario_supervisor:supervisor_asignado_id(nombre, apellido)
         `)
-        .neq('estado', 'eliminada')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching operaciones:', error);
-        throw error;
+      // Filtrar según el rol del usuario
+      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+        query = query.eq('salmonera_id', profile.salmonera_id);
+      } else if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
+        query = query.eq('servicio_id', profile.servicio_id);
       }
 
-      return (data || []).map((op: any): OperacionConRelaciones => ({
-        id: op.id,
-        codigo: op.codigo,
-        nombre: op.nombre,
-        sitio_id: op.sitio_id,
-        servicio_id: op.servicio_id,
-        salmonera_id: op.salmonera_id,
-        contratista_id: op.contratista_id,
-        fecha_inicio: op.fecha_inicio,
-        fecha_fin: op.fecha_fin,
-        tareas: op.tareas,
-        equipo_buceo_id: op.equipo_buceo_id,
-        created_at: op.created_at,
-        updated_at: op.updated_at,
-        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(op.estado) 
-          ? op.estado 
-          : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada' | 'eliminada',
-        salmoneras: op.salmoneras,
-        sitios: op.sitios,
-        contratistas: op.contratistas
-      }));
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data || [];
     },
   });
 
-  // Create operacion
-  const createOperacionMutation = useMutation({
-    mutationFn: async (data: OperacionFormData) => {
-      console.log('Creating operacion:', data);
-      
-      if (!data.codigo || !data.nombre) {
-        throw new Error('Código y nombre son campos requeridos');
+  const { data: operacionDetail } = useQuery<OperacionConRelaciones | null>({
+    queryKey: ['operacion-detail'],
+    queryFn: () => null,
+    enabled: false,
+  });
+
+  const getOperacionById = async (id: string): Promise<OperacionConRelaciones | null> => {
+    const { data, error } = await supabase
+      .from('operacion')
+      .select(`
+        *,
+        salmoneras:salmonera_id(nombre),
+        contratistas:contratista_id(nombre),
+        sitios:sitio_id(nombre),
+        equipos_buceo:equipo_buceo_id(nombre),
+        usuario_supervisor:supervisor_asignado_id(nombre, apellido)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async (formData: OperacionFormData) => {
+      // Auto-asignar salmonera si el usuario es admin_salmonera
+      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id && !formData.salmonera_id) {
+        formData.salmonera_id = profile.salmonera_id;
       }
 
-      const { data: result, error } = await supabase
+      // Auto-asignar servicio si el usuario es admin_servicio
+      if (profile?.role === 'admin_servicio' && profile?.servicio_id && !formData.servicio_id) {
+        formData.servicio_id = profile.servicio_id;
+      }
+
+      const { data, error } = await supabase
         .from('operacion')
-        .insert([{
-          codigo: data.codigo,
-          nombre: data.nombre,
-          sitio_id: data.sitio_id || null,
-          servicio_id: data.servicio_id || null,
-          salmonera_id: data.salmonera_id || null,
-          contratista_id: data.contratista_id || null,
-          fecha_inicio: data.fecha_inicio,
-          fecha_fin: data.fecha_fin || null,
-          tareas: data.tareas || null,
-          estado: data.estado || 'activa'
-        }])
-        .select(`
-          *,
-          salmoneras:salmonera_id (nombre),
-          sitios:sitio_id (nombre),
-          contratistas:contratista_id (nombre)
-        `)
+        .insert([formData])
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error creating operacion:', error);
-        throw error;
-      }
-
-      return {
-        ...result,
-        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
-          ? result.estado 
-          : 'activa')
-      };
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -147,44 +132,24 @@ export const useOperaciones = () => {
         description: "La operación ha sido creada exitosamente.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error creating operacion:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear la operación.",
+        description: "No se pudo crear la operación.",
         variant: "destructive",
       });
     },
   });
 
-  // Update operacion
-  const updateOperacionMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
-      console.log('Updating operacion:', id, data);
-      
-      const { data: result, error } = await supabase
+      const { error } = await supabase
         .from('operacion')
         .update(data)
-        .eq('id', id)
-        .select(`
-          *,
-          salmoneras:salmonera_id (nombre),
-          sitios:sitio_id (nombre),
-          contratistas:contratista_id (nombre)
-        `)
-        .single();
+        .eq('id', id);
 
-      if (error) {
-        console.error('Error updating operacion:', error);
-        throw error;
-      }
-
-      return {
-        ...result,
-        estado: (['activa', 'pausada', 'completada', 'cancelada', 'eliminada'].includes(result.estado) 
-          ? result.estado 
-          : 'activa')
-      };
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -193,7 +158,7 @@ export const useOperaciones = () => {
         description: "La operación ha sido actualizada exitosamente.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error updating operacion:', error);
       toast({
         title: "Error",
@@ -203,66 +168,14 @@ export const useOperaciones = () => {
     },
   });
 
-  // Verificar si la operación puede ser eliminada
-  const checkCanDelete = async (operacionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
-    try {
-      // Verificar HPTs
-      const { data: hpts } = await supabase
-        .from('hpt')
-        .select('id')
-        .eq('operacion_id', operacionId);
-
-      if (hpts && hpts.length > 0) {
-        return { canDelete: false, reason: 'La operación tiene documentos HPT asociados' };
-      }
-
-      // Verificar Anexos Bravo
-      const { data: anexos } = await supabase
-        .from('anexo_bravo')
-        .select('id')
-        .eq('operacion_id', operacionId);
-
-      if (anexos && anexos.length > 0) {
-        return { canDelete: false, reason: 'La operación tiene documentos Anexo Bravo asociados' };
-      }
-
-      // Verificar Bitácoras
-      const { data: bitacoras } = await supabase
-        .from('bitacora_supervisor')
-        .select('bitacora_id')
-        .eq('operacion_id', operacionId);
-
-      if (bitacoras && bitacoras.length > 0) {
-        return { canDelete: false, reason: 'La operación tiene bitácoras asociadas' };
-      }
-
-      return { canDelete: true };
-    } catch (error) {
-      console.error('Error checking if operation can be deleted:', error);
-      return { canDelete: false, reason: 'Error al verificar documentos asociados' };
-    }
-  };
-
-  // Eliminar físicamente
-  const deleteOperacionMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Checking if operacion can be deleted:', id);
-      
-      const { canDelete, reason } = await checkCanDelete(id);
-
-      if (!canDelete) {
-        throw new Error(reason || 'No se puede eliminar la operación');
-      }
-
       const { error } = await supabase
         .from('operacion')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting operacion:', error);
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
@@ -271,43 +184,11 @@ export const useOperaciones = () => {
         description: "La operación ha sido eliminada exitosamente.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error deleting operacion:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar la operación.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Marcar como eliminada
-  const markAsDeletedMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Marking operacion as deleted:', id);
-      
-      const { error } = await supabase
-        .from('operacion')
-        .update({ estado: 'eliminada' })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error marking operacion as deleted:', error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
-      toast({
-        title: "Operación marcada como eliminada",
-        description: "La operación ha sido marcada como eliminada. Los documentos asociados se mantienen para trazabilidad.",
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Error marking operacion as deleted:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo marcar la operación como eliminada.",
+        description: "No se pudo eliminar la operación.",
         variant: "destructive",
       });
     },
@@ -315,14 +196,14 @@ export const useOperaciones = () => {
 
   return {
     operaciones,
+    operacionDetail,
     isLoading,
-    createOperacion: createOperacionMutation.mutateAsync,
-    isCreating: createOperacionMutation.isPending,
-    updateOperacion: updateOperacionMutation.mutateAsync,
-    deleteOperacion: deleteOperacionMutation.mutateAsync,
-    markAsDeleted: markAsDeletedMutation.mutateAsync,
-    checkCanDelete,
-    isUpdating: updateOperacionMutation.isPending,
-    isDeleting: deleteOperacionMutation.isPending,
+    getOperacionById,
+    createOperacion: createMutation.mutateAsync,
+    updateOperacion: updateMutation.mutateAsync,
+    deleteOperacion: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

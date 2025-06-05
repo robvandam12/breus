@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -66,7 +67,7 @@ export const useContratistas = () => {
 
         if (associationError) {
           console.error('Error creating salmonera-contratista association:', associationError);
-          // No lanzar error aquí, solo log
+          // No lanzar error aquí, solo log para que no bloquee la creación del contratista
         }
       }
 
@@ -123,6 +124,7 @@ export const useContratistas = () => {
     isLoading,
     createContratista: createMutation.mutateAsync,
     deleteContratista: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };
 };
