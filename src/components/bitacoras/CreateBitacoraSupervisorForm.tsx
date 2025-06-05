@@ -68,8 +68,8 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
     setLoading(true);
     try {
       const formData: BitacoraSupervisorFormData = {
+        codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: inmersionData.inmersion_id,
-        supervisor: data.supervisor,
         supervisor_id: profile?.id || '',
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
@@ -97,7 +97,9 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
         observaciones_generales_texto: '',
         validacion_contratista: false,
         comentarios_validacion: '',
-        diving_records: []
+        diving_records: [],
+        // Campos opcionales
+        supervisor: data.supervisor
       };
 
       console.log('Submitting bitácora supervisor with team data:', formData);

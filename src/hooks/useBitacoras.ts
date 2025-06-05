@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -41,9 +40,7 @@ export interface BitacoraBuzo {
 }
 
 export interface BitacoraSupervisorFormData {
-  codigo: string;
   inmersion_id: string;
-  supervisor: string;
   supervisor_id: string;
   fecha: string;
   firmado: boolean;
@@ -68,6 +65,8 @@ export interface BitacoraSupervisorFormData {
   incidentes: string;
   evaluacion_general: string;
   // Campos adicionales para compatibilidad con formularios completos
+  codigo?: string;
+  supervisor?: string;
   folio?: string;
   codigo_verificacion?: string;
   empresa_nombre?: string;

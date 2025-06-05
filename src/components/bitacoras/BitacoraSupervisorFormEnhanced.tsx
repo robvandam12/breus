@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
 
     const submitData: BitacoraSupervisorFormData = {
       inmersion_id: formData.inmersion_id!,
-      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
+      supervisor_id: profile?.id || '',
       fecha: formData.fecha!,
       firmado: false,
       estado_aprobacion: 'pendiente',
@@ -76,10 +77,12 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       validacion_contratista: false,
       comentarios_validacion: '',
       diving_records: [],
-      supervisor_id: profile?.id || '',
       desarrollo_inmersion: formData.desarrollo_inmersion,
       incidentes: formData.incidentes || '',
-      evaluacion_general: formData.evaluacion_general
+      evaluacion_general: formData.evaluacion_general,
+      // Campos opcionales
+      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
+      codigo: `BIT-SUP-${Date.now()}`
     };
 
     onSubmit(submitData);
