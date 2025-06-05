@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X } from 'lucide-react';
-import { useBitacoraEnhanced, BitacoraSupervisorFormData, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
+import { useBitacoraEnhanced, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
@@ -56,8 +56,12 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     }
 
     const submitData: BitacoraSupervisorFormData = {
+      codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: formData.inmersion_id!,
-      supervisor_id: profile?.id || '',
+      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
+      desarrollo_inmersion: formData.desarrollo_inmersion,
+      incidentes: formData.incidentes || '',
+      evaluacion_general: formData.evaluacion_general,
       fecha: formData.fecha!,
       firmado: false,
       estado_aprobacion: 'pendiente',
@@ -77,12 +81,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       validacion_contratista: false,
       comentarios_validacion: '',
       diving_records: [],
-      desarrollo_inmersion: formData.desarrollo_inmersion,
-      incidentes: formData.incidentes || '',
-      evaluacion_general: formData.evaluacion_general,
-      // Campos opcionales
-      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
-      codigo: `BIT-SUP-${Date.now()}`
+      supervisor_id: profile?.id || ''
     };
 
     onSubmit(submitData);

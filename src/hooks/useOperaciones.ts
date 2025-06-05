@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -21,15 +22,15 @@ export interface OperacionBasica {
 }
 
 // Tipos simples para las relaciones
-interface BasicRelation {
+interface RelacionSimple {
   nombre: string;
 }
 
 // Tipo con relaciones para uso en componentes
 export interface OperacionConRelaciones extends OperacionBasica {
-  salmoneras?: BasicRelation;
-  sitios?: BasicRelation;
-  contratistas?: BasicRelation;
+  salmoneras?: RelacionSimple;
+  sitios?: RelacionSimple;
+  contratistas?: RelacionSimple;
 }
 
 // Alias para compatibilidad hacia atrás
