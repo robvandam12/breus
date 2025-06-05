@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, ArrowLeft } from "lucide-react";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useAuth } from "@/hooks/useAuth";
-import { MapPicker } from "@/components/ui/map-picker";
+import { SimpleMap } from "@/components/ui/simple-map";
 
 interface CreateSitioFormAnimatedProps {
   onSubmit: (data: any) => Promise<void>;
@@ -59,11 +58,11 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel, salmoneraId }: Cre
     }
   };
 
-  const handleMapChange = (coordinates: { lat: number; lng: number }) => {
+  const handleMapLocationSelect = (lat: number, lng: number) => {
     setFormData(prev => ({
       ...prev,
-      coordenadas_lat: coordinates.lat.toString(),
-      coordenadas_lng: coordinates.lng.toString()
+      coordenadas_lat: lat.toString(),
+      coordenadas_lng: lng.toString()
     }));
   };
 
@@ -77,6 +76,9 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel, salmoneraId }: Cre
     { value: 'inactivo', label: 'Inactivo' },
     { value: 'mantenimiento', label: 'Mantenimiento' }
   ];
+
+  // Check if user is admin_salmonera to disable salmonera selection
+  const isAdminSalmonera = profile?.role === 'admin_salmonera';
 
   return (
     <motion.div 
@@ -148,11 +150,16 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel, salmoneraId }: Cre
                 <EnhancedSelect
                   options={salmoneraOptions}
                   value={formData.salmonera_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, salmonera_id: value }))}
+                  onValueChange={(value) => !isAdminSalmonera && setFormData(prev => ({ ...prev, salmonera_id: value }))}
                   placeholder="Seleccione una salmonera"
                   className="w-full"
-                  disabled={profile?.role === 'admin_salmonera'}
+                  disabled={isAdminSalmonera}
                 />
+                {isAdminSalmonera && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Asignado automáticamente a su salmonera
+                  </p>
+                )}
               </motion.div>
 
               <motion.div
@@ -217,18 +224,19 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel, salmoneraId }: Cre
                 transition={{ delay: 0.6, duration: 0.3 }}
               >
                 <Label>Ubicación en Mapa</Label>
-                <MapPicker
-                  value={
-                    formData.coordenadas_lat && formData.coordenadas_lng
-                      ? { 
-                          lat: parseFloat(formData.coordenadas_lat), 
-                          lng: parseFloat(formData.coordenadas_lng) 
-                        }
-                      : undefined
-                  }
-                  onChange={handleMapChange}
-                  className="mt-2"
-                />
+                <div className="mt-2 border rounded-lg overflow-hidden">
+                  <SimpleMap
+                    onLocationSelect={handleMapLocationSelect}
+                    initialLat={formData.coordenadas_lat ? parseFloat(formData.coordenadas_lat) : -33.4489}
+                    initialLng={formData.coordenadas_lng ? parseFloat(formData.coordenadas_lng) : -70.6693}
+                    height="300px"
+                  />
+                </div>
+                {formData.coordenadas_lat && formData.coordenadas_lng && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Coordenadas: {parseFloat(formData.coordenadas_lat).toFixed(6)}, {parseFloat(formData.coordenadas_lng).toFixed(6)}
+                  </p>
+                )}
               </motion.div>
 
               <motion.div

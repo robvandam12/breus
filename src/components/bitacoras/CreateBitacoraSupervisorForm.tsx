@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, X, Users, Building, Calendar, Clock } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
   supervisor: z.string().min(1, "El supervisor es requerido"),
@@ -40,6 +41,7 @@ interface CreateBitacoraSupervisorFormProps {
 }
 
 export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel }: CreateBitacoraSupervisorFormProps) => {
+  const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -68,7 +70,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
       const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: inmersionData.inmersion_id,
-        supervisor: data.supervisor,
+        supervisor_id: profile?.id || '',
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
         evaluacion_general: data.evaluacion_general,
@@ -95,7 +97,9 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
         observaciones_generales_texto: '',
         validacion_contratista: false,
         comentarios_validacion: '',
-        diving_records: []
+        diving_records: [],
+        // Campos opcionales
+        supervisor: data.supervisor
       };
 
       console.log('Submitting bitácora supervisor with team data:', formData);

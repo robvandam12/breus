@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Contratista {
   id: string;
@@ -30,6 +30,7 @@ export interface ContratistaFormData {
 
 export const useContratistas = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
 
   const { data: contratistas = [], isLoading } = useQuery({
     queryKey: ['contratistas'],
@@ -53,13 +54,32 @@ export const useContratistas = () => {
         .single();
 
       if (error) throw error;
+
+      // Si el usuario es admin_salmonera, crear automáticamente la asociación
+      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+        const { error: associationError } = await supabase
+          .from('salmonera_contratista')
+          .insert({
+            salmonera_id: profile.salmonera_id,
+            contratista_id: data.id
+          });
+
+        if (associationError) {
+          console.error('Error creating salmonera-contratista association:', associationError);
+          // No lanzar error aquí, solo log
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contratistas'] });
+      queryClient.invalidateQueries({ queryKey: ['salmonera-contratista'] });
       toast({
         title: "Contratista creado",
-        description: "El contratista ha sido creado exitosamente.",
+        description: profile?.role === 'admin_salmonera' 
+          ? "El contratista ha sido creado y asociado a su salmonera exitosamente."
+          : "El contratista ha sido creado exitosamente.",
       });
     },
     onError: (error) => {

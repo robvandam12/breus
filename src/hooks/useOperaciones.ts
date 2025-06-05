@@ -21,14 +21,19 @@ export interface OperacionBasica {
   updated_at: string;
 }
 
-// Tipo con relaciones para uso en componentes
-export interface OperacionConRelaciones extends OperacionBasica {
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
+// Tipos simples para las relaciones
+interface RelacionSimple {
+  nombre: string;
 }
 
-// Alias para compatibilidad hacia atrás (usa el tipo con relaciones)
+// Tipo con relaciones para uso en componentes
+export interface OperacionConRelaciones extends OperacionBasica {
+  salmoneras?: RelacionSimple;
+  sitios?: RelacionSimple;
+  contratistas?: RelacionSimple;
+}
+
+// Alias para compatibilidad hacia atrás
 export type Operacion = OperacionConRelaciones;
 
 export interface OperacionFormData {
