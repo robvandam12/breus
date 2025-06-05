@@ -10,7 +10,7 @@ import { FileText, Plus, LayoutGrid, LayoutList, Users } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
+import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { BitacoraInmersionSelectorEnhanced } from "@/components/bitacoras/BitacoraInmersionSelectorEnhanced";
 import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
@@ -271,10 +271,10 @@ const BitacorasSupervisor = () => {
 
           {/* Create Form Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-6">
+            <DialogContent variant="form" className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
               <DialogTitle className="sr-only">Crear Nueva Bitácora de Supervisor</DialogTitle>
               {selectedInmersionData && (
-                <CreateBitacoraSupervisorForm
+                <CreateBitacoraSupervisorFormComplete
                   inmersionData={selectedInmersionData}
                   onSubmit={handleCreateSupervisor}
                   onCancel={() => {
