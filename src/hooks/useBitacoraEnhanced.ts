@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -15,6 +16,10 @@ export interface InmersionCompleta {
   temperatura_agua: number;
   visibilidad: number;
   corriente: string;
+  equipo_buceo_id?: string;
+  operacion_id: string;
+  supervisor_id?: string;
+  buzo_principal_id?: string;
   operacion: {
     id: string;
     nombre: string;
@@ -24,10 +29,32 @@ export interface InmersionCompleta {
     sitios?: { nombre: string };
     equipos_buceo?: { nombre: string };
   };
-  equipo_buceo_id?: string;
-  operacion_id: string;
-  supervisor_id?: string;
-  buzo_principal_id?: string;
+}
+
+export interface EquipoBuceoMiembroCompleto {
+  id: string;
+  equipo_id: string;
+  usuario_id: string;
+  rol_equipo: string;
+  disponible: boolean;
+  created_at: string;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    email: string;
+  };
+}
+
+export interface EquipoBuceoCompleto {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  tipo_empresa: string;
+  empresa_id: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  miembros?: EquipoBuceoMiembroCompleto[];
 }
 
 export interface BitacoraSupervisorCompleta {
@@ -40,7 +67,7 @@ export interface BitacoraSupervisorCompleta {
   evaluacion_general: string;
   fecha: string;
   firmado: boolean;
-  estado_aprobacion: string;
+  estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
   created_at: string;
   updated_at: string;
   inmersion?: InmersionCompleta;
@@ -57,7 +84,7 @@ export interface BitacoraBuzoCompleta {
   estado_fisico_post: string;
   observaciones_tecnicas: string;
   firmado: boolean;
-  estado_aprobacion: string;
+  estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
   created_at: string;
   updated_at: string;
   inmersion?: InmersionCompleta;
@@ -65,13 +92,70 @@ export interface BitacoraBuzoCompleta {
 }
 
 export interface BitacoraBuzoFormData {
+  codigo: string;
   inmersion_id: string;
   buzo_id: string;
+  buzo: string;
   fecha: string;
   profundidad_maxima: number;
   trabajos_realizados: string;
   estado_fisico_post: string;
   observaciones_tecnicas: string;
+  firmado: boolean;
+  estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
+  
+  // Campos completos opcionales
+  folio?: string;
+  codigo_verificacion?: string;
+  empresa_nombre?: string;
+  centro_nombre?: string;
+  buzo_rut?: string;
+  supervisor_nombre?: string;
+  supervisor_rut?: string;
+  supervisor_correo?: string;
+  jefe_centro_correo?: string;
+  contratista_nombre?: string;
+  contratista_rut?: string;
+  
+  // Condiciones ambientales
+  condamb_estado_puerto?: string;
+  condamb_estado_mar?: string;
+  condamb_temp_aire_c?: number;
+  condamb_temp_agua_c?: number;
+  condamb_visibilidad_fondo_mts?: number;
+  condamb_corriente_fondo_nudos?: number;
+  
+  // Datos técnicos del buceo
+  datostec_equipo_usado?: string;
+  datostec_traje?: string;
+  datostec_hora_dejo_superficie?: string;
+  datostec_hora_llegada_fondo?: string;
+  datostec_hora_salida_fondo?: string;
+  datostec_hora_llegada_superficie?: string;
+  
+  // Tiempos y tabulación
+  tiempos_total_fondo?: string;
+  tiempos_total_descompresion?: string;
+  tiempos_total_buceo?: string;
+  tiempos_tabulacion_usada?: string;
+  tiempos_intervalo_superficie?: string;
+  tiempos_nitrogeno_residual?: string;
+  tiempos_grupo_repetitivo_anterior?: string;
+  tiempos_nuevo_grupo_repetitivo?: string;
+  
+  // Objetivo del buceo
+  objetivo_proposito?: string;
+  objetivo_tipo_area?: string;
+  objetivo_caracteristicas_dimensiones?: string;
+  
+  // Condiciones y certificaciones
+  condcert_buceo_altitud?: boolean;
+  condcert_certificados_equipos_usados?: boolean;
+  condcert_buceo_areas_confinadas?: boolean;
+  condcert_observaciones?: string;
+  
+  // Validador final
+  validador_nombre?: string;
 }
 
 // Interfaz completa para Bitácora Supervisor con todos los campos requeridos
@@ -150,7 +234,7 @@ export interface BitacoraSupervisorFormData {
   incidentes: string;
   evaluacion_general: string;
   firmado: boolean;
-  estado_aprobacion: string;
+  estado_aprobacion: 'pendiente' | 'aprobada' | 'rechazada';
   
   // Campos opcionales existentes
   folio?: string;

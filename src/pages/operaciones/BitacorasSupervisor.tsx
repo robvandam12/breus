@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -13,7 +12,8 @@ import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { BitacoraInmersionSelectorEnhanced } from "@/components/bitacoras/BitacoraInmersionSelectorEnhanced";
-import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+import { useBitacoras } from "@/hooks/useBitacoras";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,7 +52,19 @@ const BitacorasSupervisor = () => {
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
       console.log('Creating bitácora supervisor with data:', data);
-      await createBitacoraSupervisor.mutateAsync(data);
+      // Convertir los datos al formato esperado por useBitacoras
+      const bitacoraData = {
+        codigo: data.codigo,
+        inmersion_id: data.inmersion_id,
+        supervisor: data.supervisor,
+        desarrollo_inmersion: data.desarrollo_inmersion,
+        incidentes: data.incidentes,
+        evaluacion_general: data.evaluacion_general,
+        fecha: data.fecha,
+        firmado: data.firmado,
+        estado_aprobacion: data.estado_aprobacion as 'pendiente' | 'aprobada' | 'rechazada'
+      };
+      await createBitacoraSupervisor.mutateAsync(bitacoraData);
       setIsCreateDialogOpen(false);
       setShowInmersionSelector(false);
       setSelectedInmersionData(null);
