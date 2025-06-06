@@ -71,7 +71,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
   const { equipos: equiposBuceo } = useEquiposBuceoEnhanced();
 
   const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
-  const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion_id);
+  const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion?.equipo_buceo_id);
 
   const [buzosAsistentes, setBuzosAsistentes] = useState([
     { nombre: '', matricula: '', cargo: '', numero_serie_profundimetro: '', color_profundimetro: '' }
@@ -108,18 +108,18 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('fecha_inicio_faena', selectedInmersion.fecha_inmersion);
       setValue('hora_inicio_faena', selectedInmersion.hora_inicio);
       setValue('hora_termino_faena', selectedInmersion.hora_fin || '');
-      setValue('lugar_trabajo', 'Sitio de trabajo'); // Usar un valor por defecto ya que no tenemos la relación directa
+      setValue('lugar_trabajo', selectedInmersion.operacion?.sitios?.nombre || 'Sitio de trabajo');
       setValue('tipo_trabajo', selectedInmersion.objetivo);
       setValue('supervisor_nombre_matricula', selectedInmersion.supervisor);
       setValue('profundidad_trabajo', selectedInmersion.profundidad_max);
       setValue('profundidad_maxima', selectedInmersion.profundidad_max);
-      setValue('contratista_nombre', 'Contratista'); // Usar un valor por defecto
+      setValue('contratista_nombre', selectedInmersion.operacion?.contratistas?.nombre || 'Contratista');
       setValue('buzo_nombres', selectedInmersion.buzo_principal);
       
       // Auto-poblar datos del equipo de buceo si existe
       if (equipoBuceo?.miembros) {
         const miembrosData = equipoBuceo.miembros.map(miembro => ({
-          nombre: `${miembro.usuario?.nombre || ''} ${miembro.usuario?.apellido || ''}`.trim(),
+          nombre: miembro.usuario ? `${miembro.usuario.nombre || ''} ${miembro.usuario.apellido || ''}`.trim() : '',
           matricula: '',
           cargo: miembro.rol_equipo || '',
           numero_serie_profundimetro: '',
@@ -207,8 +207,8 @@ export const CreateBitacoraSupervisorFormComplete = ({
         estado_aprobacion: 'pendiente' as const,
         
         // Campos opcionales
-        empresa_nombre: 'Empresa', // Valor por defecto
-        centro_nombre: 'Centro', // Valor por defecto  
+        empresa_nombre: selectedInmersion?.operacion?.salmoneras?.nombre || 'Empresa',
+        centro_nombre: selectedInmersion?.operacion?.sitios?.nombre || 'Centro',
         inmersiones_buzos: [],
         diving_records: []
       };
