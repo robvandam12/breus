@@ -123,7 +123,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
           return {
             nombre: '', // Se llenará manualmente
             matricula: '',
-            cargo: miembro.rol_equipo || '',
+            cargo: (miembro as any).rol_equipo || '', // Acceso seguro con casting
             numero_serie_profundimetro: '',
             color_profundimetro: ''
           };
