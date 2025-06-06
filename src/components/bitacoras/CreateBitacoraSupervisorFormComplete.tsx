@@ -71,7 +71,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
   const { equipos: equiposBuceo } = useEquiposBuceoEnhanced();
 
   const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
-  const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion?.equipo_buceo_id);
+  const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion_id);
 
   const [buzosAsistentes, setBuzosAsistentes] = useState([
     { nombre: '', matricula: '', cargo: '', numero_serie_profundimetro: '', color_profundimetro: '' }
@@ -108,12 +108,12 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('fecha_inicio_faena', selectedInmersion.fecha_inmersion);
       setValue('hora_inicio_faena', selectedInmersion.hora_inicio);
       setValue('hora_termino_faena', selectedInmersion.hora_fin || '');
-      setValue('lugar_trabajo', selectedInmersion.operacion?.sitios?.nombre || 'Sitio de trabajo');
+      setValue('lugar_trabajo', 'Sitio de trabajo');
       setValue('tipo_trabajo', selectedInmersion.objetivo);
       setValue('supervisor_nombre_matricula', selectedInmersion.supervisor);
       setValue('profundidad_trabajo', selectedInmersion.profundidad_max);
       setValue('profundidad_maxima', selectedInmersion.profundidad_max);
-      setValue('contratista_nombre', selectedInmersion.operacion?.contratistas?.nombre || 'Contratista');
+      setValue('contratista_nombre', 'Contratista');
       setValue('buzo_nombres', selectedInmersion.buzo_principal);
       
       // Auto-poblar datos del equipo de buceo si existe
@@ -207,8 +207,8 @@ export const CreateBitacoraSupervisorFormComplete = ({
         estado_aprobacion: 'pendiente' as const,
         
         // Campos opcionales
-        empresa_nombre: selectedInmersion?.operacion?.salmoneras?.nombre || 'Empresa',
-        centro_nombre: selectedInmersion?.operacion?.sitios?.nombre || 'Centro'
+        empresa_nombre: 'Empresa',
+        centro_nombre: 'Centro'
       };
 
       await onSubmit(formData);
@@ -807,7 +807,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p><strong>Código:</strong> {selectedInmersion.codigo}</p>
-                  <p><strong>Operación:</strong> {selectedInmersion.operacion?.nombre || 'Sin nombre'}</p>
+                  <p><strong>Operación:</strong> Sin nombre</p>
                   <p><strong>Fecha:</strong> {new Date(selectedInmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
                 </div>
                 <div>

@@ -381,10 +381,32 @@ export const useBitacoraEnhanced = () => {
       return (data || []).map(item => ({
         ...item,
         estado_aprobacion: (item.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
-        buzos_asistentes: Array.isArray(item.buzos_asistentes) ? item.buzos_asistentes : 
-          (item.buzos_asistentes ? JSON.parse(item.buzos_asistentes as string) : []),
-        equipos_utilizados: Array.isArray(item.equipos_utilizados) ? item.equipos_utilizados : 
-          (item.equipos_utilizados ? JSON.parse(item.equipos_utilizados as string) : [])
+        buzos_asistentes: (() => {
+          try {
+            if (Array.isArray((item as any).buzos_asistentes)) {
+              return (item as any).buzos_asistentes;
+            }
+            if (typeof (item as any).buzos_asistentes === 'string') {
+              return JSON.parse((item as any).buzos_asistentes);
+            }
+            return [];
+          } catch {
+            return [];
+          }
+        })(),
+        equipos_utilizados: (() => {
+          try {
+            if (Array.isArray((item as any).equipos_utilizados)) {
+              return (item as any).equipos_utilizados;
+            }
+            if (typeof (item as any).equipos_utilizados === 'string') {
+              return JSON.parse((item as any).equipos_utilizados);
+            }
+            return [];
+          } catch {
+            return [];
+          }
+        })()
       }));
     }
   });
@@ -447,10 +469,32 @@ export const useBitacoraEnhanced = () => {
     return {
       ...data,
       estado_aprobacion: (data.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
-      buzos_asistentes: Array.isArray(data.buzos_asistentes) ? data.buzos_asistentes : 
-        (data.buzos_asistentes ? JSON.parse(data.buzos_asistentes as string) : []),
-      equipos_utilizados: Array.isArray(data.equipos_utilizados) ? data.equipos_utilizados : 
-        (data.equipos_utilizados ? JSON.parse(data.equipos_utilizados as string) : [])
+      buzos_asistentes: (() => {
+        try {
+          if (Array.isArray((data as any).buzos_asistentes)) {
+            return (data as any).buzos_asistentes;
+          }
+          if (typeof (data as any).buzos_asistentes === 'string') {
+            return JSON.parse((data as any).buzos_asistentes);
+          }
+          return [];
+        } catch {
+          return [];
+        }
+      })(),
+      equipos_utilizados: (() => {
+        try {
+          if (Array.isArray((data as any).equipos_utilizados)) {
+            return (data as any).equipos_utilizados;
+          }
+          if (typeof (data as any).equipos_utilizados === 'string') {
+            return JSON.parse((data as any).equipos_utilizados);
+          }
+          return [];
+        } catch {
+          return [];
+        }
+      })()
     };
   };
 
