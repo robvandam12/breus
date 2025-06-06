@@ -119,12 +119,9 @@ export const CreateBitacoraSupervisorFormComplete = ({
       // Auto-poblar datos del equipo de buceo si existe
       if (equipoBuceo?.miembros && equipoBuceo.miembros.length > 0) {
         const miembrosData = equipoBuceo.miembros.map(miembro => {
-          // Acceso seguro a las propiedades del usuario
-          const nombreCompleto = miembro.usuario ? 
-            `${miembro.usuario.nombre || ''} ${miembro.usuario.apellido || ''}`.trim() : '';
-          
+          // Solo tenemos acceso a usuario_id, no al objeto usuario completo
           return {
-            nombre: nombreCompleto,
+            nombre: '', // Se llenará manualmente
             matricula: '',
             cargo: miembro.rol_equipo || '',
             numero_serie_profundimetro: '',
