@@ -117,14 +117,20 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('buzo_nombres', selectedInmersion.buzo_principal);
       
       // Auto-poblar datos del equipo de buceo si existe
-      if (equipoBuceo?.miembros) {
-        const miembrosData = equipoBuceo.miembros.map(miembro => ({
-          nombre: miembro.usuario ? `${miembro.usuario.nombre || ''} ${miembro.usuario.apellido || ''}`.trim() : '',
-          matricula: '',
-          cargo: miembro.rol_equipo || '',
-          numero_serie_profundimetro: '',
-          color_profundimetro: ''
-        }));
+      if (equipoBuceo?.miembros && equipoBuceo.miembros.length > 0) {
+        const miembrosData = equipoBuceo.miembros.map(miembro => {
+          // Acceso seguro a las propiedades del usuario
+          const nombreCompleto = miembro.usuario ? 
+            `${miembro.usuario.nombre || ''} ${miembro.usuario.apellido || ''}`.trim() : '';
+          
+          return {
+            nombre: nombreCompleto,
+            matricula: '',
+            cargo: miembro.rol_equipo || '',
+            numero_serie_profundimetro: '',
+            color_profundimetro: ''
+          };
+        });
         setBuzosAsistentes(miembrosData.length > 0 ? miembrosData : buzosAsistentes);
       }
 
