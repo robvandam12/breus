@@ -379,10 +379,14 @@ export const useBitacoraEnhanced = () => {
       
       if (error) throw error;
       
-      // Mapear los datos para asegurar tipos correctos
+      // Mapear los datos para asegurar tipos correctos y manejar arrays JSON
       return (data || []).map(item => ({
         ...item,
-        estado_aprobacion: (item.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada'
+        estado_aprobacion: (item.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
+        buzos_asistentes: Array.isArray(item.buzos_asistentes) ? item.buzos_asistentes : [],
+        equipos_utilizados: Array.isArray(item.equipos_utilizados) ? item.equipos_utilizados : [],
+        inmersiones_buzos: Array.isArray(item.inmersiones_buzos) ? item.inmersiones_buzos : [],
+        diving_records: Array.isArray(item.diving_records) ? item.diving_records : []
       }));
     }
   });
@@ -444,7 +448,11 @@ export const useBitacoraEnhanced = () => {
     
     return {
       ...data,
-      estado_aprobacion: (data.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada'
+      estado_aprobacion: (data.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
+      buzos_asistentes: Array.isArray(data.buzos_asistentes) ? data.buzos_asistentes : [],
+      equipos_utilizados: Array.isArray(data.equipos_utilizados) ? data.equipos_utilizados : [],
+      inmersiones_buzos: Array.isArray(data.inmersiones_buzos) ? data.inmersiones_buzos : [],
+      diving_records: Array.isArray(data.diving_records) ? data.diving_records : []
     };
   };
 
