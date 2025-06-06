@@ -208,9 +208,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
         
         // Campos opcionales
         empresa_nombre: selectedInmersion?.operacion?.salmoneras?.nombre || 'Empresa',
-        centro_nombre: selectedInmersion?.operacion?.sitios?.nombre || 'Centro',
-        inmersiones_buzos: [],
-        diving_records: []
+        centro_nombre: selectedInmersion?.operacion?.sitios?.nombre || 'Centro'
       };
 
       await onSubmit(formData);

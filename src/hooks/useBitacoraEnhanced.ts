@@ -326,8 +326,6 @@ export interface BitacoraSupervisorFormData {
   observaciones_generales_texto?: string;
   validacion_contratista?: boolean;
   comentarios_validacion?: string;
-  inmersiones_buzos?: any[];
-  diving_records?: any[];
 }
 
 export const useBitacoraEnhanced = () => {
@@ -383,10 +381,10 @@ export const useBitacoraEnhanced = () => {
       return (data || []).map(item => ({
         ...item,
         estado_aprobacion: (item.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
-        buzos_asistentes: Array.isArray(item.buzos_asistentes) ? item.buzos_asistentes : [],
-        equipos_utilizados: Array.isArray(item.equipos_utilizados) ? item.equipos_utilizados : [],
-        inmersiones_buzos: Array.isArray(item.inmersiones_buzos) ? item.inmersiones_buzos : [],
-        diving_records: Array.isArray(item.diving_records) ? item.diving_records : []
+        buzos_asistentes: Array.isArray(item.buzos_asistentes) ? item.buzos_asistentes : 
+          (item.buzos_asistentes ? JSON.parse(item.buzos_asistentes as string) : []),
+        equipos_utilizados: Array.isArray(item.equipos_utilizados) ? item.equipos_utilizados : 
+          (item.equipos_utilizados ? JSON.parse(item.equipos_utilizados as string) : [])
       }));
     }
   });
@@ -449,10 +447,10 @@ export const useBitacoraEnhanced = () => {
     return {
       ...data,
       estado_aprobacion: (data.estado_aprobacion || 'pendiente') as 'pendiente' | 'aprobada' | 'rechazada',
-      buzos_asistentes: Array.isArray(data.buzos_asistentes) ? data.buzos_asistentes : [],
-      equipos_utilizados: Array.isArray(data.equipos_utilizados) ? data.equipos_utilizados : [],
-      inmersiones_buzos: Array.isArray(data.inmersiones_buzos) ? data.inmersiones_buzos : [],
-      diving_records: Array.isArray(data.diving_records) ? data.diving_records : []
+      buzos_asistentes: Array.isArray(data.buzos_asistentes) ? data.buzos_asistentes : 
+        (data.buzos_asistentes ? JSON.parse(data.buzos_asistentes as string) : []),
+      equipos_utilizados: Array.isArray(data.equipos_utilizados) ? data.equipos_utilizados : 
+        (data.equipos_utilizados ? JSON.parse(data.equipos_utilizados as string) : [])
     };
   };
 
