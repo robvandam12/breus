@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Users, Plus, Trash2 } from "lucide-react";
+import { Users, Plus, Trash2, UserPlus } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
+import { useInmersiones } from "@/hooks/useInmersiones";
+import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
 
 interface BuzoInmersion {
   buzo_id: string;
@@ -20,6 +22,7 @@ interface BuzoInmersion {
   tiempo_ascenso: number;
   tabulacion_usada: string;
   tiempo_usado: number;
+  es_emergencia?: boolean;
 }
 
 interface BitacoraStep2Props {
@@ -29,25 +32,60 @@ interface BitacoraStep2Props {
 
 export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
   const [activeTab, setActiveTab] = useState<string>('');
-  const [inmersionesBuzos, setInmersionesBuzos] = useState<BuzoInmersion[]>(() => {
-    // Initialize with existing data or empty array
-    return data.inmersiones_buzos?.map((buzo, index) => ({
-      buzo_id: buzo.buzo_id || `buzo-${index}`,
-      buzo_nombre: buzo.buzo_nombre || '',
-      profundidad_maxima: buzo.profundidad_maxima || 0,
-      hora_dejo_superficie: buzo.hora_dejo_superficie || '',
-      hora_llego_superficie: buzo.hora_llego_superficie || '',
-      tiempo_descenso: buzo.tiempo_descenso || 0,
-      tiempo_fondo: buzo.tiempo_fondo || 0,
-      tiempo_ascenso: buzo.tiempo_ascenso || 0,
-      tabulacion_usada: buzo.tabulacion_usada || '',
-      tiempo_usado: buzo.tiempo_usado || 0
-    })) || [];
-  });
+  const [inmersionesBuzos, setInmersionesBuzos] = useState<BuzoInmersion[]>([]);
+  const { inmersiones } = useInmersiones();
+  const { equiposBuceo } = useEquiposBuceo();
 
-  const agregarBuzo = () => {
+  // Obtener la inmersión actual y su equipo de buceo
+  const inmersionActual = inmersiones.find(i => i.inmersion_id === data.inmersion_id);
+  const equipoActual = equiposBuceo.find(e => e.id === inmersionActual?.operacion?.equipo_buceo_id);
+
+  useEffect(() => {
+    // Inicializar con buzos del equipo si no hay datos previos
+    if (inmersionesBuzos.length === 0 && equipoActual?.miembros) {
+      const buzosIniciales: BuzoInmersion[] = equipoActual.miembros.map((miembro, index) => ({
+        buzo_id: miembro.usuario_id || `buzo-${index}`,
+        buzo_nombre: miembro.usuario?.nombre ? `${miembro.usuario.nombre} ${miembro.usuario.apellido || ''}` : `Buzo ${index + 1}`,
+        profundidad_maxima: 0,
+        hora_dejo_superficie: '',
+        hora_llego_superficie: '',
+        tiempo_descenso: 0,
+        tiempo_fondo: 0,
+        tiempo_ascenso: 0,
+        tabulacion_usada: '',
+        tiempo_usado: 0,
+        es_emergencia: false
+      }));
+      setInmersionesBuzos(buzosIniciales);
+      if (buzosIniciales.length > 0) {
+        setActiveTab(buzosIniciales[0].buzo_id);
+      }
+      onUpdate({ inmersiones_buzos: buzosIniciales });
+    } else if (data.inmersiones_buzos && data.inmersiones_buzos.length > 0) {
+      // Restaurar datos existentes
+      const buzosExistentes = data.inmersiones_buzos.map((buzo, index) => ({
+        buzo_id: buzo.buzo_id || `buzo-${index}`,
+        buzo_nombre: buzo.buzo_nombre || '',
+        profundidad_maxima: buzo.profundidad_maxima || 0,
+        hora_dejo_superficie: buzo.hora_dejo_superficie || '',
+        hora_llego_superficie: buzo.hora_llego_superficie || '',
+        tiempo_descenso: buzo.tiempo_descenso || 0,
+        tiempo_fondo: buzo.tiempo_fondo || 0,
+        tiempo_ascenso: buzo.tiempo_ascenso || 0,
+        tabulacion_usada: buzo.tabulacion_usada || '',
+        tiempo_usado: buzo.tiempo_usado || 0,
+        es_emergencia: buzo.es_emergencia || false
+      }));
+      setInmersionesBuzos(buzosExistentes);
+      if (!activeTab && buzosExistentes.length > 0) {
+        setActiveTab(buzosExistentes[0].buzo_id);
+      }
+    }
+  }, [equipoActual, data.inmersion_id, data.inmersiones_buzos, activeTab]);
+
+  const agregarBuzoEmergencia = () => {
     const nuevoBuzo: BuzoInmersion = {
-      buzo_id: `buzo-${Date.now()}`,
+      buzo_id: `buzo-emergencia-${Date.now()}`,
       buzo_nombre: '',
       profundidad_maxima: 0,
       hora_dejo_superficie: '',
@@ -56,14 +94,14 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
       tiempo_fondo: 0,
       tiempo_ascenso: 0,
       tabulacion_usada: '',
-      tiempo_usado: 0
+      tiempo_usado: 0,
+      es_emergencia: true
     };
     
     const nuevasInmersiones = [...inmersionesBuzos, nuevoBuzo];
     setInmersionesBuzos(nuevasInmersiones);
     setActiveTab(nuevoBuzo.buzo_id);
     
-    // Actualizar el estado principal
     onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
@@ -71,7 +109,6 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
     const nuevasInmersiones = inmersionesBuzos.filter(buzo => buzo.buzo_id !== buzoId);
     setInmersionesBuzos(nuevasInmersiones);
     
-    // Si eliminamos el tab activo, cambiar a otro
     if (activeTab === buzoId && nuevasInmersiones.length > 0) {
       setActiveTab(nuevasInmersiones[0].buzo_id);
     }
@@ -87,15 +124,21 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
     onUpdate({ inmersiones_buzos: nuevasInmersiones });
   };
 
-  // Si no hay ningún buzo y no hay tab activo, crear el primer buzo
-  if (inmersionesBuzos.length === 0) {
-    agregarBuzo();
-  }
+  const calcularTiempoTotal = (buzo: BuzoInmersion) => {
+    return buzo.tiempo_descenso + buzo.tiempo_fondo + buzo.tiempo_ascenso;
+  };
 
-  // Si hay buzos pero no hay tab activo, seleccionar el primero
-  if (inmersionesBuzos.length > 0 && !activeTab) {
-    setActiveTab(inmersionesBuzos[0].buzo_id);
-  }
+  useEffect(() => {
+    // Auto-calcular tiempo total para cada buzo
+    const nuevasInmersiones = inmersionesBuzos.map(buzo => ({
+      ...buzo,
+      tiempo_usado: calcularTiempoTotal(buzo)
+    }));
+    if (JSON.stringify(nuevasInmersiones) !== JSON.stringify(inmersionesBuzos)) {
+      setInmersionesBuzos(nuevasInmersiones);
+      onUpdate({ inmersiones_buzos: nuevasInmersiones });
+    }
+  }, [inmersionesBuzos.map(b => `${b.tiempo_descenso}-${b.tiempo_fondo}-${b.tiempo_ascenso}`).join(',')]);
 
   return (
     <div className="space-y-6">
@@ -118,12 +161,13 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                 {inmersionesBuzos.length} {inmersionesBuzos.length === 1 ? 'Buzo' : 'Buzos'}
               </Badge>
               <Button
-                onClick={agregarBuzo}
+                onClick={agregarBuzoEmergencia}
                 size="sm"
                 className="flex items-center gap-2"
+                variant="outline"
               >
-                <Plus className="w-4 h-4" />
-                Agregar Buzo
+                <UserPlus className="w-4 h-4" />
+                Buzo Emergencia
               </Button>
             </div>
           </div>
@@ -131,12 +175,15 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
         <CardContent>
           {inmersionesBuzos.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-auto">
+              <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${inmersionesBuzos.length}, 1fr)` }}>
                 {inmersionesBuzos.map((buzo, index) => (
                   <TabsTrigger key={buzo.buzo_id} value={buzo.buzo_id} className="relative">
                     <div className="flex items-center gap-2">
-                      <span>{buzo.buzo_nombre || `Buzo ${index + 1}`}</span>
-                      {inmersionesBuzos.length > 1 && (
+                      <span className="truncate max-w-[120px]">
+                        {buzo.buzo_nombre || `Buzo ${index + 1}`}
+                        {buzo.es_emergencia && <Badge variant="destructive" className="ml-1 text-xs">EMG</Badge>}
+                      </span>
+                      {buzo.es_emergencia && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -158,12 +205,15 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                 <TabsContent key={buzo.buzo_id} value={buzo.buzo_id} className="mt-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor={`nombre-${buzo.buzo_id}`}>Nombre del Buzo</Label>
+                      <Label htmlFor={`nombre-${buzo.buzo_id}`}>
+                        Nombre del Buzo {buzo.es_emergencia && <Badge variant="destructive" className="ml-2">Emergencia</Badge>}
+                      </Label>
                       <Input
                         id={`nombre-${buzo.buzo_id}`}
                         value={buzo.buzo_nombre}
                         onChange={(e) => actualizarBuzo(buzo.buzo_id, 'buzo_nombre', e.target.value)}
                         placeholder="Nombre completo del buzo"
+                        disabled={!buzo.es_emergencia}
                       />
                     </div>
 
@@ -248,8 +298,6 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                           id={`tiempo-usado-${buzo.buzo_id}`}
                           type="number"
                           value={buzo.tiempo_usado}
-                          onChange={(e) => actualizarBuzo(buzo.buzo_id, 'tiempo_usado', parseFloat(e.target.value) || 0)}
-                          placeholder="0"
                           className="bg-gray-50"
                           readOnly
                         />
@@ -261,6 +309,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                         <strong>Resumen:</strong> {buzo.buzo_nombre || 'Este buzo'} realizó una inmersión a {buzo.profundidad_maxima} metros
                         {buzo.hora_dejo_superficie && buzo.hora_llego_superficie && 
                           ` desde las ${buzo.hora_dejo_superficie} hasta las ${buzo.hora_llego_superficie}`}
+                        {buzo.es_emergencia && ' (Buzo de Emergencia)'}
                       </p>
                     </div>
                   </div>
@@ -270,10 +319,10 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
           ) : (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No hay buzos registrados</p>
-              <Button onClick={agregarBuzo}>
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Primer Buzo
+              <p className="text-gray-500 mb-4">No hay buzos en el equipo</p>
+              <Button onClick={agregarBuzoEmergencia}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Agregar Buzo de Emergencia
               </Button>
             </div>
           )}
@@ -287,7 +336,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
           </div>
           <div className="text-sm text-green-800">
             <strong>Información:</strong> Los buzos provienen del equipo de buceo asignado a la operación. 
-            Puede agregar buzos adicionales si es necesario.
+            Los buzos del equipo no se pueden eliminar, pero puede agregar buzos de emergencia si es necesario.
           </div>
         </div>
       </div>

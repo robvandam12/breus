@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText } from "lucide-react";
+import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTriangle } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
@@ -18,7 +19,7 @@ interface OperacionInmersionesProps {
 
 export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoras();
+  const { createBitacoraSupervisor, createBitacoraBuzo, bitacorasSupervisor } = useBitacoras();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [inmersionToDelete, setInmersionToDelete] = useState<string | null>(null);
@@ -57,6 +58,18 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   };
 
   const handleCreateBitacoraBuzo = (inmersionId: string) => {
+    // Verificar si existe bitácora de supervisor para esta inmersión
+    const bitacoraSupervisorExiste = bitacorasSupervisor.some(b => b.inmersion_id === inmersionId);
+    
+    if (!bitacoraSupervisorExiste) {
+      toast({
+        title: "Bitácora supervisor requerida",
+        description: "Debe crear primero la bitácora de supervisor antes de crear la bitácora de buzo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSelectedInmersionId(inmersionId);
     setShowBitacoraBuzoForm(true);
   };
@@ -114,6 +127,10 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
     }
   };
 
+  const tieneBitacoraSupervisor = (inmersionId: string) => {
+    return bitacorasSupervisor.some(b => b.inmersion_id === inmersionId);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -163,70 +180,80 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {operacionInmersiones.map((inmersion) => (
-                  <TableRow key={inmersion.inmersion_id}>
-                    <TableCell className="font-medium">{inmersion.codigo}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        {inmersion.buzo_principal}
-                      </div>
-                    </TableCell>
-                    <TableCell>{inmersion.supervisor}</TableCell>
-                    <TableCell>
-                      <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                        {inmersion.estado}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{inmersion.profundidad_max}m</TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <FileText className="w-4 h-4 mr-1" />
-                          Bit. Supervisor
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <FileText className="w-4 h-4 mr-1" />
-                          Bit. Buzo
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setInmersionToDelete(inmersion.inmersion_id);
-                            setShowDeleteDialog(true);
-                          }}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {operacionInmersiones.map((inmersion) => {
+                  const tieneBitSupervisor = tieneBitacoraSupervisor(inmersion.inmersion_id);
+                  
+                  return (
+                    <TableRow key={inmersion.inmersion_id}>
+                      <TableCell className="font-medium">{inmersion.codigo}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          {inmersion.buzo_principal}
+                        </div>
+                      </TableCell>
+                      <TableCell>{inmersion.supervisor}</TableCell>
+                      <TableCell>
+                        <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                          {inmersion.estado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{inmersion.profundidad_max}m</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Bit. Supervisor
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
+                            className={`${
+                              tieneBitSupervisor 
+                                ? "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                : "text-gray-400 cursor-not-allowed"
+                            }`}
+                            disabled={!tieneBitSupervisor}
+                            title={!tieneBitSupervisor ? "Requiere bitácora de supervisor" : ""}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            {!tieneBitSupervisor && <AlertTriangle className="w-3 h-3 ml-1" />}
+                            Bit. Buzo
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setInmersionToDelete(inmersion.inmersion_id);
+                              setShowDeleteDialog(true);
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
 
-      {/* Modal de confirmación para eliminar */}
       <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
@@ -238,7 +265,6 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
         onConfirm={handleDeleteInmersion}
       />
 
-      {/* Modal para crear bitácora de supervisor */}
       <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
         <DialogContent className="max-w-6xl">
           {selectedInmersionId && (
@@ -254,7 +280,6 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
         </DialogContent>
       </Dialog>
 
-      {/* Modal para crear bitácora de buzo */}
       <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
         <DialogContent className="max-w-6xl">
           {selectedInmersionId && (

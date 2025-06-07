@@ -9,6 +9,7 @@ import { OperacionFormData, useOperaciones } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useSitios } from "@/hooks/useSitios";
 import { useContratistas } from "@/hooks/useContratistas";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateOperacionFormProps {
@@ -26,6 +27,7 @@ export const CreateOperacionForm = ({
   const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
   const { sitios, isLoading: loadingSitios } = useSitios();
   const { contratistas, isLoading: loadingContratistas } = useContratistas();
+  const { profile } = useAuth();
 
   const [formData, setFormData] = useState<OperacionFormData>({
     codigo: initialData?.codigo || "",
@@ -33,10 +35,10 @@ export const CreateOperacionForm = ({
     fecha_inicio: initialData?.fecha_inicio || "",
     fecha_fin: initialData?.fecha_fin || "",
     estado: initialData?.estado || "activa",
-    salmonera_id: initialData?.salmonera_id || "",
+    salmonera_id: initialData?.salmonera_id || (profile?.role === 'admin_salmonera' ? profile.salmonera_id : undefined),
     sitio_id: initialData?.sitio_id || "",
     contratista_id: initialData?.contratista_id || "",
-    servicio_id: initialData?.servicio_id || "",
+    servicio_id: initialData?.servicio_id || (profile?.role === 'admin_servicio' ? profile.servicio_id : undefined),
     tareas: initialData?.tareas || "",
   });
 
@@ -66,10 +68,21 @@ export const CreateOperacionForm = ({
     }
 
     try {
+      // Limpiar campos vacíos para evitar errores de UUID
+      const cleanedData: OperacionFormData = {
+        ...formData,
+        salmonera_id: formData.salmonera_id && formData.salmonera_id.trim() !== "" ? formData.salmonera_id : undefined,
+        sitio_id: formData.sitio_id && formData.sitio_id.trim() !== "" ? formData.sitio_id : undefined,
+        contratista_id: formData.contratista_id && formData.contratista_id.trim() !== "" ? formData.contratista_id : undefined,
+        servicio_id: formData.servicio_id && formData.servicio_id.trim() !== "" ? formData.servicio_id : undefined,
+        fecha_fin: formData.fecha_fin && formData.fecha_fin.trim() !== "" ? formData.fecha_fin : undefined,
+        tareas: formData.tareas && formData.tareas.trim() !== "" ? formData.tareas : undefined,
+      };
+
       if (isEditing && initialData?.id) {
-        await updateOperacion({ id: initialData.id, data: formData });
+        await updateOperacion({ id: initialData.id, data: cleanedData });
       } else {
-        await createOperacion(formData);
+        await createOperacion(cleanedData);
       }
       
       onClose?.();
@@ -82,6 +95,9 @@ export const CreateOperacionForm = ({
   const updateFormData = (field: keyof OperacionFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Obtener el nombre de la salmonera del usuario para mostrar
+  const userSalmonera = validSalmoneras.find(s => s.id === profile?.salmonera_id);
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -154,27 +170,36 @@ export const CreateOperacionForm = ({
 
             <div>
               <Label htmlFor="salmonera">Salmonera</Label>
-              <Select 
-                value={formData.salmonera_id || ""} 
-                onValueChange={(value) => updateFormData("salmonera_id", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar salmonera" />
-                </SelectTrigger>
-                <SelectContent>
-                  {loadingSalmoneras ? (
-                    <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
-                  ) : validSalmoneras.length === 0 ? (
-                    <SelectItem value="no_data_placeholder" disabled>No hay salmoneras disponibles</SelectItem>
-                  ) : (
-                    validSalmoneras.map((salmonera) => (
-                      <SelectItem key={salmonera.id} value={salmonera.id}>
-                        {salmonera.nombre}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              {profile?.role === 'admin_salmonera' ? (
+                <Input
+                  value={userSalmonera?.nombre || 'Salmonera asignada'}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              ) : (
+                <Select 
+                  value={formData.salmonera_id || ""} 
+                  onValueChange={(value) => updateFormData("salmonera_id", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar salmonera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin seleccionar</SelectItem>
+                    {loadingSalmoneras ? (
+                      <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
+                    ) : validSalmoneras.length === 0 ? (
+                      <SelectItem value="no_data_placeholder" disabled>No hay salmoneras disponibles</SelectItem>
+                    ) : (
+                      validSalmoneras.map((salmonera) => (
+                        <SelectItem key={salmonera.id} value={salmonera.id}>
+                          {salmonera.nombre}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div>
@@ -187,6 +212,7 @@ export const CreateOperacionForm = ({
                   <SelectValue placeholder="Seleccionar sitio" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Sin seleccionar</SelectItem>
                   {loadingSitios ? (
                     <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
                   ) : validSitios.length === 0 ? (
@@ -212,6 +238,7 @@ export const CreateOperacionForm = ({
                   <SelectValue placeholder="Seleccionar contratista" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Sin seleccionar</SelectItem>
                   {loadingContratistas ? (
                     <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
                   ) : validContratistas.length === 0 ? (
@@ -226,6 +253,16 @@ export const CreateOperacionForm = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="tareas">Tareas (Opcional)</Label>
+            <Input
+              id="tareas"
+              value={formData.tareas || ""}
+              onChange={(e) => updateFormData("tareas", e.target.value)}
+              placeholder="Descripción de las tareas"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
