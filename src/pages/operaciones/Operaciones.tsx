@@ -12,6 +12,16 @@ import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionFor
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  const handleOpenCreateForm = () => {
+    console.log('Opening create form dialog');
+    setShowCreateForm(true);
+  };
+
+  const handleCloseCreateForm = () => {
+    console.log('Closing create form dialog');
+    setShowCreateForm(false);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
@@ -22,7 +32,7 @@ export default function Operaciones() {
             subtitle="Gestión de operaciones de buceo y documentos asociados" 
             icon={Calendar} 
           >
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={handleOpenCreateForm}>
               <Plus className="w-4 h-4 mr-2" />
               Nuevo
             </Button>
@@ -36,7 +46,7 @@ export default function Operaciones() {
               <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <CreateOperacionForm 
-                    onClose={() => setShowCreateForm(false)}
+                    onClose={handleCloseCreateForm}
                   />
                 </DialogContent>
               </Dialog>

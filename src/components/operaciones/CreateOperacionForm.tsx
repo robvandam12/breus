@@ -35,10 +35,10 @@ export const CreateOperacionForm = ({
     fecha_inicio: initialData?.fecha_inicio || "",
     fecha_fin: initialData?.fecha_fin || "",
     estado: initialData?.estado || "activa",
-    salmonera_id: initialData?.salmonera_id || (profile?.role === 'admin_salmonera' ? profile.salmonera_id : undefined),
+    salmonera_id: initialData?.salmonera_id || (profile?.role === 'admin_salmonera' ? profile.salmonera_id : ""),
     sitio_id: initialData?.sitio_id || "",
     contratista_id: initialData?.contratista_id || "",
-    servicio_id: initialData?.servicio_id || (profile?.role === 'admin_servicio' ? profile.servicio_id : undefined),
+    servicio_id: initialData?.servicio_id || (profile?.role === 'admin_servicio' ? profile.servicio_id : ""),
     tareas: initialData?.tareas || "",
   });
 
@@ -58,6 +58,8 @@ export const CreateOperacionForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission started with data:', formData);
+    
     if (!formData.codigo || !formData.nombre || !formData.fecha_inicio) {
       toast({
         title: "Error",
@@ -70,7 +72,10 @@ export const CreateOperacionForm = ({
     try {
       // Limpiar campos vacíos para evitar errores de UUID
       const cleanedData: OperacionFormData = {
-        ...formData,
+        codigo: formData.codigo,
+        nombre: formData.nombre,
+        fecha_inicio: formData.fecha_inicio,
+        estado: formData.estado,
         salmonera_id: formData.salmonera_id && formData.salmonera_id.trim() !== "" ? formData.salmonera_id : undefined,
         sitio_id: formData.sitio_id && formData.sitio_id.trim() !== "" ? formData.sitio_id : undefined,
         contratista_id: formData.contratista_id && formData.contratista_id.trim() !== "" ? formData.contratista_id : undefined,
@@ -79,20 +84,30 @@ export const CreateOperacionForm = ({
         tareas: formData.tareas && formData.tareas.trim() !== "" ? formData.tareas : undefined,
       };
 
+      console.log('Cleaned data for submission:', cleanedData);
+
       if (isEditing && initialData?.id) {
+        console.log('Updating operation with ID:', initialData.id);
         await updateOperacion({ id: initialData.id, data: cleanedData });
       } else {
+        console.log('Creating new operation');
         await createOperacion(cleanedData);
       }
       
+      console.log('Operation completed successfully');
       onClose?.();
     } catch (error) {
       console.error("Error with operation:", error);
-      // El error ya se maneja en el hook
+      toast({
+        title: "Error",
+        description: `No se pudo ${isEditing ? 'actualizar' : 'crear'} la operación: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        variant: "destructive",
+      });
     }
   };
 
   const updateFormData = (field: keyof OperacionFormData, value: string) => {
+    console.log(`Updating field ${field} with value:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -272,7 +287,7 @@ export const CreateOperacionForm = ({
               </Button>
             )}
             <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creando..." : (isEditing ? "Actualizar Operación" : "Crear Operación")}
+              {isCreating ? "Procesando..." : (isEditing ? "Actualizar Operación" : "Crear Operación")}
             </Button>
           </div>
         </form>
