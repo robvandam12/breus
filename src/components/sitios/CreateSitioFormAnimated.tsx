@@ -42,7 +42,10 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [coordinates, setCoordinates] = useState<{ lat?: number; lng?: number }>({});
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>({
+    lat: -41.4693,
+    lng: -72.9424
+  });
 
   // Query para obtener salmoneras (solo si no es admin_salmonera)
   const { data: salmoneras = [] } = useQuery({
@@ -71,6 +74,8 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
     defaultValues: {
       estado: 'activo',
       salmonera_id: profile?.role === 'admin_salmonera' ? profile.salmonera_id : '',
+      coordenadas_lat: coordinates.lat,
+      coordenadas_lng: coordinates.lng,
     }
   });
 
@@ -83,10 +88,8 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
 
   // Auto-poblar coordenadas cuando se seleccionan en el mapa
   useEffect(() => {
-    if (coordinates.lat && coordinates.lng) {
-      setValue('coordenadas_lat', coordinates.lat);
-      setValue('coordenadas_lng', coordinates.lng);
-    }
+    setValue('coordenadas_lat', coordinates.lat);
+    setValue('coordenadas_lng', coordinates.lng);
   }, [coordinates, setValue]);
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -100,8 +103,8 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
         ubicacion: data.ubicacion,
         estado: data.estado,
         profundidad_maxima: data.profundidad_maxima,
-        coordenadas_lat: data.coordenadas_lat,
-        coordenadas_lng: data.coordenadas_lng,
+        coordenadas_lat: coordinates.lat,
+        coordenadas_lng: coordinates.lng,
         capacidad_jaulas: data.capacidad_jaulas,
         observaciones: data.observaciones,
       };
@@ -114,7 +117,18 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   };
 
   const handleLocationSelect = (lat: number, lng: number) => {
+    console.log('Location selected:', lat, lng);
     setCoordinates({ lat, lng });
+  };
+
+  const handleCoordinateChange = (field: 'lat' | 'lng', value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setCoordinates(prev => ({
+        ...prev,
+        [field]: numValue
+      }));
+    }
   };
 
   const isAdminSalmonera = profile?.role === 'admin_salmonera';
@@ -271,6 +285,32 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
               </Button>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="coordenadas_lat">Latitud</Label>
+                <Input
+                  id="coordenadas_lat"
+                  type="number"
+                  step="any"
+                  value={coordinates.lat}
+                  onChange={(e) => handleCoordinateChange('lat', e.target.value)}
+                  placeholder="-41.4693"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="coordenadas_lng">Longitud</Label>
+                <Input
+                  id="coordenadas_lng"
+                  type="number"
+                  step="any"
+                  value={coordinates.lng}
+                  onChange={(e) => handleCoordinateChange('lng', e.target.value)}
+                  placeholder="-72.9424"
+                />
+              </div>
+            </div>
+
             <AnimatePresence>
               {showMap && (
                 <motion.div
@@ -282,50 +322,12 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
                   <SimpleMap
                     onLocationSelect={handleLocationSelect}
                     height="400px"
-                    initialLat={coordinates.lat || -41.4693}
-                    initialLng={coordinates.lng || -72.9424}
+                    initialLat={coordinates.lat}
+                    initialLng={coordinates.lng}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="coordenadas_lat">Latitud</Label>
-                <Input
-                  id="coordenadas_lat"
-                  type="number"
-                  step="any"
-                  {...register('coordenadas_lat', { valueAsNumber: true })}
-                  placeholder="-41.4693"
-                  value={coordinates.lat || ''}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
-                      setCoordinates(prev => ({ ...prev, lat: value }));
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="coordenadas_lng">Longitud</Label>
-                <Input
-                  id="coordenadas_lng"
-                  type="number"
-                  step="any"
-                  {...register('coordenadas_lng', { valueAsNumber: true })}
-                  placeholder="-72.9424"
-                  value={coordinates.lng || ''}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
-                      setCoordinates(prev => ({ ...prev, lng: value }));
-                    }
-                  }}
-                />
-              </div>
-            </div>
           </div>
 
           <div className="space-y-2">
