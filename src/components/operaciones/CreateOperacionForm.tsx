@@ -76,10 +76,10 @@ export const CreateOperacionForm = ({
         nombre: formData.nombre,
         fecha_inicio: formData.fecha_inicio,
         estado: formData.estado,
-        salmonera_id: formData.salmonera_id && formData.salmonera_id.trim() !== "" ? formData.salmonera_id : undefined,
-        sitio_id: formData.sitio_id && formData.sitio_id.trim() !== "" ? formData.sitio_id : undefined,
-        contratista_id: formData.contratista_id && formData.contratista_id.trim() !== "" ? formData.contratista_id : undefined,
-        servicio_id: formData.servicio_id && formData.servicio_id.trim() !== "" ? formData.servicio_id : undefined,
+        salmonera_id: formData.salmonera_id && formData.salmonera_id.trim() !== "" && formData.salmonera_id !== "none" ? formData.salmonera_id : undefined,
+        sitio_id: formData.sitio_id && formData.sitio_id.trim() !== "" && formData.sitio_id !== "none" ? formData.sitio_id : undefined,
+        contratista_id: formData.contratista_id && formData.contratista_id.trim() !== "" && formData.contratista_id !== "none" ? formData.contratista_id : undefined,
+        servicio_id: formData.servicio_id && formData.servicio_id.trim() !== "" && formData.servicio_id !== "none" ? formData.servicio_id : undefined,
         fecha_fin: formData.fecha_fin && formData.fecha_fin.trim() !== "" ? formData.fecha_fin : undefined,
         tareas: formData.tareas && formData.tareas.trim() !== "" ? formData.tareas : undefined,
       };
@@ -193,18 +193,18 @@ export const CreateOperacionForm = ({
                 />
               ) : (
                 <Select 
-                  value={formData.salmonera_id || ""} 
-                  onValueChange={(value) => updateFormData("salmonera_id", value)}
+                  value={formData.salmonera_id || "none"} 
+                  onValueChange={(value) => updateFormData("salmonera_id", value === "none" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar salmonera" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin seleccionar</SelectItem>
+                    <SelectItem value="none">Sin seleccionar</SelectItem>
                     {loadingSalmoneras ? (
-                      <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
+                      <SelectItem value="loading" disabled>Cargando...</SelectItem>
                     ) : validSalmoneras.length === 0 ? (
-                      <SelectItem value="no_data_placeholder" disabled>No hay salmoneras disponibles</SelectItem>
+                      <SelectItem value="no_data" disabled>No hay salmoneras disponibles</SelectItem>
                     ) : (
                       validSalmoneras.map((salmonera) => (
                         <SelectItem key={salmonera.id} value={salmonera.id}>
@@ -220,18 +220,18 @@ export const CreateOperacionForm = ({
             <div>
               <Label htmlFor="sitio">Sitio</Label>
               <Select 
-                value={formData.sitio_id || ""} 
-                onValueChange={(value) => updateFormData("sitio_id", value)}
+                value={formData.sitio_id || "none"} 
+                onValueChange={(value) => updateFormData("sitio_id", value === "none" ? "" : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar sitio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin seleccionar</SelectItem>
+                  <SelectItem value="none">Sin seleccionar</SelectItem>
                   {loadingSitios ? (
-                    <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
+                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
                   ) : validSitios.length === 0 ? (
-                    <SelectItem value="no_data_placeholder" disabled>No hay sitios disponibles</SelectItem>
+                    <SelectItem value="no_data" disabled>No hay sitios disponibles</SelectItem>
                   ) : (
                     validSitios.map((sitio) => (
                       <SelectItem key={sitio.id} value={sitio.id}>
@@ -246,18 +246,18 @@ export const CreateOperacionForm = ({
             <div>
               <Label htmlFor="contratista">Contratista</Label>
               <Select 
-                value={formData.contratista_id || ""} 
-                onValueChange={(value) => updateFormData("contratista_id", value)}
+                value={formData.contratista_id || "none"} 
+                onValueChange={(value) => updateFormData("contratista_id", value === "none" ? "" : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar contratista" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin seleccionar</SelectItem>
+                  <SelectItem value="none">Sin seleccionar</SelectItem>
                   {loadingContratistas ? (
-                    <SelectItem value="loading_placeholder" disabled>Cargando...</SelectItem>
+                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
                   ) : validContratistas.length === 0 ? (
-                    <SelectItem value="no_data_placeholder" disabled>No hay contratistas disponibles</SelectItem>
+                    <SelectItem value="no_data" disabled>No hay contratistas disponibles</SelectItem>
                   ) : (
                     validContratistas.map((contratista) => (
                       <SelectItem key={contratista.id} value={contratista.id}>
