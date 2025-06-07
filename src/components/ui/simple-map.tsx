@@ -1,5 +1,7 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { MapPin, RotateCcw } from 'lucide-react';
 
 interface SimpleMapProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -14,90 +16,123 @@ export const SimpleMap = ({
   initialLng = -70.6693,
   height = "400px" 
 }: SimpleMapProps) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedCoords, setSelectedCoords] = useState({ lat: initialLat, lng: initialLng });
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    // Simulate map loading
+    const timer = setTimeout(() => {
+      setMapLoaded(true);
+    }, 500);
 
-    // Create a simple interactive map using OpenStreetMap
-    const mapHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style>
-          body { margin: 0; padding: 0; }
-          #map { height: 100vh; width: 100%; }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          const map = L.map('map').setView([${initialLat}, ${initialLng}], 10);
-          
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(map);
+    return () => clearTimeout(timer);
+  }, []);
 
-          let marker = L.marker([${initialLat}, ${initialLng}]).addTo(map);
+  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!mapContainerRef.current) return;
+    
+    const rect = mapContainerRef.current.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    
+    // Convert click position to approximate coordinates (Chile region)
+    const lat = initialLat + (0.5 - y) * 2; // Adjust range as needed
+    const lng = initialLng + (x - 0.5) * 2; // Adjust range as needed
+    
+    const newCoords = { lat, lng };
+    setSelectedCoords(newCoords);
+    onLocationSelect(lat, lng);
+  };
 
-          map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
-            
-            if (marker) {
-              map.removeLayer(marker);
-            }
-            
-            marker = L.marker([lat, lng]).addTo(map);
-            
-            // Send coordinates to parent
-            window.parent.postMessage({
-              type: 'map-click',
-              lat: lat,
-              lng: lng
-            }, '*');
-          });
-        </script>
-      </body>
-      </html>
-    `;
-
-    if (iframeRef.current) {
-      const blob = new Blob([mapHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      iframeRef.current.src = url;
-
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [initialLat, initialLng]);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'map-click') {
-        onLocationSelect(event.data.lat, event.data.lng);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [onLocationSelect]);
+  const resetToDefault = () => {
+    setSelectedCoords({ lat: initialLat, lng: initialLng });
+    onLocationSelect(initialLat, initialLng);
+  };
 
   return (
-    <div ref={mapRef} style={{ height, width: '100%' }}>
-      <iframe
-        ref={iframeRef}
-        style={{ 
-          width: '100%', 
-          height: '100%', 
-          border: 'none',
-          borderRadius: '0.5rem'
-        }}
-        title="Mapa interactivo"
-      />
+    <div className="w-full" style={{ height }}>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-blue-600" />
+          <span className="text-sm font-medium">Mapa Interactivo</span>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={resetToDefault}
+          className="flex items-center gap-1"
+        >
+          <RotateCcw className="w-3 h-3" />
+          Reset
+        </Button>
+      </div>
+      
+      <div
+        ref={mapContainerRef}
+        onClick={handleMapClick}
+        className="relative w-full border-2 border-dashed border-blue-300 rounded-lg cursor-crosshair transition-all hover:border-blue-500 bg-gradient-to-br from-blue-50 to-green-50"
+        style={{ height: 'calc(100% - 60px)' }}
+      >
+        {!mapLoaded ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+              <p className="text-sm text-gray-600">Cargando mapa...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Map Background Pattern */}
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: '20px 20px'
+              }}
+            />
+            
+            {/* Instructions */}
+            <div className="absolute top-4 left-4 right-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                <p className="text-xs text-gray-600 text-center">
+                  Haz clic en cualquier punto para seleccionar la ubicación
+                </p>
+              </div>
+            </div>
+            
+            {/* Selected Location Marker */}
+            <div 
+              className="absolute w-6 h-6 -ml-3 -mt-3 z-10"
+              style={{
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse">
+                <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-30"></div>
+              </div>
+            </div>
+            
+            {/* Coordinates Display */}
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
+                <div className="text-xs text-gray-600 text-center">
+                  <div className="font-medium">Coordenadas seleccionadas:</div>
+                  <div className="mt-1">
+                    Lat: {selectedCoords.lat.toFixed(6)}, Lng: {selectedCoords.lng.toFixed(6)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

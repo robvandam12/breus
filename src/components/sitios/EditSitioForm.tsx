@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EnhancedSelect } from "@/components/ui/enhanced-select";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin } from "lucide-react";
+import { MapPin, Map } from "lucide-react";
 import { Sitio, SitioFormData } from "@/hooks/useSitios";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { MapPicker } from "@/components/ui/map-picker";
+import { SimpleMap } from "@/components/ui/simple-map";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface EditSitioFormProps {
   sitio: Sitio;
@@ -19,14 +19,15 @@ interface EditSitioFormProps {
 
 export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps) => {
   const { salmoneras } = useSalmoneras();
+  const [showMap, setShowMap] = useState(false);
   const [formData, setFormData] = useState<SitioFormData>({
     nombre: sitio.nombre,
     codigo: sitio.codigo,
     salmonera_id: sitio.salmonera_id,
     ubicacion: sitio.ubicacion,
     profundidad_maxima: sitio.profundidad_maxima || undefined,
-    coordenadas_lat: sitio.coordenadas_lat || undefined,
-    coordenadas_lng: sitio.coordenadas_lng || undefined,
+    coordenadas_lat: sitio.coordenadas_lat || -41.4693,
+    coordenadas_lng: sitio.coordenadas_lng || -72.9424,
     estado: sitio.estado as 'activo' | 'inactivo' | 'mantenimiento',
     capacidad_jaulas: sitio.capacidad_jaulas || undefined,
     observaciones: sitio.observaciones || ''
@@ -45,12 +46,23 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
     }
   };
 
-  const handleMapChange = (coordinates: { lat: number; lng: number }) => {
+  const handleLocationSelect = (lat: number, lng: number) => {
+    console.log('Location selected in edit form:', lat, lng);
     setFormData(prev => ({
       ...prev,
-      coordenadas_lat: coordinates.lat,
-      coordenadas_lng: coordinates.lng
+      coordenadas_lat: lat,
+      coordenadas_lng: lng
     }));
+  };
+
+  const handleCoordinateChange = (field: 'coordenadas_lat' | 'coordenadas_lng', value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: numValue
+      }));
+    }
   };
 
   const salmoneraOptions = salmoneras.map(salmonera => ({
@@ -120,6 +132,65 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
           />
         </div>
 
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Coordenadas GPS</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMap(!showMap)}
+            >
+              <Map className="w-4 h-4 mr-2" />
+              {showMap ? 'Ocultar Mapa' : 'Seleccionar en Mapa'}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="coordenadas_lat">Latitud</Label>
+              <Input
+                id="coordenadas_lat"
+                type="number"
+                step="any"
+                value={formData.coordenadas_lat || ''}
+                onChange={(e) => handleCoordinateChange('coordenadas_lat', e.target.value)}
+                placeholder="-41.4693"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="coordenadas_lng">Longitud</Label>
+              <Input
+                id="coordenadas_lng"
+                type="number"
+                step="any"
+                value={formData.coordenadas_lng || ''}
+                onChange={(e) => handleCoordinateChange('coordenadas_lng', e.target.value)}
+                placeholder="-72.9424"
+              />
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {showMap && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 400 }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden rounded-lg border"
+              >
+                <SimpleMap
+                  onLocationSelect={handleLocationSelect}
+                  height="400px"
+                  initialLat={formData.coordenadas_lat || -41.4693}
+                  initialLng={formData.coordenadas_lng || -72.9424}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
@@ -160,19 +231,6 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
               className="w-full"
             />
           </div>
-        </div>
-
-        <div>
-          <Label>Ubicación en Mapa</Label>
-          <MapPicker
-            value={
-              formData.coordenadas_lat && formData.coordenadas_lng
-                ? { lat: formData.coordenadas_lat, lng: formData.coordenadas_lng }
-                : undefined
-            }
-            onChange={handleMapChange}
-            className="mt-2"
-          />
         </div>
 
         <div>

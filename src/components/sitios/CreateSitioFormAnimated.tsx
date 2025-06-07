@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -119,15 +118,19 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   const handleLocationSelect = (lat: number, lng: number) => {
     console.log('Location selected:', lat, lng);
     setCoordinates({ lat, lng });
+    setValue('coordenadas_lat', lat);
+    setValue('coordenadas_lng', lng);
   };
 
   const handleCoordinateChange = (field: 'lat' | 'lng', value: string) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      setCoordinates(prev => ({
-        ...prev,
-        [field]: numValue
-      }));
+      setCoordinates(prev => {
+        const newCoords = { ...prev, [field]: numValue };
+        setValue('coordenadas_lat', newCoords.lat);
+        setValue('coordenadas_lng', newCoords.lng);
+        return newCoords;
+      });
     }
   };
 
@@ -317,7 +320,7 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 400 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
+                  className="overflow-hidden rounded-lg border"
                 >
                   <SimpleMap
                     onLocationSelect={handleLocationSelect}
