@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Users, Plus, Trash2, UserPlus } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
+import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface BuzoInmersion {
   buzo_id: string;
@@ -34,11 +34,13 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
   const [activeTab, setActiveTab] = useState<string>('');
   const [inmersionesBuzos, setInmersionesBuzos] = useState<BuzoInmersion[]>([]);
   const { inmersiones } = useInmersiones();
-  const { equiposBuceo } = useEquiposBuceo();
+  const { equipos } = useEquiposBuceo();
+  const { operaciones } = useOperaciones();
 
   // Obtener la inmersión actual y su equipo de buceo
   const inmersionActual = inmersiones.find(i => i.inmersion_id === data.inmersion_id);
-  const equipoActual = equiposBuceo.find(e => e.id === inmersionActual?.operacion?.equipo_buceo_id);
+  const operacionActual = operaciones.find(op => op.id === inmersionActual?.operacion_id);
+  const equipoActual = equipos.find(e => e.id === operacionActual?.equipo_buceo_id);
 
   useEffect(() => {
     // Inicializar con buzos del equipo si no hay datos previos

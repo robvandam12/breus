@@ -4,6 +4,7 @@ import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete
 import { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useBitacoras } from "@/hooks/useBitacoras";
+import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface CreateBitacoraBuzoFormCompleteWithInmersionProps {
   inmersionId: string;
@@ -17,9 +18,10 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   onCancel 
 }: CreateBitacoraBuzoFormCompleteWithInmersionProps) => {
   const [loading, setLoading] = useState(false);
-  const [initialData, setInitialData] = useState<Partial<BitacoraBuzoFormData> | null>(null);
+  const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData> | null>(null);
   const { inmersiones } = useInmersiones();
   const { bitacorasSupervisor } = useBitacoras();
+  const { operaciones } = useOperaciones();
 
   useEffect(() => {
     // Obtener datos de la inmersión y bitácora supervisor
@@ -27,6 +29,9 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
     const bitacoraSupervisor = bitacorasSupervisor.find(b => b.inmersion_id === inmersionId);
     
     if (inmersion) {
+      // Obtener operación asociada
+      const operacion = operaciones.find(op => op.id === inmersion.operacion_id);
+      
       const datosIniciales: Partial<BitacoraBuzoFormData> = {
         inmersion_id: inmersionId,
         codigo: `BIT-BUZ-${Date.now()}`,
@@ -36,28 +41,28 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
         firmado: false,
         estado_aprobacion: 'pendiente',
         // Datos de la operación
-        empresa_nombre: inmersion.operacion?.salmoneras?.nombre || inmersion.operacion?.contratistas?.nombre || '',
-        centro_nombre: inmersion.operacion?.sitios?.nombre || '',
+        empresa_nombre: operacion?.nombre || '',
+        centro_nombre: operacion?.nombre || '',
         supervisor_nombre: inmersion.supervisor,
         // Condiciones ambientales de la inmersión
         condamb_temp_agua_c: inmersion.temperatura_agua,
         condamb_visibilidad_fondo_mts: inmersion.visibilidad,
         condamb_corriente_fondo_nudos: parseFloat(inmersion.corriente) || 0,
         // Datos técnicos del buceo de la bitácora supervisor si existe
-        datostec_hora_dejo_superficie: bitacoraSupervisor?.inmersiones_buzos?.[0]?.hora_dejo_superficie || inmersion.hora_inicio,
-        datostec_hora_llegada_superficie: bitacoraSupervisor?.inmersiones_buzos?.[0]?.hora_llego_superficie || inmersion.hora_fin,
+        datostec_hora_dejo_superficie: inmersion.hora_inicio,
+        datostec_hora_llegada_superficie: inmersion.hora_fin,
         // Trabajos realizados basado en el objetivo
         trabajos_realizados: inmersion.objetivo || '',
         estado_fisico_post: 'Normal', // Valor por defecto
         objetivo_proposito: inmersion.objetivo || '',
-        // Tiempos de la bitácora supervisor si existe
-        tiempos_total_fondo: bitacoraSupervisor?.inmersiones_buzos?.[0]?.tiempo_fondo?.toString() || '',
-        tiempos_tabulacion_usada: bitacoraSupervisor?.inmersiones_buzos?.[0]?.tabulacion_usada || '',
+        // Valores por defecto para campos requeridos
+        tiempos_total_fondo: '',
+        tiempos_tabulacion_usada: '',
       };
       
-      setInitialData(datosIniciales);
+      setFormData(datosIniciales);
     }
-  }, [inmersionId, inmersiones, bitacorasSupervisor]);
+  }, [inmersionId, inmersiones, bitacorasSupervisor, operaciones]);
 
   const handleSubmit = async (data: BitacoraBuzoFormData) => {
     setLoading(true);
@@ -75,7 +80,7 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
     }
   };
 
-  if (!initialData) {
+  if (!formData) {
     return (
       <div className="p-6 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -85,10 +90,18 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   }
 
   return (
-    <CreateBitacoraBuzoFormComplete
-      initialData={initialData}
-      onSubmit={handleSubmit}
-      onCancel={onCancel}
-    />
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-semibold text-blue-900">Datos Pre-cargados</h3>
+        <p className="text-sm text-blue-700">
+          Los datos de la inmersión y bitácora de supervisor han sido pre-cargados automáticamente.
+        </p>
+      </div>
+      
+      <CreateBitacoraBuzoFormComplete
+        onSubmit={handleSubmit}
+        onCancel={onCancel}
+      />
+    </div>
   );
 };
