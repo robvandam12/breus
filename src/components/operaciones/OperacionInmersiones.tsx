@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
-import { CreateBitacoraBuzoFormComplete } from "@/components/bitacoras/CreateBitacoraBuzoFormComplete";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
+import { useBitacoras } from "@/hooks/useBitacoras";
 import { toast } from "@/hooks/use-toast";
 
 interface OperacionInmersionesProps {
@@ -19,7 +19,7 @@ interface OperacionInmersionesProps {
 
 export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoraEnhanced();
+  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoras();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [inmersionToDelete, setInmersionToDelete] = useState<string | null>(null);
@@ -259,7 +259,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
       <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
         <DialogContent className="max-w-6xl">
           {selectedInmersionId && (
-            <CreateBitacoraBuzoFormComplete
+            <CreateBitacoraBuzoFormCompleteWithInmersion
               inmersionId={selectedInmersionId}
               onSubmit={handleSubmitBitacoraBuzo}
               onCancel={() => {
