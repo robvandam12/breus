@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
 
   const handleSubmitBitacoraSupervisor = async (data: any) => {
     try {
-      await createBitacoraSupervisor(data);
+      await createBitacoraSupervisor.mutateAsync(data);
       toast({
         title: "Bitácora creada",
         description: "La bitácora de supervisor ha sido creada exitosamente.",
@@ -83,7 +82,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
 
   const handleSubmitBitacoraBuzo = async (data: any) => {
     try {
-      await createBitacoraBuzo(data);
+      await createBitacoraBuzo.mutateAsync(data);
       toast({
         title: "Bitácora creada",
         description: "La bitácora de buzo ha sido creada exitosamente.",
