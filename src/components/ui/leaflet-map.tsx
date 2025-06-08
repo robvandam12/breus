@@ -1,5 +1,5 @@
 
-import { InteractiveMap } from '@/components/ui/interactive-map';
+import { VisualMap } from '@/components/ui/visual-map';
 
 interface LeafletMapProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -16,6 +16,5 @@ interface LeafletMapProps {
 }
 
 export const LeafletMap = (props: LeafletMapProps) => {
-  // Usar el nuevo componente InteractiveMap que funciona correctamente
-  return <InteractiveMap {...props} />;
+  return <VisualMap {...props} />;
 };

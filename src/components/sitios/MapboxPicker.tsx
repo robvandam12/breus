@@ -1,5 +1,5 @@
 
-import { InteractiveMap } from '@/components/ui/interactive-map';
+import { VisualMap } from '@/components/ui/visual-map';
 
 interface MapboxPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -15,12 +15,12 @@ export const MapboxPicker = ({
   height = "400px" 
 }: MapboxPickerProps) => {
   return (
-    <InteractiveMap
+    <VisualMap
       onLocationSelect={onLocationSelect}
       initialLat={initialLat}
       initialLng={initialLng}
       height={height}
-      showAddressSearch={false}
+      showAddressSearch={true}
     />
   );
 };
