@@ -7,7 +7,7 @@ import { MapPin, Search } from 'lucide-react';
 import { SimpleMap } from '@/components/ui/simple-map';
 
 // Lazy loading para Leaflet
-const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, showAddressSearch, markers }: any) => {
+const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, showAddressSearch, markers = [] }: any) => {
   const [leafletComponents, setLeafletComponents] = useState<any>(null);
   const [position, setPosition] = useState<[number, number]>([initialLat, initialLng]);
   const [address, setAddress] = useState('');
@@ -81,6 +81,9 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
     onLocationSelect(lat, lng);
   };
 
+  // Ensure markers is always an array
+  const safeMarkers = Array.isArray(markers) ? markers : [];
+
   // Fallback a SimpleMap si Leaflet no se ha cargado
   if (!leafletComponents) {
     return (
@@ -113,6 +116,7 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           initialLat={initialLat}
           initialLng={initialLng}
           height={showAddressSearch ? 'calc(100% - 80px)' : '100%'}
+          markers={safeMarkers}
         />
       </div>
     );
@@ -176,7 +180,7 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           </Marker>
           
           {/* Marcadores adicionales */}
-          {markers.map((marker: any, index: number) => (
+          {safeMarkers.map((marker: any, index: number) => (
             <Marker key={index} position={[marker.lat, marker.lng]}>
               <Popup>
                 <strong>{marker.title}</strong>
@@ -217,5 +221,23 @@ interface LeafletMapProps {
 }
 
 export const LeafletMap = (props: LeafletMapProps) => {
-  return <LazyLeafletMap {...props} />;
+  const {
+    onLocationSelect,
+    initialLat = -41.4693,
+    initialLng = -72.9424,
+    height = "400px",
+    showAddressSearch = true,
+    markers = []
+  } = props;
+
+  return (
+    <LazyLeafletMap
+      onLocationSelect={onLocationSelect}
+      initialLat={initialLat}
+      initialLng={initialLng}
+      height={height}
+      showAddressSearch={showAddressSearch}
+      markers={markers}
+    />
+  );
 };

@@ -39,6 +39,9 @@ export const SimpleMap = ({
     onLocationSelect(lat, lng);
   };
 
+  // Ensure markers is always an array
+  const safeMarkers = Array.isArray(markers) ? markers : [];
+
   return (
     <div className="w-full space-y-2" style={{ height }}>
       <div className="flex items-center justify-between text-sm text-gray-600 bg-blue-50 p-2 rounded">
@@ -87,7 +90,7 @@ export const SimpleMap = ({
         </div>
 
         {/* Operation markers */}
-        {markers.map((marker, index) => (
+        {safeMarkers.map((marker, index) => (
           <div
             key={index}
             className="absolute transform -translate-x-1/2 -translate-y-full z-10 group"

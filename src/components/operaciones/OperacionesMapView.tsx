@@ -24,23 +24,28 @@ export const OperacionesMapView = () => {
     );
   }
 
-  // Crear marcadores para las operaciones basados en sus sitios
-  const operacionMarkers = operaciones.map((operacion) => {
-    const sitio = sitios.find(s => s.id === operacion.sitio_id);
-    if (!sitio || !sitio.coordenadas_lat || !sitio.coordenadas_lng) return null;
+  // Crear marcadores para las operaciones basados en sus sitios con verificaciones de seguridad
+  const operacionMarkers = Array.isArray(operaciones) ? operaciones.map((operacion) => {
+    if (!operacion || !operacion.sitio_id) return null;
+    
+    const sitio = Array.isArray(sitios) ? sitios.find(s => s?.id === operacion.sitio_id) : null;
+    if (!sitio || typeof sitio.coordenadas_lat !== 'number' || typeof sitio.coordenadas_lng !== 'number') return null;
     
     return {
       lat: sitio.coordenadas_lat,
       lng: sitio.coordenadas_lng,
-      title: operacion.nombre,
-      description: `${operacion.codigo} - ${operacion.estado}\nSitio: ${sitio.nombre}`
+      title: operacion.nombre || 'Operación sin nombre',
+      description: `${operacion.codigo || 'Sin código'} - ${operacion.estado || 'Sin estado'}\nSitio: ${sitio.nombre || 'Sin nombre'}`
     };
-  }).filter(Boolean) as Array<{
+  }).filter(Boolean) : [];
+
+  // Filtrar elementos null y asegurar que tenemos el tipo correcto
+  const validMarkers = operacionMarkers.filter((marker): marker is {
     lat: number;
     lng: number;
     title: string;
     description: string;
-  }>;
+  } => marker !== null);
 
   return (
     <div className="space-y-6">
@@ -58,38 +63,40 @@ export const OperacionesMapView = () => {
             initialLng={selectedLocation.lng}
             height="500px"
             showAddressSearch={false}
-            markers={operacionMarkers}
+            markers={validMarkers}
           />
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {operaciones.map((operacion) => {
-          const sitio = sitios.find(s => s.id === operacion.sitio_id);
+        {Array.isArray(operaciones) ? operaciones.map((operacion) => {
+          if (!operacion) return null;
+          
+          const sitio = Array.isArray(sitios) ? sitios.find(s => s?.id === operacion.sitio_id) : null;
           return (
             <Card key={operacion.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-medium text-sm">{operacion.nombre}</h3>
+                  <h3 className="font-medium text-sm">{operacion.nombre || 'Sin nombre'}</h3>
                   <Badge variant={operacion.estado === 'activa' ? 'default' : 'secondary'}>
-                    {operacion.estado}
+                    {operacion.estado || 'Sin estado'}
                   </Badge>
                 </div>
                 <div className="space-y-1 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
+                    <span>{operacion.fecha_inicio ? new Date(operacion.fecha_inicio).toLocaleDateString('es-CL') : 'Sin fecha'}</span>
                   </div>
                   {sitio && (
                     <div className="flex items-center gap-1">
                       <Building className="w-3 h-3" />
-                      <span>{sitio.nombre}</span>
+                      <span>{sitio.nombre || 'Sin nombre'}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     <span>
-                      {sitio && sitio.coordenadas_lat && sitio.coordenadas_lng 
+                      {sitio && typeof sitio.coordenadas_lat === 'number' && typeof sitio.coordenadas_lng === 'number'
                         ? `${sitio.coordenadas_lat.toFixed(4)}, ${sitio.coordenadas_lng.toFixed(4)}`
                         : 'Sin coordenadas'
                       }
@@ -99,7 +106,11 @@ export const OperacionesMapView = () => {
               </CardContent>
             </Card>
           );
-        })}
+        }).filter(Boolean) : (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">No hay operaciones disponibles</p>
+          </div>
+        )}
       </div>
     </div>
   );
