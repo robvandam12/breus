@@ -16,8 +16,10 @@ export const OperacionesManager = () => {
     console.log('View detail for operation:', id);
   };
 
-  const handleEdit = async (id: string, data: any) => {
+  const handleEdit = async (operacion: any) => {
     try {
+      // Extract the id from the operacion object and pass the rest as data
+      const { id, ...data } = operacion;
       await updateOperacion({ id, data });
     } catch (error) {
       console.error('Error updating operation:', error);
@@ -32,8 +34,8 @@ export const OperacionesManager = () => {
     }
   };
 
-  const handleSelect = (id: string) => {
-    console.log('Select operation:', id);
+  const handleSelect = (operacion: any) => {
+    console.log('Select operation:', operacion.id);
   };
 
   return (
