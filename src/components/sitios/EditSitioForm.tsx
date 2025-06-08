@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Map } from "lucide-react";
 import { Sitio, SitioFormData } from "@/hooks/useSitios";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { SimpleMap } from "@/components/ui/simple-map";
+import { LeafletMap } from "@/components/ui/leaflet-map";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface EditSitioFormProps {
@@ -176,15 +177,16 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
             {showMap && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 400 }}
+                animate={{ opacity: 1, height: 500 }}
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden rounded-lg border"
               >
-                <SimpleMap
+                <LeafletMap
                   onLocationSelect={handleLocationSelect}
-                  height="400px"
+                  height="500px"
                   initialLat={formData.coordenadas_lat || -41.4693}
                   initialLng={formData.coordenadas_lng || -72.9424}
+                  showAddressSearch={true}
                 />
               </motion.div>
             )}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Users, Plus, Trash2, UserPlus } from "lucide-react";
+import { Users, Plus, Trash2, UserPlus, AlertCircle } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BuzoInmersion {
   buzo_id: string;
@@ -64,7 +66,6 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
       }
       onUpdate({ inmersiones_buzos: buzosIniciales });
     } else if (data.inmersiones_buzos && data.inmersiones_buzos.length > 0) {
-      // Restaurar datos existentes
       const buzosExistentes = data.inmersiones_buzos.map((buzo, index) => ({
         buzo_id: buzo.buzo_id || `buzo-${index}`,
         buzo_nombre: buzo.buzo_nombre || '',
@@ -151,6 +152,14 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
         </p>
       </div>
 
+      <Alert className="border-amber-200 bg-amber-50">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-amber-800">
+          <strong>Nota:</strong> Esta información se basa en los datos de la inmersión y el equipo asignado. 
+          Los campos marcados no pueden editarse ya que provienen de registros previos.
+        </AlertDescription>
+      </Alert>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -216,7 +225,11 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                         onChange={(e) => actualizarBuzo(buzo.buzo_id, 'buzo_nombre', e.target.value)}
                         placeholder="Nombre completo del buzo"
                         disabled={!buzo.es_emergencia}
+                        className={!buzo.es_emergencia ? "bg-gray-50" : ""}
                       />
+                      {!buzo.es_emergencia && (
+                        <p className="text-xs text-gray-500 mt-1">Este nombre proviene del equipo asignado</p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -303,6 +316,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
                           className="bg-gray-50"
                           readOnly
                         />
+                        <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
                       </div>
                     </div>
 
@@ -339,6 +353,7 @@ export const BitacoraStep2 = ({ data, onUpdate }: BitacoraStep2Props) => {
           <div className="text-sm text-green-800">
             <strong>Información:</strong> Los buzos provienen del equipo de buceo asignado a la operación. 
             Los buzos del equipo no se pueden eliminar, pero puede agregar buzos de emergencia si es necesario.
+            Esta información se complementará con los datos de perfil de cada usuario.
           </div>
         </div>
       </div>

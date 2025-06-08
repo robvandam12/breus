@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, X, Building, Info } from "lucide-react";
+import { MapPin, X, Building, Info, Map } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SitioFormData } from "@/hooks/useSitios";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { SimpleMap } from "@/components/ui/simple-map";
+import { LeafletMap } from "@/components/ui/leaflet-map";
 
 const formSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -283,7 +283,7 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
                 size="sm"
                 onClick={() => setShowMap(!showMap)}
               >
-                <MapPin className="w-4 h-4 mr-2" />
+                <Map className="w-4 h-4 mr-2" />
                 {showMap ? 'Ocultar Mapa' : 'Seleccionar en Mapa'}
               </Button>
             </div>
@@ -318,15 +318,16 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
               {showMap && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 400 }}
+                  animate={{ opacity: 1, height: 500 }}
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden rounded-lg border"
                 >
-                  <SimpleMap
+                  <LeafletMap
                     onLocationSelect={handleLocationSelect}
-                    height="400px"
+                    height="500px"
                     initialLat={coordinates.lat}
                     initialLng={coordinates.lng}
+                    showAddressSearch={true}
                   />
                 </motion.div>
               )}
