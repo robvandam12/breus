@@ -52,10 +52,10 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2Props) =>
           const userData = getUserData(miembro.usuario_id);
           return {
             usuario_id: miembro.usuario_id,
-            nombre: userData?.nombre_completo || miembro.nombre_completo,
+            nombre: userData?.nombre_completo || `${miembro.nombre || ''} ${miembro.apellido || ''}`.trim(),
             rut: userData?.rut || '',
             matricula: userData?.matricula || '',
-            rol: miembro.rol as 'buzo_principal' | 'buzo_asistente',
+            rol: miembro.rol_equipo as 'buzo_principal' | 'buzo_asistente',
             telefono: userData?.telefono
           };
         });

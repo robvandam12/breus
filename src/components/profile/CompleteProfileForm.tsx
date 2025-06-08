@@ -13,27 +13,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 interface ProfileFormData {
-  // Información personal
   rut: string;
   telefono: string;
   direccion: string;
   ciudad: string;
   region: string;
   fecha_nacimiento: string;
-  
-  // Información profesional
   matricula: string;
   certificacion_nivel: string;
   fecha_vencimiento_certificacion: string;
   experiencia_anos: string;
   especialidades: string[];
-  
-  // Contacto de emergencia
   contacto_emergencia_nombre: string;
   contacto_emergencia_telefono: string;
   contacto_emergencia_relacion: string;
-  
-  // Información médica
   observaciones_medicas: string;
 }
 
@@ -60,13 +53,35 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
   });
 
   useEffect(() => {
-    if (profile?.perfil_buzo) {
-      setProfileData(prev => ({
-        ...prev,
-        ...profile.perfil_buzo
-      }));
-    }
-  }, [profile]);
+    // Load existing profile data from the usuario table
+    const loadProfileData = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: userData, error } = await supabase
+          .from('usuario')
+          .select('perfil_buzo')
+          .eq('usuario_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error loading profile:', error);
+          return;
+        }
+
+        if (userData?.perfil_buzo) {
+          setProfileData(prev => ({
+            ...prev,
+            ...userData.perfil_buzo
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+
+    loadProfileData();
+  }, [user?.id]);
 
   const addEspecialidad = () => {
     if (newEspecialidad.trim() && !profileData.especialidades.includes(newEspecialidad.trim())) {
@@ -108,7 +123,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
       const { error } = await supabase
         .from('usuario')
         .update({
-          perfil_buzo: profileData,
+          perfil_buzo: profileData as any,
           perfil_completado: calculateProgress() >= 80
         })
         .eq('usuario_id', user?.id);
@@ -141,7 +156,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-blue-600" />
-            Perfil Profesional - {profile?.rol === 'supervisor' ? 'Supervisor' : 'Buzo'}
+            Perfil Profesional - {profile?.role === 'supervisor' ? 'Supervisor' : 'Buzo'}
           </CardTitle>
           <Badge variant={progress >= 80 ? "default" : "outline"}>
             {progress}% completo
