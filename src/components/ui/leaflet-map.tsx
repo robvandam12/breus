@@ -12,6 +12,7 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
   const [position, setPosition] = useState<[number, number]>([initialLat, initialLng]);
   const [address, setAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
   useEffect(() => {
     const loadLeaflet = async () => {
@@ -38,7 +39,6 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           TileLayer: reactLeafletModule.TileLayer,
           Marker: reactLeafletModule.Marker,
           Popup: reactLeafletModule.Popup,
-          useMap: reactLeafletModule.useMap,
         });
       } catch (error) {
         console.error('Error loading Leaflet:', error);
@@ -47,6 +47,13 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
 
     loadLeaflet();
   }, []);
+
+  // Update map view when position changes
+  useEffect(() => {
+    if (mapInstance && position) {
+      mapInstance.setView(position, mapInstance.getZoom());
+    }
+  }, [position, mapInstance]);
 
   const searchAddress = async () => {
     if (!address.trim()) return;
@@ -79,6 +86,10 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
     const lng = e.latlng.lng;
     setPosition([lat, lng]);
     onLocationSelect(lat, lng);
+  };
+
+  const handleMapReady = (map: any) => {
+    setMapInstance(map);
   };
 
   // Ensure markers is always an array
@@ -122,15 +133,7 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
     );
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, useMap } = leafletComponents;
-
-  const MapUpdater = ({ center }: { center: [number, number] }) => {
-    const map = useMap();
-    useEffect(() => {
-      map.setView(center, map.getZoom());
-    }, [center, map]);
-    return null;
-  };
+  const { MapContainer, TileLayer, Marker, Popup } = leafletComponents;
 
   return (
     <div className="w-full space-y-4" style={{ height }}>
@@ -163,12 +166,12 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           zoom={10}
           style={{ height: '100%', width: '100%' }}
           onClick={handleMapClick}
+          whenReady={(e) => handleMapReady(e.target)}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MapUpdater center={position} />
           
           {/* Marcador principal */}
           <Marker position={position}>
