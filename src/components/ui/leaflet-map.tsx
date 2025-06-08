@@ -1,54 +1,52 @@
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, Search } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { SimpleMap } from '@/components/ui/simple-map';
 
-// Fix for default markers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-interface LeafletMapProps {
-  onLocationSelect: (lat: number, lng: number) => void;
-  initialLat?: number;
-  initialLng?: number;
-  height?: string;
-  showAddressSearch?: boolean;
-  markers?: Array<{
-    lat: number;
-    lng: number;
-    title: string;
-    description?: string;
-  }>;
-}
-
-function MapUpdater({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-}
-
-export const LeafletMap = ({ 
-  onLocationSelect, 
-  initialLat = -41.4693, 
-  initialLng = -72.9424,
-  height = "400px",
-  showAddressSearch = true,
-  markers = []
-}: LeafletMapProps) => {
+// Lazy loading para Leaflet
+const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, showAddressSearch, markers }: any) => {
+  const [leafletComponents, setLeafletComponents] = useState<any>(null);
   const [position, setPosition] = useState<[number, number]>([initialLat, initialLng]);
   const [address, setAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const loadLeaflet = async () => {
+      try {
+        const [leafletModule, reactLeafletModule] = await Promise.all([
+          import('leaflet'),
+          import('react-leaflet')
+        ]);
+        
+        // Import CSS
+        await import('leaflet/dist/leaflet.css');
+        
+        // Fix for default markers
+        const L = leafletModule.default;
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        });
+
+        setLeafletComponents({
+          MapContainer: reactLeafletModule.MapContainer,
+          TileLayer: reactLeafletModule.TileLayer,
+          Marker: reactLeafletModule.Marker,
+          Popup: reactLeafletModule.Popup,
+          useMap: reactLeafletModule.useMap,
+        });
+      } catch (error) {
+        console.error('Error loading Leaflet:', error);
+      }
+    };
+
+    loadLeaflet();
+  }, []);
 
   const searchAddress = async () => {
     if (!address.trim()) return;
@@ -81,6 +79,53 @@ export const LeafletMap = ({
     const lng = e.latlng.lng;
     setPosition([lat, lng]);
     onLocationSelect(lat, lng);
+  };
+
+  // Fallback a SimpleMap si Leaflet no se ha cargado
+  if (!leafletComponents) {
+    return (
+      <div className="w-full space-y-4" style={{ height }}>
+        {showAddressSearch && (
+          <div className="space-y-2">
+            <Label htmlFor="address-search">Buscar por dirección</Label>
+            <div className="flex gap-2">
+              <Input
+                id="address-search"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Ej: Puerto Montt, Región de Los Lagos"
+                onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
+              />
+              <Button 
+                onClick={searchAddress} 
+                disabled={isSearching}
+                size="sm"
+              >
+                <Search className="w-4 h-4" />
+                {isSearching ? 'Buscando...' : 'Buscar'}
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        <SimpleMap
+          onLocationSelect={onLocationSelect}
+          initialLat={initialLat}
+          initialLng={initialLng}
+          height={showAddressSearch ? 'calc(100% - 80px)' : '100%'}
+        />
+      </div>
+    );
+  }
+
+  const { MapContainer, TileLayer, Marker, Popup, useMap } = leafletComponents;
+
+  const MapUpdater = ({ center }: { center: [number, number] }) => {
+    const map = useMap();
+    useEffect(() => {
+      map.setView(center, map.getZoom());
+    }, [center, map]);
+    return null;
   };
 
   return (
@@ -131,7 +176,7 @@ export const LeafletMap = ({
           </Marker>
           
           {/* Marcadores adicionales */}
-          {markers.map((marker, index) => (
+          {markers.map((marker: any, index: number) => (
             <Marker key={index} position={[marker.lat, marker.lng]}>
               <Popup>
                 <strong>{marker.title}</strong>
@@ -155,4 +200,22 @@ export const LeafletMap = ({
       </div>
     </div>
   );
+};
+
+interface LeafletMapProps {
+  onLocationSelect: (lat: number, lng: number) => void;
+  initialLat?: number;
+  initialLng?: number;
+  height?: string;
+  showAddressSearch?: boolean;
+  markers?: Array<{
+    lat: number;
+    lng: number;
+    title: string;
+    description?: string;
+  }>;
+}
+
+export const LeafletMap = (props: LeafletMapProps) => {
+  return <LazyLeafletMap {...props} />;
 };

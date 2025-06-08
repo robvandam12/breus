@@ -5,10 +5,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
 import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
+import { useOperaciones } from "@/hooks/useOperaciones";
 import { List, MapPin, Grid3X3 } from "lucide-react";
 
 export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState("table");
+  const { operaciones, updateOperacion, deleteOperacion } = useOperaciones();
+
+  const handleViewDetail = (id: string) => {
+    console.log('View detail for operation:', id);
+  };
+
+  const handleEdit = async (id: string, data: any) => {
+    try {
+      await updateOperacion({ id, data });
+    } catch (error) {
+      console.error('Error updating operation:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOperacion(id);
+    } catch (error) {
+      console.error('Error deleting operation:', error);
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    console.log('Select operation:', id);
+  };
 
   return (
     <div className="space-y-6">
@@ -29,11 +55,20 @@ export const OperacionesManager = () => {
         </TabsList>
         
         <TabsContent value="table">
-          <OperacionesTable />
+          <OperacionesTable 
+            operaciones={operaciones}
+            onViewDetail={handleViewDetail}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </TabsContent>
         
         <TabsContent value="cards">
-          <OperacionCardView />
+          <OperacionCardView 
+            operaciones={operaciones}
+            onSelect={handleSelect}
+            onEdit={handleEdit}
+          />
         </TabsContent>
         
         <TabsContent value="map">
