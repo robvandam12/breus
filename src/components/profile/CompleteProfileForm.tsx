@@ -69,10 +69,10 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
           return;
         }
 
-        if (userData?.perfil_buzo) {
+        if (userData?.perfil_buzo && typeof userData.perfil_buzo === 'object') {
           setProfileData(prev => ({
             ...prev,
-            ...userData.perfil_buzo
+            ...userData.perfil_buzo as Partial<ProfileFormData>
           }));
         }
       } catch (error) {

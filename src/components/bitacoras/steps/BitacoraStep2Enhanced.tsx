@@ -49,14 +49,13 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2Props) =>
       const teamBuzos: BuzoInfo[] = currentTeam.miembros
         .filter(m => m.rol === 'buzo_principal' || m.rol === 'buzo_asistente')
         .map(miembro => {
-          const userData = getUserData(miembro.usuario_id);
+          // Use the data available from EquipoBuceoMiembro interface
           return {
-            usuario_id: miembro.usuario_id,
-            nombre: userData?.nombre_completo || `${miembro.nombre || ''} ${miembro.apellido || ''}`.trim(),
-            rut: userData?.rut || '',
-            matricula: userData?.matricula || '',
-            rol: miembro.rol_equipo as 'buzo_principal' | 'buzo_asistente',
-            telefono: userData?.telefono
+            nombre: miembro.nombre_completo || 'Usuario',
+            rut: '',
+            matricula: miembro.matricula || '',
+            rol: miembro.rol === 'buzo_principal' ? 'buzo_principal' as const : 'buzo_asistente' as const,
+            telefono: miembro.telefono || ''
           };
         });
 
@@ -67,7 +66,7 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2Props) =>
         buzos_equipo: teamBuzos
       });
     }
-  }, [currentTeam, getUserData, onUpdate]);
+  }, [currentTeam, onUpdate]);
 
   const addBuzoEmergencia = () => {
     if (newBuzo.nombre.trim() && newBuzo.rut.trim()) {
