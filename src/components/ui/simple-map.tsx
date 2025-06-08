@@ -1,137 +1,116 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, RotateCcw } from 'lucide-react';
+import { MapPin, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface SimpleMapProps {
   onLocationSelect: (lat: number, lng: number) => void;
-  initialLat?: number;
-  initialLng?: number;
+  initialLat: number;
+  initialLng: number;
   height?: string;
+  markers?: Array<{
+    lat: number;
+    lng: number;
+    title: string;
+    description?: string;
+  }>;
 }
 
 export const SimpleMap = ({ 
   onLocationSelect, 
-  initialLat = -33.4489, 
-  initialLng = -70.6693,
-  height = "400px" 
+  initialLat, 
+  initialLng, 
+  height = "400px",
+  markers = []
 }: SimpleMapProps) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [selectedCoords, setSelectedCoords] = useState({ lat: initialLat, lng: initialLng });
-  const [mapLoaded, setMapLoaded] = useState(false);
-
-  useEffect(() => {
-    // Simulate map loading
-    const timer = setTimeout(() => {
-      setMapLoaded(true);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const [selectedLocation, setSelectedLocation] = useState({ lat: initialLat, lng: initialLng });
+  const [zoom, setZoom] = useState(10);
 
   const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!mapContainerRef.current) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
+    // Simple coordinate calculation (approximate)
+    const lat = initialLat + (0.5 - y / rect.height) * 0.1;
+    const lng = initialLng + (x / rect.width - 0.5) * 0.1;
     
-    // Convert click position to approximate coordinates (Chile region)
-    const lat = initialLat + (0.5 - y) * 2; // Adjust range as needed
-    const lng = initialLng + (x - 0.5) * 2; // Adjust range as needed
-    
-    const newCoords = { lat, lng };
-    setSelectedCoords(newCoords);
+    setSelectedLocation({ lat, lng });
     onLocationSelect(lat, lng);
   };
 
-  const resetToDefault = () => {
-    setSelectedCoords({ lat: initialLat, lng: initialLng });
-    onLocationSelect(initialLat, initialLng);
-  };
-
   return (
-    <div className="w-full" style={{ height }}>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-medium">Mapa Interactivo</span>
+    <div className="w-full space-y-2" style={{ height }}>
+      <div className="flex items-center justify-between text-sm text-gray-600 bg-blue-50 p-2 rounded">
+        <span>Mapa simplificado - Haz clic para seleccionar ubicación</span>
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setZoom(Math.min(zoom + 1, 15))}
+          >
+            <ZoomIn className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setZoom(Math.max(zoom - 1, 1))}
+          >
+            <ZoomOut className="w-3 h-3" />
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={resetToDefault}
-          className="flex items-center gap-1"
-        >
-          <RotateCcw className="w-3 h-3" />
-          Reset
-        </Button>
       </div>
       
-      <div
-        ref={mapContainerRef}
-        onClick={handleMapClick}
-        className="relative w-full border-2 border-dashed border-blue-300 rounded-lg cursor-crosshair transition-all hover:border-blue-500 bg-gradient-to-br from-blue-50 to-green-50"
+      <div 
+        className="relative bg-gradient-to-br from-blue-100 to-green-100 border-2 border-dashed border-blue-300 rounded-lg cursor-crosshair overflow-hidden"
         style={{ height: 'calc(100% - 60px)' }}
+        onClick={handleMapClick}
       >
-        {!mapLoaded ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-              <p className="text-sm text-gray-600">Cargando mapa...</p>
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="grid grid-cols-8 grid-rows-6 h-full w-full">
+            {Array.from({ length: 48 }).map((_, i) => (
+              <div key={i} className="border border-blue-200" />
+            ))}
+          </div>
+        </div>
+
+        {/* Selected location marker */}
+        <div
+          className="absolute transform -translate-x-1/2 -translate-y-full z-10"
+          style={{
+            left: '50%',
+            top: '50%'
+          }}
+        >
+          <MapPin className="w-6 h-6 text-red-500 drop-shadow-md" />
+        </div>
+
+        {/* Operation markers */}
+        {markers.map((marker, index) => (
+          <div
+            key={index}
+            className="absolute transform -translate-x-1/2 -translate-y-full z-10 group"
+            style={{
+              left: `${50 + (marker.lng - initialLng) * 500}%`,
+              top: `${50 - (marker.lat - initialLat) * 500}%`
+            }}
+            title={marker.title}
+          >
+            <MapPin className="w-5 h-5 text-blue-600 drop-shadow-md" />
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 hidden group-hover:block bg-white p-2 rounded shadow-lg border text-xs whitespace-nowrap z-20">
+              <div className="font-medium">{marker.title}</div>
+              {marker.description && (
+                <div className="text-gray-600">{marker.description}</div>
+              )}
             </div>
           </div>
-        ) : (
-          <>
-            {/* Map Background Pattern */}
-            <div 
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '20px 20px'
-              }}
-            />
-            
-            {/* Instructions */}
-            <div className="absolute top-4 left-4 right-4">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
-                <p className="text-xs text-gray-600 text-center">
-                  Haz clic en cualquier punto para seleccionar la ubicación
-                </p>
-              </div>
-            </div>
-            
-            {/* Selected Location Marker */}
-            <div 
-              className="absolute w-6 h-6 -ml-3 -mt-3 z-10"
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse">
-                <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-30"></div>
-              </div>
-            </div>
-            
-            {/* Coordinates Display */}
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
-                <div className="text-xs text-gray-600 text-center">
-                  <div className="font-medium">Coordenadas seleccionadas:</div>
-                  <div className="mt-1">
-                    Lat: {selectedCoords.lat.toFixed(6)}, Lng: {selectedCoords.lng.toFixed(6)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        ))}
+
+        {/* Coordinates display */}
+        <div className="absolute bottom-2 left-2 bg-white/90 px-2 py-1 rounded text-xs">
+          {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+        </div>
       </div>
     </div>
   );
