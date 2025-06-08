@@ -6,17 +6,18 @@ import { Label } from '@/components/ui/label';
 import { MapPin, Search } from 'lucide-react';
 import { SimpleMap } from '@/components/ui/simple-map';
 
-// Lazy loading para Leaflet
+// Componente simplificado que usa lazy loading pero con mejor manejo de errores
 const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, showAddressSearch, markers = [] }: any) => {
   const [leafletComponents, setLeafletComponents] = useState<any>(null);
   const [position, setPosition] = useState<[number, number]>([initialLat, initialLng]);
   const [address, setAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const loadLeaflet = async () => {
       try {
+        console.log('Loading Leaflet components...');
         const [leafletModule, reactLeafletModule] = await Promise.all([
           import('leaflet'),
           import('react-leaflet')
@@ -34,26 +35,22 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         });
 
+        console.log('Leaflet components loaded successfully');
         setLeafletComponents({
           MapContainer: reactLeafletModule.MapContainer,
           TileLayer: reactLeafletModule.TileLayer,
           Marker: reactLeafletModule.Marker,
           Popup: reactLeafletModule.Popup,
         });
+        setLoadError(false);
       } catch (error) {
         console.error('Error loading Leaflet:', error);
+        setLoadError(true);
       }
     };
 
     loadLeaflet();
   }, []);
-
-  // Update map view when position changes
-  useEffect(() => {
-    if (mapInstance && position) {
-      mapInstance.setView(position, mapInstance.getZoom());
-    }
-  }, [position, mapInstance]);
 
   const searchAddress = async () => {
     if (!address.trim()) return;
@@ -82,21 +79,18 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
   };
 
   const handleMapClick = (e: any) => {
+    console.log('Map clicked:', e.latlng);
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
     setPosition([lat, lng]);
     onLocationSelect(lat, lng);
   };
 
-  const handleMapReady = (map: any) => {
-    setMapInstance(map);
-  };
-
   // Ensure markers is always an array
   const safeMarkers = Array.isArray(markers) ? markers : [];
 
-  // Fallback a SimpleMap si Leaflet no se ha cargado
-  if (!leafletComponents) {
+  // Si hay error o no se han cargado los componentes, usar SimpleMap
+  if (loadError || !leafletComponents) {
     return (
       <div className="w-full space-y-4" style={{ height }}>
         {showAddressSearch && (
@@ -129,6 +123,12 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           height={showAddressSearch ? 'calc(100% - 80px)' : '100%'}
           markers={safeMarkers}
         />
+        
+        {loadError && (
+          <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+            Nota: Usando mapa simplificado debido a un problema de carga
+          </div>
+        )}
       </div>
     );
   }
@@ -165,8 +165,10 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           center={position}
           zoom={10}
           style={{ height: '100%', width: '100%' }}
-          onClick={handleMapClick}
-          whenReady={(e) => handleMapReady(e.target)}
+          eventHandlers={{
+            click: handleMapClick,
+          }}
+          key={`${position[0]}-${position[1]}`} // Force re-render when position changes
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -184,7 +186,7 @@ const LazyLeafletMap = ({ onLocationSelect, initialLat, initialLng, height, show
           
           {/* Marcadores adicionales */}
           {safeMarkers.map((marker: any, index: number) => (
-            <Marker key={index} position={[marker.lat, marker.lng]}>
+            <Marker key={`marker-${index}`} position={[marker.lat, marker.lng]}>
               <Popup>
                 <strong>{marker.title}</strong>
                 {marker.description && <><br />{marker.description}</>}
