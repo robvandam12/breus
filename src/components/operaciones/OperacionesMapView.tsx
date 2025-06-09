@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, Building } from "lucide-react";
@@ -9,6 +10,11 @@ import { LeafletMap } from "@/components/ui/leaflet-map";
 export const OperacionesMapView = () => {
   const { operaciones, isLoading } = useOperaciones();
   const { sitios } = useSitios();
+  const [selectedLocation, setSelectedLocation] = useState({ lat: -41.4693, lng: -72.9424 });
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setSelectedLocation({ lat, lng });
+  };
 
   if (isLoading) {
     return (
@@ -41,15 +47,6 @@ export const OperacionesMapView = () => {
     description: string;
   } => marker !== null);
 
-  // Calcular el centro del mapa basado en las operaciones
-  const centerLat = validMarkers.length > 0 
-    ? validMarkers.reduce((sum, marker) => sum + marker.lat, 0) / validMarkers.length 
-    : -41.4693;
-  
-  const centerLng = validMarkers.length > 0 
-    ? validMarkers.reduce((sum, marker) => sum + marker.lng, 0) / validMarkers.length 
-    : -72.9424;
-
   return (
     <div className="space-y-6">
       <Card>
@@ -61,9 +58,9 @@ export const OperacionesMapView = () => {
         </CardHeader>
         <CardContent>
           <LeafletMap
-            onLocationSelect={() => {}} // No hacemos nada al seleccionar ubicación
-            initialLat={centerLat}
-            initialLng={centerLng}
+            onLocationSelect={handleLocationSelect}
+            initialLat={selectedLocation.lat}
+            initialLng={selectedLocation.lng}
             height="500px"
             showAddressSearch={false}
             markers={validMarkers}

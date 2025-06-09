@@ -10,14 +10,10 @@ import { List, MapPin, Grid3X3 } from "lucide-react";
 
 export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState("table");
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const { operaciones, updateOperacion, deleteOperacion } = useOperaciones();
 
-  const handleViewDetail = (operacion: any) => {
-    console.log('View detail for operation:', operacion);
-    setSelectedOperacion(operacion);
-    setShowDetailModal(true);
+  const handleViewDetail = (id: string) => {
+    console.log('View detail for operation:', id);
   };
 
   const handleEdit = async (operacion: any) => {
@@ -40,7 +36,6 @@ export const OperacionesManager = () => {
 
   const handleSelect = (operacion: any) => {
     console.log('Select operation:', operacion.id);
-    handleViewDetail(operacion);
   };
 
   return (
