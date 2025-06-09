@@ -1,5 +1,5 @@
 
-import { VisualMap } from '@/components/ui/visual-map';
+import { LeafletMap } from '@/components/ui/leaflet-map';
 
 interface MapboxPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -15,7 +15,7 @@ export const MapboxPicker = ({
   height = "400px" 
 }: MapboxPickerProps) => {
   return (
-    <VisualMap
+    <LeafletMap
       onLocationSelect={onLocationSelect}
       initialLat={initialLat}
       initialLng={initialLng}

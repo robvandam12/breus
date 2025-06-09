@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Target } from "lucide-react";
-import { VisualMap } from '@/components/ui/visual-map';
+import { LeafletMap } from '@/components/ui/leaflet-map';
 
 interface MapPickerProps {
   initialLat?: number;
@@ -68,10 +68,10 @@ export const MapPicker = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Mapa visual */}
+        {/* Mapa usando Leaflet */}
         <div className="space-y-3">
           <Label>Mapa Interactivo</Label>
-          <VisualMap
+          <LeafletMap
             onLocationSelect={handleLocationFromMap}
             initialLat={selectedLat}
             initialLng={selectedLng}
