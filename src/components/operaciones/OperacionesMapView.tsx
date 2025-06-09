@@ -1,28 +1,33 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Building } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2 } from "lucide-react";
 import { useSitios } from "@/hooks/useSitios";
 import { LeafletMap } from "@/components/ui/leaflet-map";
 
-export const OperacionesMapView = () => {
-  const { operaciones, isLoading } = useOperaciones();
+interface OperacionesMapViewProps {
+  operaciones: any[];
+  onSelect: (operacion: any) => void;
+  onViewDetail: (operacion: any) => void;
+  onEdit: (operacion: any) => void;
+  onDelete: (operacionId: string) => void;
+}
+
+export const OperacionesMapView = ({ 
+  operaciones, 
+  onSelect, 
+  onViewDetail, 
+  onEdit, 
+  onDelete 
+}: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
   const [selectedLocation, setSelectedLocation] = useState({ lat: -41.4693, lng: -72.9424 });
 
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng });
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   // Crear marcadores para las operaciones basados en sus sitios con verificaciones de seguridad
   const operacionMarkers = Array.isArray(operaciones) ? operaciones.map((operacion) => {
@@ -82,7 +87,7 @@ export const OperacionesMapView = () => {
                     {operacion.estado || 'Sin estado'}
                   </Badge>
                 </div>
-                <div className="space-y-1 text-xs text-gray-600">
+                <div className="space-y-1 text-xs text-gray-600 mb-3">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     <span>{operacion.fecha_inicio ? new Date(operacion.fecha_inicio).toLocaleDateString('es-CL') : 'Sin fecha'}</span>
@@ -102,6 +107,34 @@ export const OperacionesMapView = () => {
                       }
                     </span>
                   </div>
+                </div>
+                
+                {/* Acciones */}
+                <div className="flex gap-1 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewDetail(operacion)}
+                    className="ios-button-sm"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(operacion)}
+                    className="ios-button-sm"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(operacion.id)}
+                    className="ios-button-sm text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>

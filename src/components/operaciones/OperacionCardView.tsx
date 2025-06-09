@@ -5,15 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Calendar, Users, Settings, FileText, Activity, Search, Filter, Plus } from "lucide-react";
+import { MapPin, Calendar, Users, Settings, FileText, Activity, Search, Filter, Plus, Trash2 } from "lucide-react";
 
 interface OperacionCardViewProps {
   operaciones: any[];
   onSelect: (operacion: any) => void;
   onEdit: (operacion: any) => void;
+  onViewDetail: (operacion: any) => void;
+  onDelete: (operacionId: string) => void;
 }
 
-export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCardViewProps) => {
+export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail, onDelete }: OperacionCardViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -169,7 +171,7 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCa
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => onSelect(operacion)}
+                      onClick={() => onViewDetail(operacion)}
                     >
                       <FileText className="w-4 h-4 mr-1" />
                       Ver Detalles
@@ -180,6 +182,14 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCa
                       onClick={() => onEdit(operacion)}
                     >
                       <Settings className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onDelete(operacion.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </CardContent>
