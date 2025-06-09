@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Calendar, Users, Settings, FileText, Activity, Search, Filter, Plus } from "lucide-react";
+import { MapPin, Calendar, Users, Settings, FileText, Activity, Search, Filter, Plus, Eye, Edit, Trash2 } from "lucide-react";
 
 interface OperacionCardViewProps {
   operaciones: any[];
@@ -97,7 +97,7 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCa
             const docStatus = getDocumentStatus(operacion);
             
             return (
-              <Card key={operacion.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card key={operacion.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -167,19 +167,19 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit }: OperacionCa
                   <div className="flex gap-2 pt-2">
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="flex-1"
+                      size="sm"
                       onClick={() => onSelect(operacion)}
                     >
-                      <FileText className="w-4 h-4 mr-1" />
-                      Ver Detalles
+                      <Eye className="w-4 h-4 mr-1" />
+                      Ver
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => onEdit(operacion)}
                     >
-                      <Settings className="w-4 h-4" />
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
                     </Button>
                   </div>
                 </CardContent>
