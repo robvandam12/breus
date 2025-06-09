@@ -2,18 +2,24 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
 import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
+import { OperacionDetailModal } from "@/components/operaciones/OperacionDetailModal";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { List, MapPin, Grid3X3 } from "lucide-react";
 
 export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState("table");
+  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const { operaciones, updateOperacion, deleteOperacion } = useOperaciones();
 
-  const handleViewDetail = (id: string) => {
-    console.log('View detail for operation:', id);
+  const handleViewDetail = (operacion: any) => {
+    console.log('View detail for operation:', operacion);
+    setSelectedOperacion(operacion);
+    setShowDetailModal(true);
   };
 
   const handleEdit = async (operacion: any) => {
@@ -36,6 +42,11 @@ export const OperacionesManager = () => {
 
   const handleSelect = (operacion: any) => {
     console.log('Select operation:', operacion.id);
+  };
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedOperacion(null);
   };
 
   return (
@@ -77,6 +88,17 @@ export const OperacionesManager = () => {
           <OperacionesMapView />
         </TabsContent>
       </Tabs>
+
+      {/* Modal de detalle de operación */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          {selectedOperacion && (
+            <OperacionDetailModal 
+              operacion={selectedOperacion}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
