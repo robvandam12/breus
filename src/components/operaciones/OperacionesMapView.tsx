@@ -24,7 +24,7 @@ export const OperacionesMapView = ({
   onDelete 
 }: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
-  const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [ubicacionFilter, setUbicacionFilter] = useState<string>('all');
 
   // Función para obtener color según estado de operación
   const getEstadoColor = (estado: string) => {
@@ -59,16 +59,16 @@ export const OperacionesMapView = ({
     };
   }).filter(Boolean) : [];
 
-  // Filtrar por región si es necesario
-  const filteredMarkers = regionFilter === 'all' 
+  // Filtrar por ubicación si es necesario
+  const filteredMarkers = ubicacionFilter === 'all' 
     ? operacionMarkers 
     : operacionMarkers.filter(marker => {
         const sitio = sitios.find(s => s?.id === marker.operacion?.sitio_id);
-        return sitio?.region === regionFilter;
+        return sitio?.ubicacion?.toLowerCase().includes(ubicacionFilter.toLowerCase());
       });
 
-  // Obtener regiones únicas
-  const regiones = Array.from(new Set(sitios.map(s => s?.region).filter(Boolean)));
+  // Obtener ubicaciones únicas
+  const ubicaciones = Array.from(new Set(sitios.map(s => s?.ubicacion).filter(Boolean)));
 
   // Calcular centro del mapa basado en las operaciones filtradas
   const getMapCenter = () => {
@@ -94,15 +94,15 @@ export const OperacionesMapView = ({
             </CardTitle>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
-              <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <Select value={ubicacionFilter} onValueChange={setUbicacionFilter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por región" />
+                  <SelectValue placeholder="Filtrar por ubicación" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las regiones</SelectItem>
-                  {regiones.map((region) => (
-                    <SelectItem key={region} value={region}>
-                      {region}
+                  <SelectItem value="all">Todas las ubicaciones</SelectItem>
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem key={ubicacion} value={ubicacion}>
+                      {ubicacion}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -153,9 +153,9 @@ export const OperacionesMapView = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.isArray(operaciones) ? operaciones
           .filter(operacion => {
-            if (regionFilter === 'all') return true;
+            if (ubicacionFilter === 'all') return true;
             const sitio = sitios.find(s => s?.id === operacion.sitio_id);
-            return sitio?.region === regionFilter;
+            return sitio?.ubicacion?.toLowerCase().includes(ubicacionFilter.toLowerCase());
           })
           .map((operacion) => {
           if (!operacion) return null;
