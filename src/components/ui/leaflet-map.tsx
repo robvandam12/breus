@@ -15,6 +15,7 @@ interface LeafletMapProps {
   onLocationSelect?: (lat: number, lng: number) => void;
   initialLat?: number;
   initialLng?: number;
+  initialZoom?: number;
   height?: string;
   showAddressSearch?: boolean;
   showLocationSelector?: boolean;
@@ -32,6 +33,7 @@ export const LeafletMap = ({
   onLocationSelect,
   initialLat = -41.4693,
   initialLng = -72.9424,
+  initialZoom = 10,
   height = "400px",
   showAddressSearch = true,
   showLocationSelector = true,
@@ -44,13 +46,15 @@ export const LeafletMap = ({
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Initialize map
-    const map = L.map(mapRef.current).setView([initialLat, initialLng], 10);
+    // Initialize map with neutral tile layer
+    const map = L.map(mapRef.current).setView([initialLat, initialLng], initialZoom);
     mapInstanceRef.current = map;
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    // Use a more neutral map style (CartoDB Positron is lighter and more neutral)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
     }).addTo(map);
 
     // Add click handler only if location selector is enabled
@@ -63,7 +67,7 @@ export const LeafletMap = ({
     return () => {
       map.remove();
     };
-  }, [initialLat, initialLng, showLocationSelector, onLocationSelect]);
+  }, [initialLat, initialLng, initialZoom, showLocationSelector, onLocationSelect]);
 
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -121,7 +125,7 @@ export const LeafletMap = ({
   return (
     <div 
       ref={mapRef} 
-      style={{ height, width: '100%' }}
+      style={{ height, width: '100%', zIndex: 1 }}
       className="rounded-lg border"
     />
   );

@@ -24,7 +24,7 @@ export const OperacionesMapView = ({
   onDelete 
 }: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
-  const [ubicacionFilter, setUbicacionFilter] = useState<string>('all');
+  const [regionFilter, setRegionFilter] = useState<string>('all');
 
   // Función para obtener color según estado de operación
   const getEstadoColor = (estado: string) => {
@@ -32,7 +32,7 @@ export const OperacionesMapView = ({
       case 'activa':
         return '#10B981'; // green
       case 'pausada':
-        return '#F59E0B'; // yellow
+        return '#F59E0B'; // amber
       case 'completada':
         return '#3B82F6'; // blue
       case 'cancelada':
@@ -59,16 +59,16 @@ export const OperacionesMapView = ({
     };
   }).filter(Boolean) : [];
 
-  // Filtrar por ubicación si es necesario
-  const filteredMarkers = ubicacionFilter === 'all' 
+  // Filtrar por región si es necesario
+  const filteredMarkers = regionFilter === 'all' 
     ? operacionMarkers 
     : operacionMarkers.filter(marker => {
         const sitio = sitios.find(s => s?.id === marker.operacion?.sitio_id);
-        return sitio?.ubicacion?.toLowerCase().includes(ubicacionFilter.toLowerCase());
+        return sitio?.region === regionFilter;
       });
 
-  // Obtener ubicaciones únicas
-  const ubicaciones = Array.from(new Set(sitios.map(s => s?.ubicacion).filter(Boolean)));
+  // Obtener regiones únicas
+  const regiones = Array.from(new Set(sitios.map(s => s?.region).filter(Boolean)));
 
   // Calcular centro del mapa basado en las operaciones filtradas
   const getMapCenter = () => {
@@ -94,15 +94,15 @@ export const OperacionesMapView = ({
             </CardTitle>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
-              <Select value={ubicacionFilter} onValueChange={setUbicacionFilter}>
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por ubicación" />
+                  <SelectValue placeholder="Filtrar por región" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las ubicaciones</SelectItem>
-                  {ubicaciones.map((ubicacion) => (
-                    <SelectItem key={ubicacion} value={ubicacion}>
-                      {ubicacion}
+                <SelectContent style={{ zIndex: 9999 }}>
+                  <SelectItem value="all">Todas las regiones</SelectItem>
+                  {regiones.map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -111,21 +111,24 @@ export const OperacionesMapView = ({
           </div>
         </CardHeader>
         <CardContent>
-          <LeafletMap
-            initialLat={mapCenter.lat}
-            initialLng={mapCenter.lng}
-            height="500px"
-            showAddressSearch={false}
-            markers={filteredMarkers.map(marker => ({
-              lat: marker.lat,
-              lng: marker.lng,
-              title: marker.title,
-              description: marker.description,
-              color: marker.color,
-              onClick: () => onViewDetail(marker.operacion)
-            }))}
-            showLocationSelector={false}
-          />
+          <div style={{ zIndex: 1 }}>
+            <LeafletMap
+              initialLat={mapCenter.lat}
+              initialLng={mapCenter.lng}
+              height="500px"
+              showAddressSearch={false}
+              markers={filteredMarkers.map(marker => ({
+                lat: marker.lat,
+                lng: marker.lng,
+                title: marker.title,
+                description: marker.description,
+                color: marker.color,
+                onClick: () => onViewDetail(marker.operacion)
+              }))}
+              showLocationSelector={false}
+              initialZoom={8}
+            />
+          </div>
           
           {/* Leyenda de estados */}
           <div className="mt-4 flex flex-wrap gap-3">
@@ -134,7 +137,7 @@ export const OperacionesMapView = ({
               <span className="text-sm text-gray-600">Activa</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
               <span className="text-sm text-gray-600">Pausada</span>
             </div>
             <div className="flex items-center gap-2">
@@ -153,9 +156,9 @@ export const OperacionesMapView = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.isArray(operaciones) ? operaciones
           .filter(operacion => {
-            if (ubicacionFilter === 'all') return true;
+            if (regionFilter === 'all') return true;
             const sitio = sitios.find(s => s?.id === operacion.sitio_id);
-            return sitio?.ubicacion?.toLowerCase().includes(ubicacionFilter.toLowerCase());
+            return sitio?.region === regionFilter;
           })
           .map((operacion) => {
           if (!operacion) return null;

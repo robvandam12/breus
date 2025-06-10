@@ -1372,6 +1372,7 @@ export type Database = {
           nombre: string
           observaciones: string | null
           profundidad_maxima: number | null
+          region: string | null
           salmonera_id: string
           ubicacion: string
           updated_at: string
@@ -1387,6 +1388,7 @@ export type Database = {
           nombre: string
           observaciones?: string | null
           profundidad_maxima?: number | null
+          region?: string | null
           salmonera_id: string
           ubicacion: string
           updated_at?: string
@@ -1402,6 +1404,7 @@ export type Database = {
           nombre?: string
           observaciones?: string | null
           profundidad_maxima?: number | null
+          region?: string | null
           salmonera_id?: string
           ubicacion?: string
           updated_at?: string

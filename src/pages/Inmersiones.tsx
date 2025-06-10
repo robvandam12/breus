@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList, Eye } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -224,6 +225,7 @@ export default function Inmersiones() {
                               className="flex-1"
                               onClick={() => handleViewInmersion(inmersion)}
                             >
+                              <Eye className="w-4 h-4 mr-2" />
                               Ver Detalles
                             </Button>
                           </div>
@@ -269,6 +271,7 @@ export default function Inmersiones() {
                                 size="sm"
                                 onClick={() => handleViewInmersion(inmersion)}
                               >
+                                <Eye className="w-4 h-4 mr-2" />
                                 Ver
                               </Button>
                             </TableCell>
@@ -284,7 +287,7 @@ export default function Inmersiones() {
 
           {/* Detail Modal */}
           <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 9999 }}>
               {selectedInmersion && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3">
@@ -293,7 +296,9 @@ export default function Inmersiones() {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-zinc-900">{selectedInmersion.codigo}</h2>
-                      <p className="text-zinc-500">{selectedInmersion.operacion_nombre}</p>
+                      <p className="text-zinc-500">
+                        {getOperacionData(selectedInmersion.operacion_id)?.nombre || 'Sin operación'}
+                      </p>
                     </div>
                   </div>
 
@@ -306,7 +311,7 @@ export default function Inmersiones() {
                         <div className="grid gap-3">
                           <div>
                             <label className="text-sm font-medium text-gray-500">Fecha de Inmersión</label>
-                            <p className="text-lg">{selectedInmersion.fecha_inmersion}</p>
+                            <p className="text-lg">{new Date(selectedInmersion.fecha_inmersion).toLocaleDateString()}</p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-gray-500">Horario</label>
@@ -326,13 +331,19 @@ export default function Inmersiones() {
                             <label className="text-sm font-medium text-gray-500">Supervisor</label>
                             <p className="text-lg">{selectedInmersion.supervisor}</p>
                           </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Estado</label>
+                            <Badge className={getEstadoBadgeColor(selectedInmersion.estado)}>
+                              {selectedInmersion.estado}
+                            </Badge>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>Condiciones</CardTitle>
+                        <CardTitle>Condiciones de Inmersión</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid gap-3">

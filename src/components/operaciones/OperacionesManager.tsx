@@ -25,10 +25,33 @@ export const OperacionesManager = () => {
 
   const handleEdit = async (operacion: any) => {
     try {
-      const { id, ...data } = operacion;
-      await updateOperacion({ id, data });
-    } catch (error) {
+      // Limpiar datos para evitar enviar relaciones
+      const { id, sitios, contratistas, salmoneras, ...cleanData } = operacion;
+      
+      console.log('Updating operation with clean data:', cleanData);
+      
+      await updateOperacion({ id, data: cleanData });
+      
+      toast({
+        title: "Operación actualizada",
+        description: "La operación ha sido actualizada exitosamente.",
+      });
+    } catch (error: any) {
       console.error('Error updating operation:', error);
+      
+      if (error?.code === 'PGRST204' && error?.message?.includes('contratistas')) {
+        toast({
+          title: "Error de datos",
+          description: "Error al actualizar la operación. Verifique los datos del contratista.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar la operación.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -47,6 +70,11 @@ export const OperacionesManager = () => {
       }
       
       await deleteOperacion(id);
+      
+      toast({
+        title: "Operación eliminada",
+        description: "La operación ha sido eliminada exitosamente.",
+      });
     } catch (error) {
       console.error('Error deleting operation:', error);
       toast({
@@ -117,7 +145,7 @@ export const OperacionesManager = () => {
 
       {/* Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 9998 }}>
           {selectedOperacion && (
             <OperacionDetailModal 
               operacion={selectedOperacion}

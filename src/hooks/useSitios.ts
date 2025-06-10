@@ -8,6 +8,7 @@ export interface Sitio {
   nombre: string;
   codigo: string;
   ubicacion: string;
+  region: string;
   salmonera_id: string;
   estado: string;
   coordenadas_lat?: number;
@@ -27,6 +28,7 @@ export interface SitioFormData {
   codigo: string;
   salmonera_id: string;
   ubicacion: string;
+  region: string;
   profundidad_maxima?: number;
   coordenadas_lat?: number;
   coordenadas_lng?: number;
