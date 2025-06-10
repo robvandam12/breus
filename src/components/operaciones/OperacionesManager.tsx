@@ -9,12 +9,13 @@ import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { List, MapPin, Grid3X3 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState("table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const { operaciones, updateOperacion, deleteOperacion } = useOperaciones();
+  const { operaciones, updateOperacion, deleteOperacion, checkCanDelete } = useOperaciones();
 
   const handleViewDetail = (operacion: any) => {
     console.log('View detail for operation:', operacion);
@@ -24,7 +25,6 @@ export const OperacionesManager = () => {
 
   const handleEdit = async (operacion: any) => {
     try {
-      // Extract the id from the operacion object and pass the rest as data
       const { id, ...data } = operacion;
       await updateOperacion({ id, data });
     } catch (error) {
@@ -34,9 +34,26 @@ export const OperacionesManager = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      // Verificar si se puede eliminar
+      const { canDelete, reason } = await checkCanDelete(id);
+      
+      if (!canDelete) {
+        toast({
+          title: "No se puede eliminar",
+          description: `La operación no se puede eliminar porque ${reason}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await deleteOperacion(id);
     } catch (error) {
       console.error('Error deleting operation:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la operación.",
+        variant: "destructive",
+      });
     }
   };
 

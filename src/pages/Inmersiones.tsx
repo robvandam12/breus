@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -9,16 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
-import { InmersionActions } from "@/components/inmersion/InmersionActions";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [selectedInmersion, setSelectedInmersion] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion, refreshInmersiones } = useInmersiones();
@@ -82,6 +83,11 @@ export default function Inmersiones() {
 
   const handleRefresh = () => {
     refreshInmersiones();
+  };
+
+  const handleViewInmersion = (inmersion: any) => {
+    setSelectedInmersion(inmersion);
+    setShowDetailModal(true);
   };
 
   if (showWizard) {
@@ -178,15 +184,9 @@ export default function Inmersiones() {
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                                {inmersion.estado}
-                              </Badge>
-                              <InmersionActions 
-                                inmersionId={inmersion.inmersion_id} 
-                                onRefresh={handleRefresh}
-                              />
-                            </div>
+                            <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                              {inmersion.estado}
+                            </Badge>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -215,6 +215,17 @@ export default function Inmersiones() {
                           <div className="text-sm text-gray-600">
                             <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
                             <p><strong>Profundidad:</strong> {inmersion.profundidad_max}m</p>
+                          </div>
+
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => handleViewInmersion(inmersion)}
+                            >
+                              Ver Detalles
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -253,10 +264,13 @@ export default function Inmersiones() {
                             </TableCell>
                             <TableCell>{inmersion.profundidad_max}m</TableCell>
                             <TableCell className="text-right">
-                              <InmersionActions 
-                                inmersionId={inmersion.inmersion_id} 
-                                onRefresh={handleRefresh}
-                              />
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewInmersion(inmersion)}
+                              >
+                                Ver
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -267,6 +281,107 @@ export default function Inmersiones() {
               )}
             </div>
           </div>
+
+          {/* Detail Modal */}
+          <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              {selectedInmersion && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Anchor className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-zinc-900">{selectedInmersion.codigo}</h2>
+                      <p className="text-zinc-500">{selectedInmersion.operacion_nombre}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Información General</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Fecha de Inmersión</label>
+                            <p className="text-lg">{selectedInmersion.fecha_inmersion}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Horario</label>
+                            <p className="text-lg">{selectedInmersion.hora_inicio} - {selectedInmersion.hora_fin || 'En curso'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Buzo Principal</label>
+                            <p className="text-lg">{selectedInmersion.buzo_principal}</p>
+                          </div>
+                          {selectedInmersion.buzo_asistente && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-500">Buzo Asistente</label>
+                              <p className="text-lg">{selectedInmersion.buzo_asistente}</p>
+                            </div>
+                          )}
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Supervisor</label>
+                            <p className="text-lg">{selectedInmersion.supervisor}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Condiciones</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Profundidad Máxima</label>
+                            <p className="text-lg">{selectedInmersion.profundidad_max} m</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Temperatura del Agua</label>
+                            <p className="text-lg">{selectedInmersion.temperatura_agua}°C</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Visibilidad</label>
+                            <p className="text-lg">{selectedInmersion.visibilidad} m</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Corriente</label>
+                            <p className="text-lg">{selectedInmersion.corriente}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {selectedInmersion.objetivo && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Objetivo</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p>{selectedInmersion.objetivo}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {selectedInmersion.observaciones && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Observaciones</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p>{selectedInmersion.observaciones}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </SidebarProvider>
