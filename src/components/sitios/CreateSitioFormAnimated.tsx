@@ -24,6 +24,7 @@ const formSchema = z.object({
   codigo: z.string().min(1, "El código es requerido"),
   salmonera_id: z.string().min(1, "Debe seleccionar una salmonera"),
   ubicacion: z.string().min(1, "La ubicación es requerida"),
+  region: z.string().min(1, "La región es requerida"),
   estado: z.enum(['activo', 'inactivo', 'mantenimiento']),
   profundidad_maxima: z.number().optional(),
   coordenadas_lat: z.number().optional(),
@@ -36,6 +37,28 @@ interface CreateSitioFormAnimatedProps {
   onSubmit: (data: SitioFormData) => Promise<void>;
   onCancel: () => void;
 }
+
+// Función para determinar la región basada en la ubicación
+const determinarRegion = (ubicacion: string): string => {
+  const ubicacionLower = ubicacion.toLowerCase();
+  
+  if (ubicacionLower.includes('valparaíso') || ubicacionLower.includes('valparaiso')) return 'Valparaíso';
+  if (ubicacionLower.includes('los lagos') || ubicacionLower.includes('puerto montt') || ubicacionLower.includes('osorno')) return 'Los Lagos';
+  if (ubicacionLower.includes('aysén') || ubicacionLower.includes('aysen') || ubicacionLower.includes('coyhaique')) return 'Aysén';
+  if (ubicacionLower.includes('magallanes') || ubicacionLower.includes('punta arenas')) return 'Magallanes';
+  if (ubicacionLower.includes('antofagasta')) return 'Antofagasta';
+  if (ubicacionLower.includes('atacama')) return 'Atacama';
+  if (ubicacionLower.includes('coquimbo')) return 'Coquimbo';
+  if (ubicacionLower.includes('metropolitana') || ubicacionLower.includes('santiago')) return 'Metropolitana';
+  if (ubicacionLower.includes('ohiggins') || ubicacionLower.includes('rancagua')) return 'O´Higgins';
+  if (ubicacionLower.includes('maule') || ubicacionLower.includes('talca')) return 'Maule';
+  if (ubicacionLower.includes('ñuble') || ubicacionLower.includes('chillán')) return 'Ñuble';
+  if (ubicacionLower.includes('biobío') || ubicacionLower.includes('biobio') || ubicacionLower.includes('concepción')) return 'Biobío';
+  if (ubicacionLower.includes('araucanía') || ubicacionLower.includes('araucania') || ubicacionLower.includes('temuco')) return 'Araucanía';
+  if (ubicacionLower.includes('los ríos') || ubicacionLower.includes('los rios') || ubicacionLower.includes('valdivia')) return 'Los Ríos';
+  
+  return 'Los Lagos'; // Por defecto para sitios de acuicultura
+};
 
 export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormAnimatedProps) => {
   const { profile } = useAuth();
@@ -72,6 +95,7 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
     resolver: zodResolver(formSchema),
     defaultValues: {
       estado: 'activo',
+      region: 'Los Lagos',
       salmonera_id: profile?.role === 'admin_salmonera' ? profile.salmonera_id : '',
       coordenadas_lat: coordinates.lat,
       coordenadas_lng: coordinates.lng,
@@ -91,6 +115,15 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
     setValue('coordenadas_lng', coordinates.lng);
   }, [coordinates, setValue]);
 
+  // Auto-determinar región cuando cambia la ubicación
+  const ubicacion = watch('ubicacion');
+  useEffect(() => {
+    if (ubicacion) {
+      const regionDetectada = determinarRegion(ubicacion);
+      setValue('region', regionDetectada);
+    }
+  }, [ubicacion, setValue]);
+
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
@@ -100,6 +133,7 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
         codigo: data.codigo,
         salmonera_id: data.salmonera_id,
         ubicacion: data.ubicacion,
+        region: data.region,
         estado: data.estado,
         profundidad_maxima: data.profundidad_maxima,
         coordenadas_lat: coordinates.lat,
@@ -135,6 +169,23 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   };
 
   const isAdminSalmonera = profile?.role === 'admin_salmonera';
+
+  const regionOptions = [
+    { value: 'Los Lagos', label: 'Los Lagos' },
+    { value: 'Aysén', label: 'Aysén' },
+    { value: 'Magallanes', label: 'Magallanes' },
+    { value: 'Los Ríos', label: 'Los Ríos' },
+    { value: 'Araucanía', label: 'Araucanía' },
+    { value: 'Biobío', label: 'Biobío' },
+    { value: 'Ñuble', label: 'Ñuble' },
+    { value: 'Maule', label: 'Maule' },
+    { value: 'O´Higgins', label: 'O´Higgins' },
+    { value: 'Metropolitana', label: 'Metropolitana' },
+    { value: 'Valparaíso', label: 'Valparaíso' },
+    { value: 'Coquimbo', label: 'Coquimbo' },
+    { value: 'Atacama', label: 'Atacama' },
+    { value: 'Antofagasta', label: 'Antofagasta' }
+  ];
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -239,16 +290,37 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ubicacion">Ubicación *</Label>
-            <Input
-              id="ubicacion"
-              {...register('ubicacion')}
-              placeholder="Ej: Puerto Montt, Región de Los Lagos"
-            />
-            {errors.ubicacion && (
-              <p className="text-sm text-red-600">{errors.ubicacion.message}</p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion">Ubicación *</Label>
+              <Input
+                id="ubicacion"
+                {...register('ubicacion')}
+                placeholder="Ej: Puerto Montt, Región de Los Lagos"
+              />
+              {errors.ubicacion && (
+                <p className="text-sm text-red-600">{errors.ubicacion.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="region">Región *</Label>
+              <Select value={watch('region')} onValueChange={(value) => setValue('region', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar región" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regionOptions.map((region) => (
+                    <SelectItem key={region.value} value={region.value}>
+                      {region.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.region && (
+                <p className="text-sm text-red-600">{errors.region.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

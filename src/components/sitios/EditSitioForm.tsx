@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,7 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
     codigo: sitio.codigo,
     salmonera_id: sitio.salmonera_id,
     ubicacion: sitio.ubicacion,
+    region: sitio.region || 'Los Lagos',
     profundidad_maxima: sitio.profundidad_maxima || undefined,
     coordenadas_lat: sitio.coordenadas_lat || -41.4693,
     coordenadas_lng: sitio.coordenadas_lng || -72.9424,
@@ -77,6 +77,23 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
     { value: 'mantenimiento', label: 'Mantenimiento' }
   ];
 
+  const regionOptions = [
+    { value: 'Los Lagos', label: 'Los Lagos' },
+    { value: 'Aysén', label: 'Aysén' },
+    { value: 'Magallanes', label: 'Magallanes' },
+    { value: 'Los Ríos', label: 'Los Ríos' },
+    { value: 'Araucanía', label: 'Araucanía' },
+    { value: 'Biobío', label: 'Biobío' },
+    { value: 'Ñuble', label: 'Ñuble' },
+    { value: 'Maule', label: 'Maule' },
+    { value: 'O´Higgins', label: 'O´Higgins' },
+    { value: 'Metropolitana', label: 'Metropolitana' },
+    { value: 'Valparaíso', label: 'Valparaíso' },
+    { value: 'Coquimbo', label: 'Coquimbo' },
+    { value: 'Atacama', label: 'Atacama' },
+    { value: 'Antofagasta', label: 'Antofagasta' }
+  ];
+
   return (
     <>
       <DialogHeader>
@@ -122,15 +139,28 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
           />
         </div>
 
-        <div>
-          <Label htmlFor="ubicacion">Ubicación *</Label>
-          <Input
-            id="ubicacion"
-            value={formData.ubicacion}
-            onChange={(e) => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
-            placeholder="Ubicación geográfica del sitio"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="ubicacion">Ubicación *</Label>
+            <Input
+              id="ubicacion"
+              value={formData.ubicacion}
+              onChange={(e) => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
+              placeholder="Ubicación geográfica del sitio"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="region">Región</Label>
+            <EnhancedSelect
+              options={regionOptions}
+              value={formData.region}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, region: value }))}
+              placeholder="Seleccione una región"
+              className="w-full"
+            />
+          </div>
         </div>
 
         <div className="space-y-4">
