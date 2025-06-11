@@ -161,7 +161,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-blue-600" />
-            Perfil Profesional - {profile?.rol === 'supervisor' ? 'Supervisor' : 'Buzo'}
+            Perfil Profesional - {profile?.role === 'supervisor' ? 'Supervisor' : 'Buzo'}
           </CardTitle>
           <Badge variant={progress >= 80 ? "default" : "outline"}>
             {progress}% completo

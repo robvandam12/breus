@@ -14,7 +14,8 @@ import {
   MapPin, 
   CheckCircle,
   ArrowRight,
-  X 
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';

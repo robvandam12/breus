@@ -33,7 +33,7 @@ export default function Index() {
     }
 
     // Check if buzo needs onboarding
-    if (user && profile && profile.rol === 'buzo') {
+    if (user && profile && profile.role === 'buzo') {
       const onboardingCompleted = localStorage.getItem('onboarding_completed');
       if (!onboardingCompleted) {
         setShowOnboarding(true);
@@ -50,7 +50,7 @@ export default function Index() {
   }
 
   // Show onboarding for buzos who haven't seen it
-  if (showOnboarding && profile?.rol === 'buzo') {
+  if (showOnboarding && profile?.role === 'buzo') {
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
@@ -65,7 +65,7 @@ export default function Index() {
       return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
     };
 
-    switch (profile?.rol) {
+    switch (profile?.role) {
       case 'superuser':
         return <AdminSalmoneraView />;
       case 'admin_salmonera':
@@ -85,7 +85,7 @@ export default function Index() {
   const getDashboardTitle = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
-    switch (profile?.rol) {
+    switch (profile?.role) {
       case 'superuser':
         return "Panel de Administración";
       case 'admin_salmonera':
@@ -104,7 +104,7 @@ export default function Index() {
   const getDashboardSubtitle = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
-    switch (profile?.rol) {
+    switch (profile?.role) {
       case 'superuser':
         return "Gestión completa del sistema";
       case 'admin_salmonera':

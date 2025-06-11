@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +14,7 @@ export interface UserProfile {
   servicio_id?: string;
   created_at: string;
   updated_at: string;
+  perfil_buzo?: any;
 }
 
 export interface AuthContextType {
@@ -102,7 +102,8 @@ export const useAuthProvider = (): AuthContextType => {
           salmonera_id: data.salmonera_id || undefined,
           servicio_id: data.servicio_id || undefined,
           created_at: data.created_at,
-          updated_at: data.updated_at
+          updated_at: data.updated_at,
+          perfil_buzo: data.perfil_buzo || undefined
         };
         setProfile(userProfile);
       }
