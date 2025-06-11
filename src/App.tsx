@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -45,7 +46,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
