@@ -30,11 +30,206 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
+
+import { buzoNavigationItems, buzoAccessiblePages } from './BuzoNavigation';
+
+const navigationByRole = {
+  superuser: [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+    },
+    {
+      title: "Mi Perfil",
+      icon: Users,
+      url: "/profile-setup",
+    }
+  ],
+  admin_salmonera: [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      badge: "15"
+    },
+    {
+      title: "Equipo de Buceo",
+      icon: Users,
+      url: "/equipo-de-buceo"
+    },
+    {
+      title: "Operaciones",
+      icon: Calendar,
+      url: "/operaciones",
+      badge: "25"
+    },
+    {
+      title: "Formularios",
+      icon: FileText,
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+      ]
+    },
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones",
+      badge: "18"
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes"
+    },
+    {
+      title: "Mi Empresa",
+      icon: Building,
+      items: [
+        { title: "Sitios", url: "/empresas/sitios" },
+        { title: "Contratistas", url: "/empresas/contratistas" },
+        { title: "Personal Disponible", url: "/admin/salmonera" }
+      ]
+    },
+    {
+      title: "Configuración",
+      icon: Settings,
+      url: "/configuracion"
+    }
+  ],
+  admin_servicio: [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      badge: "8"
+    },
+    {
+      title: "Equipo de Buceo",
+      icon: Users,
+      url: "/equipo-de-buceo"
+    },
+    {
+      title: "Operaciones",
+      icon: Calendar,
+      url: "/operaciones",
+      badge: "12"
+    },
+    {
+      title: "Formularios",
+      icon: FileText,
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+      ]
+    },
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones",
+      badge: "7"
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes"
+    },
+    {
+      title: "Mi Empresa",
+      icon: Building,
+      items: [
+        { title: "Información", url: "/empresas/contratistas" }
+      ]
+    },
+    {
+      title: "Configuración",
+      icon: Settings,
+      url: "/configuracion"
+    }
+  ],
+  supervisor: [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      badge: "5"
+    },
+    {
+      title: "Equipo de Buceo",
+      icon: Users,
+      url: "/equipo-de-buceo"
+    },
+    {
+      title: "Operaciones",
+      icon: Calendar,
+      url: "/operaciones",
+      badge: "12"
+    },
+    {
+      title: "Formularios",
+      icon: FileText,
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+      ]
+    },
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones",
+      badge: "7"
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes"
+    },
+    {
+      title: "Configuración",
+      icon: Settings,
+      url: "/configuracion"
+    }
+  ],
+  buzo: buzoNavigationItems
+};
+
+const accessiblePagesByRole = {
+  superuser: ['/'],
+  admin_salmonera: ['/'],
+  admin_servicio: ['/'],
+  supervisor: ['/'],
+  buzo: buzoAccessiblePages
+};
 
 interface MenuSubItem {
   title: string;
@@ -395,10 +590,10 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
   return [];
 };
 
-export function RoleBasedSidebar() {
-  const { profile, signOut } = useAuth();
-  const { salmoneras } = useSalmoneras();
-  const { contratistas } = useContratistas();
+export const RoleBasedSidebar = () => {
+  const { profile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Fix the type error by explicitly converting to boolean
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
@@ -467,6 +662,8 @@ export function RoleBasedSidebar() {
     }
     return null;
   };
+
+  const navigationItems = navigationByRole[profile?.role as keyof typeof navigationByRole] || buzoNavigationItems;
 
   return (
     <Sidebar className="border-r border-border/40 font-sans bg-white">

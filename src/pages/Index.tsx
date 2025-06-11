@@ -1,4 +1,3 @@
-
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
@@ -23,10 +22,22 @@ export default function Index() {
       return;
     }
 
-    // Redirect new users to onboarding
-    if (user && profile && !profile.nombre && !profile.apellido) {
-      navigate('/onboarding');
-      return;
+    // Redirect new users to onboarding based on role
+    if (user && profile) {
+      // Si es buzo y no tiene perfil completo o empresa asignada
+      if (profile.role === 'buzo' && (!profile.perfil_completado || (!profile.salmonera_id && !profile.servicio_id))) {
+        // Solo redirigir si está completamente sin datos
+        if (!profile.nombre && !profile.apellido) {
+          navigate('/buzo-onboarding');
+          return;
+        }
+      }
+      
+      // Para otros roles sin datos básicos
+      if (profile.role !== 'buzo' && !profile.nombre && !profile.apellido) {
+        navigate('/onboarding');
+        return;
+      }
     }
   }, [loading, user, profile, navigate]);
 
@@ -51,8 +62,8 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Si el buzo no está asignado a empresa, mostrar vista restringida
-        return isAssigned ? <BuzoView /> : <BuzoRestrictedView />;
+        // Usar el nuevo dashboard específico para buzos
+        return <BuzoDashboard />;
       default:
         return <BuzoRestrictedView />;
     }

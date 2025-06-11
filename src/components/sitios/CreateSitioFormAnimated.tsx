@@ -11,13 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, X, Building, Info, Map } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, X, Building, Info } from "lucide-react";
 import { SitioFormData } from "@/hooks/useSitios";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LeafletMap } from "@/components/ui/leaflet-map";
+import { SitioMapSelector } from "./SitioMapSelector";
 
 const formSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -63,7 +62,6 @@ const determinarRegion = (ubicacion: string): string => {
 export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormAnimatedProps) => {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [showMap, setShowMap] = useState(false);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>({
     lat: -41.4693,
     lng: -72.9424
@@ -156,16 +154,8 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
     setValue('coordenadas_lng', lng);
   };
 
-  const handleCoordinateChange = (field: 'lat' | 'lng', value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      setCoordinates(prev => {
-        const newCoords = { ...prev, [field]: numValue };
-        setValue('coordenadas_lat', newCoords.lat);
-        setValue('coordenadas_lng', newCoords.lng);
-        return newCoords;
-      });
-    }
+  const handleUbicacionChange = (ubicacion: string) => {
+    setValue('ubicacion', ubicacion);
   };
 
   const isAdminSalmonera = profile?.role === 'admin_salmonera';
@@ -188,7 +178,7 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
   ];
 
   return (
-    <Card className="max-w-4xl mx-auto">
+    <Card className="max-w-5xl mx-auto">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -323,6 +313,16 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
             </div>
           </div>
 
+          {/* Mapa para seleccionar ubicación - Mostrado por defecto */}
+          <SitioMapSelector
+            initialLat={coordinates.lat}
+            initialLng={coordinates.lng}
+            ubicacion={watch('ubicacion') || ''}
+            onLocationSelect={handleLocationSelect}
+            onUbicacionChange={handleUbicacionChange}
+            height="400px"
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
@@ -344,66 +344,6 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
                 placeholder="12"
               />
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Coordenadas GPS</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowMap(!showMap)}
-              >
-                <Map className="w-4 h-4 mr-2" />
-                {showMap ? 'Ocultar Mapa' : 'Seleccionar en Mapa'}
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="coordenadas_lat">Latitud</Label>
-                <Input
-                  id="coordenadas_lat"
-                  type="number"
-                  step="any"
-                  value={coordinates.lat}
-                  onChange={(e) => handleCoordinateChange('lat', e.target.value)}
-                  placeholder="-41.4693"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="coordenadas_lng">Longitud</Label>
-                <Input
-                  id="coordenadas_lng"
-                  type="number"
-                  step="any"
-                  value={coordinates.lng}
-                  onChange={(e) => handleCoordinateChange('lng', e.target.value)}
-                  placeholder="-72.9424"
-                />
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {showMap && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 500 }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden rounded-lg border"
-                >
-                  <LeafletMap
-                    onLocationSelect={handleLocationSelect}
-                    height="500px"
-                    initialLat={coordinates.lat}
-                    initialLng={coordinates.lng}
-                    showAddressSearch={true}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           <div className="space-y-2">
