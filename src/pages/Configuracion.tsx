@@ -1,84 +1,203 @@
 
-import { useState } from "react";
+import { useState } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Webhook, Bell, User, Shield } from "lucide-react";
-import { WebhookManagement } from "@/components/configuration/WebhookManagement";
-import { NotificationSettings } from "@/components/configuration/NotificationSettings";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Settings, User, Bell, Shield, Key } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-const Configuracion = () => {
+export default function Configuracion() {
+  const { profile, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const handlePasswordChange = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido cambiada exitosamente",
+      });
+
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al cambiar la contraseña",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white">
+      <div className="min-h-screen flex w-full">
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col bg-white">
+        <main className="flex-1 flex flex-col">
           <Header 
             title="Configuración" 
-            subtitle="Gestiona las preferencias del sistema" 
+            subtitle="Gestiona tu cuenta y preferencias" 
             icon={Settings} 
           />
-          
-          <div className="flex-1 overflow-auto bg-white">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto">
-              <Tabs defaultValue="webhooks" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="webhooks" className="flex items-center gap-2">
-                    <Webhook className="w-4 h-4" />
-                    Webhooks
-                  </TabsTrigger>
-                  <TabsTrigger value="notifications" className="flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    Notificaciones
-                  </TabsTrigger>
-                  <TabsTrigger value="security" className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Seguridad
-                  </TabsTrigger>
-                  <TabsTrigger value="profile" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Perfil
-                  </TabsTrigger>
-                </TabsList>
+          <div className="flex-1 overflow-auto">
+            <div className="p-6 max-w-4xl mx-auto space-y-6">
+              
+              {/* Información de Cuenta */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Información de Cuenta
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nombre</Label>
+                      <Input value={profile?.nombre || ''} disabled />
+                    </div>
+                    <div>
+                      <Label>Apellido</Label>
+                      <Input value={profile?.apellido || ''} disabled />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input value={user?.email || ''} disabled />
+                  </div>
+                  <div>
+                    <Label>Rol</Label>
+                    <Input value={profile?.role === 'buzo' ? 'Buzo Profesional' : profile?.role || ''} disabled />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Para cambiar tu información personal, ve a "Mi Perfil" en el menú lateral.
+                  </p>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="webhooks">
-                  <WebhookManagement />
-                </TabsContent>
+              {/* Cambio de Contraseña */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="w-5 h-5" />
+                    Cambiar Contraseña
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="newPassword">Nueva Contraseña</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({
+                        ...prev,
+                        newPassword: e.target.value
+                      }))}
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({
+                        ...prev,
+                        confirmPassword: e.target.value
+                      }))}
+                      placeholder="Confirma tu nueva contraseña"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handlePasswordChange}
+                    disabled={isLoading || !passwordData.newPassword || !passwordData.confirmPassword}
+                  >
+                    {isLoading ? "Actualizando..." : "Cambiar Contraseña"}
+                  </Button>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="notifications">
-                  <NotificationSettings />
-                </TabsContent>
+              {/* Notificaciones */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5" />
+                    Preferencias de Notificaciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">
+                    Las notificaciones de operaciones y bitácoras están habilitadas por defecto para buzos profesionales.
+                  </p>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="security">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Configuración de Seguridad</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Configuraciones de seguridad y acceso del sistema.</p>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+              {/* Seguridad */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Seguridad de la Cuenta
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm"><strong>Última conexión:</strong> {new Date().toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-600">
+                      Tu cuenta está protegida por autenticación segura. Si sospechas actividad inusual, 
+                      cambia tu contraseña inmediatamente.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="profile">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Perfil de Usuario</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Gestión del perfil personal y preferencias de cuenta.</p>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
             </div>
           </div>
         </main>
       </div>
     </SidebarProvider>
   );
-};
-
-export default Configuracion;
+}

@@ -3,13 +3,30 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Anchor, Building, User, AlertTriangle, FileText } from 'lucide-react';
+import { Calendar, Anchor, Building, User, AlertTriangle, FileText, Clock, CheckCircle2, Users } from 'lucide-react';
 import { useBuzoNotifications } from '@/hooks/useBuzoNotifications';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+import { useContratistas } from '@/hooks/useContratistas';
+import { useInmersiones } from '@/hooks/useInmersiones';
+import { useBitacoras } from '@/hooks/useBitacoras';
+import { useOperaciones } from '@/hooks/useOperaciones';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export const BuzoDashboard = () => {
   const { profile, user } = useAuth();
   const { notifications, unreadCount } = useBuzoNotifications();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
+  const { inmersiones } = useInmersiones();
+  const { bitacorasBuzo } = useBitacoras();
+  const { operaciones } = useOperaciones();
+  const [stats, setStats] = useState({
+    totalOperaciones: 0,
+    bitacorasPendientes: 0,
+    bitacorasCompletadas: 0,
+    inmersionesMes: 0
+  });
 
   // Verificar si el perfil está completo
   const isProfileComplete = () => {
@@ -22,22 +39,53 @@ export const BuzoDashboard = () => {
 
   const profileComplete = isProfileComplete();
 
-  // Obtener nombre de la empresa
-  const getCompanyName = () => {
+  // Obtener nombre de las empresas
+  const getSalmoneraName = () => {
     if (profile?.salmonera_id) {
-      return "Salmonera Asignada";
-    } else if (profile?.servicio_id) {
-      return "Servicio Asignado";
+      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
+      return salmonera?.nombre || 'Salmonera no encontrada';
     }
-    return "Sin empresa asignada";
+    return null;
   };
 
-  const getCompanyStatus = () => {
-    if (profile?.salmonera_id || profile?.servicio_id) {
-      return "success";
+  const getContratistaName = () => {
+    if (profile?.servicio_id) {
+      const contratista = contratistas.find(c => c.id === profile.servicio_id);
+      return contratista?.nombre || 'Contratista no encontrado';
     }
-    return "warning";
+    return null;
   };
+
+  // Calcular estadísticas específicas del buzo
+  useEffect(() => {
+    // Filtrar operaciones donde el buzo está asignado
+    const buzoBitacoras = bitacorasBuzo.filter(b => b.buzo === `${profile?.nombre} ${profile?.apellido}`);
+    const buzoInmersiones = inmersiones.filter(i => 
+      i.buzo_principal === `${profile?.nombre} ${profile?.apellido}` ||
+      i.buzo_asistente === `${profile?.nombre} ${profile?.apellido}`
+    );
+    
+    // Operaciones donde participa el buzo
+    const buzoOperaciones = operaciones.filter(op => {
+      // Verificar si hay inmersiones del buzo en esta operación
+      return buzoInmersiones.some(inm => inm.operacion_id === op.id);
+    });
+
+    // Inmersiones del mes actual
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const inmersionesMes = buzoInmersiones.filter(inm => {
+      const inmDate = new Date(inm.fecha_inmersion);
+      return inmDate.getMonth() === currentMonth && inmDate.getFullYear() === currentYear;
+    }).length;
+
+    setStats({
+      totalOperaciones: buzoOperaciones.length,
+      bitacorasPendientes: buzoBitacoras.filter(b => !b.firmado).length,
+      bitacorasCompletadas: buzoBitacoras.filter(b => b.firmado).length,
+      inmersionesMes
+    });
+  }, [bitacorasBuzo, inmersiones, operaciones, profile]);
 
   return (
     <div className="space-y-6">
@@ -74,91 +122,112 @@ export const BuzoDashboard = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Estado de Empresa */}
+      {/* Información de Empresas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estado de Empresa</CardTitle>
-            <Building className="w-4 h-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-5 h-5 text-blue-600" />
+              Salmonera Asignada
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p className="text-lg font-semibold">{getCompanyName()}</p>
-              <Badge variant={getCompanyStatus() === 'success' ? 'default' : 'secondary'}>
-                {profile?.salmonera_id || profile?.servicio_id ? 'Asignado' : 'Sin asignar'}
-              </Badge>
-            </div>
+            {getSalmoneraName() ? (
+              <div>
+                <p className="text-lg font-semibold">{getSalmoneraName()}</p>
+                <Badge variant="default">Asignado</Badge>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-500">Sin salmonera asignada</p>
+                <Badge variant="secondary">No asignado</Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Notificaciones */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Notificaciones</CardTitle>
-            <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-5 h-5 text-teal-600" />
+              Empresa de Servicio
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">{unreadCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Notificaciones sin leer
-              </p>
-              {unreadCount > 0 && (
-                <Button variant="outline" size="sm" className="w-full">
-                  Ver Notificaciones
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bitácoras Pendientes */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bitácoras</CardTitle>
-            <FileText className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                Bitácoras pendientes
-              </p>
-              {profileComplete ? (
-                <Button variant="outline" size="sm" className="w-full" asChild>
-                  <Link to="/bitacoras/buzo">Ver Bitácoras</Link>
-                </Button>
-              ) : (
-                <p className="text-xs text-orange-600">
-                  Completa tu perfil para crear bitácoras
-                </p>
-              )}
-            </div>
+            {getContratistaName() ? (
+              <div>
+                <p className="text-lg font-semibold">{getContratistaName()}</p>
+                <Badge variant="default">Asignado</Badge>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-500">Sin empresa de servicio asignada</p>
+                <Badge variant="secondary">No asignado</Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Operaciones Recientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Anchor className="w-5 h-5" />
-            Historial de Operaciones
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <Anchor className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium mb-2">No hay operaciones registradas</p>
-            <p className="text-sm">
-              {profileComplete 
-                ? "Cuando seas asignado a operaciones, aparecerán aquí."
-                : "Completa tu perfil para ser asignado a operaciones."
-              }
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Operaciones</CardTitle>
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalOperaciones}</div>
+            <p className="text-xs text-muted-foreground">
+              Total participaciones
             </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bitácoras Pendientes</CardTitle>
+            <Clock className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{stats.bitacorasPendientes}</div>
+            <p className="text-xs text-muted-foreground">
+              Por completar
+            </p>
+            {stats.bitacorasPendientes > 0 && (
+              <Button variant="outline" size="sm" className="w-full mt-2" asChild>
+                <Link to="/bitacoras/buzo">Ver Pendientes</Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bitácoras Completadas</CardTitle>
+            <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.bitacorasCompletadas}</div>
+            <p className="text-xs text-muted-foreground">
+              Firmadas este mes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inmersiones</CardTitle>
+            <Anchor className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.inmersionesMes}</div>
+            <p className="text-xs text-muted-foreground">
+              Este mes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Notificaciones Recientes */}
       {notifications.length > 0 && (
@@ -167,6 +236,9 @@ export const BuzoDashboard = () => {
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
               Notificaciones Recientes
+              {unreadCount > 0 && (
+                <Badge variant="destructive">{unreadCount}</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -196,6 +268,44 @@ export const BuzoDashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Historial Reciente */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Actividad Reciente
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.bitacorasCompletadas > 0 || stats.totalOperaciones > 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Has participado en {stats.totalOperaciones} operaciones y completado {stats.bitacorasCompletadas} bitácoras.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/operaciones">Ver Historial de Operaciones</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/bitacoras/buzo">Ver Mis Bitácoras</Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium mb-2">Sin actividad registrada</p>
+              <p className="text-sm">
+                {profileComplete 
+                  ? "Cuando seas asignado a operaciones, aparecerán aquí."
+                  : "Completa tu perfil para ser asignado a operaciones."
+                }
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -33,6 +32,7 @@ import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
 import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
 import UserManagement from "./pages/admin/UserManagement";
+import BuzoOnboardingPage from "./pages/Onboarding/BuzoOnboardingPage";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +51,7 @@ const App: React.FC = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
-                <Onboarding />
+                <BuzoOnboardingPage />
               </ProtectedRoute>
             } />
             <Route path="/profile-setup" element={

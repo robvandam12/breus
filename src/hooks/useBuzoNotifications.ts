@@ -15,13 +15,16 @@ interface Notification {
 }
 
 export const useBuzoNotifications = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || profile?.role !== 'buzo') {
+      setLoading(false);
+      return;
+    }
 
     const fetchNotifications = async () => {
       try {
@@ -77,7 +80,7 @@ export const useBuzoNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, profile?.role]);
 
   const markAsRead = async (notificationId: string) => {
     try {

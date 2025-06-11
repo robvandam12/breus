@@ -81,6 +81,11 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Mi Perfil",
         icon: Users,
         url: "/profile-setup",
+      },
+      {
+        title: "Configuración",
+        icon: Settings,
+        url: "/configuracion"
       }
     ];
   }
@@ -100,21 +105,30 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/profile-setup"
       },
       {
+        title: "Operaciones",
+        icon: Calendar,
+        url: "/operaciones",
+        badge: "2"
+      },
+      {
         title: "Inmersiones",
         icon: Anchor,
         url: "/inmersiones",
       },
       {
-        title: "Bitácoras",
+        title: "Mis Bitácoras",
         icon: Book,
-        items: [
-          { title: "Mis Bitácoras", url: "/bitacoras/buzo" }
-        ]
+        url: "/bitacoras/buzo"
       },
       {
         title: "Reportes",
         icon: BarChart3,
         url: "/reportes"
+      },
+      {
+        title: "Configuración",
+        icon: Settings,
+        url: "/configuracion"
       }
     ];
   }
