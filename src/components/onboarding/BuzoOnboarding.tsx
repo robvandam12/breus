@@ -16,8 +16,8 @@ export const BuzoOnboarding = ({ onComplete }: BuzoOnboardingProps) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Verificar si el perfil está completo
-  const isProfileComplete = profile?.perfil_completado || false;
+  // Verificar si el perfil está completo - usando optional chaining y fallback
+  const isProfileComplete = (profile as any)?.perfil_completado || false;
 
   const steps = [
     {

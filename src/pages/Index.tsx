@@ -28,8 +28,8 @@ export default function Index() {
       return;
     }
 
-    // Para buzos nuevos sin perfil, ir al onboarding
-    if (user && profile?.role === 'buzo' && !profile.perfil_completado) {
+    // Para buzos nuevos sin perfil, ir al onboarding - usando optional chaining
+    if (user && profile?.role === 'buzo' && !(profile as any)?.perfil_completado) {
       navigate('/buzo-onboarding');
       return;
     }
