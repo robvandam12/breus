@@ -95,23 +95,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Mi Perfil",
         icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
+        url: "/profile-setup"
       },
       {
         title: "Inmersiones",
@@ -122,19 +108,13 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Bitácoras",
         icon: Book,
         items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
+          { title: "Mis Bitácoras", url: "/bitacoras/buzo" }
         ]
       },
       {
         title: "Reportes",
         icon: BarChart3,
         url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion",
       }
     ];
   }

@@ -6,15 +6,18 @@ import { AdminSalmoneraView } from "@/components/dashboard/AdminSalmoneraView";
 import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoView } from "@/components/dashboard/BuzoView";
+import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
+import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     // Redirect if not authenticated
@@ -28,6 +31,14 @@ export default function Index() {
       navigate('/onboarding');
       return;
     }
+
+    // Check if buzo needs onboarding
+    if (user && profile && profile.rol === 'buzo') {
+      const onboardingCompleted = localStorage.getItem('onboarding_completed');
+      if (!onboardingCompleted) {
+        setShowOnboarding(true);
+      }
+    }
   }, [loading, user, profile, navigate]);
 
   if (loading) {
@@ -38,10 +49,23 @@ export default function Index() {
     );
   }
 
+  // Show onboarding for buzos who haven't seen it
+  if (showOnboarding && profile?.rol === 'buzo') {
+    return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
+  }
+
   const getDashboardContent = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+    
+    // Verificar si el perfil del buzo está completo
+    const isProfileComplete = () => {
+      if (!profile?.perfil_buzo) return false;
+      const requiredFields = ['rut', 'telefono', 'direccion', 'ciudad', 'region', 'nacionalidad'];
+      const perfilBuzo = profile.perfil_buzo as any;
+      return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
+    };
 
-    switch (profile?.role) {
+    switch (profile?.rol) {
       case 'superuser':
         return <AdminSalmoneraView />;
       case 'admin_salmonera':
@@ -51,8 +75,8 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Si el buzo no está asignado a empresa, mostrar vista restringida
-        return isAssigned ? <BuzoView /> : <BuzoRestrictedView />;
+        // Usar el nuevo dashboard específico para buzos
+        return <BuzoDashboard />;
       default:
         return <BuzoRestrictedView />;
     }
@@ -61,7 +85,7 @@ export default function Index() {
   const getDashboardTitle = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
-    switch (profile?.role) {
+    switch (profile?.rol) {
       case 'superuser':
         return "Panel de Administración";
       case 'admin_salmonera':
@@ -71,7 +95,7 @@ export default function Index() {
       case 'supervisor':
         return "Dashboard Supervisor";
       case 'buzo':
-        return isAssigned ? "Dashboard Buzo" : "Bienvenido a Breus";
+        return "Dashboard Buzo";
       default:
         return "Dashboard";
     }
@@ -80,7 +104,7 @@ export default function Index() {
   const getDashboardSubtitle = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
-    switch (profile?.role) {
+    switch (profile?.rol) {
       case 'superuser':
         return "Gestión completa del sistema";
       case 'admin_salmonera':
@@ -90,7 +114,7 @@ export default function Index() {
       case 'supervisor':
         return "Supervisión de operaciones de buceo";
       case 'buzo':
-        return isAssigned ? "Mis inmersiones y bitácoras" : "Completa tu perfil para comenzar";
+        return "Gestión de inmersiones y bitácoras";
       default:
         return "Panel de control personal";
     }
