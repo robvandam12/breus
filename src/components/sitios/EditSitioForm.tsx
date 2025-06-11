@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,11 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EnhancedSelect } from "@/components/ui/enhanced-select";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin, Map } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Sitio, SitioFormData } from "@/hooks/useSitios";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { LeafletMap } from "@/components/ui/leaflet-map";
-import { motion, AnimatePresence } from "framer-motion";
+import { SitioMapSelector } from "./SitioMapSelector";
 
 interface EditSitioFormProps {
   sitio: Sitio;
@@ -19,7 +19,6 @@ interface EditSitioFormProps {
 
 export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps) => {
   const { salmoneras } = useSalmoneras();
-  const [showMap, setShowMap] = useState(false);
   const [formData, setFormData] = useState<SitioFormData>({
     nombre: sitio.nombre,
     codigo: sitio.codigo,
@@ -56,14 +55,11 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
     }));
   };
 
-  const handleCoordinateChange = (field: 'coordenadas_lat' | 'coordenadas_lng', value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: numValue
-      }));
-    }
+  const handleLocationSearch = (location: string) => {
+    setFormData(prev => ({
+      ...prev,
+      ubicacion: location
+    }));
   };
 
   const salmoneraOptions = salmoneras.map(salmonera => ({
@@ -103,7 +99,7 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
         </DialogTitle>
       </DialogHeader>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="nombre">Nombre del Sitio *</Label>
@@ -163,64 +159,17 @@ export const EditSitioForm = ({ sitio, onSubmit, onCancel }: EditSitioFormProps)
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Coordenadas GPS</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMap(!showMap)}
-            >
-              <Map className="w-4 h-4 mr-2" />
-              {showMap ? 'Ocultar Mapa' : 'Seleccionar en Mapa'}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="coordenadas_lat">Latitud</Label>
-              <Input
-                id="coordenadas_lat"
-                type="number"
-                step="any"
-                value={formData.coordenadas_lat || ''}
-                onChange={(e) => handleCoordinateChange('coordenadas_lat', e.target.value)}
-                placeholder="-41.4693"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="coordenadas_lng">Longitud</Label>
-              <Input
-                id="coordenadas_lng"
-                type="number"
-                step="any"
-                value={formData.coordenadas_lng || ''}
-                onChange={(e) => handleCoordinateChange('coordenadas_lng', e.target.value)}
-                placeholder="-72.9424"
-              />
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {showMap && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 500 }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden rounded-lg border"
-              >
-                <LeafletMap
-                  onLocationSelect={handleLocationSelect}
-                  height="500px"
-                  initialLat={formData.coordenadas_lat || -41.4693}
-                  initialLng={formData.coordenadas_lng || -72.9424}
-                  showAddressSearch={true}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Mapa siempre visible */}
+        <div className="space-y-2">
+          <Label>Ubicación en Mapa</Label>
+          <SitioMapSelector
+            initialLat={formData.coordenadas_lat || -41.4693}
+            initialLng={formData.coordenadas_lng || -72.9424}
+            onLocationSelect={handleLocationSelect}
+            onLocationSearch={handleLocationSearch}
+            searchValue={formData.ubicacion}
+            height="400px"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

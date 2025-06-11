@@ -11,13 +11,16 @@ import { Calendar, User, Award, Phone, MapPin, AlertTriangle, X } from 'lucide-r
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { PhotoUpload } from './PhotoUpload';
 
 interface ProfileFormData {
+  foto?: string;
   rut: string;
   telefono: string;
   direccion: string;
   ciudad: string;
   region: string;
+  nacionalidad: string;
   fecha_nacimiento: string;
   matricula: string;
   certificacion_nivel: string;
@@ -35,11 +38,13 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
   const [isLoading, setIsLoading] = useState(false);
   const [newEspecialidad, setNewEspecialidad] = useState('');
   const [profileData, setProfileData] = useState<ProfileFormData>({
+    foto: '',
     rut: '',
     telefono: '',
     direccion: '',
     ciudad: '',
     region: '',
+    nacionalidad: 'Chilena',
     fecha_nacimiento: '',
     matricula: '',
     certificacion_nivel: '',
@@ -102,7 +107,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
   const calculateProgress = () => {
     const requiredFields = [
-      'rut', 'telefono', 'direccion', 'ciudad', 'region',
+      'rut', 'telefono', 'direccion', 'ciudad', 'region', 'nacionalidad',
       'fecha_nacimiento', 'matricula', 'certificacion_nivel',
       'fecha_vencimiento_certificacion', 'contacto_emergencia_nombre',
       'contacto_emergencia_telefono'
@@ -172,6 +177,18 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Foto de perfil */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+              <User className="w-4 h-4" />
+              Foto de Perfil
+            </h3>
+            <PhotoUpload
+              currentPhoto={profileData.foto}
+              onPhotoChange={(photoUrl) => setProfileData(prev => ({ ...prev, foto: photoUrl }))}
+            />
+          </div>
+
           {/* Información Personal */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
@@ -197,7 +214,25 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
                   onChange={(e) => setProfileData({ ...profileData, telefono: e.target.value })}
                 />
               </div>
-              <div className="md:col-span-2">
+              <div>
+                <Label htmlFor="nacionalidad">Nacionalidad *</Label>
+                <Select value={profileData.nacionalidad} onValueChange={(value) => setProfileData({ ...profileData, nacionalidad: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar nacionalidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Chilena">Chilena</SelectItem>
+                    <SelectItem value="Argentina">Argentina</SelectItem>
+                    <SelectItem value="Peruana">Peruana</SelectItem>
+                    <SelectItem value="Boliviana">Boliviana</SelectItem>
+                    <SelectItem value="Brasileña">Brasileña</SelectItem>
+                    <SelectItem value="Colombiana">Colombiana</SelectItem>
+                    <SelectItem value="Ecuatoriana">Ecuatoriana</SelectItem>
+                    <SelectItem value="Otra">Otra</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento *</Label>
                 <Input
                   id="fecha_nacimiento"
@@ -370,7 +405,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
             </div>
           </div>
 
-          {/* Información Médica */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Observaciones Médicas</h3>
             <div>

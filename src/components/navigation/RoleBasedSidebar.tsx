@@ -10,7 +10,8 @@ import {
   Shield,
   LogOut,
   Users,
-  Building
+  Building,
+  MapPin
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,7 +31,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
@@ -395,16 +396,104 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
   return [];
 };
 
-export function RoleBasedSidebar() {
+export const RoleBasedSidebar = () => {
   const { profile, signOut } = useAuth();
+
+  // Si es buzo, usar navegación específica
+  if (profile?.role === 'buzo') {
+    return <BuzoNavigation />;
+  }
+
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
+  const location = useLocation();
+  
+  const canAccessPage = (requiredRole?: string, requiredPermission?: string) => {
+    if (requiredRole && profile?.role !== requiredRole) return false;
+    if (requiredPermission && !hasPermission(requiredPermission)) return false;
+    return true;
+  };
 
-  // Fix the type error by explicitly converting to boolean
-  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+  const navItems = [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      enabled: true
+    },
+    {
+      title: "Empresas",
+      icon: Building,
+      items: [
+        {
+          title: "Salmoneras",
+          icon: Building,
+          url: "/empresas/salmoneras",
+          enabled: canAccessPage('superuser')
+        },
+        {
+          title: "Sitios",
+          icon: MapPin,
+          url: "/empresas/sitios",
+          enabled: canAccessPage()
+        },
+        {
+          title: "Contratistas",
+          icon: Users,
+          url: "/empresas/contratistas",
+          enabled: canAccessPage()
+        }
+      ]
+    },
+    {
+      title: "Equipo de Buceo",
+      icon: Users,
+      url: "/equipo-de-buceo",
+      enabled: true
+    },
+    {
+      title: "Operaciones",
+      icon: Calendar,
+      url: "/operaciones",
+      enabled: true
+    },
+    {
+      title: "Formularios",
+      icon: FileText,
+      items: [
+        { title: "HPT", url: "/formularios/hpt" },
+        { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+      ]
+    },
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones",
+      enabled: true
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes",
+      enabled: true
+    },
+    {
+      title: "Configuración",
+      icon: Settings,
+      url: "/configuracion",
+      enabled: true
+    }
+  ];
 
-  const filteredMenuItems = menuItems.filter(item => {
+  const filteredMenuItems = navItems.filter(item => {
     if (!item.roleRequired) return true;
     return profile?.role === item.roleRequired;
   }).map(item => ({
@@ -562,4 +651,4 @@ export function RoleBasedSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-}
+};

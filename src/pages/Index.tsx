@@ -7,7 +7,9 @@ import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoView } from "@/components/dashboard/BuzoView";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
+import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { useAuth } from "@/hooks/useAuth";
+import { useBuzoNotifications } from "@/hooks/useBuzoNotifications";
 import { BarChart3 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +18,9 @@ export default function Index() {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
 
+  // Inicializar notificaciones para buzos
+  useBuzoNotifications();
+
   useEffect(() => {
     // Redirect if not authenticated
     if (!loading && !user) {
@@ -23,8 +28,14 @@ export default function Index() {
       return;
     }
 
-    // Redirect new users to onboarding
-    if (user && profile && !profile.nombre && !profile.apellido) {
+    // Para buzos nuevos sin perfil, ir al onboarding
+    if (user && profile?.role === 'buzo' && !profile.perfil_completado) {
+      navigate('/buzo-onboarding');
+      return;
+    }
+
+    // Redirect new users to onboarding (otros roles)
+    if (user && profile && !profile.nombre && !profile.apellido && profile.role !== 'buzo') {
       navigate('/onboarding');
       return;
     }
@@ -51,8 +62,8 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Si el buzo no está asignado a empresa, mostrar vista restringida
-        return isAssigned ? <BuzoView /> : <BuzoRestrictedView />;
+        // Usar el nuevo dashboard específico para buzos
+        return <BuzoDashboard />;
       default:
         return <BuzoRestrictedView />;
     }
@@ -71,7 +82,7 @@ export default function Index() {
       case 'supervisor':
         return "Dashboard Supervisor";
       case 'buzo':
-        return isAssigned ? "Dashboard Buzo" : "Bienvenido a Breus";
+        return isAssigned ? "Mi Dashboard de Buceo" : "Bienvenido a Breus";
       default:
         return "Dashboard";
     }
@@ -90,7 +101,7 @@ export default function Index() {
       case 'supervisor':
         return "Supervisión de operaciones de buceo";
       case 'buzo':
-        return isAssigned ? "Mis inmersiones y bitácoras" : "Completa tu perfil para comenzar";
+        return isAssigned ? "Mis inmersiones, bitácoras y operaciones" : "Completa tu perfil para comenzar";
       default:
         return "Panel de control personal";
     }
