@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -24,7 +25,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import EmailConfirmation from "./pages/auth/EmailConfirmation";
-import ProfileSetup from "./pages/auth/ProfileSetup";
+import ProfileSetup from "./pages/ProfileSetup";
 import AuthCallback from "./pages/auth/AuthCallback";
 import Onboarding from "./pages/Onboarding";
 import Reportes from "./pages/Reportes";
@@ -32,7 +33,7 @@ import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
 import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
 import UserManagement from "./pages/admin/UserManagement";
-import BuzoOnboardingPage from "./pages/Onboarding/BuzoOnboardingPage";
+import BuzoOnboardingPage from "./pages/BuzoOnboardingPage";
 
 const queryClient = new QueryClient();
 
