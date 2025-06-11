@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Award, Phone, MapPin, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { PhotoUpload } from '@/components/profile/PhotoUpload';
+import { toast } from '@/hooks/use-toast';
 
 interface ProfileFormData {
   rut: string;
@@ -28,15 +28,12 @@ interface ProfileFormData {
   contacto_emergencia_telefono: string;
   contacto_emergencia_relacion: string;
   observaciones_medicas: string;
-  nacionalidad: string;
-  foto_url: string;
 }
 
 export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void }) => {
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [newEspecialidad, setNewEspecialidad] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<ProfileFormData>({
     rut: '',
     telefono: '',
@@ -52,9 +49,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
     contacto_emergencia_nombre: '',
     contacto_emergencia_telefono: '',
     contacto_emergencia_relacion: '',
-    observaciones_medicas: '',
-    nacionalidad: '',
-    foto_url: ''
+    observaciones_medicas: ''
   });
 
   useEffect(() => {
@@ -88,14 +83,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
     loadProfileData();
   }, [user?.id]);
 
-  const handlePhotoChange = (url: string | null) => {
-    setPhotoUrl(url);
-    setProfileData(prev => ({
-      ...prev,
-      foto_url: url || ''
-    }));
-  };
-
   const addEspecialidad = () => {
     if (newEspecialidad.trim() && !profileData.especialidades.includes(newEspecialidad.trim())) {
       setProfileData(prev => ({
@@ -118,7 +105,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
       'rut', 'telefono', 'direccion', 'ciudad', 'region',
       'fecha_nacimiento', 'matricula', 'certificacion_nivel',
       'fecha_vencimiento_certificacion', 'contacto_emergencia_nombre',
-      'contacto_emergencia_telefono', 'nacionalidad'
+      'contacto_emergencia_telefono'
     ];
     
     const filledFields = requiredFields.filter(field => 
@@ -185,19 +172,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Foto de perfil */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
-              <User className="w-4 h-4" />
-              Foto de Perfil
-            </h3>
-            <PhotoUpload
-              currentPhotoUrl={profileData.foto_url}
-              onPhotoChange={handlePhotoChange}
-              userName={`${profile?.nombre || ''} ${profile?.apellido || ''}`}
-            />
-          </div>
-
           {/* Información Personal */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
@@ -223,7 +197,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
                   onChange={(e) => setProfileData({ ...profileData, telefono: e.target.value })}
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento *</Label>
                 <Input
                   id="fecha_nacimiento"
@@ -231,27 +205,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
                   value={profileData.fecha_nacimiento}
                   onChange={(e) => setProfileData({ ...profileData, fecha_nacimiento: e.target.value })}
                 />
-              </div>
-              <div>
-                <Label htmlFor="nacionalidad">Nacionalidad *</Label>
-                <Select value={profileData.nacionalidad} onValueChange={(value) => setProfileData({ ...profileData, nacionalidad: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar nacionalidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="chilena">Chilena</SelectItem>
-                    <SelectItem value="argentina">Argentina</SelectItem>
-                    <SelectItem value="peruana">Peruana</SelectItem>
-                    <SelectItem value="colombiana">Colombiana</SelectItem>
-                    <SelectItem value="ecuatoriana">Ecuatoriana</SelectItem>
-                    <SelectItem value="boliviana">Boliviana</SelectItem>
-                    <SelectItem value="paraguaya">Paraguaya</SelectItem>
-                    <SelectItem value="uruguaya">Uruguaya</SelectItem>
-                    <SelectItem value="brasileña">Brasileña</SelectItem>
-                    <SelectItem value="venezolana">Venezolana</SelectItem>
-                    <SelectItem value="otra">Otra</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>

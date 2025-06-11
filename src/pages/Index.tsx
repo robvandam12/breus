@@ -7,7 +7,6 @@ import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoView } from "@/components/dashboard/BuzoView";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
-import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useEffect } from "react";
@@ -24,23 +23,10 @@ export default function Index() {
       return;
     }
 
-    // Redirect new users to onboarding based on role
-    if (user && profile) {
-      // Si es buzo y no tiene perfil completo o empresa asignada
-      const isProfileCompleted = (profile as any).perfil_completado;
-      if (profile.role === 'buzo' && (!isProfileCompleted || (!profile.salmonera_id && !profile.servicio_id))) {
-        // Solo redirigir si está completamente sin datos
-        if (!profile.nombre && !profile.apellido) {
-          navigate('/buzo-onboarding');
-          return;
-        }
-      }
-      
-      // Para otros roles sin datos básicos
-      if (profile.role !== 'buzo' && !profile.nombre && !profile.apellido) {
-        navigate('/onboarding');
-        return;
-      }
+    // Redirect new users to onboarding
+    if (user && profile && !profile.nombre && !profile.apellido) {
+      navigate('/onboarding');
+      return;
     }
   }, [loading, user, profile, navigate]);
 
@@ -65,8 +51,8 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Usar el nuevo dashboard específico para buzos
-        return <BuzoDashboard />;
+        // Si el buzo no está asignado a empresa, mostrar vista restringida
+        return isAssigned ? <BuzoView /> : <BuzoRestrictedView />;
       default:
         return <BuzoRestrictedView />;
     }
