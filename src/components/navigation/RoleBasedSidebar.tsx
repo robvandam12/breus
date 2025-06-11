@@ -34,7 +34,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 import { buzoNavigationItems, buzoAccessiblePages } from './BuzoNavigation';
 
@@ -592,6 +593,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
 
 export const RoleBasedSidebar = () => {
   const { profile } = useAuth();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -612,17 +615,15 @@ export const RoleBasedSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      toast({
-        title: "Sesión cerrada",
+      await supabase.auth.signOut();
+      toast("Sesión cerrada", {
         description: "Has cerrado sesión exitosamente.",
       });
+      navigate('/login');
     } catch (error) {
       console.error('Error during logout:', error);
-      toast({
-        title: "Error",
+      toast("Error", {
         description: "Error al cerrar sesión.",
-        variant: "destructive",
       });
     }
   };

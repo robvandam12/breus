@@ -12,7 +12,7 @@ export const BuzoDashboard = () => {
   const navigate = useNavigate();
 
   const isAssigned = profile?.salmonera_id || profile?.servicio_id;
-  const isProfileComplete = profile?.perfil_completado;
+  const isProfileComplete = (profile as any)?.perfil_completado;
 
   return (
     <div className="space-y-6">
@@ -21,7 +21,7 @@ export const BuzoDashboard = () => {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={profile?.perfil_buzo?.foto_url} />
+              <AvatarImage src={(profile as any)?.perfil_buzo?.foto_url} />
               <AvatarFallback className="text-lg">
                 {profile?.nombre?.[0]}{profile?.apellido?.[0]}
               </AvatarFallback>

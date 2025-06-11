@@ -1,3 +1,4 @@
+
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
@@ -6,6 +7,7 @@ import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoView } from "@/components/dashboard/BuzoView";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
+import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useEffect } from "react";
@@ -25,7 +27,8 @@ export default function Index() {
     // Redirect new users to onboarding based on role
     if (user && profile) {
       // Si es buzo y no tiene perfil completo o empresa asignada
-      if (profile.role === 'buzo' && (!profile.perfil_completado || (!profile.salmonera_id && !profile.servicio_id))) {
+      const isProfileCompleted = (profile as any).perfil_completado;
+      if (profile.role === 'buzo' && (!isProfileCompleted || (!profile.salmonera_id && !profile.servicio_id))) {
         // Solo redirigir si está completamente sin datos
         if (!profile.nombre && !profile.apellido) {
           navigate('/buzo-onboarding');

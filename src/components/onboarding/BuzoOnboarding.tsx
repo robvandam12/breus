@@ -33,7 +33,7 @@ export const BuzoOnboarding = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
-  const isProfileComplete = profile?.perfil_completado;
+  const isProfileComplete = (profile as any)?.perfil_completado;
   const isAssigned = profile?.salmonera_id || profile?.servicio_id;
 
   const handleNext = () => {

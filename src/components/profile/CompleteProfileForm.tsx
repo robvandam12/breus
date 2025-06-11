@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Award, Phone, MapPin, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { PhotoUpload } from '@/components/profile/PhotoUpload';
 
 interface ProfileFormData {
   rut: string;

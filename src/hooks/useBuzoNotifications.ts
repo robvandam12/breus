@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface BuzoNotification {
   id: string;
@@ -42,10 +42,8 @@ export const useBuzoNotifications = () => {
 
       // Mostrar toast para notificaciones importantes
       if (notification.type === 'bitacora_pendiente' || notification.type === 'operacion_proximidad') {
-        toast({
-          title: notification.title,
+        toast(notification.title, {
           description: notification.message,
-          duration: 5000,
         });
       }
 
@@ -85,15 +83,18 @@ export const useBuzoNotifications = () => {
 
       if (error) throw error;
 
-      const buzoNotifications: BuzoNotification[] = (data || []).map(item => ({
-        id: item.id,
-        type: item.metadata?.notification_type || 'operacion_asignada',
-        title: item.title,
-        message: item.message,
-        data: item.metadata?.data,
-        read: item.read,
-        created_at: item.created_at
-      }));
+      const buzoNotifications: BuzoNotification[] = (data || []).map(item => {
+        const metadata = typeof item.metadata === 'object' && item.metadata !== null ? item.metadata as any : {};
+        return {
+          id: item.id,
+          type: metadata.notification_type || 'operacion_asignada',
+          title: item.title,
+          message: item.message,
+          data: metadata.data,
+          read: item.read,
+          created_at: item.created_at
+        };
+      });
 
       setNotifications(buzoNotifications);
       setUnreadCount(buzoNotifications.filter(n => !n.read).length);

@@ -1,3 +1,4 @@
+
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, toast } from "sonner"
 
@@ -26,4 +27,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   )
 }
 
+// Exportar tanto el componente como el toast
 export { Toaster, toast }
+// Exportar también como Sonner para compatibilidad
+export { Toaster as Sonner }
