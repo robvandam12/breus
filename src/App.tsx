@@ -28,7 +28,6 @@ import EmailConfirmation from "./pages/auth/EmailConfirmation";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import AuthCallback from "./pages/auth/AuthCallback";
 import Onboarding from "./pages/Onboarding";
-import BuzoOnboardingPage from "./pages/BuzoOnboardingPage";
 import Reportes from "./pages/Reportes";
 import Configuracion from "./pages/Configuracion";
 import AdminRoles from "./pages/admin/AdminRoles";
@@ -53,11 +52,6 @@ const App: React.FC = () => (
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
-              </ProtectedRoute>
-            } />
-            <Route path="/buzo-onboarding" element={
-              <ProtectedRoute>
-                <BuzoOnboardingPage />
               </ProtectedRoute>
             } />
             <Route path="/profile-setup" element={
