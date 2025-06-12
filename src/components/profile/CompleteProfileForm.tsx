@@ -12,7 +12,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PhotoUpload } from './PhotoUpload';
-import { RutInput } from '@/components/ui/rut-input';
 
 interface ProfileFormData {
   foto_perfil: string;
@@ -59,6 +58,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
   });
 
   useEffect(() => {
+    // Load existing profile data from the usuario table
     const loadProfileData = async () => {
       if (!user?.id) return;
       
@@ -125,15 +125,11 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
     setIsLoading(true);
 
     try {
-      const progress = calculateProgress();
-      const isComplete = progress >= 100;
-
       const { error } = await supabase
         .from('usuario')
         .update({
           perfil_buzo: profileData as any,
-          perfil_completado: isComplete,
-          estado_buzo: isComplete ? 'activo' : 'inactivo'
+          perfil_completado: calculateProgress() >= 80
         })
         .eq('usuario_id', user?.id);
 
@@ -141,9 +137,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
       toast({
         title: "Perfil actualizado",
-        description: isComplete 
-          ? "Tu perfil está completo. ¡Ya eres un buzo activo en el sistema!"
-          : "Tu información profesional ha sido guardada exitosamente.",
+        description: "Tu información profesional ha sido guardada exitosamente.",
       });
 
       onComplete?.();
@@ -169,7 +163,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
             <User className="w-5 h-5 text-blue-600" />
             Perfil Profesional - {profile?.role === 'supervisor' ? 'Supervisor' : 'Buzo'}
           </CardTitle>
-          <Badge variant={progress >= 100 ? "default" : "outline"}>
+          <Badge variant={progress >= 80 ? "default" : "outline"}>
             {progress}% completo
           </Badge>
         </div>
@@ -179,11 +173,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
             style={{ width: `${progress}%` }}
           />
         </div>
-        {progress >= 100 && (
-          <Badge variant="default" className="bg-green-600">
-            ✓ Perfil Completo - Buzo Activo
-          </Badge>
-        )}
       </CardHeader>
 
       <CardContent>
@@ -208,11 +197,15 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
               Información Personal
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RutInput
-                value={profileData.rut}
-                onChange={(value) => setProfileData({ ...profileData, rut: value })}
-                required
-              />
+              <div>
+                <Label htmlFor="rut">RUT *</Label>
+                <Input
+                  id="rut"
+                  placeholder="12.345.678-9"
+                  value={profileData.rut}
+                  onChange={(e) => setProfileData({ ...profileData, rut: e.target.value })}
+                />
+              </div>
               <div>
                 <Label htmlFor="telefono">Teléfono *</Label>
                 <Input

@@ -1,82 +1,59 @@
 
-import { MainLayout } from '@/components/layout/MainLayout';
-import { OperacionCardView } from '@/components/operaciones/OperacionCardView';
-import { useOperaciones } from '@/hooks/useOperaciones';
-import { useInmersiones } from '@/hooks/useInmersiones';
-import { Calendar } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { Header } from "@/components/layout/Header";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Plus, Calendar } from "lucide-react";
+import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
+import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 
 export default function Operaciones() {
-  const { profile } = useAuth();
-  const { operaciones, isLoading } = useOperaciones();
-  const { inmersiones } = useInmersiones();
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Para buzos, filtrar operaciones donde han participado
-  const getFilteredOperaciones = () => {
-    if (profile?.role !== 'buzo') return operaciones;
-    
-    const buzoName = `${profile?.nombre} ${profile?.apellido}`;
-    return operaciones.filter(operacion => {
-      // Verificar si el buzo ha participado en alguna inmersión de esta operación
-      return inmersiones.some(inmersion => 
-        inmersion.operacion_id === operacion.id &&
-        (inmersion.buzo_principal === buzoName || inmersion.buzo_asistente === buzoName)
-      );
-    });
+  const handleOpenCreateForm = () => {
+    console.log('Opening create form dialog');
+    setShowCreateForm(true);
   };
 
-  const filteredOperaciones = getFilteredOperaciones();
-
-  const handleSelect = (operacion: any) => {
-    console.log('Operación seleccionada:', operacion);
+  const handleCloseCreateForm = () => {
+    console.log('Closing create form dialog');
+    setShowCreateForm(false);
   };
-
-  const handleEdit = (operacion: any) => {
-    console.log('Editar operación:', operacion);
-  };
-
-  const handleViewDetail = (operacion: any) => {
-    console.log('Ver detalle operación:', operacion);
-  };
-
-  const handleDelete = (operacionId: string) => {
-    console.log('Eliminar operación:', operacionId);
-  };
-
-  if (isLoading) {
-    return (
-      <MainLayout
-        title="Operaciones"
-        subtitle={
-          profile?.role === 'buzo' 
-            ? "Historial de operaciones donde has participado"
-            : "Gestión de operaciones de buceo"
-        }
-        icon={Calendar}
-      >
-        <div className="text-center py-8">Cargando operaciones...</div>
-      </MainLayout>
-    );
-  }
 
   return (
-    <MainLayout
-      title="Operaciones"
-      subtitle={
-        profile?.role === 'buzo' 
-          ? "Historial de operaciones donde has participado"
-          : "Gestión de operaciones de buceo"
-      }
-      icon={Calendar}
-    >
-      <OperacionCardView 
-        operaciones={filteredOperaciones}
-        onSelect={handleSelect}
-        onEdit={handleEdit}
-        onViewDetail={handleViewDetail}
-        onDelete={handleDelete}
-      />
-    </MainLayout>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-white">
+        <RoleBasedSidebar />
+        <main className="flex-1 flex flex-col bg-white">
+          <Header 
+            title="Operaciones" 
+            subtitle="Gestión de operaciones de buceo y documentos asociados" 
+            icon={Calendar} 
+          >
+            <Button onClick={handleOpenCreateForm}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo
+            </Button>
+          </Header>
+          
+          <div className="flex-1 overflow-auto bg-white">
+            <div className="p-6">
+              <OperacionesManager />
+
+              {/* Create Form Modal */}
+              <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <CreateOperacionForm 
+                    onClose={handleCloseCreateForm}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }
