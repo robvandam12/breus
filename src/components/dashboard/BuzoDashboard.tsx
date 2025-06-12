@@ -318,7 +318,7 @@ export const BuzoDashboard = () => {
             </div>
           )}
         </CardContent>
-      </div>
+      </Card>
     </div>
   );
 };
