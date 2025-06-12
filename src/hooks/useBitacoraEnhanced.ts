@@ -10,6 +10,7 @@ export interface InmersionCompleta {
   objetivo: string;
   supervisor: string;
   buzo_principal: string;
+  buzo_asistente?: string;
   hora_inicio: string;
   hora_fin?: string;
   profundidad_max: number;
@@ -19,6 +20,7 @@ export interface InmersionCompleta {
   operacion_id: string;
   supervisor_id?: string;
   buzo_principal_id?: string;
+  buzo_asistente_id?: string;
   operacion?: {
     id: string;
     nombre: string;
