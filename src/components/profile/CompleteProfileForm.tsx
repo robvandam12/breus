@@ -12,7 +12,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PhotoUpload } from './PhotoUpload';
-import { RutInput } from '@/components/ui/rut-input';
 
 interface ProfileFormData {
   foto_perfil: string;
@@ -38,7 +37,6 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [newEspecialidad, setNewEspecialidad] = useState('');
-  const [rutValid, setRutValid] = useState(true);
   const [profileData, setProfileData] = useState<ProfileFormData>({
     foto_perfil: '',
     rut: '',
@@ -124,31 +122,14 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!rutValid) {
-      toast({
-        title: "Error",
-        description: "Por favor, ingresa un RUT válido.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      const progress = calculateProgress();
-      const isComplete = progress >= 80;
-      
-      // Determinar estado del buzo basado en completitud del perfil
-      const estadoBuzo = isComplete ? 'activo' : 'inactivo';
-
       const { error } = await supabase
         .from('usuario')
         .update({
           perfil_buzo: profileData as any,
-          perfil_completado: isComplete,
-          estado_buzo: estadoBuzo
+          perfil_completado: calculateProgress() >= 80
         })
         .eq('usuario_id', user?.id);
 
@@ -156,7 +137,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
       toast({
         title: "Perfil actualizado",
-        description: `Tu información profesional ha sido guardada exitosamente. Estado: ${estadoBuzo}.`,
+        description: "Tu información profesional ha sido guardada exitosamente.",
       });
 
       onComplete?.();
@@ -218,10 +199,11 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="rut">RUT *</Label>
-                <RutInput
+                <Input
+                  id="rut"
+                  placeholder="12.345.678-9"
                   value={profileData.rut}
-                  onChange={(value) => setProfileData({ ...profileData, rut: value })}
-                  onValidationChange={setRutValid}
+                  onChange={(e) => setProfileData({ ...profileData, rut: e.target.value })}
                 />
               </div>
               <div>
@@ -445,7 +427,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
           <div className="flex gap-4 pt-6">
             <Button 
               type="submit" 
-              disabled={isLoading || !rutValid}
+              disabled={isLoading}
               className="flex-1"
             >
               {isLoading ? "Guardando..." : "Guardar Perfil"}
