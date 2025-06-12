@@ -83,8 +83,6 @@ export default function Index() {
   };
 
   const getDashboardTitle = () => {
-    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
-
     switch (profile?.role) {
       case 'superuser':
         return "Panel de Administración";
@@ -102,8 +100,6 @@ export default function Index() {
   };
 
   const getDashboardSubtitle = () => {
-    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
-
     switch (profile?.role) {
       case 'superuser':
         return "Gestión completa del sistema";

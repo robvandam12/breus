@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PhotoUpload } from './PhotoUpload';
+import { RutInput } from '@/components/ui/rut-input';
 
 interface ProfileFormData {
   foto_perfil: string;
@@ -125,11 +126,16 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
     setIsLoading(true);
 
     try {
+      const progress = calculateProgress();
+      const isComplete = progress >= 80;
+      const estadoBuzo = isComplete ? 'activo' : 'inactivo';
+
       const { error } = await supabase
         .from('usuario')
         .update({
           perfil_buzo: profileData as any,
-          perfil_completado: calculateProgress() >= 80
+          perfil_completado: isComplete,
+          estado_buzo: estadoBuzo
         })
         .eq('usuario_id', user?.id);
 
@@ -137,7 +143,7 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
 
       toast({
         title: "Perfil actualizado",
-        description: "Tu información profesional ha sido guardada exitosamente.",
+        description: `Tu información profesional ha sido guardada exitosamente. Estado: ${estadoBuzo}.`,
       });
 
       onComplete?.();
@@ -197,15 +203,11 @@ export const CompleteProfileForm = ({ onComplete }: { onComplete?: () => void })
               Información Personal
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="rut">RUT *</Label>
-                <Input
-                  id="rut"
-                  placeholder="12.345.678-9"
-                  value={profileData.rut}
-                  onChange={(e) => setProfileData({ ...profileData, rut: e.target.value })}
-                />
-              </div>
+              <RutInput
+                value={profileData.rut}
+                onChange={(value) => setProfileData({ ...profileData, rut: value })}
+                required
+              />
               <div>
                 <Label htmlFor="telefono">Teléfono *</Label>
                 <Input

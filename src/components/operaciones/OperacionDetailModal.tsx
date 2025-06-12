@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from "@/components/ui/badge";
 import { Edit } from "lucide-react";
 import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
@@ -17,9 +16,11 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface OperacionDetailModalProps {
   operacion: any;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const OperacionDetailModal = ({ operacion }: OperacionDetailModalProps) => {
+const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
@@ -44,79 +45,76 @@ const OperacionDetailModal = ({ operacion }: OperacionDetailModalProps) => {
   };
 
   return (
-    <motion.div
-      className="w-full max-w-6xl mx-auto p-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      {/* Header del Modal */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre}</h2>
-          <p className="text-gray-600">Código: {operacion.codigo}</p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
+        {/* Header del Modal */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre}</h2>
+            <p className="text-gray-600">Código: {operacion.codigo}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge className={getStatusColor(operacion.estado)}>
+              {operacion.estado}
+            </Badge>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <Button 
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Editar Operación
+              </Button>
+              <DialogContent className="max-w-3xl">
+                <EditOperacionForm
+                  operacion={operacion}
+                  onSubmit={handleEditOperacion}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge className={getStatusColor(operacion.estado)}>
-            {operacion.estado}
-          </Badge>
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <Button 
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Editar Operación
-            </Button>
-            <DialogContent className="max-w-3xl">
-              <EditOperacionForm
-                operacion={operacion}
-                onSubmit={handleEditOperacion}
-                onCancel={() => setIsEditDialogOpen(false)}
+
+        <div className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+              <TabsTrigger value="documentos">Documentos</TabsTrigger>
+              <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general" className="space-y-6">
+              <OperacionInfo operacion={operacion} />
+              <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+            </TabsContent>
+
+            <TabsContent value="equipo" className="space-y-6">
+              <OperacionTeamManagerEnhanced 
+                operacionId={operacion.id} 
+                salmoneraId={operacion.salmonera_id || undefined}
+                contratistaId={operacion.contratista_id || undefined}
               />
-            </DialogContent>
-          </Dialog>
+            </TabsContent>
+
+            <TabsContent value="documentos" className="space-y-6">
+              <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+            </TabsContent>
+
+            <TabsContent value="inmersiones" className="space-y-6">
+              <OperacionInmersiones operacionId={operacion.id} />
+            </TabsContent>
+
+            <TabsContent value="timeline" className="space-y-6">
+              <OperacionTimeline operacionId={operacion.id} />
+            </TabsContent>
+          </Tabs>
         </div>
-      </div>
-
-      <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
-            <TabsTrigger value="documentos">Documentos</TabsTrigger>
-            <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general" className="space-y-6">
-            <OperacionInfo operacion={operacion} />
-            <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-          </TabsContent>
-
-          <TabsContent value="equipo" className="space-y-6">
-            <OperacionTeamManagerEnhanced 
-              operacionId={operacion.id} 
-              salmoneraId={operacion.salmonera_id || undefined}
-              contratistaId={operacion.contratista_id || undefined}
-            />
-          </TabsContent>
-
-          <TabsContent value="documentos" className="space-y-6">
-            <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-          </TabsContent>
-
-          <TabsContent value="inmersiones" className="space-y-6">
-            <OperacionInmersiones operacionId={operacion.id} />
-          </TabsContent>
-
-          <TabsContent value="timeline" className="space-y-6">
-            <OperacionTimeline operacionId={operacion.id} />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </motion.div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

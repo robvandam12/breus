@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -105,15 +106,15 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/profile-setup"
       },
       {
-        title: "Operaciones",
+        title: "Mis Operaciones",
         icon: Calendar,
-        url: "/operaciones",
+        url: "/buzo/operaciones",
         badge: "2"
       },
       {
-        title: "Inmersiones",
+        title: "Mis Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
+        url: "/buzo/inmersiones",
       },
       {
         title: "Mis Bitácoras",
@@ -121,9 +122,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         url: "/bitacoras/buzo"
       },
       {
-        title: "Reportes",
+        title: "Mis Reportes",
         icon: BarChart3,
-        url: "/reportes"
+        url: "/buzo/reportes"
       },
       {
         title: "Configuración",

@@ -34,6 +34,9 @@ import AdminRoles from "./pages/admin/AdminRoles";
 import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
 import UserManagement from "./pages/admin/UserManagement";
 import BuzoOnboardingPage from "./pages/BuzoOnboardingPage";
+import BuzoOperaciones from "./pages/buzo/BuzoOperaciones";
+import BuzoInmersiones from "./pages/buzo/BuzoInmersiones";
+import BuzoReportesPage from "./pages/buzo/BuzoReportesPage";
 
 const queryClient = new QueryClient();
 
@@ -167,6 +170,25 @@ const App: React.FC = () => (
             <Route path="/admin/salmonera" element={
               <ProtectedRoute requiredRole="admin_salmonera">
                 <AdminSalmoneraPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Rutas específicas para buzos */}
+            <Route path="/buzo/operaciones" element={
+              <ProtectedRoute requiredRole="buzo">
+                <BuzoOperaciones />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/buzo/inmersiones" element={
+              <ProtectedRoute requiredRole="buzo">
+                <BuzoInmersiones />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/buzo/reportes" element={
+              <ProtectedRoute requiredRole="buzo">
+                <BuzoReportesPage />
               </ProtectedRoute>
             } />
             

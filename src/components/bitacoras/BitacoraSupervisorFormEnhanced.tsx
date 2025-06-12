@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, Building, MapPin, FileText, Save, X } from 'lucide-react';
+import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anchor } from 'lucide-react';
 import { useBitacoraEnhanced, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
 import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,11 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
   const [selectedInmersion, setSelectedInmersion] = useState<InmersionCompleta | null>(null);
+  const [buzosData, setBuzosData] = useState<Array<{
+    nombre: string;
+    rol: string;
+    profundidad: number;
+  }>>([]);
   const [formData, setFormData] = useState<Partial<BitacoraSupervisorFormData>>({
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -45,9 +51,33 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
           inmersion_id: selectedInmersionId,
           fecha: inmersion.fecha_inmersion
         }));
+
+        // Poblar datos de buzos automáticamente
+        const buzos = [];
+        if (inmersion.buzo_principal) {
+          buzos.push({
+            nombre: inmersion.buzo_principal,
+            rol: 'Principal',
+            profundidad: inmersion.profundidad_max || 0
+          });
+        }
+        if (inmersion.buzo_asistente) {
+          buzos.push({
+            nombre: inmersion.buzo_asistente,
+            rol: 'Asistente',
+            profundidad: inmersion.profundidad_max || 0
+          });
+        }
+        setBuzosData(buzos);
       }
     }
   }, [selectedInmersionId, inmersiones]);
+
+  const updateBuzoProfundidad = (index: number, profundidad: number) => {
+    setBuzosData(prev => prev.map((buzo, i) => 
+      i === index ? { ...buzo, profundidad } : buzo
+    ));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +102,11 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       supervisor_nombre_matricula: '',
       estado_mar: '',
       visibilidad_fondo: 0,
-      inmersiones_buzos: [],
+      inmersiones_buzos: buzosData.map(buzo => ({
+        nombre: buzo.nombre,
+        rol: buzo.rol,
+        profundidad_alcanzada: buzo.profundidad
+      })),
       equipos_utilizados: [],
       trabajo_a_realizar: '',
       descripcion_trabajo: '',
@@ -182,11 +216,57 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
                   </div>
                 </div>
 
+                {/* Datos de Buzos y Profundidades */}
+                {buzosData.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-700 border-b pb-2">
+                      3. Datos de Buzos y Profundidades
+                    </h3>
+                    <div className="space-y-3">
+                      {buzosData.map((buzo, index) => (
+                        <Card key={index} className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                            <div>
+                              <Label className="text-sm font-medium">Buzo</Label>
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">{buzo.nombre}</span>
+                                <Badge variant={buzo.rol === 'Principal' ? 'default' : 'secondary'}>
+                                  {buzo.rol}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor={`profundidad-${index}`}>Profundidad Alcanzada (m)</Label>
+                              <div className="flex items-center gap-2">
+                                <Anchor className="w-4 h-4 text-teal-500" />
+                                <Input
+                                  id={`profundidad-${index}`}
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={buzo.profundidad}
+                                  onChange={(e) => updateBuzoProfundidad(index, Number(e.target.value))}
+                                  className="w-24"
+                                />
+                                <span className="text-sm text-gray-500">metros</span>
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <p>Profundidad máxima planificada: {selectedInmersion.profundidad_max}m</p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <Separator />
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-purple-700 border-b pb-2">
-                    3. Registro del Supervisor
+                    4. Registro del Supervisor
                   </h3>
                   <div>
                     <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión</Label>

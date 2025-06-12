@@ -1,4 +1,3 @@
-
 // Database row types for manual typing
 export interface UsuarioRow {
   usuario_id: string;
@@ -10,6 +9,7 @@ export interface UsuarioRow {
   servicio_id: string | null;
   perfil_buzo: any;
   perfil_completado: boolean | null;
+  estado_buzo: 'activo' | 'inactivo' | 'suspendido' | null;
   created_at: string;
   updated_at: string;
 }

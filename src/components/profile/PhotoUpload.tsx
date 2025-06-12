@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useStorage } from '@/hooks/useStorage';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface PhotoUploadProps {
   currentPhoto?: string;
@@ -15,48 +17,27 @@ interface PhotoUploadProps {
 export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: PhotoUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentPhoto || null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile } = useStorage();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
-        description: "Solo se permiten archivos de imagen.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "La imagen no puede ser mayor a 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleImageSelect = async (file: File) => {
     setIsUploading(true);
 
     try {
-      // Crear preview local
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreview(result);
-        onPhotoChange(result);
-      };
-      reader.readAsDataURL(file);
-
-      toast({
-        title: "Foto cargada",
-        description: "La foto se ha cargado correctamente.",
+      const photoUrl = await uploadFile(file, {
+        bucket: 'profile-photos',
+        maxSize: 5 * 1024 * 1024, // 5MB
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
       });
+
+      if (photoUrl) {
+        setPreview(photoUrl);
+        onPhotoChange(photoUrl);
+        
+        toast({
+          title: "Foto cargada",
+          description: "La foto de perfil se ha cargado correctamente.",
+        });
+      }
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast({
@@ -72,13 +53,6 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
   const handleRemovePhoto = () => {
     setPreview(null);
     onPhotoChange(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
   };
 
   return (
@@ -93,44 +67,44 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={openFileDialog}
-            disabled={disabled || isUploading}
-            className="flex items-center gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            {isUploading ? 'Cargando...' : 'Subir Foto'}
-          </Button>
-
-          {preview && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleRemovePhoto}
-              disabled={disabled || isUploading}
-              className="flex items-center gap-2 text-red-600"
-            >
-              <X className="w-4 h-4" />
-              Eliminar
-            </Button>
+        <div className="flex-1">
+          {!preview ? (
+            <ImageUpload
+              onImageSelect={handleImageSelect}
+              className="h-32"
+              maxSize={5 * 1024 * 1024}
+              accept={['image/jpeg', 'image/png', 'image/gif', 'image/webp']}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="text-sm text-green-600 font-medium">
+                ✓ Foto cargada correctamente
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleRemovePhoto}
+                disabled={disabled || isUploading}
+                className="flex items-center gap-2 text-red-600 w-fit"
+              >
+                <X className="w-4 h-4" />
+                Eliminar foto
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
+      {isUploading && (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          Subiendo foto...
+        </div>
+      )}
 
       <p className="text-sm text-gray-500">
-        Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB.
+        Formatos permitidos: JPG, PNG, GIF, WebP. Tamaño máximo: 5MB.
       </p>
     </div>
   );

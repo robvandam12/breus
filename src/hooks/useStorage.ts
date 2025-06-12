@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export interface UploadOptions {
-  bucket: 'signatures' | 'contracts' | 'attachments';
+  bucket: 'signatures' | 'contracts' | 'attachments' | 'profile-photos';
   folder?: string;
   fileName?: string;
   maxSize?: number;
@@ -38,8 +38,8 @@ export const useStorage = () => {
         filePath = `${options.folder}/${fileName}`;
       }
 
-      // Para signatures, usar el user ID como folder
-      if (options.bucket === 'signatures') {
+      // Para signatures y profile-photos, usar el user ID como folder
+      if (options.bucket === 'signatures' || options.bucket === 'profile-photos') {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Usuario no autenticado');
         filePath = `${user.id}/${fileName}`;
@@ -50,7 +50,7 @@ export const useStorage = () => {
         .from(options.bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
 
       if (error) throw error;

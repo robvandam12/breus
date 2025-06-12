@@ -21,7 +21,7 @@ export const useBuzoNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id || profile?.role !== 'buzo') {
+    if (!user?.id) {
       setLoading(false);
       return;
     }
@@ -80,7 +80,7 @@ export const useBuzoNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, profile?.role]);
+  }, [user?.id]);
 
   const markAsRead = async (notificationId: string) => {
     try {

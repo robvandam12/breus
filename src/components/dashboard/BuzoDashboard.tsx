@@ -38,6 +38,16 @@ export const BuzoDashboard = () => {
   };
 
   const profileComplete = isProfileComplete();
+  const progress = profileComplete ? 100 : 0;
+
+  // Obtener estado del buzo
+  const getBuzoStatus = () => {
+    if (!profile?.perfil_buzo) return 'Sin perfil';
+    const perfilBuzo = profile.perfil_buzo as any;
+    return perfilBuzo.estado_buzo || 'inactivo';
+  };
+
+  const buzoStatus = getBuzoStatus();
 
   // Obtener nombre de las empresas
   const getSalmoneraName = () => {
@@ -94,12 +104,19 @@ export const BuzoDashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Bienvenido, {profile?.nombre} {profile?.apellido}
         </h1>
-        <p className="text-gray-600">
-          Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-gray-600">
+            Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
+          </p>
+          <Badge variant={buzoStatus === 'activo' ? 'default' : 'secondary'}>
+            {buzoStatus === 'activo' ? 'Buzo Activo' : 
+             buzoStatus === 'inactivo' ? 'Buzo Inactivo' : 
+             buzoStatus === 'suspendido' ? 'Suspendido' : 'Estado desconocido'}
+          </Badge>
+        </div>
       </div>
 
-      {/* Estado del Perfil */}
+      {/* Estado del Perfil - Solo mostrar si no está completo */}
       {!profileComplete && (
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
@@ -110,7 +127,7 @@ export const BuzoDashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="text-orange-700 mb-4">
-              Debes completar tu perfil profesional para poder crear bitácoras y participar en operaciones.
+              Debes completar tu perfil profesional para poder activarte como buzo y participar en operaciones.
             </p>
             <Button asChild className="bg-orange-600 hover:bg-orange-700">
               <Link to="/profile-setup">
@@ -285,7 +302,7 @@ export const BuzoDashboard = () => {
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/operaciones">Ver Historial de Operaciones</Link>
+                  <Link to="/buzo/operaciones">Ver Historial de Operaciones</Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/bitacoras/buzo">Ver Mis Bitácoras</Link>
