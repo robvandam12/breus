@@ -38,7 +38,9 @@ export const BuzoDashboard = () => {
   };
 
   const profileComplete = isProfileComplete();
-  const isActiveBuzo = profile?.estado_buzo === 'activo' && profileComplete;
+  // Get estado_buzo from perfil_buzo since it's stored there
+  const estadoBuzo = (profile?.perfil_buzo as any)?.estado_buzo || 'inactivo';
+  const isActiveBuzo = estadoBuzo === 'activo' && profileComplete;
 
   // Obtener nombre de las empresas
   const getSalmoneraName = () => {
@@ -106,7 +108,7 @@ export const BuzoDashboard = () => {
               variant={isActiveBuzo ? "default" : "secondary"} 
               className={isActiveBuzo ? "bg-green-600" : ""}
             >
-              {isActiveBuzo ? "Buzo Activo" : profile?.estado_buzo === 'suspendido' ? "Suspendido" : "Inactivo"}
+              {isActiveBuzo ? "Buzo Activo" : estadoBuzo === 'suspendido' ? "Suspendido" : "Inactivo"}
             </Badge>
             {profileComplete && (
               <Badge variant="outline" className="text-xs">
@@ -303,7 +305,7 @@ export const BuzoDashboard = () => {
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/operaciones">Ver Historial de Operaciones</Link>
+                  <Link to="/buzo/operaciones">Ver Historial de Operaciones</Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/bitacoras/buzo">Ver Mis Bitácoras</Link>

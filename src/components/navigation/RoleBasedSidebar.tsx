@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
@@ -14,9 +15,44 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User } from 'lucide-react';
+import { 
+  LogOut, 
+  User, 
+  LayoutDashboard, 
+  Users, 
+  Building, 
+  Factory, 
+  Settings, 
+  Webhook,
+  Calendar,
+  BarChart3,
+  MapPin,
+  Box,
+  Anchor,
+  FileText,
+  ClipboardCheck,
+  ClipboardList
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
+
+const iconMap = {
+  'layout-dashboard': LayoutDashboard,
+  'users': Users,
+  'building': Building,
+  'factory': Factory,
+  'settings': Settings,
+  'webhook': Webhook,
+  'calendar': Calendar,
+  'bar-chart-3': BarChart3,
+  'map-pin': MapPin,
+  'box': Box,
+  'anchor': Anchor,
+  'file-text': FileText,
+  'clipboard-check': ClipboardCheck,
+  'clipboard-list': ClipboardList,
+  'user': User
+};
 
 const roleMenus = {
   superuser: [
@@ -153,17 +189,22 @@ export const RoleBasedSidebar = () => {
             <SidebarGroup key={index}>
               <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
               <SidebarGroupContent>
-                {group.items.map((item, i) => (
-                  <SidebarMenuItem
-                    key={i}
-                    active={location.pathname === item.url}
-                    className="transition-colors hover:bg-blue-50"
-                  >
-                    <Link to={item.url}>
-                      <SidebarMenuButton icon={item.icon} label={item.title} />
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map((item, i) => {
+                  const IconComponent = iconMap[item.icon as keyof typeof iconMap] || LayoutDashboard;
+                  return (
+                    <SidebarMenuItem key={i}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={location.pathname === item.url}
+                      >
+                        <Link to={item.url} className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarGroupContent>
             </SidebarGroup>
           ))}
