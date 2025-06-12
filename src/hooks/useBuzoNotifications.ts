@@ -52,7 +52,7 @@ export const useBuzoNotifications = () => {
 
     // Suscribirse a nuevas notificaciones en tiempo real
     const channel = supabase
-      .channel('notifications')
+      .channel('buzo-notifications')
       .on(
         'postgres_changes',
         {
@@ -67,7 +67,7 @@ export const useBuzoNotifications = () => {
           setUnreadCount(prev => prev + 1);
           
           // Mostrar toast para notificaciones importantes
-          if (newNotification.type === 'operation_assignment' || newNotification.type === 'bitacora_ready') {
+          if (['operation_assignment', 'bitacora_ready', 'inmersion_scheduled'].includes(newNotification.type)) {
             toast({
               title: newNotification.title,
               description: newNotification.message,

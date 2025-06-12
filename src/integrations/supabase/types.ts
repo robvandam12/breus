@@ -1424,6 +1424,7 @@ export type Database = {
           apellido: string
           created_at: string
           email: string | null
+          estado_buzo: string | null
           nombre: string
           perfil_buzo: Json | null
           perfil_completado: boolean | null
@@ -1437,6 +1438,7 @@ export type Database = {
           apellido: string
           created_at?: string
           email?: string | null
+          estado_buzo?: string | null
           nombre: string
           perfil_buzo?: Json | null
           perfil_completado?: boolean | null
@@ -1450,6 +1452,7 @@ export type Database = {
           apellido?: string
           created_at?: string
           email?: string | null
+          estado_buzo?: string | null
           nombre?: string
           perfil_buzo?: Json | null
           perfil_completado?: boolean | null
@@ -1664,6 +1667,10 @@ export type Database = {
       jwt_servicio: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validate_rut: {
+        Args: { rut_input: string }
+        Returns: boolean
       }
     }
     Enums: {

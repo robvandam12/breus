@@ -38,6 +38,7 @@ export const BuzoDashboard = () => {
   };
 
   const profileComplete = isProfileComplete();
+  const isActiveBuzo = profile?.estado_buzo === 'activo' && profileComplete;
 
   // Obtener nombre de las empresas
   const getSalmoneraName = () => {
@@ -91,15 +92,32 @@ export const BuzoDashboard = () => {
     <div className="space-y-6">
       {/* Bienvenida */}
       <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 rounded-lg border">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Bienvenido, {profile?.nombre} {profile?.apellido}
-        </h1>
-        <p className="text-gray-600">
-          Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Bienvenido, {profile?.nombre} {profile?.apellido}
+            </h1>
+            <p className="text-gray-600">
+              Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge 
+              variant={isActiveBuzo ? "default" : "secondary"} 
+              className={isActiveBuzo ? "bg-green-600" : ""}
+            >
+              {isActiveBuzo ? "Buzo Activo" : profile?.estado_buzo === 'suspendido' ? "Suspendido" : "Inactivo"}
+            </Badge>
+            {profileComplete && (
+              <Badge variant="outline" className="text-xs">
+                Perfil Completo
+              </Badge>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Estado del Perfil */}
+      {/* Estado del Perfil - Solo mostrar si NO está completo */}
       {!profileComplete && (
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
