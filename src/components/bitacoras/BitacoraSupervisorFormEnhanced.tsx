@@ -61,6 +61,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
             profundidad: inmersion.profundidad_max || 0
           });
         }
+        // Cambio aquí: usar buzo_asistente en lugar de buzo_asistente
         if (inmersion.buzo_asistente) {
           buzos.push({
             nombre: inmersion.buzo_asistente,

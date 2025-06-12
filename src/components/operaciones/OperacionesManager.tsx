@@ -144,15 +144,13 @@ export const OperacionesManager = () => {
       </Tabs>
 
       {/* Detail Modal */}
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 9998 }}>
-          {selectedOperacion && (
-            <OperacionDetailModal 
-              operacion={selectedOperacion}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedOperacion && (
+        <OperacionDetailModal 
+          operacion={selectedOperacion}
+          isOpen={showDetailModal}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 };

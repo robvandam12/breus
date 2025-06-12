@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ interface BitacoraDetailViewProps {
   onSign?: (id: string) => void;
 }
 
-export const BitacoraDetailView = ({ bitacora, isOpen, onClose, onSign }: BitacoraDetailViewProps) => {
+export const BitacoraDetailView = ({ bitacora, type, isOpen, onClose, onSign }: BitacoraDetailViewProps) => {
   const getStatusBadge = () => {
     if (bitacora.firmado) {
       return (
@@ -40,7 +41,7 @@ export const BitacoraDetailView = ({ bitacora, isOpen, onClose, onSign }: Bitaco
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[60]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[70]">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
