@@ -38,6 +38,7 @@ export const BuzoDashboard = () => {
   };
 
   const profileComplete = isProfileComplete();
+  const estadoBuzo = (profile as any)?.estado_buzo || 'inactivo';
 
   // Obtener nombre de las empresas
   const getSalmoneraName = () => {
@@ -91,15 +92,27 @@ export const BuzoDashboard = () => {
     <div className="space-y-6">
       {/* Bienvenida */}
       <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 rounded-lg border">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Bienvenido, {profile?.nombre} {profile?.apellido}
-        </h1>
-        <p className="text-gray-600">
-          Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Bienvenido, {profile?.nombre} {profile?.apellido}
+            </h1>
+            <p className="text-gray-600">
+              Dashboard de Buzo Profesional - Gestiona tus inmersiones y bitácoras
+            </p>
+          </div>
+          <div className="text-right">
+            <Badge 
+              variant={estadoBuzo === 'activo' ? 'default' : 'secondary'}
+              className={estadoBuzo === 'activo' ? 'bg-green-600' : ''}
+            >
+              {estadoBuzo === 'activo' ? '✓ Buzo Activo' : '○ Buzo Inactivo'}
+            </Badge>
+          </div>
+        </div>
       </div>
 
-      {/* Estado del Perfil */}
+      {/* Estado del Perfil - Solo mostrar si NO está completo */}
       {!profileComplete && (
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
@@ -229,46 +242,6 @@ export const BuzoDashboard = () => {
         </Card>
       </div>
 
-      {/* Notificaciones Recientes */}
-      {notifications.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Notificaciones Recientes
-              {unreadCount > 0 && (
-                <Badge variant="destructive">{unreadCount}</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {notifications.slice(0, 5).map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-3 rounded-lg border ${
-                    notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{notification.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notification.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {!notification.read && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Historial Reciente */}
       <Card>
         <CardHeader>
@@ -285,7 +258,7 @@ export const BuzoDashboard = () => {
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/operaciones">Ver Historial de Operaciones</Link>
+                  <Link to="/buzo/operaciones">Ver Historial de Operaciones</Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/bitacoras/buzo">Ver Mis Bitácoras</Link>

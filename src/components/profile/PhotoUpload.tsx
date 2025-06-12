@@ -1,10 +1,12 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PhotoUploadProps {
   currentPhoto?: string;
@@ -15,10 +17,39 @@ interface PhotoUploadProps {
 export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: PhotoUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentPhoto || null);
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const uploadToSupabase = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading to Supabase:', error);
+      return null;
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
 
     // Validar tipo de archivo
@@ -49,14 +80,21 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setPreview(result);
-        onPhotoChange(result);
       };
       reader.readAsDataURL(file);
 
-      toast({
-        title: "Foto cargada",
-        description: "La foto se ha cargado correctamente.",
-      });
+      // Subir a Supabase
+      const publicUrl = await uploadToSupabase(file);
+      
+      if (publicUrl) {
+        onPhotoChange(publicUrl);
+        toast({
+          title: "Foto cargada",
+          description: "La foto se ha cargado correctamente.",
+        });
+      } else {
+        throw new Error("Error al subir la foto");
+      }
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast({
@@ -64,10 +102,39 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
         description: "Error al cargar la foto. Intenta nuevamente.",
         variant: "destructive",
       });
+      // Resetear preview en caso de error
+      setPreview(currentPhoto || null);
     } finally {
       setIsUploading(false);
     }
   };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      await handleFileUpload(files[0]);
+    }
+  }, []);
 
   const handleRemovePhoto = () => {
     setPreview(null);
@@ -93,17 +160,29 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
+        <div className="flex-1">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+              isDragActive 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
             onClick={openFileDialog}
-            disabled={disabled || isUploading}
-            className="flex items-center gap-2"
           >
-            <Upload className="w-4 h-4" />
-            {isUploading ? 'Cargando...' : 'Subir Foto'}
-          </Button>
+            <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-600">
+              {isDragActive 
+                ? 'Suelta la imagen aquí...' 
+                : 'Arrastra una imagen o haz clic para seleccionar'
+              }
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              PNG, JPG, GIF, WebP hasta 5MB
+            </p>
+          </div>
 
           {preview && (
             <Button
@@ -112,7 +191,7 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
               size="sm"
               onClick={handleRemovePhoto}
               disabled={disabled || isUploading}
-              className="flex items-center gap-2 text-red-600"
+              className="flex items-center gap-2 text-red-600 mt-2"
             >
               <X className="w-4 h-4" />
               Eliminar
@@ -127,11 +206,8 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
         accept="image/*"
         onChange={handleFileSelect}
         className="hidden"
+        disabled={disabled || isUploading}
       />
-
-      <p className="text-sm text-gray-500">
-        Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB.
-      </p>
     </div>
   );
 };
