@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Inmersiones() {
   const { profile } = useAuth();
-  const { inmersiones, isLoading } = useInmersiones();
+  const { inmersiones, loadingInmersiones } = useInmersiones();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -32,6 +32,22 @@ export default function Inmersiones() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Convertir inmersión al formato esperado por ImmersionCard si es necesario
+  const convertToImmersionCardFormat = (inmersion: any) => {
+    return {
+      ...inmersion,
+      id: inmersion.inmersion_id,
+      operacion: inmersion.operacion_id,
+      fecha: inmersion.fecha_inmersion,
+      hora: inmersion.hora_inicio,
+      buzo: inmersion.buzo_principal,
+      profundidad: inmersion.profundidad_max,
+      temperatura: inmersion.temperatura_agua,
+      estado: inmersion.estado,
+      observaciones: inmersion.observaciones || ''
+    };
+  };
 
   return (
     <MainLayout
@@ -72,7 +88,7 @@ export default function Inmersiones() {
         </div>
 
         {/* Lista de Inmersiones */}
-        {isLoading ? (
+        {loadingInmersiones ? (
           <div className="text-center py-8">Cargando inmersiones...</div>
         ) : filteredInmersiones.length === 0 ? (
           <div className="text-center py-8">
@@ -94,7 +110,7 @@ export default function Inmersiones() {
             {filteredInmersiones.map((inmersion) => (
               <ImmersionCard
                 key={inmersion.inmersion_id}
-                inmersion={inmersion}
+                inmersion={convertToImmersionCardFormat(inmersion)}
                 showActions={profile?.role !== 'buzo'}
               />
             ))}

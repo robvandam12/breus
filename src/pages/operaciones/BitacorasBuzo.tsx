@@ -10,10 +10,11 @@ import { useBitacoras } from '@/hooks/useBitacoras';
 import { Book, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 export default function BitacorasBuzo() {
   const { profile } = useAuth();
-  const { bitacorasBuzo, isLoading } = useBitacoras();
+  const { bitacorasBuzo, loadingBuzo, createBitacoraBuzo } = useBitacoras();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -29,6 +30,33 @@ export default function BitacorasBuzo() {
     
     return matchesSearch && matchesStatus && isBuzoOwner;
   });
+
+  const handleView = (id: string) => {
+    // TODO: Implementar vista de detalle de bitácora
+    console.log('Ver bitácora:', id);
+  };
+
+  const handleSign = (id: string) => {
+    // TODO: Implementar firma de bitácora
+    console.log('Firmar bitácora:', id);
+  };
+
+  const handleSubmitBitacora = async (data: any) => {
+    try {
+      await createBitacoraBuzo.mutateAsync(data);
+      toast({
+        title: "Bitácora creada",
+        description: "La bitácora ha sido creada exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error creating bitácora:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <MainLayout
@@ -69,7 +97,7 @@ export default function BitacorasBuzo() {
           </div>
 
           {/* Lista de Bitácoras */}
-          {isLoading ? (
+          {loadingBuzo ? (
             <div className="text-center py-8">Cargando bitácoras...</div>
           ) : buzoBitacorasFiltered.length === 0 ? (
             <div className="text-center py-8">
@@ -89,6 +117,8 @@ export default function BitacorasBuzo() {
                   key={bitacora.bitacora_id}
                   bitacora={bitacora}
                   type="buzo"
+                  onView={handleView}
+                  onSign={handleSign}
                 />
               ))}
             </div>
@@ -96,7 +126,11 @@ export default function BitacorasBuzo() {
         </TabsContent>
 
         <TabsContent value="crear" className="space-y-6">
-          <CreateBitacoraBuzoFormCompleteWithInmersion />
+          <CreateBitacoraBuzoFormCompleteWithInmersion
+            inmersionId=""
+            onSubmit={handleSubmitBitacora}
+            onCancel={() => {}}
+          />
         </TabsContent>
       </Tabs>
     </MainLayout>

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { DatePickerWithRange } from '@/components/ui/date-picker';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Calendar, Anchor, FileText, TrendingUp, Download } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';

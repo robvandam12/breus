@@ -5,6 +5,7 @@ import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 
 export default function Operaciones() {
   const { profile } = useAuth();
@@ -27,6 +28,38 @@ export default function Operaciones() {
 
   const filteredOperaciones = getFilteredOperaciones();
 
+  const handleSelect = (operacion: any) => {
+    console.log('Operación seleccionada:', operacion);
+  };
+
+  const handleEdit = (operacion: any) => {
+    console.log('Editar operación:', operacion);
+  };
+
+  const handleViewDetail = (operacion: any) => {
+    console.log('Ver detalle operación:', operacion);
+  };
+
+  const handleDelete = (operacionId: string) => {
+    console.log('Eliminar operación:', operacionId);
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout
+        title="Operaciones"
+        subtitle={
+          profile?.role === 'buzo' 
+            ? "Historial de operaciones donde has participado"
+            : "Gestión de operaciones de buceo"
+        }
+        icon={Calendar}
+      >
+        <div className="text-center py-8">Cargando operaciones...</div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout
       title="Operaciones"
@@ -39,9 +72,10 @@ export default function Operaciones() {
     >
       <OperacionCardView 
         operaciones={filteredOperaciones}
-        isLoading={isLoading}
-        showCreateButton={profile?.role !== 'buzo'}
-        showEditActions={profile?.role !== 'buzo'}
+        onSelect={handleSelect}
+        onEdit={handleEdit}
+        onViewDetail={handleViewDetail}
+        onDelete={handleDelete}
       />
     </MainLayout>
   );
