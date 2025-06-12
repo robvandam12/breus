@@ -1,10 +1,13 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useDropzone } from 'react-dropzone';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PhotoUploadProps {
   currentPhoto?: string;
@@ -15,12 +18,41 @@ interface PhotoUploadProps {
 export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: PhotoUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentPhoto || null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const uploadToSupabase = async (file: File): Promise<string> => {
+    if (!user?.id) throw new Error('Usuario no autenticado');
 
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/avatar.${fileExt}`;
+
+    // Eliminar foto anterior si existe
+    if (currentPhoto) {
+      const oldPath = currentPhoto.split('/').slice(-2).join('/');
+      await supabase.storage.from('profile-photos').remove([oldPath]);
+    }
+
+    const { error: uploadError, data } = await supabase.storage
+      .from('profile-photos')
+      .upload(fileName, file, { 
+        upsert: true,
+        contentType: file.type 
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (disabled || acceptedFiles.length === 0) return;
+
+    const file = acceptedFiles[0];
+    
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       toast({
@@ -47,14 +79,16 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
       // Crear preview local
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreview(result);
-        onPhotoChange(result);
+        setPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
 
+      // Subir a Supabase
+      const photoUrl = await uploadToSupabase(file);
+      onPhotoChange(photoUrl);
+
       toast({
-        title: "Foto cargada",
+        title: "Foto actualizada",
         description: "La foto se ha cargado correctamente.",
       });
     } catch (error) {
@@ -64,21 +98,43 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
         description: "Error al cargar la foto. Intenta nuevamente.",
         variant: "destructive",
       });
+      setPreview(currentPhoto || null);
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [disabled, currentPhoto, onPhotoChange, user?.id]);
 
-  const handleRemovePhoto = () => {
-    setPreview(null);
-    onPhotoChange(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+    },
+    multiple: false,
+    disabled: disabled || isUploading
+  });
+
+  const handleRemovePhoto = async () => {
+    if (!currentPhoto || isUploading) return;
+
+    try {
+      const path = currentPhoto.split('/').slice(-2).join('/');
+      await supabase.storage.from('profile-photos').remove([path]);
+      
+      setPreview(null);
+      onPhotoChange(null);
+      
+      toast({
+        title: "Foto eliminada",
+        description: "La foto ha sido eliminada correctamente.",
+      });
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      toast({
+        title: "Error",
+        description: "Error al eliminar la foto.",
+        variant: "destructive",
+      });
     }
-  };
-
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
   };
 
   return (
@@ -93,17 +149,38 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={openFileDialog}
-            disabled={disabled || isUploading}
-            className="flex items-center gap-2"
+        <div className="flex-1">
+          <div
+            {...getRootProps()}
+            className={`
+              border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+              ${isDragActive 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+              }
+              ${(disabled || isUploading) && 'opacity-50 cursor-not-allowed'}
+            `}
           >
-            <Upload className="w-4 h-4" />
-            {isUploading ? 'Cargando...' : 'Subir Foto'}
-          </Button>
+            <input {...getInputProps()} />
+            {isUploading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Subiendo...</span>
+              </div>
+            ) : isDragActive ? (
+              <p className="text-sm text-blue-600">Suelta la imagen aquí...</p>
+            ) : (
+              <div className="space-y-2">
+                <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                <p className="text-sm text-gray-600">
+                  Arrastra una imagen aquí o haz clic para seleccionar
+                </p>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF, WebP hasta 5MB
+                </p>
+              </div>
+            )}
+          </div>
 
           {preview && (
             <Button
@@ -112,26 +189,14 @@ export const PhotoUpload = ({ currentPhoto, onPhotoChange, disabled = false }: P
               size="sm"
               onClick={handleRemovePhoto}
               disabled={disabled || isUploading}
-              className="flex items-center gap-2 text-red-600"
+              className="w-full mt-2 text-red-600 hover:text-red-700"
             >
-              <X className="w-4 h-4" />
-              Eliminar
+              <X className="w-4 h-4 mr-2" />
+              Eliminar Foto
             </Button>
           )}
         </div>
       </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-
-      <p className="text-sm text-gray-500">
-        Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB.
-      </p>
     </div>
   );
 };
