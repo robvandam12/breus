@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export interface UploadOptions {
-  bucket: 'signatures' | 'contracts' | 'attachments' | 'profile-photos';
+  bucket: 'signatures' | 'contracts' | 'attachments';
   folder?: string;
   fileName?: string;
   maxSize?: number;
@@ -38,8 +38,8 @@ export const useStorage = () => {
         filePath = `${options.folder}/${fileName}`;
       }
 
-      // Para signatures y profile-photos, usar el user ID como folder
-      if (options.bucket === 'signatures' || options.bucket === 'profile-photos') {
+      // Para signatures, usar el user ID como folder
+      if (options.bucket === 'signatures') {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Usuario no autenticado');
         filePath = `${user.id}/${fileName}`;
@@ -55,12 +55,24 @@ export const useStorage = () => {
 
       if (error) throw error;
 
-      // Obtener URL pública
-      const { data: publicData } = supabase.storage
-        .from(options.bucket)
-        .getPublicUrl(data.path);
+      // Obtener URL pública o firmada según el bucket
+      let publicUrl: string;
       
-      const publicUrl = publicData.publicUrl;
+      if (options.bucket === 'signatures') {
+        // Para signatures, generar URL firmada (privada)
+        const { data: signedData } = await supabase.storage
+          .from(options.bucket)
+          .createSignedUrl(data.path, 60 * 60 * 24 * 7); // 7 días
+        
+        publicUrl = signedData?.signedUrl || '';
+      } else {
+        // Para otros buckets, usar URL pública
+        const { data: publicData } = supabase.storage
+          .from(options.bucket)
+          .getPublicUrl(data.path);
+        
+        publicUrl = publicData.publicUrl;
+      }
 
       toast({
         title: "Archivo subido",

@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -33,9 +34,6 @@ import AdminRoles from "./pages/admin/AdminRoles";
 import AdminSalmoneraPage from "./pages/admin/AdminSalmoneraPage";
 import UserManagement from "./pages/admin/UserManagement";
 import BuzoOnboardingPage from "./pages/BuzoOnboardingPage";
-import BuzoOperaciones from '@/pages/buzo/BuzoOperaciones';
-import BuzoInmersiones from '@/pages/buzo/BuzoInmersiones'; 
-import BuzoReportesPage from '@/pages/buzo/BuzoReportesPage';
 
 const queryClient = new QueryClient();
 
@@ -45,7 +43,7 @@ const App: React.FC = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
-        <Router>
+        <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -174,7 +172,7 @@ const App: React.FC = () => (
             
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
+        </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

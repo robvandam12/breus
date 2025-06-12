@@ -10,7 +10,6 @@ export interface UsuarioRow {
   servicio_id: string | null;
   perfil_buzo: any;
   perfil_completado: boolean | null;
-  estado_buzo: 'activo' | 'inactivo' | 'suspendido' | null;
   created_at: string;
   updated_at: string;
 }
