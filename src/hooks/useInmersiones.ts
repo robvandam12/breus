@@ -308,31 +308,49 @@ export const useInmersiones = (operacionId?: string) => {
 
         if (fetchError) throw fetchError;
 
-        // REAL-TIME VALIDATION: Check for depth limit breach and create notification
+        // REAL-TIME VALIDATION: Check for depth limit breach and create a security alert
         if (currentInmersion && data.current_depth > currentInmersion.profundidad_max) {
           console.warn(`ALERTA DE PROFUNDIDAD: Inmersión ${currentInmersion.codigo}. Actual: ${data.current_depth}m, Máxima: ${currentInmersion.profundidad_max}m`);
-          if (currentInmersion.supervisor_id) {
-            const { error: notificationError } = await supabase.from('notifications').insert({
-              user_id: currentInmersion.supervisor_id,
-              type: 'warning',
-              title: `Alerta de Profundidad: ${currentInmersion.codigo}`,
-              message: `La profundidad actual (${data.current_depth}m) excede la máxima planificada (${currentInmersion.profundidad_max}m).`,
-              metadata: {
-                inmersion_id: id,
-                operacion_id: currentInmersion.operacion_id,
-                link: `/inmersiones` 
+          
+          // Find the security rule for depth limit
+          const { data: rule, error: ruleError } = await supabase
+            .from('security_alert_rules')
+            .select('id, priority')
+            .eq('type', 'DEPTH_LIMIT')
+            .maybeSingle();
+
+          if (ruleError) {
+            console.error('Error fetching depth limit rule:', ruleError);
+          } else if (rule) {
+            // Create a security alert, which will trigger a notification
+            const { error: alertError } = await supabase.from('security_alerts').insert({
+              inmersion_id: id,
+              rule_id: rule.id,
+              type: 'DEPTH_LIMIT',
+              priority: rule.priority,
+              details: {
+                current_depth: data.current_depth,
+                max_depth: currentInmersion.profundidad_max,
+                inmersion_code: currentInmersion.codigo
               }
             });
 
-            if (notificationError) {
-              console.error('Error creating depth alert notification:', notificationError);
+            if (alertError) {
+              console.error('Error creating security alert:', alertError);
+              toast({
+                title: "Error al crear alerta",
+                description: "No se pudo registrar la alerta de seguridad.",
+                variant: "destructive",
+              });
             } else {
                toast({
-                title: "¡Alerta de Seguridad Enviada!",
+                title: "¡Alerta de Seguridad Registrada!",
                 description: "Se ha notificado al supervisor sobre el exceso de profundidad.",
                 variant: "destructive",
               });
             }
+          } else {
+            console.warn("Regla de seguridad para 'DEPTH_LIMIT' no encontrada. La alerta no será creada via el nuevo sistema.");
           }
         }
 

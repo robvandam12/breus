@@ -1369,6 +1369,106 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alert_rules: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          message_template: string
+          name: string
+          priority: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          message_template: string
+          name: string
+          priority?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          message_template?: string
+          name?: string
+          priority?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      security_alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          inmersion_id: string
+          priority: string
+          rule_id: string | null
+          type: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          inmersion_id: string
+          priority: string
+          rule_id?: string | null
+          type: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          inmersion_id?: string
+          priority?: string
+          rule_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+          {
+            foreignKeyName: "security_alerts_inmersion_id_fkey"
+            columns: ["inmersion_id"]
+            isOneToOne: false
+            referencedRelation: "inmersion"
+            referencedColumns: ["inmersion_id"]
+          },
+          {
+            foreignKeyName: "security_alerts_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "security_alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sitios: {
         Row: {
           capacidad_jaulas: number | null
