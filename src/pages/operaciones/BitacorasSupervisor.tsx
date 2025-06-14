@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -16,10 +17,16 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { SimplePagination } from "@/components/ui/SimplePagination";
+import { BitacoraSupervisorCompleta } from "@/types/bitacoras";
+import { BitacoraCard } from "@/components/bitacoras/BitacoraCard";
+import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
+import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedBitacora, setSelectedBitacora] = useState<BitacoraSupervisorCompleta | null>(null);
+  const [bitacoraToSign, setBitacoraToSign] = useState<BitacoraSupervisorCompleta | null>(null);
   
   const { 
     bitacorasSupervisor, 
@@ -63,6 +70,16 @@ const BitacorasSupervisor = () => {
     await updateBitacoraSupervisorSignature.mutateAsync({ bitacoraId: id, signatureData });
   };
   
+  const handleViewDetails = (bitacoraId: string) => {
+    const bitacora = bitacorasSupervisor.find(b => b.bitacora_id === bitacoraId);
+    if (bitacora) setSelectedBitacora(bitacora);
+  };
+
+  const handleOpenSignModal = (bitacoraId: string) => {
+    const bitacora = bitacorasSupervisor.find(b => b.bitacora_id === bitacoraId);
+    if (bitacora) setBitacoraToSign(bitacora);
+  };
+
   if (loading) {
     return (
       <SidebarProvider>
@@ -183,7 +200,7 @@ const BitacorasSupervisor = () => {
                 </CardContent>
               </Card>
             ) : (
-              <>
+              <div className="space-y-4">
                 {viewMode === 'table' ? (
                   <Card>
                     <Table>
@@ -208,21 +225,29 @@ const BitacorasSupervisor = () => {
                         ))}
                       </TableBody>
                     </Table>
-                    <SimplePagination 
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      totalItems={totalItems}
-                      itemsPerPage={itemsPerPage}
-                      onItemsPerPageChange={setItemsPerPage}
-                    />
                   </Card>
                 ) : (
-                   <div className="text-center p-8 border rounded-lg bg-zinc-50">
-                    <p className="text-zinc-500">La vista de tarjetas no está implementada aún.</p>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredBitacorasSupervisor.map((bitacora) => (
+                      <BitacoraCard
+                        key={bitacora.bitacora_id}
+                        bitacora={bitacora}
+                        type="supervisor"
+                        onView={handleViewDetails}
+                        onSign={handleOpenSignModal}
+                      />
+                    ))}
                   </div>
                 )}
-              </>
+                <SimplePagination 
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              </div>
             )}
           </div>
 
@@ -234,6 +259,27 @@ const BitacorasSupervisor = () => {
               />
             </DialogContent>
           </Dialog>
+
+          {selectedBitacora && (
+            <BitacoraDetailView
+              isOpen={!!selectedBitacora}
+              onClose={() => setSelectedBitacora(null)}
+              bitacora={selectedBitacora}
+              type="supervisor"
+              onSign={handleOpenSignModal}
+            />
+          )}
+
+          {bitacoraToSign && (
+            <BitacoraSignatureModal
+              isOpen={!!bitacoraToSign}
+              onOpenChange={() => setBitacoraToSign(null)}
+              onConfirm={(signature) => {
+                handleSignSupervisor(bitacoraToSign.bitacora_id, signature);
+                setBitacoraToSign(null);
+              }}
+            />
+          )}
         </main>
       </div>
     </SidebarProvider>
@@ -241,3 +287,4 @@ const BitacorasSupervisor = () => {
 };
 
 export default BitacorasSupervisor;
+

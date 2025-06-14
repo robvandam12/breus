@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +10,7 @@ import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import { BitacoraFilters as IBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { SimplePagination } from "@/components/ui/SimplePagination";
+import { BitacoraCard } from "@/components/bitacoras/BitacoraCard";
 
 interface BitacorasBuzoContentProps {
   filteredBitacorasBuzo: BitacoraBuzoCompleta[];
@@ -26,6 +28,8 @@ interface BitacorasBuzoContentProps {
   totalItems: number;
   itemsPerPage: number;
   onItemsPerPageChange: (size: number) => void;
+  onViewDetails: (id: string) => void;
+  onOpenSignModal: (id: string) => void;
 }
 
 export const BitacorasBuzoContent = ({
@@ -44,6 +48,8 @@ export const BitacorasBuzoContent = ({
   totalItems,
   itemsPerPage,
   onItemsPerPageChange,
+  onViewDetails,
+  onOpenSignModal,
 }: BitacorasBuzoContentProps) => {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -124,7 +130,7 @@ export const BitacorasBuzoContent = ({
           </CardContent>
         </Card>
       ) : (
-        <>
+        <div className="space-y-4">
           {viewMode === 'table' ? (
             <Card>
               <Table>
@@ -150,21 +156,29 @@ export const BitacorasBuzoContent = ({
                   ))}
                 </TableBody>
               </Table>
-              <SimplePagination 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={onItemsPerPageChange}
-              />
             </Card>
           ) : (
-            <div className="text-center p-8 border rounded-lg bg-zinc-50">
-              <p className="text-zinc-500">La vista de tarjetas no está implementada aún.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredBitacorasBuzo.map((bitacora) => (
+                <BitacoraCard
+                  key={bitacora.bitacora_id}
+                  bitacora={bitacora}
+                  type="buzo"
+                  onView={onViewDetails}
+                  onSign={onOpenSignModal}
+                />
+              ))}
             </div>
           )}
-        </>
+          <SimplePagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={onItemsPerPageChange}
+          />
+        </div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -12,10 +13,15 @@ import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BitacoraBuzoCompleta } from "@/types/bitacoras";
+import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
+import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 
 const BitacorasBuzo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedBitacora, setSelectedBitacora] = useState<BitacoraBuzoCompleta | null>(null);
+  const [bitacoraToSign, setBitacoraToSign] = useState<BitacoraBuzoCompleta | null>(null);
   
   const { 
     bitacorasBuzo, 
@@ -51,6 +57,16 @@ const BitacorasBuzo = () => {
 
   const handleSignBuzo = async (id: string, signatureData: string) => {
     await updateBitacoraBuzoSignature.mutateAsync({ bitacoraId: id, signatureData });
+  };
+
+  const handleViewDetails = (bitacoraId: string) => {
+    const bitacora = bitacorasBuzo.find(b => b.bitacora_id === bitacoraId);
+    if (bitacora) setSelectedBitacora(bitacora);
+  };
+
+  const handleOpenSignModal = (bitacoraId: string) => {
+    const bitacora = bitacorasBuzo.find(b => b.bitacora_id === bitacoraId);
+    if (bitacora) setBitacoraToSign(bitacora);
   };
 
   const hasSupervisorLogs = bitacorasSupervisor.length > 0;
@@ -142,6 +158,8 @@ const BitacorasBuzo = () => {
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={setItemsPerPage}
+              onViewDetails={handleViewDetails}
+              onOpenSignModal={handleOpenSignModal}
             />
           </div>
 
@@ -153,6 +171,29 @@ const BitacorasBuzo = () => {
               />
             </DialogContent>
           </Dialog>
+
+          {selectedBitacora && (
+            <BitacoraDetailView
+              isOpen={!!selectedBitacora}
+              onClose={() => setSelectedBitacora(null)}
+              bitacora={selectedBitacora}
+              type="buzo"
+              onSign={handleOpenSignModal}
+            />
+          )}
+
+          {bitacoraToSign && (
+            <BitacoraSignatureModal
+              isOpen={!!bitacoraToSign}
+              onOpenChange={() => setBitacoraToSign(null)}
+              onConfirm={(signature) => {
+                if(bitacoraToSign) {
+                  handleSignBuzo(bitacoraToSign.bitacora_id, signature);
+                  setBitacoraToSign(null);
+                }
+              }}
+            />
+          )}
         </main>
       </div>
     </SidebarProvider>
@@ -160,3 +201,4 @@ const BitacorasBuzo = () => {
 };
 
 export default BitacorasBuzo;
+
