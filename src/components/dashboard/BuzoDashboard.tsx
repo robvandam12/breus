@@ -8,7 +8,7 @@ import { useBuzoNotifications } from '@/hooks/useBuzoNotifications';
 import { useSalmoneras } from '@/hooks/useSalmoneras';
 import { useContratistas } from '@/hooks/useContratistas';
 import { useInmersiones } from '@/hooks/useInmersiones';
-import { useBitacoras } from '@/hooks/useBitacoras';
+import { useBitacoraEnhanced } from '@/hooks/useBitacoraEnhanced';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ export const BuzoDashboard = () => {
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
   const { inmersiones } = useInmersiones();
-  const { bitacorasBuzo } = useBitacoras();
+  const { bitacorasBuzo } = useBitacoraEnhanced();
   const { operaciones } = useOperaciones();
   const [stats, setStats] = useState({
     totalOperaciones: 0,

@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete";
-import { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface CreateBitacoraBuzoFormCompleteWithInmersionProps {
@@ -20,7 +20,7 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData> | null>(null);
   const { inmersiones } = useInmersiones();
-  const { bitacorasSupervisor } = useBitacoras();
+  const { bitacorasSupervisor } = useBitacoraEnhanced();
   const { operaciones } = useOperaciones();
 
   useEffect(() => {

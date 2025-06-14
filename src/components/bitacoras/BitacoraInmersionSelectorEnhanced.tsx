@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, Users, Building, MapPin, Anchor } from "lucide-react";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 
 interface InmersionData {
   inmersion_id: string;
@@ -34,7 +34,7 @@ export const BitacoraInmersionSelectorEnhanced = ({
   description = "Seleccione la inmersión para la cual desea crear la bitácora"
 }: BitacoraInmersionSelectorEnhancedProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { inmersiones, loadingInmersiones } = useBitacoras();
+  const { inmersiones, loadingInmersiones } = useBitacoraEnhanced();
 
   const filteredInmersiones = inmersiones.filter(inmersion =>
     inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||

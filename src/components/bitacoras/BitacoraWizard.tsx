@@ -7,7 +7,7 @@ import { BitacoraStep1 } from './steps/BitacoraStep1';
 import { BitacoraStep2 } from './steps/BitacoraStep2';
 import { BitacoraStep4 } from './steps/BitacoraStep4';
 import { BitacoraStep5 } from './steps/BitacoraStep5';
-import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacoraEnhanced';
 
 // Export the type for the step components
 export type BitacoraSupervisorData = BitacoraSupervisorFormData;

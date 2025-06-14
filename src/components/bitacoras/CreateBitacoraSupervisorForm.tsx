@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +12,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { FileText, X, Users, Building, Calendar, Clock } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { BitacoraSupervisorFormData } from "@/hooks/useBitacoras";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
 import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({

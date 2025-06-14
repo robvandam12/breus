@@ -10,7 +10,7 @@ import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTrian
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
-import { useBitacoraEnhanced as useBitacoras } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { toast } from "@/hooks/use-toast";
 
 interface OperacionInmersionesProps {
@@ -19,7 +19,7 @@ interface OperacionInmersionesProps {
 
 export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo, bitacorasSupervisor } = useBitacoras();
+  const { createBitacoraSupervisor, createBitacoraBuzo, bitacorasSupervisor } = useBitacoraEnhanced();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [inmersionToDelete, setInmersionToDelete] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
 
   const handleCreateBitacoraBuzo = (inmersionId: string) => {
     // Verificar si existe bitácora de supervisor para esta inmersión
-    const bitacoraSupervisorExiste = bitacorasSupervisor.some(b => b.inmersion_id === inmersionId);
+    const bitacoraSupervisorExiste = (bitacorasSupervisor || []).some(b => b.inmersion_id === inmersionId);
     
     if (!bitacoraSupervisorExiste) {
       toast({
@@ -128,7 +128,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   };
 
   const tieneBitacoraSupervisor = (inmersionId: string) => {
-    return bitacorasSupervisor.some(b => b.inmersion_id === inmersionId);
+    return (bitacorasSupervisor || []).some(b => b.inmersion_id === inmersionId);
   };
 
   if (isLoading) {

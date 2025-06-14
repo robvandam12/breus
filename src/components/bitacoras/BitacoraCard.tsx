@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, FileText, CheckCircle, PenTool } from "lucide-react";
-import { BitacoraSupervisor, BitacoraBuzo } from "@/hooks/useBitacoras";
+import { BitacoraSupervisorCompleta as BitacoraSupervisor, BitacoraBuzoCompleta as BitacoraBuzo } from "@/hooks/useBitacoraEnhanced";
 
 interface BitacoraCardProps {
   bitacora: BitacoraSupervisor | BitacoraBuzo;

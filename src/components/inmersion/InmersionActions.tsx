@@ -14,7 +14,7 @@ import { MoreVertical, Edit, Trash2, FileText, Eye } from "lucide-react";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { toast } from "@/hooks/use-toast";
 
 interface InmersionActionsProps {
@@ -24,7 +24,7 @@ interface InmersionActionsProps {
 
 export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsProps) => {
   const { deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoras();
+  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoraEnhanced();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBitacoraSupervisorForm, setShowBitacoraSupervisorForm] = useState(false);

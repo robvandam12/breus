@@ -2,10 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, FileText, Anchor, AlertTriangle } from "lucide-react";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 
 export const RecentActivity = () => {
-  const { bitacorasSupervisor, bitacorasBuzo } = useBitacoras();
+  const { bitacorasSupervisor, bitacorasBuzo } = useBitacoraEnhanced();
 
   // Combine recent activities from bitácoras
   const recentActivities = [
