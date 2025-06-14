@@ -302,55 +302,127 @@ export const useInmersiones = (operacionId?: string) => {
       if (data.current_depth !== undefined && data.current_depth !== null) {
         const { data: currentInmersion, error: fetchError } = await supabase
           .from('inmersion')
-          .select('depth_history, profundidad_max, supervisor_id, codigo, operacion_id')
+          .select('depth_history, profundidad_max, supervisor_id, codigo, operacion_id, planned_bottom_time, fecha_inmersion, hora_inicio, estado')
           .eq('inmersion_id', id)
           .single();
 
         if (fetchError) throw fetchError;
-
-        // REAL-TIME VALIDATION: Check for depth limit breach and create a security alert
-        if (currentInmersion && data.current_depth > currentInmersion.profundidad_max) {
-          console.warn(`ALERTA DE PROFUNDIDAD: Inmersión ${currentInmersion.codigo}. Actual: ${data.current_depth}m, Máxima: ${currentInmersion.profundidad_max}m`);
-          
-          // Find the security rule for depth limit
-          const { data: rule, error: ruleError } = await supabase
+        
+        if (currentInmersion) {
+          // Fetch active security rules
+          const { data: rules, error: rulesError } = await supabase
             .from('security_alert_rules')
-            .select('id, priority')
-            .eq('type', 'DEPTH_LIMIT')
-            .maybeSingle();
+            .select('*')
+            .in('type', ['DEPTH_LIMIT', 'ASCENT_RATE', 'BOTTOM_TIME'])
+            .eq('enabled', true);
 
-          if (ruleError) {
-            console.error('Error fetching depth limit rule:', ruleError);
-          } else if (rule) {
-            // Create a security alert, which will trigger a notification
-            const { error: alertError } = await supabase.from('security_alerts').insert({
-              inmersion_id: id,
-              rule_id: rule.id,
-              type: 'DEPTH_LIMIT',
-              priority: rule.priority,
-              details: {
-                current_depth: data.current_depth,
-                max_depth: currentInmersion.profundidad_max,
-                inmersion_code: currentInmersion.codigo
-              }
-            });
+          if (rulesError) {
+            console.error('Error fetching security rules:', rulesError);
+          } else if (rules && rules.length > 0) {
+            const alertsToInsert = [];
+            const currentHistory = (currentInmersion.depth_history || []) as Array<{ depth: number; timestamp: string }>;
 
-            if (alertError) {
-              console.error('Error creating security alert:', alertError);
-              toast({
-                title: "Error al crear alerta",
-                description: "No se pudo registrar la alerta de seguridad.",
-                variant: "destructive",
-              });
-            } else {
-               toast({
-                title: "¡Alerta de Seguridad Registrada!",
-                description: "Se ha notificado al supervisor sobre el exceso de profundidad.",
-                variant: "destructive",
+            // Fetch existing unacknowledged alerts for this immersion to avoid spam
+            const { data: existingAlerts } = await supabase
+              .from('security_alerts')
+              .select('type')
+              .eq('inmersion_id', id)
+              .eq('acknowledged', false);
+            const existingAlertTypes = existingAlerts?.map(a => a.type) || [];
+
+            // 1. REAL-TIME VALIDATION: Check for depth limit breach
+            const depthRule = rules.find(r => r.type === 'DEPTH_LIMIT');
+            if (depthRule && data.current_depth > currentInmersion.profundidad_max && !existingAlertTypes.includes('DEPTH_LIMIT')) {
+              console.warn(`ALERTA DE PROFUNDIDAD: Inmersión ${currentInmersion.codigo}. Actual: ${data.current_depth}m, Máxima: ${currentInmersion.profundidad_max}m`);
+              alertsToInsert.push({
+                inmersion_id: id,
+                rule_id: depthRule.id,
+                type: 'DEPTH_LIMIT',
+                priority: depthRule.priority,
+                details: {
+                  current_depth: data.current_depth,
+                  max_depth: currentInmersion.profundidad_max,
+                  inmersion_code: currentInmersion.codigo
+                }
               });
             }
-          } else {
-            console.warn("Regla de seguridad para 'DEPTH_LIMIT' no encontrada. La alerta no será creada via el nuevo sistema.");
+
+            // 2. REAL-TIME VALIDATION: Check for ascent rate breach
+            const ascentRule = rules.find(r => r.type === 'ASCENT_RATE');
+            if (ascentRule && currentHistory.length > 0) {
+              const lastHistoryEntry = currentHistory[currentHistory.length - 1];
+              const isAscending = data.current_depth < lastHistoryEntry.depth;
+
+              if (isAscending) {
+                const depthChange = lastHistoryEntry.depth - data.current_depth;
+                const timeChangeMs = new Date().getTime() - new Date(lastHistoryEntry.timestamp).getTime();
+                
+                if (timeChangeMs > 1000) { // Avoid division by zero and ensure meaningful time diff
+                  const timeChangeMin = timeChangeMs / (1000 * 60);
+                  const ascentRate = depthChange / timeChangeMin; // m/min
+                  const maxAscentRate = (ascentRule.config as any)?.max_ascent_rate_m_per_min || 10;
+
+                  if (ascentRate > maxAscentRate) {
+                     console.warn(`ALERTA DE VELOCIDAD DE ASCENSO: Inmersión ${currentInmersion.codigo}. Tasa actual: ${ascentRate.toFixed(2)}m/min, Máxima: ${maxAscentRate}m/min`);
+                     alertsToInsert.push({
+                        inmersion_id: id,
+                        rule_id: ascentRule.id,
+                        type: 'ASCENT_RATE',
+                        priority: ascentRule.priority,
+                        details: {
+                          ascent_rate: ascentRate.toFixed(2),
+                          max_ascent_rate: maxAscentRate,
+                          inmersion_code: currentInmersion.codigo
+                        }
+                     });
+                  }
+                }
+              }
+            }
+
+            // 3. REAL-TIME VALIDATION: Check for bottom time breach
+            const bottomTimeRule = rules.find(r => r.type === 'BOTTOM_TIME');
+            const plannedBottomTime = currentInmersion.planned_bottom_time;
+            if (bottomTimeRule && plannedBottomTime && currentInmersion.estado === 'en_progreso' && !existingAlertTypes.includes('BOTTOM_TIME')) {
+                const startTime = new Date(`${currentInmersion.fecha_inmersion}T${currentInmersion.hora_inicio}`);
+                const currentTime = new Date();
+                const currentBottomTime = (currentTime.getTime() - startTime.getTime()) / (1000 * 60); // in minutes
+
+                if (currentBottomTime > plannedBottomTime) {
+                    console.warn(`ALERTA DE TIEMPO DE FONDO: Inmersión ${currentInmersion.codigo}. Tiempo actual: ${currentBottomTime.toFixed(2)}min, Planificado: ${plannedBottomTime}min`);
+                    alertsToInsert.push({
+                        inmersion_id: id,
+                        rule_id: bottomTimeRule.id,
+                        type: 'BOTTOM_TIME',
+                        priority: bottomTimeRule.priority,
+                        details: {
+                            current_bottom_time: currentBottomTime.toFixed(2),
+                            planned_bottom_time: plannedBottomTime,
+                            inmersion_code: currentInmersion.codigo
+                        }
+                    });
+                }
+            }
+            
+            // Insert any new alerts
+            if (alertsToInsert.length > 0) {
+              const { error: alertError } = await supabase.from('security_alerts').insert(alertsToInsert);
+
+              if (alertError) {
+                console.error('Error creating security alert(s):', alertError);
+                toast({
+                  title: "Error al crear alerta(s)",
+                  description: "No se pudo registrar la(s) alerta(s) de seguridad.",
+                  variant: "destructive",
+                });
+              } else {
+                 toast({
+                  title: `¡${alertsToInsert.length} Alerta(s) de Seguridad Registrada(s)!`,
+                  description: "Se ha notificado al supervisor sobre la(s) nueva(s) condicione(s).",
+                  variant: "destructive",
+                });
+              }
+            }
           }
         }
 
