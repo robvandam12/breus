@@ -4,6 +4,7 @@ import { Tables, Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { Inmersion } from './useInmersiones';
+import { bitacoraBuzoFormSchema } from '@/components/bitacoras/buzoFormSchema';
 
 // Nueva interfaz para Inmersión con detalles de operación
 export interface InmersionCompleta extends Inmersion {
@@ -69,60 +70,15 @@ const bitacoraSupervisorFormSchema = z.object({
 
 export type BitacoraSupervisorFormData = z.infer<typeof bitacoraSupervisorFormSchema>;
 
-const bitacoraBuzoFormSchema = z.object({
+const bitacoraBuzoDataSchema = bitacoraBuzoFormSchema.extend({
   codigo: z.string(),
-  inmersion_id: z.string().uuid(),
-  buzo: z.string(),
   fecha: z.string(),
-  profundidad_maxima: z.number(),
-  trabajos_realizados: z.string(),
-  observaciones_tecnicas: z.string().optional(),
-  estado_fisico_post: z.string(),
   firmado: z.boolean().default(false),
   estado_aprobacion: z.string().default('pendiente'),
   buzo_id: z.string().uuid().optional(),
-  folio: z.string().optional(),
-  codigo_verificacion: z.string().optional(),
-  empresa_nombre: z.string().optional(),
-  centro_nombre: z.string().optional(),
-  buzo_rut: z.string().optional(),
-  supervisor_nombre: z.string().optional(),
-  supervisor_rut: z.string().optional(),
-  supervisor_correo: z.string().optional(),
-  jefe_centro_correo: z.string().optional(),
-  contratista_nombre: z.string().optional(),
-  contratista_rut: z.string().optional(),
-  condamb_estado_puerto: z.string().optional(),
-  condamb_estado_mar: z.string().optional(),
-  condamb_temp_aire_c: z.number().optional(),
-  condamb_temp_agua_c: z.number().optional(),
-  condamb_visibilidad_fondo_mts: z.number().optional(),
-  condamb_corriente_fondo_nudos: z.number().optional(),
-  datostec_equipo_usado: z.string().optional(),
-  datostec_traje: z.string().optional(),
-  datostec_hora_dejo_superficie: z.string().optional(),
-  datostec_hora_llegada_fondo: z.string().optional(),
-  datostec_hora_salida_fondo: z.string().optional(),
-  datostec_hora_llegada_superficie: z.string().optional(),
-  tiempos_total_fondo: z.string().optional(),
-  tiempos_total_descompresion: z.string().optional(),
-  tiempos_total_buceo: z.string().optional(),
-  tiempos_tabulacion_usada: z.string().optional(),
-  tiempos_intervalo_superficie: z.string().optional(),
-  tiempos_nitrogeno_residual: z.string().optional(),
-  tiempos_grupo_repetitivo_anterior: z.string().optional(),
-  tiempos_nuevo_grupo_repetitivo: z.string().optional(),
-  objetivo_proposito: z.string().optional(),
-  objetivo_tipo_area: z.string().optional(),
-  objetivo_caracteristicas_dimensiones: z.string().optional(),
-  condcert_buceo_altitud: z.boolean().optional(),
-  condcert_certificados_equipos_usados: z.boolean().optional(),
-  condcert_buceo_areas_confinadas: z.boolean().optional(),
-  condcert_observaciones: z.string().optional(),
-  validador_nombre: z.string().optional(),
 });
 
-export type BitacoraBuzoFormData = z.infer<typeof bitacoraBuzoFormSchema>;
+export type BitacoraBuzoFormData = z.infer<typeof bitacoraBuzoDataSchema>;
 
 
 // Funciones de Fetch
