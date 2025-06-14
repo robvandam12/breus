@@ -1,4 +1,3 @@
-
 import { Tables } from '@/integrations/supabase/types';
 
 // Extendiendo Tables<'inmersion'> para asegurar compatibilidad
@@ -11,8 +10,8 @@ export interface InmersionCompleta extends Tables<'inmersion'> {
     contratistas?: { nombre: string } | null;
     sitios?: { nombre: string } | null;
   };
-  buzo_asistente?: string | null;
-  buzo_asistente_id?: string | null;
+  // Las propiedades 'buzo_asistente' y 'buzo_asistente_id' se heredan de Tables<'inmersion'>
+  // por lo que no es necesario redeclararlas aquí.
 }
 
 export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
