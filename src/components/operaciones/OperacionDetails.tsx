@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -123,8 +122,8 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     }
   });
   
-  const handleCreateInmersion = (data: any) => {
-    createInmersionMutation.mutate(data);
+  const handleCreateInmersion = async (data: any) => {
+    await createInmersionMutation.mutateAsync(data);
   };
 
   if (isLoading) {
