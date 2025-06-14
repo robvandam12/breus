@@ -141,6 +141,8 @@ export const CreateBitacoraSupervisorFormComplete = ({
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
+      const combinedObservaciones = `Condiciones físicas previas: ${data.condiciones_fisicas_previas}\n\nObservaciones Generales: ${data.observaciones_generales}`;
+        
       const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
@@ -164,7 +166,6 @@ export const CreateBitacoraSupervisorFormComplete = ({
         equipos_utilizados: equiposUtilizados,
         
         // 4. Observaciones
-        condiciones_fisicas_previas: data.condiciones_fisicas_previas,
         incidentes_menores: data.incidentes_menores || '',
         
         // 5. Embarcación de Apoyo
@@ -200,7 +201,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
         medidas_correctivas: data.medidas_correctivas,
         
         // 12. Observaciones Generales
-        observaciones_generales: data.observaciones_generales,
+        observaciones_generales: combinedObservaciones,
         
         // Campos de compatibilidad
         desarrollo_inmersion: data.desarrollo_inmersion,
