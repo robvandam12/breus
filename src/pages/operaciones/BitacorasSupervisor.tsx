@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -16,7 +15,7 @@ import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { Pagination } from "@/components/ui/Pagination";
+import { SimplePagination } from "@/components/ui/SimplePagination";
 
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -208,7 +207,7 @@ const BitacorasSupervisor = () => {
                         ))}
                       </TableBody>
                     </Table>
-                    <Pagination 
+                    <SimplePagination 
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={setCurrentPage}

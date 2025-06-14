@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +8,7 @@ import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import { BitacoraFilters as IBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { Pagination } from "@/components/ui/Pagination";
+import { SimplePagination } from "@/components/ui/SimplePagination";
 
 interface BitacorasBuzoContentProps {
   filteredBitacorasBuzo: BitacoraBuzoCompleta[];
@@ -149,7 +148,7 @@ export const BitacorasBuzoContent = ({
                   ))}
                 </TableBody>
               </Table>
-              <Pagination 
+              <SimplePagination 
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
