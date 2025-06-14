@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,10 +12,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft, Plus, Trash2, Info } from "lucide-react";
-import { useBitacoraEnhanced, BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
+import { useInmersionesData } from "@/hooks/useInmersionesData";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+// import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced"; // TODO: This hook needs to be replaced or created
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const formSchema = z.object({
@@ -67,11 +69,11 @@ export const CreateBitacoraSupervisorFormComplete = ({
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
-  const { inmersiones } = useBitacoraEnhanced();
-  const { equipos: equiposBuceo } = useEquiposBuceoEnhanced();
+  const { inmersiones } = useInmersionesData();
+  // const { equipos: equiposBuceo } = useEquiposBuceoEnhanced(); // TODO: Re-implementar
 
   const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
-  const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion_id);
+  // const equipoBuceo = equiposBuceo.find(e => e.id === selectedInmersion?.operacion_id); // TODO: Re-implementar
 
   const [buzosAsistentes, setBuzosAsistentes] = useState([
     { nombre: '', matricula: '', cargo: '', numero_serie_profundimetro: '', color_profundimetro: '' }
@@ -118,6 +120,8 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('buzo_nombres', selectedInmersion.buzo_principal);
       
       // Auto-poblar datos del equipo de buceo si existe
+      // TODO: Re-implementar la carga de equipos de buceo. El hook useEquiposBuceoEnhanced fue removido.
+      /*
       if (equipoBuceo?.miembros && equipoBuceo.miembros.length > 0) {
         const miembrosData = equipoBuceo.miembros.map(miembro => {
           // Solo tenemos acceso a usuario_id, no al objeto usuario completo
@@ -131,13 +135,14 @@ export const CreateBitacoraSupervisorFormComplete = ({
         });
         setBuzosAsistentes(miembrosData.length > 0 ? miembrosData : buzosAsistentes);
       }
+      */
 
       // Marcar cámara hiperbárica si profundidad > 40m
       if (selectedInmersion.profundidad_max > 40) {
         setValue('camara_hiperbarica_requerida', true);
       }
     }
-  }, [selectedInmersion, equipoBuceo, setValue]);
+  }, [selectedInmersion, setValue]);
 
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
