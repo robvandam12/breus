@@ -7,7 +7,7 @@ import { FileText, Plus, AlertTriangle, Users } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
-import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import { BitacoraFilters as IBitacoraFilters } from "@/hooks/useBitacoraFilters";
 
 interface BitacorasBuzoContentProps {

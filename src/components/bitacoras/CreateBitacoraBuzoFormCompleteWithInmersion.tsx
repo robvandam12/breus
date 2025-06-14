@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete";
-import { BitacoraBuzoFormData, useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraBuzoFormData, useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
+import { useInmersionesData } from "@/hooks/useInmersionesData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,8 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   inmersionId,
 }: CreateBitacoraBuzoFormCompleteWithInmersionProps) => {
   const [selectedInmersionId, setSelectedInmersionId] = useState<string | null>(inmersionId || null);
-  const { inmersiones, loadingInmersiones, bitacorasBuzo } = useBitacoraEnhanced();
+  const { inmersiones, loadingInmersiones } = useInmersionesData();
+  const { bitacorasBuzo } = useBitacorasBuzo();
 
   // Filtra inmersiones que ya tienen una bitácora de buzo.
   const bitacoraInmersionIds = new Set(bitacorasBuzo.map(b => b.inmersion_id).filter(Boolean));

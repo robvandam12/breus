@@ -9,7 +9,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { BitacorasBuzoContent } from "@/components/bitacoras/BitacorasBuzoContent";
-import { useBitacoraEnhanced, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
+import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,11 +20,14 @@ const BitacorasBuzo = () => {
   
   const { 
     bitacorasBuzo, 
-    bitacorasSupervisor,
-    loading,
+    loadingBuzo,
     createBitacoraBuzo,
     updateBitacoraBuzoSignature
-  } = useBitacoraEnhanced();
+  } = useBitacorasBuzo();
+
+  const { bitacorasSupervisor, loadingSupervisor } = useBitacorasSupervisor();
+  
+  const loading = loadingBuzo || loadingSupervisor;
   
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
