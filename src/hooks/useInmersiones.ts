@@ -3,83 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineSync } from './useOfflineSync';
 import { useEffect } from "react";
+import type { Inmersion } from "@/types/inmersion";
+import { getOperationCompleteData, validateOperationDocuments } from './useOperacionInfo';
+import { useInmersionSecurity } from './useInmersionSecurity';
 
-export interface Inmersion {
-  inmersion_id: string;
-  codigo: string;
-  fecha_inmersion: string;
-  hora_inicio: string;
-  hora_fin?: string;
-  operacion_id: string;
-  buzo_principal: string;
-  buzo_principal_id?: string;
-  buzo_asistente?: string;
-  buzo_asistente_id?: string;
-  supervisor: string;
-  supervisor_id?: string;
-  objetivo: string;
-  estado: string;
-  profundidad_max: number;
-  temperatura_agua: number;
-  visibilidad: number;
-  corriente: string;
-  observaciones?: string;
-  hpt_validado: boolean;
-  anexo_bravo_validado: boolean;
-  created_at: string;
-  updated_at: string;
-  operacion_nombre?: string;
-  current_depth?: number | null;
-  planned_bottom_time?: number | null;
-  depth_history?: Array<{ depth: number; timestamp: string }>;
-}
-
-export interface ValidationStatus {
-  hasValidHPT: boolean;
-  hasValidAnexoBravo: boolean;
-  hasTeam: boolean;
-  canExecute: boolean;
-  hptCode?: string;
-  anexoBravoCode?: string;
-}
-
-export interface OperationData {
-  id: string;
-  codigo: string;
-  nombre: string;
-  equipo_buceo_id?: string;
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
-}
-
-export interface HPTData {
-  id: string;
-  codigo: string;
-  supervisor: string;
-  firmado: boolean;
-}
-
-export interface AnexoBravoData {
-  id: string;
-  codigo: string;
-  supervisor: string;
-  firmado: boolean;
-}
-
-export interface EquipoBuceoData {
-  id: string;
-  nombre: string;
-  miembros: Array<{
-    usuario_id: string;
-    rol_equipo: string;
-    nombre?: string;
-  }>;
-}
+export { validateOperationDocuments };
+export type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData } from "@/types/inmersion";
 
 export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();
   const { isOnline, addPendingAction } = useOfflineSync();
+  const { checkForSecurityBreaches } = useInmersionSecurity();
 
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['inmersiones', operacionId],
@@ -130,83 +64,6 @@ export const useInmersiones = (operacionId?: string) => {
     };
   }, [queryClient, operacionId]);
 
-  // Nueva función para obtener datos completos de la operación
-  const getOperationCompleteData = async (operacionId: string) => {
-    try {
-      // Obtener datos de la operación
-      const { data: operacionData, error: operacionError } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          salmoneras:salmonera_id(nombre),
-          sitios:sitio_id(nombre),
-          contratistas:contratista_id(nombre)
-        `)
-        .eq('id', operacionId)
-        .single();
-
-      if (operacionError) throw operacionError;
-
-      // Obtener HPT firmado de la operación
-      const { data: hptData } = await supabase
-        .from('hpt')
-        .select('id, codigo, supervisor, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .maybeSingle();
-
-      // Obtener Anexo Bravo firmado de la operación
-      const { data: anexoBravoData } = await supabase
-        .from('anexo_bravo')
-        .select('id, codigo, supervisor, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .maybeSingle();
-
-      // Obtener datos del equipo de buceo si está asignado
-      let equipoBuceoData = null;
-      if (operacionData.equipo_buceo_id) {
-        const { data: equipoData } = await supabase
-          .from('equipos_buceo')
-          .select(`
-            id,
-            nombre,
-            equipo_buceo_miembros (
-              usuario_id,
-              rol_equipo,
-              usuario:usuario_id (
-                nombre,
-                apellido
-              )
-            )
-          `)
-          .eq('id', operacionData.equipo_buceo_id)
-          .single();
-
-        if (equipoData) {
-          equipoBuceoData = {
-            ...equipoData,
-            miembros: equipoData.equipo_buceo_miembros?.map((miembro: any) => ({
-              usuario_id: miembro.usuario_id,
-              rol_equipo: miembro.rol_equipo,
-              nombre: miembro.usuario ? `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : ''
-            })) || []
-          };
-        }
-      }
-
-      return {
-        operacion: operacionData as OperationData,
-        hpt: hptData as HPTData | null,
-        anexoBravo: anexoBravoData as AnexoBravoData | null,
-        equipoBuceo: equipoBuceoData as EquipoBuceoData | null
-      };
-    } catch (error) {
-      console.error('Error getting operation complete data:', error);
-      return null;
-    }
-  };
-
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
       if (!isOnline) {
@@ -214,26 +71,22 @@ export const useInmersiones = (operacionId?: string) => {
         const payload = { ...inmersionData, hpt_validado: false, anexo_bravo_validado: false };
         addPendingAction({ type: 'create', table: 'inmersion', payload });
         
-        // Optimistic update
-        const newInmersion = { ...payload, inmersion_id: tempId, codigo: `OFFLINE-${tempId.slice(-4)}` };
+        const newInmersion = { ...payload, inmersion_id: tempId, codigo: `OFFLINE-${tempId.slice(-4)}` } as Inmersion;
         queryClient.setQueryData(['inmersiones'], (oldData: Inmersion[] = []) => [...oldData, newInmersion]);
         return newInmersion;
       }
 
-      // Obtener datos completos de la operación para poblar campos automáticamente
       const operationData = await getOperationCompleteData(inmersionData.operacion_id);
       
       let finalData = { ...inmersionData };
 
       if (operationData) {
-        // Poblar supervisor desde HPT o Anexo Bravo
         if (!finalData.supervisor && operationData.hpt?.supervisor) {
           finalData.supervisor = operationData.hpt.supervisor;
         } else if (!finalData.supervisor && operationData.anexoBravo?.supervisor) {
           finalData.supervisor = operationData.anexoBravo.supervisor;
         }
 
-        // Poblar buzos desde el equipo de buceo
         if (operationData.equipoBuceo?.miembros) {
           const buzoPrincipal = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'supervisor');
           const buzoAsistente = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_asistente' || m.rol_equipo === 'buzo');
@@ -249,7 +102,6 @@ export const useInmersiones = (operacionId?: string) => {
           }
         }
 
-        // Generar código automático si no se proporciona
         if (!finalData.codigo) {
           const timestamp = Date.now().toString().slice(-6);
           finalData.codigo = `INM-${operationData.operacion.codigo}-${timestamp}`;
@@ -298,133 +150,16 @@ export const useInmersiones = (operacionId?: string) => {
         return { inmersion_id: id, ...data };
       }
 
-      // If updating depth, also update history and perform real-time validation
       if (data.current_depth !== undefined && data.current_depth !== null) {
+        await checkForSecurityBreaches(id, data);
+
         const { data: currentInmersion, error: fetchError } = await supabase
           .from('inmersion')
-          .select('depth_history, profundidad_max, supervisor_id, codigo, operacion_id, planned_bottom_time, fecha_inmersion, hora_inicio, estado')
+          .select('depth_history')
           .eq('inmersion_id', id)
           .single();
 
         if (fetchError) throw fetchError;
-        
-        if (currentInmersion) {
-          // Fetch active security rules
-          const { data: rules, error: rulesError } = await supabase
-            .from('security_alert_rules')
-            .select('*')
-            .in('type', ['DEPTH_LIMIT', 'ASCENT_RATE', 'BOTTOM_TIME'])
-            .eq('enabled', true);
-
-          if (rulesError) {
-            console.error('Error fetching security rules:', rulesError);
-          } else if (rules && rules.length > 0) {
-            const alertsToInsert = [];
-            const currentHistory = (currentInmersion.depth_history || []) as Array<{ depth: number; timestamp: string }>;
-
-            // Fetch existing unacknowledged alerts for this immersion to avoid spam
-            const { data: existingAlerts } = await supabase
-              .from('security_alerts')
-              .select('type')
-              .eq('inmersion_id', id)
-              .eq('acknowledged', false);
-            const existingAlertTypes = existingAlerts?.map(a => a.type) || [];
-
-            // 1. REAL-TIME VALIDATION: Check for depth limit breach
-            const depthRule = rules.find(r => r.type === 'DEPTH_LIMIT');
-            if (depthRule && data.current_depth > currentInmersion.profundidad_max && !existingAlertTypes.includes('DEPTH_LIMIT')) {
-              console.warn(`ALERTA DE PROFUNDIDAD: Inmersión ${currentInmersion.codigo}. Actual: ${data.current_depth}m, Máxima: ${currentInmersion.profundidad_max}m`);
-              alertsToInsert.push({
-                inmersion_id: id,
-                rule_id: depthRule.id,
-                type: 'DEPTH_LIMIT',
-                priority: depthRule.priority,
-                details: {
-                  current_depth: data.current_depth,
-                  max_depth: currentInmersion.profundidad_max,
-                  inmersion_code: currentInmersion.codigo
-                }
-              });
-            }
-
-            // 2. REAL-TIME VALIDATION: Check for ascent rate breach
-            const ascentRule = rules.find(r => r.type === 'ASCENT_RATE');
-            if (ascentRule && currentHistory.length > 0) {
-              const lastHistoryEntry = currentHistory[currentHistory.length - 1];
-              const isAscending = data.current_depth < lastHistoryEntry.depth;
-
-              if (isAscending) {
-                const depthChange = lastHistoryEntry.depth - data.current_depth;
-                const timeChangeMs = new Date().getTime() - new Date(lastHistoryEntry.timestamp).getTime();
-                
-                if (timeChangeMs > 1000) { // Avoid division by zero and ensure meaningful time diff
-                  const timeChangeMin = timeChangeMs / (1000 * 60);
-                  const ascentRate = depthChange / timeChangeMin; // m/min
-                  const maxAscentRate = (ascentRule.config as any)?.max_ascent_rate_m_per_min || 10;
-
-                  if (ascentRate > maxAscentRate) {
-                     console.warn(`ALERTA DE VELOCIDAD DE ASCENSO: Inmersión ${currentInmersion.codigo}. Tasa actual: ${ascentRate.toFixed(2)}m/min, Máxima: ${maxAscentRate}m/min`);
-                     alertsToInsert.push({
-                        inmersion_id: id,
-                        rule_id: ascentRule.id,
-                        type: 'ASCENT_RATE',
-                        priority: ascentRule.priority,
-                        details: {
-                          ascent_rate: ascentRate.toFixed(2),
-                          max_ascent_rate: maxAscentRate,
-                          inmersion_code: currentInmersion.codigo
-                        }
-                     });
-                  }
-                }
-              }
-            }
-
-            // 3. REAL-TIME VALIDATION: Check for bottom time breach
-            const bottomTimeRule = rules.find(r => r.type === 'BOTTOM_TIME');
-            const plannedBottomTime = currentInmersion.planned_bottom_time;
-            if (bottomTimeRule && plannedBottomTime && currentInmersion.estado === 'en_progreso' && !existingAlertTypes.includes('BOTTOM_TIME')) {
-                const startTime = new Date(`${currentInmersion.fecha_inmersion}T${currentInmersion.hora_inicio}`);
-                const currentTime = new Date();
-                const currentBottomTime = (currentTime.getTime() - startTime.getTime()) / (1000 * 60); // in minutes
-
-                if (currentBottomTime > plannedBottomTime) {
-                    console.warn(`ALERTA DE TIEMPO DE FONDO: Inmersión ${currentInmersion.codigo}. Tiempo actual: ${currentBottomTime.toFixed(2)}min, Planificado: ${plannedBottomTime}min`);
-                    alertsToInsert.push({
-                        inmersion_id: id,
-                        rule_id: bottomTimeRule.id,
-                        type: 'BOTTOM_TIME',
-                        priority: bottomTimeRule.priority,
-                        details: {
-                            current_bottom_time: currentBottomTime.toFixed(2),
-                            planned_bottom_time: plannedBottomTime,
-                            inmersion_code: currentInmersion.codigo
-                        }
-                    });
-                }
-            }
-            
-            // Insert any new alerts
-            if (alertsToInsert.length > 0) {
-              const { error: alertError } = await supabase.from('security_alerts').insert(alertsToInsert);
-
-              if (alertError) {
-                console.error('Error creating security alert(s):', alertError);
-                toast({
-                  title: "Error al crear alerta(s)",
-                  description: "No se pudo registrar la(s) alerta(s) de seguridad.",
-                  variant: "destructive",
-                });
-              } else {
-                 toast({
-                  title: `¡${alertsToInsert.length} Alerta(s) de Seguridad Registrada(s)!`,
-                  description: "Se ha notificado al supervisor sobre la(s) nueva(s) condicione(s).",
-                  variant: "destructive",
-                });
-              }
-            }
-          }
-        }
 
         const currentHistory = (currentInmersion?.depth_history || []) as Array<{ depth: number; timestamp: string }>;
         const newHistoryEntry = {
@@ -556,54 +291,6 @@ export const useInmersiones = (operacionId?: string) => {
       });
     },
   });
-
-  const validateOperationDocuments = async (operacionId: string): Promise<ValidationStatus> => {
-    try {
-      // Verificar HPT firmado
-      const { data: hptData } = await supabase
-        .from('hpt')
-        .select('codigo, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .single();
-
-      // Verificar Anexo Bravo firmado
-      const { data: anexoData } = await supabase
-        .from('anexo_bravo')
-        .select('codigo, firmado')
-        .eq('operacion_id', operacionId)
-        .eq('firmado', true)
-        .single();
-
-      // Verificar que la operación tenga equipo asignado
-      const { data: operacionData } = await supabase
-        .from('operacion')
-        .select('equipo_buceo_id')
-        .eq('id', operacionId)
-        .single();
-
-      const hasValidHPT = !!hptData;
-      const hasValidAnexoBravo = !!anexoData;
-      const hasTeam = !!(operacionData?.equipo_buceo_id);
-
-      return {
-        hasValidHPT,
-        hasValidAnexoBravo,
-        hasTeam,
-        canExecute: hasValidHPT && hasValidAnexoBravo && hasTeam,
-        hptCode: hptData?.codigo,
-        anexoBravoCode: anexoData?.codigo
-      };
-    } catch (error) {
-      console.error('Error validating documents:', error);
-      return {
-        hasValidHPT: false,
-        hasValidAnexoBravo: false,
-        hasTeam: false,
-        canExecute: false
-      };
-    }
-  };
 
   return {
     inmersiones,
