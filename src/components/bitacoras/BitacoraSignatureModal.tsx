@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { HandDrawnSignature } from '@/components/signatures/HandDrawnSignature';
+import { DigitalSignature } from '@/components/anexo-bravo/DigitalSignature';
 import { PenTool, CheckCircle } from 'lucide-react';
 
 interface BitacoraSignatureModalProps {
@@ -61,7 +60,7 @@ export const BitacoraSignatureModal = ({
             <p className="text-sm text-zinc-500">{role}</p>
           </div>
 
-          <HandDrawnSignature
+          <DigitalSignature
             title="Firmar Bitácora"
             role={role}
             signerName={userName}
@@ -72,7 +71,6 @@ export const BitacoraSignatureModal = ({
               setSignatureData('');
             }}
             iconColor="text-blue-600"
-            compact={false}
           />
 
           <div className="flex gap-3 pt-4">

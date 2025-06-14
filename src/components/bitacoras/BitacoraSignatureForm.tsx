@@ -1,9 +1,7 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { HandDrawnSignature } from '@/components/signatures/HandDrawnSignature';
+import { DigitalSignature } from '@/components/anexo-bravo/DigitalSignature';
 import { CheckCircle, PenTool, User } from 'lucide-react';
 
 interface BitacoraSignatureFormProps {
@@ -71,7 +69,7 @@ export const BitacoraSignatureForm = ({
               <User className="w-4 h-4" />
               Firma del Supervisor
             </h4>
-            <HandDrawnSignature
+            <DigitalSignature
               title="Supervisor de Buceo"
               role="Supervisor"
               signerName={userRole === 'supervisor' ? userName : 'Pendiente'}
@@ -80,7 +78,6 @@ export const BitacoraSignatureForm = ({
               onReset={() => resetSignature('supervisor')}
               disabled={!canSignSupervisor}
               iconColor="text-blue-600"
-              compact={true}
             />
           </div>
 
@@ -90,7 +87,7 @@ export const BitacoraSignatureForm = ({
               <User className="w-4 h-4" />
               Firma del Buzo
             </h4>
-            <HandDrawnSignature
+            <DigitalSignature
               title="Buzo Principal"
               role="Buzo"
               signerName={userRole === 'buzo' ? userName : 'Pendiente'}
@@ -99,7 +96,6 @@ export const BitacoraSignatureForm = ({
               onReset={() => resetSignature('buzo')}
               disabled={!canSignBuzo}
               iconColor="text-green-600"
-              compact={true}
             />
           </div>
 

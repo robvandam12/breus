@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { PenTool, CheckCircle, RotateCcw, Trash2 } from 'lucide-react';
 interface DigitalSignatureProps {
   title: string;
   role: string;
+  signerName: string;
   isSigned: boolean;
   onSign: (signatureData: string) => void;
   onReset: () => void;
@@ -18,6 +18,7 @@ interface DigitalSignatureProps {
 export const DigitalSignature = ({
   title,
   role,
+  signerName,
   isSigned,
   onSign,
   onReset,
@@ -135,6 +136,7 @@ export const DigitalSignature = ({
       <CardContent>
         <div className="space-y-4">
           <div className="text-sm text-zinc-600">
+            <p><strong>Firmante:</strong> {signerName}</p>
             <p><strong>Rol:</strong> {role}</p>
             <p><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
             <p><strong>Hora:</strong> {new Date().toLocaleTimeString()}</p>
