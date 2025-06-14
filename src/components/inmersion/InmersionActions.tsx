@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -14,7 +13,7 @@ import { MoreVertical, Edit, Trash2, FileText, Eye } from "lucide-react";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced, BitacoraSupervisorFormData, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { toast } from "@/hooks/use-toast";
 
 interface InmersionActionsProps {
@@ -49,7 +48,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
     }
   };
 
-  const handleCreateBitacoraSupervisor = async (data: any) => {
+  const handleCreateBitacoraSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
       await createBitacoraSupervisor.mutateAsync(data);
       toast({
@@ -68,7 +67,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
     }
   };
 
-  const handleCreateBitacoraBuzo = async (data: any) => {
+  const handleCreateBitacoraBuzo = async (data: BitacoraBuzoFormData) => {
     try {
       await createBitacoraBuzo.mutateAsync(data);
       toast({

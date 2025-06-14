@@ -1,14 +1,26 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { Tables, Json } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables, Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { useInmersiones, Inmersion } from './useInmersiones';
 
+// Nueva interfaz para Inmersión con detalles de operación
+export interface InmersionCompleta extends Inmersion {
+  operacion: {
+    id: string;
+    nombre: string;
+    equipo_buceo_id?: string | null;
+    salmoneras?: { nombre: string } | null;
+    contratistas?: { nombre: string } | null;
+    sitios?: { nombre: string } | null;
+  } | null;
+}
+
 // Interfaces unificadas para Bitácoras Completas
 export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'inmersion_id' | 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
-  inmersion: Inmersion | null;
+  inmersion: InmersionCompleta | null;
   supervisor_data?: { id: string; nombre: string; } | null;
   aprobador_data?: { id: string; nombre: string; } | null;
   inmersiones_buzos: any[] | null;
@@ -17,7 +29,7 @@ export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_superv
 }
 
 export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'inmersion_id' | 'aprobada_por'> {
-  inmersion: Inmersion | null;
+  inmersion: InmersionCompleta | null;
 }
 
 // Esquemas Zod para formularios
@@ -110,7 +122,7 @@ const getBitacorasSupervisor = async (): Promise<BitacoraSupervisorCompleta[]> =
     diving_records: Array.isArray(item.diving_records) ? item.diving_records : [],
   })) || [];
 
-  return mappedData as BitacoraSupervisorCompleta[];
+  return mappedData as unknown as BitacoraSupervisorCompleta[];
 };
 
 const getBitacorasBuzo = async (): Promise<BitacoraBuzoCompleta[]> => {
@@ -139,13 +151,11 @@ export const useBitacoraEnhanced = () => {
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor, refetch: refetchSupervisor } = useQuery<BitacoraSupervisorCompleta[]>({
     queryKey: ['bitacorasSupervisor'],
     queryFn: getBitacorasSupervisor,
-    initialData: [],
   });
 
   const { data: bitacorasBuzo = [], isLoading: loadingBuzo, refetch: refetchBuzo } = useQuery<BitacoraBuzoCompleta[]>({
     queryKey: ['bitacorasBuzo'],
     queryFn: getBitacorasBuzo,
-    initialData: [],
   });
 
   const refreshBitacoras = () => {
