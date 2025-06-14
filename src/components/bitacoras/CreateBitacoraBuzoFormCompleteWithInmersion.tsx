@@ -14,13 +14,15 @@ import { Label } from "@/components/ui/label";
 interface CreateBitacoraBuzoFormCompleteWithInmersionProps {
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
+  inmersionId?: string;
 }
 
 export const CreateBitacoraBuzoFormCompleteWithInmersion = ({ 
   onSubmit, 
-  onCancel 
+  onCancel,
+  inmersionId,
 }: CreateBitacoraBuzoFormCompleteWithInmersionProps) => {
-  const [selectedInmersionId, setSelectedInmersionId] = useState<string | null>(null);
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string | null>(inmersionId || null);
   const { inmersiones, loadingInmersiones, bitacorasBuzo } = useBitacoraEnhanced();
 
   // Filtra inmersiones que ya tienen una bitácora de buzo.

@@ -73,15 +73,17 @@ const formSchema = z.object({
 interface CreateBitacoraBuzoFormCompleteProps {
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
+  inmersionId?: string;
 }
 
 export const CreateBitacoraBuzoFormComplete = ({ 
   onSubmit, 
-  onCancel 
+  onCancel,
+  inmersionId,
 }: CreateBitacoraBuzoFormCompleteProps) => {
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState(inmersionId ? 2 : 1);
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string>(inmersionId || '');
   const totalSteps = 6;
 
   const {
@@ -94,6 +96,7 @@ export const CreateBitacoraBuzoFormComplete = ({
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      inmersion_id: inmersionId || "",
       empresa_nombre: "",
       centro_nombre: "",
       buzo: "",
@@ -191,12 +194,16 @@ export const CreateBitacoraBuzoFormComplete = ({
   };
 
   const prevStep = () => {
+    if (inmersionId && currentStep === 2) {
+      onCancel();
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  if (currentStep === 1) {
+  if (currentStep === 1 && !inmersionId) {
     return (
       <div className="max-w-5xl mx-auto">
         <BitacoraInmersionSelector 
