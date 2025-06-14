@@ -52,6 +52,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
     setValue
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onBlur',
     defaultValues: {
       supervisor: inmersionData.supervisor || "",
       incidentes: ""

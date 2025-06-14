@@ -10,11 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { FileText, X, ChevronRight, ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { FileText, X, ChevronRight, ChevronLeft, Plus, Trash2, Info } from "lucide-react";
 import { useBitacoraEnhanced, BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const formSchema = z.object({
   inmersion_id: z.string().min(1, "Debe seleccionar una inmersión"),
@@ -89,6 +90,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
     getValues
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onBlur',
     defaultValues: {
       inmersion_id: inmersionId,
       incluye_descompresion: false,
@@ -294,41 +296,77 @@ export const CreateBitacoraSupervisorFormComplete = ({
           />
         </div>
         <div>
-          <Label htmlFor="lugar_trabajo">Lugar de Trabajo *</Label>
-          <Input
-            id="lugar_trabajo"
-            {...register('lugar_trabajo')}
-            placeholder="Lugar específico de trabajo"
-            className="bg-gray-100"
-            readOnly
-          />
-          {errors.lugar_trabajo && (
-            <p className="text-sm text-red-600">{errors.lugar_trabajo.message}</p>
-          )}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="lugar_trabajo">Lugar de Trabajo *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Asegúrese de ingresar el lugar de trabajo específico.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Input
+              id="lugar_trabajo"
+              {...register('lugar_trabajo')}
+              placeholder="Lugar específico de trabajo"
+              className="bg-gray-100"
+              readOnly
+            />
+            {errors.lugar_trabajo && (
+              <p className="text-sm text-red-600">{errors.lugar_trabajo.message}</p>
+            )}
+          </div>
         </div>
         <div>
-          <Label htmlFor="trabajo_a_realizar">Tipo de Trabajo *</Label>
-          <Input
-            id="trabajo_a_realizar"
-            {...register('trabajo_a_realizar')}
-            placeholder="Tipo de trabajo a realizar"
-            className="bg-gray-100"
-            readOnly
-          />
-          {errors.trabajo_a_realizar && (
-            <p className="text-sm text-red-600">{errors.trabajo_a_realizar.message}</p>
-          )}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="trabajo_a_realizar">Tipo de Trabajo *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Asegúrese de ingresar el tipo de trabajo a realizar.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Input
+              id="trabajo_a_realizar"
+              {...register('trabajo_a_realizar')}
+              placeholder="Tipo de trabajo a realizar"
+              className="bg-gray-100"
+              readOnly
+            />
+            {errors.trabajo_a_realizar && (
+              <p className="text-sm text-red-600">{errors.trabajo_a_realizar.message}</p>
+            )}
+          </div>
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="supervisor_nombre_matricula">Nombre y N° de matrícula del supervisor de buceo *</Label>
-          <Input
-            id="supervisor_nombre_matricula"
-            {...register('supervisor_nombre_matricula')}
-            placeholder="Nombre completo y matrícula del supervisor"
-          />
-          {errors.supervisor_nombre_matricula && (
-            <p className="text-sm text-red-600">{errors.supervisor_nombre_matricula.message}</p>
-          )}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="supervisor_nombre_matricula">Nombre y N° de matrícula del supervisor de buceo *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Asegúrese de ingresar el nombre completo y el número de matrícula vigente.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Input
+              id="supervisor_nombre_matricula"
+              {...register('supervisor_nombre_matricula')}
+              placeholder="Nombre completo y matrícula del supervisor"
+            />
+            {errors.supervisor_nombre_matricula && (
+              <p className="text-sm text-red-600">{errors.supervisor_nombre_matricula.message}</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -541,7 +579,22 @@ export const CreateBitacoraSupervisorFormComplete = ({
             checked={watch('incluye_descompresion')}
             onCheckedChange={(checked) => setValue('incluye_descompresion', checked as boolean)}
           />
-          <Label htmlFor="incluye_descompresion">Incluye descompresión (se debe adjuntar programa)</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="incluye_descompresion">Incluye descompresión</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Marque esta opción si el plan de buceo incluye paradas de descompresión.
+                    Se debe adjuntar el programa de descompresión.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div>
           <Label htmlFor="contratista_nombre">7. Contratista de Buceo *</Label>
@@ -645,9 +698,24 @@ export const CreateBitacoraSupervisorFormComplete = ({
           checked={watch('camara_hiperbarica_requerida')}
           onCheckedChange={(checked) => setValue('camara_hiperbarica_requerida', checked as boolean)}
         />
-        <Label htmlFor="camara_hiperbarica_requerida">
-          Cámara hiperbárica requerida (sobre 40 metros - adjuntar documentos)
-        </Label>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="camara_hiperbarica_requerida">
+            Cámara hiperbárica requerida
+          </Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">
+                  Requerida por ley para inmersiones a más de 40 metros de profundidad.
+                  Asegúrese de adjuntar los documentos de la cámara.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   );
@@ -712,7 +780,21 @@ export const CreateBitacoraSupervisorFormComplete = ({
           )}
         </div>
         <div>
-          <Label htmlFor="observaciones_generales">12. Observaciones Generales *</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="observaciones_generales">12. Observaciones Generales *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Incluya detalles sobre la inmersión, incluyendo tiempos, profundidades, y tareas específicas realizadas.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Textarea
             id="observaciones_generales"
             {...register('observaciones_generales')}
@@ -724,7 +806,22 @@ export const CreateBitacoraSupervisorFormComplete = ({
           )}
         </div>
         <div>
-          <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión *</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-zinc-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Narración detallada de la faena, desde el inicio hasta el fin.
+                    Incluya tiempos, profundidades, y tareas específicas realizadas.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Textarea
             id="desarrollo_inmersion"
             {...register('desarrollo_inmersion')}
