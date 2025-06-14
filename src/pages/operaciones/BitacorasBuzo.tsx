@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -37,7 +36,8 @@ const BitacorasBuzo = () => {
     totalPages,
     setCurrentPage,
     totalItems,
-    itemsPerPage
+    itemsPerPage,
+    setItemsPerPage
   } = useBitacoraFilters(bitacorasBuzo);
 
   const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
@@ -141,6 +141,7 @@ const BitacorasBuzo = () => {
               setCurrentPage={setCurrentPage}
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
             />
           </div>
 

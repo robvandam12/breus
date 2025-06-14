@@ -25,6 +25,7 @@ interface BitacorasBuzoContentProps {
   setCurrentPage: (page: number) => void;
   totalItems: number;
   itemsPerPage: number;
+  onItemsPerPageChange: (size: number) => void;
 }
 
 export const BitacorasBuzoContent = ({
@@ -42,6 +43,7 @@ export const BitacorasBuzoContent = ({
   setCurrentPage,
   totalItems,
   itemsPerPage,
+  onItemsPerPageChange,
 }: BitacorasBuzoContentProps) => {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -154,6 +156,7 @@ export const BitacorasBuzoContent = ({
                 onPageChange={setCurrentPage}
                 totalItems={totalItems}
                 itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={onItemsPerPageChange}
               />
             </Card>
           ) : (

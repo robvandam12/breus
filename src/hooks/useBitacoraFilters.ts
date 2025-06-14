@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 
 export interface BitacoraFilters {
@@ -8,7 +7,7 @@ export interface BitacoraFilters {
   fechaHasta: string;
 }
 
-const ITEMS_PER_PAGE = 10;
+const DEFAULT_ITEMS_PER_PAGE = 10;
 
 export const useBitacoraFilters = (initialData: any[]) => {
   const [filters, setFilters] = useState<BitacoraFilters>({
@@ -19,9 +18,15 @@ export const useBitacoraFilters = (initialData: any[]) => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPageState] = useState(DEFAULT_ITEMS_PER_PAGE);
 
   const updateFilters = (newFilters: Partial<BitacoraFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
+  };
+
+  const setItemsPerPage = (newSize: number) => {
+    setItemsPerPageState(newSize);
     setCurrentPage(1);
   };
 
@@ -64,12 +69,12 @@ export const useBitacoraFilters = (initialData: any[]) => {
     });
   }, [initialData, filters]);
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredData, currentPage]);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
 
 
   return {
@@ -80,6 +85,7 @@ export const useBitacoraFilters = (initialData: any[]) => {
     currentPage,
     setCurrentPage,
     totalItems: filteredData.length,
-    itemsPerPage: ITEMS_PER_PAGE,
+    itemsPerPage,
+    setItemsPerPage,
   };
 };

@@ -40,7 +40,8 @@ const BitacorasSupervisor = () => {
     totalPages,
     setCurrentPage,
     totalItems,
-    itemsPerPage
+    itemsPerPage,
+    setItemsPerPage
   } = useBitacoraFilters(bitacorasSupervisor);
 
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
@@ -213,6 +214,7 @@ const BitacorasSupervisor = () => {
                       onPageChange={setCurrentPage}
                       totalItems={totalItems}
                       itemsPerPage={itemsPerPage}
+                      onItemsPerPageChange={setItemsPerPage}
                     />
                   </Card>
                 ) : (
