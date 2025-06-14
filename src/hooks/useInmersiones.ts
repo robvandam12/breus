@@ -104,7 +104,8 @@ export const useInmersiones = (operacionId?: string) => {
       
       return data.map(inmersion => ({
         ...inmersion,
-        operacion_nombre: inmersion.operacion?.nombre || ''
+        operacion_nombre: inmersion.operacion?.nombre || '',
+        depth_history: (inmersion.depth_history as unknown as Array<{ depth: number; timestamp: string }>) ?? [],
       })) as Inmersion[];
     },
   });
