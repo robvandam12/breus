@@ -29,9 +29,16 @@ const BitacorasBuzo = () => {
   
   const loading = loadingBuzo || loadingSupervisor;
   
-  const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
-
-  const filteredBitacorasBuzo = filterBitacoras(bitacorasBuzo);
+  const { 
+    filters, 
+    setFilters, 
+    paginatedData: filteredBitacorasBuzo,
+    currentPage,
+    totalPages,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage
+  } = useBitacoraFilters(bitacorasBuzo);
 
   const handleCreateBuzo = async (data: BitacoraBuzoFormData) => {
     try {
@@ -129,6 +136,11 @@ const BitacorasBuzo = () => {
               onSignBuzo={handleSignBuzo}
               onNewBitacora={() => setIsCreateDialogOpen(true)}
               viewMode={viewMode}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
             />
           </div>
 

@@ -5,23 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Filter, Search } from "lucide-react";
+import { BitacoraFilters as IBitacoraFilters } from "@/hooks/useBitacoraFilters";
 
 interface BitacoraFiltersProps {
-  onFiltersChange: (filters: BitacoraFilters) => void;
-  activeFilters: BitacoraFilters;
-}
-
-export interface BitacoraFilters {
-  search: string;
-  estado: 'all' | 'firmada' | 'pendiente';
-  fechaDesde?: string;
-  fechaHasta?: string;
+  onFiltersChange: (filters: Partial<IBitacoraFilters>) => void;
+  activeFilters: IBitacoraFilters;
 }
 
 export const BitacoraFilters = ({ onFiltersChange, activeFilters }: BitacoraFiltersProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const updateFilter = (key: keyof BitacoraFilters, value: string) => {
+  const updateFilter = (key: keyof IBitacoraFilters, value: string) => {
     onFiltersChange({
       ...activeFilters,
       [key]: value
@@ -30,13 +24,15 @@ export const BitacoraFilters = ({ onFiltersChange, activeFilters }: BitacoraFilt
 
   const clearFilters = () => {
     onFiltersChange({
-      search: '',
-      estado: 'all'
+      searchTerm: '',
+      estado: 'all',
+      fechaDesde: '',
+      fechaHasta: '',
     });
     setShowAdvanced(false);
   };
 
-  const hasActiveFilters = activeFilters.search || 
+  const hasActiveFilters = activeFilters.searchTerm || 
     activeFilters.estado !== 'all' || 
     activeFilters.fechaDesde || 
     activeFilters.fechaHasta;
@@ -48,8 +44,8 @@ export const BitacoraFilters = ({ onFiltersChange, activeFilters }: BitacoraFilt
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Buscar por código, supervisor o buzo..."
-            value={activeFilters.search}
-            onChange={(e) => updateFilter('search', e.target.value)}
+            value={activeFilters.searchTerm}
+            onChange={(e) => updateFilter('searchTerm', e.target.value)}
             className="pl-10"
           />
         </div>
@@ -105,12 +101,12 @@ export const BitacoraFilters = ({ onFiltersChange, activeFilters }: BitacoraFilt
 
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2">
-          {activeFilters.search && (
+          {activeFilters.searchTerm && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Búsqueda: {activeFilters.search}
+              Búsqueda: {activeFilters.searchTerm}
               <X 
                 className="w-3 h-3 cursor-pointer" 
-                onClick={() => updateFilter('search', '')}
+                onClick={() => updateFilter('searchTerm', '')}
               />
             </Badge>
           )}

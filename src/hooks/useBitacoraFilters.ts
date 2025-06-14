@@ -1,93 +1,85 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export interface BitacoraFilters {
-  search: string;
   searchTerm: string;
-  dateFrom: Date | null;
-  dateTo: Date | null;
   estado: 'all' | 'firmada' | 'pendiente';
-  firmado: boolean | null;
-  tipo: string;
-  fechaDesde?: string;
-  fechaHasta?: string;
+  fechaDesde: string;
+  fechaHasta: string;
 }
 
-export const useBitacoraFilters = () => {
+const ITEMS_PER_PAGE = 10;
+
+export const useBitacoraFilters = (initialData: any[]) => {
   const [filters, setFilters] = useState<BitacoraFilters>({
-    search: '',
     searchTerm: '',
-    dateFrom: null,
-    dateTo: null,
     estado: 'all',
-    firmado: null,
-    tipo: '',
-    fechaDesde: undefined,
-    fechaHasta: undefined
+    fechaDesde: '',
+    fechaHasta: '',
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const updateFilters = (newFilters: Partial<BitacoraFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
   };
 
-  const filterBitacoras = (bitacoras: any[]) => {
-    return bitacoras.filter(bitacora => {
+  const filteredData = useMemo(() => {
+    if (!initialData) return [];
+    return initialData.filter(bitacora => {
       // Search term filter
-      if (filters.searchTerm || filters.search) {
-        const searchTerm = filters.searchTerm || filters.search;
-        const searchLower = searchTerm.toLowerCase();
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
         const matchesSearch = 
           bitacora.codigo?.toLowerCase().includes(searchLower) ||
           bitacora.supervisor?.toLowerCase().includes(searchLower) ||
           bitacora.buzo?.toLowerCase().includes(searchLower) ||
-          bitacora.inmersion_codigo?.toLowerCase().includes(searchLower);
+          (bitacora.inmersion_codigo && bitacora.inmersion_codigo.toLowerCase().includes(searchLower));
         
         if (!matchesSearch) return false;
       }
-
-      // Date from filter
-      if (filters.dateFrom && bitacora.fecha) {
-        const bitacoraDate = new Date(bitacora.fecha);
-        if (bitacoraDate < filters.dateFrom) return false;
-      }
-
-      // Date to filter
-      if (filters.dateTo && bitacora.fecha) {
-        const bitacoraDate = new Date(bitacora.fecha);
-        if (bitacoraDate > filters.dateTo) return false;
-      }
-
+      
       // Estado filter
       if (filters.estado !== 'all') {
-        if (filters.estado === 'firmada' && !bitacora.firmado) return false;
-        if (filters.estado === 'pendiente' && bitacora.firmado) return false;
+        const isFirmada = bitacora.firmado === true || bitacora.estado === 'firmado' || bitacora.estado_aprobacion === 'aprobada';
+        if (filters.estado === 'firmada' && !isFirmada) return false;
+        if (filters.estado === 'pendiente' && isFirmada) return false;
       }
 
       // Date range filters
       if (filters.fechaDesde && bitacora.fecha) {
-        const bitacoraDate = new Date(bitacora.fecha);
-        const fromDate = new Date(filters.fechaDesde);
+        const bitacoraDate = new Date(bitacora.fecha + 'T00:00:00');
+        const fromDate = new Date(filters.fechaDesde + 'T00:00:00');
         if (bitacoraDate < fromDate) return false;
       }
 
       if (filters.fechaHasta && bitacora.fecha) {
-        const bitacoraDate = new Date(bitacora.fecha);
-        const toDate = new Date(filters.fechaHasta);
+        const bitacoraDate = new Date(bitacora.fecha + 'T00:00:00');
+        const toDate = new Date(filters.fechaHasta + 'T00:00:00');
         if (bitacoraDate > toDate) return false;
-      }
-
-      // Firmado filter
-      if (filters.firmado !== null) {
-        if (bitacora.firmado !== filters.firmado) return false;
       }
 
       return true;
     });
-  };
+  }, [initialData, filters]);
+
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredData, currentPage]);
+
 
   return {
     filters,
     setFilters: updateFilters,
-    filterBitacoras
+    paginatedData,
+    totalPages,
+    currentPage,
+    setCurrentPage,
+    totalItems: filteredData.length,
+    itemsPerPage: ITEMS_PER_PAGE,
   };
 };

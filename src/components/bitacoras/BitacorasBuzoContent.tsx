@@ -9,6 +9,7 @@ import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import { BitacoraFilters as IBitacoraFilters } from "@/hooks/useBitacoraFilters";
+import { Pagination } from "@/components/ui/Pagination";
 
 interface BitacorasBuzoContentProps {
   filteredBitacorasBuzo: BitacoraBuzoCompleta[];
@@ -20,6 +21,11 @@ interface BitacorasBuzoContentProps {
   onSignBuzo: (id: string, signatureData: string) => Promise<void>;
   onNewBitacora: () => void;
   viewMode: 'cards' | 'table';
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: (page: number) => void;
+  totalItems: number;
+  itemsPerPage: number;
 }
 
 export const BitacorasBuzoContent = ({
@@ -32,6 +38,11 @@ export const BitacorasBuzoContent = ({
   onSignBuzo,
   onNewBitacora,
   viewMode,
+  currentPage,
+  totalPages,
+  setCurrentPage,
+  totalItems,
+  itemsPerPage,
 }: BitacorasBuzoContentProps) => {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -79,7 +90,15 @@ export const BitacorasBuzoContent = ({
         </CardContent>
       </Card>
 
-      {filteredBitacorasBuzo.length === 0 ? (
+      {bitacorasBuzo.length > 0 && totalItems === 0 ? (
+        <Card className="text-center py-12">
+          <CardContent>
+            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-zinc-900 mb-2">No se encontraron resultados</h3>
+            <p className="text-zinc-500 mb-4">Intenta ajustar los filtros de búsqueda</p>
+          </CardContent>
+        </Card>
+      ) : filteredBitacorasBuzo.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
@@ -130,6 +149,13 @@ export const BitacorasBuzoContent = ({
                   ))}
                 </TableBody>
               </Table>
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
             </Card>
           ) : (
             <div className="text-center p-8 border rounded-lg bg-zinc-50">
