@@ -32,6 +32,10 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   const handleSelectInmersion = (inmersionId: string) => {
     setSelectedInmersionId(inmersionId);
   };
+
+  const selectedInmersion = selectedInmersionId
+    ? inmersiones.find(i => i.inmersion_id === selectedInmersionId)
+    : null;
   
   if (loadingInmersiones) {
     return (
@@ -43,11 +47,10 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   }
 
   // Una vez seleccionada la inmersión, muestra el formulario completo.
-  // Asumimos que CreateBitacoraBuzoFormComplete acepta inmersionId para pre-poblarse.
-  if (selectedInmersionId) {
+  if (selectedInmersionId && selectedInmersion) {
     return (
       <CreateBitacoraBuzoFormComplete
-        inmersionId={selectedInmersionId}
+        inmersion={selectedInmersion}
         onSubmit={onSubmit}
         onCancel={() => setSelectedInmersionId(null)} // Permite volver a la pantalla de selección
       />

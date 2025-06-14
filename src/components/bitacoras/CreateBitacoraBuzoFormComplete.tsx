@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { BitacoraInmersionSelector } from "./BitacoraInmersionSelector";
-import { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraBuzoFormData, InmersionCompleta } from "@/hooks/useBitacoraEnhanced";
 import { Separator } from "@/components/ui/separator";
 import { bitacoraBuzoFormSchema, BitacoraBuzoFormValues } from "./buzoFormSchema";
 import { Step2Personal } from "./buzo-form-steps/Step2Personal";
@@ -21,16 +20,18 @@ interface CreateBitacoraBuzoFormCompleteProps {
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
   inmersionId?: string;
+  inmersion?: InmersionCompleta | null;
 }
 
 export const CreateBitacoraBuzoFormComplete = ({ 
   onSubmit, 
   onCancel,
   inmersionId,
+  inmersion,
 }: CreateBitacoraBuzoFormCompleteProps) => {
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(inmersionId ? 2 : 1);
-  const [selectedInmersionId, setSelectedInmersionId] = useState<string>(inmersionId || '');
+  const [currentStep, setCurrentStep] = useState(inmersionId || inmersion ? 2 : 1);
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string>(inmersionId || inmersion?.inmersion_id || '');
   const totalSteps = 6;
   const { toast } = useToast();
 
@@ -61,7 +62,6 @@ export const CreateBitacoraBuzoFormComplete = ({
     formState: { errors },
   } = form;
   
-  const formValues = watch();
   const draftKey = `bitacora_buzo_draft_${selectedInmersionId}`;
 
   useEffect(() => {
@@ -73,9 +73,15 @@ export const CreateBitacoraBuzoFormComplete = ({
           title: "Borrador Cargado",
           description: "Se ha cargado un borrador guardado para esta inmersión.",
         });
+      } else if (inmersion) {
+        setValue('empresa_nombre', inmersion.operacion?.salmoneras?.nombre || '');
+        setValue('centro_nombre', inmersion.operacion?.sitios?.nombre || '');
+        setValue('contratista_nombre', inmersion.operacion?.contratistas?.nombre || '');
+        setValue('supervisor_nombre', inmersion.supervisor || '');
+        setValue('objetivo_proposito', inmersion.objetivo || '');
       }
     }
-  }, [selectedInmersionId, reset, draftKey, toast]);
+  }, [selectedInmersionId, inmersion, reset, draftKey, toast, setValue]);
 
   useEffect(() => {
     const subscription = watch((value) => {
