@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Calendar, TrendingUp, Anchor, Clock, Download } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInmersiones } from '@/hooks/useInmersiones';
-import { useBitacoraEnhanced } from '@/hooks/useBitacoraEnhanced';
+import { useBitacorasBuzo } from '@/hooks/useBitacorasBuzo';
 import { useOperaciones } from '@/hooks/useOperaciones';
 
 interface MonthlyData {
@@ -26,7 +26,7 @@ interface EstadoData {
 export const BuzoReports = () => {
   const { profile } = useAuth();
   const { inmersiones } = useInmersiones();
-  const { bitacorasBuzo } = useBitacoraEnhanced();
+  const { bitacorasBuzo } = useBitacorasBuzo();
   const { operaciones } = useOperaciones();
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
