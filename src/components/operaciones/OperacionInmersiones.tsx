@@ -10,7 +10,8 @@ import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTrian
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
+import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
 import { toast } from "@/hooks/use-toast";
 
 interface OperacionInmersionesProps {
@@ -19,7 +20,8 @@ interface OperacionInmersionesProps {
 
 export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo, bitacorasSupervisor } = useBitacoraEnhanced();
+  const { createBitacoraSupervisor, bitacorasSupervisor } = useBitacorasSupervisor();
+  const { createBitacoraBuzo } = useBitacorasBuzo();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [inmersionToDelete, setInmersionToDelete] = useState<string | null>(null);

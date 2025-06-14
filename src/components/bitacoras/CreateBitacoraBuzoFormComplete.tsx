@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { BitacoraInmersionSelector } from "./BitacoraInmersionSelector";
-import { BitacoraBuzoFormData, InmersionCompleta } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
+import { InmersionCompleta } from "@/types/bitacoras";
 import { Separator } from "@/components/ui/separator";
 import { bitacoraBuzoFormSchema, BitacoraBuzoFormValues } from "./buzoFormSchema";
 import { Step2Personal } from "./buzo-form-steps/Step2Personal";

@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Plus, Anchor, Calendar, User, Clock } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
-import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBitacoraBuzoFormEnhanced";
-import { CreateBitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
+import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
+import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { useBitacorasBuzo } from '@/hooks/useBitacorasBuzo';
+import { useBitacorasSupervisor } from '@/hooks/useBitacorasSupervisor';
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -28,7 +29,8 @@ export default function Inmersiones() {
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
-  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoraEnhanced();
+  const { createBitacoraBuzo } = useBitacorasBuzo();
+  const { createBitacoraSupervisor } = useBitacorasSupervisor();
   
   const operacionId = searchParams.get('operacion');
 
@@ -96,7 +98,7 @@ export default function Inmersiones() {
 
   const handleBitacoraBuzoSubmit = async (data: any) => {
     try {
-      await createBitacoraBuzo.mutateAsync({ ...data, inmersion_id: selectedInmersionForBitacora });
+      await createBitacoraBuzo.mutateAsync(data);
       toast({
         title: "Bitácora de buzo creada",
         description: "La bitácora ha sido creada exitosamente.",
@@ -115,7 +117,7 @@ export default function Inmersiones() {
 
   const handleBitacoraSupervisorSubmit = async (data: any) => {
     try {
-      await createBitacoraSupervisor.mutateAsync({ ...data, inmersion_id: selectedInmersionForBitacora });
+      await createBitacoraSupervisor.mutateAsync(data);
       toast({
         title: "Bitácora de supervisor creada",
         description: "La bitácora ha sido creada exitosamente.",
@@ -256,19 +258,25 @@ export default function Inmersiones() {
           {/* Dialogs */}
           <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <CreateBitacoraBuzoFormEnhanced
-                onSubmit={handleBitacoraBuzoSubmit}
-                onCancel={() => setShowBitacoraBuzoForm(false)}
-              />
+              {selectedInmersionForBitacora && 
+                <CreateBitacoraBuzoFormCompleteWithInmersion
+                  inmersionId={selectedInmersionForBitacora}
+                  onSubmit={handleBitacoraBuzoSubmit}
+                  onCancel={() => setShowBitacoraBuzoForm(false)}
+                />
+              }
             </DialogContent>
           </Dialog>
 
           <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <CreateBitacoraSupervisorFormEnhanced
-                onSubmit={handleBitacoraSupervisorSubmit}
-                onCancel={() => setShowBitacoraSupervisorForm(false)}
-              />
+              {selectedInmersionForBitacora && 
+                <CreateBitacoraSupervisorFormComplete
+                  inmersionId={selectedInmersionForBitacora}
+                  onSubmit={handleBitacoraSupervisorSubmit}
+                  onCancel={() => setShowBitacoraSupervisorForm(false)}
+                />
+              }
             </DialogContent>
           </Dialog>
         </main>

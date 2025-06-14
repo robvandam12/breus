@@ -12,7 +12,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { FileText, X, Users, Building, Calendar, Clock } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({

@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle, Clock, TrendingUp } from "lucide-react";
-import { BitacoraSupervisorCompleta as BitacoraSupervisor, BitacoraBuzoCompleta as BitacoraBuzo } from "@/hooks/useBitacoraEnhanced";
+import { BitacoraSupervisorCompleta as BitacoraSupervisor, BitacoraBuzoCompleta as BitacoraBuzo } from "@/types/bitacoras";
 
 interface BitacoraStatsProps {
   bitacorasSupervisor: BitacoraSupervisor[];
