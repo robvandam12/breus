@@ -16,4 +16,6 @@ export interface SecurityAlert {
   inmersion?: {
     codigo: string;
   };
+  escalation_level: number;
+  last_escalated_at: string | null;
 }

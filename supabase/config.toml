@@ -1,1 +1,21 @@
+
 project_id = "mwxytzuootrrudjfwsif"
+
+[api]
+enabled = true
+extra_is_healthy_checks = []
+
+[database]
+major_version = 15
+
+[functions.alert-escalation]
+verify_jwt = false
+
+[auth]
+# ... (configuraciones de auth existentes)
+
+[analytics]
+# ... (configuraciones de analytics existentes)
+
+[realtime]
+enabled = true

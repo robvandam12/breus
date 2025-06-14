@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, BellRing, CheckCircle, ShieldCheck, Search, ShieldX } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle, ShieldCheck, Search, ShieldX, ChevronsUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -140,7 +140,25 @@ export const SecurityAlertsPanel = () => {
                                         Inmersión: <span className="font-semibold">{inmersionCode}</span>
                                     </p>
                                 </div>
-                                <Badge variant={alert.acknowledged ? 'secondary' : 'destructive'} className="capitalize">{alert.priority}</Badge>
+                                <div className="flex items-center gap-2">
+                                  {alert.escalation_level > 0 && !alert.acknowledged && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700">
+                                            <ChevronsUp className="w-3.5 h-3.5 mr-1" />
+                                            Nivel {alert.escalation_level}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Alerta escalada {alert.escalation_level} {alert.escalation_level > 1 ? 'veces' : 'vez'}.</p>
+                                          {alert.last_escalated_at && <p className="text-xs text-muted-foreground">Última vez: {new Date(alert.last_escalated_at).toLocaleString('es-CL')}</p>}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                  <Badge variant={alert.acknowledged ? 'secondary' : 'destructive'} className="capitalize">{alert.priority}</Badge>
+                                </div>
                             </div>
 
                             <div className="text-sm text-zinc-700 dark:text-zinc-300 space-y-1">

@@ -1415,8 +1415,10 @@ export type Database = {
           acknowledged_by: string | null
           created_at: string
           details: Json | null
+          escalation_level: number
           id: string
           inmersion_id: string
+          last_escalated_at: string | null
           priority: string
           rule_id: string | null
           type: string
@@ -1427,8 +1429,10 @@ export type Database = {
           acknowledged_by?: string | null
           created_at?: string
           details?: Json | null
+          escalation_level?: number
           id?: string
           inmersion_id: string
+          last_escalated_at?: string | null
           priority: string
           rule_id?: string | null
           type: string
@@ -1439,8 +1443,10 @@ export type Database = {
           acknowledged_by?: string | null
           created_at?: string
           details?: Json | null
+          escalation_level?: number
           id?: string
           inmersion_id?: string
+          last_escalated_at?: string | null
           priority?: string
           rule_id?: string | null
           type?: string
