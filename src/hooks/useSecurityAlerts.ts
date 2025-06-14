@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -10,7 +9,7 @@ export const useSecurityAlerts = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const { data: alerts = [], isLoading } = useQuery<SecurityAlert[]>({
+  const { data: alerts = [], isLoading } = useQuery({
     queryKey: ['security_alerts'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,7 +23,8 @@ export const useSecurityAlerts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      // Hacemos un cast para asegurar que los datos coincidan con nuestra interfaz estricta.
+      return data as SecurityAlert[];
     },
   });
 
