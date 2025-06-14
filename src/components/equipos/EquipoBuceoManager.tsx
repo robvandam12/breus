@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, UserPlus, Mail } from "lucide-react";
-import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { useEquiposBuceoEnhanced, EquipoBuceoFormData } from "@/hooks/useEquiposBuceoEnhanced";
 import { useUsuarios } from "@/hooks/useUsuarios";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { CreateEquipoForm } from "./CreateEquipoForm";
 
 interface EquipoBuceoManagerProps {
   salmoneraId?: string;
@@ -21,16 +20,10 @@ interface EquipoBuceoManagerProps {
 export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => {
   const { equipos, isLoading, createEquipo, addMiembro, inviteMember } = useEquiposBuceoEnhanced();
   const { usuarios } = useUsuarios();
-  const { salmoneras } = useSalmoneras();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
   const [selectedEquipo, setSelectedEquipo] = useState<string>('');
-  const [newEquipo, setNewEquipo] = useState({
-    nombre: '',
-    descripcion: '',
-    empresa_id: salmoneraId || ''
-  });
   const [newMember, setNewMember] = useState({
     tipo: 'existing', // 'existing' or 'invite'
     usuario_id: '',
@@ -49,12 +42,9 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
     u.rol === 'supervisor' || u.rol === 'buzo'
   );
 
-  const handleCreateEquipo = () => {
-    if (newEquipo.nombre && newEquipo.empresa_id) {
-      createEquipo({ ...newEquipo, tipo_empresa: 'salmonera' });
-      setNewEquipo({ nombre: '', descripcion: '', empresa_id: salmoneraId || '' });
-      setIsCreateDialogOpen(false);
-    }
+  const handleCreateEquipo = async (data: EquipoBuceoFormData) => {
+    await createEquipo(data);
+    setIsCreateDialogOpen(false);
   };
 
   const handleAddMember = () => {
@@ -124,57 +114,11 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Equipo de Buceo</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nombre">Nombre del Equipo *</Label>
-                <Input
-                  id="nombre"
-                  value={newEquipo.nombre}
-                  onChange={(e) => setNewEquipo(prev => ({ ...prev, nombre: e.target.value }))}
-                  placeholder="Ej: Equipo Centro Norte"
-                />
-              </div>
-              <div>
-                <Label htmlFor="descripcion">Descripción</Label>
-                <Textarea
-                  id="descripcion"
-                  value={newEquipo.descripcion}
-                  onChange={(e) => setNewEquipo(prev => ({ ...prev, descripcion: e.target.value }))}
-                  placeholder="Descripción del equipo..."
-                />
-              </div>
-              {!salmoneraId && (
-                <div>
-                  <Label htmlFor="salmonera">Salmonera *</Label>
-                  <Select
-                    value={newEquipo.empresa_id}
-                    onValueChange={(value) => setNewEquipo(prev => ({ ...prev, empresa_id: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar salmonera..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {salmoneras.map((salmonera) => (
-                        <SelectItem key={salmonera.id} value={salmonera.id}>
-                          {salmonera.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="flex gap-3 pt-4">
-                <Button onClick={handleCreateEquipo} className="flex-1">
-                  Crear Equipo
-                </Button>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </div>
+            <CreateEquipoForm 
+              onSubmit={handleCreateEquipo}
+              onCancel={() => setIsCreateDialogOpen(false)}
+              salmoneraId={salmoneraId}
+            />
           </DialogContent>
         </Dialog>
       </div>

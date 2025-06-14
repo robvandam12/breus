@@ -12,14 +12,15 @@ import { useSalmoneras } from "@/hooks/useSalmoneras";
 interface CreateEquipoFormProps {
   onSubmit: (data: { nombre: string; descripcion: string; empresa_id: string; tipo_empresa: 'salmonera' | 'contratista' }) => Promise<void>;
   onCancel: () => void;
+  salmoneraId?: string;
 }
 
-export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) => {
+export const CreateEquipoForm = ({ onSubmit, onCancel, salmoneraId }: CreateEquipoFormProps) => {
   const { salmoneras } = useSalmoneras();
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    empresa_id: ''
+    empresa_id: salmoneraId || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,24 +68,26 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
           />
         </div>
 
-        <div>
-            <Label htmlFor="salmonera">Salmonera *</Label>
-            <Select
-              value={formData.empresa_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}
-            >
-              <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar salmonera..." />
-              </SelectTrigger>
-              <SelectContent>
-                  {salmoneras.map((salmonera) => (
-                  <SelectItem key={salmonera.id} value={salmonera.id}>
-                      {salmonera.nombre}
-                  </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-        </div>
+        {!salmoneraId && (
+          <div>
+              <Label htmlFor="salmonera">Salmonera *</Label>
+              <Select
+                value={formData.empresa_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}
+              >
+                <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar salmonera..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {salmoneras.map((salmonera) => (
+                    <SelectItem key={salmonera.id} value={salmonera.id}>
+                        {salmonera.nombre}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-4">
           <Button 
