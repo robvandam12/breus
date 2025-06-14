@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -17,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
@@ -450,6 +450,37 @@ export default function Inmersiones() {
                                   <Button onClick={handleUpdateDepth}>Actualizar</Button>
                               </div>
                           </div>
+                          {/* Depth History Section */}
+                          {selectedInmersion.depth_history && selectedInmersion.depth_history.length > 0 && (
+                            <div className="pt-4">
+                              <h4 className="text-md font-medium text-gray-800 mb-2">Historial de Profundidad</h4>
+                              <div className="h-52 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart 
+                                    data={selectedInmersion.depth_history.map(h => ({ ...h, time: new Date(h.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) }))}
+                                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="time" />
+                                    <YAxis allowDecimals={false} label={{ value: 'Profundidad (m)', angle: -90, position: 'insideLeft' }} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="depth" name="Profundidad" stroke="#3b82f6" activeDot={{ r: 8 }} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <div className="mt-4 max-h-40 overflow-y-auto pr-2">
+                                <ul className="space-y-1">
+                                  {selectedInmersion.depth_history.slice().reverse().map((entry, index) => (
+                                    <li key={index} className="text-xs text-gray-600 flex justify-between p-1 rounded hover:bg-gray-50">
+                                      <span>{new Date(entry.timestamp).toLocaleString('es-CL')}</span>
+                                      <span className="font-semibold">{entry.depth} m</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
                       </CardContent>
                     </Card>
                   )}

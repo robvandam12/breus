@@ -1024,6 +1024,7 @@ export type Database = {
           corriente: string
           created_at: string
           current_depth: number | null
+          depth_history: Json | null
           estado: string
           fecha_inmersion: string
           hora_fin: string | null
@@ -1051,6 +1052,7 @@ export type Database = {
           corriente: string
           created_at?: string
           current_depth?: number | null
+          depth_history?: Json | null
           estado?: string
           fecha_inmersion: string
           hora_fin?: string | null
@@ -1078,6 +1080,7 @@ export type Database = {
           corriente?: string
           created_at?: string
           current_depth?: number | null
+          depth_history?: Json | null
           estado?: string
           fecha_inmersion?: string
           hora_fin?: string | null

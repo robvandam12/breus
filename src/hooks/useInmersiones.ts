@@ -31,6 +31,7 @@ export interface Inmersion {
   operacion_nombre?: string;
   current_depth?: number | null;
   planned_bottom_time?: number | null;
+  depth_history?: Array<{ depth: number; timestamp: string }>;
 }
 
 export interface ValidationStatus {
@@ -294,6 +295,25 @@ export const useInmersiones = (operacionId?: string) => {
           old.map(i => i.inmersion_id === id ? { ...i, ...data } : i)
         );
         return { inmersion_id: id, ...data };
+      }
+
+      // If updating depth, also update history
+      if (data.current_depth !== undefined && data.current_depth !== null) {
+        const { data: currentInmersion, error: fetchError } = await supabase
+          .from('inmersion')
+          .select('depth_history')
+          .eq('inmersion_id', id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const currentHistory = (currentInmersion?.depth_history || []) as Array<{ depth: number; timestamp: string }>;
+        const newHistoryEntry = {
+          depth: data.current_depth,
+          timestamp: new Date().toISOString(),
+        };
+        const newHistory = [...currentHistory, newHistoryEntry];
+        data.depth_history = newHistory;
       }
 
       const { data: updatedData, error } = await supabase
