@@ -1,107 +1,118 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete";
-import { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
-import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { BitacoraBuzoFormData, useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FileText } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface CreateBitacoraBuzoFormCompleteWithInmersionProps {
-  inmersionId: string;
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
 }
 
 export const CreateBitacoraBuzoFormCompleteWithInmersion = ({ 
-  inmersionId,
   onSubmit, 
   onCancel 
 }: CreateBitacoraBuzoFormCompleteWithInmersionProps) => {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData> | null>(null);
-  const { inmersiones } = useInmersiones();
-  const { bitacorasSupervisor } = useBitacoraEnhanced();
-  const { operaciones } = useOperaciones();
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string | null>(null);
+  const { inmersiones, loadingInmersiones, bitacorasBuzo } = useBitacoraEnhanced();
 
-  useEffect(() => {
-    // Obtener datos de la inmersión y bitácora supervisor
-    const inmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
-    const bitacoraSupervisor = bitacorasSupervisor.find(b => b.inmersion?.inmersion_id === inmersionId);
-    
-    if (inmersion) {
-      // Obtener operación asociada
-      const operacion = operaciones.find(op => op.id === inmersion.operacion_id);
-      
-      const datosIniciales: Partial<BitacoraBuzoFormData> = {
-        inmersion_id: inmersionId,
-        codigo: `BIT-BUZ-${Date.now()}`,
-        buzo: inmersion.buzo_principal,
-        fecha: inmersion.fecha_inmersion,
-        profundidad_maxima: inmersion.profundidad_max,
-        firmado: false,
-        estado_aprobacion: 'pendiente',
-        // Datos de la operación
-        empresa_nombre: operacion?.nombre || '',
-        centro_nombre: operacion?.nombre || '',
-        supervisor_nombre: inmersion.supervisor,
-        // Condiciones ambientales de la inmersión
-        condamb_temp_agua_c: inmersion.temperatura_agua,
-        condamb_visibilidad_fondo_mts: inmersion.visibilidad,
-        condamb_corriente_fondo_nudos: parseFloat(inmersion.corriente) || 0,
-        // Datos técnicos del buceo de la bitácora supervisor si existe
-        datostec_hora_dejo_superficie: inmersion.hora_inicio,
-        datostec_hora_llegada_superficie: inmersion.hora_fin,
-        // Trabajos realizados basado en el objetivo
-        trabajos_realizados: inmersion.objetivo || '',
-        estado_fisico_post: 'Normal', // Valor por defecto
-        objetivo_proposito: inmersion.objetivo || '',
-        // Valores por defecto para campos requeridos
-        tiempos_total_fondo: '',
-        tiempos_tabulacion_usada: '',
-      };
-      
-      setFormData(datosIniciales);
-    }
-  }, [inmersionId, inmersiones, bitacorasSupervisor, operaciones]);
+  // Filtra inmersiones que ya tienen una bitácora de buzo.
+  const bitacoraInmersionIds = new Set(bitacorasBuzo.map(b => b.inmersion_id).filter(Boolean));
+  const availableInmersiones = inmersiones.filter(i => !bitacoraInmersionIds.has(i.inmersion_id));
 
-  const handleSubmit = async (data: BitacoraBuzoFormData) => {
-    setLoading(true);
-    try {
-      // Asegurar que el inmersion_id esté incluido en los datos
-      const dataWithInmersion = {
-        ...data,
-        inmersion_id: inmersionId
-      };
-      await onSubmit(dataWithInmersion);
-    } catch (error) {
-      console.error('Error creating bitácora buzo:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSelectInmersion = (inmersionId: string) => {
+    setSelectedInmersionId(inmersionId);
   };
-
-  if (!formData) {
+  
+  if (loadingInmersiones) {
     return (
-      <div className="p-6 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p>Cargando datos de la inmersión...</p>
+      <div className="p-6 text-center flex flex-col items-center justify-center h-full min-h-[400px]">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-zinc-500">Cargando inmersiones disponibles...</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900">Datos Pre-cargados</h3>
-        <p className="text-sm text-blue-700">
-          Los datos de la inmersión y bitácora de supervisor han sido pre-cargados automáticamente.
-        </p>
-      </div>
-      
+  // Una vez seleccionada la inmersión, muestra el formulario completo.
+  // Asumimos que CreateBitacoraBuzoFormComplete acepta inmersionId para pre-poblarse.
+  if (selectedInmersionId) {
+    return (
       <CreateBitacoraBuzoFormComplete
-        onSubmit={handleSubmit}
-        onCancel={onCancel}
+        inmersionId={selectedInmersionId}
+        onSubmit={onSubmit}
+        onCancel={() => setSelectedInmersionId(null)} // Permite volver a la pantalla de selección
       />
-    </div>
+    );
+  }
+
+  // Paso inicial: seleccionar una inmersión.
+  return (
+    <Card className="max-w-3xl mx-auto border-0 shadow-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+            <FileText className="w-5 h-5 text-teal-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Nueva Bitácora de Buzo</h2>
+            <p className="text-sm text-zinc-500">Selecciona una inmersión para registrar tu bitácora.</p>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6 pt-2">
+        {availableInmersiones.length === 0 ? (
+          <Alert variant="default" className="bg-yellow-50 border-yellow-200">
+            <AlertTitle className="font-semibold text-yellow-800">No hay Inmersiones para Registrar</AlertTitle>
+            <AlertDescription className="text-yellow-700">
+              Todas las inmersiones registradas por supervisores ya tienen una bitácora de buzo asociada.
+              Por favor, espera a que se registren nuevas inmersiones.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-4">
+            <Label htmlFor="inmersion-select" className="font-medium text-zinc-800">
+                Inmersiones Disponibles
+            </Label>
+            <Select onValueChange={handleSelectInmersion}>
+              <SelectTrigger id="inmersion-select" className="w-full">
+                <SelectValue placeholder="Elige una inmersión de la lista..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableInmersiones.map((inmersion) => (
+                  <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
+                    <div className="flex items-center justify-between w-full space-x-4">
+                        <div className="flex flex-col items-start text-left">
+                            <span className="font-semibold">{inmersion.codigo}</span>
+                            <span className="text-xs text-zinc-500 truncate max-w-[200px]">{inmersion.objetivo}</span>
+                        </div>
+                         <div className="flex flex-col items-end text-right">
+                             <span className="text-xs">{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
+                            <Badge variant="outline">{inmersion.supervisor}</Badge>
+                         </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-zinc-500">
+                Solo se muestran las inmersiones que aún no tienen una bitácora de buzo registrada.
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

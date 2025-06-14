@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -8,7 +9,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText, Plus, LayoutGrid, LayoutList, AlertTriangle, Users } from "lucide-react";
-import { CreateBitacoraBuzoFormComplete } from "@/components/bitacoras/CreateBitacoraBuzoFormComplete";
+import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
@@ -222,7 +223,7 @@ const BitacorasBuzo = () => {
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogContent variant="form" className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
-              <CreateBitacoraBuzoFormComplete
+              <CreateBitacoraBuzoFormCompleteWithInmersion
                 onSubmit={handleCreateBuzo}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />
