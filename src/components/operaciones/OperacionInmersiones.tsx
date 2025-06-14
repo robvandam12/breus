@@ -13,12 +13,15 @@ import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from '@tanstack/react-query';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface OperacionInmersionesProps {
   operacionId: string;
+  canCreateInmersiones?: boolean;
+  onNewInmersion?: () => void;
 }
 
-export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
+export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewInmersion }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
   const { createBitacoraSupervisor, bitacorasSupervisor } = useBitacorasSupervisor();
   const { createBitacoraBuzo } = useBitacorasBuzo();
@@ -159,9 +162,28 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
               <Anchor className="w-5 h-5" />
               Inmersiones de la Operación
             </CardTitle>
+            {onNewInmersion && (
+              <Button
+                onClick={onNewInmersion}
+                size="sm"
+                disabled={!canCreateInmersiones}
+                title={!canCreateInmersiones ? "Complete los requisitos para crear inmersiones" : "Crear nueva inmersión"}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Inmersión
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
+          {onNewInmersion && !canCreateInmersiones && (
+            <Alert className="mb-4 border-yellow-200 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-yellow-800">
+                Para crear inmersiones necesita: Equipo asignado, HPT firmado y Anexo Bravo firmado
+              </AlertDescription>
+            </Alert>
+          )}
           {operacionInmersiones.length === 0 ? (
             <div className="text-center py-8">
               <Anchor className="w-12 h-12 text-gray-300 mx-auto mb-4" />

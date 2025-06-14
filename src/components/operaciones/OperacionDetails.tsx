@@ -11,6 +11,7 @@ import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionFor
 import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
 import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
 import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
+import { OperacionInmersiones } from '@/components/operaciones/OperacionInmersiones';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -278,52 +279,11 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         </TabsContent>
 
         <TabsContent value="inmersiones" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Inmersiones ({documentStatus?.inmersiones.length || 0})</CardTitle>
-              <Button 
-                onClick={() => setShowCreateInmersion(true)} 
-                size="sm"
-                disabled={!canCreateInmersiones}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Inmersión
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {!canCreateInmersiones && (
-                <Alert className="mb-4 border-yellow-200 bg-yellow-50">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-yellow-800">
-                    Para crear inmersiones necesita: Equipo asignado, HPT firmado y Anexo Bravo firmado
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {documentStatus?.inmersiones.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No hay inmersiones creadas</p>
-              ) : (
-                <div className="space-y-2">
-                  {documentStatus?.inmersiones.map((inmersion) => (
-                    <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{inmersion.codigo}</p>
-                        <p className="text-sm text-gray-600">Fecha: {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={inmersion.estado === 'completada' ? "default" : "secondary"}>
-                          {inmersion.estado}
-                        </Badge>
-                        <Button variant="outline" size="sm">
-                          Ver
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <OperacionInmersiones 
+            operacionId={operacionId}
+            canCreateInmersiones={canCreateInmersiones}
+            onNewInmersion={() => setShowCreateInmersion(true)}
+          />
         </TabsContent>
 
         <TabsContent value="historial" className="space-y-4">
