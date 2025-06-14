@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
 import { Activity, TrendingUp, Users, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { usePreDiveValidation } from '@/hooks/usePreDiveValidation';
@@ -19,13 +18,19 @@ interface RealTimeMetric {
 interface ActivityData {
   time: string;
   inmersiones: number;
-  validaciones: number;
   firmas: number;
+}
+
+interface ImmersionStatusData {
+    estado: string;
+    valor: number;
+    fill: string;
 }
 
 export const RealTimeMetrics = () => {
   const [metrics, setMetrics] = useState<RealTimeMetric[]>([]);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const [immersionStatusData, setImmersionStatusData] = useState<ImmersionStatusData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { validations } = usePreDiveValidation();
 
@@ -33,9 +38,9 @@ export const RealTimeMetrics = () => {
     try {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
-      const thisHour = now.getHours();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
-      // Métricas de inmersiones hoy - usando la columna correcta fecha_inmersion
+      // Métricas de inmersiones hoy
       const { data: inmersionesHoy, error: inmError } = await supabase
         .from('inmersion')
         .select('inmersion_id, estado, created_at, fecha_inmersion')
@@ -54,10 +59,10 @@ export const RealTimeMetrics = () => {
 
       const { data: anexosFirmados, error: anexoError } = await supabase
         .from('anexo_bravo')
-        .select('id, created_at')
+        .select('id, created_at, updated_at')
         .eq('firmado', true)
-        .gte('created_at', `${today}T00:00:00`);
-
+        .gte('updated_at', `${today}T00:00:00`);
+      
       if (anexoError) throw anexoError;
 
       // Métricas de operaciones activas
@@ -68,7 +73,7 @@ export const RealTimeMetrics = () => {
 
       if (opError) throw opError;
 
-      // Calcular métricas
+      // Calcular métricas para KPI cards
       const totalInmersiones = inmersionesHoy?.length || 0;
       const inmersionesCompletadas = inmersionesHoy?.filter(i => i.estado === 'completada').length || 0;
       const formulariosFirmados = (hptFirmados?.length || 0) + (anexosFirmados?.length || 0);
@@ -112,21 +117,54 @@ export const RealTimeMetrics = () => {
 
       setMetrics(newMetrics);
 
-      // Generar datos de actividad por hora (últimas 24 horas)
-      const activityByHour: ActivityData[] = [];
-      for (let i = 23; i >= 0; i--) {
-        const hour = (thisHour - i + 24) % 24;
-        const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
-        
-        activityByHour.push({
-          time: timeLabel,
-          inmersiones: Math.floor(Math.random() * 5),
-          validaciones: Math.floor(Math.random() * 3),
-          firmas: Math.floor(Math.random() * 4)
-        });
-      }
+      // --- Inicio: Nuevos datos para gráficos ---
 
-      setActivityData(activityByHour);
+      // 1. Datos para gráfico de actividad en las últimas 24h
+      const activityByHour = Array.from({ length: 24 }, (_, i) => {
+        const d = new Date();
+        d.setHours(d.getHours() - i);
+        return {
+          time: `${d.getHours().toString().padStart(2, '0')}:00`,
+          hour: d.getHours(),
+          inmersiones: 0,
+          firmas: 0,
+        };
+      }).reverse();
+      const activityMap = new Map(activityByHour.map(h => [h.hour, h]));
+
+      const { data: immersionActivity, error: immActError_24h } = await supabase.from('inmersion').select('created_at').gte('created_at', twentyFourHoursAgo);
+      if (immActError_24h) throw immActError_24h;
+      immersionActivity.forEach(item => {
+        const hour = new Date(item.created_at).getHours();
+        if (activityMap.has(hour)) activityMap.get(hour)!.inmersiones += 1;
+      });
+
+      const { data: hptActivity, error: hptActError_24h } = await supabase.from('hpt').select('updated_at').eq('firmado', true).gte('updated_at', twentyFourHoursAgo);
+      if (hptActError_24h) throw hptActError_24h;
+      hptActivity.forEach(item => {
+        const hour = new Date(item.updated_at).getHours();
+        if (activityMap.has(hour)) activityMap.get(hour)!.firmas += 1;
+      });
+
+      const { data: anexoActivity, error: anexoActError_24h } = await supabase.from('anexo_bravo').select('updated_at').eq('firmado', true).gte('updated_at', twentyFourHoursAgo);
+      if (anexoActError_24h) throw anexoActError_24h;
+      anexoActivity.forEach(item => {
+        const hour = new Date(item.updated_at).getHours();
+        if (activityMap.has(hour)) activityMap.get(hour)!.firmas += 1;
+      });
+      
+      setActivityData(Array.from(activityMap.values()));
+
+      // 2. Datos para gráfico de distribución de estados de inmersión
+      const statusData = [
+        { estado: 'Planificadas', valor: inmersionesHoy?.filter(i => i.estado === 'planificada').length || 0, fill: '#3b82f6' },
+        { estado: 'En Progreso', valor: inmersionesHoy?.filter(i => i.estado === 'en_progreso').length || 0, fill: '#10b981' },
+        { estado: 'Completadas', valor: inmersionesHoy?.filter(i => i.estado === 'completada').length || 0, fill: '#8b5cf6' },
+        { estado: 'Canceladas', valor: inmersionesHoy?.filter(i => i.estado === 'cancelada').length || 0, fill: '#ef4444' },
+      ];
+      setImmersionStatusData(statusData);
+
+      // --- Fin: Nuevos datos para gráficos ---
 
     } catch (error) {
       console.error('Error fetching real-time metrics:', error);
@@ -248,9 +286,9 @@ export const RealTimeMetrics = () => {
                 <XAxis 
                   dataKey="time" 
                   tick={{ fontSize: 12 }}
-                  interval="preserveStartEnd"
+                  interval={3}
                 />
-                <YAxis tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip 
                   contentStyle={{
                     backgroundColor: 'rgb(255 255 255 / 0.95)',
@@ -269,18 +307,10 @@ export const RealTimeMetrics = () => {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="validaciones" 
-                  stroke="#10b981" 
-                  strokeWidth={2}
-                  name="Validaciones"
-                  dot={{ r: 3 }}
-                />
-                <Line 
-                  type="monotone" 
                   dataKey="firmas" 
                   stroke="#8b5cf6" 
                   strokeWidth={2}
-                  name="Firmas"
+                  name="Firmas Docs."
                   dot={{ r: 3 }}
                 />
               </LineChart>
@@ -292,21 +322,21 @@ export const RealTimeMetrics = () => {
       {/* Distribución de Estados */}
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Estados Actuales</CardTitle>
+          <CardTitle>Distribución de Inmersiones de Hoy</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { estado: 'HPT Firmados', valor: metrics.find(m => m.label.includes('Formularios'))?.value || 0 },
-                { estado: 'Inmersiones Activas', valor: metrics.find(m => m.label.includes('Inmersiones'))?.value || 0 },
-                { estado: 'Validaciones Pendientes', valor: metrics.find(m => m.label.includes('Validaciones'))?.value || 0 }
-              ]}>
+              <BarChart data={immersionStatusData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="estado" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="valor" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
+                  {immersionStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
