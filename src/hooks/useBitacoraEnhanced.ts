@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables, Json } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
-import { useInmersiones, Inmersion } from './useInmersiones';
+import { Inmersion } from './useInmersiones';
 
 // Nueva interfaz para Inmersión con detalles de operación
 export interface InmersionCompleta extends Inmersion {
@@ -63,7 +63,8 @@ const bitacoraSupervisorFormSchema = z.object({
   empresa_nombre: z.string().optional(),
   centro_nombre: z.string().optional(),
   equipo_buceo_id: z.string().uuid().optional(),
-  buzos_asistentes: z.array(z.any()).optional(), // Campo añadido para compatibilidad
+  buzos_asistentes: z.array(z.any()).optional(),
+  fecha_termino_faena: z.string().optional(),
 });
 
 export type BitacoraSupervisorFormData = z.infer<typeof bitacoraSupervisorFormSchema>;
@@ -79,24 +80,69 @@ const bitacoraBuzoFormSchema = z.object({
   estado_fisico_post: z.string(),
   firmado: z.boolean().default(false),
   estado_aprobacion: z.string().default('pendiente'),
-  // Campos adicionales del formulario completo
+  buzo_id: z.string().uuid().optional(),
+  folio: z.string().optional(),
+  codigo_verificacion: z.string().optional(),
   empresa_nombre: z.string().optional(),
   centro_nombre: z.string().optional(),
+  buzo_rut: z.string().optional(),
   supervisor_nombre: z.string().optional(),
+  supervisor_rut: z.string().optional(),
+  supervisor_correo: z.string().optional(),
+  jefe_centro_correo: z.string().optional(),
+  contratista_nombre: z.string().optional(),
+  contratista_rut: z.string().optional(),
+  condamb_estado_puerto: z.string().optional(),
+  condamb_estado_mar: z.string().optional(),
+  condamb_temp_aire_c: z.number().optional(),
   condamb_temp_agua_c: z.number().optional(),
   condamb_visibilidad_fondo_mts: z.number().optional(),
   condamb_corriente_fondo_nudos: z.number().optional(),
+  datostec_equipo_usado: z.string().optional(),
+  datostec_traje: z.string().optional(),
   datostec_hora_dejo_superficie: z.string().optional(),
+  datostec_hora_llegada_fondo: z.string().optional(),
+  datostec_hora_salida_fondo: z.string().optional(),
   datostec_hora_llegada_superficie: z.string().optional(),
-  objetivo_proposito: z.string().optional(),
   tiempos_total_fondo: z.string().optional(),
+  tiempos_total_descompresion: z.string().optional(),
+  tiempos_total_buceo: z.string().optional(),
   tiempos_tabulacion_usada: z.string().optional(),
+  tiempos_intervalo_superficie: z.string().optional(),
+  tiempos_nitrogeno_residual: z.string().optional(),
+  tiempos_grupo_repetitivo_anterior: z.string().optional(),
+  tiempos_nuevo_grupo_repetitivo: z.string().optional(),
+  objetivo_proposito: z.string().optional(),
+  objetivo_tipo_area: z.string().optional(),
+  objetivo_caracteristicas_dimensiones: z.string().optional(),
+  condcert_buceo_altitud: z.boolean().optional(),
+  condcert_certificados_equipos_usados: z.boolean().optional(),
+  condcert_buceo_areas_confinadas: z.boolean().optional(),
+  condcert_observaciones: z.string().optional(),
+  validador_nombre: z.string().optional(),
 });
 
 export type BitacoraBuzoFormData = z.infer<typeof bitacoraBuzoFormSchema>;
 
 
 // Funciones de Fetch
+const getInmersionesCompletas = async (): Promise<InmersionCompleta[]> => {
+  const { data, error } = await supabase
+    .from('inmersion')
+    .select(`
+      *,
+      operacion:operacion(*,
+        salmoneras:salmonera_id(*),
+        sitios:sitio_id(*),
+        contratistas:contratista_id(*)
+      )
+    `)
+    .order('fecha_inmersion', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data as any) || [];
+};
+
 const getBitacorasSupervisor = async (): Promise<BitacoraSupervisorCompleta[]> => {
   const { data, error } = await supabase
     .from('bitacora_supervisor')
@@ -145,7 +191,11 @@ const getBitacorasBuzo = async (): Promise<BitacoraBuzoCompleta[]> => {
 
 export const useBitacoraEnhanced = () => {
   const queryClient = useQueryClient();
-  const { inmersiones, isLoading: loadingInmersiones, error: errorInmersiones } = useInmersiones();
+  
+  const { data: inmersiones = [], isLoading: loadingInmersiones, error: errorInmersiones } = useQuery<InmersionCompleta[]>({
+    queryKey: ['inmersionesCompletas'],
+    queryFn: getInmersionesCompletas,
+  });
 
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor, refetch: refetchSupervisor } = useQuery<BitacoraSupervisorCompleta[]>({
     queryKey: ['bitacorasSupervisor'],
@@ -164,7 +214,8 @@ export const useBitacoraEnhanced = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      const { error } = await supabase.from('bitacora_supervisor').insert(formData as any);
+      const { fecha_termino_faena, ...dataToInsert } = formData as any;
+      const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert as any);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -185,7 +236,8 @@ export const useBitacoraEnhanced = () => {
 
   const createBitacoraBuzo = useMutation({
     mutationFn: async (formData: BitacoraBuzoFormData) => {
-      const { error } = await supabase.from('bitacora_buzo').insert(formData as any);
+      const { buzo_id, ...dataToInsert } = formData as any;
+      const { error } = await supabase.from('bitacora_buzo').insert(dataToInsert as any);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {

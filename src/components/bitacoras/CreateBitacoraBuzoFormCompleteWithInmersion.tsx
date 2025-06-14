@@ -26,7 +26,7 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
   useEffect(() => {
     // Obtener datos de la inmersión y bitácora supervisor
     const inmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
-    const bitacoraSupervisor = bitacorasSupervisor.find(b => b.inmersion_id === inmersionId);
+    const bitacoraSupervisor = bitacorasSupervisor.find(b => b.inmersion?.inmersion_id === inmersionId);
     
     if (inmersion) {
       // Obtener operación asociada

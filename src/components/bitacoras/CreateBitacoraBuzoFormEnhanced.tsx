@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,9 +26,11 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
   const [selectedInmersion, setSelectedInmersion] = useState<InmersionCompleta | null>(null);
   const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData>>({
+    codigo: `BIT-BUZ-${Date.now()}`,
     inmersion_id: '',
     fecha: new Date().toISOString().split('T')[0],
-    buzo_id: profile?.id || '',
+    buzo_id: profile?.id,
+    buzo: profile ? `${profile.nombre || ''} ${profile.apellido || ''}`.trim() : '',
     profundidad_maxima: 0,
     trabajos_realizados: '',
     estado_fisico_post: '',
@@ -120,12 +121,12 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Empresa:</span>
-                        <span>{selectedInmersion.operacion.salmoneras?.nombre || selectedInmersion.operacion.contratistas?.nombre || 'N/A'}</span>
+                        <span>{selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Sitio:</span>
-                        <span>{selectedInmersion.operacion.sitios?.nombre || 'N/A'}</span>
+                        <span>{selectedInmersion.operacion?.sitios?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />
