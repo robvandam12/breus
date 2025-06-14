@@ -142,15 +142,45 @@ export const CreateBitacoraSupervisorFormComplete = ({
     setLoading(true);
     try {
       const combinedObservaciones = `Condiciones físicas previas: ${data.condiciones_fisicas_previas}\n\nObservaciones Generales: ${data.observaciones_generales}`;
-        
+      
+      const combinedIncidentes = [];
+      if (data.incidentes_menores) {
+        combinedIncidentes.push(`Incidentes menores: ${data.incidentes_menores}`);
+      }
+      if (data.incidentes) {
+        combinedIncidentes.push(`Incidentes durante la inmersión: ${data.incidentes}`);
+      }
+      
+      const extraData = {
+        tiempo_total_buceo: data.tiempo_total_buceo,
+        incluye_descompresion: data.incluye_descompresion,
+        contratista_nombre: data.contratista_nombre,
+        buzo_principal: {
+          apellido_paterno: data.buzo_apellido_paterno,
+          apellido_materno: data.buzo_apellido_materno,
+          nombres: data.buzo_nombres,
+          run: data.buzo_run,
+        },
+        profundidad_trabajo: data.profundidad_trabajo,
+        profundidad_maxima: data.profundidad_maxima,
+        camara_hiperbarica_requerida: data.camara_hiperbarica_requerida,
+        embarcacion_matricula: data.embarcacion_matricula,
+        gestion_preventiva: {
+          evaluacion_riesgos_actualizada: data.evaluacion_riesgos_actualizada,
+          procedimientos_escritos_disponibles: data.procedimientos_escritos_disponibles,
+          capacitacion_previa_realizada: data.capacitacion_previa_realizada,
+          identificacion_peligros_realizada: data.identificacion_peligros_realizada,
+          registro_incidentes_reportados: data.registro_incidentes_reportados,
+        },
+        medidas_correctivas: data.medidas_correctivas,
+      };
+
       const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: data.inmersion_id,
         supervisor: selectedInmersion?.supervisor || '',
         supervisor_id: profile?.id || '',
         fecha: new Date().toISOString().split('T')[0],
-        
-        // 1. Identificación de la Faena
         fecha_inicio_faena: data.fecha_inicio_faena,
         hora_inicio_faena: data.hora_inicio_faena,
         fecha_termino_faena: data.fecha_termino_faena,
@@ -158,59 +188,16 @@ export const CreateBitacoraSupervisorFormComplete = ({
         lugar_trabajo: data.lugar_trabajo,
         trabajo_a_realizar: data.trabajo_a_realizar,
         supervisor_nombre_matricula: data.supervisor_nombre_matricula,
-        
-        // 2. Buzos y Asistentes
         buzos_asistentes: buzosAsistentes,
-        
-        // 3. Equipos Usados
         equipos_utilizados: equiposUtilizados,
-        
-        // 4. Observaciones
-        incidentes_menores: data.incidentes_menores || '',
-        
-        // 5. Embarcación de Apoyo
-        embarcacion_nombre: data.embarcacion_nombre || '',
-        embarcacion_matricula: data.embarcacion_matricula || '',
-        
-        // 6. Tiempo de Buceo
-        tiempo_total_buceo: data.tiempo_total_buceo,
-        incluye_descompresion: data.incluye_descompresion,
-        
-        // 7. Contratista de Buceo
-        contratista_nombre: data.contratista_nombre,
-        
-        // 8. Datos del Buzo Principal
-        buzo_apellido_paterno: data.buzo_apellido_paterno,
-        buzo_apellido_materno: data.buzo_apellido_materno,
-        buzo_nombres: data.buzo_nombres,
-        buzo_run: data.buzo_run,
-        
-        // 9. Profundidades
-        profundidad_trabajo: data.profundidad_trabajo,
-        profundidad_maxima: data.profundidad_maxima,
-        camara_hiperbarica_requerida: data.camara_hiperbarica_requerida,
-        
-        // 10. Gestión Preventiva
-        evaluacion_riesgos_actualizada: data.evaluacion_riesgos_actualizada,
-        procedimientos_escritos_disponibles: data.procedimientos_escritos_disponibles,
-        capacitacion_previa_realizada: data.capacitacion_previa_realizada,
-        identificacion_peligros_realizada: data.identificacion_peligros_realizada,
-        registro_incidentes_reportados: data.registro_incidentes_reportados,
-        
-        // 11. Medidas Correctivas
-        medidas_correctivas: data.medidas_correctivas,
-        
-        // 12. Observaciones Generales
-        observaciones_generales: combinedObservaciones,
-        
-        // Campos de compatibilidad
+        embarcacion_apoyo: data.embarcacion_nombre || '',
+        observaciones_generales_texto: combinedObservaciones,
         desarrollo_inmersion: data.desarrollo_inmersion,
-        incidentes: data.incidentes || '',
+        incidentes: combinedIncidentes.join('\n\n') || undefined,
         evaluacion_general: data.evaluacion_general,
         firmado: false,
         estado_aprobacion: 'pendiente' as const,
-        
-        // Campos opcionales
+        diving_records: [extraData],
         empresa_nombre: 'Empresa',
         centro_nombre: 'Centro'
       };
