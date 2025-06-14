@@ -24,7 +24,7 @@ const formSchema = z.object({
   fecha_termino_faena: z.string().optional(),
   hora_termino_faena: z.string().optional(),
   lugar_trabajo: z.string().min(1, "El lugar de trabajo es requerido"),
-  tipo_trabajo: z.string().min(1, "El tipo de trabajo es requerido"),
+  trabajo_a_realizar: z.string().min(1, "El tipo de trabajo es requerido"),
   supervisor_nombre_matricula: z.string().min(1, "La matrícula del supervisor es requerida"),
   condiciones_fisicas_previas: z.string().min(1, "Las condiciones físicas previas son requeridas"),
   incidentes_menores: z.string().optional(),
@@ -109,7 +109,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('hora_inicio_faena', selectedInmersion.hora_inicio);
       setValue('hora_termino_faena', selectedInmersion.hora_fin || '');
       setValue('lugar_trabajo', 'Sitio de trabajo');
-      setValue('tipo_trabajo', selectedInmersion.objetivo);
+      setValue('trabajo_a_realizar', selectedInmersion.objetivo);
       setValue('supervisor_nombre_matricula', selectedInmersion.supervisor);
       setValue('profundidad_trabajo', selectedInmersion.profundidad_max);
       setValue('profundidad_maxima', selectedInmersion.profundidad_max);
@@ -154,7 +154,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
         fecha_termino_faena: data.fecha_termino_faena,
         hora_termino_faena: data.hora_termino_faena,
         lugar_trabajo: data.lugar_trabajo,
-        tipo_trabajo: data.tipo_trabajo,
+        trabajo_a_realizar: data.trabajo_a_realizar,
         supervisor_nombre_matricula: data.supervisor_nombre_matricula,
         
         // 2. Buzos y Asistentes
@@ -320,16 +320,16 @@ export const CreateBitacoraSupervisorFormComplete = ({
           )}
         </div>
         <div>
-          <Label htmlFor="tipo_trabajo">Tipo de Trabajo *</Label>
+          <Label htmlFor="trabajo_a_realizar">Tipo de Trabajo *</Label>
           <Input
-            id="tipo_trabajo"
-            {...register('tipo_trabajo')}
+            id="trabajo_a_realizar"
+            {...register('trabajo_a_realizar')}
             placeholder="Tipo de trabajo a realizar"
             className="bg-gray-100"
             readOnly
           />
-          {errors.tipo_trabajo && (
-            <p className="text-sm text-red-600">{errors.tipo_trabajo.message}</p>
+          {errors.trabajo_a_realizar && (
+            <p className="text-sm text-red-600">{errors.trabajo_a_realizar.message}</p>
           )}
         </div>
         <div className="md:col-span-2">

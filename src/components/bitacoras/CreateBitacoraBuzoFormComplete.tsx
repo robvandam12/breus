@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { BitacoraInmersionSelector } from "./BitacoraInmersionSelector";
-import { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({

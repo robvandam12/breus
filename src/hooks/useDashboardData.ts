@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useBitacoras } from './useBitacoras';
+import { useBitacoraEnhanced } from './useBitacoraEnhanced';
 import { useInmersiones } from './useInmersiones';
 import { useOperaciones } from './useOperaciones';
 import { useAlertas } from './useAlertas';
@@ -39,7 +39,7 @@ export interface ChartData {
 }
 
 export const useDashboardData = () => {
-  const { bitacorasSupervisor, bitacorasBuzo } = useBitacoras();
+  const { bitacorasSupervisor, bitacorasBuzo } = useBitacoraEnhanced();
   const { inmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
   const { alertasNoLeidas } = useAlertas();
