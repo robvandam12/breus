@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { useBitacoraEnhanced } from './useBitacoraEnhanced';
-import { useInmersiones } from './useInmersiones';
+import { useBitacorasSupervisor } from './useBitacorasSupervisor';
+import { useBitacorasBuzo } from './useBitacorasBuzo';
+import { useInmersionesData } from './useInmersionesData';
 import { useOperaciones } from './useOperaciones';
 
 export interface PerformanceMetrics {
@@ -16,8 +17,9 @@ export interface PerformanceMetrics {
 }
 
 export const usePerformanceMetrics = () => {
-  const { bitacorasSupervisor, bitacorasBuzo } = useBitacoraEnhanced();
-  const { inmersiones } = useInmersiones();
+  const { bitacorasSupervisor } = useBitacorasSupervisor();
+  const { bitacorasBuzo } = useBitacorasBuzo();
+  const { inmersiones } = useInmersionesData();
   const { operaciones } = useOperaciones();
   
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
