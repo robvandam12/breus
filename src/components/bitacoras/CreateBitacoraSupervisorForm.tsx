@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -228,11 +227,11 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
             )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
               {loading ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />

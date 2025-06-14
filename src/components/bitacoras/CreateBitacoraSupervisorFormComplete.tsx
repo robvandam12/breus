@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -922,26 +921,26 @@ export const CreateBitacoraSupervisorFormComplete = ({
           {currentStep === 5 && renderStep5()}
           {currentStep === 6 && renderStep6()}
 
-          <div className="flex justify-between pt-6 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-4 pt-6 border-t">
             <div>
               {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={prevStep}>
+                <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Anterior
                 </Button>
               )}
             </div>
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={onCancel}>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
                 Cancelar
               </Button>
               {currentStep < totalSteps ? (
-                <Button type="button" onClick={nextStep} className="bg-purple-600 hover:bg-purple-700">
+                <Button type="button" onClick={nextStep} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
                   Siguiente
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700">
+                <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
                   {loading ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />

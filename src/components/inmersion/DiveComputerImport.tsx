@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, FileText, X } from 'lucide-react';
@@ -87,8 +86,8 @@ export const DiveComputerImport: React.FC<DiveComputerImportProps> = ({ onImport
                 </div>
             )}
             
-            <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={onCancel} disabled={isImporting}>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                <Button variant="outline" onClick={onCancel} disabled={isImporting} className="w-full sm:w-auto">
                     Cancelar
                 </Button>
                 <Button onClick={handleImport} disabled={!file || isImporting} className="w-full sm:w-auto">
@@ -98,4 +97,3 @@ export const DiveComputerImport: React.FC<DiveComputerImportProps> = ({ onImport
         </div>
     );
 };
-
