@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -9,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit, Trash2, FileText, Eye } from "lucide-react";
+import { MoreVertical, Trash2, FileText } from "lucide-react";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacoraEnhanced, BitacoraSupervisorFormData, BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
+import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
+import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
 import { toast } from "@/hooks/use-toast";
 
 interface InmersionActionsProps {
@@ -23,7 +25,8 @@ interface InmersionActionsProps {
 
 export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsProps) => {
   const { deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor, createBitacoraBuzo } = useBitacoraEnhanced();
+  const { createBitacoraSupervisor } = useBitacorasSupervisor();
+  const { createBitacoraBuzo } = useBitacorasBuzo();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBitacoraSupervisorForm, setShowBitacoraSupervisorForm] = useState(false);
