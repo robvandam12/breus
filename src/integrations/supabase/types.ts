@@ -1023,6 +1023,7 @@ export type Database = {
           codigo: string
           corriente: string
           created_at: string
+          current_depth: number | null
           estado: string
           fecha_inmersion: string
           hora_fin: string | null
@@ -1032,6 +1033,7 @@ export type Database = {
           objetivo: string
           observaciones: string | null
           operacion_id: string
+          planned_bottom_time: number | null
           profundidad_max: number
           supervisor: string
           supervisor_id: string | null
@@ -1048,6 +1050,7 @@ export type Database = {
           codigo: string
           corriente: string
           created_at?: string
+          current_depth?: number | null
           estado?: string
           fecha_inmersion: string
           hora_fin?: string | null
@@ -1057,6 +1060,7 @@ export type Database = {
           objetivo: string
           observaciones?: string | null
           operacion_id: string
+          planned_bottom_time?: number | null
           profundidad_max: number
           supervisor: string
           supervisor_id?: string | null
@@ -1073,6 +1077,7 @@ export type Database = {
           codigo?: string
           corriente?: string
           created_at?: string
+          current_depth?: number | null
           estado?: string
           fecha_inmersion?: string
           hora_fin?: string | null
@@ -1082,6 +1087,7 @@ export type Database = {
           objetivo?: string
           observaciones?: string | null
           operacion_id?: string
+          planned_bottom_time?: number | null
           profundidad_max?: number
           supervisor?: string
           supervisor_id?: string | null

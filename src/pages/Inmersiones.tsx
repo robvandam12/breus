@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList, Eye } from "lucide-react";
+import { Plus, Anchor, Calendar, User, Clock, LayoutGrid, LayoutList, Eye, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -15,15 +15,18 @@ import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [selectedInmersion, setSelectedInmersion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [newDepth, setNewDepth] = useState<string>('');
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { inmersiones, isLoading, createInmersion, refreshInmersiones } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, refreshInmersiones, updateInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
@@ -88,7 +91,30 @@ export default function Inmersiones() {
 
   const handleViewInmersion = (inmersion: any) => {
     setSelectedInmersion(inmersion);
+    setNewDepth(inmersion.current_depth?.toString() || '');
     setShowDetailModal(true);
+  };
+  
+  const handleUpdateDepth = async () => {
+    if (!selectedInmersion || newDepth === '') return;
+    try {
+      const updatedInmersion = await updateInmersion({
+        id: selectedInmersion.inmersion_id,
+        data: { current_depth: parseFloat(newDepth) },
+      });
+      setSelectedInmersion(updatedInmersion);
+      toast({
+        title: "Profundidad actualizada",
+        description: "La profundidad de la inmersión se ha actualizado.",
+      });
+    } catch (error) {
+      console.error('Error updating depth:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la profundidad.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (showWizard) {
@@ -367,6 +393,45 @@ export default function Inmersiones() {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {selectedInmersion.estado === 'en_progreso' && (
+                    <Card>
+                      <CardHeader>
+                          <CardTitle>Monitoreo en Tiempo Real</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                          {selectedInmersion.current_depth > selectedInmersion.profundidad_max && (
+                              <Alert variant="destructive">
+                                  <AlertTriangle className="h-4 w-4" />
+                                  <AlertTitle>¡Advertencia!</AlertTitle>
+                                  <AlertDescription>
+                                      Profundidad actual ({selectedInmersion.current_depth}m) excede la profundidad máxima planificada ({selectedInmersion.profundidad_max}m).
+                                  </AlertDescription>
+                              </Alert>
+                          )}
+                          <div>
+                              <label className="text-sm font-medium text-gray-500">Tiempo de Fondo Planificado</label>
+                              <p className="text-lg">{selectedInmersion.planned_bottom_time ? `${selectedInmersion.planned_bottom_time} min` : 'No especificado'}</p>
+                          </div>
+                          <div>
+                              <label className="text-sm font-medium text-gray-500">Profundidad Actual</label>
+                              <div className="flex items-center gap-2 mt-1">
+                                  <Input
+                                      type="number"
+                                      value={newDepth}
+                                      onChange={(e) => setNewDepth(e.target.value)}
+                                      placeholder="Profundidad en metros"
+                                      className="max-w-xs"
+                                  />
+                                  <Button onClick={handleUpdateDepth}>Actualizar</Button>
+                              </div>
+                               <p className="text-sm text-gray-500 mt-1">
+                                  Profundidad máxima planificada: {selectedInmersion.profundidad_max}m
+                              </p>
+                          </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {selectedInmersion.objetivo && (
                     <Card>
