@@ -11,8 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft, Plus, Trash2 } from "lucide-react";
-import { useInmersiones } from "@/hooks/useInmersiones";
-import { BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced, BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
@@ -67,7 +66,7 @@ export const CreateBitacoraSupervisorFormComplete = ({
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
-  const { inmersiones } = useInmersiones();
+  const { inmersiones } = useBitacoraEnhanced();
   const { equipos: equiposBuceo } = useEquiposBuceoEnhanced();
 
   const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
@@ -108,12 +107,12 @@ export const CreateBitacoraSupervisorFormComplete = ({
       setValue('fecha_inicio_faena', selectedInmersion.fecha_inmersion);
       setValue('hora_inicio_faena', selectedInmersion.hora_inicio);
       setValue('hora_termino_faena', selectedInmersion.hora_fin || '');
-      setValue('lugar_trabajo', 'Sitio de trabajo');
+      setValue('lugar_trabajo', selectedInmersion.operacion?.sitios?.nombre || 'Sitio no especificado');
       setValue('trabajo_a_realizar', selectedInmersion.objetivo);
       setValue('supervisor_nombre_matricula', selectedInmersion.supervisor);
       setValue('profundidad_trabajo', selectedInmersion.profundidad_max);
       setValue('profundidad_maxima', selectedInmersion.profundidad_max);
-      setValue('contratista_nombre', 'Contratista');
+      setValue('contratista_nombre', selectedInmersion.operacion?.contratistas?.nombre || 'Contratista no especificado');
       setValue('buzo_nombres', selectedInmersion.buzo_principal);
       
       // Auto-poblar datos del equipo de buceo si existe
