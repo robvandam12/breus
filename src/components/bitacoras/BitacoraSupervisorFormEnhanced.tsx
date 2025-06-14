@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anchor } from 'lucide-react';
-import { useBitacoraEnhanced, InmersionCompleta } from '@/hooks/useBitacoraEnhanced';
-import { BitacoraSupervisorFormData } from '@/hooks/useBitacoras';
+import { useBitacoraEnhanced, InmersionCompleta, BitacoraSupervisorFormData } from '@/hooks/useBitacoraEnhanced';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
-  onSubmit: (data: BitacoraSupervisorFormData) => void;
+  onSubmit: (data: Partial<BitacoraSupervisorFormData>) => void;
   onCancel: () => void;
 }
 
@@ -32,11 +30,8 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     rol: string;
     profundidad: number;
   }>>([]);
-  const [formData, setFormData] = useState<Partial<BitacoraSupervisorFormData>>({
-    inmersion_id: '',
-    fecha: new Date().toISOString().split('T')[0],
+  const [formData, setFormData] = useState({
     desarrollo_inmersion: '',
-    supervisor_id: profile?.id || '',
     incidentes: '',
     evaluacion_general: ''
   });
@@ -46,12 +41,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionId);
       setSelectedInmersion(inmersion || null);
       if (inmersion) {
-        setFormData(prev => ({
-          ...prev,
-          inmersion_id: selectedInmersionId,
-          fecha: inmersion.fecha_inmersion
-        }));
-
         // Poblar datos de buzos automáticamente
         const buzos = [];
         if (inmersion.buzo_principal) {
@@ -61,7 +50,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
             profundidad: inmersion.profundidad_max || 0
           });
         }
-        // Verificar si existe buzo asistente
         if (inmersion.buzo_asistente) {
           buzos.push({
             nombre: inmersion.buzo_asistente,
@@ -86,37 +74,24 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       return;
     }
 
-    const submitData: BitacoraSupervisorFormData = {
+    const submitData: Partial<BitacoraSupervisorFormData> = {
       codigo: `BIT-SUP-${Date.now()}`,
-      inmersion_id: formData.inmersion_id!,
+      inmersion_id: selectedInmersion.inmersion_id,
+      supervisor_id: profile?.id || '',
       supervisor: profile?.nombre + ' ' + profile?.apellido || '',
       desarrollo_inmersion: formData.desarrollo_inmersion,
       incidentes: formData.incidentes || '',
       evaluacion_general: formData.evaluacion_general,
-      fecha: formData.fecha!,
+      fecha: selectedInmersion.fecha_inmersion,
       firmado: false,
       estado_aprobacion: 'pendiente',
-      fecha_inicio_faena: '',
-      hora_inicio_faena: '',
-      hora_termino_faena: '',
-      lugar_trabajo: '',
-      supervisor_nombre_matricula: '',
-      estado_mar: '',
-      visibilidad_fondo: 0,
       inmersiones_buzos: buzosData.map(buzo => ({
         nombre: buzo.nombre,
         rol: buzo.rol,
         profundidad_alcanzada: buzo.profundidad
       })),
-      equipos_utilizados: [],
-      trabajo_a_realizar: '',
-      descripcion_trabajo: '',
-      embarcacion_apoyo: '',
-      observaciones_generales_texto: '',
-      validacion_contratista: false,
-      comentarios_validacion: '',
-      diving_records: [],
-      supervisor_id: profile?.id || ''
+      lugar_trabajo: selectedInmersion.operacion?.sitios?.nombre || 'N/A',
+      empresa_nombre: selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre,
     };
 
     onSubmit(submitData);

@@ -10,7 +10,7 @@ import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTrian
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced as useBitacoras } from "@/hooks/useBitacoraEnhanced";
 import { toast } from "@/hooks/use-toast";
 
 interface OperacionInmersionesProps {

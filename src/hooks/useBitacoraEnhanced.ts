@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -86,7 +85,7 @@ export interface BitacoraSupervisorCompleta {
   lugar_trabajo?: string;
   tipo_trabajo?: string;
   supervisor_nombre_matricula?: string;
-  buzos_asistentes?: any[];
+  inmersiones_buzos?: any[];
   equipos_utilizados?: any[];
   condiciones_fisicas_previas?: string;
   incidentes_menores?: string;
@@ -237,7 +236,7 @@ export interface BitacoraBuzoFormData {
   validador_nombre?: string;
 }
 
-// Interfaz completa para Bitácora Supervisor con todos los campos requeridos
+// Interfaz completa para Bitácora Supervisor con todos los campos requeridos y opcionales corregidos
 export interface BitacoraSupervisorFormData {
   codigo: string;
   inmersion_id: string;
@@ -246,31 +245,29 @@ export interface BitacoraSupervisorFormData {
   fecha: string;
   
   // 1. Identificación de la Faena
-  fecha_inicio_faena: string;
-  hora_inicio_faena: string;
+  fecha_inicio_faena?: string;
+  hora_inicio_faena?: string;
   fecha_termino_faena?: string;
   hora_termino_faena?: string;
-  lugar_trabajo: string;
-  tipo_trabajo: string;
-  supervisor_nombre_matricula: string;
+  lugar_trabajo?: string;
+  tipo_trabajo?: string;
+  supervisor_nombre_matricula?: string;
   
-  // 2. Buzos y Asistentes (hasta 6 personas)
-  buzos_asistentes: Array<{
+  // 2. Buzos y Asistentes (Corregido a inmersiones_buzos)
+  inmersiones_buzos?: Array<{
     nombre: string;
-    matricula: string;
-    cargo: string;
-    numero_serie_profundimetro: string;
-    color_profundimetro: string;
+    rol: string;
+    profundidad_alcanzada: number;
   }>;
   
   // 3. Equipos Usados
-  equipos_utilizados: Array<{
+  equipos_utilizados?: Array<{
     equipo_usado: string;
     numero_registro: string;
   }>;
   
   // 4. Observaciones
-  condiciones_fisicas_previas: string;
+  condiciones_fisicas_previas?: string;
   incidentes_menores?: string;
   
   // 5. Embarcación de Apoyo
@@ -278,35 +275,35 @@ export interface BitacoraSupervisorFormData {
   embarcacion_matricula?: string;
   
   // 6. Tiempo de Buceo
-  tiempo_total_buceo: string;
-  incluye_descompresion: boolean;
+  tiempo_total_buceo?: string;
+  incluye_descompresion?: boolean;
   
   // 7. Contratista de Buceo
-  contratista_nombre: string;
+  contratista_nombre?: string;
   
   // 8. Datos del Buzo Principal
-  buzo_apellido_paterno: string;
-  buzo_apellido_materno: string;
-  buzo_nombres: string;
-  buzo_run: string;
+  buzo_apellido_paterno?: string;
+  buzo_apellido_materno?: string;
+  buzo_nombres?: string;
+  buzo_run?: string;
   
   // 9. Profundidades
-  profundidad_trabajo: number;
-  profundidad_maxima: number;
-  camara_hiperbarica_requerida: boolean;
+  profundidad_trabajo?: number;
+  profundidad_maxima?: number;
+  camara_hiperbarica_requerida?: boolean;
   
   // 10. Gestión Preventiva Según Decreto N°44
-  evaluacion_riesgos_actualizada: boolean;
-  procedimientos_escritos_disponibles: boolean;
-  capacitacion_previa_realizada: boolean;
-  identificacion_peligros_realizada: boolean;
-  registro_incidentes_reportados: boolean;
+  evaluacion_riesgos_actualizada?: boolean;
+  procedimientos_escritos_disponibles?: boolean;
+  capacitacion_previa_realizada?: boolean;
+  identificacion_peligros_realizada?: boolean;
+  registro_incidentes_reportados?: boolean;
   
   // 11. Medidas Correctivas Implementadas
-  medidas_correctivas: string;
+  medidas_correctivas?: string;
   
   // 12. Observaciones Generales
-  observaciones_generales: string;
+  observaciones_generales?: string;
   
   // Campos existentes para compatibilidad
   desarrollo_inmersion: string;
@@ -328,6 +325,7 @@ export interface BitacoraSupervisorFormData {
   observaciones_generales_texto?: string;
   validacion_contratista?: boolean;
   comentarios_validacion?: string;
+  diving_records?: any[];
 }
 
 export const useBitacoraEnhanced = () => {
@@ -512,9 +510,74 @@ export const useBitacoraEnhanced = () => {
     return (data && data.length > 0) || false;
   };
 
-  const refreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['inmersiones-completas'] });
-    queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor-completas'] });
+  const createBitacoraSupervisor = useMutation<BitacoraSupervisorCompleta, Error, Partial<BitacoraSupervisorFormData>>({
+    mutationFn: async (data) => {
+      const { data: result, error } = await supabase
+        .from('bitacora_supervisor')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        throw error;
+      }
+      return result as BitacoraSupervisorCompleta;
+    },
+    onSuccess: () => {
+      toast({ title: "Éxito", description: "Bitácora de supervisor creada." });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor-completas'] });
+    },
+  });
+
+  const createBitacoraBuzo = useMutation<BitacoraBuzoCompleta, Error, BitacoraBuzoFormData>({
+    mutationFn: async (data) => {
+      const { data: result, error } = await supabase
+        .from('bitacora_buzo')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        throw error;
+      }
+      return result as BitacoraBuzoCompleta;
+    },
+    onSuccess: () => {
+      toast({ title: "Éxito", description: "Bitácora de buzo creada." });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo-completas'] });
+    }
+  });
+  
+  const checkCanDeleteInmersion = async (inmersionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
+    try {
+      const { data: bitacorasSup } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      if (bitacorasSup && bitacorasSup.length > 0) {
+        return { canDelete: false, reason: 'La inmersión tiene bitácoras de supervisor asociadas' };
+      }
+
+      const { data: bitacorasBuz } = await supabase
+        .from('bitacora_buzo')
+        .select('bitacora_id')
+        .eq('inmersion_id', inmersionId);
+
+      if (bitacorasBuz && bitacorasBuz.length > 0) {
+        return { canDelete: false, reason: 'La inmersión tiene bitácoras de buzo asociadas' };
+      }
+
+      return { canDelete: true };
+    } catch (error) {
+      console.error('Error checking if immersion can be deleted:', error);
+      return { canDelete: false, reason: 'Error al verificar bitácoras asociadas' };
+    }
+  };
+
+  const refreshBitacoras = () => {
     queryClient.invalidateQueries({ queryKey: ['bitacoras-buzo-completas'] });
   };
 
@@ -528,6 +591,9 @@ export const useBitacoraEnhanced = () => {
     loading: loadingInmersiones || loadingSupervisor || loadingBuzo,
     getBitacoraSupervisorForInmersion,
     checkSupervisorBitacoraExists,
-    refreshAll
+    createBitacoraSupervisor,
+    createBitacoraBuzo,
+    checkCanDeleteInmersion,
+    refreshBitacoras
   };
 };

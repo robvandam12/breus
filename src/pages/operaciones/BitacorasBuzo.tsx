@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -14,10 +13,9 @@ import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
-import { useBitacoras } from "@/hooks/useBitacoras";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { BitacoraBuzoFormData } from "@/hooks/useBitacoras";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacoraEnhanced";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BitacorasBuzo = () => {
@@ -27,10 +25,10 @@ const BitacorasBuzo = () => {
   const { 
     bitacorasBuzo, 
     bitacorasSupervisor,
-    loading 
+    loading,
+    createBitacoraBuzo
   } = useBitacoraEnhanced();
   
-  const { createBitacoraBuzo } = useBitacoras();
   const { signBitacoraBuzo } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
 
