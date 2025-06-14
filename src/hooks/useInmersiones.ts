@@ -298,15 +298,43 @@ export const useInmersiones = (operacionId?: string) => {
         return { inmersion_id: id, ...data };
       }
 
-      // If updating depth, also update history
+      // If updating depth, also update history and perform real-time validation
       if (data.current_depth !== undefined && data.current_depth !== null) {
         const { data: currentInmersion, error: fetchError } = await supabase
           .from('inmersion')
-          .select('depth_history')
+          .select('depth_history, profundidad_max, supervisor_id, codigo, operacion_id')
           .eq('inmersion_id', id)
           .single();
 
         if (fetchError) throw fetchError;
+
+        // REAL-TIME VALIDATION: Check for depth limit breach and create notification
+        if (currentInmersion && data.current_depth > currentInmersion.profundidad_max) {
+          console.warn(`ALERTA DE PROFUNDIDAD: Inmersión ${currentInmersion.codigo}. Actual: ${data.current_depth}m, Máxima: ${currentInmersion.profundidad_max}m`);
+          if (currentInmersion.supervisor_id) {
+            const { error: notificationError } = await supabase.from('notifications').insert({
+              user_id: currentInmersion.supervisor_id,
+              type: 'warning',
+              title: `Alerta de Profundidad: ${currentInmersion.codigo}`,
+              message: `La profundidad actual (${data.current_depth}m) excede la máxima planificada (${currentInmersion.profundidad_max}m).`,
+              metadata: {
+                inmersion_id: id,
+                operacion_id: currentInmersion.operacion_id,
+                link: `/inmersiones` 
+              }
+            });
+
+            if (notificationError) {
+              console.error('Error creating depth alert notification:', notificationError);
+            } else {
+               toast({
+                title: "¡Alerta de Seguridad Enviada!",
+                description: "Se ha notificado al supervisor sobre el exceso de profundidad.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
 
         const currentHistory = (currentInmersion?.depth_history || []) as Array<{ depth: number; timestamp: string }>;
         const newHistoryEntry = {
