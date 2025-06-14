@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, Json } from '@/integrations/supabase/types';
@@ -19,7 +18,7 @@ export interface InmersionCompleta extends Inmersion {
 }
 
 // Interfaces unificadas para Bitácoras Completas
-export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'inmersion_id' | 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
+export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
   inmersion: InmersionCompleta | null;
   supervisor_data?: { id: string; nombre: string; } | null;
   aprobador_data?: { id: string; nombre: string; } | null;
@@ -28,7 +27,7 @@ export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_superv
   diving_records: any[] | null;
 }
 
-export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'inmersion_id' | 'aprobada_por'> {
+export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'aprobada_por'> {
   inmersion: InmersionCompleta | null;
 }
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -12,7 +13,7 @@ import { CreateBitacoraBuzoFormEnhanced } from "@/components/bitacoras/CreateBit
 import { CreateBitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useBitacoras } from "@/hooks/useBitacoras";
+import { useBitacoraEnhanced } from "@/hooks/useBitacoraEnhanced";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +28,7 @@ export default function Inmersiones() {
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
-  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoras();
+  const { createBitacoraBuzo, createBitacoraSupervisor } = useBitacoraEnhanced();
   
   const operacionId = searchParams.get('operacion');
 

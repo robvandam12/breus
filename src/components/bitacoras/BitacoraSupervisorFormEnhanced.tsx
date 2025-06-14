@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anchor } from 'lucide-react';
-import { useBitacoraEnhanced, InmersionCompleta, BitacoraSupervisorFormData } from '@/hooks/useBitacoraEnhanced';
+import { useBitacoraEnhanced, BitacoraSupervisorFormData } from '@/hooks/useBitacoraEnhanced';
 import { useAuth } from '@/hooks/useAuth';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { Inmersion } from '@/hooks/useInmersiones';
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
   onSubmit: (data: Partial<BitacoraSupervisorFormData>) => void;
@@ -22,9 +24,11 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
 }) => {
   const { profile } = useAuth();
   const { inmersiones, loadingInmersiones } = useBitacoraEnhanced();
+  const { operaciones } = useOperaciones();
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
-  const [selectedInmersion, setSelectedInmersion] = useState<InmersionCompleta | null>(null);
+  const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);
+  const [operacionData, setOperacionData] = useState<any | null>(null);
   const [buzosData, setBuzosData] = useState<Array<{
     nombre: string;
     rol: string;
@@ -38,29 +42,19 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
 
   useEffect(() => {
     if (selectedInmersionId) {
-      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionId);
+      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionId) as Inmersion;
       setSelectedInmersion(inmersion || null);
-      if (inmersion) {
-        // Poblar datos de buzos automáticamente
-        const buzos = [];
-        if (inmersion.buzo_principal) {
-          buzos.push({
-            nombre: inmersion.buzo_principal,
-            rol: 'Principal',
-            profundidad: inmersion.profundidad_max || 0
-          });
-        }
-        if (inmersion.buzo_asistente) {
-          buzos.push({
-            nombre: inmersion.buzo_asistente,
-            rol: 'Asistente',
-            profundidad: inmersion.profundidad_max || 0
-          });
-        }
-        setBuzosData(buzos);
-      }
     }
   }, [selectedInmersionId, inmersiones]);
+
+  useEffect(() => {
+    if (selectedInmersion && selectedInmersion.operacion_id) {
+      const operacion = operaciones.find(op => op.id === selectedInmersion.operacion_id);
+      setOperacionData(operacion || null);
+    } else {
+      setOperacionData(null);
+    }
+  }, [selectedInmersion, operaciones]);
 
   const updateBuzoProfundidad = (index: number, profundidad: number) => {
     setBuzosData(prev => prev.map((buzo, i) => 
@@ -90,8 +84,8 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
         rol: buzo.rol,
         profundidad_alcanzada: buzo.profundidad
       })),
-      lugar_trabajo: selectedInmersion.operacion?.sitios?.nombre || 'N/A',
-      empresa_nombre: selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre,
+      lugar_trabajo: operacionData?.sitio?.nombre || 'N/A',
+      empresa_nombre: operacionData?.salmonera?.nombre || operacionData?.contratista?.nombre,
     };
 
     onSubmit(submitData);
@@ -155,12 +149,12 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Empresa:</span>
-                        <span>{selectedInmersion.operacion.salmoneras?.nombre || selectedInmersion.operacion.contratistas?.nombre || 'N/A'}</span>
+                        <span>{operacionData?.salmonera?.nombre || operacionData?.contratista?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Sitio:</span>
-                        <span>{selectedInmersion.operacion.sitios?.nombre || 'N/A'}</span>
+                        <span>{operacionData?.sitio?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ export const BitacoraCard = ({ bitacora, type, onView, onSign }: BitacoraCardPro
 
           <div className="flex items-center gap-2 text-zinc-600">
             <FileText className="w-4 h-4" />
-            <span>Inmersión: {bitacora.inmersion_id}</span>
+            <span>Inmersión: {bitacora.inmersion?.codigo || bitacora.inmersion_id}</span>
           </div>
 
           {type === 'buzo' && (

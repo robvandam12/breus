@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -12,7 +13,7 @@ import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
 import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
 import { BitacoraInmersionSelectorEnhanced } from "@/components/bitacoras/BitacoraInmersionSelectorEnhanced";
-import { useBitacoras, BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
+import { useBitacoraEnhanced, BitacoraSupervisorFormData } from "@/hooks/useBitacoraEnhanced";
 import { useBitacoraActions } from "@/hooks/useBitacoraActions";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +42,7 @@ const BitacorasSupervisor = () => {
     loading, 
     createBitacoraSupervisor, 
     refreshBitacoras 
-  } = useBitacoras();
+  } = useBitacoraEnhanced();
   
   const { signBitacoraSupervisor } = useBitacoraActions();
   const { filters, setFilters, filterBitacoras } = useBitacoraFilters();
