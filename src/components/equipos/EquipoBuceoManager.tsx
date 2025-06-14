@@ -51,7 +51,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
 
   const handleCreateEquipo = () => {
     if (newEquipo.nombre && newEquipo.empresa_id) {
-      createEquipo(newEquipo);
+      createEquipo({ ...newEquipo, tipo_empresa: 'salmonera' });
       setNewEquipo({ nombre: '', descripcion: '', empresa_id: salmoneraId || '' });
       setIsCreateDialogOpen(false);
     }

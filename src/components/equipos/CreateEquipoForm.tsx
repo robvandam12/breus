@@ -6,16 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
 
 interface CreateEquipoFormProps {
-  onSubmit: (data: { nombre: string; descripcion: string }) => Promise<void>;
+  onSubmit: (data: { nombre: string; descripcion: string; empresa_id: string; tipo_empresa: 'salmonera' | 'contratista' }) => Promise<void>;
   onCancel: () => void;
 }
 
 export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) => {
+  const { salmoneras } = useSalmoneras();
   const [formData, setFormData] = useState({
     nombre: '',
-    descripcion: ''
+    descripcion: '',
+    empresa_id: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,7 +27,7 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      await onSubmit({ ...formData, tipo_empresa: 'salmonera' });
     } catch (error) {
       console.error('Error creating equipo:', error);
     } finally {
@@ -63,10 +67,29 @@ export const CreateEquipoForm = ({ onSubmit, onCancel }: CreateEquipoFormProps) 
           />
         </div>
 
+        <div>
+            <Label htmlFor="salmonera">Salmonera *</Label>
+            <Select
+              value={formData.empresa_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}
+            >
+              <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar salmonera..." />
+              </SelectTrigger>
+              <SelectContent>
+                  {salmoneras.map((salmonera) => (
+                  <SelectItem key={salmonera.id} value={salmonera.id}>
+                      {salmonera.nombre}
+                  </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+        </div>
+
         <div className="flex gap-3 pt-4">
           <Button 
             type="submit" 
-            disabled={!formData.nombre.trim() || isSubmitting}
+            disabled={!formData.nombre.trim() || !formData.empresa_id || isSubmitting}
             className="flex-1"
           >
             {isSubmitting ? 'Creando...' : 'Crear Equipo'}

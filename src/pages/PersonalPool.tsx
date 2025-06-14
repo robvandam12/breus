@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -51,7 +50,7 @@ const PersonalPool = () => {
     }
   };
 
-  const handleCreateEquipo = async (data: { nombre: string; descripcion: string; empresa_id: string }) => {
+  const handleCreateEquipo = async (data: { nombre: string; descripcion: string; empresa_id: string; tipo_empresa: 'salmonera' | 'contratista' }) => {
     await createEquipo(data);
     setShowCreateEquipoForm(false);
   };
