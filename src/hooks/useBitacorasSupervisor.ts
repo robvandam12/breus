@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { BitacoraSupervisorCompleta } from '@/types/bitacoras';
+import { useOfflineSync } from './useOfflineSync';
 
 const bitacoraSupervisorFormSchema = z.object({
   codigo: z.string(),
@@ -71,6 +71,7 @@ const getBitacorasSupervisor = async (): Promise<BitacoraSupervisorCompleta[]> =
 
 export const useBitacorasSupervisor = () => {
   const queryClient = useQueryClient();
+  const { isOnline, addPendingAction } = useOfflineSync();
 
   const { data: bitacorasSupervisor = [], isLoading: loadingSupervisor, refetch: refetchSupervisor } = useQuery<BitacoraSupervisorCompleta[]>({
     queryKey: ['bitacorasSupervisor'],
@@ -80,14 +81,22 @@ export const useBitacorasSupervisor = () => {
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
       const { fecha_termino_faena, ...dataToInsert } = formData as any;
+      if (!isOnline) {
+        addPendingAction({ type: 'create', table: 'bitacora_supervisor', payload: dataToInsert });
+        // Optimistic update
+        const tempId = `offline_${Date.now()}`;
+        const newBitacora = { ...dataToInsert, bitacora_id: tempId };
+        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) => [...oldData, newBitacora]);
+        return newBitacora;
+      }
       const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert as any);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
       toast({
-        title: "Bitácora de Supervisor Creada",
-        description: "La bitácora ha sido registrada exitosamente.",
+        title: isOnline ? "Bitácora de Supervisor Creada" : "Bitácora guardada (Offline)",
+        description: isOnline ? "La bitácora ha sido registrada exitosamente." : "Se sincronizará cuando haya conexión.",
       });
     },
     onError: (error) => {
@@ -101,9 +110,18 @@ export const useBitacorasSupervisor = () => {
 
   const updateBitacoraSupervisorSignature = useMutation({
     mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
+      const payload = { supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
+      if (!isOnline) {
+        addPendingAction({ type: 'update', table: 'bitacora_supervisor', payload: { pk: { bitacora_id: bitacoraId }, data: payload } });
+         // Optimistic update
+         queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
+          oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...payload } : b)
+        );
+        return;
+      }
       const { error } = await supabase
         .from('bitacora_supervisor')
-        .update({ supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq('bitacora_id', bitacoraId);
 
       if (error) throw new Error(error.message);
@@ -111,8 +129,8 @@ export const useBitacorasSupervisor = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
       toast({
-        title: "Bitácora Firmada",
-        description: "La firma ha sido registrada exitosamente.",
+        title: isOnline ? "Bitácora Firmada" : "Firma guardada (Offline)",
+        description: isOnline ? "La firma ha sido registrada exitosamente." : "Se sincronizará cuando haya conexión.",
       });
     },
     onError: (error) => {

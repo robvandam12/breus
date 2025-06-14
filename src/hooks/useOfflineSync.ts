@@ -1,23 +1,24 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-interface PendingAction {
+export interface PendingAction {
   id: string;
   type: 'create' | 'update' | 'delete';
   table: string;
-  data: any;
+  payload: any; // For create: data, For update: { pk: object, data: object }, For delete: { pk: object }
   timestamp: number;
 }
 
 export const useOfflineSync = () => {
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isSyncing, setIsSyncing] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Load pending actions from localStorage
     const stored = localStorage.getItem('breus_pending_actions');
     if (stored) {
       try {
@@ -27,14 +28,8 @@ export const useOfflineSync = () => {
       }
     }
 
-    const handleOnline = () => {
-      setIsOnline(true);
-      syncPendingActions();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -46,9 +41,75 @@ export const useOfflineSync = () => {
   }, []);
 
   useEffect(() => {
-    // Save pending actions to localStorage whenever they change
     localStorage.setItem('breus_pending_actions', JSON.stringify(pendingActions));
   }, [pendingActions]);
+
+  const syncPendingActions = useCallback(async () => {
+    if (isSyncing || !isOnline || pendingActions.length === 0) return;
+
+    setIsSyncing(true);
+    toast({
+      title: "Sincronizando datos...",
+      description: `Sincronizando ${pendingActions.length} acciones pendientes.`,
+    });
+
+    const actionsToSync = [...pendingActions];
+    const successfullySyncedIds: string[] = [];
+    
+    for (const action of actionsToSync) {
+      try {
+        let response;
+        switch (action.type) {
+          case 'create':
+            response = await supabase.from(action.table).insert(action.payload);
+            break;
+          case 'update':
+            const { pk, data } = action.payload;
+            response = await supabase.from(action.table).update(data).match(pk);
+            break;
+          case 'delete':
+            response = await supabase.from(action.table).delete().match(action.payload.pk);
+            break;
+          default:
+            throw new Error(`Unsupported action type: ${action.type}`);
+        }
+        
+        if (response.error) {
+          throw response.error;
+        }
+        successfullySyncedIds.push(action.id);
+      } catch (error: any) {
+        console.error('Sync failed for action:', action.id, error.message);
+        toast({
+          title: "Error de sincronización",
+          description: `Falló la acción en ${action.table}. Se reintentará más tarde.`,
+          variant: "destructive",
+        });
+        // We stop on first error to maintain order of operations
+        setIsSyncing(false);
+        return;
+      }
+    }
+
+    setPendingActions(prev => prev.filter(action => !successfullySyncedIds.includes(action.id)));
+    
+    if (successfullySyncedIds.length > 0) {
+      toast({
+        title: "Sincronización completa",
+        description: `Se sincronizaron ${successfullySyncedIds.length} acciones.`,
+      });
+      await queryClient.invalidateQueries();
+    }
+    
+    setIsSyncing(false);
+  }, [isOnline, pendingActions, queryClient, isSyncing]);
+
+  useEffect(() => {
+    if (isOnline && pendingActions.length > 0) {
+      syncPendingActions();
+    }
+  }, [isOnline, pendingActions.length, syncPendingActions]);
+
 
   const addPendingAction = (action: Omit<PendingAction, 'id' | 'timestamp'>) => {
     const newAction: PendingAction = {
@@ -56,61 +117,23 @@ export const useOfflineSync = () => {
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now()
     };
-
     setPendingActions(prev => [...prev, newAction]);
-
-    if (!isOnline) {
-      toast({
-        title: "Acción guardada offline",
-        description: "Se sincronizará cuando vuelvas a conectarte.",
-      });
-    }
-  };
-
-  const syncPendingActions = async () => {
-    if (pendingActions.length === 0) return;
-
     toast({
-      title: "Sincronizando datos...",
-      description: `${pendingActions.length} acciones pendientes.`,
+      title: "Modo Offline",
+      description: "Acción guardada. Se sincronizará al recuperar la conexión.",
     });
-
-    try {
-      // Here you would implement the actual sync logic
-      // For now, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Clear pending actions after successful sync
-      setPendingActions([]);
-      
-      // Invalidate all queries to refetch fresh data
-      queryClient.invalidateQueries();
-
-      toast({
-        title: "Sincronización completa",
-        description: "Todos los datos han sido sincronizados.",
-      });
-    } catch (error) {
-      console.error('Sync failed:', error);
-      toast({
-        title: "Error de sincronización",
-        description: "No se pudieron sincronizar todos los datos. Se intentará nuevamente.",
-        variant: "destructive",
-      });
-    }
   };
 
   const clearPendingActions = () => {
     setPendingActions([]);
-    localStorage.removeItem('breus_pending_actions');
   };
 
   return {
     pendingActions,
     isOnline,
+    isSyncing,
     addPendingAction,
-    syncPendingActions,
-    clearPendingActions,
-    hasPendingActions: pendingActions.length > 0
+    hasPendingActions: pendingActions.length > 0,
+    clearPendingActions
   };
 };

@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useOfflineSync } from './useOfflineSync';
 
 export interface Inmersion {
   inmersion_id: string;
@@ -75,6 +75,7 @@ export interface EquipoBuceoData {
 
 export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();
+  const { isOnline, addPendingAction } = useOfflineSync();
 
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['inmersiones', operacionId],
@@ -183,6 +184,17 @@ export const useInmersiones = (operacionId?: string) => {
 
   const createInmersionMutation = useMutation({
     mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
+      if (!isOnline) {
+        const tempId = `offline_${Date.now()}`;
+        const payload = { ...inmersionData, hpt_validado: false, anexo_bravo_validado: false };
+        addPendingAction({ type: 'create', table: 'inmersion', payload });
+        
+        // Optimistic update
+        const newInmersion = { ...payload, inmersion_id: tempId, codigo: `OFFLINE-${tempId.slice(-4)}` };
+        queryClient.setQueryData(['inmersiones'], (oldData: Inmersion[] = []) => [...oldData, newInmersion]);
+        return newInmersion;
+      }
+
       // Obtener datos completos de la operación para poblar campos automáticamente
       const operationData = await getOperationCompleteData(inmersionData.operacion_id);
       
@@ -232,11 +244,13 @@ export const useInmersiones = (operacionId?: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
-        title: "Inmersión creada",
-        description: "La inmersión ha sido creada exitosamente con datos auto-poblados.",
+        title: isOnline ? "Inmersión creada" : "Inmersión guardada (Offline)",
+        description: isOnline 
+          ? "La inmersión ha sido creada exitosamente con datos auto-poblados."
+          : "La inmersión se sincronizará cuando haya conexión.",
       });
     },
     onError: (error) => {
@@ -251,6 +265,14 @@ export const useInmersiones = (operacionId?: string) => {
 
   const updateInmersionMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Inmersion> }) => {
+      if (!isOnline) {
+        addPendingAction({ type: 'update', table: 'inmersion', payload: { pk: { inmersion_id: id }, data } });
+        queryClient.setQueryData(['inmersiones'], (old: Inmersion[] = []) => 
+          old.map(i => i.inmersion_id === id ? { ...i, ...data } : i)
+        );
+        return { inmersion_id: id, ...data };
+      }
+
       const { data: updatedData, error } = await supabase
         .from('inmersion')
         .update(data)
@@ -264,8 +286,10 @@ export const useInmersiones = (operacionId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
-        title: "Inmersión actualizada",
-        description: "La inmersión ha sido actualizada exitosamente.",
+        title: isOnline ? "Inmersión actualizada" : "Actualización guardada (Offline)",
+        description: isOnline 
+          ? "La inmersión ha sido actualizada exitosamente."
+          : "Se sincronizará cuando haya conexión.",
       });
     },
     onError: (error) => {
@@ -280,6 +304,13 @@ export const useInmersiones = (operacionId?: string) => {
 
   const deleteInmersionMutation = useMutation({
     mutationFn: async (id: string) => {
+      if (!isOnline) {
+        addPendingAction({ type: 'delete', table: 'inmersion', payload: { pk: { inmersion_id: id } } });
+        queryClient.setQueryData(['inmersiones'], (old: Inmersion[] = []) => 
+          old.filter(i => i.inmersion_id !== id)
+        );
+        return;
+      }
       const { error } = await supabase
         .from('inmersion')
         .delete()
@@ -290,8 +321,10 @@ export const useInmersiones = (operacionId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
-        title: "Inmersión eliminada",
-        description: "La inmersión ha sido eliminada exitosamente.",
+        title: isOnline ? "Inmersión eliminada" : "Eliminación guardada (Offline)",
+        description: isOnline
+          ? "La inmersión ha sido eliminada exitosamente."
+          : "Se sincronizará cuando haya conexión.",
       });
     },
     onError: (error) => {
