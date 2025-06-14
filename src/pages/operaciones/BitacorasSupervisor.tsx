@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
+import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
 import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
@@ -38,7 +38,13 @@ const BitacorasSupervisor = () => {
 
   const handleCreateSupervisor = async (data: BitacoraSupervisorFormData) => {
     try {
-      await createBitacoraSupervisor.mutateAsync(data);
+      // The data from BitacoraWizard is partial, let's complete it.
+      const completeData = {
+        ...data,
+        supervisor_id: data.supervisor_id || '',
+        supervisor: data.supervisor || '',
+      };
+      await createBitacoraSupervisor.mutateAsync(completeData);
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating bitácora supervisor:', error);
@@ -198,8 +204,8 @@ const BitacorasSupervisor = () => {
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogContent variant="form" className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
-              <CreateBitacoraSupervisorFormComplete
-                onSubmit={handleCreateSupervisor}
+              <BitacoraWizard
+                onComplete={handleCreateSupervisor}
                 onCancel={() => setIsCreateDialogOpen(false)}
               />
             </DialogContent>

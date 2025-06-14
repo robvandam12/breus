@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anchor } from 'lucide-react';
-import { useBitacoraEnhanced, BitacoraSupervisorFormData } from '@/hooks/useBitacoraEnhanced';
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 import { useAuth } from '@/hooks/useAuth';
 import { useOperaciones } from '@/hooks/useOperaciones';
-import { Inmersion } from '@/hooks/useInmersiones';
+import { useInmersionesData } from '@/hooks/useInmersionesData';
+import { InmersionCompleta as Inmersion } from '@/types/bitacoras';
+
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
   onSubmit: (data: Partial<BitacoraSupervisorFormData>) => void;
@@ -23,7 +26,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
   onCancel
 }) => {
   const { profile } = useAuth();
-  const { inmersiones, loadingInmersiones } = useBitacoraEnhanced();
+  const { inmersiones, loadingInmersiones } = useInmersionesData();
   const { operaciones } = useOperaciones();
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
