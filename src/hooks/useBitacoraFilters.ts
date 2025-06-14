@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 
 export interface BitacoraFilters {
@@ -40,7 +41,7 @@ export const useBitacoraFilters = (initialData: any[]) => {
           bitacora.codigo?.toLowerCase().includes(searchLower) ||
           bitacora.supervisor?.toLowerCase().includes(searchLower) ||
           bitacora.buzo?.toLowerCase().includes(searchLower) ||
-          (bitacora.inmersion_codigo && bitacora.inmersion_codigo.toLowerCase().includes(searchLower));
+          (bitacora.inmersion?.codigo && bitacora.inmersion.codigo.toLowerCase().includes(searchLower));
         
         if (!matchesSearch) return false;
       }

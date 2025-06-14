@@ -21,11 +21,11 @@ const getBitacorasBuzo = async (): Promise<BitacoraBuzoCompleta[]> => {
     .from('bitacora_buzo')
     .select(`
       *,
-      inmersion:inmersion(*,
-        operacion:operacion(*,
-          salmoneras:salmonera_id(*),
-          sitios:sitio_id(*),
-          contratistas:contratista_id(*)
+      inmersion:inmersion_id(*,
+        operacion:operacion_id(*,
+          salmoneras:salmonera_id(nombre),
+          sitios:sitio_id(nombre),
+          contratistas:contratista_id(nombre)
         )
       )
     `)

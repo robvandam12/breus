@@ -8,10 +8,10 @@ const getInmersionesCompletas = async (): Promise<InmersionCompleta[]> => {
     .from('inmersion')
     .select(`
       *,
-      operacion:operacion(*,
-        salmoneras:salmonera_id(*),
-        sitios:sitio_id(*),
-        contratistas:contratista_id(*)
+      operacion:operacion_id(*,
+        salmoneras:salmonera_id(nombre),
+        sitios:sitio_id(nombre),
+        contratistas:contratista_id(nombre)
       )
     `)
     .order('fecha_inmersion', { ascending: false });

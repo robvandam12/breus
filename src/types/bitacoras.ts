@@ -10,7 +10,9 @@ export interface InmersionCompleta extends Tables<'inmersion'> {
     salmoneras?: { nombre: string } | null;
     contratistas?: { nombre: string } | null;
     sitios?: { nombre: string } | null;
-  } | null;
+  };
+  buzo_asistente?: string | null;
+  buzo_asistente_id?: string | null;
 }
 
 export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
