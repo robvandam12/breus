@@ -1,13 +1,15 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type TableName = keyof Database['public']['Tables'];
 
 export interface PendingAction {
   id: string;
   type: 'create' | 'update' | 'delete';
-  table: string;
+  table: TableName;
   payload: any; // For create: data, For update: { pk: object, data: object }, For delete: { pk: object }
   timestamp: number;
 }
@@ -71,7 +73,7 @@ export const useOfflineSync = () => {
             response = await supabase.from(action.table).delete().match(action.payload.pk);
             break;
           default:
-            throw new Error(`Unsupported action type: ${action.type}`);
+            throw new Error(`Unsupported action type: ${(action as any).type}`);
         }
         
         if (response.error) {
@@ -85,7 +87,6 @@ export const useOfflineSync = () => {
           description: `Falló la acción en ${action.table}. Se reintentará más tarde.`,
           variant: "destructive",
         });
-        // We stop on first error to maintain order of operations
         setIsSyncing(false);
         return;
       }
