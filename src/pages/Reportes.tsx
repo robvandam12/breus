@@ -1,4 +1,3 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Calendar, Download, Filter, BarChart3, PieChart as PieChartIcon, TrendingUp, FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { SecurityAnalysisReport } from "@/components/reportes/SecurityAnalysisReport";
 
 const Reportes = () => {
   const [dateRange, setDateRange] = useState("month");
@@ -91,12 +91,14 @@ const Reportes = () => {
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
               
+              <SecurityAnalysisReport />
+              
               {/* Filtros Globales */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    Filtros de Reporte
+                    Filtros de Reporte (Ejemplo)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

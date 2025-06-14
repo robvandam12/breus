@@ -1767,6 +1767,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_security_alert_stats: {
+        Args: { p_start_date: string; p_end_date: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
