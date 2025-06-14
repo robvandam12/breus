@@ -1,10 +1,10 @@
-
 import { useActiveImmersions } from "@/hooks/useActiveImmersions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Anchor, User, Shield, Briefcase, PlayCircle, Calendar } from "lucide-react";
+import { Clock, Anchor, User, Shield, Briefcase, PlayCircle, Calendar, Waves } from "lucide-react";
+import { ImmersionDepthChart } from "./ImmersionDepthChart";
 
 const getStatusBadge = (status: string) => {
     switch (status) {
@@ -49,7 +49,7 @@ export const ActiveImmersionsPanel = () => {
           <ScrollArea className="h-[calc(100vh-20rem)] lg:h-[450px]">
             <div className="space-y-4">
               {activeImmersions.map((inmersion) => (
-                <div key={inmersion.inmersion_id} className="p-4 rounded-lg border bg-card">
+                <div key={inmersion.inmersion_id} className="p-4 rounded-lg border bg-card transition-all">
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-semibold">{inmersion.codigo}</h4>
@@ -69,6 +69,20 @@ export const ActiveImmersionsPanel = () => {
                     </p>
                     <p className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary"/> T. Fondo Plan: {inmersion.planned_bottom_time || 'N/A'} min</p>
                   </div>
+
+                  {inmersion.estado === 'en_progreso' && (
+                    <div className="mt-4 pt-3 border-t border-dashed">
+                       <div className="flex justify-between items-center text-blue-800 dark:text-blue-300">
+                        <h5 className="font-semibold text-sm">Datos en Tiempo Real</h5>
+                        <div className="flex items-center gap-2">
+                          <Waves className="w-5 h-5" />
+                          <span className="text-2xl font-bold">{inmersion.current_depth || 0}m</span>
+                        </div>
+                      </div>
+                      <ImmersionDepthChart immersion={inmersion} />
+                    </div>
+                  )}
+
                 </div>
               ))}
             </div>

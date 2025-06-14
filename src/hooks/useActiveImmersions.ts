@@ -20,6 +20,7 @@ export const useActiveImmersions = () => {
           supervisor,
           current_depth,
           planned_bottom_time,
+          depth_history,
           hora_inicio,
           fecha_inmersion,
           operacion:operacion_id (

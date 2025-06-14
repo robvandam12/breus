@@ -1,15 +1,41 @@
-
+import React, { useState, useMemo } from "react";
 import { useSecurityAlerts } from "@/hooks/useSecurityAlerts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, BellRing, CheckCircle, ShieldCheck } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle, ShieldCheck, Search, ShieldX } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export const SecurityAlertsPanel = () => {
   const { alerts, isLoading, acknowledgeAlert, isAcknowledging } = useSecurityAlerts();
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAcknowledged, setShowAcknowledged] = useState('unacknowledged');
+
+  const filteredAlerts = useMemo(() => {
+    return alerts
+      .filter(a => showAcknowledged === 'all' ? true : !a.acknowledged)
+      .filter(a => filterPriority === 'all' || a.priority === filterPriority)
+      .filter(a => {
+        const code = a.details?.inmersion_code || a.inmersion?.codigo || '';
+        const type = a.type.toLowerCase();
+        const term = searchTerm.toLowerCase();
+        return code.toLowerCase().includes(term) || type.includes(term);
+      });
+  }, [alerts, showAcknowledged, filterPriority, searchTerm]);
+
+  const handleAcknowledgeAll = () => {
+    filteredAlerts.forEach(alert => {
+      if (!alert.acknowledged) {
+        acknowledgeAlert(alert.id);
+      }
+    });
+  };
 
   const getPriorityProps = (priority: string) => {
     switch (priority) {
@@ -48,49 +74,58 @@ export const SecurityAlertsPanel = () => {
     )
   }
 
-  const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged);
-
-  if (unacknowledgedAlerts.length === 0) {
-    return (
-      <Card className="ios-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold">
-            <ShieldCheck className="w-6 h-6 text-green-600" />
-            Alertas de Seguridad
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
-            <p className="font-medium">Todo en Orden</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No hay alertas de seguridad activas en este momento.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const unacknowledgedCount = alerts.filter(a => !a.acknowledged).length;
 
   return (
     <Card className="ios-card">
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start flex-wrap gap-2">
             <CardTitle className="flex items-center gap-2 text-xl font-semibold">
-                <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" />
-                Alertas de Seguridad Activas
+                {unacknowledgedCount > 0 ? 
+                    <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" /> : 
+                    <ShieldCheck className="w-6 h-6 text-green-600" />
+                }
+                Alertas de Seguridad
             </CardTitle>
-            <Badge variant="destructive">{unacknowledgedAlerts.length} sin reconocer</Badge>
+            {unacknowledgedCount > 0 && <Badge variant="destructive">{unacknowledgedCount} sin reconocer</Badge>}
+        </div>
+        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar por código o tipo..." className="pl-8" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Prioridad" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Toda Prioridad</SelectItem>
+                    <SelectItem value="critical">Crítica</SelectItem>
+                    <SelectItem value="emergency">Emergencia</SelectItem>
+                    <SelectItem value="warning">Advertencia</SelectItem>
+                </SelectContent>
+            </Select>
+            <ToggleGroup type="single" value={showAcknowledged} onValueChange={val => val && setShowAcknowledged(val)} className="w-full sm:w-auto">
+                <ToggleGroupItem value="unacknowledged">Activas</ToggleGroupItem>
+                <ToggleGroupItem value="all">Todas</ToggleGroupItem>
+            </ToggleGroup>
         </div>
       </CardHeader>
       <CardContent>
+        {filteredAlerts.length === 0 ? (
+           <div className="text-center py-8 text-zinc-600 dark:text-zinc-400">
+             <ShieldX className="w-12 h-12 mx-auto text-zinc-400 mb-4" />
+             <p className="font-medium">No se encontraron alertas</p>
+             <p className="text-sm">{alerts.length > 0 ? 'Prueba a cambiar los filtros.' : 'El sistema no ha detectado alertas.'}</p>
+           </div>
+        ) : (
         <ScrollArea className="h-96">
           <div className="space-y-4">
-            {unacknowledgedAlerts.map((alert) => {
+            {filteredAlerts.map((alert) => {
               const { icon: Icon, color, bgColor } = getPriorityProps(alert.priority);
               const inmersionCode = alert.details?.inmersion_code || alert.inmersion?.codigo || 'N/A';
               return (
-                <div key={alert.id} className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
+                <div key={alert.id} className={`p-4 rounded-xl border ${alert.acknowledged ? 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'}`}>
                    <div className="flex items-start gap-4">
                         <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${bgColor}`}>
                             <Icon className={`w-5 h-5 ${color}`} />
@@ -105,7 +140,7 @@ export const SecurityAlertsPanel = () => {
                                         Inmersión: <span className="font-semibold">{inmersionCode}</span>
                                     </p>
                                 </div>
-                                <Badge variant="destructive" className="capitalize">{alert.priority}</Badge>
+                                <Badge variant={alert.acknowledged ? 'secondary' : 'destructive'} className="capitalize">{alert.priority}</Badge>
                             </div>
 
                             <div className="text-sm text-zinc-700 dark:text-zinc-300 space-y-1">
@@ -119,6 +154,7 @@ export const SecurityAlertsPanel = () => {
                                 <span className="text-xs text-zinc-500">
                                     {new Date(alert.created_at).toLocaleString('es-CL')}
                                 </span>
+                                {!alert.acknowledged && (
                                 <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
@@ -129,7 +165,7 @@ export const SecurityAlertsPanel = () => {
                                     variant="destructive"
                                 >
                                     <ShieldCheck className="w-4 h-4 mr-2" />
-                                    Reconocer Alerta
+                                    Reconocer
                                 </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -137,6 +173,7 @@ export const SecurityAlertsPanel = () => {
                                 </TooltipContent>
                                 </Tooltip>
                                 </TooltipProvider>
+                                )}
                             </div>
                         </div>
                    </div>
@@ -145,6 +182,15 @@ export const SecurityAlertsPanel = () => {
             })}
           </div>
         </ScrollArea>
+        )}
+         {filteredAlerts.filter(a => !a.acknowledged).length > 1 && (
+            <div className="mt-4 flex justify-end">
+                <Button onClick={handleAcknowledgeAll} disabled={isAcknowledging} variant="outline">
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Reconocer {filteredAlerts.filter(a => !a.acknowledged).length} Alertas Visibles
+                </Button>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
