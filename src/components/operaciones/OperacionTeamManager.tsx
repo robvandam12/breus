@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Users, Plus, X, UserPlus } from "lucide-react";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { CreateEquipoForm } from "@/components/equipos/CreateEquipoForm";
+import { CreateEquipoFormEnhanced } from "@/components/equipos/CreateEquipoFormEnhanced";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,7 +30,7 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: Oper
   const [isCreateEquipoDialogOpen, setIsCreateEquipoDialogOpen] = useState(false);
   
   const operacion = operaciones.find(op => op.id === operacionId);
-  const availableEquipos = equipos.filter(e => e.empresa_id === salmoneraId);
+  const availableEquipos = equipos.filter(e => e.empresa_id === (operacion?.salmonera_id || operacion?.contratista_id));
   const selectedEquipo = equipos.find(e => e.id === selectedEquipoId);
   
   // Get current assigned team from operacion
@@ -160,9 +159,11 @@ export const OperacionTeamManager = ({ operacionId, salmoneraId, onClose }: Oper
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
-                <CreateEquipoForm
+                <CreateEquipoFormEnhanced
                   onSubmit={handleCreateEquipo}
                   onCancel={() => setIsCreateEquipoDialogOpen(false)}
+                  salmoneraId={operacion?.salmonera_id}
+                  contratistaId={operacion?.contratista_id}
                 />
               </DialogContent>
             </Dialog>

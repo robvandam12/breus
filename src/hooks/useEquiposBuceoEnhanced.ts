@@ -30,6 +30,7 @@ export interface EquipoBuceoFormData {
   nombre: string;
   descripcion: string;
   empresa_id: string;
+  tipo_empresa: 'salmonera' | 'contratista';
 }
 
 export interface AddMiembroData {
@@ -97,27 +98,15 @@ export const useEquiposBuceoEnhanced = () => {
   });
 
   const createEquipoMutation = useMutation({
-    mutationFn: async (data: EquipoBuceoFormData) => {
+    mutationFn: async (data: EquipoBuceoFormData & { activo?: boolean }) => {
       console.log('Creating equipo de buceo:', data);
-      
-      // Get current user to determine empresa_id and tipo_empresa
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Usuario no autenticado');
-
-      const { data: userProfile } = await supabase
-        .from('usuario')
-        .select('salmonera_id, servicio_id')
-        .eq('usuario_id', user.user.id)
-        .single();
-
-      if (!userProfile) throw new Error('Perfil de usuario no encontrado');
 
       const equipoData = {
         nombre: data.nombre,
         descripcion: data.descripcion,
-        empresa_id: userProfile.salmonera_id || userProfile.servicio_id || data.empresa_id,
-        tipo_empresa: userProfile.salmonera_id ? 'salmonera' : 'servicio',
-        activo: true
+        empresa_id: data.empresa_id,
+        tipo_empresa: data.tipo_empresa,
+        activo: data.activo !== undefined ? data.activo : true,
       };
 
       const { data: result, error } = await supabase
