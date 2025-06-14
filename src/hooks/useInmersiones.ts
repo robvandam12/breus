@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineSync } from './useOfflineSync';
+import { useEffect } from "react";
 
 export interface Inmersion {
   inmersion_id: string;
@@ -107,6 +107,26 @@ export const useInmersiones = (operacionId?: string) => {
       })) as Inmersion[];
     },
   });
+
+  // REAL-TIME SUBSCRIPTION FOR IMMERSIONS
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-inmersiones')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inmersion' },
+        (payload) => {
+          console.log('Cambio en inmersión recibido!', payload);
+          queryClient.invalidateQueries({ queryKey: ['inmersiones', operacionId] });
+          queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, operacionId]);
 
   // Nueva función para obtener datos completos de la operación
   const getOperationCompleteData = async (operacionId: string) => {

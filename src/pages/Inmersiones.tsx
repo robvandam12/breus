@@ -37,6 +37,19 @@ export default function Inmersiones() {
     }
   }, [operacionId]);
 
+  // Sync selectedInmersion with real-time updates
+  useEffect(() => {
+    if (showDetailModal && selectedInmersion?.inmersion_id) {
+      const updatedInmersion = inmersiones.find(
+        (i) => i.inmersion_id === selectedInmersion.inmersion_id
+      );
+
+      if (updatedInmersion && JSON.stringify(updatedInmersion) !== JSON.stringify(selectedInmersion)) {
+        setSelectedInmersion(updatedInmersion);
+      }
+    }
+  }, [inmersiones, selectedInmersion, showDetailModal]);
+
   const handleCreateInmersion = async (data: any) => {
     try {
       await createInmersion(data);
@@ -409,14 +422,25 @@ export default function Inmersiones() {
                                   </AlertDescription>
                               </Alert>
                           )}
-                          <div>
-                              <label className="text-sm font-medium text-gray-500">Tiempo de Fondo Planificado</label>
-                              <p className="text-lg">{selectedInmersion.planned_bottom_time ? `${selectedInmersion.planned_bottom_time} min` : 'No especificado'}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                            <div>
+                                <label className="text-sm font-medium text-gray-500">Profundidad Actual</label>
+                                <p className="text-3xl font-bold text-blue-600">{selectedInmersion.current_depth || '0'} m</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500">Prof. Máxima Planificada</label>
+                                <p className="text-2xl font-semibold">{selectedInmersion.profundidad_max} m</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-500">Tiempo de Fondo Plan.</label>
+                                <p className="text-2xl font-semibold">{selectedInmersion.planned_bottom_time ? `${selectedInmersion.planned_bottom_time} min` : 'N/A'}</p>
+                            </div>
                           </div>
                           <div>
-                              <label className="text-sm font-medium text-gray-500">Profundidad Actual</label>
+                              <label htmlFor="update-depth-input" className="text-sm font-medium text-gray-500">Forzar Actualización de Profundidad</label>
                               <div className="flex items-center gap-2 mt-1">
                                   <Input
+                                      id="update-depth-input"
                                       type="number"
                                       value={newDepth}
                                       onChange={(e) => setNewDepth(e.target.value)}
@@ -425,9 +449,6 @@ export default function Inmersiones() {
                                   />
                                   <Button onClick={handleUpdateDepth}>Actualizar</Button>
                               </div>
-                               <p className="text-sm text-gray-500 mt-1">
-                                  Profundidad máxima planificada: {selectedInmersion.profundidad_max}m
-                              </p>
                           </div>
                       </CardContent>
                     </Card>
