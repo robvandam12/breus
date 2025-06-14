@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitaco
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
 import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface OperacionInmersionesProps {
   operacionId: string;
@@ -22,6 +22,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
   const { createBitacoraSupervisor, bitacorasSupervisor } = useBitacorasSupervisor();
   const { createBitacoraBuzo } = useBitacorasBuzo();
+  const queryClient = useQueryClient();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [inmersionToDelete, setInmersionToDelete] = useState<string | null>(null);
@@ -42,6 +43,9 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
         title: "Inmersión eliminada",
         description: "La inmersión ha sido eliminada exitosamente.",
       });
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
       setShowDeleteDialog(false);
       setInmersionToDelete(null);
     } catch (error) {

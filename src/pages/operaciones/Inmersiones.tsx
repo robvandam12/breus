@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -19,6 +18,7 @@ import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { InmersionesActions } from "./InmersionesActions";
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Inmersiones() {
   const [showWizard, setShowWizard] = useState(false);
@@ -31,6 +31,7 @@ export default function Inmersiones() {
   const { operaciones } = useOperaciones();
   const { createBitacoraBuzo } = useBitacorasBuzo();
   const { createBitacoraSupervisor } = useBitacorasSupervisor();
+  const queryClient = useQueryClient();
   
   const operacionId = searchParams.get('operacion');
 
@@ -48,6 +49,8 @@ export default function Inmersiones() {
         title: "Inmersión creada",
         description: "La inmersión ha sido creada exitosamente.",
       });
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
       setShowWizard(false);
       
       if (operacionId) {

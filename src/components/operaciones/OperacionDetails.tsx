@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
 import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
 import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 
 interface OperacionDetailsProps {
   operacionId: string;
@@ -43,80 +45,86 @@ interface DocumentStatus {
   hasTeam: boolean;
 }
 
+const fetchOperacionDetails = async (operacionId: string) => {
+  const { data: opData, error: opError } = await supabase
+    .from('operacion')
+    .select(`
+      *,
+      salmoneras:salmonera_id (nombre),
+      sitios:sitio_id (nombre),
+      contratistas:contratista_id (nombre)
+    `)
+    .eq('id', operacionId)
+    .single();
+
+  if (opError) throw opError;
+
+  const [hptData, anexoData, inmersionData] = await Promise.all([
+    supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId),
+    supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId),
+    supabase.from('inmersion').select('inmersion_id, codigo, fecha_inmersion, estado').eq('operacion_id', operacionId)
+  ]);
+
+  if (hptData.error) throw hptData.error;
+  if (anexoData.error) throw anexoData.error;
+  if (inmersionData.error) throw inmersionData.error;
+
+  const operacion: OperacionFull = {
+    ...opData,
+    sitio_nombre: opData.sitios?.nombre,
+    contratista_nombre: opData.contratistas?.nombre
+  };
+
+  const documentStatus: DocumentStatus = {
+    hpts: hptData.data || [],
+    anexosBravo: anexoData.data || [],
+    inmersiones: inmersionData.data || [],
+    hasTeam: !!opData.equipo_buceo_id
+  };
+  
+  return { operacion, documentStatus };
+};
+
 export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
-  const [operacion, setOperacion] = useState<OperacionFull | null>(null);
-  const [documentStatus, setDocumentStatus] = useState<DocumentStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchOperacionDetails = async () => {
-      try {
-        // Obtener datos de la operación con relaciones
-        const { data: opData, error: opError } = await supabase
-          .from('operacion')
-          .select(`
-            *,
-            salmoneras:salmonera_id (nombre),
-            sitios:sitio_id (nombre),
-            contratistas:contratista_id (nombre)
-          `)
-          .eq('id', operacionId)
-          .single();
+  const { data, isLoading } = useQuery({
+    queryKey: ['operacionDetails', operacionId],
+    queryFn: () => fetchOperacionDetails(operacionId),
+    enabled: !!operacionId,
+  });
 
-        if (opError) throw opError;
-
-        setOperacion({
-          ...opData,
-          sitio_nombre: opData.sitios?.nombre,
-          contratista_nombre: opData.contratistas?.nombre
-        });
-
-        // Obtener documentos asociados
-        const [hptData, anexoData, inmersionData] = await Promise.all([
-          supabase.from('hpt').select('*').eq('operacion_id', operacionId),
-          supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId),
-          supabase.from('inmersion').select('*').eq('operacion_id', operacionId)
-        ]);
-
-        // Check if operation has team assigned
-        const hasTeam = !!opData.equipo_buceo_id;
-
-        setDocumentStatus({
-          hpts: hptData.data || [],
-          anexosBravo: anexoData.data || [],
-          inmersiones: inmersionData.data || [],
-          hasTeam
-        });
-
-      } catch (error) {
-        console.error('Error fetching operation details:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOperacionDetails();
-  }, [operacionId]);
-
-  const handleCreateInmersion = async (data: any) => {
-    try {
-      const inmersionData = {
-        ...data,
-        operacion_id: operacionId
-      };
-      
-      const { error } = await supabase.from('inmersion').insert([inmersionData]);
+  const operacion = data?.operacion;
+  const documentStatus = data?.documentStatus;
+  
+  const createInmersionMutation = useMutation({
+    mutationFn: async (inmersionData: any) => {
+      const dataToInsert = { ...inmersionData, operacion_id: operacionId };
+      const { error } = await supabase.from('inmersion').insert([dataToInsert]);
       if (error) throw error;
-      
+    },
+    onSuccess: () => {
+      toast({ title: "Inmersión creada", description: "La inmersión ha sido creada exitosamente." });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
       setShowCreateInmersion(false);
-      // Refresh data
-      window.location.reload();
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Error creating Inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión.",
+        variant: "destructive",
+      });
     }
+  });
+  
+  const handleCreateInmersion = (data: any) => {
+    createInmersionMutation.mutate(data);
   };
 
   if (isLoading) {
