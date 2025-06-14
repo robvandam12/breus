@@ -273,11 +273,14 @@ const BitacorasSupervisor = () => {
           {bitacoraToSign && (
             <BitacoraSignatureModal
               isOpen={!!bitacoraToSign}
-              onOpenChange={() => setBitacoraToSign(null)}
-              onConfirm={(signature) => {
+              onClose={() => setBitacoraToSign(null)}
+              onSign={(signature) => {
                 handleSignSupervisor(bitacoraToSign.bitacora_id, signature);
                 setBitacoraToSign(null);
               }}
+              title="Firmar Bitácora de Supervisor"
+              userName={bitacoraToSign.supervisor || 'Supervisor'}
+              role="Supervisor de Buceo"
             />
           )}
         </main>
@@ -287,4 +290,3 @@ const BitacorasSupervisor = () => {
 };
 
 export default BitacorasSupervisor;
-

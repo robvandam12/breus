@@ -185,13 +185,16 @@ const BitacorasBuzo = () => {
           {bitacoraToSign && (
             <BitacoraSignatureModal
               isOpen={!!bitacoraToSign}
-              onOpenChange={() => setBitacoraToSign(null)}
-              onConfirm={(signature) => {
+              onClose={() => setBitacoraToSign(null)}
+              onSign={(signature) => {
                 if(bitacoraToSign) {
                   handleSignBuzo(bitacoraToSign.bitacora_id, signature);
                   setBitacoraToSign(null);
                 }
               }}
+              title="Firmar Bitácora de Buzo"
+              userName={bitacoraToSign.buzo || "Buzo"}
+              role="Buzo"
             />
           )}
         </main>
@@ -201,4 +204,3 @@ const BitacorasBuzo = () => {
 };
 
 export default BitacorasBuzo;
-
