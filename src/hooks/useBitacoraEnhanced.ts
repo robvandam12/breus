@@ -212,6 +212,56 @@ export const useBitacoraEnhanced = () => {
     },
   });
 
+  const updateBitacoraBuzoSignature = useMutation({
+    mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
+      const { error } = await supabase
+        .from('bitacora_buzo')
+        .update({ buzo_firma: signatureData, firmado: true, updated_at: new Date().toISOString() })
+        .eq('bitacora_id', bitacoraId);
+
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasBuzo'] });
+      toast({
+        title: "Bitácora Firmada",
+        description: "La firma ha sido registrada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al firmar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateBitacoraSupervisorSignature = useMutation({
+    mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
+      const { error } = await supabase
+        .from('bitacora_supervisor')
+        .update({ supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() })
+        .eq('bitacora_id', bitacoraId);
+
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      toast({
+        title: "Bitácora Firmada",
+        description: "La firma ha sido registrada exitosamente.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al firmar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     bitacorasSupervisor,
     bitacorasBuzo,
@@ -222,5 +272,7 @@ export const useBitacoraEnhanced = () => {
     refreshBitacoras,
     inmersiones,
     loadingInmersiones,
+    updateBitacoraBuzoSignature,
+    updateBitacoraSupervisorSignature,
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -27,7 +26,8 @@ const BitacorasBuzo = () => {
     bitacorasBuzo, 
     bitacorasSupervisor,
     loading,
-    createBitacoraBuzo
+    createBitacoraBuzo,
+    updateBitacoraBuzoSignature
   } = useBitacoraEnhanced();
   
   const { signBitacoraBuzo } = useBitacoraActions();
@@ -44,8 +44,8 @@ const BitacorasBuzo = () => {
     }
   };
 
-  const handleSignBuzo = async (id: string) => {
-    await signBitacoraBuzo(id);
+  const handleSignBuzo = async (id: string, signatureData: string) => {
+    await updateBitacoraBuzoSignature.mutateAsync({ bitacoraId: id, signatureData });
   };
 
   // Check if there are supervisor logs available
