@@ -4,6 +4,7 @@ import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { motion } from 'framer-motion';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
+import { LazyWidget } from './LazyWidget';
 import { breakpoints, cols } from './layouts';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -35,9 +36,24 @@ export const DashboardGrid = ({
             if (!widgetRegistry[widgetKey]) {
                 return <div key={item.i}><WidgetCard title={`Error: Widget '${item.i}' no encontrado`}>Componente no registrado.</WidgetCard></div>;
             }
-            const { name, component: WidgetComponent, configComponent, skeleton: SkeletonComponent } = widgetRegistry[widgetKey];
+            
+            const { 
+                name, 
+                component: WidgetComponent, 
+                configComponent, 
+                skeleton: SkeletonComponent,
+                isHeavy = false
+            } = widgetRegistry[widgetKey];
 
             const widgetProps = configComponent ? { config: widgets[widgetKey] } : {};
+
+            const widgetContent = (
+                <React.Suspense fallback={<SkeletonComponent />}>
+                    <WidgetComponent {...widgetProps} />
+                </React.Suspense>
+            );
+
+            const skeletonContent = <SkeletonComponent />;
 
             return (
                 <motion.div 
@@ -55,9 +71,12 @@ export const DashboardGrid = ({
                         onRemove={() => onRemoveWidget(item.i)}
                         onConfigure={configComponent ? () => onConfigureWidget(item.i as WidgetType) : undefined}
                     >
-                        <React.Suspense fallback={<SkeletonComponent />}>
-                            <WidgetComponent {...widgetProps} />
-                        </React.Suspense>
+                        <LazyWidget
+                            skeleton={skeletonContent}
+                            isHeavy={isHeavy}
+                        >
+                            {widgetContent}
+                        </LazyWidget>
                     </WidgetCard>
                 </motion.div>
             );
