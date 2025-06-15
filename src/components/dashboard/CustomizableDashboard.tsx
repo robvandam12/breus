@@ -6,7 +6,7 @@ import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, Loader2 } from 'lucide-react';
+import { Edit, Save, Loader2, RotateCcw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { WidgetCatalog } from './WidgetCatalog';
@@ -75,12 +75,13 @@ export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
     const defaultLayoutForRole = getLayoutForRole(currentRole);
 
-    const { layout, widgets: savedWidgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
+    const { layout, widgets: savedWidgets, isLoading, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
     const [isEditMode, setIsEditMode] = useState(false);
     const [currentLayouts, setCurrentLayouts] = useState<Layouts>({});
     const [currentWidgets, setCurrentWidgets] = useState<any>(savedWidgets || defaultWidgets);
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
     const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
+    const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
@@ -129,6 +130,18 @@ export const CustomizableDashboard = () => {
             }
         });
     }
+
+    const handleResetLayout = () => {
+        resetLayout(undefined, {
+            onSuccess: () => {
+                toast({ title: "Diseño restaurado", description: "El dashboard ha vuelto a su estado por defecto." });
+                setIsEditMode(false);
+            },
+            onError: () => {
+                toast({ title: "Error", description: "No se pudo restaurar el diseño.", variant: "destructive" });
+            }
+        });
+    };
 
     const handleAddWidget = (widgetType: WidgetType) => {
         const widgetConfig = widgetRegistry[widgetType];
@@ -261,9 +274,21 @@ export const CustomizableDashboard = () => {
                             
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button onClick={handleSaveLayout} disabled={isSaving}>
-                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                        {isSaving ? 'Guardando...' : 'Guardar Diseño'}
+                                     <Button variant="outline" onClick={() => setIsResetConfirmOpen(true)} disabled={isSaving || isResetting}>
+                                        <RotateCcw className="mr-2 h-4 w-4" />
+                                        Restaurar
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Restaurar el diseño por defecto para tu rol.</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button onClick={handleSaveLayout} disabled={isSaving || isResetting}>
+                                        {isSaving || isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                        {isSaving ? 'Guardando...' : (isResetting ? 'Restaurando...' : 'Guardar Diseño')}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -314,6 +339,15 @@ export const CustomizableDashboard = () => {
                     onConfirm={confirmRemoveWidget}
                     variant="destructive"
                     confirmText="Sí, quitar"
+                />
+                <ConfirmDialog
+                    open={isResetConfirmOpen}
+                    onOpenChange={setIsResetConfirmOpen}
+                    title="¿Restaurar diseño por defecto?"
+                    description="Esta acción restaurará el dashboard a su diseño predeterminado para tu rol actual. Se perderán todos los cambios de diseño que hayas guardado."
+                    onConfirm={handleResetLayout}
+                    variant="destructive"
+                    confirmText="Sí, restaurar"
                 />
             </div>
         </TooltipProvider>

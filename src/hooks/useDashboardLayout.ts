@@ -32,6 +32,18 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
     return data;
 }
 
+const deleteDashboardLayout = async ({ userId }: { userId: string }) => {
+    const { error } = await supabase
+        .from('dashboard_layouts')
+        .delete()
+        .eq('user_id', userId);
+    
+    if (error && error.code !== 'PGRST116') { // Don't throw if row doesn't exist
+        throw error;
+    }
+    return true;
+};
+
 export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
@@ -42,8 +54,15 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     enabled: !!profile?.id,
   });
 
-  const mutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: (newConfig: { layout: Layout[] | Layouts, widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newConfig }),
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteDashboardLayout({ userId: profile!.id }),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
     },
@@ -59,7 +78,9 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     widgets: widgets || defaultWidgets,
     isLoading,
     isError,
-    saveLayout: mutation.mutate,
-    isSaving: mutation.isPending
+    saveLayout: saveMutation.mutate,
+    isSaving: saveMutation.isPending,
+    resetLayout: deleteMutation.mutate,
+    isResetting: deleteMutation.isPending,
   };
 };
