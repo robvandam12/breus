@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
-import { motion } from 'framer-motion';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { LazyWidget } from './LazyWidget';
@@ -68,11 +67,8 @@ export const DashboardGrid = ({
             const skeletonContent = <SkeletonComponent />;
 
             return (
-                <motion.div 
+                <div 
                     key={item.i} 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, type: "spring", stiffness: 150, damping: 20 }}
                     className={`rounded-lg h-full ${isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''}`}
                 >
                     <WidgetCard 
@@ -89,7 +85,7 @@ export const DashboardGrid = ({
                             {widgetContent}
                         </LazyWidget>
                     </WidgetCard>
-                </motion.div>
+                </div>
             );
         });
     };
