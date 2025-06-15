@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Save, FileText } from "lucide-react";
 import { useMultiX } from '@/hooks/useMultiX';
+import { EncabezadoGeneral } from './steps/EncabezadoGeneral';
 import type { MultiXData, MultiXFormData } from '@/types/multix';
 
 interface MultiXWizardProps {
@@ -42,6 +43,7 @@ export const MultiXWizard = ({
     estado: 'borrador'
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { createMultiX, updateMultiX, loading } = useMultiX();
 
   const getStepsConfig = () => {
@@ -78,10 +80,44 @@ export const MultiXWizard = ({
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
 
+  const updateFormData = (newData: Partial<MultiXData>) => {
+    setFormData(prev => ({ ...prev, ...newData }));
+    // Limpiar errores relacionados con los campos actualizados
+    const updatedFields = Object.keys(newData);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      updatedFields.forEach(field => {
+        delete newErrors[field];
+      });
+      return newErrors;
+    });
+  };
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.lugar_trabajo.trim()) {
+        newErrors.lugar_trabajo = 'El lugar de trabajo es requerido';
+      }
+      if (!formData.fecha) {
+        newErrors.fecha = 'La fecha es requerida';
+      }
+      if (!formData.hora_inicio) {
+        newErrors.hora_inicio = 'La hora de inicio es requerida';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-      updateProgress();
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+        updateProgress();
+      }
     }
   };
 
@@ -112,22 +148,32 @@ export const MultiXWizard = ({
   };
 
   const renderStepContent = () => {
-    // Por ahora retornamos un placeholder
-    // Los componentes específicos se implementarán en las siguientes fases
-    return (
-      <div className="p-6 text-center">
-        <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          {steps[currentStep - 1]?.title}
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          {steps[currentStep - 1]?.description}
-        </p>
-        <p className="text-xs text-gray-400">
-          Componente en desarrollo - Fase {currentStep}
-        </p>
-      </div>
-    );
+    switch (currentStep) {
+      case 1:
+        return (
+          <EncabezadoGeneral
+            formData={formData}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        );
+      
+      default:
+        return (
+          <div className="p-6 text-center">
+            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {steps[currentStep - 1]?.title}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {steps[currentStep - 1]?.description}
+            </p>
+            <p className="text-xs text-gray-400">
+              Componente en desarrollo - Fase {currentStep}
+            </p>
+          </div>
+        );
+    }
   };
 
   return (
