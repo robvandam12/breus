@@ -1,44 +1,14 @@
-
 import { useState, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { DashboardTemplate } from './useDashboardTemplates';
 import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetRegistry';
 import { toast } from '@/hooks/use-toast';
+import { filterLayoutsByRole } from '@/utils/dashboardUtils';
 
 interface DashboardState {
     layouts: Layouts;
     widgets: any;
 }
-
-// NOTA: Esta función está duplicada desde useDashboardManager debido a restricciones de archivos.
-// Idealmente, debería vivir en un archivo de utilidades compartido.
-const filterLayoutsByRole = (layouts: Layouts | Layout[] | null | undefined, role: Role): Layouts => {
-    const roleFilter = (item: Layout) => {
-        const widgetConfig = widgetRegistry[item.i as WidgetType];
-        if (!widgetConfig) return false;
-        return !widgetConfig.roles || widgetConfig.roles.includes(role);
-    };
-
-    if (!layouts) return { lg: [] };
-
-    const layoutsObj: Layouts = Array.isArray(layouts) ? { lg: layouts } : layouts;
-    const filteredLayouts: Layouts = {};
-
-    Object.keys(layoutsObj).forEach(breakpoint => {
-        const key = breakpoint as keyof Layouts;
-        const layoutForBreakpoint = layoutsObj[key];
-        if (Array.isArray(layoutForBreakpoint)) {
-            filteredLayouts[key] = layoutForBreakpoint.filter(roleFilter);
-        }
-    });
-
-    if (!filteredLayouts.lg) {
-        filteredLayouts.lg = [];
-    }
-    
-    return filteredLayouts;
-};
-
 
 interface UseTemplateManagerProps {
     setDashboardState: (state: DashboardState) => void;

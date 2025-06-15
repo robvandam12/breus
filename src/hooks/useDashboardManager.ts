@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -11,6 +10,7 @@ import { useWidgetManager } from './useWidgetManager';
 import { useDashboardModes } from './useDashboardModes';
 import { useTemplateManager } from './useTemplateManager';
 import { useDashboardKeyboardShortcuts } from './useDashboardKeyboardShortcuts';
+import { filterLayoutsByRole } from '@/utils/dashboardUtils';
 
 interface DashboardState {
     layouts: Layouts;
@@ -18,34 +18,6 @@ interface DashboardState {
 }
 
 const defaultWidgets = {};
-
-const filterLayoutsByRole = (layouts: Layouts | Layout[] | null | undefined, role: Role): Layouts => {
-    const roleFilter = (item: Layout) => {
-        const widgetConfig = widgetRegistry[item.i as WidgetType];
-        if (!widgetConfig) return false;
-        // If roles are defined, the current role must be included. If not defined, widget is available for all roles.
-        return !widgetConfig.roles || widgetConfig.roles.includes(role);
-    };
-
-    if (!layouts) return { lg: [] };
-
-    const layoutsObj: Layouts = Array.isArray(layouts) ? { lg: layouts } : layouts;
-    const filteredLayouts: Layouts = {};
-
-    Object.keys(layoutsObj).forEach(breakpoint => {
-        const key = breakpoint as keyof Layouts;
-        const layoutForBreakpoint = layoutsObj[key];
-        if (Array.isArray(layoutForBreakpoint)) {
-            filteredLayouts[key] = layoutForBreakpoint.filter(roleFilter);
-        }
-    });
-
-    if (!filteredLayouts.lg) {
-        filteredLayouts.lg = [];
-    }
-    
-    return filteredLayouts;
-};
 
 export const useDashboardManager = (currentRole: string) => {
     const { templates, isLoading: isLoadingTemplates } = useDashboardTemplates();
