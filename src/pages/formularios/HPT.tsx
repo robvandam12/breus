@@ -13,6 +13,7 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 import { FormDialog } from "@/components/forms/FormDialog";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageLoadingSkeleton } from "@/components/layout/PageLoadingSkeleton";
+import { EmptyState } from "@/components/layout/EmptyState";
 
 const HPTPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,7 +57,7 @@ const HPTPage = () => {
   const headerActions = (
     <div className="flex items-center gap-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
           placeholder="Buscar HPTs..."
           value={searchTerm}
@@ -67,7 +68,7 @@ const HPTPage = () => {
 
       <Button 
         onClick={handleCreateHPT}
-        className="bg-blue-600 hover:bg-blue-700"
+        className="bg-primary hover:bg-primary/90"
       >
         <Plus className="w-4 h-4 mr-2" />
         Nuevo HPT
@@ -86,10 +87,10 @@ const HPTPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-primary">
               {hpts.length}
             </div>
-            <div className="text-sm text-zinc-500">HPTs Totales</div>
+            <div className="text-sm text-muted-foreground">HPTs Totales</div>
           </CardContent>
         </Card>
         <Card>
@@ -97,7 +98,7 @@ const HPTPage = () => {
             <div className="text-2xl font-bold text-green-600">
               {hpts.filter(h => h.firmado).length}
             </div>
-            <div className="text-sm text-zinc-500">HPTs Firmados</div>
+            <div className="text-sm text-muted-foreground">HPTs Firmados</div>
           </CardContent>
         </Card>
         <Card>
@@ -105,43 +106,33 @@ const HPTPage = () => {
             <div className="text-2xl font-bold text-yellow-600">
               {hpts.filter(h => h.estado === 'borrador').length}
             </div>
-            <div className="text-sm text-zinc-500">En Borrador</div>
+            <div className="text-sm text-muted-foreground">En Borrador</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gray-600">
+            <div className="text-2xl font-bold text-muted-foreground">
               {operaciones.filter(op => 
                 !hpts.some(hpt => hpt.operacion_id === op.id)
               ).length}
             </div>
-            <div className="text-sm text-zinc-500">Operaciones Disponibles</div>
+            <div className="text-sm text-muted-foreground">Operaciones Disponibles</div>
           </CardContent>
         </Card>
       </div>
 
       {/* HPTs List */}
       {filteredHPTs.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">
-              {hpts.length === 0 ? "No hay HPTs registrados" : "No se encontraron HPTs"}
-            </h3>
-            <p className="text-zinc-500 mb-4">
-              {hpts.length === 0 
-                ? "Comience creando el primer HPT seleccionando una operación"
-                : "Intenta ajustar la búsqueda"}
-            </p>
-            <Button 
-              onClick={handleCreateHPT}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo HPT
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title={hpts.length === 0 ? "No hay HPTs registrados" : "No se encontraron HPTs"}
+          description={hpts.length === 0 
+            ? "Comience creando el primer HPT seleccionando una operación"
+            : "Intenta ajustar la búsqueda"}
+          actionText="Nuevo HPT"
+          onAction={handleCreateHPT}
+          actionIcon={Plus}
+        />
       ) : (
         <Card>
           <Table>
@@ -165,7 +156,7 @@ const HPTPage = () => {
                       <div className="font-medium">{hpt.codigo || hpt.folio}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-zinc-600">
+                      <div className="text-sm text-muted-foreground">
                         {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
                       </div>
                     </TableCell>
@@ -187,13 +178,13 @@ const HPTPage = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div className="w-16 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all"
+                            className="bg-primary h-2 rounded-full transition-all"
                             style={{ width: `${hpt.progreso || 0}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500">{hpt.progreso || 0}%</span>
+                        <span className="text-xs text-muted-foreground">{hpt.progreso || 0}%</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
