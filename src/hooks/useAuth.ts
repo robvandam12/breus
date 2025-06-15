@@ -46,17 +46,20 @@ export const useAuthProvider = (): AuthContextType => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileFetched, setProfileFetched] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   // Timeout de seguridad para loading
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
-      console.warn('Auth loading timeout - forcing loading to false');
-      setLoading(false);
-    }, 10000); // 10 segundos max
+      if (!initialized) {
+        console.warn('Auth: Loading timeout - forcing loading to false');
+        setLoading(false);
+        setInitialized(true);
+      }
+    }, 8000); // 8 segundos max
 
     return () => clearTimeout(loadingTimeout);
-  }, []);
+  }, [initialized]);
 
   useEffect(() => {
     console.log('Auth: Initializing auth listener');
@@ -69,17 +72,18 @@ export const useAuthProvider = (): AuthContextType => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && !profileFetched) {
-          console.log('Auth: Fetching profile for user:', session.user.id);
+        if (session?.user) {
+          console.log('Auth: User found, fetching profile');
           await fetchUserProfile(session.user.id);
-          setProfileFetched(true);
-        } else if (!session?.user) {
+        } else {
           console.log('Auth: No session, clearing profile');
           setProfile(null);
-          setProfileFetched(false);
         }
         
-        setLoading(false);
+        if (!initialized) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     );
 
@@ -92,6 +96,7 @@ export const useAuthProvider = (): AuthContextType => {
         if (error) {
           console.error('Auth: Error getting session:', error);
           setLoading(false);
+          setInitialized(true);
           return;
         }
 
@@ -101,12 +106,14 @@ export const useAuthProvider = (): AuthContextType => {
         
         if (session?.user) {
           await fetchUserProfile(session.user.id);
-          setProfileFetched(true);
         }
       } catch (error) {
         console.error('Auth: Initialize error:', error);
       } finally {
-        setLoading(false);
+        if (!initialized) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
@@ -116,7 +123,7 @@ export const useAuthProvider = (): AuthContextType => {
       console.log('Auth: Cleaning up subscription');
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -153,20 +160,23 @@ export const useAuthProvider = (): AuthContextType => {
       }
     } catch (error) {
       console.error('Auth: Error in fetchUserProfile:', error);
-      // No mostrar toast de error aquí para evitar spam
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
+      console.log('Auth: Starting signIn for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Auth: SignIn error:', error);
+        throw error;
+      }
 
+      console.log('Auth: SignIn successful');
       toast({
         title: "Bienvenido",
         description: "Has iniciado sesión exitosamente",
@@ -179,13 +189,10 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, profileData: Partial<UserProfile>) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -225,8 +232,6 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -240,7 +245,6 @@ export const useAuthProvider = (): AuthContextType => {
       setUser(null);
       setProfile(null);
       setSession(null);
-      setProfileFetched(false);
 
       toast({
         title: "Sesión cerrada",

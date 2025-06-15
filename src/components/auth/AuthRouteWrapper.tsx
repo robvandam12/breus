@@ -12,13 +12,14 @@ export const AuthRouteWrapper = ({ children }: AuthRouteWrapperProps) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Timeout de seguridad
   useEffect(() => {
     const timeout = setTimeout(() => {
       console.warn('AuthRouteWrapper: Loading timeout reached');
       setTimeoutReached(true);
-    }, 10000); // 10 segundos
+    }, 10000);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -27,15 +28,17 @@ export const AuthRouteWrapper = ({ children }: AuthRouteWrapperProps) => {
     console.log('AuthRouteWrapper: Auth state', { 
       loading, 
       hasUser: !!user,
-      timeoutReached 
+      timeoutReached,
+      redirecting
     });
 
-    // Si ya está autenticado, redirigir al dashboard
-    if (!loading && user) {
+    // Si ya está autenticado y no está redirigiendo, redirigir al dashboard
+    if (!loading && user && !redirecting) {
       console.log('AuthRouteWrapper: User authenticated, redirecting to dashboard');
+      setRedirecting(true);
       navigate('/', { replace: true });
     }
-  }, [user, loading, navigate, timeoutReached]);
+  }, [user, loading, navigate, timeoutReached, redirecting]);
 
   // Si ha pasado el timeout y aún está cargando, permitir mostrar el formulario
   if (timeoutReached && loading) {
@@ -51,7 +54,16 @@ export const AuthRouteWrapper = ({ children }: AuthRouteWrapperProps) => {
     );
   }
 
-  // Si está autenticado, no mostrar nada (ya se está redirigiendo)
+  // Si está autenticado y redirigiendo, mostrar loading
+  if (user && redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner text="Redirigiendo..." />
+      </div>
+    );
+  }
+
+  // Si está autenticado pero no redirigiendo, no mostrar nada
   if (user) {
     return null;
   }

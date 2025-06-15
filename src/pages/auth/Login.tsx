@@ -45,11 +45,12 @@ export default function Login() {
     setError('');
 
     try {
+      console.log('Login: Starting login process');
       await signIn(email, password);
-      // Redirección automática después de login exitoso
-      navigate('/', { replace: true });
+      console.log('Login: SignIn completed, navigating...');
+      // La redirección se maneja automáticamente por AuthRouteWrapper
     } catch (error: any) {
-      console.error('Error during login:', error);
+      console.error('Login: Error during login:', error);
       setError(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
@@ -94,6 +95,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
+                  disabled={isLoading}
                   required
                 />
               </div>
@@ -106,6 +108,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  disabled={isLoading}
                   required
                 />
               </div>
