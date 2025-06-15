@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Widget Components (Lazy Loaded)
@@ -34,7 +33,7 @@ import { EquipmentStatusWidgetSkeleton } from './widgets/skeletons/EquipmentStat
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
 import { BuzoStatsWidgetSkeleton } from './widgets/skeletons/BuzoStatsWidgetSkeleton';
 
-export type Role = 'admin_servicio' | 'admin_empresa' | 'admin_contratista' | 'supervisor' | 'buzo' | 'superuser';
+export type Role = 'admin_servicio' | 'admin_salmonera' | 'admin_contratista' | 'supervisor' | 'buzo' | 'superuser';
 
 export type WidgetType =
     'kpi-cards' |
@@ -76,7 +75,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: KpiCardsWidgetSkeleton,
     defaultLayout: { w: 12, h: 4 },
     category: 'metrics',
-    roles: ['admin_servicio', 'admin_empresa', 'supervisor', 'superuser']
+    roles: ['admin_servicio', 'admin_salmonera', 'supervisor', 'superuser']
   },
   'stats-chart': {
     name: 'Gráfico de Estadísticas',
@@ -86,7 +85,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     defaultLayout: { w: 8, h: 8 },
     isHeavy: true,
     category: 'metrics',
-    roles: ['admin_servicio', 'admin_empresa', 'supervisor', 'superuser']
+    roles: ['admin_servicio', 'admin_salmonera', 'supervisor', 'superuser']
   },
   'upcoming-operations': {
     name: 'Próximas Operaciones',

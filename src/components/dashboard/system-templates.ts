@@ -1,4 +1,3 @@
-
 import { Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType, Role } from './widgetRegistry';
 
@@ -85,6 +84,14 @@ export const systemTemplates: SystemDashboardTemplate[] = [
     widget_configs: {},
     type: 'system',
     role_target: 'admin_empresa'
+  },
+  {
+    name: "Vista de Administración de Salmonera",
+    description: "Métricas clave, alertas y estado general de las operaciones de la salmonera.",
+    layout_config: adminTemplateLayout,
+    widget_configs: {},
+    type: 'system',
+    role_target: 'admin_salmonera'
   },
   {
     name: "Monitor Global del Servicio",

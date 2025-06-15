@@ -60,9 +60,9 @@ export default function Index() {
       return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
     };
 
-    switch (profile?.role as string) {
+    switch (profile?.role) {
       case 'superuser':
-      case 'admin_empresa':
+      case 'admin_salmonera':
       case 'admin_servicio':
         return <CustomizableDashboard />;
       case 'supervisor':
@@ -76,11 +76,11 @@ export default function Index() {
   };
 
   const getDashboardTitle = () => {
-    switch (profile?.role as string) {
+    switch (profile?.role) {
       case 'superuser':
         return "Panel de Administración";
-      case 'admin_empresa':
-        return "Dashboard Empresa";
+      case 'admin_salmonera':
+        return "Dashboard Salmonera";
       case 'admin_servicio':
         return "Dashboard Servicio";
       case 'supervisor':
@@ -93,10 +93,10 @@ export default function Index() {
   };
 
   const getDashboardSubtitle = () => {
-    switch (profile?.role as string) {
+    switch (profile?.role) {
       case 'superuser':
         return "Gestión completa del sistema";
-      case 'admin_empresa':
+      case 'admin_salmonera':
         return "Administración de sitios y operaciones";
       case 'admin_servicio':
         return "Control de equipos y servicios";

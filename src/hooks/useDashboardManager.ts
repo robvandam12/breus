@@ -1,11 +1,12 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetRegistry';
 import { toast } from '@/hooks/use-toast';
 import { getLayoutForRole, cols } from '@/components/dashboard/layouts';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useDashboardTemplates } from './useDashboardTemplates';
 
 interface DashboardState {
     layouts: Layouts;
@@ -15,9 +16,25 @@ interface DashboardState {
 const defaultWidgets = {};
 
 export const useDashboardManager = (currentRole: string) => {
-    const defaultLayoutForRole = getLayoutForRole(currentRole);
+    const { templates, isLoading: isLoadingTemplates } = useDashboardTemplates();
 
-    const { layout: savedLayout, widgets: savedWidgets, isLoading, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
+    const defaultLayoutAndWidgets = useMemo(() => {
+        const template = templates.find(t => t.type === 'system' && t.role_target === currentRole as Role);
+        if (template && template.layout_config) {
+            return {
+                layout: template.layout_config.lg || [],
+                widgets: template.widget_configs || defaultWidgets
+            };
+        }
+        return {
+            layout: getLayoutForRole(currentRole),
+            widgets: defaultWidgets
+        };
+    }, [templates, currentRole]);
+
+    const { layout: savedLayout, widgets: savedWidgets, isLoading: isLoadingLayout, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutAndWidgets.layout, defaultLayoutAndWidgets.widgets);
+    
+    const isLoading = isLoadingLayout || isLoadingTemplates;
     
     const [isEditMode, setIsEditMode] = useState(false);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -41,8 +58,6 @@ export const useDashboardManager = (currentRole: string) => {
     const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
 
     const getInitialDashboardState = useCallback(() => {
-        const roleLayout = getLayoutForRole(currentRole);
-
         const roleFilter = (item: Layout) => {
             const widgetConfig = widgetRegistry[item.i as WidgetType];
             if (!widgetConfig) return false;
@@ -53,31 +68,32 @@ export const useDashboardManager = (currentRole: string) => {
             return true;
         };
         
-        const filteredRoleLayout = roleLayout.filter(roleFilter);
-        
-        let initialLayouts: Layouts = { lg: filteredRoleLayout };
+        let initialLayouts: Layouts = { lg: [] };
         
         if (savedLayout) {
-             if (Array.isArray(savedLayout) && savedLayout.length > 0) {
+             if (Array.isArray(savedLayout)) {
                 const filteredLayout = savedLayout.filter(roleFilter);
                 initialLayouts = { lg: filteredLayout };
-            } else if (typeof savedLayout === 'object' && !Array.isArray(savedLayout) && Object.keys(savedLayout).length > 0) {
+            } else if (typeof savedLayout === 'object' && !Array.isArray(savedLayout)) {
                 const filteredLayouts = Object.entries(savedLayout).reduce((acc, [key, value]) => {
                     if(Array.isArray(value)) {
-                        acc[key] = value.filter(roleFilter);
+                        acc[key as keyof Layouts] = value.filter(roleFilter);
                     }
                     return acc;
                 }, {} as Layouts);
                 if (Object.keys(filteredLayouts).length > 0) {
                     initialLayouts = filteredLayouts;
                 }
-            } else {
-                 initialLayouts = { lg: filteredRoleLayout };
             }
         }
+        
+        if (!initialLayouts.lg) {
+            initialLayouts.lg = [];
+        }
+
         return {
             layouts: initialLayouts,
-            widgets: savedWidgets || defaultWidgets,
+            widgets: savedWidgets,
         };
     }, [currentRole, savedLayout, savedWidgets]);
 
