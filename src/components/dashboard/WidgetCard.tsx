@@ -37,27 +37,27 @@ export const WidgetCard = ({ title, children, className, isDraggable = false, on
         <span id={descriptionId} className="sr-only">
           Widget. {isDraggable && !isStatic ? "Modo edición activo. Use las flechas para navegar entre widgets. El widget se puede mover con el mouse usando la agarradera de arrastre." : ""}
         </span>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 border-b">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 border-b">
           <div className="flex items-center gap-2">
             {isDraggable && !isStatic && (
               <Tooltip>
                 <TooltipTrigger className="cursor-move drag-handle">
-                  <GripVertical className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                  <GripVertical className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Arrastrar para mover</p>
                 </TooltipContent>
               </Tooltip>
             )}
-            <CardTitle id={titleId} className="text-base font-medium">{title}</CardTitle>
+            <CardTitle id={titleId} className="text-sm sm:text-base font-medium truncate">{title}</CardTitle>
           </div>
           {isDraggable && !isStatic && (
             <div className="flex items-center gap-1">
               {onConfigure && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 group" onClick={onConfigure} aria-label={`Configurar widget ${title}`}>
-                        <Settings className="w-4 h-4 transition-transform duration-300 group-hover:rotate-45" />
+                    <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-6 sm:w-6 group" onClick={onConfigure} aria-label={`Configurar widget ${title}`}>
+                        <Settings className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:rotate-45" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -68,8 +68,8 @@ export const WidgetCard = ({ title, children, className, isDraggable = false, on
               {onRemove && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 group" onClick={onRemove} aria-label={`Quitar widget ${title}`}>
-                        <X className="w-4 h-4 transition-colors duration-200 group-hover:text-red-500" />
+                    <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-6 sm:w-6 group" onClick={onRemove} aria-label={`Quitar widget ${title}`}>
+                        <X className="w-3 h-3 sm:w-4 sm:h-4 transition-colors duration-200 group-hover:text-red-500" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -80,7 +80,7 @@ export const WidgetCard = ({ title, children, className, isDraggable = false, on
             </div>
           )}
         </CardHeader>
-        <CardContent className="flex-1 overflow-auto p-4">
+        <CardContent className="flex-1 overflow-auto p-2 sm:p-3 md:p-4">
           {children}
         </CardContent>
       </Card>

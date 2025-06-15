@@ -126,11 +126,11 @@ export const cleanupInvalidWidgets = (layouts: Layouts): Layouts => {
     return preventOverlapping(cleanedLayouts);
 };
 
-// New utility functions for responsive behavior
+// Optimized responsive layout utilities
 export const optimizeLayoutForMobile = (layouts: Layouts): Layouts => {
     const optimized: Layouts = { ...layouts };
     
-    // For xs and xxs breakpoints, ensure widgets are stacked vertically
+    // For mobile breakpoints, ensure better space utilization
     ['xs', 'xxs'].forEach(bp => {
         const layout = optimized[bp as keyof Layouts];
         if (Array.isArray(layout)) {
@@ -141,11 +141,22 @@ export const optimizeLayoutForMobile = (layouts: Layouts): Layouts => {
                     x: 0, // Force full width on mobile
                     y: yOffset,
                     w: bp === 'xxs' ? 2 : 4, // Use full available width
-                    h: Math.max(item.h, 3), // Minimum height for mobile
+                    h: Math.max(item.h, 2), // Reduced minimum height for mobile
                 };
                 yOffset += optimizedItem.h;
                 return optimizedItem;
             });
+        }
+    });
+    
+    // For tablet, ensure better grid utilization
+    ['sm', 'md'].forEach(bp => {
+        const layout = optimized[bp as keyof Layouts];
+        if (Array.isArray(layout)) {
+            optimized[bp as keyof Layouts] = layout.map(item => ({
+                ...item,
+                h: Math.max(item.h, 2), // Reduced height for better space usage
+            }));
         }
     });
     
@@ -161,10 +172,36 @@ export const ensureMinimumWidgetSize = (layouts: Layouts): Layouts => {
             ensured[bp as keyof Layouts] = layout.map(item => ({
                 ...item,
                 w: Math.max(item.w, 1),
-                h: Math.max(item.h, item.static ? 2 : 3),
+                h: Math.max(item.h, item.static ? 2 : 2), // Reduced minimum height
             }));
         }
     });
     
     return ensured;
+};
+
+// New utility for compact widget spacing
+export const createCompactLayout = (layouts: Layouts): Layouts => {
+    const compact: Layouts = {};
+    
+    Object.keys(layouts).forEach(bp => {
+        const layout = layouts[bp as keyof Layouts];
+        if (Array.isArray(layout)) {
+            // Sort by y position to maintain visual order
+            const sortedLayout = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+            let currentY = 0;
+            
+            compact[bp as keyof Layouts] = sortedLayout.map(item => {
+                const compactItem = {
+                    ...item,
+                    y: currentY,
+                    h: Math.min(item.h, 4), // Cap maximum height for compactness
+                };
+                currentY += compactItem.h;
+                return compactItem;
+            });
+        }
+    });
+    
+    return compact;
 };

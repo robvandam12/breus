@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface MultiXReportFilters {
   dateRange: {
@@ -81,9 +80,138 @@ interface MultiXReportData {
   }[];
 }
 
+// Datos mock siempre disponibles
+const getMockReportData = (): MultiXReportData => ({
+  contratistas_performance: [
+    {
+      contratista_id: '1',
+      contratista_nombre: 'AquaTech Diving',
+      total_multix: 45,
+      formularios_completados: 42,
+      formularios_pendientes: 3,
+      tiempo_promedio_completion: 2.5,
+      eficiencia_porcentaje: 93.3,
+      dotacion_promedio: 6.2,
+      inmersiones_realizadas: 128,
+      tiempo_total_inmersiones: 5760,
+      sitios_trabajados: ['Sitio Alpha', 'Sitio Beta', 'Sitio Gamma']
+    },
+    {
+      contratista_id: '2',
+      contratista_nombre: 'Marine Services Ltd',
+      total_multix: 38,
+      formularios_completados: 35,
+      formularios_pendientes: 3,
+      tiempo_promedio_completion: 3.1,
+      eficiencia_porcentaje: 92.1,
+      dotacion_promedio: 5.8,
+      inmersiones_realizadas: 102,
+      tiempo_total_inmersiones: 4680,
+      sitios_trabajados: ['Sitio Beta', 'Sitio Delta']
+    },
+    {
+      contratista_id: '3',
+      contratista_nombre: 'Deep Sea Solutions',
+      total_multix: 32,
+      formularios_completados: 28,
+      formularios_pendientes: 4,
+      tiempo_promedio_completion: 3.8,
+      eficiencia_porcentaje: 87.5,
+      dotacion_promedio: 7.1,
+      inmersiones_realizadas: 89,
+      tiempo_total_inmersiones: 4020,
+      sitios_trabajados: ['Sitio Alpha', 'Sitio Gamma']
+    }
+  ],
+  buzos_performance: [
+    {
+      buzo_nombre: 'Carlos',
+      buzo_apellido: 'Mendoza',
+      total_participaciones: 28,
+      roles_desempeniados: ['Supervisor', 'Buzo N°1'],
+      inmersiones_totales: 45,
+      tiempo_total_buceo: 2040,
+      profundidad_promedio: 25.3,
+      sitios_trabajados: 4,
+      contratistas_colaborados: ['AquaTech Diving', 'Marine Services Ltd'],
+      calificacion_promedio: 4.8
+    },
+    {
+      buzo_nombre: 'Ana',
+      buzo_apellido: 'Torres',
+      total_participaciones: 25,
+      roles_desempeniados: ['Buzo N°1', 'Buzo N°2'],
+      inmersiones_totales: 38,
+      tiempo_total_buceo: 1710,
+      profundidad_promedio: 22.7,
+      sitios_trabajados: 3,
+      contratistas_colaborados: ['AquaTech Diving', 'Deep Sea Solutions'],
+      calificacion_promedio: 4.6
+    },
+    {
+      buzo_nombre: 'Miguel',
+      buzo_apellido: 'Ramirez',
+      total_participaciones: 22,
+      roles_desempeniados: ['Buzo Emergencia 1', 'Supervisor'],
+      inmersiones_totales: 33,
+      tiempo_total_buceo: 1485,
+      profundidad_promedio: 28.1,
+      sitios_trabajados: 3,
+      contratistas_colaborados: ['Marine Services Ltd', 'Deep Sea Solutions'],
+      calificacion_promedio: 4.9
+    }
+  ],
+  estadisticas_generales: {
+    total_multix_periodo: 115,
+    formularios_mantencion: 68,
+    formularios_faena: 47,
+    contratistas_activos: 8,
+    buzos_activos: 24,
+    sitios_operativos: 5,
+    tiempo_promedio_formulario: 3.1,
+    eficiencia_general: 91.2
+  },
+  comparativas_mensuales: [
+    { mes: 'Enero', multix_completados: 18, contratistas_activos: 6, buzos_participantes: 18, eficiencia: 89.5 },
+    { mes: 'Febrero', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 21, eficiencia: 91.2 },
+    { mes: 'Marzo', multix_completados: 25, contratistas_activos: 8, buzos_participantes: 24, eficiencia: 93.1 },
+    { mes: 'Abril', multix_completados: 28, contratistas_activos: 8, buzos_participantes: 26, eficiencia: 92.8 },
+    { mes: 'Mayo', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 22, eficiencia: 90.5 }
+  ],
+  top_contratistas: [
+    { nombre: 'AquaTech Diving', formularios_completados: 42, eficiencia: 93.3, tiempo_promedio: 2.5 },
+    { nombre: 'Marine Services Ltd', formularios_completados: 35, eficiencia: 92.1, tiempo_promedio: 3.1 },
+    { nombre: 'Deep Sea Solutions', formularios_completados: 28, eficiencia: 87.5, tiempo_promedio: 3.8 }
+  ],
+  top_buzos: [
+    { nombre: 'Carlos Mendoza', participaciones: 28, tiempo_total: 2040, calificacion: 4.8 },
+    { nombre: 'Ana Torres', participaciones: 25, tiempo_total: 1710, calificacion: 4.6 },
+    { nombre: 'Miguel Ramirez', participaciones: 22, tiempo_total: 1485, calificacion: 4.9 }
+  ],
+  alertas_operativas: [
+    {
+      tipo: 'Eficiencia Baja',
+      descripcion: 'Contratista Deep Sea Solutions por debajo del 90% de eficiencia',
+      contratista: 'Deep Sea Solutions',
+      prioridad: 'media'
+    },
+    {
+      tipo: 'Dotación Reducida',
+      descripcion: 'Sitio Delta con dotación por debajo del promedio',
+      sitio: 'Sitio Delta',
+      prioridad: 'alta'
+    },
+    {
+      tipo: 'Tiempo Excesivo',
+      descripcion: 'Formularios de mantención tardando más de 4 horas promedio',
+      prioridad: 'baja'
+    }
+  ]
+});
+
 export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const [reportData, setReportData] = useState<MultiXReportData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -94,137 +222,12 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const generateMultiXReport = async () => {
     setIsLoading(true);
     try {
-      // En producción, esto vendría de consultas reales a la base de datos
-      const mockReportData: MultiXReportData = {
-        contratistas_performance: [
-          {
-            contratista_id: '1',
-            contratista_nombre: 'AquaTech Diving',
-            total_multix: 45,
-            formularios_completados: 42,
-            formularios_pendientes: 3,
-            tiempo_promedio_completion: 2.5,
-            eficiencia_porcentaje: 93.3,
-            dotacion_promedio: 6.2,
-            inmersiones_realizadas: 128,
-            tiempo_total_inmersiones: 5760,
-            sitios_trabajados: ['Sitio Alpha', 'Sitio Beta', 'Sitio Gamma']
-          },
-          {
-            contratista_id: '2',
-            contratista_nombre: 'Marine Services Ltd',
-            total_multix: 38,
-            formularios_completados: 35,
-            formularios_pendientes: 3,
-            tiempo_promedio_completion: 3.1,
-            eficiencia_porcentaje: 92.1,
-            dotacion_promedio: 5.8,
-            inmersiones_realizadas: 102,
-            tiempo_total_inmersiones: 4680,
-            sitios_trabajados: ['Sitio Beta', 'Sitio Delta']
-          },
-          {
-            contratista_id: '3',
-            contratista_nombre: 'Deep Sea Solutions',
-            total_multix: 32,
-            formularios_completados: 28,
-            formularios_pendientes: 4,
-            tiempo_promedio_completion: 3.8,
-            eficiencia_porcentaje: 87.5,
-            dotacion_promedio: 7.1,
-            inmersiones_realizadas: 89,
-            tiempo_total_inmersiones: 4020,
-            sitios_trabajados: ['Sitio Alpha', 'Sitio Gamma']
-          }
-        ],
-        buzos_performance: [
-          {
-            buzo_nombre: 'Carlos',
-            buzo_apellido: 'Mendoza',
-            total_participaciones: 28,
-            roles_desempeniados: ['Supervisor', 'Buzo N°1'],
-            inmersiones_totales: 45,
-            tiempo_total_buceo: 2040,
-            profundidad_promedio: 25.3,
-            sitios_trabajados: 4,
-            contratistas_colaborados: ['AquaTech Diving', 'Marine Services Ltd'],
-            calificacion_promedio: 4.8
-          },
-          {
-            buzo_nombre: 'Ana',
-            buzo_apellido: 'Torres',
-            total_participaciones: 25,
-            roles_desempeniados: ['Buzo N°1', 'Buzo N°2'],
-            inmersiones_totales: 38,
-            tiempo_total_buceo: 1710,
-            profundidad_promedio: 22.7,
-            sitios_trabajados: 3,
-            contratistas_colaborados: ['AquaTech Diving', 'Deep Sea Solutions'],
-            calificacion_promedio: 4.6
-          },
-          {
-            buzo_nombre: 'Miguel',
-            buzo_apellido: 'Ramirez',
-            total_participaciones: 22,
-            roles_desempeniados: ['Buzo Emergencia 1', 'Supervisor'],
-            inmersiones_totales: 33,
-            tiempo_total_buceo: 1485,
-            profundidad_promedio: 28.1,
-            sitios_trabajados: 3,
-            contratistas_colaborados: ['Marine Services Ltd', 'Deep Sea Solutions'],
-            calificacion_promedio: 4.9
-          }
-        ],
-        estadisticas_generales: {
-          total_multix_periodo: 115,
-          formularios_mantencion: 68,
-          formularios_faena: 47,
-          contratistas_activos: 8,
-          buzos_activos: 24,
-          sitios_operativos: 5,
-          tiempo_promedio_formulario: 3.1,
-          eficiencia_general: 91.2
-        },
-        comparativas_mensuales: [
-          { mes: 'Enero', multix_completados: 18, contratistas_activos: 6, buzos_participantes: 18, eficiencia: 89.5 },
-          { mes: 'Febrero', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 21, eficiencia: 91.2 },
-          { mes: 'Marzo', multix_completados: 25, contratistas_activos: 8, buzos_participantes: 24, eficiencia: 93.1 },
-          { mes: 'Abril', multix_completados: 28, contratistas_activos: 8, buzos_participantes: 26, eficiencia: 92.8 },
-          { mes: 'Mayo', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 22, eficiencia: 90.5 }
-        ],
-        top_contratistas: [
-          { nombre: 'AquaTech Diving', formularios_completados: 42, eficiencia: 93.3, tiempo_promedio: 2.5 },
-          { nombre: 'Marine Services Ltd', formularios_completados: 35, eficiencia: 92.1, tiempo_promedio: 3.1 },
-          { nombre: 'Deep Sea Solutions', formularios_completados: 28, eficiencia: 87.5, tiempo_promedio: 3.8 }
-        ],
-        top_buzos: [
-          { nombre: 'Carlos Mendoza', participaciones: 28, tiempo_total: 2040, calificacion: 4.8 },
-          { nombre: 'Ana Torres', participaciones: 25, tiempo_total: 1710, calificacion: 4.6 },
-          { nombre: 'Miguel Ramirez', participaciones: 22, tiempo_total: 1485, calificacion: 4.9 }
-        ],
-        alertas_operativas: [
-          {
-            tipo: 'Eficiencia Baja',
-            descripcion: 'Contratista Deep Sea Solutions por debajo del 90% de eficiencia',
-            contratista: 'Deep Sea Solutions',
-            prioridad: 'media'
-          },
-          {
-            tipo: 'Dotación Reducida',
-            descripcion: 'Sitio Delta con dotación por debajo del promedio',
-            sitio: 'Sitio Delta',
-            prioridad: 'alta'
-          },
-          {
-            tipo: 'Tiempo Excesivo',
-            descripcion: 'Formularios de mantención tardando más de 4 horas promedio',
-            prioridad: 'baja'
-          }
-        ]
-      };
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setReportData(mockReportData);
+      // Simular carga
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Usar datos mock
+      const mockData = getMockReportData();
+      setReportData(mockData);
       setError(null);
     } catch (err) {
       console.error('Error generating MultiX report:', err);
