@@ -9,6 +9,7 @@ import AnexoBravo from "@/pages/formularios/AnexoBravo";
 import HPTFormularios from "@/pages/formularios/HPTFormularios";
 import AnexoBravoFormularios from "@/pages/formularios/AnexoBravoFormularios";
 import { AuthLayout } from "@/pages/auth/AuthLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import ProfileSetup from "@/pages/ProfileSetup";
 import Onboarding from "@/pages/Onboarding";
 import BuzoOnboardingPage from "@/pages/BuzoOnboardingPage";
@@ -22,28 +23,37 @@ import Configuracion from "@/pages/Configuracion";
 import Usuarios from "@/pages/Usuarios";
 import NotFound from "@/pages/NotFound";
 import MultiX from "@/pages/formularios/MultiX";
+import { useAuth } from "@/hooks/useAuth";
 
 export const AppRoutes = () => {
   const location = useLocation();
+  const { user, loading } = useAuth();
   const authPages = ['/login', '/register', '/auth/forgot-password'];
   const isAuthPage = authPages.includes(location.pathname);
 
-  const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-    const token = localStorage.getItem('supabase.auth.token');
-
-    if (!token && !isAuthPage) {
-      return <Navigate to="/login" replace />;
+  // Componente para rutas de autenticación que redirigen si ya está autenticado
+  const AuthRoute = ({ children }: { children: JSX.Element }) => {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      );
     }
 
-    return <>{children}</>;
+    if (user) {
+      return <Navigate to="/" replace />;
+    }
+
+    return children;
   };
 
   return (
     <Routes>
-      {/* Auth routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+      {/* Auth routes - redirigen al dashboard si ya está autenticado */}
+      <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+      <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
+      <Route path="/auth/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
       <Route path="/auth/*" element={
         <AuthLayout title="Autenticación">
           <Routes>
