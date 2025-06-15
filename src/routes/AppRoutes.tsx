@@ -1,6 +1,8 @@
 
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
 import Index from "@/pages/Index";
 import HPT from "@/pages/formularios/HPT";
 import AnexoBravo from "@/pages/formularios/AnexoBravo";
@@ -23,12 +25,13 @@ import MultiX from "@/pages/formularios/MultiX";
 
 export const AppRoutes = () => {
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
+  const authPages = ['/login', '/register', '/auth/forgot-password'];
+  const isAuthPage = authPages.includes(location.pathname);
 
   const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     const token = localStorage.getItem('supabase.auth.token');
 
-    if (!token && !isLoginPage) {
+    if (!token && !isAuthPage) {
       return <Navigate to="/login" replace />;
     }
 
@@ -39,6 +42,8 @@ export const AppRoutes = () => {
     <Routes>
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/*" element={
         <AuthLayout title="Autenticación">
           <Routes>
