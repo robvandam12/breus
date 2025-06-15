@@ -36,7 +36,8 @@ export const useSecurityReports = (
         throw error;
       }
       
-      return data as SecurityReportStats;
+      // The return type of rpc is broad, so we cast it to tell TypeScript we know the shape.
+      return data as unknown as SecurityReportStats;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!dateRange.from && !!dateRange.to, // Only run query if dates are set

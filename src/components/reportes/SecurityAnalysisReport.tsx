@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import type { DateRange } from "react-day-picker";
 import { subDays, format } from 'date-fns';
@@ -6,7 +5,7 @@ import { es } from 'date-fns/locale';
 import { useSecurityReports } from '@/hooks/useSecurityReports';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, CartesianGrid } from 'recharts';
 import { AlertCircle, BarChart2, Calendar as CalendarIcon, Clock, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
