@@ -9,6 +9,7 @@ import { MyImmersionsWidget } from './widgets/MyImmersionsWidget';
 import { TeamStatusWidget } from './widgets/TeamStatusWidget';
 import { GlobalMetricsWidget } from './widgets/GlobalMetricsWidget';
 import { TeamStatusWidgetConfig } from './widgets/config/TeamStatusWidgetConfig';
+import { AlertsPanelWidgetConfig } from './widgets/config/AlertsPanelWidgetConfig';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -49,8 +50,9 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
   alerts_panel: {
     name: 'Panel de Alertas',
     component: AlertasPanelWidget,
+    configComponent: AlertsPanelWidgetConfig,
     description: 'Muestra alertas importantes del sistema.',
-    defaultLayout: { w: 4, h: 6 },
+    defaultLayout: { w: 4, h: 8 },
   },
   my_immersions: {
     name: 'Mis Inmersiones (Buzo)',
