@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,12 +44,9 @@ export default function Login() {
     setError('');
 
     try {
-      console.log('Login: Starting login process');
       await signIn(email, password);
-      console.log('Login: SignIn completed, navigating...');
-      // La redirección se maneja automáticamente por AuthRouteWrapper
     } catch (error: any) {
-      console.error('Login: Error during login:', error);
+      console.error('Error during login:', error);
       setError(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
@@ -95,7 +91,6 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  disabled={isLoading}
                   required
                 />
               </div>
@@ -108,7 +103,6 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  disabled={isLoading}
                   required
                 />
               </div>

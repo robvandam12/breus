@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,89 +45,42 @@ export const useAuthProvider = (): AuthContextType => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
-  // Timeout de seguridad para loading
   useEffect(() => {
-    const loadingTimeout = setTimeout(() => {
-      if (!initialized) {
-        console.warn('Auth: Loading timeout - forcing loading to false');
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
         setLoading(false);
-        setInitialized(true);
       }
-    }, 8000); // 8 segundos max
+    });
 
-    return () => clearTimeout(loadingTimeout);
-  }, [initialized]);
-
-  useEffect(() => {
-    console.log('Auth: Initializing auth listener');
-    
-    // Set up auth state listener
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth: State change event:', event, 'Session exists:', !!session);
-        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('Auth: User found, fetching profile');
-          await fetchUserProfile(session.user.id);
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
         } else {
-          console.log('Auth: No session, clearing profile');
           setProfile(null);
-        }
-        
-        if (!initialized) {
           setLoading(false);
-          setInitialized(true);
         }
       }
     );
 
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        console.log('Auth: Getting initial session');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Auth: Error getting session:', error);
-          setLoading(false);
-          setInitialized(true);
-          return;
-        }
-
-        console.log('Auth: Initial session exists:', !!session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error('Auth: Initialize error:', error);
-      } finally {
-        if (!initialized) {
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    return () => {
-      console.log('Auth: Cleaning up subscription');
-      subscription.unsubscribe();
-    };
-  }, [initialized]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Auth: Fetching profile for user:', userId);
-      
+      // Use manual typing for the usuario table query
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
@@ -136,10 +88,10 @@ export const useAuthProvider = (): AuthContextType => {
         .single() as { data: UsuarioRow | null; error: any };
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Auth: Error fetching profile:', error);
-        return;
+        throw error;
       }
 
+      // Transform data to match UserProfile interface
       if (data) {
         const userProfile: UserProfile = {
           id: data.usuario_id,
@@ -153,30 +105,30 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
-        console.log('Auth: Profile loaded successfully:', userProfile.role);
         setProfile(userProfile);
-      } else {
-        console.log('Auth: No profile data found');
       }
     } catch (error) {
-      console.error('Auth: Error in fetchUserProfile:', error);
+      console.error('Error fetching user profile:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el perfil del usuario",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      console.log('Auth: Starting signIn for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error('Auth: SignIn error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Auth: SignIn successful');
       toast({
         title: "Bienvenido",
         description: "Has iniciado sesión exitosamente",
@@ -189,10 +141,13 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, profileData: Partial<UserProfile>) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -204,6 +159,7 @@ export const useAuthProvider = (): AuthContextType => {
 
       if (error) throw error;
 
+      // Create user profile in usuario table
       if (data.user) {
         const { error: profileError } = await supabase
           .from('usuario')
@@ -232,19 +188,15 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
-      // Limpiar estados
-      setUser(null);
-      setProfile(null);
-      setSession(null);
 
       toast({
         title: "Sesión cerrada",
@@ -257,8 +209,6 @@ export const useAuthProvider = (): AuthContextType => {
         description: error.message || "Error al cerrar sesión",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -289,7 +239,7 @@ export const useAuthProvider = (): AuthContextType => {
     if (!profile) return false;
 
     const rolePermissions = {
-      superuser: ['*'],
+      superuser: ['*'], // All permissions
       admin_salmonera: [
         'manage_salmonera',
         'manage_sitios',
