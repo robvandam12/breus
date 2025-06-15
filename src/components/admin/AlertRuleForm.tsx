@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,7 +91,7 @@ export const AlertRuleForm = ({ isOpen, onClose, onSave, rule }: AlertRuleFormPr
         ...data,
         escalation_policy: {
             levels: data.escalation_policy.levels.map(l => ({
-                ...l,
+                after_minutes: l.after_minutes,
                 notify_roles: l.notify_roles.split(',').map(s => s.trim()).filter(Boolean),
                 channels: l.channels.split(',').map(s => s.trim()).filter(Boolean),
             }))
