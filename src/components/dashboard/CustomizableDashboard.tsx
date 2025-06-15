@@ -1,4 +1,3 @@
-
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Skeleton } from '../ui/skeleton';
@@ -22,7 +21,6 @@ export const CustomizableDashboard = () => {
         isResetting,
         currentLayouts,
         currentWidgets,
-        defaultLayoutForRole,
         configuringWidgetId,
         widgetToRemove,
         isResetConfirmOpen,
@@ -70,7 +68,7 @@ export const CustomizableDashboard = () => {
         );
     }
 
-    const currentWidgetIds = (currentLayouts?.lg || defaultLayoutForRole || []).map(item => item.i);
+    const currentWidgetIds = (currentLayouts?.lg || []).map(item => item.i as WidgetType);
 
     return (
         <div className="space-y-4">
@@ -111,7 +109,6 @@ export const CustomizableDashboard = () => {
                 onLayoutChange={onLayoutChange}
                 isEditMode={isEditMode || isPreviewMode}
                 widgets={currentWidgets}
-                defaultLayout={defaultLayoutForRole}
                 onRemoveWidget={handleRemoveWidget}
                 onConfigureWidget={handleConfigureWidget}
             />
