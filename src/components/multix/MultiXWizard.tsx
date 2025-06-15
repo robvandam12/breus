@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Save, FileText } from "lucide-react";
 import { useMultiX } from '@/hooks/useMultiX';
 import { EncabezadoGeneral } from './steps/EncabezadoGeneral';
+import { DotacionBuceo } from './steps/DotacionBuceo';
 import type { MultiXData, MultiXFormData } from '@/types/multix';
 
 interface MultiXWizardProps {
@@ -108,6 +109,26 @@ export const MultiXWizard = ({
       }
     }
 
+    if (step === 2) {
+      if (formData.dotacion.length === 0) {
+        newErrors.dotacion = 'Debe agregar al menos una persona a la dotación';
+      }
+      
+      // Validar que hay al menos un supervisor
+      const hasSupervisor = formData.dotacion.some(member => member.rol === 'Supervisor');
+      if (!hasSupervisor) {
+        newErrors.supervisor = 'Debe asignar al menos un Supervisor';
+      }
+
+      // Validar datos completos de cada miembro
+      const incompleteMembers = formData.dotacion.filter(member => 
+        !member.nombre.trim() || !member.apellido.trim()
+      );
+      if (incompleteMembers.length > 0) {
+        newErrors.members_incomplete = 'Todos los miembros deben tener nombre y apellido completos';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -152,6 +173,15 @@ export const MultiXWizard = ({
       case 1:
         return (
           <EncabezadoGeneral
+            formData={formData}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        );
+      
+      case 2:
+        return (
+          <DotacionBuceo
             formData={formData}
             updateFormData={updateFormData}
             errors={errors}
