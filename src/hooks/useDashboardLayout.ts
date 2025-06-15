@@ -136,7 +136,7 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
         if (!data) return { layout: null, widgets: null };
         
         try {
-            let layout = data.layout_config as Layouts;
+            let layout = data.layout_config as unknown as Layouts;
             let widgets = data.widget_configs;
             
             // Sanitizar layout si existe
@@ -167,5 +167,6 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
         isSaving: saveMutation.isPending,
         resetLayout: deleteMutation.mutate,
         isResetting: deleteMutation.isPending,
+        hasError: isError,
     };
 };
