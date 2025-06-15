@@ -8,7 +8,7 @@ import { useOperaciones } from '@/hooks/useOperaciones';
 export const useBuzoStats = () => {
   const { profile } = useAuth();
   const { inmersiones, isLoading: isLoadingInmersiones } = useInmersiones();
-  const { bitacorasBuzo, isLoading: isLoadingBitacoras } = useBitacorasBuzo();
+  const { bitacorasBuzo, loadingBuzo: isLoadingBitacoras } = useBitacorasBuzo();
   const { operaciones, isLoading: isLoadingOperaciones } = useOperaciones();
 
   const [stats, setStats] = useState({
