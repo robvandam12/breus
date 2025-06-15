@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
 import { Header } from "@/components/layout/Header";
@@ -62,11 +61,11 @@ export default function Inmersiones() {
     }
   };
 
-  const getOperacionData = (operacionId: string) => {
+  const getOperacionData = useCallback((operacionId: string) => {
     return operaciones.find(op => op.id === operacionId);
-  };
+  }, [operaciones]);
 
-  const getEstadoBadgeColor = (estado: string) => {
+  const getEstadoBadgeColor = useCallback((estado: string) => {
     switch (estado) {
       case 'planificada': return 'bg-blue-100 text-blue-800';
       case 'en_progreso': return 'bg-yellow-100 text-yellow-800';
@@ -74,12 +73,12 @@ export default function Inmersiones() {
       case 'cancelada': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
+  }, []);
 
-  const handleViewInmersion = (inmersion: Inmersion) => {
+  const handleViewInmersion = useCallback((inmersion: Inmersion) => {
     setSelectedInmersion(inmersion);
     setShowDetailModal(true);
-  };
+  }, []);
 
   if (showWizard) {
     return (

@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,77 +7,40 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Anchor, Calendar, MapPin, Eye, Search, Filter } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useInmersiones } from '@/hooks/useInmersiones';
-import { useOperaciones } from '@/hooks/useOperaciones';
-import { useSalmoneras } from '@/hooks/useSalmoneras';
-import { useSitios } from '@/hooks/useSitios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useInmersionesData } from '@/hooks/useInmersionesData';
+import { useInmersionesFilters } from '@/hooks/useInmersionesFilters';
+import type { BuzoInmersion } from '@/types/inmersion';
 
 export default function BuzoInmersiones() {
   const { profile } = useAuth();
-  const { inmersiones } = useInmersiones();
-  const { operaciones } = useOperaciones();
-  const { salmoneras } = useSalmoneras();
-  const { sitios } = useSitios();
-  const [buzoInmersiones, setBuzoInmersiones] = useState<any[]>([]);
-  const [filteredInmersiones, setFilteredInmersiones] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState('todos');
-  const [filterMes, setFilterMes] = useState('todos');
+  const { inmersiones: inmersionesCompletas, loadingInmersiones } = useInmersionesData();
 
-  useEffect(() => {
-    if (!profile) return;
+  const buzoInmersiones = useMemo((): BuzoInmersion[] => {
+    if (!profile || !inmersionesCompletas) return [];
 
     const buzoName = `${profile.nombre} ${profile.apellido}`;
-    const inmersionesConDetalles = inmersiones
+    return inmersionesCompletas
       .filter(i => i.buzo_principal === buzoName || i.buzo_asistente === buzoName)
-      .map(inmersion => {
-        const operacion = operaciones.find(op => op.id === inmersion.operacion_id);
-        const salmonera = salmoneras.find(s => s.id === operacion?.salmonera_id);
-        const sitio = sitios.find(s => s.id === operacion?.sitio_id);
-        
-        return {
-          ...inmersion,
-          operacion: operacion?.nombre || 'N/A',
-          salmonera: salmonera?.nombre || 'N/A',
-          sitio: sitio?.nombre || 'N/A',
-          rol: inmersion.buzo_principal === buzoName ? 'Principal' : 'Asistente'
-        };
-      })
+      .map(inmersion => ({
+        ...inmersion,
+        operacionNombre: inmersion.operacion?.nombre || 'N/A',
+        salmoneraNombre: inmersion.operacion?.salmoneras?.nombre || 'N/A',
+        sitioNombre: inmersion.operacion?.sitios?.nombre || 'N/A',
+        rol: inmersion.buzo_principal === buzoName ? 'Principal' : 'Asistente',
+      }))
       .sort((a, b) => new Date(b.fecha_inmersion).getTime() - new Date(a.fecha_inmersion).getTime());
+  }, [profile, inmersionesCompletas]);
 
-    setBuzoInmersiones(inmersionesConDetalles);
-    setFilteredInmersiones(inmersionesConDetalles);
-  }, [profile, inmersiones, operaciones, salmoneras, sitios]);
-
-  useEffect(() => {
-    let filtered = buzoInmersiones;
-
-    // Filtrar por búsqueda
-    if (searchTerm) {
-      filtered = filtered.filter(inmersion =>
-        inmersion.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inmersion.objetivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inmersion.operacion.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtrar por estado
-    if (filterEstado !== 'todos') {
-      filtered = filtered.filter(inmersion => inmersion.estado === filterEstado);
-    }
-
-    // Filtrar por mes
-    if (filterMes !== 'todos') {
-      const targetMonth = parseInt(filterMes);
-      filtered = filtered.filter(inmersion => {
-        const inmersionDate = new Date(inmersion.fecha_inmersion);
-        return inmersionDate.getMonth() === targetMonth;
-      });
-    }
-
-    setFilteredInmersiones(filtered);
-  }, [buzoInmersiones, searchTerm, filterEstado, filterMes]);
+  const {
+    searchTerm,
+    setSearchTerm,
+    filterEstado,
+    setFilterEstado,
+    filterMes,
+    setFilterMes,
+    filteredInmersiones,
+  } = useInmersionesFilters(buzoInmersiones);
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
@@ -108,6 +70,21 @@ export default function BuzoInmersiones() {
     { value: '10', label: 'Noviembre' },
     { value: '11', label: 'Diciembre' }
   ];
+
+  if (loadingInmersiones) {
+    return (
+       <MainLayout
+        title="Mis Inmersiones"
+        subtitle="Historial de todas tus inmersiones realizadas"
+        icon={Anchor}
+      >
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Cargando tus inmersiones...</p>
+        </div>
+      </MainLayout>
+    )
+  }
 
   return (
     <MainLayout
@@ -212,7 +189,7 @@ export default function BuzoInmersiones() {
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
-                          {inmersion.sitio}
+                          {inmersion.sitioNombre}
                         </div>
                         <div>
                           Profundidad: {inmersion.profundidad_max}m
@@ -270,11 +247,11 @@ export default function BuzoInmersiones() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="text-sm font-medium">Operación</label>
-                              <p className="text-sm text-gray-600">{inmersion.operacion}</p>
+                              <p className="text-sm text-gray-600">{inmersion.operacionNombre}</p>
                             </div>
                             <div>
                               <label className="text-sm font-medium">Salmonera</label>
-                              <p className="text-sm text-gray-600">{inmersion.salmonera}</p>
+                              <p className="text-sm text-gray-600">{inmersion.salmoneraNombre}</p>
                             </div>
                           </div>
 

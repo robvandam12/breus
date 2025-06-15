@@ -36,6 +36,13 @@ export interface Inmersion {
   security_alerts?: SecurityAlert[];
 }
 
+export interface BuzoInmersion extends Inmersion {
+  operacionNombre: string;
+  salmoneraNombre: string;
+  sitioNombre: string;
+  rol: 'Principal' | 'Asistente';
+}
+
 export interface ValidationStatus {
   hasValidHPT: boolean;
   hasValidAnexoBravo: boolean;

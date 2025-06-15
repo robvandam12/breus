@@ -1,4 +1,3 @@
-
 import { useActiveImmersions } from "@/hooks/useActiveImmersions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,9 +21,6 @@ const getStatusBadge = (status: string) => {
 const calculateElapsedTime = (startTime: string, startDate: string): string => {
     const startDateTime = new Date(`${startDate}T${startTime}`);
     const now = new Date();
-    // Ajuste para asegurar que la hora de inicio se interprete en la zona horaria local correcta.
-    // Asumiendo que el servidor y el cliente pueden tener zonas horarias distintas,
-    // pero la fecha y hora vienen sin zona horaria. El navegador usará su zona local.
     const diff = now.getTime() - startDateTime.getTime();
 
     if (diff < 0) return '00:00:00';
@@ -36,23 +32,27 @@ const calculateElapsedTime = (startTime: string, startDate: string): string => {
     return `${hours}:${minutes}:${seconds}`;
 };
 
+const ElapsedTimeCounter = ({ startTime, startDate }: { startTime: string; startDate: string }) => {
+    const [elapsedTime, setElapsedTime] = useState(() => calculateElapsedTime(startTime, startDate));
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setElapsedTime(calculateElapsedTime(startTime, startDate));
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, [startTime, startDate]);
+
+    return (
+        <p className="flex items-center gap-2 font-medium text-blue-600 dark:text-blue-400">
+            <Timer className="w-4 h-4"/>
+            T. Transcurrido: {elapsedTime}
+        </p>
+    );
+};
+
 export const ActiveImmersionsPanel = () => {
   const { activeImmersions, isLoading } = useActiveImmersions();
-  const [elapsedTimes, setElapsedTimes] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-      const interval = setInterval(() => {
-          const newTimes: Record<string, string> = {};
-          activeImmersions.forEach(inmersion => {
-              if (inmersion.estado === 'en_progreso') {
-                  newTimes[inmersion.inmersion_id] = calculateElapsedTime(inmersion.hora_inicio, inmersion.fecha_inmersion);
-              }
-          });
-          setElapsedTimes(newTimes);
-      }, 1000);
-
-      return () => clearInterval(interval);
-  }, [activeImmersions]);
 
   if (isLoading) {
     return (
@@ -103,10 +103,7 @@ export const ActiveImmersionsPanel = () => {
                     </p>
                     <p className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary"/> T. Fondo Plan: {inmersion.planned_bottom_time || 'N/A'} min</p>
                     {inmersion.estado === 'en_progreso' && (
-                        <p className="flex items-center gap-2 font-medium text-blue-600 dark:text-blue-400">
-                            <Timer className="w-4 h-4"/>
-                            T. Transcurrido: {elapsedTimes[inmersion.inmersion_id] || 'Calculando...'}
-                        </p>
+                        <ElapsedTimeCounter startTime={inmersion.hora_inicio} startDate={inmersion.fecha_inmersion} />
                     )}
                   </div>
 

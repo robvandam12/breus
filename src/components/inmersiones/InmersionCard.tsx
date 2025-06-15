@@ -68,4 +68,4 @@ const InmersionCard: React.FC<InmersionCardProps> = ({ inmersion, operacion, get
   );
 };
 
-export default InmersionCard;
+export default React.memo(InmersionCard);
