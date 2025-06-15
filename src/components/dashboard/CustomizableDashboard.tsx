@@ -1,3 +1,4 @@
+
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Skeleton } from '../ui/skeleton';
@@ -10,6 +11,7 @@ import { WidgetConfigSheet } from './WidgetConfigSheet';
 import { PreviewBanner } from './PreviewBanner';
 import { useDashboardManager } from '@/hooks/useDashboardManager';
 import { WidgetType } from './widgetRegistry';
+import { LoadingSpinner } from '../ui/loading-spinner';
 
 export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
@@ -19,6 +21,7 @@ export const CustomizableDashboard = () => {
         isPreviewMode,
         isSaving,
         isResetting,
+        isApplyingTemplate,
         currentLayouts,
         currentWidgets,
         defaultLayoutForRole,
@@ -72,7 +75,12 @@ export const CustomizableDashboard = () => {
     const currentWidgetIds = (currentLayouts?.lg || defaultLayoutForRole || []).map(item => item.i as WidgetType);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+            {isApplyingTemplate && (
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50 rounded-lg">
+                    <LoadingSpinner text="Aplicando plantilla..." size="lg" />
+                </div>
+            )}
             {isPreviewMode && (
                 <PreviewBanner
                     onApplyChanges={handleApplyPreviewChanges}

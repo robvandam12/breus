@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -80,13 +79,16 @@ export const useDashboardManager = (currentRole: string) => {
     
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+    const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
+
+    const filteredLayout = useMemo(() => filterLayoutsByRole(savedLayout, currentRole as Role), [savedLayout, currentRole]);
 
     const getInitialDashboardState = useCallback(() => {
         return {
-            layouts: filterLayoutsByRole(savedLayout, currentRole as Role),
+            layouts: filteredLayout,
             widgets: savedWidgets,
         };
-    }, [currentRole, savedLayout, savedWidgets]);
+    }, [filteredLayout, savedWidgets]);
 
     useEffect(() => {
         const initialDataLoading = isLoadingLayout || isLoadingTemplates;
@@ -144,9 +146,15 @@ export const useDashboardManager = (currentRole: string) => {
         }
     };
 
-    const handleApplyTemplate = (layout: Layouts, widgets: any) => {
-        setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
-    };
+    const handleApplyTemplate = useCallback((layout: Layouts, widgets: any) => {
+        setIsApplyingTemplate(true);
+        // Usar un timeout para asegurar que la UI se actualice y muestre el estado de carga
+        setTimeout(() => {
+            setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
+            setIsApplyingTemplate(false);
+            toast({ description: "Plantilla aplicada. Guarda el diseño para confirmar los cambios." });
+        }, 100);
+    }, [setDashboardState]);
 
     const undo = () => {
         if (canUndo) {
@@ -191,6 +199,7 @@ export const useDashboardManager = (currentRole: string) => {
         isPreviewMode: modes.isPreviewMode,
         isSaving,
         isResetting,
+        isApplyingTemplate,
         currentLayouts,
         currentWidgets,
         configuringWidgetId: widgetManager.configuringWidgetId,

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from '@/components/dashboard/widgetRegistry';
 import { cols } from '@/components/dashboard/layouts';
@@ -21,7 +21,7 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
     const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
 
-    const handleAddWidget = (widgetType: WidgetType) => {
+    const handleAddWidget = useCallback((widgetType: WidgetType) => {
         const widgetConfig = widgetRegistry[widgetType];
         if (!widgetConfig) return;
 
@@ -45,13 +45,13 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
         });
 
         setDashboardState({ ...dashboardState, layouts: newLayouts });
-    };
+    }, [currentLayouts, dashboardState, setDashboardState]);
 
-    const handleRemoveWidget = (widgetId: string) => {
+    const handleRemoveWidget = useCallback((widgetId: string) => {
         setWidgetToRemove(widgetId);
-    };
+    }, []);
 
-    const confirmRemoveWidget = () => {
+    const confirmRemoveWidget = useCallback(() => {
         if (!widgetToRemove) return;
         const newLayouts = { ...currentLayouts };
         Object.keys(newLayouts).forEach(bp => {
@@ -63,13 +63,13 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
         setDashboardState({ layouts: newLayouts, widgets: newWidgets });
         setWidgetToRemove(null);
         toast({ title: "Widget eliminado", description: "El widget ha sido eliminado. Guarda el diseño para aplicar los cambios." });
-    };
+    }, [widgetToRemove, currentLayouts, currentWidgets, setDashboardState]);
 
-    const handleConfigureWidget = (widgetId: WidgetType) => {
+    const handleConfigureWidget = useCallback((widgetId: WidgetType) => {
         setConfiguringWidgetId(widgetId);
-    };
+    }, []);
 
-    const handleWidgetConfigSave = (widgetId: WidgetType, config: any) => {
+    const handleWidgetConfigSave = useCallback((widgetId: WidgetType, config: any) => {
         const newWidgets = {
             ...currentWidgets,
             [widgetId]: config,
@@ -77,7 +77,7 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
         setDashboardState({ ...dashboardState, widgets: newWidgets });
         setConfiguringWidgetId(null);
         toast({ title: "Configuración actualizada", description: "Los cambios se aplicarán al guardar el diseño del dashboard." });
-    };
+    }, [currentWidgets, dashboardState, setDashboardState]);
 
     return {
         configuringWidgetId,

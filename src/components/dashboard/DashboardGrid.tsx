@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
@@ -84,7 +84,7 @@ export const DashboardGrid = ({
         };
     }, [isEditMode, layouts]);
 
-    const generateDOM = () => {
+    const domElements = useMemo(() => {
         const layoutForDOM = layouts.lg || layouts.md || layouts.sm || defaultLayout;
         return (layoutForDOM || []).map((item) => {
             const widgetKey = item.i as WidgetType;
@@ -133,7 +133,8 @@ export const DashboardGrid = ({
                 </div>
             );
         });
-    };
+    }, [layouts, isEditMode, widgets, defaultLayout, onRemoveWidget, onConfigureWidget]);
+
 
     return (
         <div ref={gridContainerRef} role="grid" aria-label="Panel de control de widgets" tabIndex={-1}>
@@ -150,7 +151,7 @@ export const DashboardGrid = ({
                 margin={[16, 16]}
                 compactType="vertical"
             >
-                {generateDOM()}
+                {domElements}
             </ResponsiveGridLayout>
         </div>
     );
