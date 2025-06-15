@@ -39,7 +39,13 @@ export const AppRoutes = () => {
     <Routes>
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/auth/*" element={<AuthLayout />} />
+      <Route path="/auth/*" element={
+        <AuthLayout title="Autenticación">
+          <Routes>
+            <Route path="/*" element={<div>Auth routes placeholder</div>} />
+          </Routes>
+        </AuthLayout>
+      } />
       
       {/* Protected routes */}
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
