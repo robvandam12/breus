@@ -1,17 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Anchor, Calendar, User, Clock, MapPin } from 'lucide-react';
+import { Anchor } from 'lucide-react';
 import { InmersionOperationSelector } from './InmersionOperationSelector';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { InmersionFormWizard } from './InmersionFormWizard';
 
 export interface InmersionWizardProps {
   onComplete: (data: any) => Promise<void>;
@@ -46,7 +42,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     profundidad_max: 0,
     temperatura_agua: 0,
     visibilidad: 0,
-    corriente: '',
+    corriente: 'sin_corriente',
     observaciones: '',
     estado: 'planificada',
     equipo_buceo_id: ''
@@ -183,7 +179,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
     setIsLoading(true);
     try {
-      // Limpiar campos UUID vacíos - convertir strings vacíos a null
       const submitData = {
         ...formData,
         operacion_id: selectedOperacionId,
@@ -192,8 +187,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
         buzo_asistente_id: formData.buzo_asistente_id || null,
         equipo_buceo_id: formData.equipo_buceo_id || null,
       };
-
-      console.log('Submitting inmersion data:', submitData);
       await onComplete(submitData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -243,10 +236,7 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
 
   const renderInmersionForm = () => {
     const selectedOperation = operaciones.find(op => op.id === selectedOperacionId);
-    const assignedTeam = selectedOperation?.equipo_buceo_id 
-      ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
-      : null;
-
+    
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -256,7 +246,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           </p>
         </div>
 
-        {/* Operation Info */}
         {selectedOperation && (
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader>
@@ -268,233 +257,15 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                Información Básica
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="codigo">Código de Inmersión *</Label>
-                <Input
-                  id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => handleInputChange('codigo', e.target.value)}
-                  placeholder="Código único de la inmersión"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="fecha_inmersion">Fecha *</Label>
-                  <Input
-                    id="fecha_inmersion"
-                    type="date"
-                    value={formData.fecha_inmersion}
-                    onChange={(e) => handleInputChange('fecha_inmersion', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="hora_inicio">Hora Inicio *</Label>
-                  <Input
-                    id="hora_inicio"
-                    type="time"
-                    value={formData.hora_inicio}
-                    onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="objetivo">Objetivo *</Label>
-                <Textarea
-                  id="objetivo"
-                  value={formData.objetivo}
-                  onChange={(e) => handleInputChange('objetivo', e.target.value)}
-                  placeholder="Objetivo de la inmersión"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Personnel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-green-600" />
-                Personal
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="supervisor">Supervisor *</Label>
-                <Input
-                  id="supervisor"
-                  value={formData.supervisor}
-                  onChange={(e) => handleInputChange('supervisor', e.target.value)}
-                  placeholder="Nombre del supervisor"
-                  disabled={!!assignedTeam}
-                />
-                {assignedTeam && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Auto-poblado desde el equipo asignado
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="buzo_principal">Buzo Principal *</Label>
-                <Input
-                  id="buzo_principal"
-                  value={formData.buzo_principal}
-                  onChange={(e) => handleInputChange('buzo_principal', e.target.value)}
-                  placeholder="Nombre del buzo principal"
-                  disabled={!!assignedTeam}
-                />
-                {assignedTeam && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Auto-poblado desde el equipo asignado
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="buzo_asistente">Buzo Asistente (Opcional)</Label>
-                <Input
-                  id="buzo_asistente"
-                  value={formData.buzo_asistente}
-                  onChange={(e) => handleInputChange('buzo_asistente', e.target.value)}
-                  placeholder="Nombre del buzo asistente"
-                  disabled={!!assignedTeam}
-                />
-                {assignedTeam && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Auto-poblado desde el equipo asignado
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Technical Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-purple-600" />
-                Detalles Técnicos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="profundidad_max">Profundidad Máx. (m)</Label>
-                  <Input
-                    id="profundidad_max"
-                    type="number"
-                    value={formData.profundidad_max}
-                    onChange={(e) => handleInputChange('profundidad_max', Number(e.target.value))}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="temperatura_agua">Temp. Agua (°C)</Label>
-                  <Input
-                    id="temperatura_agua"
-                    type="number"
-                    value={formData.temperatura_agua}
-                    onChange={(e) => handleInputChange('temperatura_agua', Number(e.target.value))}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="visibilidad">Visibilidad (m)</Label>
-                  <Input
-                    id="visibilidad"
-                    type="number"
-                    value={formData.visibilidad}
-                    onChange={(e) => handleInputChange('visibilidad', Number(e.target.value))}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="corriente">Corriente</Label>
-                  <Select
-                    value={formData.corriente}
-                    onValueChange={(value) => handleInputChange('corriente', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sin_corriente">Sin corriente</SelectItem>
-                      <SelectItem value="ligera">Ligera</SelectItem>
-                      <SelectItem value="moderada">Moderada</SelectItem>
-                      <SelectItem value="fuerte">Fuerte</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Observations */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-orange-600" />
-                Observaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="hora_fin">Hora Fin (Opcional)</Label>
-                <Input
-                  id="hora_fin"
-                  type="time"
-                  value={formData.hora_fin}
-                  onChange={(e) => handleInputChange('hora_fin', e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="observaciones">Observaciones Adicionales</Label>
-                <Textarea
-                  id="observaciones"
-                  value={formData.observaciones}
-                  onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                  placeholder="Observaciones adicionales sobre la inmersión..."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex justify-between pt-6 border-t">
-          <Button variant="outline" onClick={() => setCurrentStep(1)}>
-            Volver
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!isFormValid() || isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? "Creando..." : "Crear Inmersión"}
-            </Button>
-          </div>
-        </div>
+        <InmersionFormWizard
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          handleBack={() => setCurrentStep(1)}
+          isLoading={isLoading}
+          isFormValid={isFormValid}
+          selectedOperacionId={selectedOperacionId}
+        />
       </div>
     );
   };
