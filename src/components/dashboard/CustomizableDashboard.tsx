@@ -12,6 +12,9 @@ import { PreviewBanner } from './PreviewBanner';
 import { useDashboardManager } from '@/hooks/useDashboardManager';
 import { WidgetType } from './widgetRegistry';
 import { LoadingSpinner } from '../ui/loading-spinner';
+import { Alert, AlertDescription } from '../ui/alert';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '../ui/button';
 
 export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
@@ -31,6 +34,7 @@ export const CustomizableDashboard = () => {
         isTemplateSheetOpen,
         canUndo,
         canRedo,
+        hasError,
         
         onLayoutChange,
         handleToggleEdit,
@@ -59,16 +63,39 @@ export const CustomizableDashboard = () => {
     
     if (isLoading) {
         return (
-          <div className="space-y-4">
-              <div className="flex justify-end"><Skeleton className="h-10 w-36" /></div>
-              <div className="grid grid-cols-12 gap-4">
-                  <Skeleton className="h-24 col-span-12" />
-                  <Skeleton className="h-64 col-span-12" />
-                  <Skeleton className="h-80 col-span-5" />
-                  <Skeleton className="h-80 col-span-3" />
-                  <Skeleton className="h-80 col-span-4" />
-              </div>
-          </div>
+            <div className="space-y-4">
+                <div className="flex justify-end"><Skeleton className="h-10 w-36" /></div>
+                <div className="grid grid-cols-12 gap-4">
+                    <Skeleton className="h-24 col-span-12" />
+                    <Skeleton className="h-64 col-span-12" />
+                    <Skeleton className="h-80 col-span-5" />
+                    <Skeleton className="h-80 col-span-3" />
+                    <Skeleton className="h-80 col-span-4" />
+                </div>
+            </div>
+        );
+    }
+
+    // Manejo de errores críticos
+    if (hasError) {
+        return (
+            <div className="space-y-4">
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                        <span>Error al cargar el dashboard. Se usará configuración por defecto.</span>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.location.reload()}
+                            className="ml-4"
+                        >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Recargar
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            </div>
         );
     }
 
@@ -81,6 +108,7 @@ export const CustomizableDashboard = () => {
                     <LoadingSpinner text="Aplicando plantilla..." size="lg" />
                 </div>
             )}
+            
             {isPreviewMode && (
                 <PreviewBanner
                     onApplyChanges={handleApplyPreviewChanges}
@@ -94,7 +122,7 @@ export const CustomizableDashboard = () => {
                 />
             )}
 
-             <DashboardHeader
+            <DashboardHeader
                 isEditMode={isEditMode}
                 isPreviewMode={isPreviewMode}
                 isSaving={isSaving}
@@ -114,10 +142,10 @@ export const CustomizableDashboard = () => {
             />
 
             <DashboardGrid
-                layouts={currentLayouts}
+                layouts={currentLayouts || { lg: [] }}
                 onLayoutChange={onLayoutChange}
                 isEditMode={isEditMode || isPreviewMode}
-                widgets={currentWidgets}
+                widgets={currentWidgets || {}}
                 defaultLayout={defaultLayoutForRole || []}
                 onRemoveWidget={handleRemoveWidget}
                 onConfigureWidget={handleConfigureWidget}
@@ -130,6 +158,7 @@ export const CustomizableDashboard = () => {
                 currentLayouts={currentLayouts}
                 currentWidgets={currentWidgets}
             />
+            
             <WidgetConfigSheet 
                 isOpen={!!configuringWidgetId}
                 onClose={() => setConfiguringWidgetId(null)}
@@ -137,6 +166,7 @@ export const CustomizableDashboard = () => {
                 currentConfig={currentWidgets?.[configuringWidgetId || '']}
                 onSave={handleWidgetConfigSave}
             />
+            
             <ConfirmDialog
                 open={!!widgetToRemove}
                 onOpenChange={(open) => !open && setWidgetToRemove(null)}
@@ -146,6 +176,7 @@ export const CustomizableDashboard = () => {
                 variant="destructive"
                 confirmText="Sí, quitar"
             />
+            
             <ConfirmDialog
                 open={isResetConfirmOpen}
                 onOpenChange={setIsResetConfirmOpen}
