@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -16,6 +15,34 @@ interface DashboardState {
 }
 
 const defaultWidgets = {};
+
+const filterLayoutsByRole = (layouts: Layouts | Layout[] | null | undefined, role: Role): Layouts => {
+    const roleFilter = (item: Layout) => {
+        const widgetConfig = widgetRegistry[item.i as WidgetType];
+        if (!widgetConfig) return false;
+        // If roles are defined, the current role must be included. If not defined, widget is available for all roles.
+        return !widgetConfig.roles || widgetConfig.roles.includes(role);
+    };
+
+    if (!layouts) return { lg: [] };
+
+    const layoutsObj: Layouts = Array.isArray(layouts) ? { lg: layouts } : layouts;
+    const filteredLayouts: Layouts = {};
+
+    Object.keys(layoutsObj).forEach(breakpoint => {
+        const key = breakpoint as keyof Layouts;
+        const layoutForBreakpoint = layoutsObj[key];
+        if (Array.isArray(layoutForBreakpoint)) {
+            filteredLayouts[key] = layoutForBreakpoint.filter(roleFilter);
+        }
+    });
+
+    if (!filteredLayouts.lg) {
+        filteredLayouts.lg = [];
+    }
+    
+    return filteredLayouts;
+};
 
 export const useDashboardManager = (currentRole: string) => {
     const { templates, isLoading: isLoadingTemplates } = useDashboardTemplates();
@@ -54,40 +81,8 @@ export const useDashboardManager = (currentRole: string) => {
     const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
 
     const getInitialDashboardState = useCallback(() => {
-        const roleFilter = (item: Layout) => {
-            const widgetConfig = widgetRegistry[item.i as WidgetType];
-            if (!widgetConfig) return false;
-            if (widgetConfig.roles && !widgetConfig.roles.includes(currentRole as Role)) {
-                return false;
-            }
-            return true;
-        };
-        
-        let initialLayouts: Layouts = { lg: [] };
-        
-        if (savedLayout) {
-             if (Array.isArray(savedLayout)) {
-                const filteredLayout = savedLayout.filter(roleFilter);
-                initialLayouts = { lg: filteredLayout };
-            } else if (typeof savedLayout === 'object' && !Array.isArray(savedLayout)) {
-                const filteredLayouts = Object.entries(savedLayout).reduce((acc, [key, value]) => {
-                    if(Array.isArray(value)) {
-                        acc[key as keyof Layouts] = value.filter(roleFilter);
-                    }
-                    return acc;
-                }, {} as Layouts);
-                if (Object.keys(filteredLayouts).length > 0) {
-                    initialLayouts = filteredLayouts;
-                }
-            }
-        }
-        
-        if (!initialLayouts.lg) {
-            initialLayouts.lg = [];
-        }
-
         return {
-            layouts: initialLayouts,
+            layouts: filterLayoutsByRole(savedLayout, currentRole as Role),
             widgets: savedWidgets,
         };
     }, [currentRole, savedLayout, savedWidgets]);
