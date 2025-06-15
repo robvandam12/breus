@@ -1,3 +1,4 @@
+
 import type { SecurityAlert } from './security';
 
 export interface Inmersion {
@@ -53,9 +54,9 @@ export interface OperationData {
   codigo: string;
   nombre: string;
   equipo_buceo_id?: string;
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
+  salmoneras?: { nombre: string } | null;
+  sitios?: { nombre: string } | null;
+  contratistas?: { nombre: string } | null;
 }
 
 export interface HPTData {

@@ -1,15 +1,9 @@
 import { Tables } from '@/integrations/supabase/types';
+import type { OperationData } from '@/types/inmersion';
 
 // Extendiendo Tables<'inmersion'> para asegurar compatibilidad
 export interface InmersionCompleta extends Tables<'inmersion'> {
-  operacion: {
-    id: string;
-    nombre: string;
-    equipo_buceo_id?: string | null;
-    salmoneras?: { nombre: string } | null;
-    contratistas?: { nombre: string } | null;
-    sitios?: { nombre: string } | null;
-  };
+  operacion?: OperationData;
   // Las propiedades 'buzo_asistente' y 'buzo_asistente_id' se heredan de Tables<'inmersion'>
   // por lo que no es necesario redeclararlas aquí.
 }
