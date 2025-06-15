@@ -20,21 +20,23 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, icon: Icon, chi
     <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-50">
       <SidebarTrigger className="-ml-1 md:hidden" />
       <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
-      <Breadcrumb className="flex-1">
+      
+      <Breadcrumb className="flex-1 min-w-0">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbPage className="flex items-center gap-2">
-              {Icon && <Icon className="w-5 h-5 text-primary" />}
-              <div className="min-w-0">
-                <span className="font-semibold text-lg text-foreground truncate">{title}</span>
+            <BreadcrumbPage className="flex items-center gap-2 min-w-0">
+              {Icon && <Icon className="w-5 h-5 text-primary flex-shrink-0" />}
+              <div className="min-w-0 flex-1">
+                <span className="font-semibold text-lg text-foreground truncate block">{title}</span>
                 {subtitle && !isMobile && (
-                  <p className="text-sm text-muted-foreground truncate mt-0.5">{subtitle}</p>
+                  <p className="text-sm text-muted-foreground truncate mt-0.5 block">{subtitle}</p>
                 )}
               </div>
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+      
       <div className="ml-auto flex items-center gap-2 flex-shrink-0">
         {children}
         <NotificationButton />

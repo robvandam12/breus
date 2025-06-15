@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
 import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
@@ -17,8 +17,10 @@ import { BitacoraCard } from "@/components/bitacoras/BitacoraCard";
 import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
-import { BitacoraPageStats } from "@/components/bitacoras/BitacoraPageStats";
-import { Skeleton } from "@/components/ui/skeleton";
+import { BitacoraPageSkeleton } from "@/components/layout/BitacoraPageSkeleton";
+import { BitacoraStatsCards } from "@/components/bitacoras/BitacoraStatsCards";
+import { BitacoraViewControls } from "@/components/bitacoras/BitacoraViewControls";
+import { EmptyState } from "@/components/layout/EmptyState";
 
 const BitacorasSupervisor = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -80,49 +82,22 @@ const BitacorasSupervisor = () => {
   const completedSupervisor = bitacorasSupervisor.filter(b => b.firmado).length;
 
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center bg-zinc-100 rounded-lg p-1">
-        <Button
-          variant={viewMode === 'cards' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('cards')}
-          className="h-8 px-3"
-        >
-          <LayoutGrid className="w-4 h-4" />
-        </Button>
-        <Button
-          variant={viewMode === 'table' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('table')}
-          className="h-8 px-3"
-        >
-          <LayoutList className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <Button
-        onClick={() => setIsCreateDialogOpen(true)}
-        className="bg-purple-600 hover:bg-purple-700"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Nueva Bitácora Supervisor
-      </Button>
-    </div>
+    <BitacoraViewControls
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      onNewBitacora={() => setIsCreateDialogOpen(true)}
+      newButtonText="Nueva Bitácora Supervisor"
+      newButtonColor="bg-purple-600 hover:bg-purple-700"
+    />
   );
 
   if (loading) {
     return (
-      <BitacoraPageLayout
+      <BitacoraPageSkeleton
         title="Bitácoras Supervisor"
         subtitle="Registro de supervisión de inmersiones"
         icon={FileText}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      </BitacoraPageLayout>
+      />
     );
   }
 
@@ -133,12 +108,11 @@ const BitacorasSupervisor = () => {
       icon={FileText}
       headerActions={headerActions}
     >
-      <BitacoraPageStats
-        type="both"
-        totalSupervisor={bitacorasSupervisor.length}
-        totalBuzo={bitacorasBuzo.length}
+      <BitacoraStatsCards
+        total={bitacorasSupervisor.length}
         completed={completedSupervisor}
-        pendingSignature={bitacorasSupervisor.length - completedSupervisor}
+        pending={bitacorasSupervisor.length - completedSupervisor}
+        type="supervisor"
       />
       
       <Card className="mb-6">
@@ -157,33 +131,20 @@ const BitacorasSupervisor = () => {
       </Card>
 
       {bitacorasSupervisor.length > 0 && totalItems === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">No se encontraron resultados</h3>
-            <p className="text-zinc-500 mb-4">Intenta ajustar los filtros de búsqueda</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title="No se encontraron resultados"
+          description="Intenta ajustar los filtros de búsqueda"
+        />
       ) : filteredBitacorasSupervisor.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">
-              {bitacorasSupervisor.length === 0 
-                ? "No hay bitácoras de supervisor" 
-                : "No se encontraron resultados"}
-            </h3>
-            <p className="text-zinc-500 mb-4">
-              {bitacorasSupervisor.length === 0 
-                ? "Comienza creando una nueva bitácora de supervisor"
-                : "Intenta ajustar los filtros de búsqueda"}
-            </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Bitácora Supervisor
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title={bitacorasSupervisor.length === 0 ? "No hay bitácoras de supervisor" : "No se encontraron resultados"}
+          description={bitacorasSupervisor.length === 0 ? "Comienza creando una nueva bitácora de supervisor" : "Intenta ajustar los filtros de búsqueda"}
+          actionText="Nueva Bitácora Supervisor"
+          onAction={() => setIsCreateDialogOpen(true)}
+          actionIcon={Plus}
+        />
       ) : (
         <div className="space-y-6">
           {viewMode === 'table' ? (

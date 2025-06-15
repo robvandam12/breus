@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { BitacorasBuzoContent } from "@/components/bitacoras/BitacorasBuzoContent";
 import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
@@ -11,9 +11,10 @@ import { BitacoraBuzoCompleta } from "@/types/bitacoras";
 import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
-import { BitacoraPageStats } from "@/components/bitacoras/BitacoraPageStats";
+import { BitacoraPageSkeleton } from "@/components/layout/BitacoraPageSkeleton";
+import { BitacoraStatsCards } from "@/components/bitacoras/BitacoraStatsCards";
+import { BitacoraViewControls } from "@/components/bitacoras/BitacoraViewControls";
 import { FormDialog } from "@/components/forms/FormDialog";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const BitacorasBuzo = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
@@ -71,56 +72,22 @@ const BitacorasBuzo = () => {
   const completedBuzo = bitacorasBuzo.filter(b => b.firmado).length;
 
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center bg-zinc-100 rounded-lg p-1">
-        <Button
-          variant={viewMode === 'cards' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('cards')}
-          className="h-8 px-3"
-        >
-          <LayoutGrid className="w-4 h-4" />
-        </Button>
-        <Button
-          variant={viewMode === 'table' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('table')}
-          className="h-8 px-3"
-        >
-          <LayoutList className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <FormDialog
-        variant="form"
-        size="xl"
-        triggerText="Nueva Bitácora Buzo"
-        triggerIcon={Plus}
-        triggerClassName="bg-teal-600 hover:bg-teal-700"
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-      >
-        <CreateBitacoraBuzoFormCompleteWithInmersion
-          onSubmit={handleCreateBuzo}
-          onCancel={() => setIsCreateDialogOpen(false)}
-        />
-      </FormDialog>
-    </div>
+    <BitacoraViewControls
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      onNewBitacora={() => setIsCreateDialogOpen(true)}
+      newButtonText="Nueva Bitácora Buzo"
+      newButtonColor="bg-teal-600 hover:bg-teal-700"
+    />
   );
 
   if (loading) {
     return (
-      <BitacoraPageLayout
+      <BitacoraPageSkeleton
         title="Bitácoras Buzo"
         subtitle="Registro personal de inmersiones"
         icon={FileText}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      </BitacoraPageLayout>
+      />
     );
   }
 
@@ -131,11 +98,11 @@ const BitacorasBuzo = () => {
       icon={FileText}
       headerActions={headerActions}
     >
-      <BitacoraPageStats
-        type="buzo"
-        totalBuzo={bitacorasBuzo.length}
+      <BitacoraStatsCards
+        total={bitacorasBuzo.length}
         completed={completedBuzo}
-        pendingSignature={bitacorasBuzo.length - completedBuzo}
+        pending={bitacorasBuzo.length - completedBuzo}
+        type="buzo"
       />
       
       <BitacorasBuzoContent
@@ -157,6 +124,18 @@ const BitacorasBuzo = () => {
         onViewDetails={handleViewDetails}
         onOpenSignModal={handleOpenSignModal}
       />
+
+      <FormDialog
+        variant="form"
+        size="xl"
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      >
+        <CreateBitacoraBuzoFormCompleteWithInmersion
+          onSubmit={handleCreateBuzo}
+          onCancel={() => setIsCreateDialogOpen(false)}
+        />
+      </FormDialog>
 
       {selectedBitacora && (
         <FormDialog
