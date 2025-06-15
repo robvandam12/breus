@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -27,7 +28,7 @@ const fetchDashboardTemplates = async (userId: string, role: string) => {
     console.error('Error fetching dashboard templates:', error);
     throw new Error(error.message);
   }
-  return data as DashboardTemplate[];
+  return data as unknown as DashboardTemplate[];
 };
 
 const createDashboardTemplate = async (templateData: Omit<DashboardTemplate, 'id' | 'created_at'>) => {
@@ -37,7 +38,7 @@ const createDashboardTemplate = async (templateData: Omit<DashboardTemplate, 'id
         .select()
         .single();
     if (error) throw error;
-    return data;
+    return data as unknown as DashboardTemplate;
 }
 
 export const useDashboardTemplates = () => {
