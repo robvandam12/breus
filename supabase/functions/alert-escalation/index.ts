@@ -10,8 +10,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Las alertas se escalarán si no se reconocen después de este intervalo
-const ESCALATION_INTERVAL_MINUTES = 15;
+interface EscalationLevelConfig {
+    after_minutes: number;
+    notify_roles: string[];
+    channels: string[];
+}
+
+interface SecurityAlertRule {
+    id: string;
+    escalation_policy: { levels: EscalationLevelConfig[] };
+    type: string;
+}
 
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
@@ -21,86 +30,97 @@ serve(async (req) => {
     try {
         const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        const escalationThreshold = new Date(Date.now() - ESCALATION_INTERVAL_MINUTES * 60 * 1000).toISOString();
-
-        // 1. Buscar alertas críticas/de emergencia no reconocidas que necesiten escalamiento
-        const { data: alertsToEscalate, error: fetchError } = await supabaseAdmin
+        const { data: activeAlerts, error: fetchError } = await supabaseAdmin
             .from('security_alerts')
             .select(`
-                id, 
-                escalation_level, 
-                created_at, 
-                last_escalated_at, 
-                details,
-                inmersion_id,
-                inmersion:inmersion_id (codigo, operacion_id)
+                id, type, priority, escalation_level, created_at, last_escalated_at, details, inmersion_id,
+                inmersion:inmersion_id (codigo, operacion_id),
+                rule:rule_id (*)
             `)
             .eq('acknowledged', false)
-            .in('priority', ['critical', 'emergency'])
-            .lte('created_at', escalationThreshold)
-            .filter('last_escalated_at', 'is', null)
-            .or(`last_escalated_at.lte.${escalationThreshold}`, { referencedTable: 'security_alerts' });
+            .in('priority', ['critical', 'emergency']);
 
-        if (fetchError) {
-            console.error('Error al buscar alertas para escalar:', fetchError);
-            throw fetchError;
-        }
-
-        if (!alertsToEscalate || alertsToEscalate.length === 0) {
-            return new Response(JSON.stringify({ message: 'No hay alertas para escalar.' }), {
+        if (fetchError) throw fetchError;
+        
+        if (!activeAlerts || activeAlerts.length === 0) {
+            return new Response(JSON.stringify({ message: 'No active critical alerts to check.' }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
             });
         }
         
-        console.log(`Se encontraron ${alertsToEscalate.length} alertas para escalar.`);
+        const { data: templateRulesData, error: rulesError } = await supabaseAdmin
+            .from('security_alert_rules')
+            .select('*')
+            .eq('is_template', true)
+            .eq('enabled', true);
+            
+        if (rulesError) throw rulesError;
+        const templateRules = new Map(templateRulesData.map(r => [r.type, r]));
 
-        // 2. Encontrar administradores para notificar
-        const { data: admins, error: adminError } = await supabaseAdmin
-            .from('usuario')
-            .select('usuario_id')
-            .in('rol', ['admin_servicio', 'superuser']);
-
-        if (adminError) {
-            console.error('Error al buscar administradores:', adminError);
-            throw adminError;
-        }
-        
         const notificationsToInsert = [];
         const alertsToUpdate = [];
 
-        for (const alert of alertsToEscalate) {
-            const newEscalationLevel = alert.escalation_level + 1;
+        for (const alert of activeAlerts) {
+            const rule: SecurityAlertRule | undefined = alert.rule || templateRules.get(alert.type);
+
+            if (!rule || !rule.escalation_policy?.levels) {
+                console.log(`No valid escalation rule for alert ${alert.id} of type ${alert.type}.`);
+                continue;
+            }
+
+            const currentEscalationLevel = alert.escalation_level;
+            const policyLevels = rule.escalation_policy.levels;
             
-            alertsToUpdate.push({
-                id: alert.id,
-                escalation_level: newEscalationLevel,
-                last_escalated_at: new Date().toISOString()
-            });
+            if (currentEscalationLevel >= policyLevels.length) {
+                continue;
+            }
 
-            const inmersionCode = alert.inmersion?.codigo || alert.details?.inmersion_code || 'N/A';
-            const title = `🚨 Alerta Escalada (Nivel ${newEscalationLevel}) - Inmersión ${inmersionCode}`;
-            const message = `La alerta de seguridad crítica no ha sido reconocida y necesita atención inmediata.`;
+            const escalationConfig = policyLevels[currentEscalationLevel];
+            const lastEventTimestamp = alert.last_escalated_at || alert.created_at;
+            const minutesSinceLastEvent = (new Date().getTime() - new Date(lastEventTimestamp).getTime()) / (1000 * 60);
 
-            if (admins && admins.length > 0) {
-                for (const admin of admins) {
-                    notificationsToInsert.push({
-                        user_id: admin.usuario_id,
-                        type: 'emergency',
-                        title: title,
-                        message: message,
-                        metadata: {
-                            security_alert_id: alert.id,
-                            inmersion_id: alert.inmersion_id,
-                            operacion_id: alert.inmersion?.operacion_id,
-                            link: '/dashboard', 
-                        }
-                    });
+            if (minutesSinceLastEvent >= escalationConfig.after_minutes) {
+                const newEscalationLevel = currentEscalationLevel + 1;
+                
+                alertsToUpdate.push({
+                    id: alert.id,
+                    escalation_level: newEscalationLevel,
+                    last_escalated_at: new Date().toISOString()
+                });
+                
+                const { data: usersToNotify, error: userError } = await supabaseAdmin
+                    .from('usuario')
+                    .select('usuario_id')
+                    .in('rol', escalationConfig.notify_roles);
+                
+                if (userError) {
+                    console.error(`Error fetching users for roles ${escalationConfig.notify_roles}:`, userError);
+                    continue;
+                }
+
+                if (usersToNotify && usersToNotify.length > 0) {
+                    const inmersionCode = alert.inmersion?.codigo || alert.details?.inmersion_code || 'N/A';
+                    const title = `🚨 Alerta Escalada (Nivel ${newEscalationLevel}) - Inmersión ${inmersionCode}`;
+                    const message = `La alerta de tipo "${alert.type}" no ha sido reconocida y necesita atención inmediata.`;
+
+                    for (const user of usersToNotify) {
+                        notificationsToInsert.push({
+                            user_id: user.usuario_id,
+                            type: 'emergency',
+                            title,
+                            message,
+                            metadata: {
+                                security_alert_id: alert.id,
+                                inmersion_id: alert.inmersion_id,
+                                operacion_id: alert.inmersion?.operacion_id,
+                                link: '/dashboard', 
+                            }
+                        });
+                    }
                 }
             }
         }
 
-        // 3. Realizar actualizaciones e inserciones por lotes
         if (alertsToUpdate.length > 0) {
             const { error: updateError } = await supabaseAdmin.from('security_alerts').upsert(alertsToUpdate);
             if (updateError) throw updateError;
@@ -111,7 +131,7 @@ serve(async (req) => {
             if (insertError) throw insertError;
         }
         
-        const successMessage = `Se escalaron ${alertsToUpdate.length} alertas y se crearon ${notificationsToInsert.length} notificaciones.`;
+        const successMessage = `Proceso completado. Se escalaron ${alertsToUpdate.length} alertas y se crearon ${notificationsToInsert.length} notificaciones.`;
         console.log(successMessage);
 
         return new Response(JSON.stringify({ message: successMessage }), {
@@ -120,7 +140,7 @@ serve(async (req) => {
         });
 
     } catch (error) {
-        console.error('Error en la función de escalamiento de alertas:', error.message);
+        console.error('Error in alert escalation function:', error.message);
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,

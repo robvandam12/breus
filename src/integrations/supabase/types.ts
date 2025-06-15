@@ -1375,10 +1375,16 @@ export type Database = {
           created_at: string
           description: string | null
           enabled: boolean
+          escalation_policy: Json
           id: string
+          is_template: boolean
           message_template: string
           name: string
+          notification_channels: string[]
           priority: string
+          scope_id: string | null
+          scope_type: string | null
+          target_roles: string[]
           type: string
           updated_at: string
         }
@@ -1387,10 +1393,16 @@ export type Database = {
           created_at?: string
           description?: string | null
           enabled?: boolean
+          escalation_policy?: Json
           id?: string
+          is_template?: boolean
           message_template: string
           name: string
+          notification_channels?: string[]
           priority?: string
+          scope_id?: string | null
+          scope_type?: string | null
+          target_roles?: string[]
           type: string
           updated_at?: string
         }
@@ -1399,10 +1411,16 @@ export type Database = {
           created_at?: string
           description?: string | null
           enabled?: boolean
+          escalation_policy?: Json
           id?: string
+          is_template?: boolean
           message_template?: string
           name?: string
+          notification_channels?: string[]
           priority?: string
+          scope_id?: string | null
+          scope_type?: string | null
+          target_roles?: string[]
           type?: string
           updated_at?: string
         }
