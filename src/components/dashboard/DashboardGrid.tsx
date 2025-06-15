@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { motion } from 'framer-motion';
@@ -71,7 +70,6 @@ export const DashboardGrid = ({
             return (
                 <motion.div 
                     key={item.i} 
-                    layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, type: "spring", stiffness: 150, damping: 20 }}
