@@ -74,15 +74,17 @@ export const useDashboardManager = (currentRole: string) => {
         defaultWidgets
     });
 
-    // Optimizar el callback de cambio de layout
+    // Optimizar el callback de cambio de layout - CORREGIDO
     const onLayoutChange = useCallback((newLayout: Layout[], newLayouts: Layouts) => {
         if (modes.isEditMode || modes.isPreviewMode) {
-            setDashboardState(prevState => ({
-                ...prevState,
+            // Crear el nuevo estado directamente en lugar de usar una función
+            const newState = {
+                ...memoizedDashboardState,
                 layouts: newLayouts,
-            }));
+            };
+            setDashboardState(newState);
         }
-    }, [modes.isEditMode, modes.isPreviewMode, setDashboardState]);
+    }, [modes.isEditMode, modes.isPreviewMode, setDashboardState, memoizedDashboardState]);
 
     const handleApplyPreviewChanges = useCallback(() => {
         if (modes.isPreviewMode) {
