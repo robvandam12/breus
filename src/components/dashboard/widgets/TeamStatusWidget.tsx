@@ -7,8 +7,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export const TeamStatusWidget = () => {
-    const { teamMembers, isLoading } = useTeamStatusData();
+interface TeamStatusWidgetProps {
+    config?: {
+        showInactive?: boolean;
+        showSuspended?: boolean;
+    }
+}
+
+export const TeamStatusWidget = ({ config }: TeamStatusWidgetProps) => {
+    const { teamMembers, isLoading } = useTeamStatusData({
+        includeInactive: config?.showInactive,
+        includeSuspended: config?.showSuspended,
+    });
 
     if (isLoading) {
         return <Skeleton className="h-full w-full" />;

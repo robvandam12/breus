@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-export const MyImmersionsWidget = () => {
+export const MyImmersionsWidget = ({ config }: { config?: any }) => {
     const { last5Immersions, pendingBitacorasCount, upcomingImmersions, isLoading } = useMyImmersionsData();
 
     if (isLoading) {

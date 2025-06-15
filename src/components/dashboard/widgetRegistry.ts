@@ -8,10 +8,12 @@ import React from 'react';
 import { MyImmersionsWidget } from './widgets/MyImmersionsWidget';
 import { TeamStatusWidget } from './widgets/TeamStatusWidget';
 import { GlobalMetricsWidget } from './widgets/GlobalMetricsWidget';
+import { TeamStatusWidgetConfig } from './widgets/config/TeamStatusWidgetConfig';
 
 export interface WidgetRegistryEntry {
   name: string;
   component: React.ComponentType<any>;
+  configComponent?: React.ComponentType<any>;
   description?: string;
   defaultLayout: {
     w: number;
@@ -59,6 +61,7 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
   team_status: {
     name: 'Estado del Equipo (Supervisor)',
     component: TeamStatusWidget,
+    configComponent: TeamStatusWidgetConfig,
     description: 'Supervisa el estado de tu equipo de buzos.',
     defaultLayout: { w: 6, h: 8 },
   },

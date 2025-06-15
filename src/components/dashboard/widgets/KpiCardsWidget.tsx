@@ -4,7 +4,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { FileText, Anchor, Users, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const KpiCardsWidget = () => {
+export const KpiCardsWidget = ({ config }: { config?: any }) => {
     const { stats, isLoading: statsLoading } = useDashboardStats();
     
     const kpiData = [

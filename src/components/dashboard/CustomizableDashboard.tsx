@@ -6,11 +6,12 @@ import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, Loader2 } from 'lucide-react';
+import { Edit, Save, Loader2, Settings } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { WidgetCatalog } from './WidgetCatalog';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
+import { WidgetConfigSheet } from './WidgetConfigSheet';
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -68,20 +69,27 @@ export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
     const defaultLayoutForRole = getLayoutForRole(currentRole);
 
-    const { layout, widgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
+    const { layout, widgets: savedWidgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
     const [isEditMode, setIsEditMode] = useState(false);
     const [currentLayout, setCurrentLayout] = useState<Layout[]>([]);
+    const [currentWidgets, setCurrentWidgets] = useState<any>(savedWidgets || defaultWidgets);
+    const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
 
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
         if (layout && layout.length > 0) {
-            // Filter out widgets that are not in the registry from saved layout
             const filteredLayout = layout.filter(item => widgetRegistry[item.i]);
             setCurrentLayout(filteredLayout);
         } else if (!isLoading) {
             setCurrentLayout(roleLayout);
         }
     }, [layout, isLoading, currentRole]);
+
+    useEffect(() => {
+        if (savedWidgets) {
+            setCurrentWidgets(savedWidgets);
+        }
+    }, [savedWidgets]);
 
     const onLayoutChange = (newLayout: Layout[]) => {
         if (isEditMode) {
@@ -90,7 +98,7 @@ export const CustomizableDashboard = () => {
     };
 
     const handleSaveLayout = () => {
-        saveLayout({ layout: currentLayout, widgets }, {
+        saveLayout({ layout: currentLayout, widgets: currentWidgets }, {
             onSuccess: () => {
                 toast({ title: "Diseño guardado", description: "Tu dashboard ha sido actualizado." });
                 setIsEditMode(false);
@@ -118,6 +126,23 @@ export const CustomizableDashboard = () => {
 
     const handleRemoveWidget = (widgetId: string) => {
         setCurrentLayout(currentLayout.filter(item => item.i !== widgetId));
+        const newWidgets = { ...currentWidgets };
+        delete newWidgets[widgetId];
+        setCurrentWidgets(newWidgets);
+    };
+
+    const handleConfigureWidget = (widgetId: WidgetType) => {
+        setConfiguringWidgetId(widgetId);
+    };
+
+    const handleWidgetConfigSave = (widgetId: WidgetType, config: any) => {
+        const newWidgets = {
+            ...currentWidgets,
+            [widgetId]: config,
+        };
+        setCurrentWidgets(newWidgets);
+        setConfiguringWidgetId(null);
+        toast({ title: "Configuración actualizada", description: "Los cambios se aplicarán al guardar el diseño del dashboard." });
     };
 
     const generateDOM = () => {
@@ -126,7 +151,9 @@ export const CustomizableDashboard = () => {
             if (!widgetRegistry[widgetKey]) {
                 return <div key={item.i}><WidgetCard title={`Error: Widget '${item.i}' no encontrado`}>Componente no registrado.</WidgetCard></div>;
             }
-            const { name, component: WidgetComponent } = widgetRegistry[widgetKey];
+            const { name, component: WidgetComponent, configComponent } = widgetRegistry[widgetKey];
+
+            const widgetProps = configComponent ? { config: currentWidgets[widgetKey] } : {};
 
             return (
                 <div key={item.i} className={isEditMode ? 'border-2 border-dashed border-primary/50 rounded-lg' : ''}>
@@ -135,8 +162,9 @@ export const CustomizableDashboard = () => {
                         isDraggable={isEditMode}
                         isStatic={item.static}
                         onRemove={() => handleRemoveWidget(item.i)}
+                        onConfigure={configComponent ? () => handleConfigureWidget(item.i as WidgetType) : undefined}
                     >
-                        <WidgetComponent />
+                        <WidgetComponent {...widgetProps} />
                     </WidgetCard>
                 </div>
             );
@@ -192,6 +220,13 @@ export const CustomizableDashboard = () => {
             >
                 {generateDOM()}
             </ReactGridLayout>
+            <WidgetConfigSheet 
+                isOpen={!!configuringWidgetId}
+                onClose={() => setConfiguringWidgetId(null)}
+                widgetId={configuringWidgetId}
+                currentConfig={currentWidgets[configuringWidgetId || '']}
+                onSave={handleWidgetConfigSave}
+            />
         </div>
     );
 }
