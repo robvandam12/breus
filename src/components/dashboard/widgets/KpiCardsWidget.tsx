@@ -1,12 +1,17 @@
 
+import React from "react";
 import { KPICard } from "@/components/KPICard";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { FileText, Anchor, Users, AlertTriangle } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { KpiCardsWidgetSkeleton } from "./skeletons/KpiCardsWidgetSkeleton";
 
-export const KpiCardsWidget = ({ config }: { config?: any }) => {
+const KpiCardsWidget = ({ config }: { config?: any }) => {
     const { stats, isLoading: statsLoading } = useDashboardStats();
     
+    if (statsLoading) {
+        return <KpiCardsWidgetSkeleton />;
+    }
+
     const kpiData = [
     {
       title: "Bitácoras Totales",
@@ -38,17 +43,6 @@ export const KpiCardsWidget = ({ config }: { config?: any }) => {
     },
   ];
 
-    if (statsLoading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <Skeleton className="h-36" />
-                <Skeleton className="h-36" />
-                <Skeleton className="h-36" />
-                <Skeleton className="h-36" />
-            </div>
-        )
-    }
-
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
             {kpiData.map((kpi, index) => (
@@ -64,3 +58,5 @@ export const KpiCardsWidget = ({ config }: { config?: any }) => {
         </div>
     )
 }
+
+export default React.memo(KpiCardsWidget);

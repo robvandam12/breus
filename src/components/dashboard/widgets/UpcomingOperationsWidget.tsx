@@ -1,10 +1,13 @@
 
+import React from "react";
 import { UpcomingOperations } from "@/components/dashboard/UpcomingOperations";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { Skeleton } from "@/components/ui/skeleton";
+import { UpcomingOperationsWidgetSkeleton } from "./skeletons/UpcomingOperationsWidgetSkeleton";
 
-export const UpcomingOperationsWidget = ({ config }: { config?: any }) => {
+const UpcomingOperationsWidget = ({ config }: { config?: any }) => {
   const { operations, isLoading: operationsLoading } = useDashboardData();
-  if (operationsLoading) return <Skeleton className="h-72 rounded-xl" />;
+  if (operationsLoading) return <UpcomingOperationsWidgetSkeleton />;
   return <UpcomingOperations operations={operations} />;
 }
+
+export default React.memo(UpcomingOperationsWidget);

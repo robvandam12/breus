@@ -1,3 +1,7 @@
 
+import React from "react";
 import { StatsChart } from "@/components/dashboard/StatsChart";
-export const StatsChartWidget = () => <StatsChart />;
+
+const StatsChartWidget = () => <StatsChart />;
+
+export default React.memo(StatsChartWidget);

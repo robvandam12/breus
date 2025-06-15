@@ -1,17 +1,18 @@
 
+import React from "react";
 import { useMyImmersionsData } from "@/hooks/useMyImmersionsData";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileText, Calendar, Anchor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MyImmersionsWidgetSkeleton } from "./skeletons/MyImmersionsWidgetSkeleton";
 
-export const MyImmersionsWidget = ({ config }: { config?: any }) => {
+const MyImmersionsWidget = ({ config }: { config?: any }) => {
     const { last5Immersions, pendingBitacorasCount, upcomingImmersions, isLoading } = useMyImmersionsData();
 
     if (isLoading) {
-        return <Skeleton className="h-full w-full" />;
+        return <MyImmersionsWidgetSkeleton />;
     }
 
     return (
@@ -78,3 +79,5 @@ export const MyImmersionsWidget = ({ config }: { config?: any }) => {
         </div>
     );
 };
+
+export default React.memo(MyImmersionsWidget);
