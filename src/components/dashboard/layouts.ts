@@ -1,4 +1,3 @@
-
 import type { Layout } from 'react-grid-layout';
 
 export const baseLayout: Layout[] = [
@@ -21,8 +20,9 @@ export const supervisorLayout: Layout[] = [
     { i: 'team_status', x: 0, y: 2, w: 6, h: 8 },
     { i: 'upcoming_operations', x: 6, y: 2, w: 6, h: 8 },
     { i: 'stats_chart', x: 0, y: 10, w: 12, h: 5 },
-    { i: 'alerts_panel', x: 0, y: 15, w: 7, h: 6 },
-    { i: 'quick_actions', x: 7, y: 15, w: 5, h: 6 },
+    { i: 'alerts_panel', x: 0, y: 15, w: 4, h: 6 },
+    { i: 'weather', x: 4, y: 15, w: 4, h: 6 },
+    { i: 'quick_actions', x: 8, y: 15, w: 4, h: 6 },
 ];
 
 export const adminLayout: Layout[] = [

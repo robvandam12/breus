@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertasPanelWidget } from './widgets/AlertsPanelWidget';
 import { QuickActionsWidget } from './widgets/QuickActionsWidget';
@@ -16,6 +15,7 @@ import { GenericWidgetSkeleton } from './widgets/skeletons/GenericWidgetSkeleton
 import { SecurityAlertsWidgetSkeleton } from './widgets/skeletons/SecurityAlertsWidgetSkeleton';
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
 import { CalendarWidgetSkeleton } from './widgets/skeletons/CalendarWidgetSkeleton';
+import { WeatherWidgetSkeleton } from './widgets/skeletons/WeatherWidgetSkeleton';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -108,6 +108,13 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     skeleton: CalendarWidgetSkeleton,
     description: 'Vista de calendario de las operaciones programadas.',
     defaultLayout: { w: 8, h: 9 },
+  },
+  weather: {
+    name: 'Condiciones Climáticas',
+    component: React.lazy(() => import('./widgets/WeatherWidget')),
+    skeleton: WeatherWidgetSkeleton,
+    description: 'Muestra las condiciones climáticas marinas actuales.',
+    defaultLayout: { w: 4, h: 6 },
   },
 };
 
