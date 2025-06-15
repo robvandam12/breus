@@ -1,45 +1,37 @@
 
-import React from 'react';
+import React, { memo, Suspense } from 'react';
 import { useWidgetLazyLoad } from '@/hooks/useWidgetLazyLoad';
-import { motion } from 'framer-motion';
 
 interface LazyWidgetProps {
   children: React.ReactNode;
   skeleton: React.ReactNode;
   isHeavy?: boolean;
-  className?: string;
+  priority?: 'high' | 'normal' | 'low';
 }
 
-export const LazyWidget = ({ 
+export const LazyWidget = memo<LazyWidgetProps>(({ 
   children, 
   skeleton, 
   isHeavy = false,
-  className = '' 
-}: LazyWidgetProps) => {
-  const { elementRef, shouldLoad } = useWidgetLazyLoad({
-    delay: isHeavy ? 200 : 50,
-    threshold: 0.1
+  priority = 'normal' 
+}) => {
+  const { isVisible, elementRef } = useWidgetLazyLoad({ 
+    enabled: isHeavy || priority === 'low',
+    threshold: priority === 'high' ? 0.3 : 0.1,
+    rootMargin: priority === 'high' ? '100px' : '50px'
   });
 
   return (
-    <div ref={elementRef} className={className}>
-      {shouldLoad ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
+    <div ref={elementRef} className="h-full">
+      {isVisible ? (
+        <Suspense fallback={skeleton}>
           {children}
-        </motion.div>
+        </Suspense>
       ) : (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {skeleton}
-        </motion.div>
+        skeleton
       )}
     </div>
   );
-};
+});
+
+LazyWidget.displayName = 'LazyWidget';

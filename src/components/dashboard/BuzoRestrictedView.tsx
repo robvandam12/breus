@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,11 +7,29 @@ import { User, FileText, Building, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
-export const BuzoRestrictedView = () => {
+export const BuzoRestrictedView = React.memo(() => {
   const { profile } = useAuth();
   const navigate = useNavigate();
 
-  const isProfileComplete = profile?.salmonera_id || profile?.servicio_id;
+  // Memoizar el cálculo del perfil completo
+  const isProfileComplete = useMemo(() => 
+    Boolean(profile?.salmonera_id || profile?.servicio_id),
+    [profile?.salmonera_id, profile?.servicio_id]
+  );
+
+  // Memoizar los handlers para evitar re-renders
+  const handleNavigateToProfile = useMemo(() => 
+    () => navigate('/profile-setup'),
+    [navigate]
+  );
+
+  // Memoizar los datos del perfil
+  const profileData = useMemo(() => ({
+    nombre: profile?.nombre || '',
+    apellido: profile?.apellido || '',
+    email: profile?.email || '',
+    estado: isProfileComplete ? 'Asignado' : 'Pendiente de asignación'
+  }), [profile?.nombre, profile?.apellido, profile?.email, isProfileComplete]);
 
   return (
     <div className="space-y-6">
@@ -44,20 +62,20 @@ export const BuzoRestrictedView = () => {
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
-                <strong>Nombre:</strong> {profile?.nombre} {profile?.apellido}
+                <strong>Nombre:</strong> {profileData.nombre} {profileData.apellido}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Email:</strong> {profile?.email}
+                <strong>Email:</strong> {profileData.email}
               </p>
               <p className="text-sm text-gray-600">
                 <strong>Rol:</strong> Buzo
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Estado:</strong> {isProfileComplete ? 'Asignado' : 'Pendiente de asignación'}
+                <strong>Estado:</strong> {profileData.estado}
               </p>
               <Button 
                 variant="outline" 
-                onClick={() => navigate('/profile-setup')}
+                onClick={handleNavigateToProfile}
                 className="w-full"
               >
                 Completar Perfil
@@ -147,4 +165,6 @@ export const BuzoRestrictedView = () => {
       </div>
     </div>
   );
-};
+});
+
+BuzoRestrictedView.displayName = 'BuzoRestrictedView';

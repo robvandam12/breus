@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
@@ -7,6 +8,7 @@ import { breakpoints, cols } from './layouts';
 import { isValidLayout, optimizeLayoutForMobile, ensureMinimumWidgetSize } from '@/utils/dashboardUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -20,7 +22,82 @@ interface DashboardGridProps {
     onConfigureWidget: (widgetId: WidgetType) => void;
 }
 
-export const DashboardGrid = ({
+// Memoizar el componente individual del widget
+const MemoizedWidgetItem = React.memo<{
+    item: Layout;
+    isEditMode: boolean;
+    widgets: any;
+    onRemoveWidget: (widgetId: string) => void;
+    onConfigureWidget: (widgetId: WidgetType) => void;
+}>(({ item, isEditMode, widgets, onRemoveWidget, onConfigureWidget }) => {
+    if (!isValidLayout(item)) {
+        return (
+            <div className="p-4 border-2 border-dashed border-red-300 rounded">
+                <p className="text-sm text-red-600">Widget inválido</p>
+            </div>
+        );
+    }
+    
+    const widgetKey = item.i as WidgetType;
+    const widgetConfig = widgetRegistry[widgetKey];
+    
+    if (!widgetConfig) {
+        return (
+            <div className="p-4 border-2 border-dashed border-yellow-300 rounded">
+                <WidgetCard title={`Error: Widget '${item.i}' no encontrado`}>
+                    <p className="text-sm text-yellow-700">Componente no registrado.</p>
+                </WidgetCard>
+            </div>
+        );
+    }
+    
+    const { 
+        name, 
+        component: WidgetComponent, 
+        configComponent, 
+        skeleton: SkeletonComponent,
+        isHeavy = false
+    } = widgetConfig;
+
+    const widgetProps = configComponent ? { config: widgets[widgetKey] } : {};
+
+    const widgetContent = (
+        <React.Suspense fallback={<SkeletonComponent />}>
+            <WidgetComponent {...widgetProps} />
+        </React.Suspense>
+    );
+
+    const skeletonContent = <SkeletonComponent />;
+
+    return (
+        <div 
+            className={`rounded-lg h-full animate-scale-in transition-all duration-300 ${
+                isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''
+            }`}
+            role="gridcell"
+        >
+            <WidgetCard 
+                title={name} 
+                isDraggable={isEditMode}
+                isStatic={item.static}
+                onRemove={() => onRemoveWidget(item.i)}
+                onConfigure={configComponent ? () => onConfigureWidget(item.i as WidgetType) : undefined}
+            >
+                <LazyWidget
+                    skeleton={skeletonContent}
+                    isHeavy={isHeavy}
+                    priority={item.static ? 'high' : 'normal'}
+                >
+                    {widgetContent}
+                </LazyWidget>
+            </WidgetCard>
+        </div>
+    );
+});
+
+MemoizedWidgetItem.displayName = 'MemoizedWidgetItem';
+
+export const DashboardGrid = React.memo<DashboardGridProps>(({
     layouts,
     onLayoutChange,
     isEditMode,
@@ -28,8 +105,11 @@ export const DashboardGrid = ({
     defaultLayout,
     onRemoveWidget,
     onConfigureWidget,
-}: DashboardGridProps) => {
+}) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
+
+    // Debounce del layout change para evitar demasiadas actualizaciones
+    const debouncedLayoutChange = useDebounce(onLayoutChange, 150);
 
     // Enhanced layout validation with responsive optimization
     const validatedLayouts = useMemo(() => {
@@ -64,57 +144,7 @@ export const DashboardGrid = ({
         return ensureMinimumWidgetSize(optimized);
     }, [layouts, defaultLayout]);
 
-    useEffect(() => {
-        if (isEditMode && gridContainerRef.current) {
-            // Enfoca el primer widget disponible al entrar en modo edición.
-            const firstWidget = gridContainerRef.current.querySelector<HTMLElement>('.react-grid-item [tabindex="0"]');
-            if (firstWidget) {
-                setTimeout(() => firstWidget.focus(), 100);
-            }
-        }
-    }, [isEditMode]);
-
-    useEffect(() => {
-        const container = gridContainerRef.current;
-        if (!container || !isEditMode) return;
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                return;
-            }
-
-            const widgets = Array.from(
-                container.querySelectorAll<HTMLElement>('.react-grid-item [role="group"][tabindex="0"]')
-            );
-            if (widgets.length <= 1) return;
-            
-            event.preventDefault();
-
-            const focusedElement = document.activeElement as HTMLElement;
-            const currentIndex = widgets.findIndex(widget => widget === focusedElement || widget.contains(focusedElement));
-
-            let nextIndex = currentIndex;
-            if (currentIndex === -1) {
-                nextIndex = 0;
-            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-                nextIndex = (currentIndex + 1) % widgets.length;
-            } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-                nextIndex = (currentIndex - 1 + widgets.length) % widgets.length;
-            }
-
-            if (widgets[nextIndex]) {
-                widgets[nextIndex].focus();
-            }
-        };
-
-        container.addEventListener('keydown', handleKeyDown);
-        return () => {
-            if (container) {
-                container.removeEventListener('keydown', handleKeyDown);
-            }
-        };
-    }, [isEditMode, validatedLayouts]);
-
+    // Memoizar los elementos del DOM
     const domElements = useMemo(() => {
         try {
             const layoutForDOM = validatedLayouts.lg || validatedLayouts.md || validatedLayouts.sm || defaultLayout || [];
@@ -132,69 +162,16 @@ export const DashboardGrid = ({
                 )];
             }
             
-            return layoutForDOM.map((item) => {
-                if (!isValidLayout(item)) {
-                    return (
-                        <div key={`invalid-${Math.random()}`} className="p-4 border-2 border-dashed border-red-300 rounded">
-                            <p className="text-sm text-red-600">Widget inválido</p>
-                        </div>
-                    );
-                }
-                
-                const widgetKey = item.i as WidgetType;
-                if (!widgetRegistry[widgetKey]) {
-                    return (
-                        <div key={item.i} className="p-4 border-2 border-dashed border-yellow-300 rounded">
-                            <WidgetCard title={`Error: Widget '${item.i}' no encontrado`}>
-                                <p className="text-sm text-yellow-700">Componente no registrado.</p>
-                            </WidgetCard>
-                        </div>
-                    );
-                }
-                
-                const { 
-                    name, 
-                    component: WidgetComponent, 
-                    configComponent, 
-                    skeleton: SkeletonComponent,
-                    isHeavy = false
-                } = widgetRegistry[widgetKey];
-
-                const widgetProps = configComponent ? { config: widgets[widgetKey] } : {};
-
-                const widgetContent = (
-                    <React.Suspense fallback={<SkeletonComponent />}>
-                        <WidgetComponent {...widgetProps} />
-                    </React.Suspense>
-                );
-
-                const skeletonContent = <SkeletonComponent />;
-
-                return (
-                    <div 
-                        key={item.i} 
-                        className={`rounded-lg h-full animate-scale-in transition-all duration-300 ${
-                            isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''
-                        }`}
-                        role="gridcell"
-                    >
-                        <WidgetCard 
-                            title={name} 
-                            isDraggable={isEditMode}
-                            isStatic={item.static}
-                            onRemove={() => onRemoveWidget(item.i)}
-                            onConfigure={configComponent ? () => onConfigureWidget(item.i as WidgetType) : undefined}
-                        >
-                            <LazyWidget
-                                skeleton={skeletonContent}
-                                isHeavy={isHeavy}
-                            >
-                                {widgetContent}
-                            </LazyWidget>
-                        </WidgetCard>
-                    </div>
-                );
-            });
+            return layoutForDOM.map((item) => (
+                <MemoizedWidgetItem
+                    key={item.i}
+                    item={item}
+                    isEditMode={isEditMode}
+                    widgets={widgets}
+                    onRemoveWidget={onRemoveWidget}
+                    onConfigureWidget={onConfigureWidget}
+                />
+            ));
         } catch (error) {
             return [(
                 <div key="error-state" className="flex items-center justify-center h-32">
@@ -209,7 +186,67 @@ export const DashboardGrid = ({
         }
     }, [validatedLayouts, isEditMode, widgets, defaultLayout, onRemoveWidget, onConfigureWidget]);
 
-    const handleLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
+    // Optimizar el manejo de eventos de teclado
+    useEffect(() => {
+        if (!isEditMode || !gridContainerRef.current) return;
+
+        const container = gridContainerRef.current;
+        let timeoutId: NodeJS.Timeout;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                return;
+            }
+
+            // Debounce keyboard navigation
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                const widgets = Array.from(
+                    container.querySelectorAll<HTMLElement>('.react-grid-item [role="group"][tabindex="0"]')
+                );
+                if (widgets.length <= 1) return;
+                
+                event.preventDefault();
+
+                const focusedElement = document.activeElement as HTMLElement;
+                const currentIndex = widgets.findIndex(widget => widget === focusedElement || widget.contains(focusedElement));
+
+                let nextIndex = currentIndex;
+                if (currentIndex === -1) {
+                    nextIndex = 0;
+                } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                    nextIndex = (currentIndex + 1) % widgets.length;
+                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                    nextIndex = (currentIndex - 1 + widgets.length) % widgets.length;
+                }
+
+                if (widgets[nextIndex]) {
+                    widgets[nextIndex].focus();
+                }
+            }, 50);
+        };
+
+        container.addEventListener('keydown', handleKeyDown);
+        return () => {
+            clearTimeout(timeoutId);
+            container.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isEditMode, validatedLayouts]);
+
+    // Auto-focus optimización
+    useEffect(() => {
+        if (isEditMode && gridContainerRef.current) {
+            const timeoutId = setTimeout(() => {
+                const firstWidget = gridContainerRef.current?.querySelector<HTMLElement>('.react-grid-item [tabindex="0"]');
+                if (firstWidget) {
+                    firstWidget.focus();
+                }
+            }, 100);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [isEditMode]);
+
+    const handleLayoutChange = useCallback((newLayout: Layout[], newLayouts: Layouts) => {
         try {
             const validLayout = newLayout.filter(isValidLayout);
             const validLayouts: Layouts = {};
@@ -226,11 +263,11 @@ export const DashboardGrid = ({
             
             // Apply responsive optimizations to layout changes
             const optimized = optimizeLayoutForMobile(validLayouts);
-            onLayoutChange(validLayout, optimized);
+            debouncedLayoutChange(validLayout, optimized);
         } catch (error) {
             // Silent error handling - layout changes are non-critical
         }
-    };
+    }, [debouncedLayoutChange]);
 
     return (
         <div ref={gridContainerRef} role="grid" aria-label="Panel de control de widgets" tabIndex={-1}>
@@ -257,4 +294,6 @@ export const DashboardGrid = ({
             </ResponsiveGridLayout>
         </div>
     );
-};
+});
+
+DashboardGrid.displayName = 'DashboardGrid';

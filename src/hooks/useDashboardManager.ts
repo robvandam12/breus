@@ -1,4 +1,5 @@
 
+import { useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { Role } from '@/components/dashboard/widgetRegistry';
 import { useDashboardInitialization } from './useDashboardInitialization';
@@ -22,7 +23,9 @@ export const useDashboardManager = (currentRole: string) => {
         canRedo,
     } = useDashboardUndoRedo();
     
-    const { layouts: currentLayouts, widgets: currentWidgets } = dashboardState;
+    // Memoizar el estado actual para evitar re-renders innecesarios
+    const memoizedDashboardState = useMemo(() => dashboardState, [dashboardState]);
+    const { layouts: currentLayouts, widgets: currentWidgets } = memoizedDashboardState;
 
     const {
         isLoading,
@@ -36,7 +39,7 @@ export const useDashboardManager = (currentRole: string) => {
     } = useDashboardInitialization(currentRole as Role, resetDashboardState);
     
     const modes = useDashboardModes({
-        dashboardState,
+        dashboardState: memoizedDashboardState,
         setDashboardState,
         resetDashboardState,
         getInitialDashboardState,
@@ -47,20 +50,23 @@ export const useDashboardManager = (currentRole: string) => {
         currentWidgets,
         saveLayout,
         resetLayout,
-        onSaveSuccess: () => {
+        onSaveSuccess: useCallback(() => {
             modes.setIsEditMode(false);
             modes.setIsPreviewMode(false);
             modes.setPreviewSnapshot(null);
-        },
-        onResetSuccess: () => {
+        }, [modes]),
+        onResetSuccess: useCallback(() => {
             resetDashboardState(getInitialDashboardState()); 
             modes.setIsEditMode(false);
             modes.setIsPreviewMode(false);
             modes.setPreviewSnapshot(null);
-        }
+        }, [resetDashboardState, getInitialDashboardState, modes])
     });
 
-    const widgetManager = useWidgetManager({ dashboardState, setDashboardState });
+    const widgetManager = useWidgetManager({ 
+        dashboardState: memoizedDashboardState, 
+        setDashboardState 
+    });
 
     const templateManager = useTemplateManager({
         setDashboardState,
@@ -68,21 +74,22 @@ export const useDashboardManager = (currentRole: string) => {
         defaultWidgets
     });
 
-    const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
+    // Optimizar el callback de cambio de layout
+    const onLayoutChange = useCallback((newLayout: Layout[], newLayouts: Layouts) => {
         if (modes.isEditMode || modes.isPreviewMode) {
-            setDashboardState({
-                ...dashboardState,
+            setDashboardState(prevState => ({
+                ...prevState,
                 layouts: newLayouts,
-            });
+            }));
         }
-    };
+    }, [modes.isEditMode, modes.isPreviewMode, setDashboardState]);
 
-    const handleApplyPreviewChanges = () => {
+    const handleApplyPreviewChanges = useCallback(() => {
         if (modes.isPreviewMode) {
             modes.handleApplyPreviewChanges();
             layoutActions.handleSaveLayout();
         }
-    };
+    }, [modes, layoutActions]);
     
     useDashboardKeyboardShortcuts({
         isEditMode: modes.isEditMode,
@@ -91,8 +98,9 @@ export const useDashboardManager = (currentRole: string) => {
         redo,
         handleEnterPreview: modes.handleEnterPreview,
     });
-    
-    return {
+
+    // Memoizar el retorno para evitar re-renders de componentes consumidores
+    return useMemo(() => ({
         isLoading,
         isEditMode: modes.isEditMode,
         isPreviewMode: modes.isPreviewMode,
@@ -133,5 +141,10 @@ export const useDashboardManager = (currentRole: string) => {
         setIsTemplateSheetOpen: templateManager.setIsTemplateSheetOpen,
         undo,
         redo,
-    };
+    }), [
+        isLoading, modes, isSaving, isResetting, templateManager.isApplyingTemplate,
+        currentLayouts, currentWidgets, widgetManager, layoutActions,
+        canUndo, canRedo, defaultLayoutForRole, hasError,
+        onLayoutChange, handleApplyPreviewChanges, undo, redo
+    ]);
 };

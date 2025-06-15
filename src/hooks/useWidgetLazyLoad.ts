@@ -2,35 +2,42 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface UseWidgetLazyLoadOptions {
-  delay?: number;
   threshold?: number;
+  rootMargin?: string;
+  enabled?: boolean;
 }
 
 export const useWidgetLazyLoad = (options: UseWidgetLazyLoadOptions = {}) => {
-  const { delay = 100, threshold = 0.1 } = options;
-  const [isVisible, setIsVisible] = useState(false);
-  const [shouldLoad, setShouldLoad] = useState(false);
+  const { threshold = 0.1, rootMargin = '50px', enabled = true } = options;
+  const [isVisible, setIsVisible] = useState(!enabled);
+  const [hasLoaded, setHasLoaded] = useState(!enabled);
   const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!enabled || hasLoaded) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          // Add a small delay before actually loading the component
-          setTimeout(() => setShouldLoad(true), delay);
+          setHasLoaded(true);
           observer.disconnect();
         }
       },
-      { threshold }
+      { threshold, rootMargin }
     );
 
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
+    const currentElement = elementRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
     }
 
-    return () => observer.disconnect();
-  }, [delay, threshold]);
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [enabled, hasLoaded, threshold, rootMargin]);
 
-  return { elementRef, isVisible, shouldLoad };
+  return { isVisible, hasLoaded, elementRef };
 };
