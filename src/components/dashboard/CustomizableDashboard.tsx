@@ -13,6 +13,8 @@ import { WidgetCatalog } from './WidgetCatalog';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
 import { WidgetConfigSheet } from './WidgetConfigSheet';
 import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -78,6 +80,7 @@ export const CustomizableDashboard = () => {
     const [currentLayouts, setCurrentLayouts] = useState<Layouts>({});
     const [currentWidgets, setCurrentWidgets] = useState<any>(savedWidgets || defaultWidgets);
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
+    const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
 
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
@@ -154,14 +157,21 @@ export const CustomizableDashboard = () => {
     };
 
     const handleRemoveWidget = (widgetId: string) => {
+        setWidgetToRemove(widgetId);
+    };
+
+    const confirmRemoveWidget = () => {
+        if (!widgetToRemove) return;
         const newLayouts = { ...currentLayouts };
         Object.keys(newLayouts).forEach(bp => {
-            newLayouts[bp] = newLayouts[bp].filter(item => item.i !== widgetId);
+            newLayouts[bp] = newLayouts[bp].filter(item => item.i !== widgetToRemove);
         });
         setCurrentLayouts(newLayouts);
         const newWidgets = { ...currentWidgets };
-        delete newWidgets[widgetId];
+        delete newWidgets[widgetToRemove];
         setCurrentWidgets(newWidgets);
+        setWidgetToRemove(null);
+        toast({ title: "Widget eliminado", description: "El widget ha sido eliminado. Guarda el diseño para aplicar los cambios." });
     };
 
     const handleConfigureWidget = (widgetId: WidgetType) => {
@@ -230,47 +240,82 @@ export const CustomizableDashboard = () => {
     const currentWidgetIds = (currentLayouts.lg || defaultLayoutForRole || []).map(item => item.i);
 
     return (
-        <div className="space-y-4">
-             <div className="flex justify-end gap-2">
-                {isEditMode ? (
-                    <>
-                        <WidgetCatalog 
-                            onAddWidget={handleAddWidget}
-                            currentWidgets={currentWidgetIds}
-                        />
-                        <Button onClick={handleSaveLayout} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {isSaving ? 'Guardando...' : 'Guardar Diseño'}
-                        </Button>
-                    </>
-                ) : (
-                    <Button variant="outline" onClick={() => setIsEditMode(true)}>
-                        <Edit className="mr-2 h-4 w-4" /> Personalizar
-                    </Button>
-                )}
+        <TooltipProvider>
+            <div className="space-y-4">
+                 <div className="flex justify-end gap-2">
+                    {isEditMode ? (
+                        <>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <WidgetCatalog 
+                                            onAddWidget={handleAddWidget}
+                                            currentWidgets={currentWidgetIds}
+                                        />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Añadir nuevos widgets desde el catálogo.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button onClick={handleSaveLayout} disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                        {isSaving ? 'Guardando...' : 'Guardar Diseño'}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Guardar la disposición y configuración de tu dashboard.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </>
+                    ) : (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" onClick={() => setIsEditMode(true)}>
+                                    <Edit className="mr-2 h-4 w-4" /> Personalizar
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Activar modo edición para mover, quitar o configurar widgets.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+                </div>
+                <ResponsiveGridLayout
+                    layouts={currentLayouts}
+                    onLayoutChange={onLayoutChange}
+                    className="layout"
+                    breakpoints={breakpoints}
+                    cols={cols}
+                    rowHeight={30}
+                    isDraggable={isEditMode}
+                    isResizable={isEditMode}
+                    draggableHandle=".drag-handle"
+                    margin={[16, 16]}
+                    compactType="vertical"
+                >
+                    {generateDOM()}
+                </ResponsiveGridLayout>
+                <WidgetConfigSheet 
+                    isOpen={!!configuringWidgetId}
+                    onClose={() => setConfiguringWidgetId(null)}
+                    widgetId={configuringWidgetId}
+                    currentConfig={currentWidgets[configuringWidgetId || '']}
+                    onSave={handleWidgetConfigSave}
+                />
+                <ConfirmDialog
+                    open={!!widgetToRemove}
+                    onOpenChange={(open) => !open && setWidgetToRemove(null)}
+                    title="¿Quitar widget?"
+                    description="Esta acción quitará el widget de tu dashboard. Los cambios se guardarán cuando presiones 'Guardar Diseño'."
+                    onConfirm={confirmRemoveWidget}
+                    variant="destructive"
+                    confirmText="Sí, quitar"
+                />
             </div>
-            <ResponsiveGridLayout
-                layouts={currentLayouts}
-                onLayoutChange={onLayoutChange}
-                className="layout"
-                breakpoints={breakpoints}
-                cols={cols}
-                rowHeight={30}
-                isDraggable={isEditMode}
-                isResizable={isEditMode}
-                draggableHandle=".drag-handle"
-                margin={[16, 16]}
-                compactType="vertical"
-            >
-                {generateDOM()}
-            </ResponsiveGridLayout>
-            <WidgetConfigSheet 
-                isOpen={!!configuringWidgetId}
-                onClose={() => setConfiguringWidgetId(null)}
-                widgetId={configuringWidgetId}
-                currentConfig={currentWidgets[configuringWidgetId || '']}
-                onSave={handleWidgetConfigSave}
-            />
-        </div>
+        </TooltipProvider>
     );
 }
