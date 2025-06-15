@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Save, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
+import { WidgetCatalog } from './WidgetCatalog';
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -29,8 +30,12 @@ export const CustomizableDashboard = () => {
     const [currentLayout, setCurrentLayout] = useState<Layout[]>([]);
 
     useEffect(() => {
-        setCurrentLayout(layout);
-    }, [layout]);
+        if (layout && layout.length > 0) {
+            setCurrentLayout(layout);
+        } else if (!isLoading) {
+            setCurrentLayout(defaultLayout);
+        }
+    }, [layout, isLoading]);
 
     const onLayoutChange = (newLayout: Layout[]) => {
         if (isEditMode) {
@@ -50,6 +55,25 @@ export const CustomizableDashboard = () => {
         });
     }
 
+    const handleAddWidget = (widgetType: WidgetType) => {
+        const widgetConfig = widgetRegistry[widgetType];
+        if (!widgetConfig) return;
+
+        const newWidgetLayout: Layout = {
+            i: widgetType,
+            x: (currentLayout.length * 4) % 12, // A simple way to position new widgets
+            y: Infinity, // This will be placed at the bottom
+            w: widgetConfig.defaultLayout.w,
+            h: widgetConfig.defaultLayout.h,
+        };
+
+        setCurrentLayout([...currentLayout, newWidgetLayout]);
+    };
+
+    const handleRemoveWidget = (widgetId: string) => {
+        setCurrentLayout(currentLayout.filter(item => item.i !== widgetId));
+    };
+
     const generateDOM = () => {
         return (currentLayout || []).map((item) => {
             const widgetKey = item.i as WidgetType;
@@ -60,7 +84,12 @@ export const CustomizableDashboard = () => {
 
             return (
                 <div key={item.i} className={isEditMode ? 'border-2 border-dashed border-primary/50 rounded-lg' : ''}>
-                    <WidgetCard title={name} isDraggable={isEditMode}>
+                    <WidgetCard 
+                        title={name} 
+                        isDraggable={isEditMode}
+                        isStatic={item.static}
+                        onRemove={() => handleRemoveWidget(item.i)}
+                    >
                         <WidgetComponent />
                     </WidgetCard>
                 </div>
@@ -87,10 +116,16 @@ export const CustomizableDashboard = () => {
         <div className="space-y-4">
              <div className="flex justify-end gap-2">
                 {isEditMode ? (
-                    <Button onClick={handleSaveLayout} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        {isSaving ? 'Guardando...' : 'Guardar Diseño'}
-                    </Button>
+                    <>
+                        <WidgetCatalog 
+                            onAddWidget={handleAddWidget}
+                            currentWidgets={currentLayout.map(item => item.i)}
+                        />
+                        <Button onClick={handleSaveLayout} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            {isSaving ? 'Guardando...' : 'Guardar Diseño'}
+                        </Button>
+                    </>
                 ) : (
                     <Button variant="outline" onClick={() => setIsEditMode(true)}>
                         <Edit className="mr-2 h-4 w-4" /> Personalizar
@@ -107,6 +142,7 @@ export const CustomizableDashboard = () => {
                 isResizable={isEditMode}
                 draggableHandle=".drag-handle"
                 margin={[16, 16]}
+                compactType="vertical"
             >
                 {generateDOM()}
             </ReactGridLayout>
