@@ -44,7 +44,7 @@ const deleteDashboardLayout = async ({ userId }: { userId: string }) => {
     return true;
 };
 
-export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any) => {
+export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
@@ -88,7 +88,7 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
   const hasLayout = layout && ( (Array.isArray(layout) && layout.length > 0) || (typeof layout === 'object' && !Array.isArray(layout) && Object.keys(layout).length > 0) );
 
   return {
-    layout: hasLayout ? layout : defaultLayout,
+    layout: hasLayout ? layout : defaultLayouts,
     widgets: widgets || defaultWidgets,
     isLoading,
     isError,

@@ -4,7 +4,7 @@ import { Layouts } from 'react-grid-layout';
 import { useDashboardTemplates } from './useDashboardTemplates';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { Role } from '@/components/dashboard/widgetRegistry';
-import { getLayoutForRole } from '@/components/dashboard/layouts';
+import { getLayoutsForRole } from '@/components/dashboard/layouts';
 import { filterLayoutsByRole } from '@/utils/dashboardUtils';
 
 interface DashboardState {
@@ -17,16 +17,16 @@ const defaultWidgets = {};
 export const useDashboardInitialization = (currentRole: Role, resetDashboardState: (state: DashboardState) => void) => {
     const { templates, isLoading: isLoadingTemplates } = useDashboardTemplates();
 
-    const defaultLayoutAndWidgets = useMemo(() => {
+    const defaultLayoutsAndWidgets = useMemo(() => {
         const template = templates.find(t => t.type === 'system' && t.role_target === currentRole);
         if (template && template.layout_config) {
             return {
-                layout: template.layout_config.lg || [],
+                layouts: template.layout_config,
                 widgets: template.widget_configs || defaultWidgets
             };
         }
         return {
-            layout: getLayoutForRole(currentRole),
+            layouts: getLayoutsForRole(currentRole),
             widgets: defaultWidgets
         };
     }, [templates, currentRole]);
@@ -39,7 +39,7 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
         isSaving, 
         resetLayout, 
         isResetting 
-    } = useDashboardLayout(defaultLayoutAndWidgets.layout, defaultLayoutAndWidgets.widgets);
+    } = useDashboardLayout(defaultLayoutsAndWidgets.layouts, defaultLayoutsAndWidgets.widgets);
 
     const [isInitialized, setIsInitialized] = useState(false);
 
@@ -63,7 +63,7 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
     return {
         isLoading: !isInitialized,
         getInitialDashboardState,
-        defaultLayoutForRole: defaultLayoutAndWidgets.layout,
+        defaultLayoutForRole: defaultLayoutsAndWidgets.layouts.lg || [],
         saveLayout,
         isSaving,
         resetLayout,
