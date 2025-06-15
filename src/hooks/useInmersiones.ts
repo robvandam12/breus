@@ -1,17 +1,15 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineSync } from './useOfflineSync';
 import { useEffect } from "react";
-import type { Inmersion } from "@/types/inmersion";
+import type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData } from "@/types/inmersion";
 import { getOperationCompleteData, validateOperationDocuments } from './useOperacionInfo';
 import { useInmersionSecurity } from './useInmersionSecurity';
 import { parseDiveLog } from "@/utils/diveLogParser";
 
 export { validateOperationDocuments };
-export type { ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData } from "@/types/inmersion";
-export type { Inmersion };
+export type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData };
 
 export const useInmersiones = (operacionId?: string) => {
   const queryClient = useQueryClient();

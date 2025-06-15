@@ -1,3 +1,6 @@
+
+import type { SecurityAlert } from './security';
+
 export interface Inmersion {
   inmersion_id: string;
   codigo: string;
@@ -30,6 +33,7 @@ export interface Inmersion {
   current_depth?: number | null;
   planned_bottom_time?: number | null;
   depth_history?: Array<{ depth: number; timestamp: string }>;
+  security_alerts?: SecurityAlert[];
 }
 
 export interface ValidationStatus {
