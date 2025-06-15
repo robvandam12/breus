@@ -29,6 +29,8 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
   };
   
   const sortedOperaciones = useMemo(() => {
+    if (!operaciones || operaciones.length === 0) return [];
+    
     let sortableItems = [...operaciones];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
@@ -64,7 +66,7 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
   const rowVirtualizer = useVirtualizer({
     count: sortedOperaciones.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 65,
+    estimateSize: () => 80,
     overscan: 5,
   });
 
@@ -94,7 +96,7 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
     { key: 'fecha_inicio', label: 'Fecha Inicio' },
   ];
 
-  if (operaciones.length === 0) {
+  if (!operaciones || operaciones.length === 0) {
     return (
       <div className="text-center py-16 bg-card rounded-lg border border-border">
         <ListX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -105,30 +107,37 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
   }
 
   return (
-    <div ref={parentRef} className="h-[70vh] overflow-auto rounded-lg border border-border bg-card">
-      <table className="w-full caption-bottom text-sm" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-        <TableHeader className="sticky top-0 bg-muted/50 z-10 backdrop-blur supports-[backdrop-filter]:bg-muted/50">
-          <TableRow className="border-b border-border">
-            {columns.map(col => (
-               <TableHead 
-                 key={col.key} 
-                 onClick={() => requestSort(col.key)} 
-                 className="cursor-pointer select-none hover:bg-muted/70 transition-colors text-muted-foreground font-medium px-4 py-3"
-               >
-                 <div className="flex items-center">
-                   {col.label}
-                   {renderSortArrow(col.key)}
-                 </div>
-               </TableHead>
-            ))}
-            <TableHead className="text-right text-muted-foreground font-medium px-4 py-3">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="rounded-lg border border-border bg-card">
+      <div 
+        ref={parentRef} 
+        className="h-[600px] overflow-auto"
+        style={{ contain: 'strict' }}
+      >
+        <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+          {/* Header fijo */}
+          <div className="sticky top-0 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/95 z-10 border-b border-border">
+            <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted-foreground">
+              {columns.map(col => (
+                <div 
+                  key={col.key} 
+                  onClick={() => requestSort(col.key)} 
+                  className="cursor-pointer select-none hover:text-foreground transition-colors flex items-center"
+                >
+                  {col.label}
+                  {renderSortArrow(col.key)}
+                </div>
+              ))}
+              <div className="text-right">Acciones</div>
+            </div>
+          </div>
+
+          {/* Filas virtualizadas */}
           {rowVirtualizer.getVirtualItems().map(virtualItem => {
             const operacion = sortedOperaciones[virtualItem.index];
+            if (!operacion) return null;
+            
             return (
-              <TableRow
+              <div
                 key={operacion.id}
                 style={{
                   position: 'absolute',
@@ -136,53 +145,55 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
                   left: 0,
                   width: '100%',
                   height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
+                  transform: `translateY(${virtualItem.start + 60}px)`, // +60 para el header
                 }}
-                className="hover:bg-muted/50 transition-colors border-b border-border"
+                className="grid grid-cols-7 gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border items-center"
               >
-                <TableCell className="px-4 py-3">
-                  <div className="font-medium text-foreground">{operacion.codigo}</div>
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  <div className="font-medium text-foreground">{operacion.nombre}</div>
+                <div className="font-medium text-foreground text-sm">
+                  {operacion.codigo}
+                </div>
+                
+                <div className="min-w-0">
+                  <div className="font-medium text-foreground text-sm truncate">
+                    {operacion.nombre}
+                  </div>
                   {operacion.tareas && (
-                    <div className="text-sm text-muted-foreground truncate max-w-xs mt-1">
+                    <div className="text-xs text-muted-foreground truncate mt-1">
                       {operacion.tareas}
                     </div>
                   )}
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  <div className="text-sm text-foreground">
-                    {operacion.salmoneras?.nombre || 'No asignada'}
-                  </div>
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  <div className="text-sm text-foreground">
-                    {operacion.sitios?.nombre || 'No asignado'}
-                  </div>
-                </TableCell>
-                <TableCell className="px-4 py-3">
+                </div>
+                
+                <div className="text-sm text-foreground">
+                  {operacion.salmoneras?.nombre || 'No asignada'}
+                </div>
+                
+                <div className="text-sm text-foreground">
+                  {operacion.sitios?.nombre || 'No asignado'}
+                </div>
+                
+                <div>
                   <Badge className={getEstadoBadgeColor(operacion.estado)} variant="outline">
                     {operacion.estado}
                   </Badge>
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  <div className="text-sm text-foreground">
-                    {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right px-4 py-3">
+                </div>
+                
+                <div className="text-sm text-foreground">
+                  {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                </div>
+                
+                <div className="flex justify-end">
                   <OperacionesActions
                     onView={() => onViewDetail(operacion)}
                     onEdit={() => onEdit(operacion)}
                     onDelete={() => onDelete(operacion.id)}
                   />
-                </TableCell>
-              </TableRow>
+                </div>
+              </div>
             );
           })}
-        </TableBody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 };
