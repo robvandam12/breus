@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Widget Components (Lazy Loaded)
@@ -48,6 +49,7 @@ export type WidgetType =
 
 export interface WidgetConfig {
   name: string;
+  description: string;
   component: React.LazyExoticComponent<React.ComponentType<any>> | React.ComponentType<any>;
   skeleton: React.ComponentType;
   configComponent?: React.ComponentType<any>;
@@ -55,13 +57,14 @@ export interface WidgetConfig {
     w: number;
     h: number;
   };
-  isHeavy?: boolean; // New property for performance optimization
+  isHeavy?: boolean;
   category?: 'metrics' | 'alerts' | 'actions' | 'status' | 'content';
 }
 
 export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   'kpi-cards': {
     name: 'KPIs Principales',
+    description: 'Indicadores clave de rendimiento del sistema',
     component: KpiCardsWidget,
     skeleton: KpiCardsWidgetSkeleton,
     defaultLayout: { w: 12, h: 4 },
@@ -69,14 +72,16 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'stats-chart': {
     name: 'Gráfico de Estadísticas',
+    description: 'Visualización de datos estadísticos en tiempo real',
     component: StatsChartWidget,
     skeleton: StatsChartWidgetSkeleton,
     defaultLayout: { w: 8, h: 8 },
-    isHeavy: true, // Charts are heavy components
+    isHeavy: true,
     category: 'metrics'
   },
   'upcoming-operations': {
     name: 'Próximas Operaciones',
+    description: 'Lista de operaciones programadas próximamente',
     component: UpcomingOperationsWidget,
     skeleton: UpcomingOperationsWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
@@ -84,6 +89,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'my-immersions': {
     name: 'Mis Inmersiones',
+    description: 'Resumen de tus inmersiones recientes',
     component: MyImmersionsWidget,
     skeleton: MyImmersionsWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
@@ -91,6 +97,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'quick-actions': {
     name: 'Acciones Rápidas',
+    description: 'Acceso directo a funciones frecuentes',
     component: QuickActionsWidget,
     skeleton: GenericWidgetSkeleton,
     defaultLayout: { w: 4, h: 6 },
@@ -98,6 +105,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'security-alerts': {
     name: 'Alertas de Seguridad',
+    description: 'Monitoreo de alertas críticas del sistema',
     component: SecurityAlertsWidget,
     skeleton: SecurityAlertsWidgetSkeleton,
     defaultLayout: { w: 6, h: 8 },
@@ -105,6 +113,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'team-status': {
     name: 'Estado del Equipo',
+    description: 'Estado actual de los miembros del equipo',
     component: TeamStatusWidget,
     skeleton: GenericWidgetSkeleton,
     configComponent: TeamStatusWidgetConfig,
@@ -113,6 +122,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'weather': {
     name: 'Clima',
+    description: 'Condiciones meteorológicas actuales',
     component: WeatherWidget,
     skeleton: WeatherWidgetSkeleton,
     defaultLayout: { w: 4, h: 4 },
@@ -120,14 +130,16 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'calendar': {
     name: 'Calendario',
+    description: 'Vista de eventos y citas programadas',
     component: CalendarWidget,
     skeleton: CalendarWidgetSkeleton,
     defaultLayout: { w: 8, h: 8 },
-    isHeavy: true, // Calendar with many events can be heavy
+    isHeavy: true,
     category: 'content'
   },
   'equipment-status': {
     name: 'Estado de Equipos',
+    description: 'Monitoreo del estado de equipos de buceo',
     component: EquipmentStatusWidget,
     skeleton: EquipmentStatusWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
@@ -135,14 +147,16 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'global-metrics': {
     name: 'Métricas Globales',
+    description: 'Métricas generales del sistema',
     component: GlobalMetricsWidget,
     skeleton: GenericWidgetSkeleton,
     defaultLayout: { w: 12, h: 6 },
-    isHeavy: true, // Global metrics involve complex calculations
+    isHeavy: true,
     category: 'metrics'
   },
   'alerts-panel': {
     name: 'Panel de Alertas',
+    description: 'Centro de control de alertas del sistema',
     component: AlertsPanelWidget,
     skeleton: GenericWidgetSkeleton,
     configComponent: AlertsPanelWidgetConfig,
@@ -151,6 +165,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
   },
   'notifications': {
     name: 'Notificaciones',
+    description: 'Centro de notificaciones del usuario',
     component: NotificationWidget,
     skeleton: NotificationWidgetSkeleton,
     defaultLayout: { w: 4, h: 8 },
