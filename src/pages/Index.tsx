@@ -1,11 +1,8 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { AdminSalmoneraView } from "@/components/dashboard/AdminSalmoneraView";
 import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
-import { BuzoView } from "@/components/dashboard/BuzoView";
 import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
 import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
@@ -117,22 +114,12 @@ export default function Index() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col">
-          <Header 
-            title={getDashboardTitle()} 
-            subtitle={getDashboardSubtitle()} 
-            icon={BarChart3} 
-          />
-          <div className="flex-1 overflow-auto">
-            <div className="p-6">
-              {getDashboardContent()}
-            </div>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <MainLayout
+      title={getDashboardTitle()}
+      subtitle={getDashboardSubtitle()}
+      icon={BarChart3}
+    >
+      {getDashboardContent()}
+    </MainLayout>
   );
 }
