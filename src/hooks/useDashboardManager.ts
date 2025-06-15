@@ -308,6 +308,7 @@ export const useDashboardManager = (currentRole: string) => {
         isTemplateSheetOpen,
         canUndo,
         canRedo,
+        defaultLayoutForRole: defaultLayoutAndWidgets.layout,
         
         onLayoutChange,
         handleToggleEdit,
