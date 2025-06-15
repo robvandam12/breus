@@ -1,10 +1,11 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Calendar, Users, CheckCircle, AlertTriangle } from "lucide-react";
-import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
+import { InmersionWizard } from '@/components/inmersion/InmersionWizard';
 import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
 import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
 import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
@@ -116,13 +117,13 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
 
       {/* Dialogs */}
       <Dialog open={showCreateInmersion} onOpenChange={setShowCreateInmersion}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Nueva Inmersión</DialogTitle>
           </DialogHeader>
-          <CreateInmersionForm
-            defaultOperacionId={operacionId}
-            onSubmit={handleCreateInmersion}
+          <InmersionWizard
+            operationId={operacionId}
+            onComplete={handleCreateInmersion}
             onCancel={() => setShowCreateInmersion(false)}
           />
         </DialogContent>
