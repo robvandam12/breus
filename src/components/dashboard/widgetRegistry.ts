@@ -166,7 +166,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     defaultLayout: { w: 12, h: 6 },
     isHeavy: true,
     category: 'metrics',
-    roles: ['admin_servicio', 'superuser']
+    roles: ['admin_servicio', 'superuser', 'admin_salmonera']
   },
   'alerts-panel': {
     name: 'Panel de Alertas',
