@@ -10,9 +10,12 @@ import { NotificationToasts } from "@/components/dashboard/NotificationToasts";
 import { PerformanceMetrics } from "@/components/dashboard/PerformanceMetrics";
 import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Dashboard() {
-  const { stats, operations } = useDashboardData();
+  const { stats, isLoading: statsLoading } = useDashboardStats();
+  const { operations, isLoading: operationsLoading } = useDashboardData();
 
   const kpiData = [
     {
@@ -62,18 +65,27 @@ export function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {kpiData.map((kpi, index) => (
-          <div key={kpi.title} className="animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
-            <KPICard
-              title={kpi.title}
-              value={kpi.value}
-              change={kpi.change}
-              description={kpi.description}
-              icon={kpi.icon}
-              className="ios-card hover:scale-105 transition-transform duration-200"
-            />
-          </div>
-        ))}
+        {statsLoading ? (
+          <>
+            <Skeleton className="h-36 ios-card" />
+            <Skeleton className="h-36 ios-card" />
+            <Skeleton className="h-36 ios-card" />
+            <Skeleton className="h-36 ios-card" />
+          </>
+        ) : (
+          kpiData.map((kpi, index) => (
+            <div key={kpi.title} className="animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
+              <KPICard
+                title={kpi.title}
+                value={kpi.value}
+                change={kpi.change}
+                description={kpi.description}
+                icon={kpi.icon}
+                className="ios-card hover:scale-105 transition-transform duration-200"
+              />
+            </div>
+          ))
+        )}
       </div>
 
       {/* Performance Metrics */}
@@ -86,7 +98,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Operations and Actions */}
         <div className="space-y-6">
-          <UpcomingOperations operations={operations} />
+          {operationsLoading ? <Skeleton className="h-72 rounded-xl" /> : <UpcomingOperations operations={operations} />}
           <QuickActions />
         </div>
 
