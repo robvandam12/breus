@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Filter, BarChart3, Search } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Download, Filter, BarChart3, Search, Activity } from "lucide-react";
 import { SecurityAnalysisReport } from "@/components/reportes/SecurityAnalysisReport";
 import { ImmersionAnalysisReport } from "@/components/reportes/ImmersionAnalysisReport";
 import { GlobalFiltersCard } from "@/components/reportes/GlobalFiltersCard";
@@ -11,6 +12,7 @@ import { ComplianceChart } from "@/components/reportes/ComplianceChart";
 import { FormStatusChart } from "@/components/reportes/FormStatusChart";
 import { DailyImmersionsChart } from "@/components/reportes/DailyImmersionsChart";
 import { ExpiringPermits } from "@/components/reportes/ExpiringPermits";
+import { MultiXOperationalReport } from "@/components/reportes/MultiXOperationalReport";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 const Reportes = () => {
@@ -45,22 +47,45 @@ const Reportes = () => {
       icon={BarChart3}
       headerChildren={headerActions}
     >
-      <div className="space-y-6">
-        <SecurityAnalysisReport />
-        
-        <ImmersionAnalysisReport />
-        
-        <GlobalFiltersCard />
-        <MainKPIs />
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="multix" className="flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            MultiX Operativo
+          </TabsTrigger>
+          <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
+          <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+        </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ComplianceChart />
-          <FormStatusChart />
-        </div>
+        <TabsContent value="general" className="space-y-6">
+          <GlobalFiltersCard />
+          <MainKPIs />
 
-        <DailyImmersionsChart />
-        <ExpiringPermits />
-      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ComplianceChart />
+            <FormStatusChart />
+          </div>
+
+          <DailyImmersionsChart />
+          <ExpiringPermits />
+        </TabsContent>
+
+        <TabsContent value="multix" className="space-y-6">
+          <MultiXOperationalReport />
+        </TabsContent>
+
+        <TabsContent value="seguridad" className="space-y-6">
+          <SecurityAnalysisReport />
+        </TabsContent>
+
+        <TabsContent value="inmersiones" className="space-y-6">
+          <ImmersionAnalysisReport />
+        </TabsContent>
+      </Tabs>
     </MainLayout>
   );
 };
