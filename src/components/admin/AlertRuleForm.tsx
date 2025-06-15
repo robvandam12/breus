@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -169,7 +168,7 @@ export const AlertRuleForm = ({ isOpen, onClose, onSave, rule }: AlertRuleFormPr
                         {errors.escalation_policy?.levels?.[index]?.after_minutes && <p className="text-red-500 text-sm mt-1">{errors.escalation_policy.levels[index].after_minutes.message}</p>}
                     </div>
                     <div>
-                        <Label className="text-sm">Canales (separados por coma)</Label>
+                        <Label className="text-sm">Canales (ej: push, email)</Label>
                         <Input placeholder="push,email" {...register(`escalation_policy.levels.${index}.channels`)} />
                         {errors.escalation_policy?.levels?.[index]?.channels && <p className="text-red-500 text-sm mt-1">{errors.escalation_policy.levels[index].channels.message}</p>}
                     </div>

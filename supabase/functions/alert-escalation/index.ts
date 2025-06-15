@@ -88,34 +88,70 @@ serve(async (req) => {
                     last_escalated_at: new Date().toISOString()
                 });
                 
-                const { data: usersToNotify, error: userError } = await supabaseAdmin
+                const { data: usersToNotifyData, error: userError } = await supabaseAdmin
                     .from('usuario')
-                    .select('usuario_id')
+                    .select('usuario_id, email')
                     .in('rol', escalationConfig.notify_roles);
                 
                 if (userError) {
                     console.error(`Error fetching users for roles ${escalationConfig.notify_roles}:`, userError);
                     continue;
                 }
+                
+                const usersToNotify = usersToNotifyData || [];
 
-                if (usersToNotify && usersToNotify.length > 0) {
+                if (usersToNotify.length > 0) {
                     const inmersionCode = alert.inmersion?.codigo || alert.details?.inmersion_code || 'N/A';
-                    const title = `🚨 Alerta Escalada (Nivel ${newEscalationLevel}) - Inmersión ${inmersionCode}`;
-                    const message = `La alerta de tipo "${alert.type}" no ha sido reconocida y necesita atención inmediata.`;
 
-                    for (const user of usersToNotify) {
-                        notificationsToInsert.push({
-                            user_id: user.usuario_id,
-                            type: 'emergency',
-                            title,
-                            message,
-                            metadata: {
-                                security_alert_id: alert.id,
-                                inmersion_id: alert.inmersion_id,
-                                operacion_id: alert.inmersion?.operacion_id,
-                                link: '/dashboard', 
-                            }
-                        });
+                    // Handle PUSH notifications (in-app)
+                    if (escalationConfig.channels.includes('push')) {
+                        const title = `🚨 Alerta Escalada (Nivel ${newEscalationLevel}) - Inmersión ${inmersionCode}`;
+                        const message = `La alerta de tipo "${alert.type.replace(/_/g, ' ')}" no ha sido reconocida y necesita atención inmediata.`;
+
+                        for (const user of usersToNotify) {
+                            notificationsToInsert.push({
+                                user_id: user.usuario_id,
+                                type: 'emergency',
+                                title,
+                                message,
+                                metadata: {
+                                    security_alert_id: alert.id,
+                                    inmersion_id: alert.inmersion_id,
+                                    operacion_id: alert.inmersion?.operacion_id,
+                                    link: '/admin/alerts-log',
+                                }
+                            });
+                        }
+                    }
+
+                    // Handle EMAIL notifications
+                    if (escalationConfig.channels.includes('email')) {
+                        const recipients = usersToNotify.map(u => u.email).filter(Boolean);
+                        if (recipients.length > 0) {
+                            const emailPayload = {
+                                recipients,
+                                alert: {
+                                    id: alert.id,
+                                    type: alert.type,
+                                    priority: alert.priority,
+                                    details: alert.details,
+                                    inmersion_code: inmersionCode,
+                                    escalation_level: newEscalationLevel,
+                                }
+                            };
+                            
+                            supabaseAdmin.functions.invoke('send-alert-email', {
+                                body: emailPayload
+                            }).then(({ error: invokeError }) => {
+                                if (invokeError) {
+                                    console.error(`Error invoking send-alert-email for alert ${alert.id}:`, invokeError);
+                                } else {
+                                    console.log(`Email notification process initiated for alert ${alert.id} to ${recipients.join(', ')}.`);
+                                }
+                            });
+                        } else {
+                           console.log(`Email channel configured for alert ${alert.id}, but no valid recipient emails found for roles: ${escalationConfig.notify_roles.join(', ')}.`);
+                        }
                     }
                 }
             }
@@ -131,7 +167,7 @@ serve(async (req) => {
             if (insertError) throw insertError;
         }
         
-        const successMessage = `Proceso completado. Se escalaron ${alertsToUpdate.length} alertas y se crearon ${notificationsToInsert.length} notificaciones.`;
+        const successMessage = `Proceso completado. Se escalaron ${alertsToUpdate.length} alertas y se crearon ${notificationsToInsert.length} notificaciones push.`;
         console.log(successMessage);
 
         return new Response(JSON.stringify({ message: successMessage }), {
