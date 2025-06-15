@@ -6,7 +6,7 @@ export const cols = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 };
 
 // Utility function to ensure optimal spacing for different screen sizes
 const ensureOptimalSpacing = (layouts: Layout[], breakpoint: string): Layout[] => {
-    return layouts.map((layout, index) => {
+    return layouts.map((layout) => {
         // More compact heights for better space utilization
         const minHeight = layout.static ? 1 : 2;
         
@@ -37,7 +37,7 @@ const createResponsiveLayout = (baseLayout: Layout[], targetCols: number, breakp
     const scaleFactor = targetCols / 12;
     let currentY = 0;
     
-    return baseLayout.map(item => {
+    return baseLayout.map((item, index) => {
         const scaledWidth = Math.max(1, Math.floor(item.w * scaleFactor));
         const adjustedWidth = Math.min(scaledWidth, targetCols);
         

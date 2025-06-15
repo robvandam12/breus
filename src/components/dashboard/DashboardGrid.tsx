@@ -5,6 +5,7 @@ import { widgetRegistry } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { LazyWidget } from './LazyWidget';
 import { breakpoints, cols } from './layouts';
+import { GenericWidgetSkeleton } from './widgets/skeletons/GenericWidgetSkeleton';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -46,7 +47,11 @@ export const DashboardGrid = ({
             onConfigure={onConfigureWidget ? () => onConfigureWidget(item.i) : undefined}
             isStatic={item.static}
           >
-            <LazyWidget>
+            <LazyWidget
+              skeleton={<GenericWidgetSkeleton />}
+              isHeavy={false}
+              priority="normal"
+            >
               <WidgetComponent {...widgetProps} />
             </LazyWidget>
           </WidgetCard>
@@ -60,12 +65,12 @@ export const DashboardGrid = ({
     layouts,
     breakpoints,
     cols,
-    rowHeight: 60,
+    rowHeight: 50,
     isDraggable: isEditMode,
     isResizable: isEditMode,
     onLayoutChange,
-    margin: [8, 8] as [number, number],
-    containerPadding: [8, 8] as [number, number],
+    margin: [4, 4] as [number, number],
+    containerPadding: [4, 4] as [number, number],
     useCSSTransforms: true,
     preventCollision: false,
     compactType: 'vertical' as const,

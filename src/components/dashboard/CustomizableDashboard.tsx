@@ -126,7 +126,6 @@ export const CustomizableDashboard = () => {
                             onLayoutChange={onLayoutChange}
                             isEditMode={isEditMode || isPreviewMode}
                             widgets={currentWidgets || {}}
-                            defaultLayout={defaultLayoutForRole || []}
                             onRemoveWidget={handleRemoveWidget}
                             onConfigureWidget={handleConfigureWidget}
                         />
