@@ -676,6 +676,41 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout_config: Json
+          updated_at: string
+          user_id: string
+          widget_configs: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout_config?: Json
+          updated_at?: string
+          user_id: string
+          widget_configs?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout_config?: Json
+          updated_at?: string
+          user_id?: string
+          widget_configs?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_layouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
       domain_event: {
         Row: {
           aggregate_id: string

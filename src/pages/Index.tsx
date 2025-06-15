@@ -1,7 +1,4 @@
-
 import { MainLayout } from "@/components/layout/MainLayout";
-import { AdminSalmoneraView } from "@/components/dashboard/AdminSalmoneraView";
-import { AdminServicioView } from "@/components/dashboard/AdminServicioView";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
 import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
@@ -10,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
@@ -64,11 +62,9 @@ export default function Index() {
 
     switch (profile?.role) {
       case 'superuser':
-        return <AdminSalmoneraView />;
       case 'admin_salmonera':
-        return <AdminSalmoneraView />;
       case 'admin_servicio':
-        return <AdminServicioView />;
+        return <CustomizableDashboard />;
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
