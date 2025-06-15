@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Users, Search, UserCheck, UserX, Settings } from "lucide-react";
+import { Users, Search } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
 
 const PersonalPoolAdmin = () => {
