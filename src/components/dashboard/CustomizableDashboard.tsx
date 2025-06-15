@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import RGL, { WidthProvider, Layout } from 'react-grid-layout';
+import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, Loader2, Settings } from 'lucide-react';
+import { Edit, Save, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { WidgetCatalog } from './WidgetCatalog';
@@ -14,7 +14,7 @@ import { useAuthRoles } from '@/hooks/useAuthRoles';
 import { WidgetConfigSheet } from './WidgetConfigSheet';
 import { motion } from 'framer-motion';
 
-const ReactGridLayout = WidthProvider(RGL);
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const baseLayout: Layout[] = [
   { i: 'kpi_cards', x: 0, y: 0, w: 12, h: 2, static: true },
@@ -66,23 +66,40 @@ const getLayoutForRole = (role: string): Layout[] => {
 
 const defaultWidgets = {};
 
+const breakpoints = { lg: 1200, md: 834, sm: 640, xs: 480, xxs: 0 };
+const cols = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 };
+
 export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
     const defaultLayoutForRole = getLayoutForRole(currentRole);
 
     const { layout, widgets: savedWidgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [currentLayout, setCurrentLayout] = useState<Layout[]>([]);
+    const [currentLayouts, setCurrentLayouts] = useState<Layouts>({});
     const [currentWidgets, setCurrentWidgets] = useState<any>(savedWidgets || defaultWidgets);
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
 
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
-        if (layout && layout.length > 0) {
-            const filteredLayout = layout.filter(item => widgetRegistry[item.i]);
-            setCurrentLayout(filteredLayout);
+        const filteredRoleLayout = roleLayout.filter(item => widgetRegistry[item.i]);
+
+        if (layout) {
+             if (Array.isArray(layout) && layout.length > 0) { // Old format, convert to new
+                const filteredLayout = layout.filter(item => widgetRegistry[item.i]);
+                setCurrentLayouts({ lg: filteredLayout });
+            } else if (typeof layout === 'object' && !Array.isArray(layout) && Object.keys(layout).length > 0) { // New format
+                const filteredLayouts = Object.entries(layout).reduce((acc, [key, value]) => {
+                    if(Array.isArray(value)) {
+                        acc[key] = value.filter(item => widgetRegistry[item.i]);
+                    }
+                    return acc;
+                }, {} as Layouts);
+                setCurrentLayouts(filteredLayouts);
+            } else { // Handles empty array or empty object from DB
+                setCurrentLayouts({ lg: filteredRoleLayout });
+            }
         } else if (!isLoading) {
-            setCurrentLayout(roleLayout);
+            setCurrentLayouts({ lg: filteredRoleLayout });
         }
     }, [layout, isLoading, currentRole]);
 
@@ -92,14 +109,14 @@ export const CustomizableDashboard = () => {
         }
     }, [savedWidgets]);
 
-    const onLayoutChange = (newLayout: Layout[]) => {
+    const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
         if (isEditMode) {
-            setCurrentLayout(newLayout);
+            setCurrentLayouts(newLayouts);
         }
     };
 
     const handleSaveLayout = () => {
-        saveLayout({ layout: currentLayout, widgets: currentWidgets }, {
+        saveLayout({ layout: currentLayouts, widgets: currentWidgets }, {
             onSuccess: () => {
                 toast({ title: "Diseño guardado", description: "Tu dashboard ha sido actualizado." });
                 setIsEditMode(false);
@@ -114,19 +131,34 @@ export const CustomizableDashboard = () => {
         const widgetConfig = widgetRegistry[widgetType];
         if (!widgetConfig) return;
 
-        const newWidgetLayout: Layout = {
-            i: widgetType,
-            x: (currentLayout.length * 4) % 12, // A simple way to position new widgets
-            y: Infinity, // This will be placed at the bottom
-            w: widgetConfig.defaultLayout.w,
-            h: widgetConfig.defaultLayout.h,
-        };
+        const newLayouts = { ...currentLayouts };
+        
+        if (Object.keys(newLayouts).length === 0) {
+            Object.keys(cols).forEach(bp => {
+                newLayouts[bp] = [];
+            });
+        }
+        
+        Object.keys(newLayouts).forEach(bp => {
+            const newWidgetItem: Layout = {
+                i: widgetType,
+                x: (newLayouts[bp].length * widgetConfig.defaultLayout.w) % (cols[bp] || 12),
+                y: Infinity, // This will be placed at the bottom
+                w: widgetConfig.defaultLayout.w,
+                h: widgetConfig.defaultLayout.h,
+            };
+            newLayouts[bp] = [...(newLayouts[bp] || []), newWidgetItem];
+        });
 
-        setCurrentLayout([...currentLayout, newWidgetLayout]);
+        setCurrentLayouts(newLayouts);
     };
 
     const handleRemoveWidget = (widgetId: string) => {
-        setCurrentLayout(currentLayout.filter(item => item.i !== widgetId));
+        const newLayouts = { ...currentLayouts };
+        Object.keys(newLayouts).forEach(bp => {
+            newLayouts[bp] = newLayouts[bp].filter(item => item.i !== widgetId);
+        });
+        setCurrentLayouts(newLayouts);
         const newWidgets = { ...currentWidgets };
         delete newWidgets[widgetId];
         setCurrentWidgets(newWidgets);
@@ -147,7 +179,8 @@ export const CustomizableDashboard = () => {
     };
 
     const generateDOM = () => {
-        return (currentLayout || []).map((item) => {
+        const layoutForDOM = currentLayouts.lg || currentLayouts.md || currentLayouts.sm || defaultLayoutForRole;
+        return (layoutForDOM || []).map((item) => {
             const widgetKey = item.i as WidgetType;
             if (!widgetRegistry[widgetKey]) {
                 return <div key={item.i}><WidgetCard title={`Error: Widget '${item.i}' no encontrado`}>Componente no registrado.</WidgetCard></div>;
@@ -194,6 +227,8 @@ export const CustomizableDashboard = () => {
         );
     }
 
+    const currentWidgetIds = (currentLayouts.lg || defaultLayoutForRole || []).map(item => item.i);
+
     return (
         <div className="space-y-4">
              <div className="flex justify-end gap-2">
@@ -201,7 +236,7 @@ export const CustomizableDashboard = () => {
                     <>
                         <WidgetCatalog 
                             onAddWidget={handleAddWidget}
-                            currentWidgets={currentLayout.map(item => item.i)}
+                            currentWidgets={currentWidgetIds}
                         />
                         <Button onClick={handleSaveLayout} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -214,11 +249,12 @@ export const CustomizableDashboard = () => {
                     </Button>
                 )}
             </div>
-            <ReactGridLayout
-                layout={currentLayout}
+            <ResponsiveGridLayout
+                layouts={currentLayouts}
                 onLayoutChange={onLayoutChange}
                 className="layout"
-                cols={12}
+                breakpoints={breakpoints}
+                cols={cols}
                 rowHeight={30}
                 isDraggable={isEditMode}
                 isResizable={isEditMode}
@@ -227,7 +263,7 @@ export const CustomizableDashboard = () => {
                 compactType="vertical"
             >
                 {generateDOM()}
-            </ReactGridLayout>
+            </ResponsiveGridLayout>
             <WidgetConfigSheet 
                 isOpen={!!configuringWidgetId}
                 onClose={() => setConfiguringWidgetId(null)}

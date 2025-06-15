@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import type { Layout } from 'react-grid-layout';
+import type { Layout, Layouts } from 'react-grid-layout';
 
 const fetchDashboardLayout = async (userId: string) => {
   const { data, error } = await supabase
@@ -17,12 +17,12 @@ const fetchDashboardLayout = async (userId: string) => {
   return data;
 };
 
-const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string, layout: Layout[], widgets: any }) => {
+const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string, layout: Layout[] | Layouts, widgets: any }) => {
     const { data, error } = await supabase
         .from('dashboard_layouts')
         .upsert({
             user_id: userId,
-            layout_config: layout as any, // FIX: Cast layout to 'any' to satisfy Supabase's Json type
+            layout_config: layout as any,
             widget_configs: widgets,
             updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
@@ -37,23 +37,25 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboardLayout', profile?.id], // FIX: Use profile.id instead of profile.usuario_id
-    queryFn: () => fetchDashboardLayout(profile!.id), // FIX: Use profile.id
-    enabled: !!profile?.id, // FIX: Use profile.id
+    queryKey: ['dashboardLayout', profile?.id],
+    queryFn: () => fetchDashboardLayout(profile!.id),
+    enabled: !!profile?.id,
   });
 
   const mutation = useMutation({
-    mutationFn: (newLayout: { layout: Layout[], widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newLayout }), // FIX: Use profile.id
+    mutationFn: (newConfig: { layout: Layout[] | Layouts, widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newConfig }),
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] }); // FIX: Use profile.id
+        queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
     },
   });
   
-  const layout = data?.layout_config as unknown as Layout[] | undefined; // FIX: Cast through unknown to avoid type error
+  const layout = data?.layout_config as any;
   const widgets = data?.widget_configs;
 
+  const hasLayout = layout && ( (Array.isArray(layout) && layout.length > 0) || (typeof layout === 'object' && !Array.isArray(layout) && Object.keys(layout).length > 0) );
+
   return {
-    layout: layout && layout.length > 0 ? layout : defaultLayout,
+    layout: hasLayout ? layout : defaultLayout,
     widgets: widgets || defaultWidgets,
     isLoading,
     isError,
