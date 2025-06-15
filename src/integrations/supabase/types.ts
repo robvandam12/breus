@@ -1203,6 +1203,189 @@ export type Database = {
           },
         ]
       }
+      multix: {
+        Row: {
+          codigo: string
+          created_at: string | null
+          estado: string | null
+          estado_puerto: string | null
+          fecha: string
+          firmado: boolean | null
+          hora_inicio: string | null
+          hora_termino: string | null
+          id: string
+          lugar_trabajo: string | null
+          matricula_nave: string | null
+          multix_data: Json | null
+          nave_maniobras: string | null
+          operacion_id: string | null
+          profundidad_max: number | null
+          progreso: number | null
+          team_be: string | null
+          team_bi: string | null
+          team_s: string | null
+          temperatura: number | null
+          tipo_formulario: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string | null
+          estado?: string | null
+          estado_puerto?: string | null
+          fecha: string
+          firmado?: boolean | null
+          hora_inicio?: string | null
+          hora_termino?: string | null
+          id?: string
+          lugar_trabajo?: string | null
+          matricula_nave?: string | null
+          multix_data?: Json | null
+          nave_maniobras?: string | null
+          operacion_id?: string | null
+          profundidad_max?: number | null
+          progreso?: number | null
+          team_be?: string | null
+          team_bi?: string | null
+          team_s?: string | null
+          temperatura?: number | null
+          tipo_formulario: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string | null
+          estado?: string | null
+          estado_puerto?: string | null
+          fecha?: string
+          firmado?: boolean | null
+          hora_inicio?: string | null
+          hora_termino?: string | null
+          id?: string
+          lugar_trabajo?: string | null
+          matricula_nave?: string | null
+          multix_data?: Json | null
+          nave_maniobras?: string | null
+          operacion_id?: string | null
+          profundidad_max?: number | null
+          progreso?: number | null
+          team_be?: string | null
+          team_bi?: string | null
+          team_s?: string | null
+          temperatura?: number | null
+          tipo_formulario?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multix_operacion_id_fkey"
+            columns: ["operacion_id"]
+            isOneToOne: false
+            referencedRelation: "operacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multix_dotacion: {
+        Row: {
+          apellido: string | null
+          contratista: boolean | null
+          created_at: string | null
+          equipo: string | null
+          hora_fin_buzo: string | null
+          hora_inicio_buzo: string | null
+          id: string
+          matricula: string | null
+          multix_id: string | null
+          nombre: string | null
+          orden: number | null
+          profundidad: number | null
+          rol: string
+        }
+        Insert: {
+          apellido?: string | null
+          contratista?: boolean | null
+          created_at?: string | null
+          equipo?: string | null
+          hora_fin_buzo?: string | null
+          hora_inicio_buzo?: string | null
+          id?: string
+          matricula?: string | null
+          multix_id?: string | null
+          nombre?: string | null
+          orden?: number | null
+          profundidad?: number | null
+          rol: string
+        }
+        Update: {
+          apellido?: string | null
+          contratista?: boolean | null
+          created_at?: string | null
+          equipo?: string | null
+          hora_fin_buzo?: string | null
+          hora_inicio_buzo?: string | null
+          id?: string
+          matricula?: string | null
+          multix_id?: string | null
+          nombre?: string | null
+          orden?: number | null
+          profundidad?: number | null
+          rol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multix_dotacion_multix_id_fkey"
+            columns: ["multix_id"]
+            isOneToOne: false
+            referencedRelation: "multix"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multix_equipos_superficie: {
+        Row: {
+          created_at: string | null
+          equipo_sup: string | null
+          horometro_fin: number | null
+          horometro_ini: number | null
+          id: string
+          matricula_eq: string | null
+          multix_id: string | null
+          orden: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipo_sup?: string | null
+          horometro_fin?: number | null
+          horometro_ini?: number | null
+          id?: string
+          matricula_eq?: string | null
+          multix_id?: string | null
+          orden?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          equipo_sup?: string | null
+          horometro_fin?: number | null
+          horometro_ini?: number | null
+          id?: string
+          matricula_eq?: string | null
+          multix_id?: string | null
+          orden?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multix_equipos_superficie_multix_id_fkey"
+            columns: ["multix_id"]
+            isOneToOne: false
+            referencedRelation: "multix"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_subscriptions: {
         Row: {
           channel: string

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,13 +62,12 @@ export const useAuthProvider = (): AuthContextType => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
+          await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
           setLoading(false);
@@ -80,6 +80,7 @@ export const useAuthProvider = (): AuthContextType => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       // Use manual typing for the usuario table query
       const { data, error } = await supabase
         .from('usuario')
@@ -105,6 +106,7 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
+        console.log('Profile loaded:', userProfile);
         setProfile(userProfile);
       }
     } catch (error) {
@@ -120,7 +122,6 @@ export const useAuthProvider = (): AuthContextType => {
   };
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -141,8 +142,6 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -2,6 +2,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AuthRouteWrapper } from "@/components/auth/AuthRouteWrapper";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DashboardWithSidebarSkeleton } from "@/components/dashboard/DashboardWithSidebarSkeleton";
 import { PageWithSidebarSkeleton } from "@/components/layout/PageWithSidebarSkeleton";
@@ -50,10 +51,22 @@ const FullPageLoader = () => (
 export const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      {/* Auth Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* Auth Routes with AuthRouteWrapper */}
+      <Route path="/login" element={
+        <AuthRouteWrapper>
+          <Login />
+        </AuthRouteWrapper>
+      } />
+      <Route path="/register" element={
+        <AuthRouteWrapper>
+          <Register />
+        </AuthRouteWrapper>
+      } />
+      <Route path="/forgot-password" element={
+        <AuthRouteWrapper>
+          <ForgotPassword />
+        </AuthRouteWrapper>
+      } />
       <Route path="/email-confirmation" element={<EmailConfirmation />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
