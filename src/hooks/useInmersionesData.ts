@@ -2,9 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Inmersion } from '@/types/inmersion';
-import type { InmersionCompleta } from '@/types/bitacoras';
 
-const getInmersionesCompletas = async (): Promise<InmersionCompleta[]> => {
+const getInmersionesCompletas = async (): Promise<Inmersion[]> => {
   const { data, error } = await supabase
     .from('inmersion')
     .select(`
@@ -30,7 +29,7 @@ export const useInmersionesData = () => {
     data: inmersiones = [], 
     isLoading: loadingInmersiones, 
     error: errorInmersiones 
-  } = useQuery<InmersionCompleta[]>({
+  } = useQuery<Inmersion[]>({
     queryKey: ['inmersionesCompletas'],
     queryFn: getInmersionesCompletas,
   });
