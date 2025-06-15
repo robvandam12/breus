@@ -1,8 +1,6 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
 import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
@@ -10,56 +8,55 @@ import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal"
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { List, MapPin, Grid3X3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
+import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const OperacionesManager = () => {
   const [activeTab, setActiveTab] = useState("table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const { operaciones, updateOperacion, deleteOperacion, checkCanDelete } = useOperaciones();
+  const { 
+    operaciones, 
+    isLoading,
+    updateOperacion, 
+    deleteOperacion, 
+    checkCanDelete 
+  } = useOperaciones();
+  
+  const {
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    filteredOperaciones
+  } = useOperacionesFilters(operaciones);
 
   const handleViewDetail = (operacion: any) => {
-    console.log('View detail for operation:', operacion);
     setSelectedOperacion(operacion);
     setShowDetailModal(true);
   };
 
   const handleEdit = async (operacion: any) => {
     try {
-      // Limpiar datos para evitar enviar relaciones
       const { id, sitios, contratistas, salmoneras, ...cleanData } = operacion;
-      
-      console.log('Updating operation with clean data:', cleanData);
-      
       await updateOperacion({ id, data: cleanData });
-      
       toast({
         title: "Operación actualizada",
         description: "La operación ha sido actualizada exitosamente.",
       });
     } catch (error: any) {
-      console.error('Error updating operation:', error);
-      
-      if (error?.code === 'PGRST204' && error?.message?.includes('contratistas')) {
-        toast({
-          title: "Error de datos",
-          description: "Error al actualizar la operación. Verifique los datos del contratista.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "No se pudo actualizar la operación.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la operación.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      // Verificar si se puede eliminar
       const { canDelete, reason } = await checkCanDelete(id);
-      
       if (!canDelete) {
         toast({
           title: "No se puede eliminar",
@@ -68,15 +65,12 @@ export const OperacionesManager = () => {
         });
         return;
       }
-      
       await deleteOperacion(id);
-      
       toast({
         title: "Operación eliminada",
         description: "La operación ha sido eliminada exitosamente.",
       });
     } catch (error) {
-      console.error('Error deleting operation:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la operación.",
@@ -86,7 +80,6 @@ export const OperacionesManager = () => {
   };
 
   const handleSelect = (operacion: any) => {
-    console.log('Select operation:', operacion.id);
     handleViewDetail(operacion);
   };
 
@@ -94,9 +87,29 @@ export const OperacionesManager = () => {
     setShowDetailModal(false);
     setSelectedOperacion(null);
   };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <Skeleton className="h-10 flex-1 min-w-64" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <OperacionesFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+      />
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="table" className="flex items-center gap-2">
@@ -115,7 +128,7 @@ export const OperacionesManager = () => {
         
         <TabsContent value="table">
           <OperacionesTable 
-            operaciones={operaciones}
+            operaciones={filteredOperaciones}
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -124,7 +137,7 @@ export const OperacionesManager = () => {
         
         <TabsContent value="cards">
           <OperacionCardView 
-            operaciones={operaciones}
+            operaciones={filteredOperaciones}
             onSelect={handleSelect}
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
@@ -134,7 +147,7 @@ export const OperacionesManager = () => {
         
         <TabsContent value="map">
           <OperacionesMapView 
-            operaciones={operaciones}
+            operaciones={filteredOperaciones}
             onSelect={handleSelect}
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
@@ -143,7 +156,6 @@ export const OperacionesManager = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Detail Modal */}
       {selectedOperacion && (
         <OperacionDetailModal 
           operacion={selectedOperacion}
