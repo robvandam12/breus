@@ -1,35 +1,48 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Index from "../pages/Index";
-import NotFound from "../pages/NotFound";
-import Salmoneras from "../pages/empresas/Salmoneras";
-import Sitios from "../pages/empresas/Sitios";
-import Contratistas from "../pages/empresas/Contratistas";
-import EquipoBuceo from "../pages/EquipoBuceo";
-import Operaciones from "../pages/operaciones/Operaciones";
-import HPT from "../pages/operaciones/HPT";
-import AnexoBravo from "../pages/operaciones/AnexoBravo";
-import Inmersiones from "../pages/operaciones/Inmersiones";
-import BitacorasSupervisor from "../pages/operaciones/BitacorasSupervisor";
-import BitacorasBuzo from "../pages/operaciones/BitacorasBuzo";
-import HPTFormularios from "../pages/formularios/HPTFormularios";
-import AnexoBravoFormularios from "../pages/formularios/AnexoBravoFormularios";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+
+// Auth components are loaded eagerly
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import EmailConfirmation from "../pages/auth/EmailConfirmation";
-import ProfileSetup from "../pages/ProfileSetup";
 import AuthCallback from "../pages/auth/AuthCallback";
-import Reportes from "../pages/Reportes";
-import Configuracion from "../pages/Configuracion";
-import AdminRoles from "../pages/admin/AdminRoles";
-import AdminSalmoneraPage from "../pages/admin/AdminSalmoneraPage";
-import UserManagement from "../pages/admin/UserManagement";
-import BuzoOnboardingPage from "../pages/BuzoOnboardingPage";
-import BuzoOperaciones from "../pages/buzo/BuzoOperaciones";
-import BuzoInmersiones from "../pages/buzo/BuzoInmersiones";
-import BuzoReportesPage from "../pages/buzo/BuzoReportesPage";
+
+// Lazy-loaded pages
+const Index = lazy(() => import("../pages/Index"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
+const Sitios = lazy(() => import("../pages/empresas/Sitios"));
+const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
+const EquipoBuceo = lazy(() => import("../pages/EquipoBuceo"));
+const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
+const HPT = lazy(() => import("../pages/operaciones/HPT"));
+const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
+const Inmersiones = lazy(() => import("../pages/operaciones/Inmersiones"));
+const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
+const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
+const HPTFormularios = lazy(() => import("../pages/formularios/HPTFormularios"));
+const AnexoBravoFormularios = lazy(() => import("../pages/formularios/AnexoBravoFormularios"));
+const ProfileSetup = lazy(() => import("../pages/ProfileSetup"));
+const Reportes = lazy(() => import("../pages/Reportes"));
+const Configuracion = lazy(() => import("../pages/Configuracion"));
+const AdminRoles = lazy(() => import("../pages/admin/AdminRoles"));
+const AdminSalmoneraPage = lazy(() => import("../pages/admin/AdminSalmoneraPage"));
+const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
+const BuzoOnboardingPage = lazy(() => import("../pages/BuzoOnboardingPage"));
+const BuzoOperaciones = lazy(() => import("../pages/buzo/BuzoOperaciones"));
+const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
+const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
+
+const FullPageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner text="Cargando página..." />
+  </div>
+);
 
 export const AppRoutes = () => (
   <BrowserRouter>
@@ -44,140 +57,190 @@ export const AppRoutes = () => (
       {/* Onboarding & Profile Setup */}
       <Route path="/onboarding" element={
         <ProtectedRoute>
-          <BuzoOnboardingPage />
+          <Suspense fallback={<FullPageLoader />}>
+            <BuzoOnboardingPage />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/profile-setup" element={
         <ProtectedRoute>
-          <ProfileSetup />
+          <Suspense fallback={<FullPageLoader />}>
+            <ProfileSetup />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Core Protected Routes */}
       <Route path="/" element={
         <ProtectedRoute>
-          <Index />
+          <Suspense fallback={<DashboardSkeleton />}>
+            <Index />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Empresa Routes */}
       <Route path="/empresas/salmoneras" element={
         <ProtectedRoute requiredRole="superuser">
-          <Salmoneras />
+          <Suspense fallback={<PageSkeleton />}>
+            <Salmoneras />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/empresas/sitios" element={
         <ProtectedRoute>
-          <Sitios />
+          <Suspense fallback={<PageSkeleton />}>
+            <Sitios />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/empresas/contratistas" element={
         <ProtectedRoute>
-          <Contratistas />
+          <Suspense fallback={<PageSkeleton />}>
+            <Contratistas />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Equipo Routes */}
       <Route path="/equipo-de-buceo" element={
         <ProtectedRoute>
-          <EquipoBuceo />
+          <Suspense fallback={<PageSkeleton />}>
+            <EquipoBuceo />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Operaciones Routes */}
       <Route path="/operaciones" element={
         <ProtectedRoute>
-          <Operaciones />
+          <Suspense fallback={<PageSkeleton />}>
+            <Operaciones />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
-          <HPT />
+          <Suspense fallback={<PageSkeleton />}>
+            <HPT />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/anexo-bravo" element={
         <ProtectedRoute>
-          <AnexoBravo />
+          <Suspense fallback={<PageSkeleton />}>
+            <AnexoBravo />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/inmersiones" element={
         <ProtectedRoute>
-          <Inmersiones />
+          <Suspense fallback={<PageSkeleton />}>
+            <Inmersiones />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Bitacoras Routes */}
       <Route path="/bitacoras/supervisor" element={
         <ProtectedRoute>
-          <BitacorasSupervisor />
+          <Suspense fallback={<PageSkeleton />}>
+            <BitacorasSupervisor />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/bitacoras/buzo" element={
         <ProtectedRoute>
-          <BitacorasBuzo />
+          <Suspense fallback={<PageSkeleton />}>
+            <BitacorasBuzo />
+          </Suspense>
         </ProtectedRoute>
       } />
 
       {/* Formularios Routes */}
       <Route path="/formularios/hpt" element={
         <ProtectedRoute>
-          <HPTFormularios />
+          <Suspense fallback={<PageSkeleton />}>
+            <HPTFormularios />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/formularios/anexo-bravo" element={
         <ProtectedRoute>
-          <AnexoBravoFormularios />
+          <Suspense fallback={<PageSkeleton />}>
+            <AnexoBravoFormularios />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Other Protected Routes */}
       <Route path="/reportes" element={
         <ProtectedRoute>
-          <Reportes />
+          <Suspense fallback={<PageSkeleton />}>
+            <Reportes />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/configuracion" element={
         <ProtectedRoute>
-          <Configuracion />
+          <Suspense fallback={<PageSkeleton />}>
+            <Configuracion />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Admin Routes */}
       <Route path="/admin/roles" element={
         <ProtectedRoute requiredRole="superuser">
-          <AdminRoles />
+          <Suspense fallback={<PageSkeleton />}>
+            <AdminRoles />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/admin/users" element={
         <ProtectedRoute>
-          <UserManagement />
+          <Suspense fallback={<PageSkeleton />}>
+            <UserManagement />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/admin/salmonera" element={
         <ProtectedRoute requiredRole="admin_salmonera">
-          <AdminSalmoneraPage />
+          <Suspense fallback={<PageSkeleton />}>
+            <AdminSalmoneraPage />
+          </Suspense>
         </ProtectedRoute>
       } />
 
       {/* Rutas específicas para buzos */}
       <Route path="/buzo/operaciones" element={
         <ProtectedRoute requiredRole="buzo">
-          <BuzoOperaciones />
+          <Suspense fallback={<PageSkeleton />}>
+            <BuzoOperaciones />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/buzo/inmersiones" element={
         <ProtectedRoute requiredRole="buzo">
-          <BuzoInmersiones />
+          <Suspense fallback={<PageSkeleton />}>
+            <BuzoInmersiones />
+          </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/buzo/reportes" element={
         <ProtectedRoute requiredRole="buzo">
-          <BuzoReportesPage />
+          <Suspense fallback={<PageSkeleton />}>
+            <BuzoReportesPage />
+          </Suspense>
         </ProtectedRoute>
       } />
       
       {/* Not Found */}
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={
+        <Suspense fallback={<FullPageLoader />}>
+          <NotFound />
+        </Suspense>
+      } />
     </Routes>
   </BrowserRouter>
 );
