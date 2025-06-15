@@ -16,7 +16,9 @@ interface UseWidgetManagerProps {
 }
 
 export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidgetManagerProps) => {
-    const { layouts: currentLayouts, widgets: currentWidgets } = dashboardState;
+    // Safely access layouts and widgets with fallbacks
+    const currentLayouts = dashboardState?.layouts || {};
+    const currentWidgets = dashboardState?.widgets || {};
 
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
     const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
@@ -25,7 +27,16 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
         const widgetConfig = widgetRegistry[widgetType];
         if (!widgetConfig) return;
 
-        const newLayouts = JSON.parse(JSON.stringify(currentLayouts));
+        // Safely clone layouts
+        let newLayouts: Layouts;
+        try {
+            newLayouts = currentLayouts && typeof currentLayouts === 'object' 
+                ? JSON.parse(JSON.stringify(currentLayouts))
+                : {};
+        } catch (error) {
+            console.error('Error cloning layouts:', error);
+            newLayouts = {};
+        }
         
         if (Object.keys(newLayouts).length === 0) {
             Object.keys(cols).forEach(bp => {
@@ -34,18 +45,22 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
         }
         
         Object.keys(newLayouts).forEach(bp => {
+            const breakpointLayouts = newLayouts[bp as keyof typeof cols] || [];
             const newWidgetItem: Layout = {
                 i: widgetType,
-                x: (newLayouts[bp as keyof typeof cols].length * widgetConfig.defaultLayout.w) % (cols[bp as keyof typeof cols] || 12),
+                x: (breakpointLayouts.length * widgetConfig.defaultLayout.w) % (cols[bp as keyof typeof cols] || 12),
                 y: Infinity,
                 w: widgetConfig.defaultLayout.w,
                 h: widgetConfig.defaultLayout.h,
             };
-            newLayouts[bp as keyof typeof cols] = [...(newLayouts[bp as keyof typeof cols] || []), newWidgetItem];
+            newLayouts[bp as keyof typeof cols] = [...breakpointLayouts, newWidgetItem];
         });
 
-        setDashboardState({ ...dashboardState, layouts: newLayouts });
-    }, [currentLayouts, dashboardState, setDashboardState]);
+        setDashboardState({ 
+            layouts: newLayouts, 
+            widgets: currentWidgets 
+        });
+    }, [currentLayouts, currentWidgets, setDashboardState]);
 
     const handleRemoveWidget = useCallback((widgetId: string) => {
         setWidgetToRemove(widgetId);
@@ -53,12 +68,35 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
 
     const confirmRemoveWidget = useCallback(() => {
         if (!widgetToRemove) return;
-        const newLayouts = { ...currentLayouts };
+        
+        // Safely clone layouts
+        let newLayouts: Layouts;
+        try {
+            newLayouts = currentLayouts && typeof currentLayouts === 'object'
+                ? JSON.parse(JSON.stringify(currentLayouts))
+                : {};
+        } catch (error) {
+            console.error('Error cloning layouts for removal:', error);
+            newLayouts = {};
+        }
+
         Object.keys(newLayouts).forEach(bp => {
-            newLayouts[bp as keyof typeof newLayouts] = newLayouts[bp as keyof typeof newLayouts].filter(item => item.i !== widgetToRemove);
+            if (Array.isArray(newLayouts[bp as keyof typeof newLayouts])) {
+                newLayouts[bp as keyof typeof newLayouts] = newLayouts[bp as keyof typeof newLayouts].filter(item => item.i !== widgetToRemove);
+            }
         });
-        const newWidgets = { ...currentWidgets };
-        delete newWidgets[widgetToRemove];
+
+        // Safely clone widgets
+        let newWidgets: any;
+        try {
+            newWidgets = currentWidgets && typeof currentWidgets === 'object'
+                ? JSON.parse(JSON.stringify(currentWidgets))
+                : {};
+            delete newWidgets[widgetToRemove];
+        } catch (error) {
+            console.error('Error cloning widgets for removal:', error);
+            newWidgets = {};
+        }
         
         setDashboardState({ layouts: newLayouts, widgets: newWidgets });
         setWidgetToRemove(null);
@@ -70,14 +108,25 @@ export const useWidgetManager = ({ dashboardState, setDashboardState }: UseWidge
     }, []);
 
     const handleWidgetConfigSave = useCallback((widgetId: WidgetType, config: any) => {
-        const newWidgets = {
-            ...currentWidgets,
-            [widgetId]: config,
-        };
-        setDashboardState({ ...dashboardState, widgets: newWidgets });
+        // Safely update widget config
+        let newWidgets: any;
+        try {
+            newWidgets = currentWidgets && typeof currentWidgets === 'object'
+                ? JSON.parse(JSON.stringify(currentWidgets))
+                : {};
+            newWidgets[widgetId] = config;
+        } catch (error) {
+            console.error('Error updating widget config:', error);
+            newWidgets = { [widgetId]: config };
+        }
+
+        setDashboardState({ 
+            layouts: currentLayouts, 
+            widgets: newWidgets 
+        });
         setConfiguringWidgetId(null);
         toast({ title: "Configuración actualizada", description: "Los cambios se aplicarán al guardar el diseño del dashboard." });
-    }, [currentWidgets, dashboardState, setDashboardState]);
+    }, [currentWidgets, currentLayouts, setDashboardState]);
 
     return {
         configuringWidgetId,

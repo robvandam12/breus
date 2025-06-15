@@ -80,7 +80,7 @@ interface MultiXReportData {
   }[];
 }
 
-// Datos mock siempre disponibles
+// Datos mock mejorados y más realistas
 const getMockReportData = (): MultiXReportData => ({
   contratistas_performance: [
     {
@@ -121,6 +121,19 @@ const getMockReportData = (): MultiXReportData => ({
       inmersiones_realizadas: 89,
       tiempo_total_inmersiones: 4020,
       sitios_trabajados: ['Sitio Alpha', 'Sitio Gamma']
+    },
+    {
+      contratista_id: '4',
+      contratista_nombre: 'Oceanic Contractors',
+      total_multix: 29,
+      formularios_completados: 26,
+      formularios_pendientes: 3,
+      tiempo_promedio_completion: 2.8,
+      eficiencia_porcentaje: 89.7,
+      dotacion_promedio: 5.5,
+      inmersiones_realizadas: 76,
+      tiempo_total_inmersiones: 3420,
+      sitios_trabajados: ['Sitio Delta', 'Sitio Echo']
     }
   ],
   buzos_performance: [
@@ -159,34 +172,49 @@ const getMockReportData = (): MultiXReportData => ({
       sitios_trabajados: 3,
       contratistas_colaborados: ['Marine Services Ltd', 'Deep Sea Solutions'],
       calificacion_promedio: 4.9
+    },
+    {
+      buzo_nombre: 'Paula',
+      buzo_apellido: 'Silva',
+      total_participaciones: 20,
+      roles_desempeniados: ['Buzo N°2', 'Comunicador'],
+      inmersiones_totales: 30,
+      tiempo_total_buceo: 1350,
+      profundidad_promedio: 24.5,
+      sitios_trabajados: 2,
+      contratistas_colaborados: ['Oceanic Contractors'],
+      calificacion_promedio: 4.7
     }
   ],
   estadisticas_generales: {
-    total_multix_periodo: 115,
-    formularios_mantencion: 68,
-    formularios_faena: 47,
-    contratistas_activos: 8,
-    buzos_activos: 24,
-    sitios_operativos: 5,
-    tiempo_promedio_formulario: 3.1,
-    eficiencia_general: 91.2
+    total_multix_periodo: 144,
+    formularios_mantencion: 85,
+    formularios_faena: 59,
+    contratistas_activos: 12,
+    buzos_activos: 32,
+    sitios_operativos: 8,
+    tiempo_promedio_formulario: 2.9,
+    eficiencia_general: 91.8
   },
   comparativas_mensuales: [
     { mes: 'Enero', multix_completados: 18, contratistas_activos: 6, buzos_participantes: 18, eficiencia: 89.5 },
     { mes: 'Febrero', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 21, eficiencia: 91.2 },
     { mes: 'Marzo', multix_completados: 25, contratistas_activos: 8, buzos_participantes: 24, eficiencia: 93.1 },
-    { mes: 'Abril', multix_completados: 28, contratistas_activos: 8, buzos_participantes: 26, eficiencia: 92.8 },
-    { mes: 'Mayo', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 22, eficiencia: 90.5 }
+    { mes: 'Abril', multix_completados: 28, contratistas_activos: 9, buzos_participantes: 26, eficiencia: 92.8 },
+    { mes: 'Mayo', multix_completados: 31, contratistas_activos: 10, buzos_participantes: 28, eficiencia: 91.5 },
+    { mes: 'Junio', multix_completados: 20, contratistas_activos: 8, buzos_participantes: 22, eficiencia: 90.2 }
   ],
   top_contratistas: [
     { nombre: 'AquaTech Diving', formularios_completados: 42, eficiencia: 93.3, tiempo_promedio: 2.5 },
     { nombre: 'Marine Services Ltd', formularios_completados: 35, eficiencia: 92.1, tiempo_promedio: 3.1 },
+    { nombre: 'Oceanic Contractors', formularios_completados: 26, eficiencia: 89.7, tiempo_promedio: 2.8 },
     { nombre: 'Deep Sea Solutions', formularios_completados: 28, eficiencia: 87.5, tiempo_promedio: 3.8 }
   ],
   top_buzos: [
     { nombre: 'Carlos Mendoza', participaciones: 28, tiempo_total: 2040, calificacion: 4.8 },
     { nombre: 'Ana Torres', participaciones: 25, tiempo_total: 1710, calificacion: 4.6 },
-    { nombre: 'Miguel Ramirez', participaciones: 22, tiempo_total: 1485, calificacion: 4.9 }
+    { nombre: 'Miguel Ramirez', participaciones: 22, tiempo_total: 1485, calificacion: 4.9 },
+    { nombre: 'Paula Silva', participaciones: 20, tiempo_total: 1350, calificacion: 4.7 }
   ],
   alertas_operativas: [
     {
@@ -205,13 +233,18 @@ const getMockReportData = (): MultiXReportData => ({
       tipo: 'Tiempo Excesivo',
       descripcion: 'Formularios de mantención tardando más de 4 horas promedio',
       prioridad: 'baja'
+    },
+    {
+      tipo: 'Capacitación Pendiente',
+      descripcion: 'Varios buzos con certificaciones próximas a vencer',
+      prioridad: 'media'
     }
   ]
 });
 
 export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const [reportData, setReportData] = useState<MultiXReportData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -221,17 +254,22 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
 
   const generateMultiXReport = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Simular carga
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Simular un delay mínimo para mostrar el loading
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Usar datos mock
+      // Directamente usar datos mock - no hay delay excesivo
       const mockData = getMockReportData();
       setReportData(mockData);
       setError(null);
+      
+      console.log('MultiX Report generated successfully with mock data');
     } catch (err) {
       console.error('Error generating MultiX report:', err);
       setError('Error al generar el reporte MultiX');
+      setReportData(null);
       toast({
         title: "Error",
         description: "No se pudo generar el reporte MultiX",
@@ -249,7 +287,8 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
         description: `Generando archivo ${format.toUpperCase()}...`,
       });
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simular exportación
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
         title: "Reporte Exportado",
