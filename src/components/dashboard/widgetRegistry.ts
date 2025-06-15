@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertasPanelWidget } from './widgets/AlertsPanelWidget';
 import { QuickActionsWidget } from './widgets/QuickActionsWidget';
@@ -14,6 +15,7 @@ import { MyImmersionsWidgetSkeleton } from './widgets/skeletons/MyImmersionsWidg
 import { GenericWidgetSkeleton } from './widgets/skeletons/GenericWidgetSkeleton';
 import { SecurityAlertsWidgetSkeleton } from './widgets/skeletons/SecurityAlertsWidgetSkeleton';
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
+import { CalendarWidgetSkeleton } from './widgets/skeletons/CalendarWidgetSkeleton';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -99,6 +101,13 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     skeleton: NotificationWidgetSkeleton,
     description: 'Muestra las últimas notificaciones del sistema.',
     defaultLayout: { w: 4, h: 8 },
+  },
+  calendar_view: {
+    name: 'Calendario de Operaciones',
+    component: React.lazy(() => import('./widgets/CalendarWidget')),
+    skeleton: CalendarWidgetSkeleton,
+    description: 'Vista de calendario de las operaciones programadas.',
+    defaultLayout: { w: 8, h: 9 },
   },
 };
 
