@@ -62,7 +62,7 @@ export default function Index() {
 
     switch (profile?.role) {
       case 'superuser':
-      case 'admin_salmonera':
+      case 'admin_empresa':
       case 'admin_servicio':
         return <CustomizableDashboard />;
       case 'supervisor':
@@ -79,8 +79,8 @@ export default function Index() {
     switch (profile?.role) {
       case 'superuser':
         return "Panel de Administración";
-      case 'admin_salmonera':
-        return "Dashboard Salmonera";
+      case 'admin_empresa':
+        return "Dashboard Empresa";
       case 'admin_servicio':
         return "Dashboard Servicio";
       case 'supervisor':
@@ -96,7 +96,7 @@ export default function Index() {
     switch (profile?.role) {
       case 'superuser':
         return "Gestión completa del sistema";
-      case 'admin_salmonera':
+      case 'admin_empresa':
         return "Administración de sitios y operaciones";
       case 'admin_servicio':
         return "Control de equipos y servicios";

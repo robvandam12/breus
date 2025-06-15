@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -6,6 +7,7 @@ import { Layouts } from 'react-grid-layout';
 import { toast } from '@/hooks/use-toast';
 import { systemTemplates as hardcodedSystemTemplates } from '@/components/dashboard/system-templates';
 import { Role } from '@/components/dashboard/widgetRegistry';
+import { Tables } from '@/integrations/supabase/types';
 
 export interface DashboardTemplate {
   id: string;
@@ -14,14 +16,15 @@ export interface DashboardTemplate {
   layout_config: Layouts;
   widget_configs: any;
   type: 'system' | 'user';
-  role_target?: string;
+  role_target?: Role;
   created_by?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 const fetchDashboardTemplates = async (userId: string, role: Role) => {
-  const { data: userTemplates, error } = await supabase
-    .from('dashboard_templates' as any)
+  const { data: userTemplatesData, error } = await supabase
+    .from('dashboard_templates')
     .select('*')
     .eq('type', 'user')
     .eq('created_by', userId);
@@ -31,26 +34,33 @@ const fetchDashboardTemplates = async (userId: string, role: Role) => {
     throw new Error(error.message);
   }
 
-  const relevantSystemTemplates = hardcodedSystemTemplates
+  const userTemplates: DashboardTemplate[] = (userTemplatesData || []).map(t => ({
+      ...t,
+      layout_config: t.layout_config as Layouts,
+      widget_configs: t.widget_configs,
+      type: 'user',
+  }));
+
+  const relevantSystemTemplates: DashboardTemplate[] = hardcodedSystemTemplates
+    .filter(t => t.role_target === role)
     .map((t, index) => ({
       ...t,
       id: `system-${t.name.replace(/\s+/g, '-').toLowerCase()}-${index}`,
       created_by: 'system',
       created_at: new Date().toISOString(),
-      role_target: t.role_target,
     }));
 
-  return [...(userTemplates || []), ...relevantSystemTemplates] as DashboardTemplate[];
+  return [...userTemplates, ...relevantSystemTemplates];
 };
 
-const createDashboardTemplate = async (templateData: Omit<DashboardTemplate, 'id' | 'created_at'>) => {
+const createDashboardTemplate = async (templateData: Tables<'dashboard_templates'>['Insert']) => {
     const { data, error } = await supabase
-        .from('dashboard_templates' as any)
-        .insert([templateData] as any)
+        .from('dashboard_templates')
+        .insert([templateData])
         .select()
         .single();
     if (error) throw error;
-    return data as unknown as DashboardTemplate;
+    return data;
 }
 
 export const useDashboardTemplates = () => {
