@@ -1,16 +1,19 @@
+
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit, Save, Loader2, RotateCcw, LayoutTemplate, X } from 'lucide-react';
+import { Edit, Save, Loader2, RotateCcw, LayoutTemplate, X, Eye } from 'lucide-react';
 import { WidgetCatalog } from './WidgetCatalog';
 import { WidgetType } from './widgetRegistry';
 import { UndoRedoControls } from './UndoRedoControls';
 
 interface DashboardHeaderProps {
     isEditMode: boolean;
+    isPreviewMode: boolean;
     isSaving: boolean;
     isResetting: boolean;
     currentWidgetIds: string[];
     onToggleEdit: () => void;
+    onEnterPreview: () => void;
     onSave: () => void;
     onResetConfirm: () => void;
     onCancelEdit: () => void;
@@ -24,10 +27,12 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({
     isEditMode,
+    isPreviewMode,
     isSaving,
     isResetting,
     currentWidgetIds,
     onToggleEdit,
+    onEnterPreview,
     onSave,
     onResetConfirm,
     onCancelEdit,
@@ -38,6 +43,11 @@ export const DashboardHeader = ({
     canUndo,
     canRedo,
 }: DashboardHeaderProps) => {
+    // Don't show header controls in preview mode (handled by PreviewBanner)
+    if (isPreviewMode) {
+        return null;
+    }
+
     return (
         <TooltipProvider>
             <div className="flex justify-between items-center gap-2">
@@ -82,6 +92,18 @@ export const DashboardHeader = ({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>Restaurar el diseño por defecto para tu rol.</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" onClick={onEnterPreview} disabled={isSaving || isResetting}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        Vista Previa
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Ver una vista previa de los cambios (Ctrl+P).</p>
                                 </TooltipContent>
                             </Tooltip>
 

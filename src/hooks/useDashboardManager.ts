@@ -19,6 +19,8 @@ export const useDashboardManager = (currentRole: string) => {
     const { layout: savedLayout, widgets: savedWidgets, isLoading, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
     
     const [isEditMode, setIsEditMode] = useState(false);
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [previewSnapshot, setPreviewSnapshot] = useState<DashboardState | null>(null);
 
     const { 
         state: dashboardState, 
@@ -72,11 +74,54 @@ export const useDashboardManager = (currentRole: string) => {
     }, [isLoading, getInitialDashboardState, resetDashboardState]);
 
     const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
-        if (isEditMode) {
+        if (isEditMode || isPreviewMode) {
             setDashboardState({
                 ...dashboardState,
                 layouts: newLayouts,
             });
+        }
+    };
+
+    const handleToggleEdit = () => {
+        if (isPreviewMode) {
+            handleExitPreview();
+        }
+        setIsEditMode(true);
+    };
+
+    const handleEnterPreview = () => {
+        if (isEditMode) {
+            // Save current state as preview snapshot
+            setPreviewSnapshot({ ...dashboardState });
+            setIsEditMode(false);
+            setIsPreviewMode(true);
+        }
+    };
+
+    const handleExitPreview = () => {
+        if (isPreviewMode && previewSnapshot) {
+            // Restore to the snapshot state
+            setDashboardState(previewSnapshot);
+            setIsPreviewMode(false);
+            setPreviewSnapshot(null);
+            setIsEditMode(true);
+        }
+    };
+
+    const handleApplyPreviewChanges = () => {
+        if (isPreviewMode) {
+            setIsPreviewMode(false);
+            setPreviewSnapshot(null);
+            // Apply the current changes by saving
+            handleSaveLayout();
+        }
+    };
+
+    const handleDiscardPreviewChanges = () => {
+        if (isPreviewMode) {
+            resetDashboardState(getInitialDashboardState());
+            setIsPreviewMode(false);
+            setPreviewSnapshot(null);
         }
     };
 
@@ -85,6 +130,8 @@ export const useDashboardManager = (currentRole: string) => {
             onSuccess: () => {
                 toast({ title: "Diseño guardado", description: "Tu dashboard ha sido actualizado." });
                 setIsEditMode(false);
+                setIsPreviewMode(false);
+                setPreviewSnapshot(null);
             },
             onError: () => {
                 toast({ title: "Error", description: "No se pudo guardar el diseño.", variant: "destructive" });
@@ -98,6 +145,8 @@ export const useDashboardManager = (currentRole: string) => {
             onSuccess: () => {
                 toast({ title: "Diseño restaurado", description: "El dashboard ha vuelto a su estado por defecto." });
                 setIsEditMode(false);
+                setIsPreviewMode(false);
+                setPreviewSnapshot(null);
             },
             onError: () => {
                 toast({ title: "Error", description: "No se pudo restaurar el diseño.", variant: "destructive" });
@@ -108,6 +157,8 @@ export const useDashboardManager = (currentRole: string) => {
     const handleCancelEdit = () => {
         resetDashboardState(getInitialDashboardState());
         setIsEditMode(false);
+        setIsPreviewMode(false);
+        setPreviewSnapshot(null);
     };
 
     const handleAddWidget = (widgetType: WidgetType) => {
@@ -126,7 +177,7 @@ export const useDashboardManager = (currentRole: string) => {
             const newWidgetItem: Layout = {
                 i: widgetType,
                 x: (newLayouts[bp as keyof typeof cols].length * widgetConfig.defaultLayout.w) % (cols[bp as keyof typeof cols] || 12),
-                y: Infinity, // This will be placed at the bottom
+                y: Infinity,
                 w: widgetConfig.defaultLayout.w,
                 h: widgetConfig.defaultLayout.h,
             };
@@ -174,7 +225,7 @@ export const useDashboardManager = (currentRole: string) => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (!isEditMode) return;
+            if (!isEditMode && !isPreviewMode) return;
             if (event.ctrlKey || event.metaKey) {
                 if (event.key === 'z') {
                     event.preventDefault();
@@ -182,6 +233,9 @@ export const useDashboardManager = (currentRole: string) => {
                 } else if (event.key === 'y') {
                     event.preventDefault();
                     redo();
+                } else if (event.key === 'p' && isEditMode) {
+                    event.preventDefault();
+                    handleEnterPreview();
                 }
             }
         };
@@ -190,11 +244,12 @@ export const useDashboardManager = (currentRole: string) => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isEditMode, undo, redo]);
+    }, [isEditMode, isPreviewMode, undo, redo, handleEnterPreview]);
     
     return {
         isLoading,
         isEditMode,
+        isPreviewMode,
         isSaving,
         isResetting,
         currentLayouts,
@@ -208,6 +263,11 @@ export const useDashboardManager = (currentRole: string) => {
         canRedo,
         
         onLayoutChange,
+        handleToggleEdit,
+        handleEnterPreview,
+        handleExitPreview,
+        handleApplyPreviewChanges,
+        handleDiscardPreviewChanges,
         handleSaveLayout,
         handleResetLayout,
         handleCancelEdit,

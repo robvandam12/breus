@@ -1,3 +1,4 @@
+
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Skeleton } from '../ui/skeleton';
@@ -7,6 +8,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { DashboardGrid } from './DashboardGrid';
 import { DashboardTemplateSheet } from './DashboardTemplateSheet';
 import { WidgetConfigSheet } from './WidgetConfigSheet';
+import { PreviewBanner } from './PreviewBanner';
 import { useDashboardManager } from '@/hooks/useDashboardManager';
 import { WidgetType } from './widgetRegistry';
 
@@ -15,6 +17,7 @@ export const CustomizableDashboard = () => {
     const {
         isLoading,
         isEditMode,
+        isPreviewMode,
         isSaving,
         isResetting,
         currentLayouts,
@@ -28,6 +31,11 @@ export const CustomizableDashboard = () => {
         canRedo,
         
         onLayoutChange,
+        handleToggleEdit,
+        handleEnterPreview,
+        handleExitPreview,
+        handleApplyPreviewChanges,
+        handleDiscardPreviewChanges,
         handleSaveLayout,
         handleResetLayout,
         handleCancelEdit,
@@ -66,12 +74,27 @@ export const CustomizableDashboard = () => {
 
     return (
         <div className="space-y-4">
+            {isPreviewMode && (
+                <PreviewBanner
+                    onApplyChanges={handleApplyPreviewChanges}
+                    onDiscardChanges={handleDiscardPreviewChanges}
+                    onExitPreview={handleExitPreview}
+                    isApplying={isSaving}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onUndo={undo}
+                    onRedo={redo}
+                />
+            )}
+
              <DashboardHeader
                 isEditMode={isEditMode}
+                isPreviewMode={isPreviewMode}
                 isSaving={isSaving}
                 isResetting={isResetting}
                 currentWidgetIds={currentWidgetIds}
-                onToggleEdit={() => setIsEditMode(true)}
+                onToggleEdit={handleToggleEdit}
+                onEnterPreview={handleEnterPreview}
                 onSave={handleSaveLayout}
                 onResetConfirm={() => setIsResetConfirmOpen(true)}
                 onCancelEdit={handleCancelEdit}
@@ -86,12 +109,13 @@ export const CustomizableDashboard = () => {
             <DashboardGrid
                 layouts={currentLayouts}
                 onLayoutChange={onLayoutChange}
-                isEditMode={isEditMode}
+                isEditMode={isEditMode || isPreviewMode}
                 widgets={currentWidgets}
                 defaultLayout={defaultLayoutForRole}
                 onRemoveWidget={handleRemoveWidget}
                 onConfigureWidget={handleConfigureWidget}
             />
+
             <DashboardTemplateSheet
                 isOpen={isTemplateSheetOpen}
                 onClose={() => setIsTemplateSheetOpen(false)}
