@@ -16,12 +16,12 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
 
   const getStatusBadge = (estado: string) => {
     const colors = {
-      'activa': 'bg-green-100 text-green-700',
-      'pausada': 'bg-yellow-100 text-yellow-700',
-      'completada': 'bg-blue-100 text-blue-700',
-      'cancelada': 'bg-red-100 text-red-700'
+      'activa': 'bg-green-100 text-green-800 border-green-200',
+      'pausada': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'completada': 'bg-blue-100 text-blue-800 border-blue-200',
+      'cancelada': 'bg-red-100 text-red-800 border-red-200'
     };
-    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+    return colors[estado as keyof typeof colors] || 'bg-muted text-muted-foreground';
   };
 
   const getDocumentStatus = (operacion: any) => {
@@ -42,9 +42,9 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
     <div className="space-y-6">
       {operaciones.length === 0 ? (
         <div className="text-center py-12">
-          <Activity className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay operaciones</h3>
-          <p className="text-zinc-500 mb-4">
+          <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No hay operaciones</h3>
+          <p className="text-muted-foreground mb-4">
             No se encontraron operaciones con los filtros aplicados o aún no se han creado operaciones.
           </p>
         </div>
@@ -54,12 +54,12 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
             const docStatus = getDocumentStatus(operacion);
             
             return (
-              <Card key={operacion.id} className="hover:shadow-md transition-shadow">
+              <Card key={operacion.id} className="hover:shadow-md transition-shadow border-border">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg font-semibold">{operacion.nombre}</CardTitle>
-                      <p className="text-sm text-zinc-500">{operacion.codigo}</p>
+                      <CardTitle className="text-lg font-semibold text-foreground">{operacion.nombre}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{operacion.codigo}</p>
                     </div>
                     <Badge className={getStatusBadge(operacion.estado)}>
                       {operacion.estado}
@@ -69,21 +69,21 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
                 
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-zinc-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
                       <span>{operacion.sitios?.nombre || 'Sin asignar'}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-zinc-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
                       <span>{operacion.contratistas?.nombre || 'Sin asignar'}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-zinc-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
                       {operacion.fecha_fin && (
-                        <span className="text-zinc-400">
+                        <span className="text-muted-foreground/70">
                           - {new Date(operacion.fecha_fin).toLocaleDateString('es-CL')}
                         </span>
                       )}
@@ -92,8 +92,8 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-zinc-700">Documentos</span>
-                      <span className="text-sm text-zinc-500">
+                      <span className="text-sm font-medium text-foreground">Documentos</span>
+                      <span className="text-sm text-muted-foreground">
                         {docStatus.completed}/{docStatus.total}
                       </span>
                     </div>
@@ -110,9 +110,9 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
                       </Badge>
                     </div>
                     
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${(docStatus.completed / docStatus.total) * 100}%` }}
                       />
                     </div>

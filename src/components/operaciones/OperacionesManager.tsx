@@ -113,22 +113,22 @@ export const OperacionesManager = () => {
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="table" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-10">
+          <TabsTrigger value="table" className="flex items-center gap-2 text-sm">
             <List className="w-4 h-4" />
-            Tabla
+            <span className="hidden sm:inline">Tabla</span>
           </TabsTrigger>
-          <TabsTrigger value="cards" className="flex items-center gap-2">
+          <TabsTrigger value="cards" className="flex items-center gap-2 text-sm">
             <Grid3X3 className="w-4 h-4" />
-            Tarjetas
+            <span className="hidden sm:inline">Tarjetas</span>
           </TabsTrigger>
-          <TabsTrigger value="map" className="flex items-center gap-2">
+          <TabsTrigger value="map" className="flex items-center gap-2 text-sm">
             <MapPin className="w-4 h-4" />
-            Mapa
+            <span className="hidden sm:inline">Mapa</span>
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="table">
+        <TabsContent value="table" className="mt-6">
           <OperacionesTable 
             operaciones={filteredOperaciones}
             onViewDetail={handleViewDetail}
@@ -137,7 +137,7 @@ export const OperacionesManager = () => {
           />
         </TabsContent>
         
-        <TabsContent value="cards">
+        <TabsContent value="cards" className="mt-6">
           <OperacionCardView 
             operaciones={filteredOperaciones}
             onSelect={handleSelect}
@@ -147,7 +147,7 @@ export const OperacionesManager = () => {
           />
         </TabsContent>
         
-        <TabsContent value="map">
+        <TabsContent value="map" className="mt-6">
           <OperacionesMapView 
             operaciones={filteredOperaciones}
             onSelect={handleSelect}
