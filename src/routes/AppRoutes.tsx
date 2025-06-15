@@ -7,7 +7,7 @@ import AnexoBravo from "@/pages/formularios/AnexoBravo";
 import HPTFormularios from "@/pages/formularios/HPTFormularios";
 import AnexoBravoFormularios from "@/pages/formularios/AnexoBravoFormularios";
 import { AuthLayout } from "@/pages/auth/AuthLayout";
-import ProfileSetup from "@/pages/auth/ProfileSetup";
+import ProfileSetup from "@/pages/ProfileSetup";
 import Onboarding from "@/pages/Onboarding";
 import BuzoOnboardingPage from "@/pages/BuzoOnboardingPage";
 import EquipoBuceo from "@/pages/EquipoBuceo";
