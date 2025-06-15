@@ -27,7 +27,7 @@ export const TeamStatusWidget = () => {
                                 <li key={member.usuario_id} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Avatar>
-                                            <AvatarImage src={member.avatar_url} />
+                                            <AvatarImage src={member.perfil_buzo?.avatar_url} />
                                             <AvatarFallback>{member.nombre?.[0]}{member.apellido?.[0]}</AvatarFallback>
                                         </Avatar>
                                         <div>
@@ -36,7 +36,7 @@ export const TeamStatusWidget = () => {
                                         </div>
                                     </div>
                                     <Badge variant={member.estado_buzo === 'activo' ? 'default' : 'secondary'} className="capitalize">
-                                        {member.estado_buzo}
+                                        {member.estado_buzo || 'desconocido'}
                                     </Badge>
                                 </li>
                             ))}

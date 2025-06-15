@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { UseMutateFunction } from '@tanstack/react-query';
 
 export interface Usuario {
   usuario_id: string;
@@ -13,6 +14,7 @@ export interface Usuario {
   servicio_id?: string;
   perfil_completado?: boolean;
   perfil_buzo?: any;
+  estado_buzo?: 'activo' | 'inactivo' | 'suspendido' | null;
   created_at: string;
   updated_at: string;
   salmonera?: {
