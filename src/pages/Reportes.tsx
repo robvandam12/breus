@@ -10,6 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Calendar, Download, Filter, BarChart3, PieChart as PieChartIcon, TrendingUp, FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { SecurityAnalysisReport } from "@/components/reportes/SecurityAnalysisReport";
+import { ImmersionAnalysisReport } from "@/components/reportes/ImmersionAnalysisReport";
 
 const Reportes = () => {
   const [dateRange, setDateRange] = useState("month");
@@ -92,6 +93,8 @@ const Reportes = () => {
             <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
               
               <SecurityAnalysisReport />
+              
+              <ImmersionAnalysisReport />
               
               {/* Filtros Globales */}
               <Card>
