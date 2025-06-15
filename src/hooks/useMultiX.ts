@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,7 +73,8 @@ export const useMultiX = () => {
 
       if (error) throw error;
 
-      setMultiXData(data.multix_data as MultiXData);
+      // Safe conversion using unknown as intermediate type
+      setMultiXData(data.multix_data as unknown as MultiXData);
       
       toast({
         title: "Guardado",
