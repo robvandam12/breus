@@ -60,7 +60,7 @@ export default function Index() {
       return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
     };
 
-    switch (profile?.role) {
+    switch (profile?.role as string) {
       case 'superuser':
       case 'admin_empresa':
       case 'admin_servicio':
@@ -76,7 +76,7 @@ export default function Index() {
   };
 
   const getDashboardTitle = () => {
-    switch (profile?.role) {
+    switch (profile?.role as string) {
       case 'superuser':
         return "Panel de Administración";
       case 'admin_empresa':
@@ -93,7 +93,7 @@ export default function Index() {
   };
 
   const getDashboardSubtitle = () => {
-    switch (profile?.role) {
+    switch (profile?.role as string) {
       case 'superuser':
         return "Gestión completa del sistema";
       case 'admin_empresa':

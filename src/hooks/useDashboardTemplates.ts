@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -7,7 +6,6 @@ import { Layouts } from 'react-grid-layout';
 import { toast } from '@/hooks/use-toast';
 import { systemTemplates as hardcodedSystemTemplates } from '@/components/dashboard/system-templates';
 import { Role } from '@/components/dashboard/widgetRegistry';
-import { Tables } from '@/integrations/supabase/types';
 
 export interface DashboardTemplate {
   id: string;
@@ -36,7 +34,7 @@ const fetchDashboardTemplates = async (userId: string, role: Role) => {
 
   const userTemplates: DashboardTemplate[] = (userTemplatesData || []).map(t => ({
       ...t,
-      layout_config: t.layout_config as Layouts,
+      layout_config: t.layout_config as any,
       widget_configs: t.widget_configs,
       type: 'user',
   }));
@@ -53,10 +51,10 @@ const fetchDashboardTemplates = async (userId: string, role: Role) => {
   return [...userTemplates, ...relevantSystemTemplates];
 };
 
-const createDashboardTemplate = async (templateData: Tables<'dashboard_templates'>['Insert']) => {
+const createDashboardTemplate = async (templateData: { name: string, description?: string, layout_config: Layouts, widget_configs: any, created_by: string, type: 'user' }) => {
     const { data, error } = await supabase
         .from('dashboard_templates')
-        .insert([templateData])
+        .insert([templateData as any])
         .select()
         .single();
     if (error) throw error;
