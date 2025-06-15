@@ -1,130 +1,35 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Calendar, Users, FileText, Activity, AlertTriangle, CheckCircle, Plus, Edit, Shield } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
+import { MapPin, Calendar, Users, CheckCircle, AlertTriangle } from "lucide-react";
 import { CreateInmersionForm } from '@/components/inmersiones/CreateInmersionForm';
 import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
 import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
 import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
 import { OperacionInmersiones } from '@/components/operaciones/OperacionInmersiones';
-import { useAuth } from '@/hooks/useAuth';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
+import { useOperacionDetails } from '@/hooks/useOperacionDetails';
 
 interface OperacionDetailsProps {
   operacionId: string;
   onClose: () => void;
 }
 
-interface OperacionFull {
-  id: string;
-  codigo: string;
-  nombre: string;
-  estado: string;
-  fecha_inicio: string;
-  fecha_fin?: string;
-  tareas?: string;
-  sitio_nombre?: string;
-  contratista_nombre?: string;
-  equipo_buceo_id?: string;
-  created_at: string;
-  salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
-  contratistas?: { nombre: string };
-}
-
-interface DocumentStatus {
-  hpts: any[];
-  anexosBravo: any[];
-  inmersiones: any[];
-  hasTeam: boolean;
-}
-
-const fetchOperacionDetails = async (operacionId: string) => {
-  const { data: opData, error: opError } = await supabase
-    .from('operacion')
-    .select(`
-      *,
-      salmoneras:salmonera_id (nombre),
-      sitios:sitio_id (nombre),
-      contratistas:contratista_id (nombre)
-    `)
-    .eq('id', operacionId)
-    .single();
-
-  if (opError) throw opError;
-
-  const [hptData, anexoData, inmersionData] = await Promise.all([
-    supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId),
-    supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId),
-    supabase.from('inmersion').select('inmersion_id, codigo, fecha_inmersion, estado').eq('operacion_id', operacionId)
-  ]);
-
-  if (hptData.error) throw hptData.error;
-  if (anexoData.error) throw anexoData.error;
-  if (inmersionData.error) throw inmersionData.error;
-
-  const operacion: OperacionFull = {
-    ...opData,
-    sitio_nombre: opData.sitios?.nombre,
-    contratista_nombre: opData.contratistas?.nombre
-  };
-
-  const documentStatus: DocumentStatus = {
-    hpts: hptData.data || [],
-    anexosBravo: anexoData.data || [],
-    inmersiones: inmersionData.data || [],
-    hasTeam: !!opData.equipo_buceo_id
-  };
-  
-  return { operacion, documentStatus };
-};
-
 export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
   const [showCreateInmersion, setShowCreateInmersion] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
-  const { profile } = useAuth();
-  const queryClient = useQueryClient();
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['operacionDetails', operacionId],
-    queryFn: () => fetchOperacionDetails(operacionId),
-    enabled: !!operacionId,
-  });
-
-  const operacion = data?.operacion;
-  const documentStatus = data?.documentStatus;
   
-  const createInmersionMutation = useMutation({
-    mutationFn: async (inmersionData: any) => {
-      const dataToInsert = { ...inmersionData, operacion_id: operacionId };
-      const { error } = await supabase.from('inmersion').insert([dataToInsert]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Inmersión creada", description: "La inmersión ha sido creada exitosamente." });
-      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
-      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
-      queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
-      setShowCreateInmersion(false);
-    },
-    onError: (error: any) => {
-      console.error('Error creating Inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la inmersión.",
-        variant: "destructive",
-      });
-    }
-  });
+  const { operacion, isLoading, createInmersion, compliance } = useOperacionDetails(operacionId);
   
   const handleCreateInmersion = async (data: any) => {
-    await createInmersionMutation.mutateAsync(data);
+    try {
+      await createInmersion(data);
+      setShowCreateInmersion(false);
+    } catch (error) {
+      console.error('Error al crear la inmersión desde el componente:', error);
+    }
   };
 
   if (isLoading) {
@@ -154,17 +59,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const getComplianceStatus = () => {
-    if (!documentStatus) return null;
-    
-    const hasValidHPT = documentStatus.hpts.some(h => h.firmado);
-    const hasValidAnexo = documentStatus.anexosBravo.some(a => a.firmado);
-    const canExecute = hasValidHPT && hasValidAnexo && documentStatus.hasTeam;
-    
-    return { hasValidHPT, hasValidAnexo, canExecute, hasTeam: documentStatus.hasTeam };
-  };
-
-  const compliance = getComplianceStatus();
   const canCreateInmersiones = compliance?.canExecute;
 
   return (
