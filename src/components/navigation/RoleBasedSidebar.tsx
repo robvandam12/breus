@@ -1,4 +1,3 @@
-
 import { 
   Calendar, 
   ChevronRight, 
@@ -381,7 +380,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: Shield,
         items: [
           { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
+          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
+          { title: "Reglas de Alerta", url: "/admin/alert-rules", roleRequired: "superuser" }
         ]
       }
     ];
