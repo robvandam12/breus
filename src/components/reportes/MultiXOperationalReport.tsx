@@ -21,14 +21,26 @@ import {
 import { useReportesMultiX } from '@/hooks/useReportesMultiX';
 import { ReportDateRangePicker } from './ReportDateRangePicker';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import type { DateRange } from "react-day-picker";
 
 export const MultiXOperationalReport = () => {
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    to: new Date()
   });
 
-  const { reportData, isLoading, exportReport } = useReportesMultiX({ dateRange });
+  const { reportData, isLoading, exportReport } = useReportesMultiX({ 
+    dateRange: {
+      from: dateRange.from?.toISOString().split('T')[0] || '',
+      to: dateRange.to?.toISOString().split('T')[0] || ''
+    }
+  });
+
+  const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
+    if (newDateRange) {
+      setDateRange(newDateRange);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -74,7 +86,7 @@ export const MultiXOperationalReport = () => {
             <div className="flex items-center gap-3">
               <ReportDateRangePicker
                 dateRange={dateRange}
-                onDateRangeChange={setDateRange}
+                onDateChange={handleDateRangeChange}
               />
               <Button variant="outline" onClick={() => exportReport('excel')}>
                 <Download className="w-4 h-4 mr-2" />
@@ -194,7 +206,7 @@ export const MultiXOperationalReport = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{contratista.formularios_completados}</span>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {contratista.formularios_pendientes} pendientes
                           </Badge>
                         </div>
@@ -245,7 +257,7 @@ export const MultiXOperationalReport = () => {
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {buzo.roles_desempeniados.map((rol, i) => (
-                            <Badge key={i} variant="secondary" size="sm">
+                            <Badge key={i} variant="secondary">
                               {rol}
                             </Badge>
                           ))}
@@ -382,13 +394,13 @@ export const MultiXOperationalReport = () => {
                       {(alerta.contratista || alerta.sitio) && (
                         <div className="flex items-center gap-2 mt-2">
                           {alerta.contratista && (
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="outline">
                               <Users className="h-3 w-3 mr-1" />
                               {alerta.contratista}
                             </Badge>
                           )}
                           {alerta.sitio && (
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="outline">
                               <MapPin className="h-3 w-3 mr-1" />
                               {alerta.sitio}
                             </Badge>
