@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Layout, Layouts } from 'react-grid-layout';
+import { toast } from '@/hooks/use-toast';
 
 const fetchDashboardLayout = async (userId: string) => {
   const { data, error } = await supabase
@@ -58,6 +58,17 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     mutationFn: (newConfig: { layout: Layout[] | Layouts, widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newConfig }),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
+        toast({
+            title: 'Diseño guardado',
+            description: 'La configuración de tu dashboard se ha guardado correctamente.',
+        });
+    },
+    onError: (error: Error) => {
+        toast({
+            title: 'Error al guardar',
+            description: `No se pudo guardar tu configuración. ${error.message}`,
+            variant: 'destructive',
+        });
     },
   });
 
@@ -65,6 +76,17 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     mutationFn: () => deleteDashboardLayout({ userId: profile!.id }),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
+        toast({
+            title: 'Diseño restablecido',
+            description: 'Tu dashboard ha vuelto a la configuración por defecto.',
+        });
+    },
+    onError: (error: Error) => {
+        toast({
+            title: 'Error al restablecer',
+            description: `No se pudo restablecer la configuración. ${error.message}`,
+            variant: 'destructive',
+        });
     },
   });
   
