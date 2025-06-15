@@ -40,17 +40,29 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
 
   console.log('Editing operacion:', operacion);
   console.log('Form data:', formData);
-  console.log('Available salmoneras:', salmoneras);
-  console.log('Available contratistas:', contratistas);
-  console.log('Available sitios:', sitios);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log('Submitting operacion update:', formData);
-      await onSubmit(formData);
+      // Preparar datos limpios para la actualización
+      const dataToSubmit = {
+        codigo: formData.codigo,
+        nombre: formData.nombre,
+        sitio_id: formData.sitio_id || null,
+        servicio_id: formData.servicio_id || null,
+        salmonera_id: formData.salmonera_id || null,
+        contratista_id: formData.contratista_id || null,
+        fecha_inicio: formData.fecha_inicio,
+        fecha_fin: formData.fecha_fin || null,
+        tareas: formData.tareas || null,
+        estado: formData.estado
+      };
+
+      console.log('Submitting operacion update with data:', dataToSubmit);
+      
+      await onSubmit(dataToSubmit);
       toast({
         title: "Operación actualizada",
         description: "La operación ha sido actualizada exitosamente.",
@@ -125,15 +137,16 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="salmonera_id">Salmonera *</Label>
+              <Label htmlFor="salmonera_id">Salmonera</Label>
               <Select
-                value={formData.salmonera_id}
+                value={formData.salmonera_id || ''}
                 onValueChange={(value) => handleChange('salmonera_id', value)}
               >
                 <SelectTrigger className="ios-input">
                   <SelectValue placeholder="Seleccionar salmonera" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Sin salmonera</SelectItem>
                   {salmoneras.map((salmonera) => (
                     <SelectItem key={salmonera.id} value={salmonera.id}>
                       {salmonera.nombre}
@@ -144,15 +157,16 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             </div>
 
             <div>
-              <Label htmlFor="contratista_id">Contratista *</Label>
+              <Label htmlFor="contratista_id">Contratista</Label>
               <Select
-                value={formData.contratista_id}
+                value={formData.contratista_id || ''}
                 onValueChange={(value) => handleChange('contratista_id', value)}
               >
                 <SelectTrigger className="ios-input">
                   <SelectValue placeholder="Seleccionar contratista" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Sin contratista</SelectItem>
                   {contratistas.map((contratista) => (
                     <SelectItem key={contratista.id} value={contratista.id}>
                       {contratista.nombre}
@@ -164,17 +178,18 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
           </div>
 
           <div>
-            <Label htmlFor="sitio_id">Sitio *</Label>
+            <Label htmlFor="sitio_id">Sitio</Label>
             <Select
-              value={formData.sitio_id}
+              value={formData.sitio_id || ''}
               onValueChange={(value) => handleChange('sitio_id', value)}
             >
               <SelectTrigger className="ios-input">
                 <SelectValue placeholder="Seleccionar sitio" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">Sin sitio</SelectItem>
                 {sitios
-                  .filter(sitio => sitio.salmonera_id === formData.salmonera_id)
+                  .filter(sitio => !formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id)
                   .map((sitio) => (
                     <SelectItem key={sitio.id} value={sitio.id}>
                       {sitio.nombre}

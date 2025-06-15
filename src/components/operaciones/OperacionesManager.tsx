@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
@@ -41,16 +40,42 @@ export const OperacionesManager = () => {
 
   const handleEdit = async (operacion: any) => {
     try {
-      const { id, sitios, contratistas, salmoneras, ...cleanData } = operacion;
-      await updateOperacion({ id, data: cleanData });
+      // Limpiar datos para enviar solo los campos válidos de la tabla operacion
+      const cleanData = {
+        codigo: operacion.codigo,
+        nombre: operacion.nombre,
+        tareas: operacion.tareas,
+        fecha_inicio: operacion.fecha_inicio,
+        fecha_fin: operacion.fecha_fin,
+        estado: operacion.estado,
+        estado_aprobacion: operacion.estado_aprobacion,
+        salmonera_id: operacion.salmonera_id,
+        contratista_id: operacion.contratista_id,
+        sitio_id: operacion.sitio_id,
+        servicio_id: operacion.servicio_id,
+        equipo_buceo_id: operacion.equipo_buceo_id,
+        supervisor_asignado_id: operacion.supervisor_asignado_id
+      };
+
+      // Remover campos undefined o null
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key as keyof typeof cleanData] === undefined) {
+          delete cleanData[key as keyof typeof cleanData];
+        }
+      });
+
+      console.log('Sending cleaned data to update:', cleanData);
+      
+      await updateOperacion({ id: operacion.id, data: cleanData });
       toast({
         title: "Operación actualizada",
         description: "La operación ha sido actualizada exitosamente.",
       });
     } catch (error: any) {
+      console.error('Error updating operacion:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar la operación.",
+        description: `No se pudo actualizar la operación: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     }
