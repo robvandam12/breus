@@ -711,6 +711,42 @@ export type Database = {
           },
         ]
       }
+      dashboard_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          layout_config: Json
+          name: string
+          type: string
+          updated_at: string
+          widget_configs: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          layout_config: Json
+          name: string
+          type?: string
+          updated_at?: string
+          widget_configs: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          layout_config?: Json
+          name?: string
+          type?: string
+          updated_at?: string
+          widget_configs?: Json
+        }
+        Relationships: []
+      }
       domain_event: {
         Row: {
           aggregate_id: string

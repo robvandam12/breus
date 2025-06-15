@@ -61,6 +61,7 @@ export interface WidgetConfig {
   defaultLayout: {
     w: number;
     h: number;
+    static?: boolean;
   };
   isHeavy?: boolean;
   category?: 'metrics' | 'alerts' | 'actions' | 'status' | 'content';

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -22,7 +21,7 @@ export interface DashboardTemplate {
 
 const fetchDashboardTemplates = async (userId: string, role: Role) => {
   const { data: userTemplates, error } = await supabase
-    .from('dashboard_templates')
+    .from('dashboard_templates' as any)
     .select('*')
     .eq('type', 'user')
     .eq('created_by', userId);
@@ -33,7 +32,6 @@ const fetchDashboardTemplates = async (userId: string, role: Role) => {
   }
 
   const relevantSystemTemplates = hardcodedSystemTemplates
-    .filter(t => t.role_target === role)
     .map((t, index) => ({
       ...t,
       id: `system-${t.name.replace(/\s+/g, '-').toLowerCase()}-${index}`,
