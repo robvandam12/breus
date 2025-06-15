@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useEquipoBuceo, EquipoBuceo } from '@/hooks/useEquipoBuceo';
 import { EquipmentStatusWidgetSkeleton } from './skeletons/EquipmentStatusWidgetSkeleton';
-import { AlertCircle, Users, CheckCircle, XCircle, Tool, Ship } from 'lucide-react';
+import { AlertCircle, Users, CheckCircle, XCircle, Wrench, Ship } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -23,7 +23,7 @@ const getStatus = (equipo: EquipoBuceo) => {
          return { label: 'En Uso', color: 'bg-blue-500', icon: <Ship className="h-4 w-4" /> };
     }
     if (equipo.nombre.toLowerCase().includes('gamma')) {
-        return { label: 'Mantenimiento', color: 'bg-yellow-500 text-black', icon: <Tool className="h-4 w-4" /> };
+        return { label: 'Mantenimiento', color: 'bg-yellow-500 text-black', icon: <Wrench className="h-4 w-4" /> };
     }
     return { label: 'Disponible', color: 'bg-green-500', icon: <CheckCircle className="h-4 w-4" /> };
 };
