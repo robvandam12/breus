@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,12 +113,12 @@ export const InmersionDetailModal: React.FC<InmersionDetailModalProps> = ({
             </Card>
           )}
 
-          {currentInmersion.depth_history && currentInmersion.depth_history.length > 0 && (
+          {Array.isArray(currentInmersion.depth_history) && currentInmersion.depth_history.length > 0 && (
             <Card>
               <CardHeader><CardTitle>Perfil de Profundidad</CardTitle></CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentInmersion.depth_history}>
+                  <LineChart data={currentInmersion.depth_history as any[]}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="timestamp" tickFormatter={(time) => new Date(time).toLocaleTimeString()} />
                     <YAxis reversed domain={[0, 'dataMax + 5']} />

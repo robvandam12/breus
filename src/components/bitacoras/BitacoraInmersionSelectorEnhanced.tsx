@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, Users, Building, MapPin, Anchor } from "lucide-react";
 import { useInmersionesData } from "@/hooks/useInmersionesData";
-import { InmersionCompleta } from "@/types/bitacoras";
+import type { Inmersion } from "@/types/inmersion";
 
 interface InmersionData {
   inmersion_id: string;
@@ -37,25 +36,25 @@ export const BitacoraInmersionSelectorEnhanced = ({
   const [searchTerm, setSearchTerm] = useState("");
   const { inmersiones, loadingInmersiones } = useInmersionesData();
 
-  const filteredInmersiones = (inmersiones as InmersionCompleta[]).filter(inmersion =>
+  const filteredInmersiones = (inmersiones as Inmersion[]).filter(inmersion =>
     inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inmersion.supervisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inmersion.operacion?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+    (inmersion.operacion as any)?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSelect = (inmersion: InmersionCompleta) => {
+  const handleSelect = (inmersion: Inmersion) => {
     const inmersionData: InmersionData = {
       inmersion_id: inmersion.inmersion_id,
       codigo: inmersion.codigo,
       fecha_inmersion: inmersion.fecha_inmersion,
       objetivo: inmersion.objetivo,
-      supervisor: inmersion.supervisor,
-      buzo_principal: inmersion.buzo_principal,
+      supervisor: inmersion.supervisor || '',
+      buzo_principal: inmersion.buzo_principal || '',
       hora_inicio: inmersion.hora_inicio,
-      hora_fin: inmersion.hora_fin,
+      hora_fin: inmersion.hora_fin || undefined,
       operacion: inmersion.operacion,
-      equipo_buceo_id: inmersion.operacion?.equipo_buceo_id
+      equipo_buceo_id: (inmersion.operacion as any)?.equipo_buceo_id
     };
     onInmersionSelected(inmersionData);
   };
@@ -140,23 +139,23 @@ export const BitacoraInmersionSelectorEnhanced = ({
                     </div>
                     <div className="flex items-center gap-1">
                       <Building className="w-3 h-3" />
-                      <span><strong>Operación:</strong> {inmersion.operacion?.nombre || 'Sin operación'}</span>
+                      <span><strong>Operación:</strong> {(inmersion.operacion as any)?.nombre || 'Sin operación'}</span>
                     </div>
                   </div>
 
-                  {inmersion.operacion?.equipo_buceo_id && (
+                  {(inmersion.operacion as any)?.equipo_buceo_id && (
                     <div className="mt-3 p-2 bg-green-50 rounded border border-green-200">
                       <div className="flex items-center gap-1 text-xs text-green-700">
                         <Users className="w-3 h-3" />
-                        <span><strong>Equipo de Buceo ID:</strong> {inmersion.operacion.equipo_buceo_id}</span>
+                        <span><strong>Equipo de Buceo ID:</strong> {(inmersion.operacion as any).equipo_buceo_id}</span>
                       </div>
                     </div>
                   )}
 
-                  {inmersion.operacion?.salmoneras?.nombre && (
+                  {(inmersion.operacion as any)?.salmoneras?.nombre && (
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <MapPin className="w-3 h-3" />
-                      <span><strong>Empresa:</strong> {inmersion.operacion.salmoneras.nombre}</span>
+                      <span><strong>Empresa:</strong> {(inmersion.operacion as any).salmoneras.nombre}</span>
                     </div>
                   )}
                 </div>

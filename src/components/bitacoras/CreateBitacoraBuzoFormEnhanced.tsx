@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, Anchor, Save, X } from 'lucide-react';
 import { BitacoraBuzoFormData } from '@/hooks/useBitacorasBuzo';
-import { InmersionCompleta } from '@/types/bitacoras';
+import type { Inmersion } from '@/types/inmersion';
 import { useInmersionesData } from '@/hooks/useInmersionesData';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -27,7 +26,7 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
   const { inmersiones, loadingInmersiones } = useInmersionesData();
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
-  const [selectedInmersion, setSelectedInmersion] = useState<InmersionCompleta | null>(null);
+  const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);
   const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData>>({
     codigo: `BIT-BUZ-${Date.now()}`,
     inmersion_id: '',
@@ -124,12 +123,12 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Empresa:</span>
-                        <span>{selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre || 'N/A'}</span>
+                        <span>{(selectedInmersion.operacion as any)?.salmoneras?.nombre || (selectedInmersion.operacion as any)?.contratistas?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Sitio:</span>
-                        <span>{selectedInmersion.operacion?.sitios?.nombre || 'N/A'}</span>
+                        <span>{(selectedInmersion.operacion as any)?.sitios?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />

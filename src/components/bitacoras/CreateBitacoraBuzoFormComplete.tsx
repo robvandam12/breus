@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +7,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FileText, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { BitacoraInmersionSelector } from "./BitacoraInmersionSelector";
 import { BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
-import { InmersionCompleta } from "@/types/bitacoras";
+import type { Inmersion } from "@/types/inmersion";
 import { Separator } from "@/components/ui/separator";
 import { bitacoraBuzoFormSchema, BitacoraBuzoFormValues } from "./buzoFormSchema";
 import { Step2Personal } from "./buzo-form-steps/Step2Personal";
@@ -22,7 +21,7 @@ interface CreateBitacoraBuzoFormCompleteProps {
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
   inmersionId?: string;
-  inmersion?: InmersionCompleta | null;
+  inmersion?: Inmersion | null;
 }
 
 export const CreateBitacoraBuzoFormComplete = ({ 
@@ -76,9 +75,9 @@ export const CreateBitacoraBuzoFormComplete = ({
           description: "Se ha cargado un borrador guardado para esta inmersión.",
         });
       } else if (inmersion) {
-        setValue('empresa_nombre', inmersion.operacion?.salmoneras?.nombre || '');
-        setValue('centro_nombre', inmersion.operacion?.sitios?.nombre || '');
-        setValue('contratista_nombre', inmersion.operacion?.contratistas?.nombre || '');
+        setValue('empresa_nombre', (inmersion.operacion as any)?.salmoneras?.nombre || '');
+        setValue('centro_nombre', (inmersion.operacion as any)?.sitios?.nombre || '');
+        setValue('contratista_nombre', (inmersion.operacion as any)?.contratistas?.nombre || '');
         setValue('supervisor_nombre', inmersion.supervisor || '');
         setValue('objetivo_proposito', inmersion.objetivo || '');
       }

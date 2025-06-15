@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,7 +19,13 @@ export const useInmersionesCRUD = (operacionId?: string) => {
         .select(`
           *,
           operacion:operacion_id (
-            nombre
+            id,
+            codigo,
+            nombre,
+            equipo_buceo_id,
+            salmoneras:salmonera_id(nombre),
+            sitios:sitio_id(nombre),
+            contratistas:contratista_id(nombre)
           )
         `)
         .order('created_at', { ascending: false });
@@ -35,9 +40,9 @@ export const useInmersionesCRUD = (operacionId?: string) => {
       
       return data.map(inmersion => ({
         ...inmersion,
-        operacion_nombre: inmersion.operacion?.nombre || '',
-        depth_history: (inmersion.depth_history as unknown as Array<{ depth: number; timestamp: string }>) ?? [],
-      })) as Inmersion[];
+        operacion_nombre: (inmersion.operacion as any)?.nombre || '',
+        depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
+      })) as unknown as Inmersion[];
     },
   });
 
@@ -138,13 +143,13 @@ export const useInmersionesCRUD = (operacionId?: string) => {
 
         if (fetchError) throw fetchError;
 
-        const currentHistory = (currentInmersion?.depth_history || []) as Array<{ depth: number; timestamp: string }>;
+        const currentHistory = (Array.isArray(currentInmersion?.depth_history) ? currentInmersion?.depth_history : []) as Array<{ depth: number; timestamp: string }>;
         const newHistoryEntry = {
           depth: data.current_depth,
           timestamp: new Date().toISOString(),
         };
         const newHistory = [...currentHistory, newHistoryEntry];
-        data.depth_history = newHistory;
+        data.depth_history = newHistory as any;
       }
 
       const { data: updatedData, error } = await supabase

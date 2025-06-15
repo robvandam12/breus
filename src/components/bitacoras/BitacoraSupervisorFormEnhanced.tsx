@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 import { useAuth } from '@/hooks/useAuth';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersionesData } from '@/hooks/useInmersionesData';
-import { InmersionCompleta as Inmersion } from '@/types/bitacoras';
+import type { Inmersion } from '@/types/inmersion';
 
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
@@ -75,7 +74,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
       codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: selectedInmersion.inmersion_id,
       supervisor_id: profile?.id || '',
-      supervisor: profile?.nombre + ' ' + profile?.apellido || '',
+      supervisor: (profile?.nombre || '') + ' ' + (profile?.apellido || ''),
       desarrollo_inmersion: formData.desarrollo_inmersion,
       incidentes: formData.incidentes || '',
       evaluacion_general: formData.evaluacion_general,

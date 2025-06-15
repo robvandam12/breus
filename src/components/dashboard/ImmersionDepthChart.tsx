@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Inmersion } from '@/types/inmersion';
 
@@ -7,11 +6,13 @@ interface ImmersionDepthChartProps {
 }
 
 export const ImmersionDepthChart = ({ immersion }: ImmersionDepthChartProps) => {
-  if (!immersion.depth_history || immersion.depth_history.length < 2) {
+  const depthHistory = Array.isArray(immersion.depth_history) ? immersion.depth_history : [];
+
+  if (depthHistory.length < 2) {
     return <div className="text-center text-sm text-zinc-500 dark:text-zinc-400 py-4">No hay suficientes datos de profundidad para mostrar un gráfico.</div>;
   }
 
-  const data = immersion.depth_history.map(d => ({
+  const data = depthHistory.map((d: any) => ({
     time: new Date(d.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
     depth: d.depth * -1 // Profundidad como valor negativo para el gráfico
   }));
