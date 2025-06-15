@@ -10,9 +10,10 @@ interface MainLayoutProps {
   title: string;
   subtitle: string;
   icon: React.ElementType;
+  headerChildren?: React.ReactNode;
 }
 
-export const MainLayout = ({ children, title, subtitle, icon }: MainLayoutProps) => {
+export const MainLayout = ({ children, title, subtitle, icon, headerChildren }: MainLayoutProps) => {
   const isMobile = useIsMobile();
   
   return (
@@ -20,7 +21,9 @@ export const MainLayout = ({ children, title, subtitle, icon }: MainLayoutProps)
       <div className="min-h-screen flex w-full">
         <RoleBasedSidebar />
         <main className="flex-1 flex flex-col pb-16 md:pb-0">
-          <Header title={title} subtitle={subtitle} icon={icon} />
+          <Header title={title} subtitle={subtitle} icon={icon}>
+            {headerChildren}
+          </Header>
           <div className="flex-1 overflow-auto bg-muted/20">
             <div className="p-4 sm:p-6">
               {children}

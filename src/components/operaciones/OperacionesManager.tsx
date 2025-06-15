@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
@@ -11,9 +10,11 @@ import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
 import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const OperacionesManager = () => {
-  const [activeTab, setActiveTab] = useState("table");
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const { 
