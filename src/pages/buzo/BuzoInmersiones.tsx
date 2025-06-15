@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,13 +23,16 @@ export default function BuzoInmersiones() {
     const buzoName = `${profile.nombre} ${profile.apellido}`;
     return inmersionesCompletas
       .filter(i => i.buzo_principal === buzoName || i.buzo_asistente === buzoName)
-      .map(inmersion => ({
-        ...inmersion,
-        operacionNombre: inmersion.operacion?.nombre || 'N/A',
-        salmoneraNombre: inmersion.operacion?.salmoneras?.nombre || 'N/A',
-        sitioNombre: inmersion.operacion?.sitios?.nombre || 'N/A',
-        rol: inmersion.buzo_principal === buzoName ? 'Principal' : 'Asistente',
-      }))
+      .map(inmersion => {
+        const rol: 'Principal' | 'Asistente' = inmersion.buzo_principal === buzoName ? 'Principal' : 'Asistente';
+        return {
+          ...inmersion,
+          operacionNombre: inmersion.operacion?.nombre || 'N/A',
+          salmoneraNombre: inmersion.operacion?.salmoneras?.nombre || 'N/A',
+          sitioNombre: inmersion.operacion?.sitios?.nombre || 'N/A',
+          rol,
+        };
+      })
       .sort((a, b) => new Date(b.fecha_inmersion).getTime() - new Date(a.fecha_inmersion).getTime());
   }, [profile, inmersionesCompletas]);
 
