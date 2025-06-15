@@ -52,10 +52,10 @@ export const BitacorasBuzoContent = ({
   onOpenSignModal,
 }: BitacorasBuzoContentProps) => {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Supervisor Requirement Alert */}
       {!hasSupervisorLogs && (
-        <Alert className="mb-6 border-orange-200 bg-orange-50">
+        <Alert className="border-orange-200 bg-orange-50">
           <AlertTriangle className="w-4 h-4 text-orange-600" />
           <AlertDescription className="text-orange-800">
             <strong>Bitácoras de Supervisor Requeridas:</strong> Las bitácoras de buzo requieren 
@@ -66,7 +66,7 @@ export const BitacorasBuzoContent = ({
       )}
 
       {/* Emergency Diver Info */}
-      <Alert className="mb-6 border-blue-200 bg-blue-50">
+      <Alert className="border-blue-200 bg-blue-50">
         <Users className="w-4 h-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
           <strong>Buzos de Emergencia:</strong> Los buzos designados como "emergencia" 
@@ -82,10 +82,10 @@ export const BitacorasBuzoContent = ({
         filteredBuzo={filteredBitacorasBuzo}
       />
 
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <FileText className="w-5 h-5 text-primary" />
             Filtros y Búsqueda
           </CardTitle>
         </CardHeader>
@@ -100,21 +100,21 @@ export const BitacorasBuzoContent = ({
       {bitacorasBuzo.length > 0 && totalItems === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">No se encontraron resultados</h3>
-            <p className="text-zinc-500 mb-4">Intenta ajustar los filtros de búsqueda</p>
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No se encontraron resultados</h3>
+            <p className="text-muted-foreground mb-4">Intenta ajustar los filtros de búsqueda</p>
           </CardContent>
         </Card>
       ) : filteredBitacorasBuzo.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-900 mb-2">
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               {bitacorasBuzo.length === 0 
                 ? "No hay bitácoras de buzo" 
                 : "No se encontraron resultados"}
             </h3>
-            <p className="text-zinc-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               {bitacorasBuzo.length === 0 
                 ? hasSupervisorLogs 
                   ? "Comienza creando bitácoras de buzo basadas en los registros del supervisor"
@@ -130,35 +130,39 @@ export const BitacorasBuzoContent = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {viewMode === 'table' ? (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Inmersión</TableHead>
-                    <TableHead>Buzo</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Profundidad</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBitacorasBuzo.map((bitacora) => (
-                    <BitacoraTableRow
-                      key={bitacora.bitacora_id}
-                      bitacora={bitacora}
-                      type="buzo"
-                      onSign={onSignBuzo}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-muted-foreground">Código</TableHead>
+                        <TableHead className="text-muted-foreground">Inmersión</TableHead>
+                        <TableHead className="text-muted-foreground">Buzo</TableHead>
+                        <TableHead className="text-muted-foreground">Fecha</TableHead>
+                        <TableHead className="text-muted-foreground">Profundidad</TableHead>
+                        <TableHead className="text-muted-foreground">Estado</TableHead>
+                        <TableHead className="text-right text-muted-foreground">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBitacorasBuzo.map((bitacora) => (
+                        <BitacoraTableRow
+                          key={bitacora.bitacora_id}
+                          bitacora={bitacora}
+                          type="buzo"
+                          onSign={onSignBuzo}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredBitacorasBuzo.map((bitacora) => (
                 <BitacoraCard
                   key={bitacora.bitacora_id}
