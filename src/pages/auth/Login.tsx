@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,15 +31,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, user } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirigir si el usuario ya está autenticado
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +45,6 @@ export default function Login() {
 
     try {
       await signIn(email, password);
-      // La redirección se maneja automáticamente con el useEffect de arriba
-      // cuando el estado del usuario cambie
     } catch (error: any) {
       console.error('Error during login:', error);
       setError(error.message || 'Error al iniciar sesión');

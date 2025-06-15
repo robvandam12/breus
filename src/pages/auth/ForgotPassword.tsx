@@ -1,13 +1,14 @@
 
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const BreusLogo = ({ size = 64 }: { size?: number }) => (
   <svg 
@@ -29,21 +30,12 @@ const BreusLogo = ({ size = 64 }: { size?: number }) => (
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const { resetPassword, user } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirigir si el usuario ya está autenticado
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email) {
       setError('Por favor, ingresa tu email');
       return;
@@ -53,17 +45,26 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      await resetPassword(email);
-      setSuccess(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu bandeja de entrada para las instrucciones de recuperación",
+      });
     } catch (error: any) {
-      console.error('Error during password reset:', error);
-      setError(error.message || 'Error al enviar email de recuperación');
+      console.error('Error sending reset email:', error);
+      setError(error.message || 'Error al enviar el email de recuperación');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (success) {
+  if (isSubmitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
@@ -74,22 +75,33 @@ export default function ForgotPassword() {
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
               Email Enviado
             </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Sistema de Gestión de Buceo
+            </p>
           </div>
 
           <Card>
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
-                <p className="text-gray-600">
-                  Hemos enviado un enlace de recuperación a tu email. 
-                  Revisa tu bandeja de entrada y sigue las instrucciones.
-                </p>
-                <Link 
-                  to="/login"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-500"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Volver al inicio de sesión
-                </Link>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <Mail className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Revisa tu email
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Hemos enviado las instrucciones de recuperación a <strong>{email}</strong>
+                  </p>
+                </div>
+                <div className="pt-4">
+                  <Link to="/login">
+                    <Button variant="outline" className="w-full">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Volver al login
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -109,15 +121,15 @@ export default function ForgotPassword() {
             Recuperar Contraseña
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Te enviaremos un enlace para restablecer tu contraseña
+            Sistema de Gestión de Buceo
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recuperación de Contraseña</CardTitle>
+            <CardTitle>¿Olvidaste tu contraseña?</CardTitle>
             <CardDescription>
-              Ingresa tu email para recibir instrucciones
+              Ingresa tu email y te enviaremos las instrucciones para recuperarla
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -137,6 +149,7 @@ export default function ForgotPassword() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -151,17 +164,20 @@ export default function ForgotPassword() {
                     Enviando...
                   </>
                 ) : (
-                  'Enviar Enlace de Recuperación'
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Enviar instrucciones
+                  </>
                 )}
               </Button>
 
               <div className="text-center">
                 <Link 
-                  to="/login"
-                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
+                  to="/login" 
+                  className="text-sm text-blue-600 hover:text-blue-500 flex items-center justify-center"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Volver al inicio de sesión
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Volver al login
                 </Link>
               </div>
             </form>
