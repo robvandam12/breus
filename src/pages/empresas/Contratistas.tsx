@@ -43,21 +43,14 @@ const Contratistas = () => {
     }
   };
 
-  const handleEditContratista = async (id: string, data: any) => {
-    try {
-      await updateContratista({ id, data });
-      toast({
-        title: "Contratista actualizado",
-        description: "El contratista ha sido actualizado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error updating contratista:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el contratista.",
-        variant: "destructive",
-      });
-    }
+  const handleEditContratista = async (contratista: any) => {
+    // TODO: Implementar edit dialog
+    console.log('Edit contratista:', contratista);
+  };
+
+  const handleSelectContratista = (contratista: any) => {
+    // TODO: Implementar vista de detalles
+    console.log('Select contratista:', contratista);
   };
 
   const handleDeleteContratista = async (id: string) => {
@@ -147,15 +140,15 @@ const Contratistas = () => {
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-yellow-600">
-            {contratistas.filter(c => c.salmoneras_asociadas && c.salmoneras_asociadas.length > 0).length}
-          </div>
-          <div className="text-sm text-zinc-500">Con Salmoneras</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-purple-600">
             {contratistas.filter(c => c.especialidades && c.especialidades.length > 0).length}
           </div>
           <div className="text-sm text-zinc-500">Con Especialidades</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold text-purple-600">
+            {contratistas.filter(c => c.certificaciones && c.certificaciones.length > 0).length}
+          </div>
+          <div className="text-sm text-zinc-500">Con Certificaciones</div>
         </Card>
       </div>
 
@@ -184,6 +177,7 @@ const Contratistas = () => {
           contratistas={filteredContratistas} 
           onEdit={handleEditContratista}
           onDelete={handleDeleteContratista}
+          onSelect={handleSelectContratista}
         />
       )}
     </MainLayout>

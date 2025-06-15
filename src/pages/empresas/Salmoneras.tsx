@@ -62,6 +62,11 @@ const Salmoneras = () => {
     }
   };
 
+  const handleSelectSalmonera = (salmonera: any) => {
+    // TODO: Implementar vista de detalles
+    console.log('Select salmonera:', salmonera);
+  };
+
   const handleDeleteSalmonera = async (id: string) => {
     try {
       await deleteSalmonera(id);
@@ -149,15 +154,15 @@ const Salmoneras = () => {
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-yellow-600">
-            {salmoneras.filter(s => s.sitios_count && s.sitios_count > 0).length}
+            {salmoneras.filter(s => s.sitios_activos && s.sitios_activos > 0).length}
           </div>
           <div className="text-sm text-zinc-500">Con Sitios</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-purple-600">
-            {salmoneras.filter(s => s.contratistas_asociados && s.contratistas_asociados.length > 0).length}
+            {salmoneras.length}
           </div>
-          <div className="text-sm text-zinc-500">Con Contratistas</div>
+          <div className="text-sm text-zinc-500">Total Registradas</div>
         </Card>
       </div>
 
@@ -186,12 +191,14 @@ const Salmoneras = () => {
           salmoneras={filteredSalmoneras} 
           onEdit={handleEditSalmonera}
           onDelete={handleDeleteSalmonera}
+          onSelect={handleSelectSalmonera}
         />
       ) : (
         <SalmoneraCardView 
           salmoneras={filteredSalmoneras}
           onEdit={handleEditSalmonera}
           onDelete={handleDeleteSalmonera}
+          onSelect={handleSelectSalmonera}
         />
       )}
     </MainLayout>

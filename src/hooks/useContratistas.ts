@@ -93,6 +93,32 @@ export const useContratistas = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ContratistaFormData }) => {
+      const { error } = await supabase
+        .from('contratistas')
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contratistas'] });
+      toast({
+        title: "Contratista actualizado",
+        description: "El contratista ha sido actualizado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating contratista:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el contratista.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -123,8 +149,10 @@ export const useContratistas = () => {
     contratistas,
     isLoading,
     createContratista: createMutation.mutateAsync,
+    updateContratista: updateMutation.mutateAsync,
     deleteContratista: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };
 };
