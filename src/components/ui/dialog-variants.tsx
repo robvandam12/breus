@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogProps } from "@/components/ui/dialog";
+import { DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-interface DialogContentVariantProps extends React.ComponentPropsWithoutRef<typeof DialogContent> {
+interface DialogContentVariantProps extends Omit<React.ComponentPropsWithoutRef<typeof DialogContent>, 'variant'> {
   variant?: 'default' | 'form' | 'detail' | 'wizard';
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
