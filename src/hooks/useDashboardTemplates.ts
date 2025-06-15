@@ -5,6 +5,8 @@ import { useAuth } from './useAuth';
 import { useAuthRoles } from './useAuthRoles';
 import { Layouts } from 'react-grid-layout';
 import { toast } from '@/hooks/use-toast';
+import { systemTemplates as hardcodedSystemTemplates } from '@/components/dashboard/system-templates';
+import { Role } from '@/components/dashboard/widgetRegistry';
 
 export interface DashboardTemplate {
   id: string;
@@ -18,17 +20,29 @@ export interface DashboardTemplate {
   created_at: string;
 }
 
-const fetchDashboardTemplates = async (userId: string, role: string) => {
-  const { data, error } = await supabase
-    .from('dashboard_templates' as any)
+const fetchDashboardTemplates = async (userId: string, role: Role) => {
+  const { data: userTemplates, error } = await supabase
+    .from('dashboard_templates')
     .select('*')
-    .or(`and(type.eq.system,role_target.eq.${role}),and(type.eq.user,created_by.eq.${userId})`);
+    .eq('type', 'user')
+    .eq('created_by', userId);
 
   if (error) {
-    console.error('Error fetching dashboard templates:', error);
+    console.error('Error fetching user dashboard templates:', error);
     throw new Error(error.message);
   }
-  return data as unknown as DashboardTemplate[];
+
+  const relevantSystemTemplates = hardcodedSystemTemplates
+    .filter(t => t.role_target === role)
+    .map((t, index) => ({
+      ...t,
+      id: `system-${t.name.replace(/\s+/g, '-').toLowerCase()}-${index}`,
+      created_by: 'system',
+      created_at: new Date().toISOString(),
+      role_target: t.role_target,
+    }));
+
+  return [...(userTemplates || []), ...relevantSystemTemplates] as DashboardTemplate[];
 };
 
 const createDashboardTemplate = async (templateData: Omit<DashboardTemplate, 'id' | 'created_at'>) => {
@@ -48,7 +62,7 @@ export const useDashboardTemplates = () => {
 
   const { data: templates = [], isLoading, isError } = useQuery({
     queryKey: ['dashboardTemplates', profile?.id, currentRole],
-    queryFn: () => fetchDashboardTemplates(profile!.id, currentRole),
+    queryFn: () => fetchDashboardTemplates(profile!.id, currentRole as Role),
     enabled: !!profile?.id && !!currentRole,
   });
 
