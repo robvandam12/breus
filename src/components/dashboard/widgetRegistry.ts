@@ -16,6 +16,7 @@ import { SecurityAlertsWidgetSkeleton } from './widgets/skeletons/SecurityAlerts
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
 import { CalendarWidgetSkeleton } from './widgets/skeletons/CalendarWidgetSkeleton';
 import { WeatherWidgetSkeleton } from './widgets/skeletons/WeatherWidgetSkeleton';
+import { EquipmentStatusWidgetSkeleton } from './widgets/skeletons/EquipmentStatusWidgetSkeleton';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -94,6 +95,13 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     skeleton: GenericWidgetSkeleton,
     description: 'Métricas y reportes para administradores.',
     defaultLayout: { w: 6, h: 6 },
+  },
+  equipment_status: {
+    name: 'Estado de Equipos',
+    component: React.lazy(() => import('./widgets/EquipmentStatusWidget')),
+    skeleton: EquipmentStatusWidgetSkeleton,
+    description: 'Muestra el estado actual de los equipos de buceo.',
+    defaultLayout: { w: 6, h: 8 },
   },
   notifications: {
     name: 'Notificaciones Recientes',
