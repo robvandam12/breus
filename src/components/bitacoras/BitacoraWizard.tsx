@@ -1,15 +1,15 @@
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { BitacoraFormBase } from '@/components/forms/BitacoraFormBase';
+import { BitacoraWizardProgress } from '@/components/forms/BitacoraWizardProgress';
+import { BitacoraFormActions } from '@/components/forms/BitacoraFormActions';
 import { BitacoraStep1 } from './steps/BitacoraStep1';
 import { BitacoraStep2 } from './steps/BitacoraStep2';
 import { BitacoraStep4 } from './steps/BitacoraStep4';
 import { BitacoraStep5 } from './steps/BitacoraStep5';
 import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
+import { FileText } from 'lucide-react';
 
-// Export the type for the step components
 export type BitacoraSupervisorData = BitacoraSupervisorFormData;
 
 interface BitacoraWizardProps {
@@ -17,13 +17,21 @@ interface BitacoraWizardProps {
   onCancel: () => void;
 }
 
+const WIZARD_STEPS = [
+  { title: 'Info General' },
+  { title: 'Personal' },
+  { title: 'Trabajo' },
+  { title: 'Validación' }
+];
+
 export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<BitacoraSupervisorFormData>({
     codigo: `BIT-SUP-${Date.now()}`,
     inmersion_id: '',
     supervisor: '',
-    supervisor_id: '', // Agregado campo requerido
+    supervisor_id: '',
     desarrollo_inmersion: '',
     incidentes: '',
     evaluacion_general: '',
@@ -49,7 +57,6 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
   });
 
   const totalSteps = 4;
-  const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -63,8 +70,15 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
     }
   };
 
-  const handleComplete = () => {
-    onComplete(formData);
+  const handleComplete = async () => {
+    setIsSubmitting(true);
+    try {
+      await onComplete(formData);
+    } catch (error) {
+      console.error('Error completing wizard:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateFormData = (updates: Partial<BitacoraSupervisorFormData>) => {
@@ -87,44 +101,35 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="p-6">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold">
-              Paso {currentStep} de {totalSteps}
-            </h2>
-            <span className="text-sm text-gray-500">{Math.round(progress)}% completado</span>
-          </div>
-          <Progress value={progress} className="w-full" />
-        </div>
+    <BitacoraFormBase
+      title="Nueva Bitácora de Supervisor"
+      subtitle="Registro completo de supervisión de inmersiones"
+      icon={FileText}
+      variant="dialog"
+      isLoading={isSubmitting}
+    >
+      <BitacoraWizardProgress
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        steps={WIZARD_STEPS}
+        className="mb-6"
+      />
 
+      <div className="min-h-[400px]">
         {renderStep()}
+      </div>
 
-        <div className="flex justify-between mt-6">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            Anterior
-          </Button>
-
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-
-          {currentStep === totalSteps ? (
-            <Button onClick={handleComplete}>
-              Completar
-            </Button>
-          ) : (
-            <Button onClick={handleNext}>
-              Siguiente
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      <BitacoraFormActions
+        type="wizard"
+        onCancel={onCancel}
+        onSubmit={handleComplete}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        isLoading={isSubmitting}
+        isFirstStep={currentStep === 1}
+        isLastStep={currentStep === totalSteps}
+        className="mt-6"
+      />
+    </BitacoraFormBase>
   );
 };
