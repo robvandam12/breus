@@ -25,14 +25,12 @@ const fetchDashboardLayout = async (userId: string) => {
             if (typeof data.layout_config === 'object') {
                 return data;
             } else {
-                console.warn('Layout_config inválido en base de datos, se ignorará');
                 return null;
             }
         }
         
         return data;
     } catch (error) {
-        console.error('Error al obtener layout del dashboard:', error);
         throw error;
     }
 };
@@ -50,7 +48,7 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
             .from('dashboard_layouts')
             .upsert({
                 user_id: userId,
-                layout_config: layoutsToSave as any, // Cast explícito para evitar errores de tipo
+                layout_config: layoutsToSave as unknown as any,
                 widget_configs: widgets || {},
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' })
@@ -60,7 +58,6 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error('Error al guardar layout del dashboard:', error);
         throw error;
     }
 };
@@ -77,7 +74,6 @@ const deleteDashboardLayout = async ({ userId }: { userId: string }) => {
         }
         return true;
     } catch (error) {
-        console.error('Error al eliminar layout del dashboard:', error);
         throw error;
     }
 };
@@ -107,7 +103,6 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
             queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
         },
         onError: (error: Error) => {
-            console.error('Error en mutación de guardado:', error);
             toast({
                 title: 'Error al guardar',
                 description: `No se pudo guardar tu configuración. ${error.message}`,
@@ -122,7 +117,6 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
             queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
         },
         onError: (error: Error) => {
-            console.error('Error en mutación de eliminación:', error);
             toast({
                 title: 'Error al restablecer',
                 description: `No se pudo restablecer la configuración. ${error.message}`,
@@ -151,7 +145,6 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
             
             return { layout, widgets };
         } catch (error) {
-            console.error('Error al procesar datos del layout:', error);
             return { layout: null, widgets: null };
         }
     }, [data, defaultLayouts]);

@@ -32,8 +32,6 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
                         layouts: cleanedLayouts,
                         widgets: template.widget_configs || defaultWidgets
                     };
-                } else {
-                    console.warn('Template layout inválido, usando layouts por defecto');
                 }
             }
             
@@ -43,7 +41,6 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
                 widgets: defaultWidgets
             };
         } catch (error) {
-            console.error('Error al obtener layouts por defecto:', error);
             setInitializationError('Error al cargar configuración por defecto');
             return {
                 layouts: { lg: [] },
@@ -71,13 +68,11 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
             
             // Validación adicional del resultado
             if (!isValidLayouts(filtered)) {
-                console.warn('Layout filtrado inválido, usando layouts por defecto');
                 return getLayoutsForRole(currentRole);
             }
             
             return filtered;
         } catch (error) {
-            console.error('Error al filtrar layouts:', error);
             setInitializationError('Error al procesar configuración del dashboard');
             return getLayoutsForRole(currentRole);
         }
@@ -90,7 +85,6 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
                 widgets: savedWidgets || defaultWidgets,
             };
         } catch (error) {
-            console.error('Error al obtener estado inicial:', error);
             return {
                 layouts: getLayoutsForRole(currentRole),
                 widgets: defaultWidgets,
@@ -125,7 +119,6 @@ export const useDashboardInitialization = (currentRole: Role, resetDashboardStat
                 resetDashboardState(initialState);
                 setIsInitialized(true);
             } catch (error) {
-                console.error('Error crítico en inicialización:', error);
                 toast({
                     title: 'Error Crítico',
                     description: 'Error al inicializar el dashboard. Se usará configuración mínima.',
