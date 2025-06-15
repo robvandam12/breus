@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -63,7 +64,7 @@ export const useDashboardManager = (currentRole: string) => {
 
     const { layout: savedLayout, widgets: savedWidgets, isLoading: isLoadingLayout, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutAndWidgets.layout, defaultLayoutAndWidgets.widgets);
     
-    const isLoading = isLoadingLayout || isLoadingTemplates;
+    const [isInitialized, setIsInitialized] = useState(false);
     
     const { 
         state: dashboardState, 
@@ -88,10 +89,12 @@ export const useDashboardManager = (currentRole: string) => {
     }, [currentRole, savedLayout, savedWidgets]);
 
     useEffect(() => {
-        if (!isLoading) {
+        const initialDataLoading = isLoadingLayout || isLoadingTemplates;
+        if (!initialDataLoading && !isInitialized) {
              resetDashboardState(getInitialDashboardState());
+             setIsInitialized(true);
         }
-    }, [isLoading, getInitialDashboardState, resetDashboardState]);
+    }, [isLoadingLayout, isLoadingTemplates, isInitialized, getInitialDashboardState, resetDashboardState]);
 
     const handleSaveLayout = () => {
         saveLayout({ layout: currentLayouts, widgets: currentWidgets }, {
@@ -183,7 +186,7 @@ export const useDashboardManager = (currentRole: string) => {
     }, [modes.isEditMode, modes.isPreviewMode, canUndo, canRedo, undoAction, redoAction, modes.handleEnterPreview]);
     
     return {
-        isLoading,
+        isLoading: !isInitialized,
         isEditMode: modes.isEditMode,
         isPreviewMode: modes.isPreviewMode,
         isSaving,
