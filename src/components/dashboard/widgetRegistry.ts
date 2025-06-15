@@ -13,6 +13,7 @@ import { StatsChartWidgetSkeleton } from './widgets/skeletons/StatsChartWidgetSk
 import { UpcomingOperationsWidgetSkeleton } from './widgets/skeletons/UpcomingOperationsWidgetSkeleton';
 import { MyImmersionsWidgetSkeleton } from './widgets/skeletons/MyImmersionsWidgetSkeleton';
 import { GenericWidgetSkeleton } from './widgets/skeletons/GenericWidgetSkeleton';
+import { SecurityAlertsWidgetSkeleton } from './widgets/skeletons/SecurityAlertsWidgetSkeleton';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -56,11 +57,18 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     defaultLayout: { w: 3, h: 6 },
   },
   alerts_panel: {
-    name: 'Panel de Alertas',
+    name: 'Alertas Generales',
     component: AlertasPanelWidget,
     configComponent: AlertsPanelWidgetConfig,
     skeleton: GenericWidgetSkeleton,
     description: 'Muestra alertas importantes del sistema.',
+    defaultLayout: { w: 4, h: 8 },
+  },
+  security_alerts: {
+    name: 'Alertas de Seguridad',
+    component: React.lazy(() => import('./widgets/SecurityAlertsWidget')),
+    skeleton: SecurityAlertsWidgetSkeleton,
+    description: 'Muestra alertas de seguridad críticas en tiempo real.',
     defaultLayout: { w: 4, h: 8 },
   },
   my_immersions: {
