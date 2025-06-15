@@ -22,7 +22,7 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
         .from('dashboard_layouts')
         .upsert({
             user_id: userId,
-            layout_config: layout,
+            layout_config: layout as any, // FIX: Cast layout to 'any' to satisfy Supabase's Json type
             widget_configs: widgets,
             updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
@@ -37,19 +37,19 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboardLayout', profile?.usuario_id],
-    queryFn: () => fetchDashboardLayout(profile!.usuario_id),
-    enabled: !!profile?.usuario_id,
+    queryKey: ['dashboardLayout', profile?.id], // FIX: Use profile.id instead of profile.usuario_id
+    queryFn: () => fetchDashboardLayout(profile!.id), // FIX: Use profile.id
+    enabled: !!profile?.id, // FIX: Use profile.id
   });
 
   const mutation = useMutation({
-    mutationFn: (newLayout: { layout: Layout[], widgets: any }) => saveDashboardLayout({ userId: profile!.usuario_id, ...newLayout }),
+    mutationFn: (newLayout: { layout: Layout[], widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newLayout }), // FIX: Use profile.id
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.usuario_id] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] }); // FIX: Use profile.id
     },
   });
   
-  const layout = data?.layout_config as Layout[] | undefined;
+  const layout = data?.layout_config as unknown as Layout[] | undefined; // FIX: Cast through unknown to avoid type error
   const widgets = data?.widget_configs;
 
   return {
