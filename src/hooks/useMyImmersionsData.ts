@@ -5,9 +5,9 @@ import { useInmersiones } from './useInmersiones';
 import { useBitacorasBuzo } from './useBitacorasBuzo';
 
 export const useMyImmersionsData = () => {
-  const { profile, isLoading: authLoading } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const { inmersiones, isLoading: inmersionesLoading } = useInmersiones();
-  const { bitacorasBuzo, isLoading: bitacorasLoading } = useBitacorasBuzo();
+  const { bitacorasBuzo, loadingBuzo: bitacorasLoading } = useBitacorasBuzo();
 
   const fullName = useMemo(() => profile ? `${profile.nombre} ${profile.apellido}` : '', [profile]);
 
