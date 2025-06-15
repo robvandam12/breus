@@ -1,121 +1,144 @@
-import { MainLayout } from "@/components/layout/MainLayout";
-import { SupervisorView } from "@/components/dashboard/SupervisorView";
-import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
-import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
-import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
-import { useAuth } from "@/hooks/useAuth";
-import { BarChart3 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
+
+import React from 'react';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, Users, Waves, BarChart3 } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 export default function Index() {
-  const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    // Redirect if not authenticated
-    if (!loading && !user) {
-      navigate('/login');
-      return;
-    }
-
-    // Redirect new users to onboarding
-    if (user && profile && !profile.nombre && !profile.apellido) {
-      navigate('/onboarding');
-      return;
-    }
-
-    // Check if buzo needs onboarding
-    if (user && profile && profile.role === 'buzo') {
-      const onboardingCompleted = localStorage.getItem('onboarding_completed');
-      if (!onboardingCompleted) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [loading, user, profile, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Show onboarding for buzos who haven't seen it
-  if (showOnboarding && profile?.role === 'buzo') {
-    return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
-  }
-
-  const getDashboardContent = () => {
-    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
-    
-    // Verificar si el perfil del buzo está completo
-    const isProfileComplete = () => {
-      if (!profile?.perfil_buzo) return false;
-      const requiredFields = ['rut', 'telefono', 'direccion', 'ciudad', 'region', 'nacionalidad'];
-      const perfilBuzo = profile.perfil_buzo as any;
-      return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
-    };
-
-    switch (profile?.role) {
-      case 'superuser':
-      case 'admin_salmonera':
-      case 'admin_servicio':
-        return <CustomizableDashboard />;
-      case 'supervisor':
-        return <SupervisorView />;
-      case 'buzo':
-        // Usar el nuevo dashboard específico para buzos
-        return <BuzoDashboard />;
-      default:
-        return <BuzoRestrictedView />;
-    }
-  };
-
-  const getDashboardTitle = () => {
-    switch (profile?.role) {
-      case 'superuser':
-        return "Panel de Administración";
-      case 'admin_salmonera':
-        return "Dashboard Salmonera";
-      case 'admin_servicio':
-        return "Dashboard Servicio";
-      case 'supervisor':
-        return "Dashboard Supervisor";
-      case 'buzo':
-        return "Dashboard Buzo";
-      default:
-        return "Dashboard";
-    }
-  };
-
-  const getDashboardSubtitle = () => {
-    switch (profile?.role) {
-      case 'superuser':
-        return "Gestión completa del sistema";
-      case 'admin_salmonera':
-        return "Administración de sitios y operaciones";
-      case 'admin_servicio':
-        return "Control de equipos y servicios";
-      case 'supervisor':
-        return "Supervisión de operaciones de buceo";
-      case 'buzo':
-        return "Gestión de inmersiones y bitácoras";
-      default:
-        return "Panel de control personal";
-    }
-  };
 
   return (
     <MainLayout
-      title={getDashboardTitle()}
-      subtitle={getDashboardSubtitle()}
-      icon={BarChart3}
+      title="Dashboard Principal"
+      subtitle="Gestión integral de operaciones de buceo"
+      icon={Waves}
     >
-      {getDashboardContent()}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/inmersiones')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inmersiones</CardTitle>
+              <Waves className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">24</div>
+              <p className="text-xs text-muted-foreground">
+                +20% desde el mes pasado
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/operaciones')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Operaciones Activas</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">8</div>
+              <p className="text-xs text-muted-foreground">
+                +2 nuevas esta semana
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/usuarios')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Personal Activo</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">42</div>
+              <p className="text-xs text-muted-foreground">
+                +3 nuevos buzos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/formularios/multix')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Formularios MultiX</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12</div>
+              <p className="text-xs text-muted-foreground">
+                6 mantención, 6 faena
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Acciones Rápidas</CardTitle>
+              <CardDescription>
+                Accede rápidamente a las funciones más utilizadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => navigate('/formularios/multix')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Crear Formulario MultiX
+              </Button>
+              <Button 
+                onClick={() => navigate('/inmersiones')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <Waves className="mr-2 h-4 w-4" />
+                Nueva Inmersión
+              </Button>
+              <Button 
+                onClick={() => navigate('/operaciones')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Ver Operaciones
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Formularios Disponibles</CardTitle>
+              <CardDescription>
+                Gestiona diferentes tipos de documentación
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <FileText className="h-8 w-8 text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium">MultiX - Boletas de Redes</p>
+                  <p className="text-xs text-muted-foreground">Mantención y Faena de Redes</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <FileText className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium">HPT - Hoja de Permiso de Trabajo</p>
+                  <p className="text-xs text-muted-foreground">Permisos de trabajo seguro</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <FileText className="h-8 w-8 text-orange-500" />
+                <div>
+                  <p className="text-sm font-medium">Anexo Bravo</p>
+                  <p className="text-xs text-muted-foreground">Documentación de seguridad</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </MainLayout>
   );
 }

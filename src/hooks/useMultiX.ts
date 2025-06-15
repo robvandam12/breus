@@ -49,7 +49,12 @@ export const useMultiX = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Asegurar que el tipo sea correcto
+      return {
+        ...data,
+        tipo_formulario: data.tipo_formulario as 'mantencion' | 'faena'
+      } as MultiXRecord;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['multix'] });

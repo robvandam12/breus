@@ -1,23 +1,24 @@
+
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { Login } from "@/pages/auth/Login";
-import { Index } from "@/pages";
-import { HPT } from "@/pages/formularios/HPT";
-import { AnexoBravo } from "@/pages/formularios/AnexoBravo";
-import { HPTFormularios } from "@/pages/formularios/HPTFormularios";
-import { AnexoBravoFormularios } from "@/pages/formularios/AnexoBravoFormularios";
-import { AuthLayout } from "@/components/layout/AuthLayout";
-import { ProfileSetup } from "@/pages/auth/ProfileSetup";
-import { Onboarding } from "@/pages/auth/Onboarding";
-import { BuzoOnboardingPage } from "@/pages/auth/BuzoOnboardingPage";
-import { EquipoBuceo } from "@/pages/auth/EquipoBuceo";
-import { PersonalPool } from "@/pages/auth/PersonalPool";
-import { PersonalPoolAdmin } from "@/pages/auth/PersonalPoolAdmin";
-import { Inmersiones } from "@/pages/Inmersiones";
-import { Operaciones } from "@/pages/Operaciones";
-import { Reportes } from "@/pages/Reportes";
-import { Configuracion } from "@/pages/Configuracion";
-import { Usuarios } from "@/pages/Usuarios";
-import { NotFound } from "@/pages/NotFound";
+import Login from "@/pages/auth/Login";
+import Index from "@/pages/Index";
+import HPT from "@/pages/formularios/HPT";
+import AnexoBravo from "@/pages/formularios/AnexoBravo";
+import HPTFormularios from "@/pages/formularios/HPTFormularios";
+import AnexoBravoFormularios from "@/pages/formularios/AnexoBravoFormularios";
+import AuthLayout from "@/components/layout/AuthLayout";
+import ProfileSetup from "@/pages/auth/ProfileSetup";
+import Onboarding from "@/pages/auth/Onboarding";
+import BuzoOnboardingPage from "@/pages/auth/BuzoOnboardingPage";
+import EquipoBuceo from "@/pages/auth/EquipoBuceo";
+import PersonalPool from "@/pages/auth/PersonalPool";
+import PersonalPoolAdmin from "@/pages/auth/PersonalPoolAdmin";
+import Inmersiones from "@/pages/Inmersiones";
+import Operaciones from "@/pages/operaciones/Operaciones";
+import Reportes from "@/pages/Reportes";
+import Configuracion from "@/pages/Configuracion";
+import Usuarios from "@/pages/Usuarios";
+import NotFound from "@/pages/NotFound";
 import MultiX from "@/pages/formularios/MultiX";
 
 export const AppRoutes = () => {
