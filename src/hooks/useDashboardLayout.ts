@@ -7,7 +7,28 @@ import type { Layout, Layouts } from 'react-grid-layout';
 import { toast } from '@/hooks/use-toast';
 import { sanitizeLayouts, isValidLayouts } from '@/utils/dashboardUtils';
 
+const validateLayoutStructure = (layout: unknown): layout is Layouts => {
+    if (!layout || typeof layout !== 'object') return false;
+    
+    // Verificar que sea un objeto con propiedades de breakpoint válidas
+    const validBreakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'];
+    const keys = Object.keys(layout);
+    
+    return keys.length > 0 && keys.every(key => 
+        validBreakpoints.includes(key) && 
+        Array.isArray((layout as any)[key])
+    );
+};
+
+const validateWidgetConfigs = (widgets: unknown): widgets is Record<string, any> => {
+    return typeof widgets === 'object' && widgets !== null;
+};
+
 const fetchDashboardLayout = async (userId: string) => {
+    if (!userId) {
+        throw new Error('ID de usuario requerido');
+    }
+
     try {
         const { data, error } = await supabase
             .from('dashboard_layouts')
@@ -15,33 +36,44 @@ const fetchDashboardLayout = async (userId: string) => {
             .eq('user_id', userId)
             .single();
             
-        if (error && error.code !== 'PGRST116') { // PGRST116: no rows returned
-            throw new Error(error.message);
+        if (error && error.code !== 'PGRST116') {
+            throw new Error(`Error de base de datos: ${error.message}`);
         }
         
-        // Validar datos recibidos
-        if (data && data.layout_config) {
-            // Verificar que el layout sea válido antes de devolverlo
-            if (typeof data.layout_config === 'object') {
-                return data;
-            } else {
-                return null;
+        if (data) {
+            // Validación estricta de datos recibidos
+            if (data.layout_config && !validateLayoutStructure(data.layout_config)) {
+                throw new Error('Configuración de layout inválida');
+            }
+            
+            if (data.widget_configs && !validateWidgetConfigs(data.widget_configs)) {
+                throw new Error('Configuración de widgets inválida');
             }
         }
         
         return data;
     } catch (error) {
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Error inesperado al cargar configuración');
     }
 };
 
 const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string, layout: Layout[] | Layouts, widgets: any }) => {
+    if (!userId) {
+        throw new Error('ID de usuario requerido');
+    }
+
     try {
-        // Validar layout antes de guardar
         const layoutsToSave = Array.isArray(layout) ? { lg: layout } : layout;
         
         if (!isValidLayouts(layoutsToSave)) {
-            throw new Error('Layout inválido: no se puede guardar');
+            throw new Error('Layout inválido: estructura no válida');
+        }
+
+        if (!validateWidgetConfigs(widgets)) {
+            throw new Error('Configuración de widgets inválida');
         }
         
         const { data, error } = await supabase
@@ -55,26 +87,40 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
             .select()
             .single();
             
-        if (error) throw error;
+        if (error) {
+            throw new Error(`Error al guardar: ${error.message}`);
+        }
+        
         return data;
     } catch (error) {
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Error inesperado al guardar configuración');
     }
 };
 
 const deleteDashboardLayout = async ({ userId }: { userId: string }) => {
+    if (!userId) {
+        throw new Error('ID de usuario requerido');
+    }
+
     try {
         const { error } = await supabase
             .from('dashboard_layouts')
             .delete()
             .eq('user_id', userId);
         
-        if (error && error.code !== 'PGRST116') { // Don't throw if row doesn't exist
-            throw error;
+        if (error && error.code !== 'PGRST116') {
+            throw new Error(`Error al eliminar: ${error.message}`);
         }
+        
         return true;
     } catch (error) {
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Error inesperado al eliminar configuración');
     }
 };
 
@@ -82,18 +128,21 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
     const { profile } = useAuth();
     const queryClient = useQueryClient();
 
-    const { data, isLoading, isError } = useQuery({
+    const { data, isLoading, isError, error } = useQuery({
         queryKey: ['dashboardLayout', profile?.id],
         queryFn: () => fetchDashboardLayout(profile!.id),
         enabled: !!profile?.id,
         retry: (failureCount, error) => {
-            // Solo reintentar 2 veces para errores de red
-            if (failureCount < 2 && error.message.includes('fetch')) {
-                return true;
+            // Estrategia de reintentos más inteligente
+            if (failureCount < 2) {
+                const err = error as Error;
+                // Solo reintentar para errores de red, no para errores de validación
+                return err.message.includes('fetch') || err.message.includes('network');
             }
             return false;
         },
-        staleTime: 5 * 60 * 1000, // 5 minutos
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     const saveMutation = useMutation({
@@ -101,11 +150,16 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
             saveDashboardLayout({ userId: profile!.id, ...newConfig }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
+            toast({
+                title: 'Guardado exitoso',
+                description: 'Tu configuración del dashboard se ha guardado correctamente.',
+                variant: 'default',
+            });
         },
         onError: (error: Error) => {
             toast({
                 title: 'Error al guardar',
-                description: `No se pudo guardar tu configuración. ${error.message}`,
+                description: error.message,
                 variant: 'destructive',
             });
         },
@@ -115,17 +169,21 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
         mutationFn: () => deleteDashboardLayout({ userId: profile!.id }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
+            toast({
+                title: 'Configuración restablecida',
+                description: 'Se ha restablecido la configuración por defecto del dashboard.',
+                variant: 'default',
+            });
         },
         onError: (error: Error) => {
             toast({
                 title: 'Error al restablecer',
-                description: `No se pudo restablecer la configuración. ${error.message}`,
+                description: error.message,
                 variant: 'destructive',
             });
         },
     });
     
-    // Procesar y validar datos recibidos
     const processedData = useMemo(() => {
         if (!data) return { layout: null, widgets: null };
         
@@ -133,13 +191,13 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
             let layout = data.layout_config as unknown as Layouts;
             let widgets = data.widget_configs;
             
-            // Sanitizar layout si existe
-            if (layout) {
+            if (layout && validateLayoutStructure(layout)) {
                 layout = sanitizeLayouts(layout, defaultLayouts);
+            } else {
+                layout = null;
             }
             
-            // Validar widgets
-            if (widgets && typeof widgets !== 'object') {
+            if (!validateWidgetConfigs(widgets)) {
                 widgets = null;
             }
             
@@ -156,6 +214,7 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
         widgets: processedData.widgets || defaultWidgets,
         isLoading,
         isError,
+        error: error as Error | null,
         saveLayout: saveMutation.mutate,
         isSaving: saveMutation.isPending,
         resetLayout: deleteMutation.mutate,
