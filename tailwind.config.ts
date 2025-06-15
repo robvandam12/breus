@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -205,7 +204,11 @@ export default {
 					'50%': {
 						transform: 'translateY(-2px)'
 					}
-				}
+				},
+				'border-pulse': {
+          '0%, 100%': { 'border-color': 'hsl(var(--primary) / 0.4)' },
+          '50%': { 'border-color': 'hsl(var(--primary) / 0.8)' },
+        }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -213,7 +216,8 @@ export default {
 				'fade-in': 'fade-in 0.3s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'scale-in': 'scale-in 0.2s ease-out',
-				'bounce-subtle': 'bounce-subtle 0.5s ease-in-out'
+				'bounce-subtle': 'bounce-subtle 0.5s ease-in-out',
+        'border-pulse': 'border-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
 			},
 			fontFamily: {
 				sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],

@@ -24,14 +24,14 @@ export const WidgetCard = ({ title, children, className, isDraggable = false, on
         {isDraggable && !isStatic && (
           <div className="flex items-center gap-1">
             {onConfigure && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onConfigure}>
-                  <Settings className="w-4 h-4" />
+              <Button variant="ghost" size="icon" className="h-6 w-6 group" onClick={onConfigure}>
+                  <Settings className="w-4 h-4 transition-transform duration-300 group-hover:rotate-45" />
                   <span className="sr-only">Configurar widget</span>
               </Button>
             )}
             {onRemove && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onRemove}>
-                  <X className="w-4 h-4" />
+              <Button variant="ghost" size="icon" className="h-6 w-6 group" onClick={onRemove}>
+                  <X className="w-4 h-4 transition-colors duration-200 group-hover:text-red-500" />
                   <span className="sr-only">Quitar widget</span>
               </Button>
             )}

@@ -12,6 +12,7 @@ import { Skeleton } from '../ui/skeleton';
 import { WidgetCatalog } from './WidgetCatalog';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
 import { WidgetConfigSheet } from './WidgetConfigSheet';
+import { motion } from 'framer-motion';
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -156,7 +157,14 @@ export const CustomizableDashboard = () => {
             const widgetProps = configComponent ? { config: currentWidgets[widgetKey] } : {};
 
             return (
-                <div key={item.i} className={isEditMode ? 'border-2 border-dashed border-primary/50 rounded-lg' : ''}>
+                <motion.div 
+                    key={item.i} 
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 150, damping: 20 }}
+                    className={`rounded-lg h-full ${isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''}`}
+                >
                     <WidgetCard 
                         title={name} 
                         isDraggable={isEditMode}
@@ -166,7 +174,7 @@ export const CustomizableDashboard = () => {
                     >
                         <WidgetComponent {...widgetProps} />
                     </WidgetCard>
-                </div>
+                </motion.div>
             );
         });
     };
