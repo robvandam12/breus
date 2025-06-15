@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertasPanelWidget } from './widgets/AlertsPanelWidget';
 import { QuickActionsWidget } from './widgets/QuickActionsWidget';
@@ -14,6 +13,7 @@ import { UpcomingOperationsWidgetSkeleton } from './widgets/skeletons/UpcomingOp
 import { MyImmersionsWidgetSkeleton } from './widgets/skeletons/MyImmersionsWidgetSkeleton';
 import { GenericWidgetSkeleton } from './widgets/skeletons/GenericWidgetSkeleton';
 import { SecurityAlertsWidgetSkeleton } from './widgets/skeletons/SecurityAlertsWidgetSkeleton';
+import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -92,6 +92,13 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     skeleton: GenericWidgetSkeleton,
     description: 'Métricas y reportes para administradores.',
     defaultLayout: { w: 6, h: 6 },
+  },
+  notifications: {
+    name: 'Notificaciones Recientes',
+    component: React.lazy(() => import('./widgets/NotificationWidget')),
+    skeleton: NotificationWidgetSkeleton,
+    description: 'Muestra las últimas notificaciones del sistema.',
+    defaultLayout: { w: 4, h: 8 },
   },
 };
 
