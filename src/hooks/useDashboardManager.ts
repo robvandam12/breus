@@ -32,6 +32,7 @@ export const useDashboardManager = (currentRole: string) => {
         isSaving,
         resetLayout,
         isResetting,
+        hasError,
     } = useDashboardInitialization(currentRole as Role, resetDashboardState);
     
     const modes = useDashboardModes({
@@ -107,6 +108,7 @@ export const useDashboardManager = (currentRole: string) => {
         canUndo,
         canRedo,
         defaultLayoutForRole,
+        hasError,
         
         onLayoutChange,
         handleToggleEdit: modes.handleToggleEdit,

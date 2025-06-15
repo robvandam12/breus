@@ -1,4 +1,5 @@
 
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -49,7 +50,7 @@ const saveDashboardLayout = async ({ userId, layout, widgets }: { userId: string
             .from('dashboard_layouts')
             .upsert({
                 user_id: userId,
-                layout_config: layoutsToSave as any,
+                layout_config: layoutsToSave as any, // Cast explícito para evitar errores de tipo
                 widget_configs: widgets || {},
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' })
@@ -135,7 +136,7 @@ export const useDashboardLayout = (defaultLayouts: Layouts, defaultWidgets: any)
         if (!data) return { layout: null, widgets: null };
         
         try {
-            let layout = data.layout_config;
+            let layout = data.layout_config as Layouts;
             let widgets = data.widget_configs;
             
             // Sanitizar layout si existe
