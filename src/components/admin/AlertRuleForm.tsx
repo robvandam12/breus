@@ -1,6 +1,5 @@
-
 import { useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,17 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X } from 'lucide-react';
 import type { SecurityAlertRule } from '@/types/security';
 
-const transformStringToArray = z.preprocess((val) => {
-    if (typeof val === 'string') {
-        return val.split(',').map(item => item.trim()).filter(Boolean);
-    }
-    if (Array.isArray(val)) {
-        return val;
-    }
-    return [];
-}, z.array(z.string()).min(1, 'Debe haber al menos un valor'));
-
-
 const ruleSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   type: z.string().min(1, 'El tipo es requerido'),
@@ -35,8 +23,8 @@ const ruleSchema = z.object({
   escalation_policy: z.object({
     levels: z.array(z.object({
       after_minutes: z.coerce.number().min(1, 'Debe ser mayor a 0'),
-      notify_roles: transformStringToArray,
-      channels: transformStringToArray,
+      notify_roles: z.string().min(1, 'Debe haber al menos un rol'),
+      channels: z.string().min(1, 'Debe haber al menos un canal'),
     }))
   }),
 });
@@ -89,16 +77,26 @@ export const AlertRuleForm = ({ isOpen, onClose, onSave, rule }: AlertRuleFormPr
                 ...l,
                 notify_roles: Array.isArray(l.notify_roles) ? l.notify_roles.join(',') : l.notify_roles,
                 channels: Array.isArray(l.channels) ? l.channels.join(',') : l.channels,
-            })) as any,
+            })),
         },
       });
     } else {
-      reset(defaultValues as any);
+      reset(defaultValues);
     }
   }, [rule, reset, isOpen]);
   
   const onSubmit = (data: RuleFormData) => {
-    onSave(data);
+    const transformedData = {
+        ...data,
+        escalation_policy: {
+            levels: data.escalation_policy.levels.map(l => ({
+                ...l,
+                notify_roles: l.notify_roles.split(',').map(s => s.trim()).filter(Boolean),
+                channels: l.channels.split(',').map(s => s.trim()).filter(Boolean),
+            }))
+        }
+    };
+    onSave(transformedData);
   };
 
   if (!isOpen) return null;

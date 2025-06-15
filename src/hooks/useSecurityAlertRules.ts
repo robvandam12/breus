@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -16,7 +15,7 @@ export const useSecurityAlertRules = () => {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data as SecurityAlertRule[];
+            return data as unknown as SecurityAlertRule[];
         },
     });
 
@@ -44,7 +43,7 @@ export const useSecurityAlertRules = () => {
             const { id, ...ruleToUpdate } = updatedRule;
             const { data, error } = await supabase
                 .from('security_alert_rules')
-                .update(ruleToUpdate)
+                .update(ruleToUpdate as any)
                 .eq('id', id)
                 .select()
                 .single();
@@ -60,7 +59,7 @@ export const useSecurityAlertRules = () => {
         },
     });
 
-     const deleteRuleMutation = useMutation({
+    const deleteRuleMutation = useMutation({
         mutationFn: async (ruleId: string) => {
             const { error } = await supabase
                 .from('security_alert_rules')
