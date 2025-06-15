@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit, Save, Loader2, RotateCcw } from 'lucide-react';
+import { Edit, Save, Loader2, RotateCcw, LayoutTemplate } from 'lucide-react';
 import { WidgetCatalog } from './WidgetCatalog';
 import { WidgetType } from './widgetRegistry';
 
@@ -14,6 +14,7 @@ interface DashboardHeaderProps {
     onSave: () => void;
     onResetConfirm: () => void;
     onAddWidget: (widgetType: WidgetType) => void;
+    onManageTemplates: () => void;
 }
 
 export const DashboardHeader = ({
@@ -25,12 +26,25 @@ export const DashboardHeader = ({
     onSave,
     onResetConfirm,
     onAddWidget,
+    onManageTemplates,
 }: DashboardHeaderProps) => {
     return (
         <TooltipProvider>
             <div className="flex justify-end gap-2">
                 {isEditMode ? (
                     <>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" onClick={onManageTemplates}>
+                                    <LayoutTemplate className="mr-2 h-4 w-4" />
+                                    Plantillas
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Aplicar una plantilla o guardar el diseño actual.</p>
+                            </TooltipContent>
+                        </Tooltip>
+
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <div>

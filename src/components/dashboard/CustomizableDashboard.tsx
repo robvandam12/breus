@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -13,6 +12,7 @@ import { ConfirmDialog } from '../ui/confirm-dialog';
 import { getLayoutForRole, cols } from './layouts';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardGrid } from './DashboardGrid';
+import { DashboardTemplateSheet } from './DashboardTemplateSheet';
 
 const defaultWidgets = {};
 
@@ -27,6 +27,7 @@ export const CustomizableDashboard = () => {
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
     const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+    const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
 
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
@@ -145,6 +146,11 @@ export const CustomizableDashboard = () => {
         setConfiguringWidgetId(null);
         toast({ title: "Configuración actualizada", description: "Los cambios se aplicarán al guardar el diseño del dashboard." });
     };
+
+    const handleApplyTemplate = (layout: Layouts, widgets: any) => {
+        setCurrentLayouts(layout);
+        setCurrentWidgets(widgets || defaultWidgets);
+    };
     
     if (isLoading) {
         return (
@@ -174,6 +180,7 @@ export const CustomizableDashboard = () => {
                 onSave={handleSaveLayout}
                 onResetConfirm={() => setIsResetConfirmOpen(true)}
                 onAddWidget={handleAddWidget}
+                onManageTemplates={() => setIsTemplateSheetOpen(true)}
             />
 
             <DashboardGrid
@@ -184,6 +191,13 @@ export const CustomizableDashboard = () => {
                 defaultLayout={defaultLayoutForRole}
                 onRemoveWidget={handleRemoveWidget}
                 onConfigureWidget={handleConfigureWidget}
+            />
+            <DashboardTemplateSheet
+                isOpen={isTemplateSheetOpen}
+                onClose={() => setIsTemplateSheetOpen(false)}
+                onApplyTemplate={handleApplyTemplate}
+                currentLayouts={currentLayouts}
+                currentWidgets={currentWidgets}
             />
             <WidgetConfigSheet 
                 isOpen={!!configuringWidgetId}
