@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,13 +19,13 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
   
   const getEstadoBadgeColor = (estado: string) => {
     const colors: Record<string, string> = {
-      activa: 'bg-green-100 text-green-700',
-      pausada: 'bg-yellow-100 text-yellow-700',
-      completada: 'bg-blue-100 text-blue-700',
-      cancelada: 'bg-red-100 text-red-700',
-      eliminada: 'bg-gray-100 text-gray-700',
+      activa: 'bg-green-100 text-green-800 border-green-200',
+      pausada: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      completada: 'bg-blue-100 text-blue-800 border-blue-200',
+      cancelada: 'bg-red-100 text-red-800 border-red-200',
+      eliminada: 'bg-muted text-muted-foreground border-border',
     };
-    return colors[estado] || 'bg-gray-100 text-gray-700';
+    return colors[estado] || 'bg-muted text-muted-foreground border-border';
   };
   
   const sortedOperaciones = useMemo(() => {
@@ -63,7 +64,7 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
   const rowVirtualizer = useVirtualizer({
     count: sortedOperaciones.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 73, // Altura estimada de la fila en píxeles
+    estimateSize: () => 65,
     overscan: 5,
   });
 
@@ -79,7 +80,9 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
     if (!sortConfig || sortConfig.key !== key) {
       return null;
     }
-    return sortConfig.direction === 'ascending' ? <ArrowUp className="w-4 h-4 ml-1 text-gray-600" /> : <ArrowDown className="w-4 h-4 ml-1 text-gray-600" />;
+    return sortConfig.direction === 'ascending' ? 
+      <ArrowUp className="w-4 h-4 ml-1 text-muted-foreground" /> : 
+      <ArrowDown className="w-4 h-4 ml-1 text-muted-foreground" />;
   };
 
   const columns = [
@@ -93,28 +96,32 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
 
   if (operaciones.length === 0) {
     return (
-      <div className="text-center py-16 bg-gray-50 rounded-lg">
-        <ListX className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-800 mb-2">No se encontraron operaciones</h3>
-        <p className="text-gray-500">Intenta ajustar los filtros de búsqueda o crea una nueva operación.</p>
+      <div className="text-center py-16 bg-card rounded-lg border border-border">
+        <ListX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">No se encontraron operaciones</h3>
+        <p className="text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva operación.</p>
       </div>
     );
   }
 
   return (
-    <div ref={parentRef} className="h-[70vh] overflow-auto rounded-lg border relative">
+    <div ref={parentRef} className="h-[70vh] overflow-auto rounded-lg border border-border bg-card">
       <table className="w-full caption-bottom text-sm" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-        <TableHeader className="sticky top-0 bg-gray-50 z-10">
-          <TableRow>
+        <TableHeader className="sticky top-0 bg-muted/50 z-10 backdrop-blur supports-[backdrop-filter]:bg-muted/50">
+          <TableRow className="border-b border-border">
             {columns.map(col => (
-               <TableHead key={col.key} onClick={() => requestSort(col.key)} className="cursor-pointer select-none hover:bg-gray-100 transition-colors">
+               <TableHead 
+                 key={col.key} 
+                 onClick={() => requestSort(col.key)} 
+                 className="cursor-pointer select-none hover:bg-muted/70 transition-colors text-muted-foreground font-medium px-4 py-3"
+               >
                  <div className="flex items-center">
                    {col.label}
                    {renderSortArrow(col.key)}
                  </div>
                </TableHead>
             ))}
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium px-4 py-3">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -131,38 +138,40 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
                   height: `${virtualItem.size}px`,
                   transform: `translateY(${virtualItem.start}px)`,
                 }}
-                className="hover:bg-gray-50"
+                className="hover:bg-muted/50 transition-colors border-b border-border"
               >
-                <TableCell>
-                  <div className="font-medium">{operacion.codigo}</div>
+                <TableCell className="px-4 py-3">
+                  <div className="font-medium text-foreground">{operacion.codigo}</div>
                 </TableCell>
-                <TableCell>
-                  <div className="font-medium">{operacion.nombre}</div>
+                <TableCell className="px-4 py-3">
+                  <div className="font-medium text-foreground">{operacion.nombre}</div>
                   {operacion.tareas && (
-                    <div className="text-sm text-gray-500 truncate max-w-xs">
+                    <div className="text-sm text-muted-foreground truncate max-w-xs mt-1">
                       {operacion.tareas}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>
-                  <div className="text-sm">
+                <TableCell className="px-4 py-3">
+                  <div className="text-sm text-foreground">
                     {operacion.salmoneras?.nombre || 'No asignada'}
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="text-sm">
+                <TableCell className="px-4 py-3">
+                  <div className="text-sm text-foreground">
                     {operacion.sitios?.nombre || 'No asignado'}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-4 py-3">
                   <Badge className={getEstadoBadgeColor(operacion.estado)} variant="outline">
                     {operacion.estado}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                <TableCell className="px-4 py-3">
+                  <div className="text-sm text-foreground">
+                    {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                  </div>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right px-4 py-3">
                   <OperacionesActions
                     onView={() => onViewDetail(operacion)}
                     onEdit={() => onEdit(operacion)}
