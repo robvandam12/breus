@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -303,7 +302,6 @@ export const useDashboardManager = (currentRole: string) => {
         isResetting,
         currentLayouts,
         currentWidgets,
-        defaultLayoutForRole,
         configuringWidgetId,
         widgetToRemove,
         isResetConfirmOpen,

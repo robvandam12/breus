@@ -78,14 +78,6 @@ export const systemTemplates: SystemDashboardTemplate[] = [
     role_target: 'supervisor'
   },
   {
-    name: "Vista de Administración de Empresa",
-    description: "Métricas clave, alertas y estado general de las operaciones de la empresa.",
-    layout_config: adminTemplateLayout,
-    widget_configs: {},
-    type: 'system',
-    role_target: 'admin_empresa'
-  },
-  {
     name: "Vista de Administración de Salmonera",
     description: "Métricas clave, alertas y estado general de las operaciones de la salmonera.",
     layout_config: adminTemplateLayout,

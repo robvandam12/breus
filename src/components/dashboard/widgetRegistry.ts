@@ -120,7 +120,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: SecurityAlertsWidgetSkeleton,
     defaultLayout: { w: 6, h: 8 },
     category: 'alerts',
-    roles: ['admin_servicio', 'supervisor', 'superuser']
+    roles: ['admin_salmonera', 'admin_servicio', 'supervisor', 'superuser']
   },
   'team-status': {
     name: 'Estado del Equipo',
@@ -166,7 +166,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     defaultLayout: { w: 12, h: 6 },
     isHeavy: true,
     category: 'metrics',
-    roles: ['superuser']
+    roles: ['admin_servicio', 'superuser']
   },
   'alerts-panel': {
     name: 'Panel de Alertas',
@@ -176,7 +176,7 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     configComponent: AlertsPanelWidgetConfig,
     defaultLayout: { w: 8, h: 8 },
     category: 'alerts',
-    roles: ['admin_servicio', 'supervisor', 'superuser']
+    roles: ['admin_salmonera', 'admin_servicio', 'supervisor', 'superuser']
   },
   'notifications': {
     name: 'Notificaciones',
