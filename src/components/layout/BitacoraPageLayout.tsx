@@ -1,10 +1,6 @@
 
 import React from 'react';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { BottomNavBar } from "@/components/navigation/BottomNavBar";
+import { MainLayout } from "@/components/layout/MainLayout";
 
 interface BitacoraPageLayoutProps {
   title: string;
@@ -14,6 +10,7 @@ interface BitacoraPageLayoutProps {
   children: React.ReactNode;
   maxWidth?: 'full' | '7xl' | '6xl' | '5xl';
   padding?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
 export const BitacoraPageLayout: React.FC<BitacoraPageLayoutProps> = ({
@@ -23,10 +20,9 @@ export const BitacoraPageLayout: React.FC<BitacoraPageLayoutProps> = ({
   headerActions,
   children,
   maxWidth = '7xl',
-  padding = 'md'
+  padding = 'md',
+  className = "bg-gray-50"
 }) => {
-  const isMobile = useIsMobile();
-  
   const maxWidthClasses = {
     'full': 'w-full',
     '7xl': 'max-w-7xl',
@@ -40,27 +36,18 @@ export const BitacoraPageLayout: React.FC<BitacoraPageLayoutProps> = ({
     'lg': 'p-8'
   };
 
+  const contentClassName = `${paddingClasses[padding]} ${maxWidthClasses[maxWidth]} mx-auto w-full space-y-6`;
+
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col">
-          <Header 
-            title={title}
-            subtitle={subtitle}
-            icon={icon}
-          >
-            {headerActions}
-          </Header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className={`${paddingClasses[padding]} ${maxWidthClasses[maxWidth]} mx-auto w-full space-y-6`}>
-              {children}
-            </div>
-          </div>
-        </main>
-        {isMobile && <BottomNavBar />}
-      </div>
-    </SidebarProvider>
+    <MainLayout
+      title={title}
+      subtitle={subtitle}
+      icon={icon}
+      headerChildren={headerActions}
+      className={className}
+      contentClassName={contentClassName}
+    >
+      {children}
+    </MainLayout>
   );
 };

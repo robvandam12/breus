@@ -1,7 +1,5 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { FileText } from "lucide-react";
 
@@ -17,26 +15,17 @@ export default function AnexoBravo() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white">
-        <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col bg-white">
-          <Header 
-            title="Anexo Bravo" 
-            subtitle="Formulario de Anexo Bravo para operaciones de buceo" 
-            icon={FileText} 
-          />
-          
-          <div className="flex-1 overflow-auto bg-white">
-            <div className="p-6">
-              <FullAnexoBravoForm
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <MainLayout
+      title="Anexo Bravo"
+      subtitle="Formulario de Anexo Bravo para operaciones de buceo"
+      icon={FileText}
+      className="bg-white"
+      contentClassName="bg-white"
+    >
+      <FullAnexoBravoForm
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
+    </MainLayout>
   );
 }
