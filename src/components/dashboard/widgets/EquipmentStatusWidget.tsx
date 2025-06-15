@@ -15,7 +15,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const getStatus = (equipo: EquipoBuceo) => {
-    // Lógica de estado simulada para demostración
     if (!equipo.activo) {
         return { label: 'Inactivo', color: 'bg-gray-500', icon: <XCircle className="h-4 w-4" /> };
     }
@@ -97,11 +96,38 @@ const EquipmentStatusWidget = () => {
         );
     }
 
+    const statusCounts = (equipos || []).reduce((acc, equipo) => {
+        const statusLabel = getStatus(equipo).label;
+        if (statusLabel === 'Disponible') acc.disponible++;
+        else if (statusLabel === 'En Uso') acc.enUso++;
+        else if (statusLabel === 'Mantenimiento') acc.mantenimiento++;
+        else if (statusLabel === 'Inactivo') acc.inactivo++;
+        return acc;
+    }, { disponible: 0, enUso: 0, mantenimiento: 0, inactivo: 0 });
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="text-base">Estado de Equipos de Buceo</CardTitle>
                 <CardDescription>Resumen de disponibilidad y asignación de equipos.</CardDescription>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span>Disponible: {statusCounts.disponible}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Ship className="h-4 w-4 text-blue-500" />
+                        <span>En Uso: {statusCounts.enUso}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Wrench className="h-4 w-4 text-yellow-500" />
+                        <span>Mantenimiento: {statusCounts.mantenimiento}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <XCircle className="h-4 w-4 text-gray-500" />
+                        <span>Inactivo: {statusCounts.inactivo}</span>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="p-0 flex-grow relative">
                 <ScrollArea className="absolute inset-0">
