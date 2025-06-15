@@ -33,16 +33,17 @@ export const useDashboardModes = ({
             setIsPreviewMode(false);
             setPreviewSnapshot(null);
             setIsEditMode(true);
-            toast({ description: "Saliendo de vista previa." });
+            toast({ title: "Vista Previa", description: "Saliendo de vista previa. Vuelves al modo edición." });
         }
     };
     
     const handleToggleEdit = () => {
         if (isPreviewMode) {
             handleExitPreview();
+            return; // Exit here as handleExitPreview already shows a toast
         }
         setIsEditMode(true);
-        toast({ description: "Modo edición activado. Ahora puedes mover y redimensionar widgets." });
+        toast({ title: "Modo Edición", description: "Ahora puedes mover y redimensionar widgets." });
     };
 
     const handleEnterPreview = () => {
@@ -50,7 +51,7 @@ export const useDashboardModes = ({
             setPreviewSnapshot({ ...dashboardState });
             setIsEditMode(false);
             setIsPreviewMode(true);
-            toast({ description: "Entrando a vista previa." });
+            toast({ title: "Vista Previa", description: "Entrando a vista previa. Los cambios son temporales." });
         }
     };
 
@@ -67,7 +68,7 @@ export const useDashboardModes = ({
             resetDashboardState(getInitialDashboardState());
             setIsPreviewMode(false);
             setPreviewSnapshot(null);
-            toast({ description: "Cambios de la vista previa descartados." });
+            toast({ title: "Vista Previa", description: "Cambios de la vista previa descartados." });
         }
     };
     
@@ -76,7 +77,7 @@ export const useDashboardModes = ({
         setIsEditMode(false);
         setIsPreviewMode(false);
         setPreviewSnapshot(null);
-        toast({ description: "Edición cancelada. Se ha restaurado el último diseño guardado." });
+        toast({ title: "Edición Cancelada", description: "Se ha restaurado el último diseño guardado." });
     };
 
     return {

@@ -58,10 +58,6 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     mutationFn: (newConfig: { layout: Layout[] | Layouts, widgets: any }) => saveDashboardLayout({ userId: profile!.id, ...newConfig }),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
-        toast({
-            title: 'Diseño guardado',
-            description: 'La configuración de tu dashboard se ha guardado correctamente.',
-        });
     },
     onError: (error: Error) => {
         toast({
@@ -76,10 +72,6 @@ export const useDashboardLayout = (defaultLayout: Layout[], defaultWidgets: any)
     mutationFn: () => deleteDashboardLayout({ userId: profile!.id }),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['dashboardLayout', profile?.id] });
-        toast({
-            title: 'Diseño restablecido',
-            description: 'Tu dashboard ha vuelto a la configuración por defecto.',
-        });
     },
     onError: (error: Error) => {
         toast({

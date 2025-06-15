@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -152,21 +153,21 @@ export const useDashboardManager = (currentRole: string) => {
         setTimeout(() => {
             setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
             setIsApplyingTemplate(false);
-            toast({ description: "Plantilla aplicada. Guarda el diseño para confirmar los cambios." });
+            toast({ title: "Plantilla Aplicada", description: "Guarda el diseño para confirmar los cambios." });
         }, 100);
     }, [setDashboardState]);
 
     const undo = () => {
         if (canUndo) {
             undoAction();
-            toast({ description: "Acción deshecha." });
+            toast({ title: "Deshacer", description: "Última acción deshecha." });
         }
     };
 
     const redo = () => {
         if (canRedo) {
             redoAction();
-            toast({ description: "Acción rehecha." });
+            toast({ title: "Rehacer", description: "Última acción rehecha." });
         }
     };
 

@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
@@ -113,7 +112,7 @@ export const DashboardGrid = ({
             return (
                 <div 
                     key={item.i} 
-                    className={`rounded-lg h-full ${isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''}`}
+                    className={`rounded-lg h-full animate-scale-in transition-all duration-300 ${isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''}`}
                     role="gridcell"
                 >
                     <WidgetCard 
