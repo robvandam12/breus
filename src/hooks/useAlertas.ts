@@ -1,7 +1,7 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSecurityAlerts } from "./useSecurityAlerts";
+import type { SecurityAlert } from "@/types/security";
 
 export interface Alerta {
   id: string;
@@ -15,64 +15,47 @@ export interface Alerta {
   updated_at: string;
 }
 
+const mapSecurityAlertToAlerta = (securityAlert: SecurityAlert): Alerta => {
+  const priorityMap = {
+    emergency: 'alta' as const,
+    critical: 'alta' as const,
+    warning: 'media' as const,
+    info: 'baja' as const,
+  };
+
+  const typeMap: { [key: string]: Alerta['tipo'] } = {
+    DEPTH_LIMIT: 'inmersion_sin_validar',
+    ASCENT_RATE: 'inmersion_sin_validar',
+    BOTTOM_TIME: 'inmersion_sin_validar',
+  };
+
+  return {
+    id: securityAlert.id,
+    titulo: `Alerta: ${securityAlert.type.replace(/_/g, ' ')}`,
+    descripcion: `Inmersión ${securityAlert.inmersion?.codigo || 'N/A'}. Prioridad: ${securityAlert.priority}, Nivel Esc: ${securityAlert.escalation_level}`,
+    tipo: typeMap[securityAlert.type] || 'inmersion_sin_validar',
+    prioridad: priorityMap[securityAlert.priority],
+    leida: securityAlert.acknowledged,
+    fecha_creacion: securityAlert.created_at,
+    created_at: securityAlert.created_at,
+    updated_at: securityAlert.acknowledged_at || securityAlert.created_at,
+  };
+};
+
 export const useAlertas = () => {
-  const queryClient = useQueryClient();
+  const { alerts: securityAlerts, isLoading: isLoadingSecurity, acknowledgeAlert } = useSecurityAlerts();
 
-  // Fetch alertas
-  const { data: alertas = [], isLoading } = useQuery({
-    queryKey: ['alertas'],
-    queryFn: async () => {
-      console.log('Fetching alertas...');
-      
-      // Por ahora retornamos datos mock ya que no tenemos la tabla en Supabase
-      const mockAlertas: Alerta[] = [
-        {
-          id: '1',
-          titulo: 'HPT pendiente de firma',
-          descripcion: 'HPT-001 requiere firma del supervisor mandante',
-          tipo: 'hpt_pendiente',
-          prioridad: 'alta',
-          leida: false,
-          fecha_creacion: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          titulo: 'Inmersión completada',
-          descripcion: 'Inmersión INM-002 ha sido completada exitosamente',
-          tipo: 'bitacora_pendiente',
-          prioridad: 'media',
-          leida: true,
-          fecha_creacion: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+  const alertas: Alerta[] = securityAlerts.map(mapSecurityAlertToAlerta);
+  const isLoading = isLoadingSecurity;
 
-      return mockAlertas;
-    },
-  });
-
-  // Marcar como leída
   const marcarComoLeidaMutation = useMutation({
-    mutationFn: async (alertaId: string) => {
-      console.log('Marcando alerta como leída:', alertaId);
-      // Aquí iría la llamada a Supabase
-      return { id: alertaId };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alertas'] });
-      toast({
-        title: "Alerta marcada como leída",
-        description: "La alerta ha sido marcada como leída.",
-      });
-    },
+    mutationFn: (alertaId: string) => acknowledgeAlert(alertaId),
+    // onSuccess y onError son manejados por el hook subyacente useSecurityAlerts,
+    // que ya muestra sus propios toasts. No es necesario duplicarlos aquí.
   });
 
   const alertasNoLeidas = alertas.filter(alerta => !alerta.leida);
 
-  // Agregar alertas por prioridad para StatsChart
   const alertasPorPrioridad = alertas.reduce((acc, alerta) => {
     acc[alerta.prioridad] = (acc[alerta.prioridad] || 0) + 1;
     return acc;

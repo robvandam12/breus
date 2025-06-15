@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -68,10 +69,34 @@ export const useSecurityAlerts = () => {
       .channel('security-alerts-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'security_alerts' },
+        { event: 'INSERT', schema: 'public', table: 'security_alerts' },
         (payload) => {
-          console.log('Cambio en alertas de seguridad!', payload);
+          console.log('Nueva alerta de seguridad!', payload);
           queryClient.invalidateQueries({ queryKey: ['security_alerts'] });
+          const newAlert = payload.new as SecurityAlert;
+          toast({
+              title: `🚨 Nueva Alerta: ${newAlert.type.replace(/_/g, ' ')}`,
+              description: `Prioridad ${newAlert.priority}. Inmersión: ${newAlert.details?.inmersion_code || 'N/A'}`,
+              variant: newAlert.priority === 'critical' || newAlert.priority === 'emergency' ? 'destructive' : 'default',
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'security_alerts' },
+        (payload) => {
+          console.log('Alerta de seguridad actualizada!', payload);
+          queryClient.invalidateQueries({ queryKey: ['security_alerts'] });
+          const oldAlert = payload.old as SecurityAlert;
+          const newAlert = payload.new as SecurityAlert;
+
+          if (newAlert.escalation_level > oldAlert.escalation_level) {
+             toast({
+              title: `⚠️ Alerta Escalada: ${newAlert.type.replace(/_/g, ' ')}`,
+              description: `La alerta para la inmersión ${newAlert.details?.inmersion_code || 'N/A'} ha sido escalada.`,
+              variant: 'destructive',
+            })
+          }
         }
       )
       .subscribe();
