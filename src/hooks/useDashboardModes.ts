@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Layouts } from 'react-grid-layout';
@@ -13,7 +12,6 @@ interface UseDashboardModesProps {
     setDashboardState: (newState: DashboardState) => void;
     resetDashboardState: (newState: DashboardState) => void;
     getInitialDashboardState: () => DashboardState;
-    handleSaveLayout: () => void;
 }
 
 export const useDashboardModes = ({
@@ -21,7 +19,6 @@ export const useDashboardModes = ({
     setDashboardState,
     resetDashboardState,
     getInitialDashboardState,
-    handleSaveLayout
 }: UseDashboardModesProps) => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -59,7 +56,6 @@ export const useDashboardModes = ({
         if (isPreviewMode) {
             setIsPreviewMode(false);
             setPreviewSnapshot(null);
-            handleSaveLayout();
         }
     };
 
