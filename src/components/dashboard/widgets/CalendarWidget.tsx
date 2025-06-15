@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { CalendarWidgetSkeleton } from './skeletons/CalendarWidgetSkeleton';
-import type { Operacion } from '@/hooks/useOperacionesQuery';
+import type { Operacion } from '@/hooks/useOperaciones';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const getStatusColor = (status: string) => {

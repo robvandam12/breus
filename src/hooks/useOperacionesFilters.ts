@@ -1,7 +1,6 @@
-
 import { useState, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { OperacionConRelaciones } from '@/hooks/useOperacionesQuery';
+import type { OperacionConRelaciones } from '@/hooks/useOperaciones';
 
 export const useOperacionesFilters = (operaciones: OperacionConRelaciones[]) => {
   const [searchTerm, setSearchTerm] = useState('');

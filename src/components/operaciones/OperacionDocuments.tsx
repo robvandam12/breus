@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ import { useHPT } from "@/hooks/useHPT";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { DocumentCreationButton } from "./DocumentCreationButton";
+import { DocumentCreationButton } from "./OperacionesComponents";
 import { DocumentCard } from "./DocumentCard";
 
 interface OperacionDocumentsProps {

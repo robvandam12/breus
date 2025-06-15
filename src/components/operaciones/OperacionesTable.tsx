@@ -1,11 +1,10 @@
-
 import { useState, useMemo, useRef } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { OperacionesActions } from "./OperacionesActions";
+import { OperacionesActions } from "./OperacionesComponents";
 import { ArrowUp, ArrowDown, ListX } from "lucide-react";
-import type { OperacionConRelaciones } from "@/hooks/useOperacionesQuery";
+import type { OperacionConRelaciones } from "@/hooks/useOperaciones";
 
 interface OperacionesTableProps {
   operaciones: OperacionConRelaciones[];
