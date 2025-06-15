@@ -13,6 +13,12 @@ import { getLayoutForRole, cols } from './layouts';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardGrid } from './DashboardGrid';
 import { DashboardTemplateSheet } from './DashboardTemplateSheet';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+
+interface DashboardState {
+    layouts: Layouts;
+    widgets: any;
+}
 
 const defaultWidgets = {};
 
@@ -20,10 +26,22 @@ export const CustomizableDashboard = () => {
     const { currentRole } = useAuthRoles();
     const defaultLayoutForRole = getLayoutForRole(currentRole);
 
-    const { layout, widgets: savedWidgets, isLoading, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
+    const { layout: savedLayout, widgets: savedWidgets, isLoading, saveLayout, isSaving, resetLayout, isResetting } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
+    
     const [isEditMode, setIsEditMode] = useState(false);
-    const [currentLayouts, setCurrentLayouts] = useState<Layouts>({});
-    const [currentWidgets, setCurrentWidgets] = useState<any>(savedWidgets || defaultWidgets);
+
+    const { 
+        state: dashboardState, 
+        set: setDashboardState, 
+        undo, 
+        redo,
+        reset: resetDashboardState, 
+        canUndo, 
+        canRedo 
+    } = useUndoRedo<DashboardState>({ layouts: {}, widgets: defaultWidgets });
+
+    const { layouts: currentLayouts, widgets: currentWidgets } = dashboardState;
+    
     const [configuringWidgetId, setConfiguringWidgetId] = useState<WidgetType | null>(null);
     const [widgetToRemove, setWidgetToRemove] = useState<string | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -32,36 +50,40 @@ export const CustomizableDashboard = () => {
     useEffect(() => {
         const roleLayout = getLayoutForRole(currentRole);
         const filteredRoleLayout = roleLayout.filter(item => widgetRegistry[item.i]);
-
-        if (layout) {
-             if (Array.isArray(layout) && layout.length > 0) { // Old format, convert to new
-                const filteredLayout = layout.filter(item => widgetRegistry[item.i]);
-                setCurrentLayouts({ lg: filteredLayout });
-            } else if (typeof layout === 'object' && !Array.isArray(layout) && Object.keys(layout).length > 0) { // New format
-                const filteredLayouts = Object.entries(layout).reduce((acc, [key, value]) => {
+        
+        let initialLayouts: Layouts = { lg: filteredRoleLayout };
+        
+        if (savedLayout) {
+             if (Array.isArray(savedLayout) && savedLayout.length > 0) {
+                const filteredLayout = savedLayout.filter(item => widgetRegistry[item.i]);
+                initialLayouts = { lg: filteredLayout };
+            } else if (typeof savedLayout === 'object' && !Array.isArray(savedLayout) && Object.keys(savedLayout).length > 0) {
+                const filteredLayouts = Object.entries(savedLayout).reduce((acc, [key, value]) => {
                     if(Array.isArray(value)) {
                         acc[key] = value.filter(item => widgetRegistry[item.i]);
                     }
                     return acc;
                 }, {} as Layouts);
-                setCurrentLayouts(filteredLayouts);
-            } else { // Handles empty array or empty object from DB
-                setCurrentLayouts({ lg: filteredRoleLayout });
+                initialLayouts = filteredLayouts;
+            } else {
+                 initialLayouts = { lg: filteredRoleLayout };
             }
-        } else if (!isLoading) {
-            setCurrentLayouts({ lg: filteredRoleLayout });
         }
-    }, [layout, isLoading, currentRole]);
 
-    useEffect(() => {
-        if (savedWidgets) {
-            setCurrentWidgets(savedWidgets);
+        if (!isLoading) {
+             resetDashboardState({
+                layouts: initialLayouts,
+                widgets: savedWidgets || defaultWidgets,
+            });
         }
-    }, [savedWidgets]);
+    }, [savedLayout, savedWidgets, isLoading, currentRole, resetDashboardState]);
 
     const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
         if (isEditMode) {
-            setCurrentLayouts(newLayouts);
+            setDashboardState({
+                ...dashboardState,
+                layouts: newLayouts,
+            });
         }
     };
 
@@ -78,6 +100,7 @@ export const CustomizableDashboard = () => {
     }
 
     const handleResetLayout = () => {
+        setIsResetConfirmOpen(false);
         resetLayout(undefined, {
             onSuccess: () => {
                 toast({ title: "Diseño restaurado", description: "El dashboard ha vuelto a su estado por defecto." });
@@ -93,7 +116,7 @@ export const CustomizableDashboard = () => {
         const widgetConfig = widgetRegistry[widgetType];
         if (!widgetConfig) return;
 
-        const newLayouts = { ...currentLayouts };
+        const newLayouts = JSON.parse(JSON.stringify(currentLayouts));
         
         if (Object.keys(newLayouts).length === 0) {
             Object.keys(cols).forEach(bp => {
@@ -112,7 +135,7 @@ export const CustomizableDashboard = () => {
             newLayouts[bp as keyof typeof cols] = [...(newLayouts[bp as keyof typeof cols] || []), newWidgetItem];
         });
 
-        setCurrentLayouts(newLayouts);
+        setDashboardState({ ...dashboardState, layouts: newLayouts });
     };
 
     const handleRemoveWidget = (widgetId: string) => {
@@ -125,10 +148,10 @@ export const CustomizableDashboard = () => {
         Object.keys(newLayouts).forEach(bp => {
             newLayouts[bp as keyof typeof newLayouts] = newLayouts[bp as keyof typeof newLayouts].filter(item => item.i !== widgetToRemove);
         });
-        setCurrentLayouts(newLayouts);
         const newWidgets = { ...currentWidgets };
         delete newWidgets[widgetToRemove];
-        setCurrentWidgets(newWidgets);
+        
+        setDashboardState({ layouts: newLayouts, widgets: newWidgets });
         setWidgetToRemove(null);
         toast({ title: "Widget eliminado", description: "El widget ha sido eliminado. Guarda el diseño para aplicar los cambios." });
     };
@@ -142,15 +165,34 @@ export const CustomizableDashboard = () => {
             ...currentWidgets,
             [widgetId]: config,
         };
-        setCurrentWidgets(newWidgets);
+        setDashboardState({ ...dashboardState, widgets: newWidgets });
         setConfiguringWidgetId(null);
         toast({ title: "Configuración actualizada", description: "Los cambios se aplicarán al guardar el diseño del dashboard." });
     };
 
     const handleApplyTemplate = (layout: Layouts, widgets: any) => {
-        setCurrentLayouts(layout);
-        setCurrentWidgets(widgets || defaultWidgets);
+        setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
     };
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!isEditMode) return;
+            if (event.ctrlKey || event.metaKey) {
+                if (event.key === 'z') {
+                    event.preventDefault();
+                    undo();
+                } else if (event.key === 'y') {
+                    event.preventDefault();
+                    redo();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isEditMode, undo, redo]);
     
     if (isLoading) {
         return (
@@ -167,7 +209,7 @@ export const CustomizableDashboard = () => {
         );
     }
 
-    const currentWidgetIds = (currentLayouts.lg || defaultLayoutForRole || []).map(item => item.i);
+    const currentWidgetIds = (currentLayouts?.lg || defaultLayoutForRole || []).map(item => item.i);
 
     return (
         <div className="space-y-4">
@@ -181,6 +223,10 @@ export const CustomizableDashboard = () => {
                 onResetConfirm={() => setIsResetConfirmOpen(true)}
                 onAddWidget={handleAddWidget}
                 onManageTemplates={() => setIsTemplateSheetOpen(true)}
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
             />
 
             <DashboardGrid
@@ -203,7 +249,7 @@ export const CustomizableDashboard = () => {
                 isOpen={!!configuringWidgetId}
                 onClose={() => setConfiguringWidgetId(null)}
                 widgetId={configuringWidgetId}
-                currentConfig={currentWidgets[configuringWidgetId || '']}
+                currentConfig={currentWidgets?.[configuringWidgetId || '']}
                 onSave={handleWidgetConfigSave}
             />
             <ConfirmDialog
