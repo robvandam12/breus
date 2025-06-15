@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -25,8 +26,8 @@ export const useDashboardManager = (currentRole: string) => {
     const { 
         state: dashboardState, 
         set: setDashboardState, 
-        undo, 
-        redo,
+        undo: undoAction, 
+        redo: redoAction,
         reset: resetDashboardState, 
         canUndo, 
         canRedo 
@@ -87,6 +88,7 @@ export const useDashboardManager = (currentRole: string) => {
             handleExitPreview();
         }
         setIsEditMode(true);
+        toast({ description: "Modo edición activado. Ahora puedes mover y redimensionar widgets." });
     };
 
     const handleEnterPreview = () => {
@@ -95,6 +97,7 @@ export const useDashboardManager = (currentRole: string) => {
             setPreviewSnapshot({ ...dashboardState });
             setIsEditMode(false);
             setIsPreviewMode(true);
+            toast({ description: "Entrando a vista previa." });
         }
     };
 
@@ -105,6 +108,7 @@ export const useDashboardManager = (currentRole: string) => {
             setIsPreviewMode(false);
             setPreviewSnapshot(null);
             setIsEditMode(true);
+            toast({ description: "Saliendo de vista previa." });
         }
     };
 
@@ -122,6 +126,7 @@ export const useDashboardManager = (currentRole: string) => {
             resetDashboardState(getInitialDashboardState());
             setIsPreviewMode(false);
             setPreviewSnapshot(null);
+            toast({ description: "Cambios de la vista previa descartados." });
         }
     };
 
@@ -159,6 +164,7 @@ export const useDashboardManager = (currentRole: string) => {
         setIsEditMode(false);
         setIsPreviewMode(false);
         setPreviewSnapshot(null);
+        toast({ description: "Edición cancelada. Se ha restaurado el último diseño guardado." });
     };
 
     const handleAddWidget = (widgetType: WidgetType) => {
@@ -223,6 +229,20 @@ export const useDashboardManager = (currentRole: string) => {
         setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
     };
 
+    const undo = () => {
+        if (canUndo) {
+            undoAction();
+            toast({ description: "Acción deshecha." });
+        }
+    };
+
+    const redo = () => {
+        if (canRedo) {
+            redoAction();
+            toast({ description: "Acción rehecha." });
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (!isEditMode && !isPreviewMode) return;
@@ -244,7 +264,7 @@ export const useDashboardManager = (currentRole: string) => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isEditMode, isPreviewMode, undo, redo, handleEnterPreview]);
+    }, [isEditMode, isPreviewMode, canUndo, canRedo, undoAction, redoAction, handleEnterPreview]);
     
     return {
         isLoading,

@@ -35,7 +35,7 @@ export const WidgetCard = ({ title, children, className, isDraggable = false, on
         tabIndex={isDraggable && !isStatic ? 0 : -1}
       >
         <span id={descriptionId} className="sr-only">
-          Widget. {isDraggable && !isStatic ? "Cuando el modo edición está activo, este widget es enfocable. Futuras versiones permitirán moverlo con el teclado." : ""}
+          Widget. {isDraggable && !isStatic ? "Modo edición activo. Use las flechas para navegar entre widgets. El widget se puede mover con el mouse usando la agarradera de arrastre." : ""}
         </span>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 border-b">
           <div className="flex items-center gap-2">

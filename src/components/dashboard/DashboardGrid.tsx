@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
@@ -40,6 +41,49 @@ export const DashboardGrid = ({
         }
     }, [isEditMode]);
 
+    useEffect(() => {
+        const container = gridContainerRef.current;
+        if (!container || !isEditMode) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                return;
+            }
+
+            const widgets = Array.from(
+                container.querySelectorAll<HTMLElement>('.react-grid-item [role="group"][tabindex="0"]')
+            );
+            if (widgets.length <= 1) return;
+            
+            event.preventDefault();
+
+            const focusedElement = document.activeElement as HTMLElement;
+            const currentIndex = widgets.findIndex(widget => widget === focusedElement || widget.contains(focusedElement));
+
+            let nextIndex = currentIndex;
+            if (currentIndex === -1) {
+                // If nothing is focused, start from the first one
+                nextIndex = 0;
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                nextIndex = (currentIndex + 1) % widgets.length;
+            } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                nextIndex = (currentIndex - 1 + widgets.length) % widgets.length;
+            }
+
+            if (widgets[nextIndex]) {
+                widgets[nextIndex].focus();
+            }
+        };
+
+        // We attach the listener to the grid container to avoid global conflicts
+        container.addEventListener('keydown', handleKeyDown);
+        return () => {
+            if (container) {
+                container.removeEventListener('keydown', handleKeyDown);
+            }
+        };
+    }, [isEditMode, layouts]);
+
     const generateDOM = () => {
         const layoutForDOM = layouts.lg || layouts.md || layouts.sm || defaultLayout;
         return (layoutForDOM || []).map((item) => {
@@ -70,6 +114,7 @@ export const DashboardGrid = ({
                 <div 
                     key={item.i} 
                     className={`rounded-lg h-full ${isEditMode && !item.static ? 'border-2 border-dashed border-primary/50 animate-border-pulse' : ''}`}
+                    role="gridcell"
                 >
                     <WidgetCard 
                         title={name} 
@@ -91,7 +136,7 @@ export const DashboardGrid = ({
     };
 
     return (
-        <div ref={gridContainerRef}>
+        <div ref={gridContainerRef} role="grid" aria-label="Panel de control de widgets" tabIndex={-1}>
             <ResponsiveGridLayout
                 layouts={layouts}
                 onLayoutChange={onLayoutChange}
