@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { motion } from 'framer-motion';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
@@ -28,6 +28,19 @@ export const DashboardGrid = ({
     onRemoveWidget,
     onConfigureWidget,
 }: DashboardGridProps) => {
+    const gridContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isEditMode && gridContainerRef.current) {
+            // Enfoca el primer widget disponible al entrar en modo edición.
+            // Esto mejora la accesibilidad del teclado al proporcionar un punto de partida claro.
+            const firstWidget = gridContainerRef.current.querySelector<HTMLElement>('.react-grid-item [tabindex="0"]');
+            if (firstWidget) {
+                // Pequeño timeout para asegurar que el elemento sea enfocable después del cambio de estado.
+                setTimeout(() => firstWidget.focus(), 100);
+            }
+        }
+    }, [isEditMode]);
 
     const generateDOM = () => {
         const layoutForDOM = layouts.lg || layouts.md || layouts.sm || defaultLayout;
@@ -84,20 +97,22 @@ export const DashboardGrid = ({
     };
 
     return (
-        <ResponsiveGridLayout
-            layouts={layouts}
-            onLayoutChange={onLayoutChange}
-            className="layout"
-            breakpoints={breakpoints}
-            cols={cols}
-            rowHeight={30}
-            isDraggable={isEditMode}
-            isResizable={isEditMode}
-            draggableHandle=".drag-handle"
-            margin={[16, 16]}
-            compactType="vertical"
-        >
-            {generateDOM()}
-        </ResponsiveGridLayout>
+        <div ref={gridContainerRef}>
+            <ResponsiveGridLayout
+                layouts={layouts}
+                onLayoutChange={onLayoutChange}
+                className="layout"
+                breakpoints={breakpoints}
+                cols={cols}
+                rowHeight={30}
+                isDraggable={isEditMode}
+                isResizable={isEditMode}
+                draggableHandle=".drag-handle"
+                margin={[16, 16]}
+                compactType="vertical"
+            >
+                {generateDOM()}
+            </ResponsiveGridLayout>
+        </div>
     );
 };
