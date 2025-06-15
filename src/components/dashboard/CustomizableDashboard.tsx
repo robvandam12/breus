@@ -1,4 +1,3 @@
-
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Skeleton } from '../ui/skeleton';
@@ -31,6 +30,7 @@ export const CustomizableDashboard = () => {
         onLayoutChange,
         handleSaveLayout,
         handleResetLayout,
+        handleCancelEdit,
         handleAddWidget,
         handleRemoveWidget,
         confirmRemoveWidget,
@@ -74,6 +74,7 @@ export const CustomizableDashboard = () => {
                 onToggleEdit={() => setIsEditMode(true)}
                 onSave={handleSaveLayout}
                 onResetConfirm={() => setIsResetConfirmOpen(true)}
+                onCancelEdit={handleCancelEdit}
                 onAddWidget={handleAddWidget}
                 onManageTemplates={() => setIsTemplateSheetOpen(true)}
                 onUndo={undo}

@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { widgetRegistry, WidgetType } from '@/components/dashboard/widgetRegistry';
@@ -38,7 +37,7 @@ export const useDashboardManager = (currentRole: string) => {
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
 
-    useEffect(() => {
+    const getInitialDashboardState = useCallback(() => {
         const roleLayout = getLayoutForRole(currentRole);
         const filteredRoleLayout = roleLayout.filter(item => widgetRegistry[item.i]);
         
@@ -60,14 +59,17 @@ export const useDashboardManager = (currentRole: string) => {
                  initialLayouts = { lg: filteredRoleLayout };
             }
         }
+        return {
+            layouts: initialLayouts,
+            widgets: savedWidgets || defaultWidgets,
+        };
+    }, [currentRole, savedLayout, savedWidgets]);
 
+    useEffect(() => {
         if (!isLoading) {
-             resetDashboardState({
-                layouts: initialLayouts,
-                widgets: savedWidgets || defaultWidgets,
-            });
+             resetDashboardState(getInitialDashboardState());
         }
-    }, [savedLayout, savedWidgets, isLoading, currentRole, resetDashboardState]);
+    }, [isLoading, getInitialDashboardState, resetDashboardState]);
 
     const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
         if (isEditMode) {
@@ -101,6 +103,11 @@ export const useDashboardManager = (currentRole: string) => {
                 toast({ title: "Error", description: "No se pudo restaurar el diseño.", variant: "destructive" });
             }
         });
+    };
+
+    const handleCancelEdit = () => {
+        resetDashboardState(getInitialDashboardState());
+        setIsEditMode(false);
     };
 
     const handleAddWidget = (widgetType: WidgetType) => {
@@ -203,6 +210,7 @@ export const useDashboardManager = (currentRole: string) => {
         onLayoutChange,
         handleSaveLayout,
         handleResetLayout,
+        handleCancelEdit,
         handleAddWidget,
         handleRemoveWidget,
         confirmRemoveWidget,

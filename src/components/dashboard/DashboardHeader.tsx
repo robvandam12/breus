@@ -1,7 +1,6 @@
-
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit, Save, Loader2, RotateCcw, LayoutTemplate } from 'lucide-react';
+import { Edit, Save, Loader2, RotateCcw, LayoutTemplate, X } from 'lucide-react';
 import { WidgetCatalog } from './WidgetCatalog';
 import { WidgetType } from './widgetRegistry';
 import { UndoRedoControls } from './UndoRedoControls';
@@ -14,6 +13,7 @@ interface DashboardHeaderProps {
     onToggleEdit: () => void;
     onSave: () => void;
     onResetConfirm: () => void;
+    onCancelEdit: () => void;
     onAddWidget: (widgetType: WidgetType) => void;
     onManageTemplates: () => void;
     onUndo: () => void;
@@ -30,6 +30,7 @@ export const DashboardHeader = ({
     onToggleEdit,
     onSave,
     onResetConfirm,
+    onCancelEdit,
     onAddWidget,
     onManageTemplates,
     onUndo,
@@ -81,6 +82,18 @@ export const DashboardHeader = ({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>Restaurar el diseño por defecto para tu rol.</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" onClick={onCancelEdit} disabled={isSaving || isResetting}>
+                                        <X className="mr-2 h-4 w-4" />
+                                        Cancelar
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Descartar cambios y salir del modo edición.</p>
                                 </TooltipContent>
                             </Tooltip>
 
