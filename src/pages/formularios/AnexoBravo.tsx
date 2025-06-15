@@ -1,8 +1,5 @@
 
 import { useState } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +12,9 @@ import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravo
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { toast } from "@/hooks/use-toast";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/layout/EmptyState";
 
 const AnexoBravoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,18 +51,9 @@ const AnexoBravoPage = () => {
   const handleSubmitAnexo = async (data: any) => {
     try {
       await createAnexoBravo(data);
-      toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente.",
-      });
       handleAnexoComplete();
     } catch (error) {
       console.error('Error creating anexo bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el Anexo Bravo.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -80,233 +71,212 @@ const AnexoBravoPage = () => {
     }
   };
 
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <Input
+          placeholder="Buscar Anexos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-64"
+        />
+      </div>
+
+      <Button 
+        onClick={handleCreateAnexo}
+        className="bg-primary hover:bg-primary/90"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Nuevo Anexo Bravo
+      </Button>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <RoleBasedSidebar />
-          <main className="flex-1 flex flex-col bg-gray-50">
-            <Header 
-              title="Anexos Bravo" 
-              subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo" 
-              icon={Shield} 
-            />
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          </main>
+      <MainLayout
+        title="Anexos Bravo"
+        subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo"
+        icon={Shield}
+        headerChildren={headerActions}
+      >
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner text="Cargando Anexos Bravo..." />
         </div>
-      </SidebarProvider>
+      </MainLayout>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col bg-gray-50">
-          <Header 
-            title="Anexos Bravo" 
-            subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo" 
-            icon={Shield} 
-          >
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar Anexos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64 ios-input"
-                />
+    <MainLayout
+      title="Anexos Bravo"
+      subtitle="Gestión de documentos Anexo Bravo para operaciones de buceo"
+      icon={Shield}
+      headerChildren={headerActions}
+    >
+      <div className="space-y-6">
+        {/* KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-primary">
+                {anexosBravo.length}
               </div>
-
-              <Button 
-                onClick={handleCreateAnexo}
-                className="ios-button bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Anexo Bravo
-              </Button>
-            </div>
-          </Header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-              {/* KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="ios-card">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {anexosBravo.length}
-                    </div>
-                    <div className="text-sm text-zinc-500">Anexos Totales</div>
-                  </CardContent>
-                </Card>
-                <Card className="ios-card">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      {anexosBravo.filter(a => a.firmado).length}
-                    </div>
-                    <div className="text-sm text-zinc-500">Anexos Firmados</div>
-                  </CardContent>
-                </Card>
-                <Card className="ios-card">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {anexosBravo.filter(a => a.estado === 'borrador').length}
-                    </div>
-                    <div className="text-sm text-zinc-500">En Borrador</div>
-                  </CardContent>
-                </Card>
-                <Card className="ios-card">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-gray-600">
-                      {operaciones.filter(op => 
-                        !anexosBravo.some(anexo => anexo.operacion_id === op.id)
-                      ).length}
-                    </div>
-                    <div className="text-sm text-zinc-500">Operaciones Disponibles</div>
-                  </CardContent>
-                </Card>
+              <div className="text-sm text-muted-foreground">Anexos Totales</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-green-600">
+                {anexosBravo.filter(a => a.firmado).length}
               </div>
+              <div className="text-sm text-muted-foreground">Anexos Firmados</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-yellow-600">
+                {anexosBravo.filter(a => a.estado === 'borrador').length}
+              </div>
+              <div className="text-sm text-muted-foreground">En Borrador</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-muted-foreground">
+                {operaciones.filter(op => 
+                  !anexosBravo.some(anexo => anexo.operacion_id === op.id)
+                ).length}
+              </div>
+              <div className="text-sm text-muted-foreground">Operaciones Disponibles</div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {/* Anexos List */}
-              {filteredAnexos.length === 0 ? (
-                <Card className="ios-card text-center py-12">
-                  <CardContent>
-                    <Shield className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-zinc-900 mb-2">
-                      {anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos"}
-                    </h3>
-                    <p className="text-zinc-500 mb-4">
-                      {anexosBravo.length === 0 
-                        ? "Comience creando el primer Anexo Bravo seleccionando una operación"
-                        : "Intenta ajustar la búsqueda"}
-                    </p>
-                    <Button 
-                      onClick={handleCreateAnexo}
-                      className="ios-button bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Anexo Bravo
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="ios-card">
-                  <div className="ios-table-container">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Código</TableHead>
-                          <TableHead>Operación</TableHead>
-                          <TableHead>Supervisor</TableHead>
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead>Progreso</TableHead>
-                          <TableHead className="text-right">Acciones</TableHead>
+        {/* Anexos List */}
+        {filteredAnexos.length === 0 ? (
+          <EmptyState
+            icon={Shield}
+            title={anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos"}
+            description={anexosBravo.length === 0 
+              ? "Comience creando el primer Anexo Bravo seleccionando una operación"
+              : "Intenta ajustar la búsqueda"}
+            actionText={anexosBravo.length === 0 ? "Nuevo Anexo Bravo" : undefined}
+            onAction={anexosBravo.length === 0 ? handleCreateAnexo : undefined}
+            actionIcon={anexosBravo.length === 0 ? Plus : undefined}
+          />
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Operación</TableHead>
+                      <TableHead>Supervisor</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Progreso</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAnexos.map((anexo) => {
+                      const operacion = operaciones.find(op => op.id === anexo.operacion_id);
+                      return (
+                        <TableRow key={anexo.id}>
+                          <TableCell>
+                            <div className="font-medium">{anexo.codigo}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-muted-foreground">
+                              {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
+                            </div>
+                          </TableCell>
+                          <TableCell>{anexo.supervisor}</TableCell>
+                          <TableCell>
+                            {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
+                              {anexo.firmado ? (
+                                <div className="flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Firmado
+                                </div>
+                              ) : (
+                                anexo.estado || 'Borrador'
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-muted rounded-full h-2">
+                                <div 
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{ width: `${anexo.progreso || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground">{anexo.progreso || 0}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewAnexo(anexo.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Ver
+                              </Button>
+                              {!anexo.firmado && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEditAnexo(anexo.id)}
+                                >
+                                  <Edit className="w-4 h-4 mr-1" />
+                                  Editar
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAnexos.map((anexo) => {
-                          const operacion = operaciones.find(op => op.id === anexo.operacion_id);
-                          return (
-                            <TableRow key={anexo.id}>
-                              <TableCell>
-                                <div className="font-medium">{anexo.codigo}</div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm text-zinc-600">
-                                  {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
-                                </div>
-                              </TableCell>
-                              <TableCell>{anexo.supervisor}</TableCell>
-                              <TableCell>
-                                {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
-                                  {anexo.firmado ? (
-                                    <div className="flex items-center gap-1">
-                                      <CheckCircle className="w-3 h-3" />
-                                      Firmado
-                                    </div>
-                                  ) : (
-                                    anexo.estado || 'Borrador'
-                                  )}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-blue-600 h-2 rounded-full transition-all"
-                                      style={{ width: `${anexo.progreso || 0}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-xs text-gray-500">{anexo.progreso || 0}%</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="ios-button-sm"
-                                    onClick={() => handleViewAnexo(anexo.id)}
-                                  >
-                                    <Eye className="w-4 h-4 mr-1" />
-                                    Ver
-                                  </Button>
-                                  {!anexo.firmado && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="ios-button-sm"
-                                      onClick={() => handleEditAnexo(anexo.id)}
-                                    >
-                                      <Edit className="w-4 h-4 mr-1" />
-                                      Editar
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Card>
-              )}
-            </div>
-          </div>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Operation Selector Dialog */}
-          <Dialog open={showOperationSelector} onOpenChange={setShowOperationSelector}>
-            <DialogContent className="max-w-4xl">
-              <AnexoBravoOperationSelector 
-                onOperacionSelected={handleOperationSelected}
-                selectedOperacionId={selectedOperacionId}
-              />
-            </DialogContent>
-          </Dialog>
+        {/* Operation Selector Dialog */}
+        <Dialog open={showOperationSelector} onOpenChange={setShowOperationSelector}>
+          <DialogContent className="max-w-4xl">
+            <AnexoBravoOperationSelector 
+              onOperacionSelected={handleOperationSelected}
+              selectedOperacionId={selectedOperacionId}
+            />
+          </DialogContent>
+        </Dialog>
 
-          {/* Create/Edit Form Modal */}
-          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <FullAnexoBravoForm 
-                operacionId={selectedOperacionId}
-                anexoId={editingAnexoId || undefined}
-                onSubmit={handleSubmitAnexo}
-                onCancel={() => setShowCreateForm(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </main>
+        {/* Create/Edit Form Modal */}
+        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <FullAnexoBravoForm 
+              operacionId={selectedOperacionId}
+              anexoId={editingAnexoId || undefined}
+              onSubmit={handleSubmitAnexo}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-    </SidebarProvider>
+    </MainLayout>
   );
 };
 

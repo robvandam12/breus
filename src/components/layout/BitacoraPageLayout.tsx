@@ -21,7 +21,7 @@ export const BitacoraPageLayout: React.FC<BitacoraPageLayoutProps> = ({
   children,
   maxWidth = '7xl',
   padding = 'md',
-  className = "bg-gray-50"
+  className = ""
 }) => {
   const maxWidthClasses = {
     'full': 'w-full',

@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus } from "lucide-react";
 import { BitacoraWizard } from "@/components/bitacoras/BitacoraWizard";
@@ -115,10 +114,10 @@ const BitacorasSupervisor = () => {
         type="supervisor"
       />
       
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <FileText className="w-5 h-5 text-primary" />
             Filtros y Búsqueda
           </CardTitle>
         </CardHeader>
@@ -149,28 +148,32 @@ const BitacorasSupervisor = () => {
         <div className="space-y-6">
           {viewMode === 'table' ? (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Inmersión</TableHead>
-                    <TableHead>Supervisor</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBitacorasSupervisor.map((bitacora) => (
-                    <BitacoraTableRow
-                      key={bitacora.bitacora_id}
-                      bitacora={bitacora}
-                      type="supervisor"
-                      onSign={handleSignSupervisor}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-muted-foreground">Código</TableHead>
+                        <TableHead className="text-muted-foreground">Inmersión</TableHead>
+                        <TableHead className="text-muted-foreground">Supervisor</TableHead>
+                        <TableHead className="text-muted-foreground">Fecha</TableHead>
+                        <TableHead className="text-muted-foreground">Estado</TableHead>
+                        <TableHead className="text-right text-muted-foreground">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBitacorasSupervisor.map((bitacora) => (
+                        <BitacoraTableRow
+                          key={bitacora.bitacora_id}
+                          bitacora={bitacora}
+                          type="supervisor"
+                          onSign={handleSignSupervisor}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           ) : (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
