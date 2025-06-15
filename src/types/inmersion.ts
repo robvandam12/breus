@@ -1,4 +1,3 @@
-
 import type { SecurityAlert } from './security';
 
 export interface Inmersion {
@@ -26,10 +25,7 @@ export interface Inmersion {
   created_at: string;
   updated_at: string;
   operacion_nombre?: string;
-  operacion?: {
-    codigo: string;
-    nombre: string;
-  };
+  operacion?: OperationData;
   current_depth?: number | null;
   planned_bottom_time?: number | null;
   depth_history?: Array<{ depth: number; timestamp: string }>;
