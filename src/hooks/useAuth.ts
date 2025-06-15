@@ -46,42 +46,82 @@ export const useAuthProvider = (): AuthContextType => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileFetched, setProfileFetched] = useState(false);
+
+  // Timeout de seguridad para loading
+  useEffect(() => {
+    const loadingTimeout = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing loading to false');
+      setLoading(false);
+    }, 10000); // 10 segundos max
+
+    return () => clearTimeout(loadingTimeout);
+  }, []);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
+    console.log('Auth: Initializing auth listener');
+    
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
+        console.log('Auth: State change event:', event, 'Session exists:', !!session);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user && !profileFetched) {
+          console.log('Auth: Fetching profile for user:', session.user.id);
+          await fetchUserProfile(session.user.id);
+          setProfileFetched(true);
+        } else if (!session?.user) {
+          console.log('Auth: No session, clearing profile');
+          setProfile(null);
+          setProfileFetched(false);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Get initial session
+    const initializeAuth = async () => {
+      try {
+        console.log('Auth: Getting initial session');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Auth: Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Auth: Initial session exists:', !!session);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           await fetchUserProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setLoading(false);
+          setProfileFetched(true);
         }
+      } catch (error) {
+        console.error('Auth: Initialize error:', error);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      console.log('Auth: Cleaning up subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
-      // Use manual typing for the usuario table query
+      console.log('Auth: Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
@@ -89,10 +129,10 @@ export const useAuthProvider = (): AuthContextType => {
         .single() as { data: UsuarioRow | null; error: any };
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        console.error('Auth: Error fetching profile:', error);
+        return;
       }
 
-      // Transform data to match UserProfile interface
       if (data) {
         const userProfile: UserProfile = {
           id: data.usuario_id,
@@ -106,23 +146,20 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
-        console.log('Profile loaded:', userProfile);
+        console.log('Auth: Profile loaded successfully:', userProfile.role);
         setProfile(userProfile);
+      } else {
+        console.log('Auth: No profile data found');
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar el perfil del usuario",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Auth: Error in fetchUserProfile:', error);
+      // No mostrar toast de error aquí para evitar spam
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -142,6 +179,8 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -158,7 +197,6 @@ export const useAuthProvider = (): AuthContextType => {
 
       if (error) throw error;
 
-      // Create user profile in usuario table
       if (data.user) {
         const { error: profileError } = await supabase
           .from('usuario')
@@ -194,8 +232,15 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // Limpiar estados
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      setProfileFetched(false);
 
       toast({
         title: "Sesión cerrada",
@@ -208,6 +253,8 @@ export const useAuthProvider = (): AuthContextType => {
         description: error.message || "Error al cerrar sesión",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,7 +285,7 @@ export const useAuthProvider = (): AuthContextType => {
     if (!profile) return false;
 
     const rolePermissions = {
-      superuser: ['*'], // All permissions
+      superuser: ['*'],
       admin_salmonera: [
         'manage_salmonera',
         'manage_sitios',

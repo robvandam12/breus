@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
@@ -13,54 +14,111 @@ export default function Index() {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+
+  // Timeout de seguridad para evitar loading infinito
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      console.warn('Index: Loading timeout - user might be stuck');
+      if (loading && !user) {
+        console.log('Index: Forcing redirect to login due to timeout');
+        navigate('/login', { replace: true });
+      }
+    }, 15000); // 15 segundos
+
+    return () => clearTimeout(timeout);
+  }, [loading, user, navigate]);
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!loading && !user) {
-      navigate('/login');
+    console.log('Index: Auth state changed', { 
+      loading, 
+      hasUser: !!user, 
+      hasProfile: !!profile,
+      userRole: profile?.role,
+      redirecting 
+    });
+
+    // Evitar redirecciones múltiples
+    if (redirecting) {
+      console.log('Index: Already redirecting, skipping');
       return;
     }
 
-    // Redirect new users to onboarding
-    if (user && profile && !profile.nombre && !profile.apellido) {
-      navigate('/onboarding');
+    // Si está cargando, esperar
+    if (loading) {
+      console.log('Index: Still loading, waiting...');
       return;
     }
 
-    // Check if buzo needs onboarding
+    // Si no hay usuario, redirigir a login
+    if (!user) {
+      console.log('Index: No user found, redirecting to login');
+      setRedirecting(true);
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    // Si hay usuario pero no perfil completo, redirigir a onboarding
+    if (user && (!profile || (!profile.nombre && !profile.apellido))) {
+      console.log('Index: User exists but profile incomplete, redirecting to onboarding');
+      setRedirecting(true);
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+
+    // Check onboarding para buzos
     if (user && profile && profile.role === 'buzo') {
       const onboardingCompleted = localStorage.getItem('onboarding_completed');
       if (!onboardingCompleted) {
+        console.log('Index: Buzo needs onboarding');
         setShowOnboarding(true);
       }
     }
-  }, [loading, user, profile, navigate]);
 
-  if (loading) {
+    // Si llegamos aquí, todo está bien
+    console.log('Index: Auth state is valid, showing dashboard');
+  }, [loading, user, profile, navigate, redirecting]);
+
+  // Loading state
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">
+            {redirecting ? 'Redirigiendo...' : 'Verificando autenticación...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No debería llegar aquí sin user/profile, pero por seguridad
+  if (!user || !profile) {
+    console.warn('Index: Reached dashboard without user/profile');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900">Error de autenticación</h2>
+          <p className="text-gray-600 mt-2">Por favor, inicia sesión nuevamente</p>
+          <button 
+            onClick={() => navigate('/login')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Ir a Login
+          </button>
+        </div>
       </div>
     );
   }
 
   // Show onboarding for buzos who haven't seen it
-  if (showOnboarding && profile?.role === 'buzo') {
+  if (showOnboarding && profile.role === 'buzo') {
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
   const getDashboardContent = () => {
-    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
-    
-    // Verificar si el perfil del buzo está completo
-    const isProfileComplete = () => {
-      if (!profile?.perfil_buzo) return false;
-      const requiredFields = ['rut', 'telefono', 'direccion', 'ciudad', 'region', 'nacionalidad'];
-      const perfilBuzo = profile.perfil_buzo as any;
-      return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
-    };
-
-    switch (profile?.role) {
+    switch (profile.role) {
       case 'superuser':
       case 'admin_salmonera':
       case 'admin_servicio':
@@ -68,7 +126,6 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Usar el nuevo dashboard específico para buzos
         return <BuzoDashboard />;
       default:
         return <BuzoRestrictedView />;
@@ -76,7 +133,7 @@ export default function Index() {
   };
 
   const getDashboardTitle = () => {
-    switch (profile?.role) {
+    switch (profile.role) {
       case 'superuser':
         return "Panel de Administración";
       case 'admin_salmonera':
@@ -93,7 +150,7 @@ export default function Index() {
   };
 
   const getDashboardSubtitle = () => {
-    switch (profile?.role) {
+    switch (profile.role) {
       case 'superuser':
         return "Gestión completa del sistema";
       case 'admin_salmonera':
