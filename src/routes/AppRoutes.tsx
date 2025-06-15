@@ -1,9 +1,10 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import { PageSkeleton } from "@/components/layout/PageSkeleton";
+import { DashboardWithSidebarSkeleton } from "@/components/dashboard/DashboardWithSidebarSkeleton";
+import { PageWithSidebarSkeleton } from "@/components/layout/PageWithSidebarSkeleton";
 
 // Auth components are loaded eagerly
 import Login from "../pages/auth/Login";
@@ -73,7 +74,7 @@ export const AppRoutes = () => (
       {/* Core Protected Routes */}
       <Route path="/" element={
         <ProtectedRoute>
-          <Suspense fallback={<DashboardSkeleton />}>
+          <Suspense fallback={<DashboardWithSidebarSkeleton />}>
             <Index />
           </Suspense>
         </ProtectedRoute>
@@ -82,21 +83,21 @@ export const AppRoutes = () => (
       {/* Empresa Routes */}
       <Route path="/empresas/salmoneras" element={
         <ProtectedRoute requiredRole="superuser">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Salmoneras />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/empresas/sitios" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Sitios />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/empresas/contratistas" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Contratistas />
           </Suspense>
         </ProtectedRoute>
@@ -105,7 +106,7 @@ export const AppRoutes = () => (
       {/* Equipo Routes */}
       <Route path="/equipo-de-buceo" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <EquipoBuceo />
           </Suspense>
         </ProtectedRoute>
@@ -114,28 +115,28 @@ export const AppRoutes = () => (
       {/* Operaciones Routes */}
       <Route path="/operaciones" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Operaciones />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <HPT />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/anexo-bravo" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AnexoBravo />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/inmersiones" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Inmersiones />
           </Suspense>
         </ProtectedRoute>
@@ -144,14 +145,14 @@ export const AppRoutes = () => (
       {/* Bitacoras Routes */}
       <Route path="/bitacoras/supervisor" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BitacorasSupervisor />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/bitacoras/buzo" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BitacorasBuzo />
           </Suspense>
         </ProtectedRoute>
@@ -160,14 +161,14 @@ export const AppRoutes = () => (
       {/* Formularios Routes */}
       <Route path="/formularios/hpt" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <HPTFormularios />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/formularios/anexo-bravo" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AnexoBravoFormularios />
           </Suspense>
         </ProtectedRoute>
@@ -176,14 +177,14 @@ export const AppRoutes = () => (
       {/* Other Protected Routes */}
       <Route path="/reportes" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Reportes />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/configuracion" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Configuracion />
           </Suspense>
         </ProtectedRoute>
@@ -192,21 +193,21 @@ export const AppRoutes = () => (
       {/* Admin Routes */}
       <Route path="/admin/roles" element={
         <ProtectedRoute requiredRole="superuser">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AdminRoles />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/admin/users" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <UserManagement />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/admin/salmonera" element={
         <ProtectedRoute requiredRole="admin_salmonera">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AdminSalmoneraPage />
           </Suspense>
         </ProtectedRoute>
@@ -215,21 +216,21 @@ export const AppRoutes = () => (
       {/* Rutas específicas para buzos */}
       <Route path="/buzo/operaciones" element={
         <ProtectedRoute requiredRole="buzo">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BuzoOperaciones />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/buzo/inmersiones" element={
         <ProtectedRoute requiredRole="buzo">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BuzoInmersiones />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/buzo/reportes" element={
         <ProtectedRoute requiredRole="buzo">
-          <Suspense fallback={<PageSkeleton />}>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BuzoReportesPage />
           </Suspense>
         </ProtectedRoute>
