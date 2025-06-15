@@ -1,4 +1,3 @@
-
 import {
   Sheet,
   SheetContent,
@@ -20,7 +19,7 @@ import { Loader2, Save } from "lucide-react";
 interface DashboardTemplateSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onApplyTemplate: (layout: Layouts, widgets: any) => void;
+  onApplyTemplate: (template: DashboardTemplate) => void;
   currentLayouts: Layouts;
   currentWidgets: any;
 }
@@ -37,9 +36,8 @@ export const DashboardTemplateSheet = ({
   const [newTemplateDescription, setNewTemplateDescription] = useState("");
 
   const handleApply = (template: DashboardTemplate) => {
-    onApplyTemplate(template.layout_config, template.widget_configs);
-    toast({ title: `Plantilla '${template.name}' aplicada.`, description: "Guarda el diseño para conservar los cambios." });
-    onClose();
+    onApplyTemplate(template);
+    // The toast and onClose are now handled by the hook after validation.
   };
 
   const handleSaveCurrent = async () => {
@@ -132,11 +130,9 @@ const TemplateItem = ({ template, onApply }: { template: DashboardTemplate, onAp
                 <h4 className="font-semibold truncate">{template.name}</h4>
                 {template.description && <p className="text-sm text-muted-foreground truncate">{template.description}</p>}
             </div>
-            <SheetClose asChild>
-                <Button size="sm" variant="outline" onClick={() => onApply(template)} className="ml-2 flex-shrink-0">
-                    Aplicar
-                </Button>
-            </SheetClose>
+            <Button size="sm" variant="outline" onClick={() => onApply(template)} className="ml-2 flex-shrink-0">
+                Aplicar
+            </Button>
         </div>
     );
 }

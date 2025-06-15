@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -6,7 +5,7 @@ import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetR
 import { toast } from '@/hooks/use-toast';
 import { getLayoutForRole } from '@/components/dashboard/layouts';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
-import { useDashboardTemplates } from './useDashboardTemplates';
+import { useDashboardTemplates, DashboardTemplate } from './useDashboardTemplates';
 import { useWidgetManager } from './useWidgetManager';
 import { useDashboardModes } from './useDashboardModes';
 
@@ -107,9 +106,7 @@ export const useDashboardManager = (currentRole: string) => {
                 modes.setIsPreviewMode(false);
                 modes.setPreviewSnapshot(null);
             },
-            onError: () => {
-                toast({ title: "Error", description: "No se pudo guardar el diseño.", variant: "destructive" });
-            }
+            // onError is handled by useDashboardLayout
         });
     }
 
@@ -122,9 +119,7 @@ export const useDashboardManager = (currentRole: string) => {
                 modes.setIsPreviewMode(false);
                 modes.setPreviewSnapshot(null);
             },
-            onError: () => {
-                toast({ title: "Error", description: "No se pudo restaurar el diseño.", variant: "destructive" });
-            }
+             // onError is handled by useDashboardLayout
         });
     };
 
@@ -147,15 +142,47 @@ export const useDashboardManager = (currentRole: string) => {
         }
     };
 
-    const handleApplyTemplate = useCallback((layout: Layouts, widgets: any) => {
+    const handleApplyTemplate = useCallback((template: DashboardTemplate) => {
         setIsApplyingTemplate(true);
         // Usar un timeout para asegurar que la UI se actualice y muestre el estado de carga
         setTimeout(() => {
-            setDashboardState({ layouts: layout, widgets: widgets || defaultWidgets });
-            setIsApplyingTemplate(false);
-            toast({ title: "Plantilla Aplicada", description: "Guarda el diseño para confirmar los cambios." });
+            try {
+                const { layout_config, widget_configs, name: templateName } = template;
+
+                const allLayoutItems = Object.values(layout_config).flat();
+                const invalidWidgetIds = allLayoutItems
+                    .map(item => item.i as WidgetType)
+                    .filter(widgetId => !widgetRegistry[widgetId]);
+
+                if (invalidWidgetIds.length > 0) {
+                    throw new Error(`La plantilla contiene widgets que ya no existen: ${invalidWidgetIds.join(', ')}.`);
+                }
+
+                const filteredLayouts = filterLayoutsByRole(layout_config, currentRole as Role);
+                const filteredItems = Object.values(filteredLayouts).flat();
+
+                if (allLayoutItems.length > 0 && filteredItems.length === 0) {
+                    throw new Error(`Ningún widget en esta plantilla está disponible para tu rol actual.`);
+                }
+
+                setDashboardState({ layouts: filteredLayouts, widgets: widget_configs || defaultWidgets });
+                toast({
+                    title: "Plantilla Aplicada",
+                    description: `Se aplicó '${templateName}'. Guarda el diseño para confirmar los cambios.`
+                });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Ocurrió un error desconocido.";
+                toast({
+                    title: "No se pudo aplicar la plantilla",
+                    description: message,
+                    variant: "destructive"
+                });
+            } finally {
+                setIsApplyingTemplate(false);
+                setIsTemplateSheetOpen(false);
+            }
         }, 100);
-    }, [setDashboardState]);
+    }, [setDashboardState, currentRole]);
 
     const undo = () => {
         if (canUndo) {
