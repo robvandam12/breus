@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,36 +71,33 @@ export const VirtualizedInmersionsList: React.FC<VirtualizedInmersionsListProps>
           position: 'relative',
         }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1">
-          {virtualItems.map((virtualItem) => {
-            const inmersion = inmersiones[virtualItem.index];
-            const operacion = getOperacionData(inmersion.operacion_id);
+        {virtualItems.map((virtualItem) => {
+          const inmersion = inmersiones[virtualItem.index];
+          const operacion = getOperacionData(inmersion.operacion_id);
 
-            return (
-              <div
-                key={virtualItem.key}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                className="grid-item"
-              >
-                <div className="h-full">
-                  <InmersionCard
-                    inmersion={inmersion}
-                    operacion={operacion}
-                    getEstadoBadgeColor={getEstadoBadgeColor}
-                    onView={onViewInmersion}
-                  />
-                </div>
+          return (
+            <div
+              key={virtualItem.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualItem.size}px`,
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <div className="h-full p-2">
+                <InmersionCard
+                  inmersion={inmersion}
+                  operacion={operacion}
+                  getEstadoBadgeColor={getEstadoBadgeColor}
+                  onView={onViewInmersion}
+                />
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

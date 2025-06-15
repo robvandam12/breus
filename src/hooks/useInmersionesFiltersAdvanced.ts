@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Inmersion } from '@/types/inmersion';
@@ -151,13 +150,13 @@ export const useInmersionesFiltersAdvanced = (inmersiones: Inmersion[]) => {
   };
 
   const hasActiveFilters = 
-    filters.searchTerm || 
+    !!filters.searchTerm || 
     filters.estado !== 'todos' ||
     filters.salmonera !== 'todos' ||
     filters.sitio !== 'todos' ||
     filters.supervisor !== 'todos' ||
-    filters.fechaDesde ||
-    filters.fechaHasta ||
+    !!filters.fechaDesde ||
+    !!filters.fechaHasta ||
     filters.profundidadMin !== null ||
     filters.profundidadMax !== null;
 
