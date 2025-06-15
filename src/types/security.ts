@@ -1,10 +1,12 @@
 
+export type SecurityAlertPriority = 'info' | 'warning' | 'critical' | 'emergency';
+
 export interface SecurityAlert {
   id: string;
   inmersion_id: string;
   rule_id: string | null;
   type: 'DEPTH_LIMIT' | 'ASCENT_RATE' | 'BOTTOM_TIME' | string;
-  priority: 'info' | 'warning' | 'critical' | 'emergency';
+  priority: SecurityAlertPriority;
   details: {
     inmersion_code?: string;
     [key: string]: any;
@@ -36,7 +38,7 @@ export interface SecurityAlertRule {
   description: string | null;
   type: string;
   config: any;
-  priority: 'info' | 'warning' | 'critical' | 'emergency';
+  priority: SecurityAlertPriority;
   message_template: string;
   enabled: boolean;
   is_template: boolean;
