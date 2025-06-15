@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
@@ -10,8 +11,11 @@ import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import InmersionesList from '@/components/inmersiones/InmersionesList';
 import { InmersionDetailModal } from '@/components/inmersiones/InmersionDetailModal';
+import { InmersionesAdvancedFilters } from '@/components/inmersiones/InmersionesAdvancedFilters';
+import { VirtualizedInmersionsList } from '@/components/inmersiones/VirtualizedInmersionsList';
+import { VirtualizedInmersionsTable } from '@/components/inmersiones/VirtualizedInmersionsTable';
+import { useInmersionesFiltersAdvanced } from '@/hooks/useInmersionesFiltersAdvanced';
 import type { Inmersion } from '@/types/inmersion';
 
 export default function Inmersiones() {
@@ -25,6 +29,16 @@ export default function Inmersiones() {
   const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
+
+  // Usamos los filtros avanzados
+  const {
+    filters,
+    updateFilter,
+    clearFilters,
+    filteredAndSortedInmersiones,
+    filterOptions,
+    hasActiveFilters,
+  } = useInmersionesFiltersAdvanced(inmersiones);
 
   useEffect(() => {
     if (operacionId) {
@@ -126,22 +140,44 @@ export default function Inmersiones() {
             </div>
           </Header>
           
-          <div className="flex-1 overflow-auto bg-white p-6">
+          <div className="flex-1 overflow-auto bg-white p-6 space-y-6">
+            {/* Filtros avanzados */}
+            <InmersionesAdvancedFilters
+              filters={filters}
+              updateFilter={updateFilter}
+              clearFilters={clearFilters}
+              filterOptions={filterOptions}
+              hasActiveFilters={hasActiveFilters}
+              totalResults={filteredAndSortedInmersiones.length}
+            />
+
+            {/* Lista de inmersiones */}
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-2 text-gray-600">Cargando inmersiones...</p>
               </div>
             ) : (
-              <InmersionesList
-                viewMode={viewMode}
-                inmersiones={inmersiones}
-                operaciones={operaciones}
-                getOperacionData={getOperacionData}
-                getEstadoBadgeColor={getEstadoBadgeColor}
-                onViewInmersion={handleViewInmersion}
-                onNewInmersion={() => setShowWizard(true)}
-              />
+              <>
+                {viewMode === 'cards' ? (
+                  <VirtualizedInmersionsList
+                    inmersiones={filteredAndSortedInmersiones}
+                    getOperacionData={getOperacionData}
+                    getEstadoBadgeColor={getEstadoBadgeColor}
+                    onViewInmersion={handleViewInmersion}
+                    onNewInmersion={() => setShowWizard(true)}
+                    containerHeight={650}
+                  />
+                ) : (
+                  <VirtualizedInmersionsTable
+                    inmersiones={filteredAndSortedInmersiones}
+                    getOperacionData={getOperacionData}
+                    getEstadoBadgeColor={getEstadoBadgeColor}
+                    onViewInmersion={handleViewInmersion}
+                    containerHeight={650}
+                  />
+                )}
+              </>
             )}
           </div>
 

@@ -97,12 +97,15 @@ export default function BuzoInmersiones() {
       icon={Anchor}
     >
       <div className="space-y-6">
-        {/* Filtros */}
+        {/* Filtros mejorados */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
               Filtros
+              <Badge variant="secondary" className="ml-auto">
+                {filteredInmersiones.length} de {buzoInmersiones.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -151,7 +154,7 @@ export default function BuzoInmersiones() {
           </CardContent>
         </Card>
 
-        {/* Lista de inmersiones */}
+        {/* Lista de inmersiones optimizada */}
         {filteredInmersiones.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
