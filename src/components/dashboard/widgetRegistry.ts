@@ -5,6 +5,9 @@ import { QuickActionsWidget } from './widgets/QuickActionsWidget';
 import { StatsChartWidget } from './widgets/StatsChartWidget';
 import { AlertasPanelWidget } from './widgets/AlertsPanelWidget';
 import React from 'react';
+import { MyImmersionsWidget } from './widgets/MyImmersionsWidget';
+import { TeamStatusWidget } from './widgets/TeamStatusWidget';
+import { GlobalMetricsWidget } from './widgets/GlobalMetricsWidget';
 
 export interface WidgetRegistryEntry {
   name: string;
@@ -46,6 +49,24 @@ export const widgetRegistry: Record<string, WidgetRegistryEntry> = {
     component: AlertasPanelWidget,
     description: 'Muestra alertas importantes del sistema.',
     defaultLayout: { w: 4, h: 6 },
+  },
+  my_immersions: {
+    name: 'Mis Inmersiones (Buzo)',
+    component: MyImmersionsWidget,
+    description: 'Resumen de tu actividad de buceo.',
+    defaultLayout: { w: 12, h: 7 },
+  },
+  team_status: {
+    name: 'Estado del Equipo (Supervisor)',
+    component: TeamStatusWidget,
+    description: 'Supervisa el estado de tu equipo de buzos.',
+    defaultLayout: { w: 6, h: 8 },
+  },
+  global_metrics: {
+    name: 'Métricas Globales (Admin)',
+    component: GlobalMetricsWidget,
+    description: 'Métricas y reportes para administradores.',
+    defaultLayout: { w: 6, h: 6 },
   },
 };
 

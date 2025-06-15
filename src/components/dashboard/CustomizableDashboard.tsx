@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import RGL, { WidthProvider, Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -11,10 +10,11 @@ import { Edit, Save, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { WidgetCatalog } from './WidgetCatalog';
+import { useAuthRoles } from '@/hooks/useAuthRoles';
 
 const ReactGridLayout = WidthProvider(RGL);
 
-const defaultLayout: Layout[] = [
+const baseLayout: Layout[] = [
   { i: 'kpi_cards', x: 0, y: 0, w: 12, h: 2, static: true },
   { i: 'stats_chart', x: 0, y: 2, w: 12, h: 5 },
   { i: 'upcoming_operations', x: 0, y: 7, w: 5, h: 6 },
@@ -22,20 +22,66 @@ const defaultLayout: Layout[] = [
   { i: 'alerts_panel', x: 8, y: 7, w: 4, h: 6 },
 ];
 
+const buzoLayout: Layout[] = [
+    { i: 'my_immersions', x: 0, y: 0, w: 12, h: 7, isResizable: false },
+    { i: 'kpi_cards', x: 0, y: 7, w: 12, h: 2, static: true },
+    { i: 'quick_actions', x: 0, y: 9, w: 4, h: 6 },
+    { i: 'alerts_panel', x: 4, y: 9, w: 8, h: 6 },
+];
+
+const supervisorLayout: Layout[] = [
+    { i: 'kpi_cards', x: 0, y: 0, w: 12, h: 2, static: true },
+    { i: 'team_status', x: 0, y: 2, w: 6, h: 8 },
+    { i: 'upcoming_operations', x: 6, y: 2, w: 6, h: 8 },
+    { i: 'stats_chart', x: 0, y: 10, w: 12, h: 5 },
+    { i: 'alerts_panel', x: 0, y: 15, w: 7, h: 6 },
+    { i: 'quick_actions', x: 7, y: 15, w: 5, h: 6 },
+];
+
+const adminLayout: Layout[] = [
+    { i: 'kpi_cards', x: 0, y: 0, w: 12, h: 2, static: true },
+    { i: 'stats_chart', x: 0, y: 2, w: 12, h: 5 },
+    { i: 'global_metrics', x: 0, y: 7, w: 6, h: 6 },
+    { i: 'alerts_panel', x: 6, y: 7, w: 6, h: 6 },
+    { i: 'upcoming_operations', x: 0, y: 13, w: 7, h: 6 },
+    { i: 'quick_actions', x: 7, y: 13, w: 5, h: 6 },
+];
+
+const getLayoutForRole = (role: string): Layout[] => {
+    switch (role) {
+        case 'buzo':
+            return buzoLayout;
+        case 'supervisor':
+            return supervisorLayout;
+        case 'admin_salmonera':
+        case 'admin_servicio':
+        case 'superuser':
+            return adminLayout;
+        default:
+            return baseLayout;
+    }
+};
+
 const defaultWidgets = {};
 
 export const CustomizableDashboard = () => {
-    const { layout, widgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayout, defaultWidgets);
+    const { currentRole } = useAuthRoles();
+    const defaultLayoutForRole = getLayoutForRole(currentRole);
+
+    const { layout, widgets, isLoading, saveLayout, isSaving } = useDashboardLayout(defaultLayoutForRole, defaultWidgets);
     const [isEditMode, setIsEditMode] = useState(false);
     const [currentLayout, setCurrentLayout] = useState<Layout[]>([]);
 
     useEffect(() => {
+        const roleLayout = getLayoutForRole(currentRole);
         if (layout && layout.length > 0) {
-            setCurrentLayout(layout);
+            // Filter out widgets that are not in the registry from saved layout
+            const filteredLayout = layout.filter(item => widgetRegistry[item.i]);
+            setCurrentLayout(filteredLayout);
         } else if (!isLoading) {
-            setCurrentLayout(defaultLayout);
+            setCurrentLayout(roleLayout);
         }
-    }, [layout, isLoading]);
+    }, [layout, isLoading, currentRole]);
 
     const onLayoutChange = (newLayout: Layout[]) => {
         if (isEditMode) {
@@ -137,7 +183,7 @@ export const CustomizableDashboard = () => {
                 onLayoutChange={onLayoutChange}
                 className="layout"
                 cols={12}
-                rowHeight={50}
+                rowHeight={30}
                 isDraggable={isEditMode}
                 isResizable={isEditMode}
                 draggableHandle=".drag-handle"
