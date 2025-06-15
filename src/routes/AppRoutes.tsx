@@ -23,7 +23,7 @@ const EquipoBuceo = lazy(() => import("../pages/EquipoBuceo"));
 const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
 const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
-const Inmersiones = lazy(() => import("../pages/operaciones/Inmersiones"));
+const Inmersiones = lazy(() => import("../pages/Inmersiones"));
 const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
 const HPTFormularios = lazy(() => import("../pages/formularios/HPTFormularios"));
