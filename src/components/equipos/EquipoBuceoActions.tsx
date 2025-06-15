@@ -1,12 +1,11 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit, Trash2, Users, Settings } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Users } from "lucide-react";
 import { EditEquipoForm } from "./EditEquipoForm";
 import { EquipoBuceoMemberManager } from "./EquipoBuceoMemberManager";
+import { FormDialog } from "@/components/forms/FormDialog";
 import { toast } from "@/hooks/use-toast";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
@@ -88,31 +87,28 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Dialog para editar equipo */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Equipo</DialogTitle>
-          </DialogHeader>
-          <EditEquipoForm
-            equipo={equipo}
-            onSubmit={handleEdit}
-            onCancel={() => setShowEditDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        variant="form"
+        size="md"
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      >
+        <EditEquipoForm
+          equipo={equipo}
+          onSubmit={handleEdit}
+          onCancel={() => setShowEditDialog(false)}
+        />
+      </FormDialog>
 
-      {/* Dialog para gestionar miembros */}
-      <Dialog open={showMemberDialog} onOpenChange={setShowMemberDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestionar Miembros - {equipo.nombre}</DialogTitle>
-          </DialogHeader>
-          <EquipoBuceoMemberManager equipoId={equipo.id} equipo={equipo} />
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        variant="form"
+        size="xl"
+        open={showMemberDialog}
+        onOpenChange={setShowMemberDialog}
+      >
+        <EquipoBuceoMemberManager equipoId={equipo.id} equipo={equipo} />
+      </FormDialog>
 
-      {/* Dialog de confirmación para eliminar */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

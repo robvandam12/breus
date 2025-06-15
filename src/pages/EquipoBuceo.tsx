@@ -1,18 +1,16 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Plus, Search } from "lucide-react";
 import { CreateEquipoFormWizard } from "@/components/equipos/CreateEquipoFormWizard";
 import { EquipoBuceoActions } from "@/components/equipos/EquipoBuceoActions";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "@/hooks/use-toast";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
+import { WizardDialog } from "@/components/forms/WizardDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const EquipoBuceo = () => {
@@ -93,20 +91,19 @@ const EquipoBuceo = () => {
         />
       </div>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="ios-button bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Equipo
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl">
-          <CreateEquipoFormWizard
-            onSubmit={handleCreateEquipo}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <WizardDialog
+        triggerText="Nuevo Equipo"
+        triggerIcon={Plus}
+        triggerClassName="bg-blue-600 hover:bg-blue-700"
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        size="xl"
+      >
+        <CreateEquipoFormWizard
+          onSubmit={handleCreateEquipo}
+          onCancel={() => setIsCreateDialogOpen(false)}
+        />
+      </WizardDialog>
     </div>
   );
 

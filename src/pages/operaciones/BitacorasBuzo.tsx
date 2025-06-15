@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Plus, LayoutGrid, LayoutList } from "lucide-react";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { BitacorasBuzoContent } from "@/components/bitacoras/BitacorasBuzoContent";
@@ -13,6 +12,7 @@ import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
 import { BitacoraPageStats } from "@/components/bitacoras/BitacoraPageStats";
+import { FormDialog } from "@/components/forms/FormDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BitacorasBuzo = () => {
@@ -91,14 +91,20 @@ const BitacorasBuzo = () => {
         </Button>
       </div>
 
-      <Button
-        onClick={() => setIsCreateDialogOpen(true)}
-        className="bg-teal-600 hover:bg-teal-700"
-        disabled={!hasSupervisorLogs}
+      <FormDialog
+        variant="form"
+        size="xl"
+        triggerText="Nueva Bitácora Buzo"
+        triggerIcon={Plus}
+        triggerClassName="bg-teal-600 hover:bg-teal-700"
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
       >
-        <Plus className="w-4 h-4 mr-2" />
-        Nueva Bitácora Buzo
-      </Button>
+        <CreateBitacoraBuzoFormCompleteWithInmersion
+          onSubmit={handleCreateBuzo}
+          onCancel={() => setIsCreateDialogOpen(false)}
+        />
+      </FormDialog>
     </div>
   );
 
@@ -152,23 +158,21 @@ const BitacorasBuzo = () => {
         onOpenSignModal={handleOpenSignModal}
       />
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent variant="form" className="max-w-7xl max-h-[85vh] overflow-y-auto p-0">
-          <CreateBitacoraBuzoFormCompleteWithInmersion
-            onSubmit={handleCreateBuzo}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
       {selectedBitacora && (
-        <BitacoraDetailView
-          isOpen={!!selectedBitacora}
-          onClose={() => setSelectedBitacora(null)}
-          bitacora={selectedBitacora}
-          type="buzo"
-          onSign={handleOpenSignModal}
-        />
+        <FormDialog
+          variant="detail"
+          size="xl"
+          open={!!selectedBitacora}
+          onOpenChange={(open) => !open && setSelectedBitacora(null)}
+        >
+          <BitacoraDetailView
+            isOpen={!!selectedBitacora}
+            onClose={() => setSelectedBitacora(null)}
+            bitacora={selectedBitacora}
+            type="buzo"
+            onSign={handleOpenSignModal}
+          />
+        </FormDialog>
       )}
 
       {bitacoraToSign && (
