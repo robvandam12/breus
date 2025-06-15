@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -5,9 +6,11 @@ import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetR
 import { toast } from '@/hooks/use-toast';
 import { getLayoutForRole } from '@/components/dashboard/layouts';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
-import { useDashboardTemplates, DashboardTemplate } from './useDashboardTemplates';
+import { useDashboardTemplates } from './useDashboardTemplates';
 import { useWidgetManager } from './useWidgetManager';
 import { useDashboardModes } from './useDashboardModes';
+import { useTemplateManager } from './useTemplateManager';
+import { useDashboardKeyboardShortcuts } from './useDashboardKeyboardShortcuts';
 
 interface DashboardState {
     layouts: Layouts;
@@ -78,9 +81,7 @@ export const useDashboardManager = (currentRole: string) => {
     const { layouts: currentLayouts, widgets: currentWidgets } = dashboardState;
     
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-    const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
-    const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
-
+    
     const filteredLayout = useMemo(() => filterLayoutsByRole(savedLayout, currentRole as Role), [savedLayout, currentRole]);
 
     const getInitialDashboardState = useCallback(() => {
@@ -133,6 +134,12 @@ export const useDashboardManager = (currentRole: string) => {
     
     const widgetManager = useWidgetManager({ dashboardState, setDashboardState });
 
+    const templateManager = useTemplateManager({
+        setDashboardState,
+        currentRole: currentRole as Role,
+        defaultWidgets
+    });
+
     const onLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
         if (modes.isEditMode || modes.isPreviewMode) {
             setDashboardState({
@@ -141,48 +148,6 @@ export const useDashboardManager = (currentRole: string) => {
             });
         }
     };
-
-    const handleApplyTemplate = useCallback((template: DashboardTemplate) => {
-        setIsApplyingTemplate(true);
-        // Usar un timeout para asegurar que la UI se actualice y muestre el estado de carga
-        setTimeout(() => {
-            try {
-                const { layout_config, widget_configs, name: templateName } = template;
-
-                const allLayoutItems = Object.values(layout_config).flat();
-                const invalidWidgetIds = allLayoutItems
-                    .map(item => item.i as WidgetType)
-                    .filter(widgetId => !widgetRegistry[widgetId]);
-
-                if (invalidWidgetIds.length > 0) {
-                    throw new Error(`La plantilla contiene widgets que ya no existen: ${invalidWidgetIds.join(', ')}.`);
-                }
-
-                const filteredLayouts = filterLayoutsByRole(layout_config, currentRole as Role);
-                const filteredItems = Object.values(filteredLayouts).flat();
-
-                if (allLayoutItems.length > 0 && filteredItems.length === 0) {
-                    throw new Error(`Ningún widget en esta plantilla está disponible para tu rol actual.`);
-                }
-
-                setDashboardState({ layouts: filteredLayouts, widgets: widget_configs || defaultWidgets });
-                toast({
-                    title: "Plantilla Aplicada",
-                    description: `Se aplicó '${templateName}'. Guarda el diseño para confirmar los cambios.`
-                });
-            } catch (error) {
-                const message = error instanceof Error ? error.message : "Ocurrió un error desconocido.";
-                toast({
-                    title: "No se pudo aplicar la plantilla",
-                    description: message,
-                    variant: "destructive"
-                });
-            } finally {
-                setIsApplyingTemplate(false);
-                setIsTemplateSheetOpen(false);
-            }
-        }, 100);
-    }, [setDashboardState, currentRole]);
 
     const undo = () => {
         if (canUndo) {
@@ -197,29 +162,14 @@ export const useDashboardManager = (currentRole: string) => {
             toast({ title: "Rehacer", description: "Última acción rehecha." });
         }
     };
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!modes.isEditMode && !modes.isPreviewMode) return;
-            if (event.ctrlKey || event.metaKey) {
-                if (event.key === 'z') {
-                    event.preventDefault();
-                    undo();
-                } else if (event.key === 'y') {
-                    event.preventDefault();
-                    redo();
-                } else if (event.key === 'p' && modes.isEditMode) {
-                    event.preventDefault();
-                    modes.handleEnterPreview();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [modes.isEditMode, modes.isPreviewMode, canUndo, canRedo, undoAction, redoAction, modes.handleEnterPreview]);
+    
+    useDashboardKeyboardShortcuts({
+        isEditMode: modes.isEditMode,
+        isPreviewMode: modes.isPreviewMode,
+        undo,
+        redo,
+        handleEnterPreview: modes.handleEnterPreview,
+    });
     
     return {
         isLoading: !isInitialized,
@@ -227,13 +177,13 @@ export const useDashboardManager = (currentRole: string) => {
         isPreviewMode: modes.isPreviewMode,
         isSaving,
         isResetting,
-        isApplyingTemplate,
+        isApplyingTemplate: templateManager.isApplyingTemplate,
         currentLayouts,
         currentWidgets,
         configuringWidgetId: widgetManager.configuringWidgetId,
         widgetToRemove: widgetManager.widgetToRemove,
         isResetConfirmOpen,
-        isTemplateSheetOpen,
+        isTemplateSheetOpen: templateManager.isTemplateSheetOpen,
         canUndo,
         canRedo,
         defaultLayoutForRole: defaultLayoutAndWidgets.layout,
@@ -252,13 +202,13 @@ export const useDashboardManager = (currentRole: string) => {
         confirmRemoveWidget: widgetManager.confirmRemoveWidget,
         handleConfigureWidget: widgetManager.handleConfigureWidget,
         handleWidgetConfigSave: widgetManager.handleWidgetConfigSave,
-        handleApplyTemplate,
+        handleApplyTemplate: templateManager.handleApplyTemplate,
         
         setIsEditMode: modes.setIsEditMode,
         setConfiguringWidgetId: widgetManager.setConfiguringWidgetId,
         setWidgetToRemove: widgetManager.setWidgetToRemove,
         setIsResetConfirmOpen,
-        setIsTemplateSheetOpen,
+        setIsTemplateSheetOpen: templateManager.setIsTemplateSheetOpen,
         undo,
         redo,
     };
