@@ -1,7 +1,7 @@
 
 import { Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetRegistry';
-import { getLayoutsForRole } from '@/components/dashboard/layouts';
+import { getLayoutsForRole, preventOverlapping } from '@/components/dashboard/layouts';
 
 export const isValidLayout = (layout: Layout): boolean => {
     return (
@@ -21,11 +21,9 @@ export const isValidLayout = (layout: Layout): boolean => {
 export const isValidLayouts = (layouts: Layouts): boolean => {
     if (!layouts || typeof layouts !== 'object') return false;
     
-    // Verificar que al menos tenga un breakpoint válido
     const breakpoints = Object.keys(layouts);
     if (breakpoints.length === 0) return false;
     
-    // Verificar que cada breakpoint tenga un array válido
     return breakpoints.every(bp => {
         const layout = layouts[bp];
         return Array.isArray(layout) && layout.every(isValidLayout);
@@ -33,16 +31,13 @@ export const isValidLayouts = (layouts: Layouts): boolean => {
 };
 
 export const sanitizeLayouts = (layouts: Layouts | Layout[] | null | undefined, fallbackLayouts: Layouts): Layouts => {
-    // Si layouts es null/undefined, usar fallback
     if (!layouts) return fallbackLayouts;
     
-    // Si es un array, convertir a formato Layouts
     if (Array.isArray(layouts)) {
         const sanitizedArray = layouts.filter(isValidLayout);
         return sanitizedArray.length > 0 ? { lg: sanitizedArray } : fallbackLayouts;
     }
     
-    // Si es un objeto Layouts, validar y sanitizar
     if (typeof layouts === 'object') {
         const sanitizedLayouts: Layouts = {};
         let hasValidBreakpoint = false;
@@ -58,17 +53,16 @@ export const sanitizeLayouts = (layouts: Layouts | Layout[] | null | undefined, 
             }
         });
         
-        // Si no hay breakpoints válidos, usar fallback
         if (!hasValidBreakpoint) return fallbackLayouts;
         
-        // Asegurar que al menos 'lg' existe
         if (!sanitizedLayouts.lg && sanitizedLayouts.md) {
             sanitizedLayouts.lg = sanitizedLayouts.md;
         } else if (!sanitizedLayouts.lg && fallbackLayouts.lg) {
             sanitizedLayouts.lg = fallbackLayouts.lg;
         }
         
-        return sanitizedLayouts;
+        // Apply overlap prevention
+        return preventOverlapping(sanitizedLayouts);
     }
     
     return fallbackLayouts;
@@ -82,7 +76,6 @@ export const filterLayoutsByRole = (layouts: Layouts | Layout[] | null | undefin
         if (!isValidLayout(item)) return false;
         const widgetConfig = widgetRegistry[item.i as WidgetType];
         if (!widgetConfig) return false;
-        // Si roles están definidos, el rol actual debe estar incluido. Si no están definidos, widget disponible para todos.
         return !widgetConfig.roles || widgetConfig.roles.includes(role);
     };
 
@@ -101,17 +94,16 @@ export const filterLayoutsByRole = (layouts: Layouts | Layout[] | null | undefin
         }
     });
 
-    // Si no hay elementos válidos después del filtrado, usar layouts por defecto para el rol
     if (!hasValidItems) {
         return fallbackLayouts;
     }
 
-    // Asegurar que lg existe
     if (!filteredLayouts.lg) {
         filteredLayouts.lg = fallbackLayouts.lg || [];
     }
     
-    return filteredLayouts;
+    // Apply overlap prevention to final result
+    return preventOverlapping(filteredLayouts);
 };
 
 export const validateWidgetExists = (widgetId: string): boolean => {
@@ -131,5 +123,48 @@ export const cleanupInvalidWidgets = (layouts: Layouts): Layouts => {
         }
     });
     
-    return cleanedLayouts;
+    return preventOverlapping(cleanedLayouts);
+};
+
+// New utility functions for responsive behavior
+export const optimizeLayoutForMobile = (layouts: Layouts): Layouts => {
+    const optimized: Layouts = { ...layouts };
+    
+    // For xs and xxs breakpoints, ensure widgets are stacked vertically
+    ['xs', 'xxs'].forEach(bp => {
+        const layout = optimized[bp as keyof Layouts];
+        if (Array.isArray(layout)) {
+            let yOffset = 0;
+            optimized[bp as keyof Layouts] = layout.map(item => {
+                const optimizedItem = {
+                    ...item,
+                    x: 0, // Force full width on mobile
+                    y: yOffset,
+                    w: bp === 'xxs' ? 2 : 4, // Use full available width
+                    h: Math.max(item.h, 3), // Minimum height for mobile
+                };
+                yOffset += optimizedItem.h;
+                return optimizedItem;
+            });
+        }
+    });
+    
+    return optimized;
+};
+
+export const ensureMinimumWidgetSize = (layouts: Layouts): Layouts => {
+    const ensured: Layouts = {};
+    
+    Object.keys(layouts).forEach(bp => {
+        const layout = layouts[bp as keyof Layouts];
+        if (Array.isArray(layout)) {
+            ensured[bp as keyof Layouts] = layout.map(item => ({
+                ...item,
+                w: Math.max(item.w, 1),
+                h: Math.max(item.h, item.static ? 2 : 3),
+            }));
+        }
+    });
+    
+    return ensured;
 };

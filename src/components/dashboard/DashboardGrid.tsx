@@ -1,11 +1,10 @@
-
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { widgetRegistry, WidgetType } from './widgetRegistry';
 import { WidgetCard } from './WidgetCard';
 import { LazyWidget } from './LazyWidget';
 import { breakpoints, cols } from './layouts';
-import { isValidLayout } from '@/utils/dashboardUtils';
+import { isValidLayout, optimizeLayoutForMobile, ensureMinimumWidgetSize } from '@/utils/dashboardUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -32,10 +31,9 @@ export const DashboardGrid = ({
 }: DashboardGridProps) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
 
-    // Validar layouts recibidos
+    // Enhanced layout validation with responsive optimization
     const validatedLayouts = useMemo(() => {
         if (!layouts || typeof layouts !== 'object') {
-            console.warn('Layouts inválidos recibidos, usando layout por defecto');
             return { lg: defaultLayout || [] };
         }
         
@@ -57,12 +55,13 @@ export const DashboardGrid = ({
             return { lg: defaultLayout || [] };
         }
         
-        // Asegurar que lg existe
         if (!validated.lg && defaultLayout) {
             validated.lg = defaultLayout;
         }
         
-        return validated;
+        // Apply responsive optimizations
+        const optimized = optimizeLayoutForMobile(validated);
+        return ensureMinimumWidgetSize(optimized);
     }, [layouts, defaultLayout]);
 
     useEffect(() => {
@@ -197,7 +196,6 @@ export const DashboardGrid = ({
                 );
             });
         } catch (error) {
-            console.error('Error al generar elementos del DOM:', error);
             return [(
                 <div key="error-state" className="flex items-center justify-center h-32">
                     <Alert variant="destructive" className="max-w-md">
@@ -213,7 +211,6 @@ export const DashboardGrid = ({
 
     const handleLayoutChange = (newLayout: Layout[], newLayouts: Layouts) => {
         try {
-            // Validar el nuevo layout antes de aplicarlo
             const validLayout = newLayout.filter(isValidLayout);
             const validLayouts: Layouts = {};
             
@@ -227,9 +224,11 @@ export const DashboardGrid = ({
                 }
             });
             
-            onLayoutChange(validLayout, validLayouts);
+            // Apply responsive optimizations to layout changes
+            const optimized = optimizeLayoutForMobile(validLayouts);
+            onLayoutChange(validLayout, optimized);
         } catch (error) {
-            console.error('Error al manejar cambio de layout:', error);
+            // Silent error handling - layout changes are non-critical
         }
     };
 
@@ -249,6 +248,10 @@ export const DashboardGrid = ({
                 compactType="vertical"
                 preventCollision={false}
                 useCSSTransforms={true}
+                autoSize={true}
+                isBounded={true}
+                resizeHandles={['se']}
+                transformScale={1}
             >
                 {domElements}
             </ResponsiveGridLayout>
