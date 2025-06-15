@@ -1,15 +1,12 @@
-import { Tables } from '@/integrations/supabase/types';
-import type { OperationData } from '@/types/inmersion';
 
-// Extendiendo Tables<'inmersion'> para asegurar compatibilidad
-export interface InmersionCompleta extends Tables<'inmersion'> {
-  operacion?: OperationData;
-  // Las propiedades 'buzo_asistente' y 'buzo_asistente_id' se heredan de Tables<'inmersion'>
-  // por lo que no es necesario redeclararlas aquí.
-}
+import { Tables } from '@/integrations/supabase/types';
+import type { Inmersion } from '@/types/inmersion';
+
+// La interfaz 'InmersionCompleta' ha sido consolidada en el tipo 'Inmersion'
+// en `src/types/inmersion.ts`. Todas las referencias aquí usan ahora 'Inmersion'.
 
 export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
-  inmersion: InmersionCompleta | null;
+  inmersion: Inmersion | null;
   supervisor_data?: { id: string; nombre: string; } | null;
   aprobador_data?: { id: string; nombre: string; } | null;
   inmersiones_buzos: any[] | null;
@@ -18,5 +15,5 @@ export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_superv
 }
 
 export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'aprobada_por'> {
-  inmersion: InmersionCompleta | null;
+  inmersion: Inmersion | null;
 }
