@@ -381,7 +381,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
           { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
-          { title: "Reglas de Alerta", url: "/admin/alert-rules", roleRequired: "superuser" }
+          { title: "Reglas de Alerta", url: "/admin/alert-rules", roleRequired: "superuser" },
+          { title: "Registro de Alertas", url: "/admin/alerts-log", roleRequired: "superuser" }
         ]
       }
     ];

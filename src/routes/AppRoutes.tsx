@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -34,6 +35,7 @@ const AdminRoles = lazy(() => import("../pages/admin/AdminRoles"));
 const AdminSalmoneraPage = lazy(() => import("../pages/admin/AdminSalmoneraPage"));
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const AlertRulesAdmin = lazy(() => import("../pages/admin/AlertRulesAdmin"));
+const AlertsLog = lazy(() => import("../pages/admin/AlertsLog"));
 const BuzoOnboardingPage = lazy(() => import("../pages/BuzoOnboardingPage"));
 const BuzoOperaciones = lazy(() => import("../pages/buzo/BuzoOperaciones"));
 const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
@@ -216,6 +218,13 @@ export const AppRoutes = () => (
         <ProtectedRoute requiredRole="superuser">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AlertRulesAdmin />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/alerts-log" element={
+        <ProtectedRoute requiredRole="superuser">
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <AlertsLog />
           </Suspense>
         </ProtectedRoute>
       } />
