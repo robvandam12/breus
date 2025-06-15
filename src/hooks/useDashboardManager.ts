@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
-import { widgetRegistry, WidgetType } from '@/components/dashboard/widgetRegistry';
+import { widgetRegistry, WidgetType, Role } from '@/components/dashboard/widgetRegistry';
 import { toast } from '@/hooks/use-toast';
 import { getLayoutForRole, cols } from '@/components/dashboard/layouts';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
@@ -42,22 +42,35 @@ export const useDashboardManager = (currentRole: string) => {
 
     const getInitialDashboardState = useCallback(() => {
         const roleLayout = getLayoutForRole(currentRole);
-        const filteredRoleLayout = roleLayout.filter(item => widgetRegistry[item.i]);
+
+        const roleFilter = (item: Layout) => {
+            const widgetConfig = widgetRegistry[item.i as WidgetType];
+            if (!widgetConfig) return false;
+            // If roles are defined, check if currentRole is included. If not defined, it's for all roles.
+            if (widgetConfig.roles && !widgetConfig.roles.includes(currentRole as Role)) {
+                return false;
+            }
+            return true;
+        };
+        
+        const filteredRoleLayout = roleLayout.filter(roleFilter);
         
         let initialLayouts: Layouts = { lg: filteredRoleLayout };
         
         if (savedLayout) {
              if (Array.isArray(savedLayout) && savedLayout.length > 0) {
-                const filteredLayout = savedLayout.filter(item => widgetRegistry[item.i]);
+                const filteredLayout = savedLayout.filter(roleFilter);
                 initialLayouts = { lg: filteredLayout };
             } else if (typeof savedLayout === 'object' && !Array.isArray(savedLayout) && Object.keys(savedLayout).length > 0) {
                 const filteredLayouts = Object.entries(savedLayout).reduce((acc, [key, value]) => {
                     if(Array.isArray(value)) {
-                        acc[key] = value.filter(item => widgetRegistry[item.i]);
+                        acc[key] = value.filter(roleFilter);
                     }
                     return acc;
                 }, {} as Layouts);
-                initialLayouts = filteredLayouts;
+                if (Object.keys(filteredLayouts).length > 0) {
+                    initialLayouts = filteredLayouts;
+                }
             } else {
                  initialLayouts = { lg: filteredRoleLayout };
             }

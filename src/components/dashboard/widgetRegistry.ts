@@ -15,6 +15,7 @@ const EquipmentStatusWidget = React.lazy(() => import('./widgets/EquipmentStatus
 const GlobalMetricsWidget = React.lazy(() => import('./widgets/GlobalMetricsWidget'));
 const AlertsPanelWidget = React.lazy(() => import('./widgets/AlertsPanelWidget'));
 const NotificationWidget = React.lazy(() => import('./widgets/NotificationWidget'));
+const BuzoStatsWidget = React.lazy(() => import('./widgets/BuzoStatsWidget'));
 
 // Widget Config Components
 const TeamStatusWidgetConfig = React.lazy(() => import('./widgets/configs/TeamStatusWidgetConfig'));
@@ -31,6 +32,9 @@ import { WeatherWidgetSkeleton } from './widgets/skeletons/WeatherWidgetSkeleton
 import { CalendarWidgetSkeleton } from './widgets/skeletons/CalendarWidgetSkeleton';
 import { EquipmentStatusWidgetSkeleton } from './widgets/skeletons/EquipmentStatusWidgetSkeleton';
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
+import { BuzoStatsWidgetSkeleton } from './widgets/skeletons/BuzoStatsWidgetSkeleton';
+
+export type Role = 'admin_servicio' | 'admin_empresa' | 'admin_contratista' | 'supervisor' | 'buzo' | 'superuser';
 
 export type WidgetType =
     'kpi-cards' |
@@ -45,7 +49,8 @@ export type WidgetType =
     'equipment-status' |
     'global-metrics' |
     'alerts-panel' |
-    'notifications';
+    'notifications' |
+    'buzo-stats';
 
 export interface WidgetConfig {
   name: string;
@@ -59,6 +64,7 @@ export interface WidgetConfig {
   };
   isHeavy?: boolean;
   category?: 'metrics' | 'alerts' | 'actions' | 'status' | 'content';
+  roles?: Role[];
 }
 
 export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
@@ -68,7 +74,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     component: KpiCardsWidget,
     skeleton: KpiCardsWidgetSkeleton,
     defaultLayout: { w: 12, h: 4 },
-    category: 'metrics'
+    category: 'metrics',
+    roles: ['admin_servicio', 'admin_empresa', 'supervisor', 'superuser']
   },
   'stats-chart': {
     name: 'Gráfico de Estadísticas',
@@ -77,7 +84,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: StatsChartWidgetSkeleton,
     defaultLayout: { w: 8, h: 8 },
     isHeavy: true,
-    category: 'metrics'
+    category: 'metrics',
+    roles: ['admin_servicio', 'admin_empresa', 'supervisor', 'superuser']
   },
   'upcoming-operations': {
     name: 'Próximas Operaciones',
@@ -85,7 +93,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     component: UpcomingOperationsWidget,
     skeleton: UpcomingOperationsWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
-    category: 'content'
+    category: 'content',
+    roles: ['supervisor', 'buzo', 'superuser']
   },
   'my-immersions': {
     name: 'Mis Inmersiones',
@@ -93,7 +102,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     component: MyImmersionsWidget,
     skeleton: MyImmersionsWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
-    category: 'content'
+    category: 'content',
+    roles: ['buzo']
   },
   'quick-actions': {
     name: 'Acciones Rápidas',
@@ -109,7 +119,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     component: SecurityAlertsWidget,
     skeleton: SecurityAlertsWidgetSkeleton,
     defaultLayout: { w: 6, h: 8 },
-    category: 'alerts'
+    category: 'alerts',
+    roles: ['admin_servicio', 'supervisor', 'superuser']
   },
   'team-status': {
     name: 'Estado del Equipo',
@@ -118,7 +129,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: GenericWidgetSkeleton,
     configComponent: TeamStatusWidgetConfig,
     defaultLayout: { w: 4, h: 6 },
-    category: 'status'
+    category: 'status',
+    roles: ['supervisor', 'superuser']
   },
   'weather': {
     name: 'Clima',
@@ -143,7 +155,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     component: EquipmentStatusWidget,
     skeleton: EquipmentStatusWidgetSkeleton,
     defaultLayout: { w: 6, h: 6 },
-    category: 'status'
+    category: 'status',
+    roles: ['supervisor', 'superuser']
   },
   'global-metrics': {
     name: 'Métricas Globales',
@@ -152,7 +165,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: GenericWidgetSkeleton,
     defaultLayout: { w: 12, h: 6 },
     isHeavy: true,
-    category: 'metrics'
+    category: 'metrics',
+    roles: ['superuser']
   },
   'alerts-panel': {
     name: 'Panel de Alertas',
@@ -161,7 +175,8 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: GenericWidgetSkeleton,
     configComponent: AlertsPanelWidgetConfig,
     defaultLayout: { w: 8, h: 8 },
-    category: 'alerts'
+    category: 'alerts',
+    roles: ['admin_servicio', 'supervisor', 'superuser']
   },
   'notifications': {
     name: 'Notificaciones',
@@ -170,5 +185,14 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     skeleton: NotificationWidgetSkeleton,
     defaultLayout: { w: 4, h: 8 },
     category: 'alerts'
+  },
+  'buzo-stats': {
+    name: 'Estadísticas de Buzo',
+    description: 'Métricas clave de tu actividad como buzo.',
+    component: BuzoStatsWidget,
+    skeleton: BuzoStatsWidgetSkeleton,
+    defaultLayout: { w: 12, h: 4 },
+    category: 'metrics',
+    roles: ['buzo']
   }
 };

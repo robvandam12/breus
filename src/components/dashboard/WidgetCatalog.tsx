@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { widgetRegistry, WidgetType } from "./widgetRegistry";
+import { Role, widgetRegistry, WidgetType } from "./widgetRegistry";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuthRoles } from "@/hooks/useAuthRoles";
 
 interface WidgetCatalogProps {
   onAddWidget: (widgetType: WidgetType) => void;
@@ -19,8 +20,18 @@ interface WidgetCatalogProps {
 }
 
 export const WidgetCatalog = ({ onAddWidget, currentWidgets }: WidgetCatalogProps) => {
+  const { currentRole } = useAuthRoles();
+
   const availableWidgets = Object.entries(widgetRegistry).filter(
-    ([key]) => !currentWidgets.includes(key)
+    ([key, config]) => {
+      if (currentWidgets.includes(key)) {
+        return false;
+      }
+      if (config.roles && !config.roles.includes(currentRole as Role)) {
+        return false;
+      }
+      return true;
+    }
   );
 
   return (
