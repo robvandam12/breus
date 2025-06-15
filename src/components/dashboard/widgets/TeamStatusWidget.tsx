@@ -14,7 +14,7 @@ interface TeamStatusWidgetProps {
     }
 }
 
-export const TeamStatusWidget = ({ config }: TeamStatusWidgetProps) => {
+const TeamStatusWidget = ({ config }: TeamStatusWidgetProps) => {
     const { teamMembers, isLoading } = useTeamStatusData({
         includeInactive: config?.showInactive,
         includeSuspended: config?.showSuspended,
@@ -61,3 +61,5 @@ export const TeamStatusWidget = ({ config }: TeamStatusWidgetProps) => {
         </Card>
     );
 };
+
+export default TeamStatusWidget;

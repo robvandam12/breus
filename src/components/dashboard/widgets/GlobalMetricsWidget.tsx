@@ -4,7 +4,7 @@ import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 
-export const GlobalMetricsWidget = ({ config }: { config?: any }) => {
+const GlobalMetricsWidget = ({ config }: { config?: any }) => {
     return (
         <Card className="h-full flex flex-col justify-center">
             <CardHeader>
@@ -24,3 +24,5 @@ export const GlobalMetricsWidget = ({ config }: { config?: any }) => {
         </Card>
     )
 }
+
+export default GlobalMetricsWidget;

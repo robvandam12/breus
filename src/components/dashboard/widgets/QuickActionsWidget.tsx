@@ -1,3 +1,6 @@
 
 import { QuickActions } from "@/components/dashboard/QuickActions";
-export const QuickActionsWidget = () => <QuickActions />;
+
+const QuickActionsWidget = () => <QuickActions />;
+
+export default QuickActionsWidget;
