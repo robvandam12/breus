@@ -22,16 +22,16 @@ export const useMultiX = () => {
     try {
       const { data, error } = await supabase
         .from('multix')
-        .insert([{
+        .insert({
           operacion_id: formData.operacion_id,
           codigo: formData.codigo,
           tipo_formulario: formData.tipo_formulario,
-          multix_data: formData.multix_data,
+          multix_data: formData.multix_data as any,
           user_id: user.id,
           fecha: formData.multix_data.fecha,
           estado: 'borrador',
           progreso: 0
-        }])
+        })
         .select()
         .single();
 
@@ -65,7 +65,7 @@ export const useMultiX = () => {
       const { data, error } = await supabase
         .from('multix')
         .update({
-          multix_data: updates,
+          multix_data: updates as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -74,7 +74,7 @@ export const useMultiX = () => {
 
       if (error) throw error;
 
-      setMultiXData(data.multix_data);
+      setMultiXData(data.multix_data as MultiXData);
       
       toast({
         title: "Guardado",
@@ -123,15 +123,18 @@ export const useMultiX = () => {
     setError(null);
 
     try {
+      const currentData = multiXData || {};
+      const updatedData = {
+        ...currentData,
+        firmas
+      };
+
       const { data, error } = await supabase
         .from('multix')
         .update({
           firmado: true,
           estado: 'firmado',
-          multix_data: {
-            ...multiXData,
-            firmas
-          }
+          multix_data: updatedData as any
         })
         .eq('id', id)
         .select()
