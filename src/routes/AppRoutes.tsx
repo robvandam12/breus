@@ -23,6 +23,7 @@ const EquipoBuceo = lazy(() => import("../pages/EquipoBuceo"));
 const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
 const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
+const MultiX = lazy(() => import("../pages/operaciones/MultiX"));
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
 const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
@@ -133,6 +134,13 @@ export const AppRoutes = () => (
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AnexoBravo />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/operaciones/multix" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <MultiX />
           </Suspense>
         </ProtectedRoute>
       } />
