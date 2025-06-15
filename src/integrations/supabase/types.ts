@@ -789,6 +789,7 @@ export type Database = {
           created_at: string
           descripcion: string | null
           empresa_id: string
+          estado: string
           id: string
           nombre: string
           tipo_empresa: string
@@ -799,6 +800,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           empresa_id: string
+          estado?: string
           id?: string
           nombre: string
           tipo_empresa: string
@@ -809,6 +811,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           empresa_id?: string
+          estado?: string
           id?: string
           nombre?: string
           tipo_empresa?: string

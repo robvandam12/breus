@@ -18,13 +18,15 @@ const getStatus = (equipo: EquipoBuceo) => {
     if (!equipo.activo) {
         return { label: 'Inactivo', color: 'bg-gray-500', icon: <XCircle className="h-4 w-4" /> };
     }
-    if (equipo.nombre.toLowerCase().includes('beta')) {
-         return { label: 'En Uso', color: 'bg-blue-500', icon: <Ship className="h-4 w-4" /> };
+    switch (equipo.estado) {
+        case 'en_uso':
+            return { label: 'En Uso', color: 'bg-blue-500', icon: <Ship className="h-4 w-4" /> };
+        case 'mantenimiento':
+            return { label: 'Mantenimiento', color: 'bg-yellow-500 text-black', icon: <Wrench className="h-4 w-4" /> };
+        case 'disponible':
+        default:
+            return { label: 'Disponible', color: 'bg-green-500', icon: <CheckCircle className="h-4 w-4" /> };
     }
-    if (equipo.nombre.toLowerCase().includes('gamma')) {
-        return { label: 'Mantenimiento', color: 'bg-yellow-500 text-black', icon: <Wrench className="h-4 w-4" /> };
-    }
-    return { label: 'Disponible', color: 'bg-green-500', icon: <CheckCircle className="h-4 w-4" /> };
 };
 
 const EquipoItem = ({ equipo }: { equipo: EquipoBuceo }) => {
