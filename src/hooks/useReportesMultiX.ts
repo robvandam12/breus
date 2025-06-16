@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -272,9 +271,9 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, toast]);
+  }, [isLoading]);
 
-  const exportReport = async (format: 'pdf' | 'excel') => {
+  const exportReport = useCallback(async (format: 'pdf' | 'excel') => {
     try {
       toast({
         title: "Exportando Reporte MultiX",
@@ -295,7 +294,7 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   return {
     reportData,

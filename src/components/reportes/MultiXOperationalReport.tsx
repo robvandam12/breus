@@ -36,9 +36,14 @@ export const MultiXOperationalReport = () => {
 
   const { reportData, isLoading, error, generateMultiXReport, exportReport } = useReportesMultiX(filters);
 
+  // Cargar el reporte solo una vez al montar el componente
   useEffect(() => {
     generateMultiXReport();
-  }, [generateMultiXReport]);
+  }, []); // Array de dependencias vacío para ejecutar solo al montar
+
+  const handleGenerateReport = () => {
+    generateMultiXReport();
+  };
 
   if (isLoading) {
     return (
@@ -73,7 +78,7 @@ export const MultiXOperationalReport = () => {
         </CardHeader>
         <CardContent>
           <p className="text-red-600">{error}</p>
-          <Button onClick={generateMultiXReport} className="mt-4">
+          <Button onClick={handleGenerateReport} className="mt-4">
             Reintentar
           </Button>
         </CardContent>
@@ -150,7 +155,7 @@ export const MultiXOperationalReport = () => {
               </Select>
             </div>
             <div className="flex items-end gap-2">
-              <Button onClick={generateMultiXReport} className="flex-1">
+              <Button onClick={handleGenerateReport} className="flex-1">
                 Actualizar
               </Button>
               <Button 
@@ -402,7 +407,6 @@ export const MultiXOperationalReport = () => {
           </Card>
         </TabsContent>
 
-        {/* Tab Buzos */}
         <TabsContent value="buzos" className="space-y-6">
           <Card>
             <CardHeader>
@@ -460,7 +464,6 @@ export const MultiXOperationalReport = () => {
           </Card>
         </TabsContent>
 
-        {/* Tab Equipos */}
         <TabsContent value="equipos" className="space-y-6">
           <Card>
             <CardHeader>
@@ -526,7 +529,6 @@ export const MultiXOperationalReport = () => {
           </Card>
         </TabsContent>
 
-        {/* Tab Operaciones */}
         <TabsContent value="operaciones" className="space-y-6">
           <Card>
             <CardHeader>
