@@ -73,7 +73,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
     const submitData: Partial<BitacoraSupervisorFormData> = {
       codigo: `BIT-SUP-${Date.now()}`,
       inmersion_id: selectedInmersion.inmersion_id,
-      supervisor_id: profile?.id || '',
       supervisor: (profile?.nombre || '') + ' ' + (profile?.apellido || ''),
       desarrollo_inmersion: formData.desarrollo_inmersion,
       incidentes: formData.incidentes || '',

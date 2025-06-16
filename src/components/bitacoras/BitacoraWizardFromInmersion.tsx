@@ -121,10 +121,10 @@ export const BitacoraWizardFromInmersion = ({
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo
       const buzosEquipo = assignedTeam.miembros?.map(miembro => ({
-        nombre: miembro.usuario?.nombre || '',
-        apellido: miembro.usuario?.apellido || '',
+        nombre: miembro.nombre || 'Sin nombre',
+        apellido: miembro.apellido || '',
         rut: '',
-        rol: miembro.rol_equipo,
+        rol: miembro.rol_equipo || 'Buzo',
         profundidad_trabajo: 0,
         tiempo_inmersion: 0,
         del_equipo_buceo: true
