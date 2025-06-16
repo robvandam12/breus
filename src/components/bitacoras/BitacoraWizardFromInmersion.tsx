@@ -122,9 +122,9 @@ export const BitacoraWizardFromInmersion = ({
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo usando las propiedades correctas
       const buzosEquipo = assignedTeam.miembros?.map(miembro => {
-        // Usar directamente las propiedades disponibles o valores por defecto
-        const nombreCompleto = miembro.usuario_id ? 'Miembro del equipo' : 'Sin nombre';
-        const rol = miembro.rol_equipo || 'Buzo';
+        // Usar las propiedades correctas del tipo EquipoBuceoMiembro
+        const nombreCompleto = miembro.nombre_completo || 'Sin nombre';
+        const rol = miembro.rol || 'Buzo';
         
         return {
           nombre: nombreCompleto,
