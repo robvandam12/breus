@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MultiXReportFilters {
@@ -248,19 +248,18 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    generateMultiXReport();
-  }, [filters]);
-
-  const generateMultiXReport = async () => {
+  // Usar useCallback para evitar recrear la función en cada render
+  const generateMultiXReport = useCallback(async () => {
+    if (isLoading) return; // Evitar multiple calls simultáneas
+    
     setIsLoading(true);
     setError(null);
     
     try {
       // Simular un delay mínimo para mostrar el loading
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Directamente usar datos mock - no hay delay excesivo
+      // Usar datos mock
       const mockData = getMockReportData();
       setReportData(mockData);
       setError(null);
@@ -278,7 +277,17 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoading, toast]);
+
+  // Efecto que se ejecuta solo cuando cambian los filtros de forma significativa
+  useEffect(() => {
+    const filtersKey = JSON.stringify(filters);
+    const timeoutId = setTimeout(() => {
+      generateMultiXReport();
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [filters.dateRange.from, filters.dateRange.to, filters.tipoFormulario, filters.contratistaId, filters.sitioId, generateMultiXReport]);
 
   const exportReport = async (format: 'pdf' | 'excel') => {
     try {
