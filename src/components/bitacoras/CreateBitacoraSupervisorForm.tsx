@@ -71,7 +71,6 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
       const formData: BitacoraSupervisorFormData = {
         codigo: `BIT-SUP-${Date.now()}`,
         inmersion_id: inmersionData.inmersion_id,
-        supervisor_id: profile?.id || '',
         desarrollo_inmersion: data.desarrollo_inmersion,
         incidentes: data.incidentes || "",
         evaluacion_general: data.evaluacion_general,

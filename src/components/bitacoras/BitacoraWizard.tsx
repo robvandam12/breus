@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { BitacoraFormBase } from '@/components/forms/BitacoraFormBase';
 import { BitacoraWizardProgress } from '@/components/forms/BitacoraWizardProgress';
@@ -31,7 +30,6 @@ export const BitacoraWizard = ({ onComplete, onCancel }: BitacoraWizardProps) =>
     codigo: `BIT-SUP-${Date.now()}`,
     inmersion_id: '',
     supervisor: '',
-    supervisor_id: '',
     desarrollo_inmersion: '',
     incidentes: '',
     evaluacion_general: '',

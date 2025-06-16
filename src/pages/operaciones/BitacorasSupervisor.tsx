@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { FileText, Plus } from "lucide-react";
 import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
 import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
@@ -131,7 +131,6 @@ const BitacorasSupervisor = () => {
       onNewBitacora={handleNewBitacora}
       newButtonText="Nueva Bitácora Supervisor"
       newButtonColor="bg-purple-600 hover:bg-purple-700"
-      disabled={inmersionesSinBitacora.length === 0}
     />
   );
 

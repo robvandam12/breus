@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,8 +121,8 @@ export const BitacoraWizardFromInmersion = ({
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo
       const buzosEquipo = assignedTeam.miembros?.map(miembro => ({
-        nombre: miembro.nombre || '',
-        apellido: '',
+        nombre: miembro.usuario?.nombre || '',
+        apellido: miembro.usuario?.apellido || '',
         rut: '',
         rol: miembro.rol_equipo,
         profundidad_trabajo: 0,
@@ -206,8 +205,6 @@ export const BitacoraWizardFromInmersion = ({
           <BitacoraStep1 
             data={formData} 
             onUpdate={updateFormData}
-            inmersion={selectedInmersion}
-            operacion={selectedOperation}
           />
         );
       case 2:

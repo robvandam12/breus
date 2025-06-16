@@ -1,11 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diving, Target, Plus, Trash2 } from "lucide-react";
+import { Activity, Target, Plus, Trash2 } from "lucide-react";
 import { BitacoraSupervisorData } from '../BitacoraWizardFromInmersion';
 
 interface BitacoraStep5DatosBuzosProps {
@@ -103,7 +102,7 @@ export const BitacoraStep5DatosBuzos = ({ data, onUpdate }: BitacoraStep5DatosBu
             <Card key={index}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Diving className="w-5 h-5 text-blue-600" />
+                  <Activity className="w-5 h-5 text-blue-600" />
                   Registro de Buceo - {registro.buzo_nombre}
                 </CardTitle>
               </CardHeader>
