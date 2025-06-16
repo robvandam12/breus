@@ -36,8 +36,6 @@ const bitacoraSupervisorFormSchema = z.object({
   empresa_nombre: z.string().optional(),
   centro_nombre: z.string().optional(),
   equipo_buceo_id: z.string().uuid().optional(),
-  buzos_asistentes: z.array(z.any()).optional(),
-  fecha_termino_faena: z.string().optional(),
 });
 
 export type BitacoraSupervisorFormData = z.infer<typeof bitacoraSupervisorFormSchema>;
@@ -81,7 +79,7 @@ export const useBitacorasSupervisor = () => {
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
       // Remover campos que no existen en la tabla
-      const { fecha_termino_faena, ...dataToInsert } = formData as any;
+      const { equipo_buceo_id, operacion_id, empresa_nombre, centro_nombre, ...dataToInsert } = formData as any;
       
       // Asegurar que la fecha esté presente
       if (!dataToInsert.fecha) {
