@@ -11,10 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, FileText } from "lucide-react";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
+import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
+import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
 import { toast } from "@/hooks/use-toast";
 
@@ -51,7 +51,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
     }
   };
 
-  const handleCreateBitacoraSupervisor = async (data: BitacoraSupervisorFormData) => {
+  const handleCreateBitacoraSupervisor = async (data: any) => {
     try {
       await createBitacoraSupervisor.mutateAsync(data);
       toast({
@@ -129,12 +129,12 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
         onConfirm={handleDelete}
       />
 
-      {/* Modal para crear bitácora de supervisor */}
+      {/* Modal para crear bitácora de supervisor - usando el wizard de 6 pasos */}
       <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
         <DialogContent className="max-w-6xl">
-          <CreateBitacoraSupervisorFormComplete
+          <BitacoraWizardFromInmersion
             inmersionId={inmersionId}
-            onSubmit={handleCreateBitacoraSupervisor}
+            onComplete={handleCreateBitacoraSupervisor}
             onCancel={() => setShowBitacoraSupervisorForm(false)}
           />
         </DialogContent>

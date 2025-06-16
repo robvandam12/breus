@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTriangle } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
+import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
@@ -296,9 +297,9 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewI
       <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
         <DialogContent className="max-w-6xl">
           {selectedInmersionId && (
-            <CreateBitacoraSupervisorFormComplete
+            <BitacoraWizardFromInmersion
               inmersionId={selectedInmersionId}
-              onSubmit={handleSubmitBitacoraSupervisor}
+              onComplete={handleSubmitBitacoraSupervisor}
               onCancel={() => {
                 setShowBitacoraSupervisorForm(false);
                 setSelectedInmersionId(null);

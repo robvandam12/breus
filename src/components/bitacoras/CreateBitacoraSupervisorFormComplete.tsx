@@ -14,7 +14,6 @@ import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersionesData } from '@/hooks/useInmersionesData';
 import type { Inmersion } from '@/types/inmersion';
 
-
 interface CreateBitacoraSupervisorFormCompleteProps {
   onSubmit: (data: BitacoraSupervisorFormData) => void;
   onCancel: () => void;
@@ -62,11 +61,23 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
 
   useEffect(() => {
     if (selectedInmersion) {
-      const initialBuzosData = (selectedInmersion.personal_inmersion || []).map(personal => ({
-        nombre: personal.nombre,
-        rol: personal.rol,
-        profundidad: 0
-      }));
+      // Como personal_inmersion no existe, crear datos de ejemplo basados en la inmersión
+      const initialBuzosData = [
+        {
+          nombre: selectedInmersion.buzo_principal,
+          rol: 'Principal',
+          profundidad: 0
+        }
+      ];
+      
+      if (selectedInmersion.buzo_asistente) {
+        initialBuzosData.push({
+          nombre: selectedInmersion.buzo_asistente,
+          rol: 'Asistente',
+          profundidad: 0
+        });
+      }
+      
       setBuzosData(initialBuzosData);
     }
   }, [selectedInmersion]);

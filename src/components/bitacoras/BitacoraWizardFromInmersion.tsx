@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,16 +120,22 @@ export const BitacoraWizardFromInmersion = ({
   // Auto-poblar datos de la inmersión y equipo
   useEffect(() => {
     if (selectedInmersion && selectedOperation && assignedTeam) {
-      // Auto-poblar buzos del equipo
-      const buzosEquipo = assignedTeam.miembros?.map(miembro => ({
-        nombre: miembro.nombre || 'Sin nombre',
-        apellido: miembro.apellido || '',
-        rut: '',
-        rol: miembro.rol_equipo || 'Buzo',
-        profundidad_trabajo: 0,
-        tiempo_inmersion: 0,
-        del_equipo_buceo: true
-      })) || [];
+      // Auto-poblar buzos del equipo usando las propiedades correctas
+      const buzosEquipo = assignedTeam.miembros?.map(miembro => {
+        // Usar directamente las propiedades disponibles o valores por defecto
+        const nombreCompleto = miembro.usuario_id ? 'Miembro del equipo' : 'Sin nombre';
+        const rol = miembro.rol_equipo || 'Buzo';
+        
+        return {
+          nombre: nombreCompleto,
+          apellido: '',
+          rut: '',
+          rol: rol,
+          profundidad_trabajo: 0,
+          tiempo_inmersion: 0,
+          del_equipo_buceo: true
+        };
+      }) || [];
 
       setFormData(prev => ({
         ...prev,
