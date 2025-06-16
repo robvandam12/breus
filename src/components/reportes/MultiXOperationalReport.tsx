@@ -1,60 +1,81 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Download, 
-  TrendingUp, 
+  Activity, 
   Users, 
   Settings, 
-  Fish, 
-  Clock,
-  Anchor,
-  Activity,
+  TrendingUp, 
+  Calendar, 
+  Download,
+  BarChart3,
+  FileText,
   AlertTriangle,
   CheckCircle,
-  Calendar,
-  MapPin,
-  Gauge
+  Clock,
+  User,
+  Wrench,
+  Ship
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { useReportesMultiX } from '@/hooks/useReportesMultiX';
+import { useReportesMultiX } from "@/hooks/useReportesMultiX";
 
 export const MultiXOperationalReport = () => {
-  const [dateFrom, setDateFrom] = useState<Date>(new Date(new Date().setMonth(new Date().getMonth() - 1)));
-  const [dateTo, setDateTo] = useState<Date>(new Date());
-  const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena' | 'todos'>('todos');
-  const [contratistaId, setContratistaId] = useState<string>('');
-  const [sitioId, setSitioId] = useState<string>('');
-
-  const { reportData, isLoading, generateMultiXReport, exportReport } = useReportesMultiX({
+  const [filters, setFilters] = useState({
     dateRange: {
-      from: dateFrom.toISOString().split('T')[0],
-      to: dateTo.toISOString().split('T')[0]
+      from: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+      to: new Date().toISOString().split('T')[0]
     },
-    tipoFormulario: tipoFormulario === 'todos' ? undefined : tipoFormulario,
-    contratistaId: contratistaId || undefined,
-    sitioId: sitioId || undefined
+    tipoFormulario: undefined as 'mantencion' | 'faena' | undefined,
+    contratistaId: undefined as string | undefined,
+    sitioId: undefined as string | undefined,
   });
+
+  const { reportData, isLoading, error, generateMultiXReport, exportReport } = useReportesMultiX(filters);
 
   useEffect(() => {
     generateMultiXReport();
-  }, [dateFrom, dateTo, tipoFormulario, contratistaId, sitioId]);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  }, [generateMultiXReport]);
 
   if (isLoading) {
     return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Cargando Reporte MultiX...
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Generando reporte MultiX...</p>
-          </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="w-5 h-5" />
+            Error en Reporte MultiX
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-600">{error}</p>
+          <Button onClick={generateMultiXReport} className="mt-4">
+            Reintentar
+          </Button>
         </CardContent>
       </Card>
     );
@@ -63,11 +84,11 @@ export const MultiXOperationalReport = () => {
   if (!reportData) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Activity className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500">No hay datos disponibles para el reporte MultiX</p>
-          </div>
+        <CardHeader>
+          <CardTitle>Reporte MultiX</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>No hay datos disponibles para generar el reporte.</p>
         </CardContent>
       </Card>
     );
@@ -75,7 +96,7 @@ export const MultiXOperationalReport = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
+      {/* Filtros del Reporte */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -84,55 +105,60 @@ export const MultiXOperationalReport = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium">Fecha Desde</label>
-              <DatePicker
-                date={dateFrom}
-                onDateChange={(date) => date && setDateFrom(date)}
+              <Label>Fecha Desde</Label>
+              <input
+                type="date"
+                value={filters.dateRange.from}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  dateRange: { ...prev.dateRange, from: e.target.value }
+                }))}
+                className="w-full px-3 py-2 border rounded-md"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Fecha Hasta</label>
-              <DatePicker
-                date={dateTo}
-                onDateChange={(date) => date && setDateTo(date)}
+              <Label>Fecha Hasta</Label>
+              <input
+                type="date"
+                value={filters.dateRange.to}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  dateRange: { ...prev.dateRange, to: e.target.value }
+                }))}
+                className="w-full px-3 py-2 border rounded-md"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Tipo Formulario</label>
-              <Select value={tipoFormulario} onValueChange={(value: any) => setTipoFormulario(value)}>
+              <Label>Tipo de Formulario</Label>
+              <Select 
+                value={filters.tipoFormulario || "todos"} 
+                onValueChange={(value) => setFilters(prev => ({
+                  ...prev,
+                  tipoFormulario: value === "todos" ? undefined : value as 'mantencion' | 'faena'
+                }))}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccionar tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="todos">Todos los formularios</SelectItem>
                   <SelectItem value="mantencion">Mantención</SelectItem>
                   <SelectItem value="faena">Faena</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-sm font-medium">Contratista</label>
-              <Select value={contratistaId} onValueChange={setContratistaId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="1">AquaTech Diving</SelectItem>
-                  <SelectItem value="2">Marine Services Ltd</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex items-end gap-2">
-              <Button onClick={() => exportReport('excel')} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Excel
+              <Button onClick={generateMultiXReport} className="flex-1">
+                Actualizar
               </Button>
-              <Button onClick={() => exportReport('pdf')} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                PDF
+              <Button 
+                variant="outline" 
+                onClick={() => exportReport('excel')}
+                className="px-3"
+              >
+                <Download className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -140,451 +166,434 @@ export const MultiXOperationalReport = () => {
       </Card>
 
       {/* KPIs Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Fish className="w-6 h-6 text-blue-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">MultiX Completados</p>
-                <p className="text-2xl font-bold">{reportData.estadisticas_generales.total_multix_periodo}</p>
-                <p className="text-xs text-green-600">↑ 12% vs mes anterior</p>
+                <p className="text-sm font-medium text-gray-600">Total MultiX</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {reportData.estadisticas_generales.total_multix_periodo}
+                </p>
               </div>
+              <FileText className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Buzos Activos</p>
-                <p className="text-2xl font-bold">{reportData.estadisticas_generales.buzos_activos}</p>
-                <p className="text-xs text-blue-600">En {reportData.estadisticas_generales.sitios_operativos} sitios</p>
+                <p className="text-sm font-medium text-gray-600">Contratistas Activos</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {reportData.estadisticas_generales.contratistas_activos}
+                </p>
               </div>
+              <Users className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Tiempo Promedio</p>
-                <p className="text-2xl font-bold">{reportData.estadisticas_generales.tiempo_promedio_formulario}h</p>
-                <p className="text-xs text-gray-600">Por formulario</p>
+                <p className="text-sm font-medium text-gray-600">Buzos Activos</p>
+                <p className="text-3xl font-bold text-purple-600">
+                  {reportData.estadisticas_generales.buzos_activos}
+                </p>
               </div>
+              <User className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-orange-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Eficiencia General</p>
-                <p className="text-2xl font-bold">{reportData.estadisticas_generales.eficiencia_general}%</p>
-                <p className="text-xs text-green-600">↑ 2.3% optimización</p>
+                <p className="text-sm font-medium text-gray-600">Eficiencia General</p>
+                <p className="text-3xl font-bold text-orange-600">
+                  {reportData.estadisticas_generales.eficiencia_general.toFixed(1)}%
+                </p>
               </div>
+              <TrendingUp className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
+      {/* Tabs con Reportes Detallados */}
+      <Tabs defaultValue="general" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="contratistas">Contratistas</TabsTrigger>
-          <TabsTrigger value="buzos">Buzos</TabsTrigger>
-          <TabsTrigger value="equipos">Equipos</TabsTrigger>
-          <TabsTrigger value="operaciones">Operaciones</TabsTrigger>
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="contratistas" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Contratistas
+          </TabsTrigger>
+          <TabsTrigger value="buzos" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Buzos
+          </TabsTrigger>
+          <TabsTrigger value="equipos" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Equipos
+          </TabsTrigger>
+          <TabsTrigger value="operaciones" className="flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Operaciones
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-4">
+        {/* Tab General */}
+        <TabsContent value="general" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tendencia Mensual */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Tendencia Mensual MultiX</CardTitle>
+                <CardTitle>Evolución Mensual</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={reportData.comparativas_mensuales}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="multix_completados" stroke="#8884d8" strokeWidth={2} />
-                    <Line type="monotone" dataKey="eficiencia" stroke="#82ca9d" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="space-y-4">
+                  {reportData.comparativas_mensuales.map((mes, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{mes.mes}</p>
+                        <p className="text-sm text-gray-600">{mes.multix_completados} formularios</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">{mes.eficiencia.toFixed(1)}%</p>
+                        <p className="text-sm text-gray-600">{mes.buzos_participantes} buzos</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Distribución por Tipo */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Distribución por Tipo</CardTitle>
+                <CardTitle>Top Contratistas</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Mantención', value: reportData.estadisticas_generales.formularios_mantencion },
-                        { name: 'Faena', value: reportData.estadisticas_generales.formularios_faena }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label
-                    >
-                      {[0, 1].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="space-y-4">
+                  {reportData.top_contratistas.map((contratista, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{contratista.nombre}</p>
+                        <p className="text-sm text-gray-600">{contratista.formularios_completados} formularios</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-blue-600">{contratista.eficiencia.toFixed(1)}%</p>
+                        <p className="text-sm text-gray-600">{contratista.tiempo_promedio}h promedio</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Alertas Operativas */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Alertas y Recomendaciones Operativas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {reportData.alertas_operativas.map((alerta, index) => (
-                  <div key={index} className={`flex items-start gap-3 p-3 rounded-lg ${
-                    alerta.prioridad === 'alta' ? 'bg-red-50 border border-red-200' :
-                    alerta.prioridad === 'media' ? 'bg-yellow-50 border border-yellow-200' :
-                    'bg-blue-50 border border-blue-200'
-                  }`}>
-                    {alerta.prioridad === 'alta' ? (
-                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
-                    ) : (
-                      <CheckCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="font-medium text-sm">{alerta.tipo}</p>
-                      <p className="text-sm text-gray-600">{alerta.descripcion}</p>
-                      {(alerta.contratista || alerta.sitio) && (
-                        <div className="flex gap-2 mt-1">
-                          {alerta.contratista && (
-                            <Badge variant="outline" className="text-xs">
-                              <Users className="w-3 h-3 mr-1" />
-                              {alerta.contratista}
-                            </Badge>
-                          )}
-                          {alerta.sitio && (
-                            <Badge variant="outline" className="text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {alerta.sitio}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="contratistas" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Performance de Contratistas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {reportData.contratistas_performance.map((contratista, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="font-semibold">{contratista.contratista_nombre}</h4>
-                        <p className="text-sm text-gray-600">{contratista.sitios_trabajados.length} sitios activos</p>
-                      </div>
-                      <Badge variant={contratista.eficiencia_porcentaje >= 90 ? "default" : "secondary"}>
-                        {contratista.eficiencia_porcentaje}% eficiencia
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">MultiX Completados</span>
-                        <p className="font-bold text-lg">{contratista.formularios_completados}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Dotación Promedio</span>
-                        <p className="font-bold text-lg">{contratista.dotacion_promedio}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Inmersiones</span>
-                        <p className="font-bold text-lg">{contratista.inmersiones_realizadas}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Tiempo Total</span>
-                        <p className="font-bold text-lg">{Math.round(contratista.tiempo_total_inmersiones / 60)}h</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Tiempo Promedio</span>
-                        <p className="font-bold text-lg">{contratista.tiempo_promedio_completion}h</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <span className="text-sm text-gray-600">Sitios trabajados:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {contratista.sitios_trabajados.map((sitio, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {sitio}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="buzos" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Performance de Buzos</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                Alertas Operativas
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {reportData.buzos_performance.map((buzo, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex justify-between items-start mb-3">
+                {reportData.alertas_operativas.map((alerta, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-4 rounded-lg border-l-4 ${
+                      alerta.prioridad === 'alta' ? 'border-red-500 bg-red-50' :
+                      alerta.prioridad === 'media' ? 'border-yellow-500 bg-yellow-50' :
+                      'border-blue-500 bg-blue-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className={`w-5 h-5 mt-0.5 ${
+                        alerta.prioridad === 'alta' ? 'text-red-500' :
+                        alerta.prioridad === 'media' ? 'text-yellow-500' :
+                        'text-blue-500'
+                      }`} />
                       <div>
-                        <h4 className="font-semibold">{buzo.buzo_nombre} {buzo.buzo_apellido}</h4>
-                        <div className="flex gap-1 mt-1">
-                          {buzo.roles_desempeniados.map((rol, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {rol}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <span className="text-2xl">⭐</span>
-                          <span className="font-bold">{buzo.calificacion_promedio}</span>
-                        </div>
+                        <h4 className="font-medium">{alerta.tipo}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{alerta.descripcion}</p>
+                        {alerta.contratista && (
+                          <p className="text-xs text-gray-500 mt-1">Contratista: {alerta.contratista}</p>
+                        )}
+                        {alerta.sitio && (
+                          <p className="text-xs text-gray-500 mt-1">Sitio: {alerta.sitio}</p>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Participaciones</span>
-                        <p className="font-bold">{buzo.total_participaciones}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Inmersiones</span>
-                        <p className="font-bold">{buzo.inmersiones_totales}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Tiempo Total</span>
-                        <p className="font-bold">{Math.round(buzo.tiempo_total_buceo / 60)}h</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Prof. Promedio</span>
-                        <p className="font-bold">{buzo.profundidad_promedio}m</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <span className="text-sm text-gray-600">Contratistas colaborados:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {buzo.contratistas_colaborados.map((contratista, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {contratista}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="equipos" className="space-y-4">
+        {/* Tab Contratistas */}
+        <TabsContent value="contratistas" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Análisis de Equipos y Compresores</CardTitle>
+              <CardTitle>Performance de Contratistas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Utilización de Compresores */}
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Settings className="w-5 h-5 text-blue-600" />
-                    <h4 className="font-semibold">Compresores</h4>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Compresor 1</span>
-                      <Badge variant="default">85% uso</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Compresor 2</span>
-                      <Badge variant="secondary">72% uso</Badge>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <Gauge className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">Promedio: 1,247h trabajo</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Equipos de Buceo */}
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Anchor className="w-5 h-5 text-green-600" />
-                    <h4 className="font-semibold">Equipos Buceo</h4>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Equipos Livianos</span>
-                      <Badge variant="default">18 equipos</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Equipos Medianos</span>
-                      <Badge variant="secondary">14 equipos</Badge>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="text-sm text-gray-600">
-                        Mantención próxima: 6 equipos
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Eficiencia Operativa */}
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                    <h4 className="font-semibold">Eficiencia</h4>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Tiempo medio setup</span>
-                      <span className="font-bold">45min</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Inmersiones/día</span>
-                      <span className="font-bold">8.3</span>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="text-sm text-green-600">
-                        ↑ 12% mejora vs período anterior
-                      </div>
-                    </div>
-                  </div>
-                </Card>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Contratista</th>
+                      <th className="text-center p-3">Total MultiX</th>
+                      <th className="text-center p-3">Completados</th>
+                      <th className="text-center p-3">Eficiencia</th>
+                      <th className="text-center p-3">Tiempo Prom.</th>
+                      <th className="text-center p-3">Dotación Prom.</th>
+                      <th className="text-center p-3">Inmersiones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.contratistas_performance.map((contratista, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div>
+                            <p className="font-medium">{contratista.contratista_nombre}</p>
+                            <p className="text-sm text-gray-600">
+                              {contratista.sitios_trabajados.length} sitios activos
+                            </p>
+                          </div>
+                        </td>
+                        <td className="text-center p-3">{contratista.total_multix}</td>
+                        <td className="text-center p-3">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            {contratista.formularios_completados}
+                          </span>
+                        </td>
+                        <td className="text-center p-3">
+                          <span className={`font-bold ${
+                            contratista.eficiencia_porcentaje >= 90 ? 'text-green-600' :
+                            contratista.eficiencia_porcentaje >= 80 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {contratista.eficiencia_porcentaje.toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="text-center p-3">{contratista.tiempo_promedio_completion.toFixed(1)}h</td>
+                        <td className="text-center p-3">{contratista.dotacion_promedio.toFixed(1)}</td>
+                        <td className="text-center p-3">
+                          <div className="text-sm">
+                            <p>{contratista.inmersiones_realizadas}</p>
+                            <p className="text-gray-600">{(contratista.tiempo_total_inmersiones / 60).toFixed(0)}h total</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="operaciones" className="space-y-4">
+        {/* Tab Buzos */}
+        <TabsContent value="buzos" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Análisis Operacional Detallado</CardTitle>
+              <CardTitle>Performance de Buzos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Buzo</th>
+                      <th className="text-center p-3">Participaciones</th>
+                      <th className="text-center p-3">Roles</th>
+                      <th className="text-center p-3">Inmersiones</th>
+                      <th className="text-center p-3">Tiempo Total</th>
+                      <th className="text-center p-3">Prof. Promedio</th>
+                      <th className="text-center p-3">Calificación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.buzos_performance.map((buzo, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div>
+                            <p className="font-medium">{buzo.buzo_nombre} {buzo.buzo_apellido}</p>
+                            <p className="text-sm text-gray-600">
+                              {buzo.sitios_trabajados} sitios | {buzo.contratistas_colaborados.length} contratistas
+                            </p>
+                          </div>
+                        </td>
+                        <td className="text-center p-3">{buzo.total_participaciones}</td>
+                        <td className="text-center p-3">
+                          <div className="text-xs">
+                            {buzo.roles_desempeniados.map((rol, idx) => (
+                              <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full mr-1 mb-1">
+                                {rol}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="text-center p-3">{buzo.inmersiones_totales}</td>
+                        <td className="text-center p-3">{(buzo.tiempo_total_buceo / 60).toFixed(1)}h</td>
+                        <td className="text-center p-3">{buzo.profundidad_promedio.toFixed(1)}m</td>
+                        <td className="text-center p-3">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                            ⭐ {buzo.calificacion_promedio.toFixed(1)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Equipos */}
+        <TabsContent value="equipos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Análisis de Equipos y Recursos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-6 bg-blue-50 rounded-lg">
+                  <Wrench className="mx-auto h-12 w-12 text-blue-500 mb-4" />
+                  <h3 className="font-semibold text-lg">Compresores Activos</h3>
+                  <p className="text-3xl font-bold text-blue-600 mt-2">24</p>
+                  <p className="text-sm text-gray-600 mt-1">8 Compresor 1, 16 Compresor 2</p>
+                </div>
+                
+                <div className="text-center p-6 bg-green-50 rounded-lg">
+                  <Ship className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                  <h3 className="font-semibold text-lg">Embarcaciones</h3>
+                  <p className="text-3xl font-bold text-green-600 mt-2">18</p>
+                  <p className="text-sm text-gray-600 mt-1">Lanchas y barcos de apoyo</p>
+                </div>
+                
+                <div className="text-center p-6 bg-purple-50 rounded-lg">
+                  <Clock className="mx-auto h-12 w-12 text-purple-500 mb-4" />
+                  <h3 className="font-semibold text-lg">Horas Equipo</h3>
+                  <p className="text-3xl font-bold text-purple-600 mt-2">1,247</p>
+                  <p className="text-sm text-gray-600 mt-1">Horas totales de operación</p>
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                <h4 className="font-semibold text-lg">Utilización de Equipos por Sitio</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { sitio: 'Sitio Alpha', compresores: 6, embarcaciones: 4, horas: 320 },
+                    { sitio: 'Sitio Beta', compresores: 5, embarcaciones: 3, horas: 285 },
+                    { sitio: 'Sitio Gamma', compresores: 7, embarcaciones: 5, horas: 395 },
+                    { sitio: 'Sitio Delta', compresores: 6, embarcaciones: 6, horas: 247 }
+                  ].map((sitio, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <h5 className="font-medium">{sitio.sitio}</h5>
+                      <div className="grid grid-cols-3 gap-4 mt-3 text-sm">
+                        <div>
+                          <p className="text-gray-600">Compresores</p>
+                          <p className="font-bold text-blue-600">{sitio.compresores}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Embarcaciones</p>
+                          <p className="font-bold text-green-600">{sitio.embarcaciones}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Horas Op.</p>
+                          <p className="font-bold text-purple-600">{sitio.horas}h</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Operaciones */}
+        <TabsContent value="operaciones" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Análisis Operacional Detallado
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Tipos de Faenas */}
-                <Card className="p-4">
-                  <h4 className="font-semibold mb-4">Tipos de Faenas Realizadas</h4>
+                <div>
+                  <h4 className="font-semibold text-lg mb-4">Tipos de Trabajo MultiX</h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Fish className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm">Mantención Redes</span>
-                      </div>
-                      <Badge variant="default">124 faenas</Badge>
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                      <span>Mantención de Redes</span>
+                      <span className="font-bold text-blue-600">{reportData.estadisticas_generales.formularios_mantencion}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Fish className="w-4 h-4 text-green-500" />
-                        <span className="text-sm">Mantención Loberas</span>
-                      </div>
-                      <Badge variant="secondary">89 faenas</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Fish className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm">Mantención Peceras</span>
-                      </div>
-                      <Badge variant="outline">67 faenas</Badge>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span>Faenas Operativas</span>
+                      <span className="font-bold text-green-600">{reportData.estadisticas_generales.formularios_faena}</span>
                     </div>
                   </div>
-                </Card>
+                </div>
 
-                {/* Indicadores de Calidad */}
-                <Card className="p-4">
-                  <h4 className="font-semibold mb-4">Indicadores de Calidad</h4>
+                <div>
+                  <h4 className="font-semibold text-lg mb-4">Métricas de Calidad</h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Formularios sin observaciones</span>
-                      <Badge variant="default">87%</Badge>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span>Tiempo Promedio</span>
+                      <span className="font-bold text-gray-600">{reportData.estadisticas_generales.tiempo_promedio_formulario}h</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Cumplimiento horarios</span>
-                      <Badge variant="default">94%</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Incidentes reportados</span>
-                      <Badge variant="destructive">3</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Tiempo promedio inmersión</span>
-                      <span className="font-bold">47min</span>
+                    <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                      <span>Sitios Operativos</span>
+                      <span className="font-bold text-yellow-600">{reportData.estadisticas_generales.sitios_operativos}</span>
                     </div>
                   </div>
-                </Card>
+                </div>
               </div>
 
-              {/* Cronograma de Actividades */}
-              <Card className="p-4 mt-6">
-                <h4 className="font-semibold mb-4">Distribución de Actividades por Día</h4>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.comparativas_mensuales}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="multix_completados" fill="#8884d8" name="MultiX Completados" />
-                    <Bar dataKey="buzos_participantes" fill="#82ca9d" name="Buzos Participantes" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
+              <div className="mt-8">
+                <h4 className="font-semibold text-lg mb-4">Estado de Formularios</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-6 bg-green-50 rounded-lg">
+                    <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-3" />
+                    <h5 className="font-medium">Completados</h5>
+                    <p className="text-2xl font-bold text-green-600 mt-1">
+                      {reportData.contratistas_performance.reduce((sum, c) => sum + c.formularios_completados, 0)}
+                    </p>
+                  </div>
+                  
+                  <div className="text-center p-6 bg-yellow-50 rounded-lg">
+                    <Clock className="mx-auto h-8 w-8 text-yellow-500 mb-3" />
+                    <h5 className="font-medium">En Proceso</h5>
+                    <p className="text-2xl font-bold text-yellow-600 mt-1">
+                      {reportData.contratistas_performance.reduce((sum, c) => sum + c.formularios_pendientes, 0)}
+                    </p>
+                  </div>
+                  
+                  <div className="text-center p-6 bg-blue-50 rounded-lg">
+                    <FileText className="mx-auto h-8 w-8 text-blue-500 mb-3" />
+                    <h5 className="font-medium">Total Periodo</h5>
+                    <p className="text-2xl font-bold text-blue-600 mt-1">
+                      {reportData.estadisticas_generales.total_multix_periodo}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
