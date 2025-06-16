@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,16 +49,28 @@ export const MultiXOperationalReport = () => {
     to: new Date()
   });
 
-  const { reportData, isLoading, exportReport } = useReportesMultiX({ 
+  const [initialized, setInitialized] = useState(false);
+
+  const { reportData, isLoading, exportReport, generateMultiXReport } = useReportesMultiX({ 
     dateRange: {
       from: dateRange.from?.toISOString().split('T')[0] || '',
       to: dateRange.to?.toISOString().split('T')[0] || ''
     }
   });
 
+  // Solo cargar una vez al montar el componente
+  useEffect(() => {
+    if (!initialized) {
+      generateMultiXReport();
+      setInitialized(true);
+    }
+  }, [initialized, generateMultiXReport]);
+
   const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
     if (newDateRange) {
       setDateRange(newDateRange);
+      // Generar reporte solo cuando cambia el rango de fechas
+      generateMultiXReport();
     }
   };
 

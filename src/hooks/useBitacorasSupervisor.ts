@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
@@ -8,7 +9,6 @@ import { useOfflineSync } from './useOfflineSync';
 const bitacoraSupervisorFormSchema = z.object({
   codigo: z.string(),
   inmersion_id: z.string().uuid(),
-  supervisor_id: z.string().uuid().optional(),
   supervisor: z.string().optional(),
   desarrollo_inmersion: z.string(),
   incidentes: z.string().optional(),
@@ -80,15 +80,22 @@ export const useBitacorasSupervisor = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
+      // Remover campos que no existen en la tabla
       const { fecha_termino_faena, ...dataToInsert } = formData as any;
+      
+      // Asegurar que la fecha esté presente
+      if (!dataToInsert.fecha) {
+        dataToInsert.fecha = new Date().toISOString().split('T')[0];
+      }
+      
       if (!isOnline) {
         addPendingAction({ type: 'create', table: 'bitacora_supervisor', payload: dataToInsert });
-        // Optimistic update
         const tempId = `offline_${Date.now()}`;
         const newBitacora = { ...dataToInsert, bitacora_id: tempId };
         queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) => [...oldData, newBitacora]);
         return newBitacora;
       }
+      
       const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert as any);
       if (error) throw new Error(error.message);
     },
@@ -113,8 +120,7 @@ export const useBitacorasSupervisor = () => {
       const payload = { supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
       if (!isOnline) {
         addPendingAction({ type: 'update', table: 'bitacora_supervisor', payload: { pk: { bitacora_id: bitacoraId }, data: payload } });
-         // Optimistic update
-         queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
+        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
           oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...payload } : b)
         );
         return;

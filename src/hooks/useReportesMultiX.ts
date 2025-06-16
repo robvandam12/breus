@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MultiXReportFilters {
@@ -248,22 +248,17 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Usar useCallback para evitar recrear la función en cada render
   const generateMultiXReport = useCallback(async () => {
-    if (isLoading) return; // Evitar multiple calls simultáneas
+    if (isLoading) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      // Simular un delay mínimo para mostrar el loading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Usar datos mock
+      await new Promise(resolve => setTimeout(resolve, 800));
       const mockData = getMockReportData();
       setReportData(mockData);
       setError(null);
-      
       console.log('MultiX Report generated successfully with mock data');
     } catch (err) {
       console.error('Error generating MultiX report:', err);
@@ -279,16 +274,6 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
     }
   }, [isLoading, toast]);
 
-  // Efecto que se ejecuta solo cuando cambian los filtros de forma significativa
-  useEffect(() => {
-    const filtersKey = JSON.stringify(filters);
-    const timeoutId = setTimeout(() => {
-      generateMultiXReport();
-    }, 300); // Debounce de 300ms
-
-    return () => clearTimeout(timeoutId);
-  }, [filters.dateRange.from, filters.dateRange.to, filters.tipoFormulario, filters.contratistaId, filters.sitioId, generateMultiXReport]);
-
   const exportReport = async (format: 'pdf' | 'excel') => {
     try {
       toast({
@@ -296,7 +281,6 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
         description: `Generando archivo ${format.toUpperCase()}...`,
       });
       
-      // Simular exportación
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
