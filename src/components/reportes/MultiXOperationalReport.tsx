@@ -39,8 +39,6 @@ import {
   ComposedChart,
   Area,
   AreaChart,
-  RadialBarChart,
-  RadialBar,
   Legend
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -345,7 +343,7 @@ export const MultiXOperationalReport = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Distribución de Eficiencia</CardTitle>
-                <CardDescription>Vista radial del rendimiento general</CardDescription>
+                <CardDescription>Vista circular del rendimiento general</CardDescription>
               </CardHeader>
               <CardContent>
                 <ChartContainer
@@ -358,10 +356,24 @@ export const MultiXOperationalReport = () => {
                   className="h-[300px]"
                 >
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="80%" data={eficienciaData}>
-                      <RadialBar minAngle={15} label={{ position: 'insideStart', fill: '#fff' }} background dataKey="eficiencia" />
-                      <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
-                    </RadialBarChart>
+                    <PieChart>
+                      <Pie
+                        data={eficienciaData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ nombre, eficiencia }) => `${nombre}: ${eficiencia}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="eficiencia"
+                      >
+                        {eficienciaData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend />
+                    </PieChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               </CardContent>
