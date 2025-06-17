@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { 
   Activity, 
   CheckCircle2, 
@@ -11,12 +12,16 @@ import {
   Users, 
   FileText,
   Shield,
-  Settings
+  Settings,
+  Play,
+  Loader2
 } from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
 
 interface OperationStatus {
   id: string;
   nombre: string;
+  codigo: string;
   estado: 'planificacion' | 'preparacion' | 'ejecucion' | 'finalizacion' | 'completada';
   progreso: number;
   fechaInicio: string;
@@ -33,13 +38,102 @@ interface OperationStatus {
     equipoCompleto: boolean;
   };
   alertas: number;
+  canExecute: boolean;
 }
 
 interface OperationStatusTrackerProps {
-  operaciones: OperationStatus[];
+  operaciones: any[];
 }
 
 export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerProps) => {
+  const [operationStatuses, setOperationStatuses] = useState<OperationStatus[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { validateOperacionCompleteness } = useOperaciones();
+
+  useEffect(() => {
+    calculateStatuses();
+  }, [operaciones]);
+
+  const calculateStatuses = async () => {
+    setIsLoading(true);
+    try {
+      const statuses = await Promise.all(
+        operaciones.map(async (op) => {
+          try {
+            const validation = await validateOperacionCompleteness(op.id);
+            
+            // Calcular progreso basado en validaciones reales
+            let progreso = 0;
+            const steps = [
+              { completed: true, weight: 20 }, // Operación creada
+              { completed: !!op.sitio_id, weight: 15 }, // Sitio definido
+              { completed: validation.supervisorAsignado, weight: 15 }, // Supervisor asignado
+              { completed: validation.equipoAsignado, weight: 15 }, // Equipo asignado
+              { completed: validation.hptReady, weight: 20 }, // HPT completado
+              { completed: validation.anexoBravoReady, weight: 15 } // Anexo Bravo completado
+            ];
+            
+            progreso = steps.reduce((acc, step) => acc + (step.completed ? step.weight : 0), 0);
+            
+            // Determinar estado basado en progreso y validaciones
+            let estado: OperationStatus['estado'] = 'planificacion';
+            if (progreso >= 100 && validation.canExecute) {
+              estado = 'preparacion'; // Lista para inmersiones
+            } else if (progreso >= 70) {
+              estado = 'preparacion';
+            } else if (progreso >= 40) {
+              estado = 'planificacion';
+            }
+
+            return {
+              id: op.id,
+              nombre: op.nombre,
+              codigo: op.codigo,
+              estado,
+              progreso,
+              fechaInicio: op.fecha_inicio,
+              fechaFin: op.fecha_fin,
+              documentos: {
+                hpt: validation.hptReady,
+                anexoBravo: validation.anexoBravoReady,
+                bitacorasSupervisor: 0, // Esto se calcularia desde inmersiones reales
+                bitacorasBuzo: 0
+              },
+              equipo: {
+                supervisor: validation.supervisorAsignado,
+                buzos: validation.equipoAsignado ? 2 : 0, // Mock
+                equipoCompleto: validation.equipoAsignado
+              },
+              alertas: validation.canExecute ? 0 : 1,
+              canExecute: validation.canExecute
+            } as OperationStatus;
+          } catch (error) {
+            console.error(`Error validating operation ${op.id}:`, error);
+            return {
+              id: op.id,
+              nombre: op.nombre,
+              codigo: op.codigo,
+              estado: 'planificacion' as const,
+              progreso: 20, // Solo operación creada
+              fechaInicio: op.fecha_inicio,
+              fechaFin: op.fecha_fin,
+              documentos: { hpt: false, anexoBravo: false, bitacorasSupervisor: 0, bitacorasBuzo: 0 },
+              equipo: { supervisor: false, buzos: 0, equipoCompleto: false },
+              alertas: 1,
+              canExecute: false
+            } as OperationStatus;
+          }
+        })
+      );
+      
+      setOperationStatuses(statuses);
+    } catch (error) {
+      console.error('Error calculating operation statuses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getEstadoBadge = (estado: OperationStatus['estado']) => {
     switch (estado) {
       case 'planificacion':
@@ -74,22 +168,52 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
     }
   };
 
+  const getProgressColor = (progreso: number) => {
+    if (progreso >= 80) return 'bg-green-500';
+    if (progreso >= 60) return 'bg-blue-500';
+    if (progreso >= 40) return 'bg-yellow-500';
+    return 'bg-gray-500';
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            Estado de Operaciones
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="ml-2">Calculando estados...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-blue-600" />
-          Estado de Operaciones
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            Estado de Operaciones
+          </div>
+          <Button variant="outline" size="sm" onClick={calculateStatuses}>
+            <Shield className="w-4 h-4 mr-2" />
+            Recalcular
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {operaciones.length === 0 ? (
+        {operationStatuses.length === 0 ? (
           <div className="text-center py-8">
             <Activity className="w-12 h-12 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500">No hay operaciones activas</p>
           </div>
         ) : (
-          operaciones.map((operacion) => (
+          operationStatuses.map((operacion) => (
             <div key={operacion.id} className="p-4 border rounded-lg space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between">
@@ -98,7 +222,7 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                   <div>
                     <h4 className="font-medium">{operacion.nombre}</h4>
                     <p className="text-sm text-gray-600">
-                      Inicio: {new Date(operacion.fechaInicio).toLocaleDateString('es-CL')}
+                      {operacion.codigo} • Inicio: {new Date(operacion.fechaInicio).toLocaleDateString('es-CL')}
                     </p>
                   </div>
                 </div>
@@ -110,6 +234,12 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                     </Badge>
                   )}
                   {getEstadoBadge(operacion.estado)}
+                  {operacion.canExecute && (
+                    <Button size="sm" className="flex items-center gap-1">
+                      <Play className="w-3 h-3" />
+                      Ejecutar
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -117,9 +247,15 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Progreso General</span>
-                  <span>{operacion.progreso}%</span>
+                  <span className="font-medium">{operacion.progreso}%</span>
                 </div>
-                <Progress value={operacion.progreso} className="h-2" />
+                <div className="relative">
+                  <Progress value={operacion.progreso} className="h-2" />
+                  <div 
+                    className={`absolute top-0 left-0 h-2 rounded-full transition-all ${getProgressColor(operacion.progreso)}`}
+                    style={{ width: `${operacion.progreso}%` }}
+                  />
+                </div>
               </div>
 
               {/* Checklist */}
@@ -173,20 +309,33 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                 <div className="space-y-2">
                   <h5 className="font-medium flex items-center gap-1">
                     <Shield className="w-3 h-3" />
-                    Bitácoras
+                    Estado
                   </h5>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span>Supervisor</span>
-                      <span className="text-xs">{operacion.documentos.bitacorasSupervisor}</span>
+                      <span>Validación</span>
+                      {operacion.canExecute ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Buzo</span>
-                      <span className="text-xs">{operacion.documentos.bitacorasBuzo}</span>
+                      <span>Completitud</span>
+                      <span className="text-xs font-medium">{operacion.progreso}%</span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Acciones */}
+              {!operacion.canExecute && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-amber-600">
+                    Pendientes: {!operacion.documentos.hpt ? 'HPT ' : ''}{!operacion.documentos.anexoBravo ? 'Anexo Bravo ' : ''}{!operacion.equipo.supervisor ? 'Supervisor ' : ''}{!operacion.equipo.equipoCompleto ? 'Equipo ' : ''}
+                  </p>
+                </div>
+              )}
             </div>
           ))
         )}

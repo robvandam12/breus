@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,11 @@ import {
   FileText, 
   Users,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from "@/hooks/use-toast";
 
 interface ValidationItem {
   id: string;
@@ -23,6 +26,7 @@ interface ValidationItem {
   status: 'valid' | 'warning' | 'error' | 'pending';
   required: boolean;
   details?: string;
+  actionRequired?: string;
 }
 
 interface ValidationGatewayProps {
@@ -33,52 +37,86 @@ interface ValidationGatewayProps {
 export const ValidationGateway = ({ operacionId, onValidationComplete }: ValidationGatewayProps) => {
   const [isValidating, setIsValidating] = useState(false);
   const [lastValidation, setLastValidation] = useState<Date | null>(null);
+  const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
+  const { validateOperacionCompleteness } = useOperaciones();
 
-  // Mock validation items - en producción vendría del backend
-  const validationItems: ValidationItem[] = [
-    {
-      id: 'hpt-complete',
-      category: 'documentos',
-      title: 'HPT Completado',
-      description: 'Herramientas y Procedimientos de Trabajo documentados',
-      status: 'valid',
-      required: true
-    },
-    {
-      id: 'anexo-bravo',
-      category: 'seguridad',
-      title: 'Anexo Bravo',
-      description: 'Análisis de Riesgo y Seguridad completado',
-      status: 'valid',
-      required: true
-    },
-    {
-      id: 'personal-asignado',
-      category: 'personal',
-      title: 'Personal Asignado',
-      description: 'Supervisor y buzos certificados asignados',
-      status: 'warning',
-      required: true,
-      details: 'Falta certificación de buzo secundario'
-    },
-    {
-      id: 'equipo-verificado',
-      category: 'equipos',
-      title: 'Equipos Verificados',
-      description: 'Equipos de buceo y superficie verificados',
-      status: 'pending',
-      required: true
-    },
-    {
-      id: 'permisos-vigentes',
-      category: 'documentos',
-      title: 'Permisos Vigentes',
-      description: 'Permisos y autorizaciones vigentes',
-      status: 'error',
-      required: true,
-      details: 'Permiso ambiental vence en 2 días'
+  useEffect(() => {
+    if (operacionId) {
+      performValidation();
     }
-  ];
+  }, [operacionId]);
+
+  const performValidation = async () => {
+    setIsValidating(true);
+    try {
+      const validation = await validateOperacionCompleteness(operacionId);
+      
+      const items: ValidationItem[] = [
+        {
+          id: 'hpt-complete',
+          category: 'documentos',
+          title: 'HPT Completado',
+          description: 'Herramientas y Procedimientos de Trabajo documentados',
+          status: validation.hptReady ? 'valid' : 'error',
+          required: true,
+          details: validation.hptReady ? 'HPT completado y firmado' : 'HPT no existe o no está firmado',
+          actionRequired: validation.hptReady ? undefined : 'Crear y firmar HPT en la sección de formularios'
+        },
+        {
+          id: 'anexo-bravo',
+          category: 'seguridad',
+          title: 'Anexo Bravo',
+          description: 'Análisis de Riesgo y Seguridad completado',
+          status: validation.anexoBravoReady ? 'valid' : 'error',
+          required: true,
+          details: validation.anexoBravoReady ? 'Anexo Bravo completado y firmado' : 'Anexo Bravo no existe o no está firmado',
+          actionRequired: validation.anexoBravoReady ? undefined : 'Crear y firmar Anexo Bravo en la sección de formularios'
+        },
+        {
+          id: 'personal-asignado',
+          category: 'personal',
+          title: 'Supervisor Asignado',
+          description: 'Supervisor certificado asignado a la operación',
+          status: validation.supervisorAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.supervisorAsignado ? 'Supervisor asignado correctamente' : 'No hay supervisor asignado',
+          actionRequired: validation.supervisorAsignado ? undefined : 'Asignar supervisor en la configuración de la operación'
+        },
+        {
+          id: 'equipo-verificado',
+          category: 'equipos',
+          title: 'Equipo de Buceo',
+          description: 'Equipo de buceo asignado y verificado',
+          status: validation.equipoAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.equipoAsignado ? 'Equipo de buceo asignado' : 'No hay equipo de buceo asignado',
+          actionRequired: validation.equipoAsignado ? undefined : 'Asignar equipo de buceo en la configuración de la operación'
+        },
+        {
+          id: 'ready-execute',
+          category: 'seguridad',
+          title: 'Lista para Ejecutar',
+          description: 'Operación cumple todos los requisitos',
+          status: validation.canExecute ? 'valid' : 'error',
+          required: true,
+          details: validation.canExecute ? 'Operación lista para inmersiones' : 'Faltan requisitos obligatorios',
+          actionRequired: validation.canExecute ? undefined : 'Completar todos los requisitos anteriores'
+        }
+      ];
+
+      setValidationItems(items);
+      setLastValidation(new Date());
+    } catch (error) {
+      console.error('Error validating operation:', error);
+      toast({
+        title: "Error de validación",
+        description: "No se pudo validar la operación. Intente nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   const getCategoryIcon = (category: ValidationItem['category']) => {
     switch (category) {
@@ -125,14 +163,6 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
     }
   };
 
-  const handleValidation = async () => {
-    setIsValidating(true);
-    // Simular validación
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsValidating(false);
-    setLastValidation(new Date());
-  };
-
   const validItems = validationItems.filter(item => item.status === 'valid').length;
   const totalItems = validationItems.length;
   const requiredItems = validationItems.filter(item => item.required);
@@ -141,6 +171,22 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
   const canProceed = validRequiredItems === requiredItems.length && !hasErrors;
 
   const categories = Array.from(new Set(validationItems.map(item => item.category)));
+
+  const handleValidationComplete = () => {
+    if (canProceed) {
+      onValidationComplete?.();
+      toast({
+        title: "Validación completada",
+        description: "La operación está lista para ejecutarse.",
+      });
+    } else {
+      toast({
+        title: "Validación incompleta",
+        description: "Hay elementos que requieren atención antes de proceder.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card>
@@ -157,11 +203,15 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
             <Button
               variant="outline"
               size="sm"
-              onClick={handleValidation}
+              onClick={performValidation}
               disabled={isValidating}
               className="flex items-center gap-2"
             >
-              <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} />
+              {isValidating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
               {isValidating ? 'Validando...' : 'Revalidar'}
             </Button>
           </div>
@@ -209,7 +259,7 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
               <div className="space-y-2">
                 {categoryItems.map(item => (
                   <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
                       {getStatusIcon(item.status)}
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -220,7 +270,12 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
                         </div>
                         <p className="text-sm text-gray-600">{item.description}</p>
                         {item.details && (
-                          <p className="text-xs text-amber-600 mt-1">{item.details}</p>
+                          <p className="text-xs text-gray-500 mt-1">{item.details}</p>
+                        )}
+                        {item.actionRequired && (
+                          <p className="text-xs text-blue-600 mt-1 font-medium">
+                            Acción: {item.actionRequired}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -245,12 +300,12 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           </Button>
           
           <Button 
-            onClick={onValidationComplete}
+            onClick={handleValidationComplete}
             disabled={!canProceed}
             className="flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4" />
-            Aprobar y Continuar
+            {canProceed ? 'Aprobar y Continuar' : 'Validación Incompleta'}
           </Button>
         </div>
       </CardContent>
