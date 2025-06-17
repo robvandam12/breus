@@ -50,9 +50,9 @@ const KpiCardsWidget = ({ config }: { config?: any }) => {
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 h-full">
             {kpiData.map((kpi, index) => (
-                <div key={index} className="transition-all duration-200 hover:scale-105">
+                <div key={index} className="transition-all duration-200 hover:scale-105 h-full">
                     <KPICard
                         title={kpi.title}
                         value={kpi.value}

@@ -40,8 +40,8 @@ export const OperacionMapa = ({ operacion }: OperacionMapaProps) => {
     );
   }
 
-  // Usar un zoom mucho más alejado (±0.15 en lugar de ±0.05) para mostrar más contexto geográfico
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${sitio.coordenadas_lng - 0.15},${sitio.coordenadas_lat - 0.15},${sitio.coordenadas_lng + 0.15},${sitio.coordenadas_lat + 0.15}&layer=mapnik&marker=${sitio.coordenadas_lat},${sitio.coordenadas_lng}`;
+  // Usar un zoom mucho más alejado (±0.25) para mostrar mucho más contexto geográfico
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${sitio.coordenadas_lng - 0.25},${sitio.coordenadas_lat - 0.25},${sitio.coordenadas_lng + 0.25},${sitio.coordenadas_lat + 0.25}&layer=mapnik&marker=${sitio.coordenadas_lat},${sitio.coordenadas_lng}`;
 
   return (
     <Card>
@@ -68,7 +68,7 @@ export const OperacionMapa = ({ operacion }: OperacionMapaProps) => {
             {sitio.coordenadas_lat.toFixed(6)}, {sitio.coordenadas_lng.toFixed(6)}
           </div>
           <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded shadow text-xs font-medium">
-            Vista Regional
+            Vista Regional Amplia
           </div>
         </div>
       </CardContent>
