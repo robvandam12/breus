@@ -13,9 +13,12 @@ import {
   Users,
   Eye,
   RefreshCw,
-  Loader2
+  Loader2,
+  ExternalLink,
+  Plus
 } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useRouter } from "@/hooks/useRouter";
 import { toast } from "@/hooks/use-toast";
 
 interface ValidationItem {
@@ -27,6 +30,8 @@ interface ValidationItem {
   required: boolean;
   details?: string;
   actionRequired?: string;
+  actionUrl?: string;
+  canCreate?: boolean;
 }
 
 interface ValidationGatewayProps {
@@ -39,6 +44,7 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
   const [lastValidation, setLastValidation] = useState<Date | null>(null);
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
   const { validateOperacionCompleteness } = useOperaciones();
+  const { navigateTo } = useRouter();
 
   useEffect(() => {
     if (operacionId) {
@@ -60,7 +66,9 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           status: validation.hptReady ? 'valid' : 'error',
           required: true,
           details: validation.hptReady ? 'HPT completado y firmado' : 'HPT no existe o no está firmado',
-          actionRequired: validation.hptReady ? undefined : 'Crear y firmar HPT en la sección de formularios'
+          actionRequired: validation.hptReady ? undefined : 'Crear y firmar HPT',
+          actionUrl: `/formularios/hpt?operacion=${operacionId}`,
+          canCreate: !validation.hptReady
         },
         {
           id: 'anexo-bravo',
@@ -70,7 +78,9 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           status: validation.anexoBravoReady ? 'valid' : 'error',
           required: true,
           details: validation.anexoBravoReady ? 'Anexo Bravo completado y firmado' : 'Anexo Bravo no existe o no está firmado',
-          actionRequired: validation.anexoBravoReady ? undefined : 'Crear y firmar Anexo Bravo en la sección de formularios'
+          actionRequired: validation.anexoBravoReady ? undefined : 'Crear y firmar Anexo Bravo',
+          actionUrl: `/formularios/anexo-bravo?operacion=${operacionId}`,
+          canCreate: !validation.anexoBravoReady
         },
         {
           id: 'personal-asignado',
@@ -80,7 +90,8 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           status: validation.supervisorAsignado ? 'valid' : 'warning',
           required: true,
           details: validation.supervisorAsignado ? 'Supervisor asignado correctamente' : 'No hay supervisor asignado',
-          actionRequired: validation.supervisorAsignado ? undefined : 'Asignar supervisor en la configuración de la operación'
+          actionRequired: validation.supervisorAsignado ? undefined : 'Asignar supervisor',
+          canCreate: false
         },
         {
           id: 'equipo-verificado',
@@ -90,7 +101,8 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           status: validation.equipoAsignado ? 'valid' : 'warning',
           required: true,
           details: validation.equipoAsignado ? 'Equipo de buceo asignado' : 'No hay equipo de buceo asignado',
-          actionRequired: validation.equipoAsignado ? undefined : 'Asignar equipo de buceo en la configuración de la operación'
+          actionRequired: validation.equipoAsignado ? undefined : 'Asignar equipo de buceo',
+          canCreate: false
         },
         {
           id: 'ready-execute',
@@ -100,7 +112,8 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           status: validation.canExecute ? 'valid' : 'error',
           required: true,
           details: validation.canExecute ? 'Operación lista para inmersiones' : 'Faltan requisitos obligatorios',
-          actionRequired: validation.canExecute ? undefined : 'Completar todos los requisitos anteriores'
+          actionRequired: validation.canExecute ? undefined : 'Completar todos los requisitos anteriores',
+          canCreate: false
         }
       ];
 
@@ -115,6 +128,18 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
       });
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  const handleActionClick = (item: ValidationItem) => {
+    if (item.actionUrl) {
+      navigateTo(item.actionUrl);
+    } else if (item.id === 'personal-asignado' || item.id === 'equipo-verificado') {
+      // Navegar de vuelta al wizard en el paso correcto
+      toast({
+        title: "Configuración requerida",
+        description: "Use el wizard de operación para completar esta asignación.",
+      });
     }
   };
 
@@ -188,6 +213,10 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
     }
   };
 
+  const handleCreateInmersion = () => {
+    navigateTo(`/inmersiones?operacion=${operacionId}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -253,7 +282,9 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
             <div key={category} className="space-y-3">
               <h4 className="font-medium text-lg capitalize flex items-center gap-2">
                 {getCategoryIcon(category)}
-                {category}
+                {category === 'documentos' ? 'Documentos' : 
+                 category === 'personal' ? 'Personal' :
+                 category === 'equipos' ? 'Equipos' : 'Seguridad'}
               </h4>
               
               <div className="space-y-2">
@@ -282,6 +313,31 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
                     
                     <div className="flex items-center gap-2">
                       {getStatusBadge(item.status)}
+                      
+                      {item.canCreate && item.actionUrl && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Crear
+                        </Button>
+                      )}
+                      
+                      {item.actionUrl && !item.canCreate && item.status !== 'valid' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Ir
+                        </Button>
+                      )}
+                      
                       <Button variant="ghost" size="sm">
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -295,18 +351,32 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
 
         {/* Acciones */}
         <div className="flex justify-between pt-4 border-t">
-          <Button variant="outline">
-            Ver Detalles Completos
+          <Button variant="outline" onClick={performValidation}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refrescar Estado
           </Button>
           
-          <Button 
-            onClick={handleValidationComplete}
-            disabled={!canProceed}
-            className="flex items-center gap-2"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            {canProceed ? 'Aprobar y Continuar' : 'Validación Incompleta'}
-          </Button>
+          <div className="flex gap-2">
+            {canProceed && (
+              <Button 
+                onClick={handleCreateInmersion}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Crear Inmersión
+              </Button>
+            )}
+            
+            <Button 
+              onClick={handleValidationComplete}
+              disabled={!canProceed}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {canProceed ? 'Aprobar y Continuar' : 'Validación Incompleta'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

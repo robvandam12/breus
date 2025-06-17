@@ -16,176 +16,109 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertTriangle,
-  Play
+  Play,
+  ExternalLink
 } from "lucide-react";
 import { CreateOperacionForm } from "./CreateOperacionForm";
 import { ValidationGateway } from "./ValidationGateway";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { OperacionSitioAssignment } from "./OperacionSitioAssignment";
+import { OperacionEquipoAssignment } from "./OperacionEquipoAssignment";
+import { useOperationWizardState } from "@/hooks/useOperationWizardState";
+import { useRouter } from "@/hooks/useRouter";
 import { toast } from "@/hooks/use-toast";
-
-interface FlowStep {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  status: 'completed' | 'active' | 'pending' | 'error';
-  required: boolean;
-  component?: React.ComponentType<any>;
-}
 
 interface OperationFlowWizardProps {
   operacionId?: string;
   onStepChange?: (stepId: string) => void;
   onComplete?: () => void;
+  onCancel?: () => void;
 }
 
-export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: OperationFlowWizardProps) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [operacionData, setOperacionData] = useState<any>(null);
-  const [validationData, setValidationData] = useState<any>(null);
-  const { validateOperacionCompleteness } = useOperaciones();
-
-  const steps: FlowStep[] = [
-    {
-      id: 'operacion',
-      title: 'Crear Operación',
-      description: 'Información básica de la operación',
-      icon: <FileText className="w-5 h-5" />,
-      status: operacionId ? 'completed' : 'active',
-      required: true,
-      component: CreateOperacionForm
-    },
-    {
-      id: 'sitio',
-      title: 'Definir Sitio',
-      description: 'Ubicación y coordenadas',
-      icon: <MapPin className="w-5 h-5" />,
-      status: operacionId && operacionData?.sitio_id ? 'completed' : 'pending',
-      required: true
-    },
-    {
-      id: 'equipo',
-      title: 'Asignar Equipo',
-      description: 'Personal y roles',
-      icon: <Users className="w-5 h-5" />,
-      status: operacionId && operacionData?.equipo_buceo_id ? 'completed' : 'pending',
-      required: true
-    },
-    {
-      id: 'hpt',
-      title: 'HPT',
-      description: 'Herramientas y Procedimientos',
-      icon: <Settings className="w-5 h-5" />,
-      status: validationData?.hptReady ? 'completed' : 'pending',
-      required: true
-    },
-    {
-      id: 'anexo-bravo',
-      title: 'Anexo Bravo',
-      description: 'Análisis de Seguridad',
-      icon: <Shield className="w-5 h-5" />,
-      status: validationData?.anexoBravoReady ? 'completed' : 'pending',
-      required: true
-    },
-    {
-      id: 'validation',
-      title: 'Validación Final',
-      description: 'Verificar todo está listo',
-      icon: <CheckCircle2 className="w-5 h-5" />,
-      status: validationData?.canExecute ? 'completed' : 'pending',
-      required: true,
-      component: ValidationGateway
-    }
-  ];
+export const OperationFlowWizard = ({ 
+  operacionId, 
+  onStepChange, 
+  onComplete,
+  onCancel 
+}: OperationFlowWizardProps) => {
+  const [currentOperacionId, setCurrentOperacionId] = useState(operacionId);
+  const { navigateTo } = useRouter();
+  
+  const {
+    steps,
+    currentStep,
+    currentStepIndex,
+    completedSteps,
+    totalSteps,
+    progress,
+    canProceed,
+    canFinish,
+    operacion,
+    isLoading,
+    goToStep,
+    nextStep,
+    previousStep,
+    completeStep,
+  } = useOperationWizardState(currentOperacionId);
 
   useEffect(() => {
-    if (operacionId) {
-      loadOperacionData();
+    if (currentStep) {
+      onStepChange?.(currentStep.id);
     }
-  }, [operacionId]);
-
-  const loadOperacionData = async () => {
-    try {
-      // Cargar datos de la operación
-      // En una implementación real, esto vendría de un hook específico
-      const validation = await validateOperacionCompleteness(operacionId!);
-      setValidationData(validation);
-      
-      // Mock de datos de operación - en realidad vendría de la BD
-      setOperacionData({
-        sitio_id: true, // Mock
-        equipo_buceo_id: true, // Mock
-      });
-    } catch (error) {
-      console.error('Error loading operation data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar la información de la operación",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const completedSteps = steps.filter(step => step.status === 'completed').length;
-  const totalSteps = steps.length;
-  const progress = (completedSteps / totalSteps) * 100;
-  const canProceed = validationData?.canExecute || false;
-
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-      onStepChange?.(steps[nextStep].id);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      setCurrentStep(prevStep);
-      onStepChange?.(steps[prevStep].id);
-    }
-  };
-
-  const handleStepClick = (index: number) => {
-    // Solo permitir navegar a pasos completados o el siguiente paso activo
-    if (steps[index].status === 'completed' || index <= currentStep + 1) {
-      setCurrentStep(index);
-      onStepChange?.(steps[index].id);
-    }
-  };
+  }, [currentStep, onStepChange]);
 
   const handleOperacionCreated = (newOperacionId: string) => {
-    setOperacionData({ id: newOperacionId });
-    steps[0].status = 'completed';
+    setCurrentOperacionId(newOperacionId);
+    completeStep('operacion', { operacionId: newOperacionId });
     toast({
       title: "Operación creada",
       description: "Avanzando al siguiente paso...",
     });
-    setTimeout(() => handleNext(), 1000);
+  };
+
+  const handleSitioAssigned = (sitioId: string) => {
+    completeStep('sitio', { sitioId });
+  };
+
+  const handleEquipoAssigned = (equipoId: string, supervisorId: string) => {
+    completeStep('equipo', { equipoId, supervisorId });
   };
 
   const handleValidationComplete = () => {
-    steps[currentStep].status = 'completed';
-    toast({
-      title: "Validación completada",
-      description: "La operación está lista para ejecutarse",
-    });
-    onComplete?.();
+    if (canFinish) {
+      toast({
+        title: "¡Operación completada!",
+        description: "La operación está lista para ejecutarse",
+      });
+      onComplete?.();
+    }
   };
 
-  const getStepIcon = (step: FlowStep) => {
+  const handleCreateHPT = () => {
+    if (currentOperacionId) {
+      navigateTo(`/formularios/hpt?operacion=${currentOperacionId}`);
+    }
+  };
+
+  const handleCreateAnexoBravo = () => {
+    if (currentOperacionId) {
+      navigateTo(`/formularios/anexo-bravo?operacion=${currentOperacionId}`);
+    }
+  };
+
+  const getStepIcon = (step: any) => {
     switch (step.status) {
       case 'completed':
         return <CheckCircle2 className="w-5 h-5 text-green-600" />;
       case 'error':
         return <AlertTriangle className="w-5 h-5 text-red-600" />;
+      case 'active':
+        return <Circle className="w-5 h-5 text-blue-600 fill-current" />;
       default:
-        return step.icon;
+        return <Circle className="w-5 h-5 text-gray-400" />;
     }
   };
 
-  const getStepBadge = (step: FlowStep) => {
+  const getStepBadge = (step: any) => {
     switch (step.status) {
       case 'completed':
         return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
@@ -203,45 +136,214 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
   };
 
   const renderStepContent = () => {
-    const currentStepData = steps[currentStep];
-    
-    if (currentStepData.component) {
-      const Component = currentStepData.component;
-      
-      if (currentStepData.id === 'operacion') {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">Cargando...</span>
+        </div>
+      );
+    }
+
+    if (!currentStep) return null;
+
+    switch (currentStep.id) {
+      case 'operacion':
+        if (currentOperacionId) {
+          return (
+            <div className="text-center py-8">
+              <CheckCircle2 className="w-16 h-16 mx-auto text-green-600 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Operación Creada</h3>
+              <p className="text-gray-600 mb-6">
+                {operacion?.nombre} ({operacion?.codigo})
+              </p>
+              <Button onClick={nextStep}>
+                Continuar al Siguiente Paso
+              </Button>
+            </div>
+          );
+        }
         return (
-          <Component 
-            onClose={handleOperacionCreated}
+          <CreateOperacionForm 
+            onClose={() => onCancel?.()}
             onSuccess={handleOperacionCreated}
           />
         );
-      }
-      
-      if (currentStepData.id === 'validation') {
+
+      case 'sitio':
+        if (!currentOperacionId) {
+          return (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Primero debe crear la operación antes de continuar.
+              </AlertDescription>
+            </Alert>
+          );
+        }
         return (
-          <Component 
-            operacionId={operacionId || operacionData?.id || ''}
+          <OperacionSitioAssignment
+            operacionId={currentOperacionId}
+            currentSitioId={currentStep.data?.sitioId}
+            onComplete={handleSitioAssigned}
+          />
+        );
+
+      case 'equipo':
+        if (!currentOperacionId) {
+          return (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Primero debe crear la operación antes de continuar.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        return (
+          <OperacionEquipoAssignment
+            operacionId={currentOperacionId}
+            currentEquipoId={currentStep.data?.equipoId}
+            currentSupervisorId={currentStep.data?.supervisorId}
+            onComplete={handleEquipoAssigned}
+          />
+        );
+
+      case 'hpt':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-blue-600" />
+                Herramientas y Procedimientos de Trabajo (HPT)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {currentStep.data?.signed ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-16 h-16 mx-auto text-green-600 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">HPT Completado y Firmado</h3>
+                  <p className="text-gray-600 mb-6">
+                    El documento HPT ha sido creado y firmado correctamente.
+                  </p>
+                  <Button onClick={nextStep}>
+                    Continuar al Siguiente Paso
+                  </Button>
+                </div>
+              ) : currentStep.data?.exists ? (
+                <div className="text-center py-6">
+                  <AlertTriangle className="w-16 h-16 mx-auto text-yellow-600 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">HPT Creado pero no Firmado</h3>
+                  <p className="text-gray-600 mb-6">
+                    El documento HPT existe pero necesita ser firmado antes de continuar.
+                  </p>
+                  <Button onClick={handleCreateHPT} className="mr-2">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Completar HPT
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Crear HPT</h3>
+                  <p className="text-gray-600 mb-6">
+                    Debe crear y firmar el documento HPT antes de continuar.
+                  </p>
+                  <Button onClick={handleCreateHPT}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Crear HPT
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 'anexo-bravo':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-600" />
+                Anexo Bravo - Análisis de Seguridad
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {currentStep.data?.signed ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-16 h-16 mx-auto text-green-600 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Anexo Bravo Completado y Firmado</h3>
+                  <p className="text-gray-600 mb-6">
+                    El documento Anexo Bravo ha sido creado y firmado correctamente.
+                  </p>
+                  <Button onClick={nextStep}>
+                    Continuar al Siguiente Paso
+                  </Button>
+                </div>
+              ) : currentStep.data?.exists ? (
+                <div className="text-center py-6">
+                  <AlertTriangle className="w-16 h-16 mx-auto text-yellow-600 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Anexo Bravo Creado pero no Firmado</h3>
+                  <p className="text-gray-600 mb-6">
+                    El documento Anexo Bravo existe pero necesita ser firmado antes de continuar.
+                  </p>
+                  <Button onClick={handleCreateAnexoBravo}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Completar Anexo Bravo
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Shield className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Crear Anexo Bravo</h3>
+                  <p className="text-gray-600 mb-6">
+                    Debe crear y firmar el documento Anexo Bravo antes de continuar.
+                  </p>
+                  <Button onClick={handleCreateAnexoBravo}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Crear Anexo Bravo
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 'validation':
+        if (!currentOperacionId) {
+          return (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Primero debe crear la operación antes de continuar.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        return (
+          <ValidationGateway 
+            operacionId={currentOperacionId}
             onValidationComplete={handleValidationComplete}
           />
         );
-      }
-      
-      return <Component />;
-    }
 
-    // Contenido por defecto para pasos sin componente específico
-    return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          {currentStepData.icon}
-        </div>
-        <h3 className="text-lg font-medium mb-2">{currentStepData.title}</h3>
-        <p className="text-gray-600 mb-6">{currentStepData.description}</p>
-        <Button onClick={handleNext} disabled={currentStep === steps.length - 1}>
-          Continuar
-        </Button>
-      </div>
-    );
+      default:
+        return (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              {currentStep.id === 'sitio' && <MapPin className="w-8 h-8 text-blue-600" />}
+              {currentStep.id === 'equipo' && <Users className="w-8 h-8 text-blue-600" />}
+              {currentStep.id === 'hpt' && <Settings className="w-8 h-8 text-blue-600" />}
+              {currentStep.id === 'anexo-bravo' && <Shield className="w-8 h-8 text-blue-600" />}
+            </div>
+            <h3 className="text-lg font-medium mb-2">{currentStep.title}</h3>
+            <p className="text-gray-600 mb-6">{currentStep.description}</p>
+            <Button onClick={nextStep} disabled={currentStepIndex === steps.length - 1}>
+              Continuar
+            </Button>
+          </div>
+        );
+    }
   };
 
   return (
@@ -251,7 +353,7 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="w-6 h-6 text-blue-600" />
-              Flujo de Creación de Operación
+              Wizard de Creación de Operación
             </div>
             <div className="text-sm text-gray-600">
               {completedSteps} de {totalSteps} completados
@@ -266,22 +368,27 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
               <div
                 key={step.id}
                 className={`flex items-center gap-4 p-4 rounded-lg border transition-all cursor-pointer ${
-                  index === currentStep 
+                  index === currentStepIndex 
                     ? 'border-blue-500 bg-blue-50' 
                     : step.status === 'completed'
-                    ? 'border-green-200 bg-green-50'
+                    ? 'border-green-200 bg-green-50 hover:bg-green-100'
                     : step.status === 'error'
                     ? 'border-red-200 bg-red-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
-                onClick={() => handleStepClick(index)}
+                onClick={() => {
+                  // Solo permitir navegar a pasos completados o el actual
+                  if (step.status === 'completed' || index <= currentStepIndex) {
+                    goToStep(index);
+                  }
+                }}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   step.status === 'completed' 
                     ? 'bg-green-100' 
                     : step.status === 'error'
                     ? 'bg-red-100'
-                    : index === currentStep
+                    : index === currentStepIndex
                     ? 'bg-blue-100'
                     : 'bg-gray-100'
                 }`}>
@@ -307,26 +414,26 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
           <div className="flex justify-between pt-4 border-t">
             <Button
               variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
+              onClick={previousStep}
+              disabled={currentStepIndex === 0}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Anterior
             </Button>
             
-            {currentStep === steps.length - 1 && canProceed ? (
+            {canFinish ? (
               <Button
                 onClick={handleValidationComplete}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
               >
                 <Play className="w-4 h-4" />
-                Iniciar Operación
+                Finalizar Operación
               </Button>
             ) : (
               <Button
-                onClick={handleNext}
-                disabled={currentStep === steps.length - 1}
+                onClick={nextStep}
+                disabled={currentStepIndex === steps.length - 1 || !canProceed}
                 className="flex items-center gap-2"
               >
                 Siguiente
@@ -336,20 +443,20 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
           </div>
 
           {/* Alertas */}
-          {steps.some(step => step.required && step.status === 'pending') && (
+          {steps.some(step => step.required && step.status === 'pending') && !canFinish && (
             <Alert>
               <AlertTriangle className="w-4 h-4" />
               <AlertDescription>
-                Hay pasos obligatorios pendientes que deben completarse antes de iniciar la operación.
+                Hay pasos obligatorios pendientes que deben completarse antes de finalizar la operación.
               </AlertDescription>
             </Alert>
           )}
 
-          {canProceed && (
+          {canFinish && (
             <Alert>
               <CheckCircle2 className="w-4 h-4" />
               <AlertDescription>
-                ¡Excelente! La operación está lista para ejecutarse. Todos los requisitos han sido cumplidos.
+                ¡Excelente! La operación está completamente configurada y lista para ejecutarse.
               </AlertDescription>
             </Alert>
           )}
@@ -359,7 +466,7 @@ export const OperationFlowWizard = ({ operacionId, onStepChange, onComplete }: O
       {/* Contenido del paso actual */}
       <Card>
         <CardHeader>
-          <CardTitle>{steps[currentStep].title}</CardTitle>
+          <CardTitle>{currentStep?.title}</CardTitle>
         </CardHeader>
         <CardContent>
           {renderStepContent()}

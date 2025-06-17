@@ -14,9 +14,12 @@ import {
   Shield,
   Settings,
   Play,
-  Loader2
+  Loader2,
+  Plus
 } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useRouter } from "@/hooks/useRouter";
+import { toast } from "@/hooks/use-toast";
 
 interface OperationStatus {
   id: string;
@@ -39,6 +42,7 @@ interface OperationStatus {
   };
   alertas: number;
   canExecute: boolean;
+  sitioAsignado: boolean;
 }
 
 interface OperationStatusTrackerProps {
@@ -49,6 +53,7 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
   const [operationStatuses, setOperationStatuses] = useState<OperationStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { validateOperacionCompleteness } = useOperaciones();
+  const { navigateTo } = useRouter();
 
   useEffect(() => {
     calculateStatuses();
@@ -62,28 +67,36 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
           try {
             const validation = await validateOperacionCompleteness(op.id);
             
-            // Calcular progreso basado en validaciones reales
+            // Calcular progreso basado en validaciones reales con pesos específicos
             let progreso = 0;
             const steps = [
-              { completed: true, weight: 20 }, // Operación creada
-              { completed: !!op.sitio_id, weight: 15 }, // Sitio definido
-              { completed: validation.supervisorAsignado, weight: 15 }, // Supervisor asignado
-              { completed: validation.equipoAsignado, weight: 15 }, // Equipo asignado
-              { completed: validation.hptReady, weight: 20 }, // HPT completado
-              { completed: validation.anexoBravoReady, weight: 15 } // Anexo Bravo completado
+              { completed: true, weight: 15, name: 'Operación creada' },
+              { completed: !!op.sitio_id, weight: 15, name: 'Sitio definido' },
+              { completed: validation.supervisorAsignado, weight: 15, name: 'Supervisor asignado' },
+              { completed: validation.equipoAsignado, weight: 15, name: 'Equipo asignado' },
+              { completed: validation.hptReady, weight: 20, name: 'HPT completado' },
+              { completed: validation.anexoBravoReady, weight: 20, name: 'Anexo Bravo completado' }
             ];
             
             progreso = steps.reduce((acc, step) => acc + (step.completed ? step.weight : 0), 0);
             
             // Determinar estado basado en progreso y validaciones
             let estado: OperationStatus['estado'] = 'planificacion';
+            
             if (progreso >= 100 && validation.canExecute) {
               estado = 'preparacion'; // Lista para inmersiones
-            } else if (progreso >= 70) {
+            } else if (progreso >= 80) {
               estado = 'preparacion';
             } else if (progreso >= 40) {
               estado = 'planificacion';
             }
+
+            // Contar alertas basado en elementos faltantes críticos
+            let alertas = 0;
+            if (!validation.hptReady) alertas++;
+            if (!validation.anexoBravoReady) alertas++;
+            if (!validation.supervisorAsignado) alertas++;
+            if (!validation.equipoAsignado) alertas++;
 
             return {
               id: op.id,
@@ -96,16 +109,17 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
               documentos: {
                 hpt: validation.hptReady,
                 anexoBravo: validation.anexoBravoReady,
-                bitacorasSupervisor: 0, // Esto se calcularia desde inmersiones reales
+                bitacorasSupervisor: 0, // Se calcularía desde inmersiones reales
                 bitacorasBuzo: 0
               },
               equipo: {
                 supervisor: validation.supervisorAsignado,
-                buzos: validation.equipoAsignado ? 2 : 0, // Mock
+                buzos: validation.equipoAsignado ? 2 : 0, // Mock basado en equipo
                 equipoCompleto: validation.equipoAsignado
               },
-              alertas: validation.canExecute ? 0 : 1,
-              canExecute: validation.canExecute
+              alertas,
+              canExecute: validation.canExecute,
+              sitioAsignado: !!op.sitio_id
             } as OperationStatus;
           } catch (error) {
             console.error(`Error validating operation ${op.id}:`, error);
@@ -114,13 +128,14 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
               nombre: op.nombre,
               codigo: op.codigo,
               estado: 'planificacion' as const,
-              progreso: 20, // Solo operación creada
+              progreso: 15, // Solo operación creada
               fechaInicio: op.fecha_inicio,
               fechaFin: op.fecha_fin,
               documentos: { hpt: false, anexoBravo: false, bitacorasSupervisor: 0, bitacorasBuzo: 0 },
               equipo: { supervisor: false, buzos: 0, equipoCompleto: false },
-              alertas: 1,
-              canExecute: false
+              alertas: 4, // Máximo de alertas
+              canExecute: false,
+              sitioAsignado: !!op.sitio_id
             } as OperationStatus;
           }
         })
@@ -129,6 +144,11 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
       setOperationStatuses(statuses);
     } catch (error) {
       console.error('Error calculating operation statuses:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo calcular el estado de las operaciones",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -175,6 +195,24 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
     return 'bg-gray-500';
   };
 
+  const handleExecuteOperation = (operacionId: string) => {
+    navigateTo(`/inmersiones?operacion=${operacionId}`);
+  };
+
+  const handleConfigureOperation = (operacionId: string) => {
+    navigateTo(`/operaciones?wizard=${operacionId}`);
+  };
+
+  const getMissingItems = (operacion: OperationStatus) => {
+    const missing: string[] = [];
+    if (!operacion.documentos.hpt) missing.push('HPT');
+    if (!operacion.documentos.anexoBravo) missing.push('Anexo Bravo');
+    if (!operacion.equipo.supervisor) missing.push('Supervisor');
+    if (!operacion.equipo.equipoCompleto) missing.push('Equipo');
+    if (!operacion.sitioAsignado) missing.push('Sitio');
+    return missing;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -210,7 +248,11 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
         {operationStatuses.length === 0 ? (
           <div className="text-center py-8">
             <Activity className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">No hay operaciones activas</p>
+            <p className="text-gray-500 mb-4">No hay operaciones activas</p>
+            <Button onClick={() => navigateTo('/operaciones?wizard=new')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Nueva Operación
+            </Button>
           </div>
         ) : (
           operationStatuses.map((operacion) => (
@@ -234,10 +276,25 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                     </Badge>
                   )}
                   {getEstadoBadge(operacion.estado)}
-                  {operacion.canExecute && (
-                    <Button size="sm" className="flex items-center gap-1">
+                  
+                  {operacion.canExecute ? (
+                    <Button 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => handleExecuteOperation(operacion.id)}
+                    >
                       <Play className="w-3 h-3" />
                       Ejecutar
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="flex items-center gap-1"
+                      onClick={() => handleConfigureOperation(operacion.id)}
+                    >
+                      <Settings className="w-3 h-3" />
+                      Configurar
                     </Button>
                   )}
                 </div>
@@ -258,7 +315,7 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                 </div>
               </div>
 
-              {/* Checklist */}
+              {/* Checklist detallado */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                 <div className="space-y-2">
                   <h5 className="font-medium flex items-center gap-1">
@@ -288,7 +345,7 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                 <div className="space-y-2">
                   <h5 className="font-medium flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    Equipo
+                    Equipo y Sitio
                   </h5>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -300,8 +357,20 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Buzos</span>
-                      <span className="text-xs">{operacion.equipo.buzos} asignados</span>
+                      <span>Sitio</span>
+                      {operacion.sitioAsignado ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Equipo</span>
+                      {operacion.equipo.equipoCompleto ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -328,11 +397,11 @@ export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerPr
                 </div>
               </div>
 
-              {/* Acciones */}
+              {/* Elementos pendientes */}
               {!operacion.canExecute && (
                 <div className="pt-2 border-t">
                   <p className="text-xs text-amber-600">
-                    Pendientes: {!operacion.documentos.hpt ? 'HPT ' : ''}{!operacion.documentos.anexoBravo ? 'Anexo Bravo ' : ''}{!operacion.equipo.supervisor ? 'Supervisor ' : ''}{!operacion.equipo.equipoCompleto ? 'Equipo ' : ''}
+                    <strong>Pendientes:</strong> {getMissingItems(operacion).join(', ')}
                   </p>
                 </div>
               )}

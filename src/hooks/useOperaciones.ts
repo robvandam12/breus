@@ -123,16 +123,39 @@ const useOperacionesMutations = () => {
       // Verificar equipo asignado
       const { data: operacion } = await supabase
         .from('operacion')
-        .select('equipo_buceo_id, supervisor_asignado_id')
+        .select('equipo_buceo_id, supervisor_asignado_id, sitio_id')
         .eq('id', operacionId)
         .single();
 
+      const hptReady = hpt?.firmado || false;
+      const anexoBravoReady = anexoBravo?.firmado || false;
+      const equipoAsignado = !!operacion?.equipo_buceo_id;
+      const supervisorAsignado = !!operacion?.supervisor_asignado_id;
+      const sitioAsignado = !!operacion?.sitio_id;
+
+      // Emitir evento si la operación está completamente lista
+      const canExecute = hptReady && anexoBravoReady && equipoAsignado && supervisorAsignado && sitioAsignado;
+      
+      if (canExecute) {
+        // Emitir evento de dominio
+        await supabase.rpc('emit_domain_event', {
+          p_event_type: 'OPERATION_READY',
+          p_aggregate_id: operacionId,
+          p_aggregate_type: 'operacion',
+          p_event_data: {
+            operacion_id: operacionId,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
       return {
-        hptReady: hpt?.firmado || false,
-        anexoBravoReady: anexoBravo?.firmado || false,
-        equipoAsignado: !!operacion?.equipo_buceo_id,
-        supervisorAsignado: !!operacion?.supervisor_asignado_id,
-        canExecute: (hpt?.firmado || false) && (anexoBravo?.firmado || false) && !!operacion?.equipo_buceo_id
+        hptReady,
+        anexoBravoReady,
+        equipoAsignado,
+        supervisorAsignado,
+        sitioAsignado,
+        canExecute
       };
     } catch (error) {
       console.error('Error validating operation completeness:', error);
@@ -141,8 +164,75 @@ const useOperacionesMutations = () => {
         anexoBravoReady: false,
         equipoAsignado: false,
         supervisorAsignado: false,
+        sitioAsignado: false,
         canExecute: false
       };
+    }
+  };
+
+  const assignSitio = async (operacionId: string, sitioId: string) => {
+    try {
+      const { error } = await supabase
+        .from('operacion')
+        .update({ sitio_id: sitioId })
+        .eq('id', operacionId);
+
+      if (error) throw error;
+
+      // Emitir evento de dominio
+      await supabase.rpc('emit_domain_event', {
+        p_event_type: 'OPERATION_ASSIGNED',
+        p_aggregate_id: operacionId,
+        p_aggregate_type: 'operacion',
+        p_event_data: {
+          operacion_id: operacionId,
+          sitio_id: sitioId,
+          assignment_type: 'sitio'
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['operacion', operacionId] });
+      
+      return true;
+    } catch (error) {
+      console.error('Error assigning sitio:', error);
+      throw error;
+    }
+  };
+
+  const assignEquipoAndSupervisor = async (operacionId: string, equipoId: string, supervisorId: string) => {
+    try {
+      const { error } = await supabase
+        .from('operacion')
+        .update({ 
+          equipo_buceo_id: equipoId,
+          supervisor_asignado_id: supervisorId
+        })
+        .eq('id', operacionId);
+
+      if (error) throw error;
+
+      // Emitir evento de dominio
+      await supabase.rpc('emit_domain_event', {
+        p_event_type: 'OPERATION_ASSIGNED',
+        p_aggregate_id: operacionId,
+        p_aggregate_type: 'operacion',
+        p_event_data: {
+          operacion_id: operacionId,
+          equipo_id: equipoId,
+          supervisor_id: supervisorId,
+          assignment_type: 'equipo_supervisor'
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['operacion', operacionId] });
+      
+      return true;
+    } catch (error) {
+      console.error('Error assigning equipo and supervisor:', error);
+      throw error;
     }
   };
 
@@ -216,6 +306,8 @@ const useOperacionesMutations = () => {
   return {
     checkCanDelete,
     validateOperacionCompleteness,
+    assignSitio,
+    assignEquipoAndSupervisor,
     createOperacion: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     updateOperacion: updateMutation.mutateAsync,

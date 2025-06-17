@@ -36,6 +36,10 @@ export const useOperationNotifications = (operacionId?: string) => {
           title: "HPT Completado",
           description: `El HPT para la operación ${event.event_data?.codigo} ha sido firmado.`,
         });
+        // Emit custom event for other components to listen
+        window.dispatchEvent(new CustomEvent('operationUpdated', { 
+          detail: { operacionId: event.aggregate_id, type: 'hpt_completed' }
+        }));
         break;
         
       case 'ANEXO_DONE':
@@ -43,6 +47,9 @@ export const useOperationNotifications = (operacionId?: string) => {
           title: "Anexo Bravo Completado",
           description: `El Anexo Bravo para la operación ${event.event_data?.codigo} ha sido firmado.`,
         });
+        window.dispatchEvent(new CustomEvent('operationUpdated', { 
+          detail: { operacionId: event.aggregate_id, type: 'anexo_completed' }
+        }));
         break;
         
       case 'IMM_CREATED':
@@ -56,6 +63,16 @@ export const useOperationNotifications = (operacionId?: string) => {
         toast({
           title: "Operación Lista",
           description: "La operación cumple todos los requisitos y está lista para ejecutarse.",
+        });
+        window.dispatchEvent(new CustomEvent('operationReady', { 
+          detail: { operacionId: event.aggregate_id }
+        }));
+        break;
+        
+      case 'OPERATION_ASSIGNED':
+        toast({
+          title: "Asignación Actualizada",
+          description: "Se ha actualizado la asignación de personal o equipo.",
         });
         break;
         
@@ -83,8 +100,31 @@ export const useOperationNotifications = (operacionId?: string) => {
     });
   };
 
+  const notifyAssignmentComplete = (type: 'sitio' | 'equipo' | 'supervisor') => {
+    const messages = {
+      sitio: "Sitio asignado correctamente",
+      equipo: "Equipo de buceo asignado",
+      supervisor: "Supervisor asignado a la operación"
+    };
+    
+    toast({
+      title: "Asignación Completada",
+      description: messages[type],
+    });
+  };
+
+  const notifyOperationReady = (operacionCodigo: string) => {
+    toast({
+      title: "¡Operación Lista!",
+      description: `La operación ${operacionCodigo} está completamente configurada y lista para inmersiones.`,
+      duration: 5000,
+    });
+  };
+
   return {
     notifyStepComplete,
-    notifyValidationResult
+    notifyValidationResult,
+    notifyAssignmentComplete,
+    notifyOperationReady
   };
 };

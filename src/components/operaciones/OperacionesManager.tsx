@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { OperationStatusTracker } from "@/components/operaciones/OperationStatus
 import { OperationTemplateManager } from "@/components/operaciones/OperationTemplateManager";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
 import { List, MapPin, Grid3X3, Workflow, BarChart3, FileText, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
@@ -18,7 +20,11 @@ import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters"
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export const OperacionesManager = () => {
+interface OperacionesManagerProps {
+  onStartWizard?: (operacionId?: string) => void;
+}
+
+export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "status");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
@@ -35,6 +41,8 @@ export const OperacionesManager = () => {
     deleteOperacion, 
     checkCanDelete 
   } = useOperaciones();
+
+  const { validateBeforeInmersion } = useOperationInmersionIntegration();
   
   const {
     searchTerm,
@@ -44,43 +52,53 @@ export const OperacionesManager = () => {
     filteredOperaciones
   } = useOperacionesFilters(operaciones);
 
-  // Preparar datos para OperationStatusTracker
-  const operacionesStatus = filteredOperaciones.map(op => ({
-    id: op.id,
-    nombre: op.nombre,
-    estado: op.estado as 'planificacion' | 'preparacion' | 'ejecucion' | 'finalizacion' | 'completada',
-    progreso: op.estado === 'completada' ? 100 : op.estado === 'activa' ? 60 : 30,
-    fechaInicio: op.fecha_inicio,
-    fechaFin: op.fecha_fin,
-    documentos: {
-      hpt: true, // Esto debería venir de una consulta real
-      anexoBravo: true,
-      bitacorasSupervisor: 2,
-      bitacorasBuzo: 3
-    },
-    equipo: {
-      supervisor: !!op.supervisor_asignado_id,
-      buzos: 2, // Esto debería calcularse desde el equipo de buceo
-      equipoCompleto: !!op.equipo_buceo_id
-    },
-    alertas: 0
-  }));
-
   const handleViewDetail = (operacion: any) => {
     setSelectedOperacion(operacion);
     setShowDetailModal(true);
   };
 
   const handleStartFlowWizard = (operacionId?: string) => {
-    if (operacionId) {
-      setSelectedOperacion(operaciones.find(op => op.id === operacionId));
+    if (onStartWizard) {
+      onStartWizard(operacionId);
+    } else {
+      if (operacionId) {
+        setSelectedOperacion(operaciones.find(op => op.id === operacionId));
+      }
+      setShowFlowWizard(true);
     }
-    setShowFlowWizard(true);
   };
 
   const handleValidateOperacion = (operacionId: string) => {
     setSelectedOperacionForValidation(operacionId);
     setShowValidationGateway(true);
+  };
+
+  const handleCreateInmersion = async (operacionId: string) => {
+    try {
+      const validation = await validateBeforeInmersion(operacionId);
+      
+      if (!validation.canProceed) {
+        toast({
+          title: "Operación no lista",
+          description: validation.message,
+          variant: "destructive",
+        });
+        
+        // Mostrar wizard de validación
+        handleValidateOperacion(operacionId);
+        return;
+      }
+
+      // Redirigir a crear inmersión
+      window.location.href = `/inmersiones?operacion=${operacionId}`;
+    } catch (error) {
+      console.error('Error validating for inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo validar la operación para inmersiones",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCreateFromTemplate = (template: any) => {
@@ -228,7 +246,7 @@ export const OperacionesManager = () => {
         </TabsList>
         
         <TabsContent value="status" className="mt-6">
-          <OperationStatusTracker operaciones={operacionesStatus} />
+          <OperationStatusTracker operaciones={filteredOperaciones} />
         </TabsContent>
         
         <TabsContent value="table" className="mt-6">
@@ -237,6 +255,8 @@ export const OperacionesManager = () => {
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -247,6 +267,8 @@ export const OperacionesManager = () => {
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -257,6 +279,8 @@ export const OperacionesManager = () => {
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
 
@@ -265,15 +289,31 @@ export const OperacionesManager = () => {
             <h3 className="text-lg font-medium">Validación de Operaciones</h3>
             <div className="grid gap-4">
               {filteredOperaciones.map((operacion) => (
-                <div key={operacion.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">{operacion.nombre}</h4>
-                    <p className="text-sm text-gray-600">Código: {operacion.codigo}</p>
+                <div key={operacion.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{operacion.nombre}</h4>
+                      <p className="text-sm text-gray-600">{operacion.codigo}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleValidateOperacion(operacion.id)}
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Validar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleStartFlowWizard(operacion.id)}
+                      >
+                        <Workflow className="w-4 h-4 mr-2" />
+                        Wizard
+                      </Button>
+                    </div>
                   </div>
-                  <Button onClick={() => handleValidateOperacion(operacion.id)}>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Validar
-                  </Button>
                 </div>
               ))}
             </div>
@@ -282,31 +322,30 @@ export const OperacionesManager = () => {
       </Tabs>
 
       {/* Modals */}
-      {selectedOperacion && (
-        <OperacionDetailModal 
-          operacion={selectedOperacion}
-          isOpen={showDetailModal}
-          onClose={handleCloseDetail}
-        />
-      )}
+      <OperacionDetailModal
+        operacion={selectedOperacion}
+        isOpen={showDetailModal}
+        onClose={handleCloseDetail}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onStartWizard={handleStartFlowWizard}
+        onCreateInmersion={handleCreateInmersion}
+      />
 
+      {/* Dialogs */}
       <Dialog open={showFlowWizard} onOpenChange={setShowFlowWizard}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Flujo Completo de Operación</DialogTitle>
-          </DialogHeader>
           <OperationFlowWizard 
             operacionId={selectedOperacion?.id}
-            onStepChange={(stepId) => console.log('Step changed:', stepId)}
+            onStepChange={(stepId) => console.log('Wizard step:', stepId)}
+            onComplete={() => setShowFlowWizard(false)}
+            onCancel={() => setShowFlowWizard(false)}
           />
         </DialogContent>
       </Dialog>
 
       <Dialog open={showTemplateManager} onOpenChange={setShowTemplateManager}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestión de Templates</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <OperationTemplateManager 
             onCreateFromTemplate={handleCreateFromTemplate}
           />
@@ -315,17 +354,15 @@ export const OperacionesManager = () => {
 
       <Dialog open={showValidationGateway} onOpenChange={setShowValidationGateway}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <ValidationGateway 
-            operacionId={selectedOperacionForValidation || ''}
-            onValidationComplete={() => {
-              setShowValidationGateway(false);
-              setSelectedOperacionForValidation(null);
-              toast({
-                title: "Validación completada",
-                description: "La operación ha sido validada exitosamente.",
-              });
-            }}
-          />
+          <DialogHeader>
+            <DialogTitle>Validación de Operación</DialogTitle>
+          </DialogHeader>
+          {selectedOperacionForValidation && (
+            <ValidationGateway 
+              operacionId={selectedOperacionForValidation}
+              onValidationComplete={() => setShowValidationGateway(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
