@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { OperationStatusTracker } from "@/components/operaciones/OperationStatus
 import { OperationTemplateManager } from "@/components/operaciones/OperationTemplateManager";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { List, MapPin, Grid3X3, Workflow, BarChart3, FileTemplate, Shield } from "lucide-react";
+import { List, MapPin, Grid3X3, Workflow, BarChart3, FileText, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
 import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
@@ -199,7 +198,7 @@ export const OperacionesManager = () => {
           Wizard Completo
         </Button>
         <Button variant="outline" onClick={() => setShowTemplateManager(true)}>
-          <FileTemplate className="w-4 h-4 mr-2" />
+          <FileText className="w-4 h-4 mr-2" />
           Templates
         </Button>
       </div>

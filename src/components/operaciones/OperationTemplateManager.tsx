@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  FileTemplate, 
+  FileText, 
   Plus, 
   Edit, 
   Trash2, 
@@ -145,7 +144,7 @@ export const OperationTemplateManager = ({ onSelectTemplate, onCreateFromTemplat
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileTemplate className="w-5 h-5 text-blue-600" />
+            <FileText className="w-5 h-5 text-blue-600" />
             Templates de Operación
           </div>
           <Button 
@@ -237,7 +236,7 @@ export const OperationTemplateManager = ({ onSelectTemplate, onCreateFromTemplat
 
         {templates.length === 0 && (
           <div className="text-center py-8">
-            <FileTemplate className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+            <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500">No hay templates disponibles</p>
             <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
               Crear primer template

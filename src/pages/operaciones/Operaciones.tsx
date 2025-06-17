@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { Plus, Calendar, Workflow, FileTemplate } from "lucide-react";
+import { Plus, Calendar, Workflow, FileText } from "lucide-react";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
@@ -64,7 +64,7 @@ export default function Operaciones() {
             onClick={() => setShowTemplateManager(true)}
             className="hidden md:flex items-center gap-2"
           >
-            <FileTemplate className="w-4 h-4" />
+            <FileText className="w-4 h-4" />
             Templates
           </Button>
           <Button 
