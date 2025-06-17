@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Plus, Edit, Trash2, Clock, Users, Tools, Settings } from "lucide-react";
+import { FileText, Plus, Edit, Trash2, Clock, Users, Wrench, Settings } from "lucide-react";
 import { useOperationTemplates } from "@/hooks/useOperationTemplates";
 import { toast } from "@/hooks/use-toast";
 
@@ -117,7 +117,7 @@ export const OperationTemplateManager = ({ onCreateFromTemplate }: OperationTemp
       case 'inspeccion':
         return <Settings className="w-4 h-4" />;
       case 'reparacion':
-        return <Tools className="w-4 h-4" />;
+        return <Wrench className="w-4 h-4" />;
       case 'limpieza':
         return <Clock className="w-4 h-4" />;
       default:
