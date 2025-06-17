@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +26,7 @@ export interface BasicOperacion {
 export interface OperacionConRelaciones extends BasicOperacion {
   salmoneras?: { nombre: string };
   contratistas?: { nombre: string };
-  sitios?: { nombre: string };
+  sitios?: { nombre: string; coordenadas_lat?: number; coordenadas_lng?: number };
   equipos_buceo?: { nombre: string };
   usuario_supervisor?: { nombre: string; apellido: string };
 }
@@ -49,7 +48,7 @@ export interface OperacionFormData {
   supervisor_asignado_id?: string;
 }
 
-// Query hook
+// Query hook with expanded data
 const useOperacionesQuery = () => {
   const { profile } = useAuth();
 
@@ -62,7 +61,7 @@ const useOperacionesQuery = () => {
           *,
           salmoneras:salmonera_id(nombre),
           contratistas:contratista_id(nombre),
-          sitios:sitio_id(nombre),
+          sitios:sitio_id(nombre, coordenadas_lat, coordenadas_lng),
           equipos_buceo:equipo_buceo_id(nombre),
           usuario_supervisor:supervisor_asignado_id(nombre, apellido)
         `)
@@ -85,7 +84,7 @@ const useOperacionesQuery = () => {
   return { operaciones, isLoading, refetch };
 };
 
-// Mutations hook
+// Extended mutations hook
 const useOperacionesMutations = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -102,6 +101,48 @@ const useOperacionesMutations = () => {
     } catch (error) {
       console.error('Error checking if operation can be deleted:', error);
       return { canDelete: false, reason: 'error al verificar dependencias' };
+    }
+  };
+
+  const validateOperacionCompleteness = async (operacionId: string) => {
+    try {
+      // Verificar HPT
+      const { data: hpt } = await supabase
+        .from('hpt')
+        .select('id, firmado')
+        .eq('operacion_id', operacionId)
+        .single();
+
+      // Verificar Anexo Bravo
+      const { data: anexoBravo } = await supabase
+        .from('anexo_bravo')
+        .select('id, firmado')
+        .eq('operacion_id', operacionId)
+        .single();
+
+      // Verificar equipo asignado
+      const { data: operacion } = await supabase
+        .from('operacion')
+        .select('equipo_buceo_id, supervisor_asignado_id')
+        .eq('id', operacionId)
+        .single();
+
+      return {
+        hptReady: hpt?.firmado || false,
+        anexoBravoReady: anexoBravo?.firmado || false,
+        equipoAsignado: !!operacion?.equipo_buceo_id,
+        supervisorAsignado: !!operacion?.supervisor_asignado_id,
+        canExecute: (hpt?.firmado || false) && (anexoBravo?.firmado || false) && !!operacion?.equipo_buceo_id
+      };
+    } catch (error) {
+      console.error('Error validating operation completeness:', error);
+      return {
+        hptReady: false,
+        anexoBravoReady: false,
+        equipoAsignado: false,
+        supervisorAsignado: false,
+        canExecute: false
+      };
     }
   };
 
@@ -174,6 +215,7 @@ const useOperacionesMutations = () => {
 
   return {
     checkCanDelete,
+    validateOperacionCompleteness,
     createOperacion: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     updateOperacion: updateMutation.mutateAsync,

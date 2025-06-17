@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
-import { Plus, Anchor, LayoutGrid, LayoutList } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Anchor, LayoutGrid, LayoutList, AlertTriangle } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
+import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
@@ -19,12 +21,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function Inmersiones() {
   const isMobile = useIsMobile();
   const [showWizard, setShowWizard] = useState(false);
+  const [showValidationGateway, setShowValidationGateway] = useState(false);
+  const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(isMobile ? 'cards' : 'cards');
   const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { inmersiones, isLoading, createInmersion, refreshInmersiones } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, refreshInmersiones, validateOperationDocuments } = useInmersiones();
   const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
@@ -41,9 +45,33 @@ export default function Inmersiones() {
 
   useEffect(() => {
     if (operacionId) {
-      setShowWizard(true);
+      // Validar operación antes de crear inmersión
+      checkOperacionBeforeImmersion(operacionId);
     }
   }, [operacionId]);
+
+  const checkOperacionBeforeImmersion = async (opId: string) => {
+    try {
+      const validation = await validateOperationDocuments(opId);
+      
+      if (!validation.canExecute) {
+        // Si no puede ejecutar, mostrar el gateway de validación
+        setSelectedOperacionForValidation(opId);
+        setShowValidationGateway(true);
+        return;
+      }
+      
+      // Si puede ejecutar, proceder con el wizard
+      setShowWizard(true);
+    } catch (error) {
+      console.error('Error validating operation:', error);
+      toast({
+        title: "Error de validación",
+        description: "No se pudo validar la operación. Intente nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleCreateInmersion = async (data: any) => {
     try {
@@ -72,6 +100,17 @@ export default function Inmersiones() {
     if (operacionId) {
       navigateTo('/operaciones');
     }
+  };
+
+  const handleValidationComplete = () => {
+    setShowValidationGateway(false);
+    setSelectedOperacionForValidation(null);
+    // Después de validar, mostrar el wizard
+    setShowWizard(true);
+    toast({
+      title: "Validación completada",
+      description: "Ahora puede proceder a crear la inmersión.",
+    });
   };
 
   const getOperacionData = useCallback((operacionId: string) => {
@@ -104,6 +143,28 @@ export default function Inmersiones() {
           operationId={operacionId || undefined}
           onComplete={handleCreateInmersion}
           onCancel={handleCancelWizard}
+        />
+      </MainLayout>
+    );
+  }
+
+  if (showValidationGateway && selectedOperacionForValidation) {
+    return (
+      <MainLayout
+        title="Validación de Operación"
+        subtitle="Validar requisitos antes de crear inmersión"
+        icon={AlertTriangle}
+      >
+        <Alert className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            La operación seleccionada requiere validación antes de proceder con la creación de inmersiones.
+          </AlertDescription>
+        </Alert>
+        
+        <ValidationGateway 
+          operacionId={selectedOperacionForValidation}
+          onValidationComplete={handleValidationComplete}
         />
       </MainLayout>
     );
