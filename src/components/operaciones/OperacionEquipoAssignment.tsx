@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Shield, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Users, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -25,18 +25,12 @@ export const OperacionEquipoAssignment = ({
   const [selectedSupervisor, setSelectedSupervisor] = useState(currentSupervisorId || '');
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
+  const { data: equiposBuceo = [], isLoading: loadingEquipos } = useQuery({
     queryKey: ['equipos-buceo-disponibles'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('equipos_buceo')
-        .select(`
-          *,
-          miembros:equipo_buceo_miembros(
-            *,
-            usuario:usuario_id(nombre, apellido, rol)
-          )
-        `)
+        .select('*')
         .eq('estado', 'disponible')
         .eq('activo', true)
         .order('nombre');
@@ -51,8 +45,9 @@ export const OperacionEquipoAssignment = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('usuario')
-        .select('usuario_id, nombre, apellido, email')
-        .in('rol', ['supervisor', 'admin_servicio', 'superuser'])
+        .select('*')
+        .eq('rol', 'supervisor')
+        .eq('estado_buzo', 'activo')
         .order('nombre');
       
       if (error) throw error;
@@ -60,13 +55,11 @@ export const OperacionEquipoAssignment = ({
     }
   });
 
-  const selectedEquipoData = equipos.find(e => e.id === selectedEquipo);
-
   const handleAssignEquipo = async () => {
     if (!selectedEquipo || !selectedSupervisor) {
       toast({
         title: "Error",
-        description: "Debe seleccionar tanto el equipo como el supervisor",
+        description: "Debe seleccionar un equipo de buceo y un supervisor",
         variant: "destructive"
       });
       return;
@@ -78,7 +71,7 @@ export const OperacionEquipoAssignment = ({
         .from('operacion')
         .update({ 
           equipo_buceo_id: selectedEquipo,
-          supervisor_asignado_id: selectedSupervisor
+          supervisor_asignado_id: selectedSupervisor 
         })
         .eq('id', operacionId);
 
@@ -86,7 +79,7 @@ export const OperacionEquipoAssignment = ({
 
       toast({
         title: "Equipo asignado",
-        description: "El equipo y supervisor han sido asignados exitosamente"
+        description: "El equipo de buceo y supervisor han sido asignados exitosamente"
       });
 
       onComplete(selectedEquipo, selectedSupervisor);
@@ -110,7 +103,7 @@ export const OperacionEquipoAssignment = ({
           Asignar Equipo de Buceo y Supervisor
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {(currentEquipoId && currentSupervisorId) && (
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -118,24 +111,18 @@ export const OperacionEquipoAssignment = ({
           </div>
         )}
 
-        {/* Selección de Equipo */}
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Equipo de Buceo
-          </label>
+          <label className="text-sm font-medium">Seleccionar Equipo de Buceo</label>
           <Select value={selectedEquipo} onValueChange={setSelectedEquipo} disabled={loadingEquipos}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccione un equipo..." />
             </SelectTrigger>
             <SelectContent>
-              {equipos.map((equipo) => (
+              {equiposBuceo.map((equipo) => (
                 <SelectItem key={equipo.id} value={equipo.id}>
                   <div className="flex flex-col">
                     <span className="font-medium">{equipo.nombre}</span>
-                    <span className="text-xs text-gray-500">
-                      {equipo.miembros?.length || 0} miembros - {equipo.tipo_empresa}
-                    </span>
+                    <span className="text-xs text-gray-500">{equipo.tipo_empresa} - {equipo.descripcion}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -143,27 +130,8 @@ export const OperacionEquipoAssignment = ({
           </Select>
         </div>
 
-        {/* Información del equipo seleccionado */}
-        {selectedEquipoData && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">Miembros del Equipo</h4>
-            <div className="space-y-1">
-              {selectedEquipoData.miembros?.map((miembro: any) => (
-                <div key={miembro.id} className="text-sm text-blue-800 flex justify-between">
-                  <span>{miembro.usuario?.nombre} {miembro.usuario?.apellido}</span>
-                  <span className="font-medium">{miembro.rol_equipo}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Selección de Supervisor */}
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            Supervisor Asignado
-          </label>
+          <label className="text-sm font-medium">Seleccionar Supervisor</label>
           <Select value={selectedSupervisor} onValueChange={setSelectedSupervisor} disabled={loadingSupervisores}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccione un supervisor..." />
@@ -180,6 +148,20 @@ export const OperacionEquipoAssignment = ({
             </SelectContent>
           </Select>
         </div>
+
+        {(selectedEquipo || selectedSupervisor) && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Asignación Seleccionada</h4>
+            <div className="text-sm text-blue-800 space-y-1">
+              {selectedEquipo && (
+                <p><strong>Equipo:</strong> {equiposBuceo.find(e => e.id === selectedEquipo)?.nombre}</p>
+              )}
+              {selectedSupervisor && (
+                <p><strong>Supervisor:</strong> {supervisores.find(s => s.usuario_id === selectedSupervisor)?.nombre} {supervisores.find(s => s.usuario_id === selectedSupervisor)?.apellido}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <Button 
           onClick={handleAssignEquipo} 
