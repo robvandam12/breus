@@ -1,11 +1,14 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Webhook, Bell, Database, Shield, Globe } from "lucide-react";
+import { Settings, Webhook, Bell, Database, Shield, Globe, Users, Key } from "lucide-react";
 import { WebhookSettings } from './WebhookSettings';
 import { NotificationSettings } from '../notifications/NotificationSettings';
 import { CatalogSettings } from './CatalogSettings';
 import { AccountSettings } from './AccountSettings';
+import { PermissionsSettings } from './PermissionsSettings';
+import { SecuritySettings } from './SecuritySettings';
 
 export const ConfiguracionAvanzada = () => {
   const [activeTab, setActiveTab] = useState('webhooks');
@@ -16,35 +19,43 @@ export const ConfiguracionAvanzada = () => {
         <Settings className="w-8 h-8 text-blue-600" />
         <div>
           <h1 className="text-3xl font-bold">Configuración del Sistema</h1>
-          <p className="text-gray-600">Gestiona webhooks, notificaciones, catálogos y preferencias</p>
+          <p className="text-gray-600">Gestiona webhooks, notificaciones, permisos, seguridad y configuraciones avanzadas</p>
         </div>
       </div>
 
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-8 bg-gray-100">
+              <TabsTrigger value="webhooks" className="flex items-center gap-2 data-[state=active]:bg-white">
                 <Webhook className="w-4 h-4" />
                 Webhooks
               </TabsTrigger>
-              <TabsTrigger value="notificaciones" className="flex items-center gap-2">
+              <TabsTrigger value="notificaciones" className="flex items-center gap-2 data-[state=active]:bg-white">
                 <Bell className="w-4 h-4" />
                 Notificaciones
               </TabsTrigger>
-              <TabsTrigger value="catalogos" className="flex items-center gap-2">
+              <TabsTrigger value="permisos" className="flex items-center gap-2 data-[state=active]:bg-white">
+                <Users className="w-4 h-4" />
+                Permisos
+              </TabsTrigger>
+              <TabsTrigger value="seguridad" className="flex items-center gap-2 data-[state=active]:bg-white">
+                <Shield className="w-4 h-4" />
+                Seguridad
+              </TabsTrigger>
+              <TabsTrigger value="catalogos" className="flex items-center gap-2 data-[state=active]:bg-white">
                 <Database className="w-4 h-4" />
                 Catálogos
               </TabsTrigger>
-              <TabsTrigger value="cuenta" className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
+              <TabsTrigger value="cuenta" className="flex items-center gap-2 data-[state=active]:bg-white">
+                <Key className="w-4 h-4" />
                 Cuenta
               </TabsTrigger>
-              <TabsTrigger value="sistema" className="flex items-center gap-2">
+              <TabsTrigger value="sistema" className="flex items-center gap-2 data-[state=active]:bg-white">
                 <Globe className="w-4 h-4" />
                 Sistema
               </TabsTrigger>
-              <TabsTrigger value="integraciones" className="flex items-center gap-2">
+              <TabsTrigger value="integraciones" className="flex items-center gap-2 data-[state=active]:bg-white">
                 <Settings className="w-4 h-4" />
                 Integraciones
               </TabsTrigger>
@@ -56,6 +67,14 @@ export const ConfiguracionAvanzada = () => {
 
             <TabsContent value="notificaciones" className="mt-6">
               <NotificationSettings onClose={() => setActiveTab('webhooks')} />
+            </TabsContent>
+
+            <TabsContent value="permisos" className="mt-6">
+              <PermissionsSettings />
+            </TabsContent>
+
+            <TabsContent value="seguridad" className="mt-6">
+              <SecuritySettings />
             </TabsContent>
 
             <TabsContent value="catalogos" className="mt-6">
@@ -99,23 +118,23 @@ export const ConfiguracionAvanzada = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Configuración de Seguridad</CardTitle>
+                    <CardTitle>Configuración de Rendimiento</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-4">
                       <div className="p-4 border rounded-lg">
-                        <h3 className="font-medium mb-2">Políticas RLS</h3>
-                        <p className="text-sm text-gray-600">Row Level Security activado en todas las tablas</p>
+                        <h3 className="font-medium mb-2">Cache del Sistema</h3>
+                        <p className="text-sm text-gray-600">Redis activo - 15 minutos TTL</p>
                       </div>
                       
                       <div className="p-4 border rounded-lg">
-                        <h3 className="font-medium mb-2">Validación Pre-Inmersión</h3>
-                        <p className="text-sm text-gray-600">Trigger activo - Bloquea inmersiones sin documentos</p>
+                        <h3 className="font-medium mb-2">Compresión de Datos</h3>
+                        <p className="text-sm text-gray-600">Gzip habilitado para API responses</p>
                       </div>
                       
                       <div className="p-4 border rounded-lg">
-                        <h3 className="font-medium mb-2">Auditoría</h3>
-                        <p className="text-sm text-gray-600">Domain Events registrando todas las acciones críticas</p>
+                        <h3 className="font-medium mb-2">Límites de Rate</h3>
+                        <p className="text-sm text-gray-600">100 requests/minuto por usuario</p>
                       </div>
                     </div>
                   </CardContent>
@@ -167,6 +186,35 @@ export const ConfiguracionAvanzada = () => {
                         <div className="mt-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
                             Planificado
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>APIs y Webhooks</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h3 className="font-medium mb-2">REST API</h3>
+                        <p className="text-sm text-gray-600">v1.0 - Documentación Swagger disponible</p>
+                        <div className="mt-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                            Activo
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h3 className="font-medium mb-2">GraphQL Endpoint</h3>
+                        <p className="text-sm text-gray-600">Para consultas complejas de datos relacionados</p>
+                        <div className="mt-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                            Beta
                           </span>
                         </div>
                       </div>
