@@ -12,14 +12,16 @@ interface CreateOperacionFormWithCallbackProps {
 export const CreateOperacionFormWithCallback = ({ onClose, onSuccess }: CreateOperacionFormWithCallbackProps) => {
   const { createOperacion } = useOperaciones();
 
-  const handleSubmit = async (data: any) => {
+  // Override the default form submission
+  const handleFormSubmit = async (formData: any) => {
     try {
-      const newOperacion = await createOperacion(data);
+      const newOperacion = await createOperacion(formData);
       toast({
         title: "Operación creada",
         description: "La operación ha sido creada exitosamente.",
       });
       onSuccess(newOperacion.id);
+      onClose();
     } catch (error) {
       console.error('Error creating operacion:', error);
       toast({
@@ -30,5 +32,23 @@ export const CreateOperacionFormWithCallback = ({ onClose, onSuccess }: CreateOp
     }
   };
 
-  return <CreateOperacionForm onClose={onClose} onSubmit={handleSubmit} />;
+  // Create a modified CreateOperacionForm that handles our custom submission
+  const FormWrapper = () => {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Nueva Operación</h2>
+          <p className="mt-2 text-gray-600">
+            Complete la información básica de la operación
+          </p>
+        </div>
+        <CreateOperacionForm 
+          onClose={onClose}
+          onFormSubmit={handleFormSubmit}
+        />
+      </div>
+    );
+  };
+
+  return <FormWrapper />;
 };

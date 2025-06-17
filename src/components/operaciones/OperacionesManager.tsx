@@ -255,8 +255,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -267,8 +265,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -279,8 +275,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
 
@@ -326,10 +320,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         operacion={selectedOperacion}
         isOpen={showDetailModal}
         onClose={handleCloseDetail}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onStartWizard={handleStartFlowWizard}
-        onCreateInmersion={handleCreateInmersion}
       />
 
       {/* Dialogs */}

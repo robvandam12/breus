@@ -51,11 +51,7 @@ export const useOperationInmersionIntegration = () => {
           *,
           sitios:sitio_id(nombre, codigo, coordenadas_lat, coordenadas_lng, profundidad_maxima),
           equipos_buceo:equipo_buceo_id(
-            *,
-            miembros:equipo_buceo_miembros(
-              *,
-              usuario:usuario_id(nombre, apellido, email)
-            )
+            *
           ),
           usuario_supervisor:supervisor_asignado_id(nombre, apellido, email)
         `)
@@ -64,13 +60,29 @@ export const useOperationInmersionIntegration = () => {
 
       if (opError) throw opError;
 
+      // Obtener miembros del equipo por separado
+      let equipoBuzos: any[] = [];
+      if (operacion.equipo_buceo_id) {
+        const { data: miembros } = await supabase
+          .from('equipo_buceo_miembros')
+          .select(`
+            *,
+            usuario:usuario_id(nombre, apellido, email)
+          `)
+          .eq('equipo_id', operacion.equipo_buceo_id);
+        
+        equipoBuzos = miembros?.filter((m: any) => 
+          ['buzo', 'buzo_principal', 'buzo_asistente'].includes(m.rol_equipo)
+        ) || [];
+      }
+
       // Obtener datos de HPT
       const { data: hpt } = await supabase
         .from('hpt')
         .select('supervisor, profundidad_maxima, plan_trabajo')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
-        .single();
+        .maybeSingle();
 
       // Obtener datos de Anexo Bravo
       const { data: anexoBravo } = await supabase
@@ -78,13 +90,7 @@ export const useOperationInmersionIntegration = () => {
         .select('supervisor, lugar_faena')
         .eq('operacion_id', operacionId)
         .eq('firmado', true)
-        .single();
-
-      // Crear datos auto-poblados de forma segura
-      const equipoBuzos = operacion.equipos_buceo?.miembros ? 
-        operacion.equipos_buceo.miembros.filter((m: any) => 
-          ['buzo', 'buzo_principal', 'buzo_asistente'].includes(m.rol_equipo)
-        ) : [];
+        .maybeSingle();
 
       return {
         operacion,
@@ -182,8 +188,8 @@ export const useOperationInmersionIntegration = () => {
       const inmersionesWithBitacoras = await Promise.all(
         inmersiones.map(async (inmersion) => {
           const [supervisorBitacora, buzoBitacora] = await Promise.all([
-            supabase.from('bitacora_supervisor').select('firmado').eq('inmersion_id', inmersion.inmersion_id).single(),
-            supabase.from('bitacora_buzo').select('firmado').eq('inmersion_id', inmersion.inmersion_id).single()
+            supabase.from('bitacora_supervisor').select('firmado').eq('inmersion_id', inmersion.inmersion_id).maybeSingle(),
+            supabase.from('bitacora_buzo').select('firmado').eq('inmersion_id', inmersion.inmersion_id).maybeSingle()
           ]);
 
           return {
