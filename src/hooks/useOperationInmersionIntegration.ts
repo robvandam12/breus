@@ -80,17 +80,23 @@ export const useOperationInmersionIntegration = () => {
         .eq('firmado', true)
         .single();
 
+      // Crear datos auto-poblados de forma segura
+      const equipoBuzos = operacion.equipos_buceo?.miembros ? 
+        operacion.equipos_buceo.miembros.filter((m: any) => 
+          ['buzo', 'buzo_principal', 'buzo_asistente'].includes(m.rol_equipo)
+        ) : [];
+
       return {
         operacion,
         hpt,
         anexoBravo,
         autoPopulateData: {
-          supervisor: hpt?.supervisor || anexoBravo?.supervisor || operacion.usuario_supervisor?.nombre + ' ' + operacion.usuario_supervisor?.apellido,
+          supervisor: hpt?.supervisor || anexoBravo?.supervisor || 
+                     (operacion.usuario_supervisor ? 
+                      `${operacion.usuario_supervisor.nombre} ${operacion.usuario_supervisor.apellido}` : ''),
           profundidad_max: hpt?.profundidad_maxima || operacion.sitios?.profundidad_maxima || 30,
-          sitio_nombre: operacion.sitios?.nombre,
-          equipo_buzos: operacion.equipos_buceo?.miembros?.filter((m: any) => 
-            ['buzo', 'buzo_principal', 'buzo_asistente'].includes(m.rol_equipo)
-          )
+          sitio_nombre: operacion.sitios?.nombre || '',
+          equipo_buzos: equipoBuzos
         }
       };
     } catch (error) {
@@ -118,8 +124,12 @@ export const useOperationInmersionIntegration = () => {
         operacion_id: operacionId,
         supervisor: inmersionData.supervisor || operationData.autoPopulateData.supervisor,
         profundidad_max: inmersionData.profundidad_max || operationData.autoPopulateData.profundidad_max,
-        buzo_principal: inmersionData.buzo_principal || operationData.autoPopulateData.equipo_buzos?.[0]?.usuario?.nombre + ' ' + operationData.autoPopulateData.equipo_buzos?.[0]?.usuario?.apellido,
-        buzo_asistente: inmersionData.buzo_asistente || operationData.autoPopulateData.equipo_buzos?.[1]?.usuario?.nombre + ' ' + operationData.autoPopulateData.equipo_buzos?.[1]?.usuario?.apellido,
+        buzo_principal: inmersionData.buzo_principal || 
+          (operationData.autoPopulateData.equipo_buzos?.[0]?.usuario ? 
+           `${operationData.autoPopulateData.equipo_buzos[0].usuario.nombre} ${operationData.autoPopulateData.equipo_buzos[0].usuario.apellido}` : ''),
+        buzo_asistente: inmersionData.buzo_asistente || 
+          (operationData.autoPopulateData.equipo_buzos?.[1]?.usuario ? 
+           `${operationData.autoPopulateData.equipo_buzos[1].usuario.nombre} ${operationData.autoPopulateData.equipo_buzos[1].usuario.apellido}` : ''),
         hpt_validado: true,
         anexo_bravo_validado: true
       };

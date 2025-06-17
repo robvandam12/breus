@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
@@ -86,7 +85,6 @@ export default function Operaciones() {
       toast({
         title: "¡Operación Lista!",
         description: "La operación está completamente configurada y lista para inmersiones.",
-        duration: 5000,
       });
     };
 

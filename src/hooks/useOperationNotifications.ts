@@ -117,7 +117,6 @@ export const useOperationNotifications = (operacionId?: string) => {
     toast({
       title: "¡Operación Lista!",
       description: `La operación ${operacionCodigo} está completamente configurada y lista para inmersiones.`,
-      duration: 5000,
     });
   };
 

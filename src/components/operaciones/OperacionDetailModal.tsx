@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,18 +45,23 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
+  // Validación para evitar errores de null
+  if (!operacion) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
         {/* Header del Modal */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre}</h2>
-            <p className="text-gray-600">Código: {operacion.codigo}</p>
+            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre || 'Sin nombre'}</h2>
+            <p className="text-gray-600">Código: {operacion.codigo || 'Sin código'}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge className={getStatusColor(operacion.estado)}>
-              {operacion.estado}
+            <Badge className={getStatusColor(operacion.estado || 'activa')}>
+              {operacion.estado || 'activa'}
             </Badge>
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <Button 
