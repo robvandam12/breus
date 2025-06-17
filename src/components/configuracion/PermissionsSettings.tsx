@@ -233,8 +233,8 @@ export const PermissionsSettings = () => {
                         <div className="flex items-center gap-3">
                           <Switch
                             checked={hasPermission(permission, selectedRole)}
-                            readOnly
-                            className={hasPermission(permission, selectedRole) ? 'bg-green-600' : ''}
+                            disabled
+                            className={hasPermission(permission, selectedRole) ? 'data-[state=checked]:bg-green-600' : ''}
                           />
                           {hasPermission(permission, selectedRole) ? (
                             <Badge className="bg-green-100 text-green-800">
