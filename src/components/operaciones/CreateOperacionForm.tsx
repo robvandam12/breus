@@ -14,9 +14,10 @@ import { toast } from "@/hooks/use-toast";
 export interface CreateOperacionFormProps {
   onClose: () => void;
   onSubmitOverride?: (formData: any) => Promise<any>;
+  hideButtons?: boolean;
 }
 
-export const CreateOperacionForm = ({ onClose, onSubmitOverride }: CreateOperacionFormProps) => {
+export const CreateOperacionForm = ({ onClose, onSubmitOverride, hideButtons = false }: CreateOperacionFormProps) => {
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
@@ -186,14 +187,16 @@ export const CreateOperacionForm = ({ onClose, onSubmitOverride }: CreateOperaci
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Crear Operación
-            </Button>
-          </div>
+          {!hideButtons && (
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Crear Operación
+              </Button>
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>
