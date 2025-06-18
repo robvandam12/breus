@@ -18,7 +18,18 @@ export const useOperationWizardState = (operacionId?: string) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [stepData, setStepData] = useState<Record<string, any>>({});
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>(operacionId);
-  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // MEJORA: Estado mejorado de auto-guardado
+  const [autoSaveState, setAutoSaveState] = useState<{
+    status: 'idle' | 'saving' | 'saved' | 'error';
+    lastSaved?: Date;
+    timer?: NodeJS.Timeout;
+    retryCount: number;
+  }>({
+    status: 'idle',
+    retryCount: 0
+  });
+  
   const queryClient = useQueryClient();
 
   const steps: WizardStep[] = [
@@ -78,6 +89,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     queryFn: async () => {
       if (!wizardOperacionId) return null;
       
+      console.log('Fetching operation data for wizard:', wizardOperacionId);
       const { data, error } = await supabase
         .from('operacion')
         .select(`
@@ -89,39 +101,77 @@ export const useOperationWizardState = (operacionId?: string) => {
         .eq('id', wizardOperacionId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching operation:', error);
+        throw error;
+      }
+      
+      console.log('Operation data fetched:', data);
       return data;
     },
     enabled: !!wizardOperacionId,
     refetchInterval: 3000
   });
 
-  // Verificar documentos en tiempo real - Corregido para evitar error 400
+  // MEJORA: Verificar documentos en tiempo real con manejo robusto de errores
   const { data: documentStatus } = useQuery({
     queryKey: ['operation-documents', wizardOperacionId],
     queryFn: async () => {
       if (!wizardOperacionId) return { hptReady: false, anexoBravoReady: false };
       
-      const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1),
-        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1)
-      ]);
+      console.log('Checking document status for operation:', wizardOperacionId);
+      
+      try {
+        const [hptResult, anexoResult] = await Promise.all([
+          supabase
+            .from('hpt')
+            .select('id, firmado')
+            .eq('operacion_id', wizardOperacionId)
+            .eq('firmado', true)
+            .maybeSingle(),
+          
+          supabase
+            .from('anexo_bravo')
+            .select('id, firmado')
+            .eq('operacion_id', wizardOperacionId)
+            .eq('firmado', true)
+            .maybeSingle()
+        ]);
 
-      return {
-        hptReady: hptResult.data && hptResult.data.length > 0,
-        anexoBravoReady: anexoResult.data && anexoResult.data.length > 0
-      };
+        // Verificar errores reales (no PGRST116)
+        if (hptResult.error && hptResult.error.code !== 'PGRST116') {
+          console.error('Error checking HPT:', hptResult.error);
+          throw hptResult.error;
+        }
+
+        if (anexoResult.error && anexoResult.error.code !== 'PGRST116') {
+          console.error('Error checking Anexo Bravo:', anexoResult.error);
+          throw anexoResult.error;
+        }
+
+        const hptReady = !!hptResult.data;
+        const anexoBravoReady = !!anexoResult.data;
+        
+        console.log('Document status:', { hptReady, anexoBravoReady });
+
+        return { hptReady, anexoBravoReady };
+      } catch (error) {
+        console.error('Error checking documents:', error);
+        return { hptReady: false, anexoBravoReady: false };
+      }
     },
     enabled: !!wizardOperacionId,
     refetchInterval: 2000
   });
 
-  // Auto-guardado implementado
+  // MEJORA: Auto-guardado mejorado con retry y manejo de errores
   const autoSave = useCallback(async (data: any) => {
     if (!wizardOperacionId || !data) return;
 
     try {
-      // Filtrar valores vacíos y __empty__
+      setAutoSaveState(prev => ({ ...prev, status: 'saving' }));
+      
+      // Limpiar valores vacíos y __empty__
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
         if (value !== '' && value !== null && value !== undefined && value !== '__empty__') {
           acc[key] = value;
@@ -129,44 +179,84 @@ export const useOperationWizardState = (operacionId?: string) => {
         return acc;
       }, {} as any);
 
-      if (Object.keys(cleanData).length === 0) return;
+      if (Object.keys(cleanData).length === 0) {
+        setAutoSaveState(prev => ({ ...prev, status: 'idle' }));
+        return;
+      }
+
+      console.log('Auto-saving operation data:', cleanData);
 
       const { error } = await supabase
         .from('operacion')
         .update(cleanData)
         .eq('id', wizardOperacionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Auto-save error:', error);
+        throw error;
+      }
 
-      console.log('Auto-guardado exitoso:', cleanData);
+      setAutoSaveState({
+        status: 'saved',
+        lastSaved: new Date(),
+        retryCount: 0,
+        timer: undefined
+      });
+
+      // Cambiar a idle después de 2 segundos
+      setTimeout(() => {
+        setAutoSaveState(prev => ({ ...prev, status: 'idle' }));
+      }, 2000);
+
+      console.log('Auto-save successful');
     } catch (error) {
-      console.error('Error en auto-guardado:', error);
-    }
-  }, [wizardOperacionId]);
+      console.error('Error in auto-save:', error);
+      
+      setAutoSaveState(prev => ({
+        ...prev,
+        status: 'error',
+        retryCount: prev.retryCount + 1
+      }));
 
-  // Trigger auto-guardado con debounce
+      // Retry automático hasta 3 intentos
+      if (autoSaveState.retryCount < 3) {
+        setTimeout(() => {
+          autoSave(data);
+        }, 1000 * (autoSaveState.retryCount + 1)); // Backoff exponencial
+      } else {
+        toast({
+          title: "Error de guardado",
+          description: "No se pudieron guardar los cambios automáticamente. Por favor, guarde manualmente.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [wizardOperacionId, autoSaveState.retryCount]);
+
+  // MEJORA: Trigger auto-guardado con debounce mejorado
   const triggerAutoSave = useCallback((data: any) => {
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer);
+    // Limpiar timer anterior
+    if (autoSaveState.timer) {
+      clearTimeout(autoSaveState.timer);
     }
 
     const timer = setTimeout(() => {
       autoSave(data);
-    }, 2000); // Auto-guardado después de 2 segundos de inactividad
+    }, 2000); // Debounce de 2 segundos
 
-    setAutoSaveTimer(timer);
-  }, [autoSave, autoSaveTimer]);
+    setAutoSaveState(prev => ({ ...prev, timer }));
+  }, [autoSave, autoSaveState.timer]);
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
+      if (autoSaveState.timer) {
+        clearTimeout(autoSaveState.timer);
       }
     };
-  }, [autoSaveTimer]);
+  }, [autoSaveState.timer]);
 
-  // Calcular estado de los pasos dinámicamente
+  // MEJORA: Calcular estado de los pasos dinámicamente basado en datos reales
   const calculateStepsStatus = useCallback(() => {
     if (!operacion) return steps;
 
@@ -199,7 +289,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       }
     }
 
-    // HPT completado
+    // HPT completado (basado en datos reales)
     if (documentStatus?.hptReady) {
       const hptStep = updatedSteps.find(s => s.id === 'hpt');
       if (hptStep) {
@@ -208,7 +298,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       }
     }
 
-    // Anexo Bravo completado
+    // Anexo Bravo completado (basado en datos reales)
     if (documentStatus?.anexoBravoReady) {
       const anexoStep = updatedSteps.find(s => s.id === 'anexo-bravo');
       if (anexoStep) {
@@ -240,7 +330,7 @@ export const useOperationWizardState = (operacionId?: string) => {
   const currentSteps = calculateStepsStatus();
   const currentStep = currentSteps[currentStepIndex];
 
-  // Calcular progreso dinámico
+  // MEJORA: Calcular progreso dinámico real
   const completedSteps = currentSteps.filter(s => s.status === 'completed').length;
   const progress = (completedSteps / currentSteps.length) * 100;
 
@@ -251,6 +341,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     const targetStep = currentSteps[stepIndex];
     if (targetStep?.canNavigate || targetStep?.status === 'completed') {
       setCurrentStepIndex(stepIndex);
+      console.log('Navigated to step:', targetStep.id);
     } else {
       toast({
         title: "Paso no disponible",
@@ -266,6 +357,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       const nextStepData = currentSteps[nextIndex];
       if (nextStepData?.canNavigate || nextStepData?.status === 'completed') {
         setCurrentStepIndex(nextIndex);
+        console.log('Advanced to next step:', nextStepData.id);
       }
     }
   }, [currentStepIndex, currentSteps]);
@@ -273,10 +365,13 @@ export const useOperationWizardState = (operacionId?: string) => {
   const previousStep = useCallback(() => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex(prev => prev - 1);
+      console.log('Moved to previous step');
     }
   }, [currentStepIndex]);
 
   const completeStep = useCallback((stepId: string, data: any) => {
+    console.log('Completing step:', stepId, 'with data:', data);
+    
     setStepData(prev => ({
       ...prev,
       [stepId]: data
@@ -285,6 +380,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     // Si es el paso de operación, guardar el ID
     if (stepId === 'operacion' && data.operacionId) {
       setWizardOperacionId(data.operacionId);
+      console.log('Operation ID set:', data.operacionId);
     }
 
     // Trigger auto-guardado para otros datos
@@ -309,6 +405,7 @@ export const useOperationWizardState = (operacionId?: string) => {
   useEffect(() => {
     if (operacionId && operacionId !== wizardOperacionId) {
       setWizardOperacionId(operacionId);
+      console.log('Operation ID updated from prop:', operacionId);
     }
   }, [operacionId, wizardOperacionId]);
 
@@ -318,6 +415,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       const firstIncompleteIndex = currentSteps.findIndex(s => s.status === 'active' || s.status === 'pending');
       if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== currentStepIndex) {
         setCurrentStepIndex(firstIncompleteIndex);
+        console.log('Auto-navigated to first incomplete step:', firstIncompleteIndex);
       }
     }
   }, [isLoading, currentSteps, currentStepIndex]);
@@ -332,6 +430,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     operacionId: wizardOperacionId,
     isLoading,
     stepData,
+    autoSaveState, // NUEVO: Exponer estado de auto-guardado
     goToStep,
     nextStep,
     previousStep,
