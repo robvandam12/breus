@@ -41,6 +41,9 @@ export interface OperacionConRelaciones {
   usuario_supervisor?: { usuario_id: string; nombre: string; apellido: string };
 }
 
+// Exportar alias para compatibilidad con código existente
+export type Operacion = OperacionConRelaciones;
+
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
 
@@ -202,6 +205,55 @@ export const useOperaciones = () => {
     }
   };
 
+  // Función para validar completitud de operación
+  const validateOperacionCompleteness = async (operacionId: string) => {
+    try {
+      console.log('Validating operacion completeness:', operacionId);
+      
+      // Obtener datos de la operación
+      const { data: operacion, error: opError } = await supabase
+        .from('operacion')
+        .select('*')
+        .eq('id', operacionId)
+        .single();
+
+      if (opError) throw opError;
+
+      // Verificar documentos
+      const [hptResult, anexoResult] = await Promise.all([
+        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
+        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1)
+      ]);
+
+      const hptReady = hptResult.data && hptResult.data.length > 0;
+      const anexoBravoReady = anexoResult.data && anexoResult.data.length > 0;
+      const supervisorAsignado = !!operacion.supervisor_asignado_id;
+      const equipoAsignado = !!operacion.equipo_buceo_id;
+      const sitioAsignado = !!operacion.sitio_id;
+
+      const canExecute = hptReady && anexoBravoReady && supervisorAsignado && equipoAsignado && sitioAsignado;
+
+      return {
+        hptReady,
+        anexoBravoReady,
+        supervisorAsignado,
+        equipoAsignado,
+        sitioAsignado,
+        canExecute
+      };
+    } catch (error) {
+      console.error('Error validating operacion completeness:', error);
+      return {
+        hptReady: false,
+        anexoBravoReady: false,
+        supervisorAsignado: false,
+        equipoAsignado: false,
+        sitioAsignado: false,
+        canExecute: false
+      };
+    }
+  };
+
   const createOperacion = async (data: OperacionFormData) => {
     return createMutation.mutateAsync(data);
   };
@@ -223,6 +275,7 @@ export const useOperaciones = () => {
     updateOperacion,
     deleteOperacion,
     checkCanDelete,
+    validateOperacionCompleteness,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending

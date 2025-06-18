@@ -9,6 +9,7 @@ import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
+import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
 import { List, MapPin, Grid3X3, Workflow, CheckCircle } from "lucide-react";
@@ -100,7 +101,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
   };
 
   const handleEdit = async (operacion: any) => {
-    // En lugar de editar directamente, abrir modal de edición
     setSelectedOperacion(operacion);
     setShowEditModal(true);
   };

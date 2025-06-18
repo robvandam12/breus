@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +16,7 @@ import {
   Loader2,
   Plus
 } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperaciones, OperacionConRelaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
 import { toast } from "@/hooks/use-toast";
 
@@ -46,7 +45,7 @@ interface OperationStatus {
 }
 
 interface OperationStatusTrackerProps {
-  operaciones: any[];
+  operaciones: OperacionConRelaciones[];
 }
 
 export const OperationStatusTracker = ({ operaciones }: OperationStatusTrackerProps) => {
