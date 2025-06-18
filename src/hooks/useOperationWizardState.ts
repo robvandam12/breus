@@ -19,6 +19,8 @@ export const useOperationWizardState = (operacionId?: string) => {
   const [stepData, setStepData] = useState<Record<string, any>>({});
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>(operacionId);
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const queryClient = useQueryClient();
 
   const steps: WizardStep[] = [
@@ -78,6 +80,8 @@ export const useOperationWizardState = (operacionId?: string) => {
     queryFn: async () => {
       if (!wizardOperacionId) return null;
       
+      console.log('Fetching operation data for wizard:', wizardOperacionId);
+      
       const { data, error } = await supabase
         .from('operacion')
         .select(`
@@ -89,60 +93,102 @@ export const useOperationWizardState = (operacionId?: string) => {
         .eq('id', wizardOperacionId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching operation for wizard:', error);
+        throw error;
+      }
+      
+      console.log('Operation data fetched for wizard:', data);
       return data;
     },
     enabled: !!wizardOperacionId,
     refetchInterval: 3000
   });
 
-  // Verificar documentos en tiempo real - Corregido para evitar error 400
+  // Verificar documentos en tiempo real
   const { data: documentStatus } = useQuery({
     queryKey: ['operation-documents', wizardOperacionId],
     queryFn: async () => {
       if (!wizardOperacionId) return { hptReady: false, anexoBravoReady: false };
       
+      console.log('Checking document status for:', wizardOperacionId);
+      
       const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1),
-        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1)
+        supabase
+          .from('hpt')
+          .select('id, firmado')
+          .eq('operacion_id', wizardOperacionId)
+          .eq('firmado', true)
+          .maybeSingle(),
+        supabase
+          .from('anexo_bravo')
+          .select('id, firmado')
+          .eq('operacion_id', wizardOperacionId)
+          .eq('firmado', true)
+          .maybeSingle()
       ]);
 
-      return {
-        hptReady: hptResult.data && hptResult.data.length > 0,
-        anexoBravoReady: anexoResult.data && anexoResult.data.length > 0
+      const result = {
+        hptReady: !!hptResult.data,
+        anexoBravoReady: !!anexoResult.data
       };
+      
+      console.log('Document status check result:', result);
+      return result;
     },
     enabled: !!wizardOperacionId,
     refetchInterval: 2000
   });
 
-  // Auto-guardado implementado
-  const autoSave = useCallback(async (data: any) => {
-    if (!wizardOperacionId || !data) return;
+  // Auto-guardado mejorado
+  const performAutoSave = useCallback(async (data: any) => {
+    if (!wizardOperacionId || !data || isAutoSaving) return;
 
     try {
-      // Filtrar valores vacíos y __empty__
+      setIsAutoSaving(true);
+      console.log('Starting auto-save for operation:', wizardOperacionId, data);
+      
+      // Filtrar valores vacíos y especiales
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
         if (value !== '' && value !== null && value !== undefined && value !== '__empty__') {
-          acc[key] = value;
+          acc[key] = value === '__empty__' ? null : value;
         }
         return acc;
       }, {} as any);
 
-      if (Object.keys(cleanData).length === 0) return;
+      if (Object.keys(cleanData).length === 0) {
+        console.log('No data to save');
+        return;
+      }
 
       const { error } = await supabase
         .from('operacion')
         .update(cleanData)
         .eq('id', wizardOperacionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Auto-save error:', error);
+        throw error;
+      }
 
-      console.log('Auto-guardado exitoso:', cleanData);
+      setLastSaveTime(new Date());
+      console.log('Auto-save successful:', cleanData);
+      
+      // Actualizar cache
+      queryClient.invalidateQueries({ queryKey: ['operacion-wizard', wizardOperacionId] });
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      
     } catch (error) {
       console.error('Error en auto-guardado:', error);
+      toast({
+        title: "Error de guardado",
+        description: "No se pudo guardar automáticamente los cambios",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAutoSaving(false);
     }
-  }, [wizardOperacionId]);
+  }, [wizardOperacionId, isAutoSaving, queryClient]);
 
   // Trigger auto-guardado con debounce
   const triggerAutoSave = useCallback((data: any) => {
@@ -151,11 +197,11 @@ export const useOperationWizardState = (operacionId?: string) => {
     }
 
     const timer = setTimeout(() => {
-      autoSave(data);
-    }, 2000); // Auto-guardado después de 2 segundos de inactividad
+      performAutoSave(data);
+    }, 2000);
 
     setAutoSaveTimer(timer);
-  }, [autoSave, autoSaveTimer]);
+  }, [performAutoSave, autoSaveTimer]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -171,6 +217,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     if (!operacion) return steps;
 
     const updatedSteps = [...steps];
+    let foundFirstIncomplete = false;
     
     // Operación creada
     if (wizardOperacionId) {
@@ -188,6 +235,13 @@ export const useOperationWizardState = (operacionId?: string) => {
         sitioStep.status = 'completed';
         sitioStep.canNavigate = true;
       }
+    } else if (!foundFirstIncomplete) {
+      const sitioStep = updatedSteps.find(s => s.id === 'sitio');
+      if (sitioStep) {
+        sitioStep.status = 'active';
+        sitioStep.canNavigate = true;
+        foundFirstIncomplete = true;
+      }
     }
 
     // Equipo y supervisor asignados
@@ -196,6 +250,13 @@ export const useOperationWizardState = (operacionId?: string) => {
       if (equipoStep) {
         equipoStep.status = 'completed';
         equipoStep.canNavigate = true;
+      }
+    } else if (!foundFirstIncomplete && operacion.sitio_id) {
+      const equipoStep = updatedSteps.find(s => s.id === 'equipo');
+      if (equipoStep) {
+        equipoStep.status = 'active';
+        equipoStep.canNavigate = true;
+        foundFirstIncomplete = true;
       }
     }
 
@@ -206,6 +267,13 @@ export const useOperationWizardState = (operacionId?: string) => {
         hptStep.status = 'completed';
         hptStep.canNavigate = true;
       }
+    } else if (!foundFirstIncomplete && operacion.equipo_buceo_id && operacion.supervisor_asignado_id) {
+      const hptStep = updatedSteps.find(s => s.id === 'hpt');
+      if (hptStep) {
+        hptStep.status = 'active';
+        hptStep.canNavigate = true;
+        foundFirstIncomplete = true;
+      }
     }
 
     // Anexo Bravo completado
@@ -214,6 +282,13 @@ export const useOperationWizardState = (operacionId?: string) => {
       if (anexoStep) {
         anexoStep.status = 'completed';
         anexoStep.canNavigate = true;
+      }
+    } else if (!foundFirstIncomplete && documentStatus?.hptReady) {
+      const anexoStep = updatedSteps.find(s => s.id === 'anexo-bravo');
+      if (anexoStep) {
+        anexoStep.status = 'active';
+        anexoStep.canNavigate = true;
+        foundFirstIncomplete = true;
       }
     }
 
@@ -227,15 +302,8 @@ export const useOperationWizardState = (operacionId?: string) => {
       }
     }
 
-    // Marcar próximo paso disponible como activo
-    const firstIncomplete = updatedSteps.find(s => s.status === 'pending');
-    if (firstIncomplete) {
-      firstIncomplete.status = 'active';
-      firstIncomplete.canNavigate = true;
-    }
-
     return updatedSteps;
-  }, [operacion, documentStatus, wizardOperacionId]);
+  }, [operacion, documentStatus, wizardOperacionId, steps]);
 
   const currentSteps = calculateStepsStatus();
   const currentStep = currentSteps[currentStepIndex];
@@ -250,6 +318,7 @@ export const useOperationWizardState = (operacionId?: string) => {
   const goToStep = useCallback((stepIndex: number) => {
     const targetStep = currentSteps[stepIndex];
     if (targetStep?.canNavigate || targetStep?.status === 'completed') {
+      console.log('Navigating to step:', stepIndex, targetStep.title);
       setCurrentStepIndex(stepIndex);
     } else {
       toast({
@@ -265,6 +334,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     if (nextIndex < currentSteps.length) {
       const nextStepData = currentSteps[nextIndex];
       if (nextStepData?.canNavigate || nextStepData?.status === 'completed') {
+        console.log('Moving to next step:', nextIndex);
         setCurrentStepIndex(nextIndex);
       }
     }
@@ -272,11 +342,14 @@ export const useOperationWizardState = (operacionId?: string) => {
 
   const previousStep = useCallback(() => {
     if (currentStepIndex > 0) {
+      console.log('Moving to previous step:', currentStepIndex - 1);
       setCurrentStepIndex(prev => prev - 1);
     }
   }, [currentStepIndex]);
 
   const completeStep = useCallback((stepId: string, data: any) => {
+    console.log('Completing step:', stepId, data);
+    
     setStepData(prev => ({
       ...prev,
       [stepId]: data
@@ -293,34 +366,38 @@ export const useOperationWizardState = (operacionId?: string) => {
     }
 
     // Refrescar queries para actualizar estado
-    queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
-    queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
-    queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
+      queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+    }, 500);
 
     // Avanzar al siguiente paso automáticamente si no estamos en el último
     if (currentStepIndex < currentSteps.length - 1) {
       setTimeout(() => {
         nextStep();
-      }, 500);
+      }, 1000);
     }
   }, [currentStepIndex, currentSteps.length, nextStep, queryClient, triggerAutoSave]);
 
   // Actualizar operacionId cuando cambie el prop
   useEffect(() => {
     if (operacionId && operacionId !== wizardOperacionId) {
+      console.log('Updating wizard operation ID:', operacionId);
       setWizardOperacionId(operacionId);
     }
   }, [operacionId, wizardOperacionId]);
 
   // Auto-navegar al primer paso incompleto al cargar
   useEffect(() => {
-    if (!isLoading && currentSteps.length > 0) {
-      const firstIncompleteIndex = currentSteps.findIndex(s => s.status === 'active' || s.status === 'pending');
+    if (!isLoading && currentSteps.length > 0 && wizardOperacionId) {
+      const firstIncompleteIndex = currentSteps.findIndex(s => s.status === 'active');
       if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== currentStepIndex) {
+        console.log('Auto-navigating to first incomplete step:', firstIncompleteIndex);
         setCurrentStepIndex(firstIncompleteIndex);
       }
     }
-  }, [isLoading, currentSteps, currentStepIndex]);
+  }, [isLoading, currentSteps, currentStepIndex, wizardOperacionId]);
 
   return {
     steps: currentSteps,
@@ -332,6 +409,8 @@ export const useOperationWizardState = (operacionId?: string) => {
     operacionId: wizardOperacionId,
     isLoading,
     stepData,
+    isAutoSaving,
+    lastSaveTime,
     goToStep,
     nextStep,
     previousStep,
