@@ -8,12 +8,10 @@ import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView"
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
-import { OperationStatusTracker } from "@/components/operaciones/OperationStatusTracker";
-import { OperationTemplateManager } from "@/components/operaciones/OperationTemplateManager";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
-import { List, MapPin, Grid3X3, Workflow, BarChart3, FileText, Shield } from "lucide-react";
+import { List, MapPin, Grid3X3, Workflow, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
 import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
@@ -26,11 +24,10 @@ interface OperacionesManagerProps {
 
 export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "status");
+  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
-  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showValidationGateway, setShowValidationGateway] = useState(false);
   const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
   
@@ -99,15 +96,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         variant: "destructive",
       });
     }
-  };
-
-  const handleCreateFromTemplate = (template: any) => {
-    toast({
-      title: "Template seleccionado",
-      description: `Creando operación basada en "${template.nombre}"`,
-    });
-    setShowTemplateManager(false);
-    setShowFlowWizard(true);
   };
 
   const handleEdit = async (operacion: any) => {
@@ -208,25 +196,9 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
       />
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => setShowFlowWizard(true)}>
-          <Workflow className="w-4 h-4 mr-2" />
-          Wizard Completo
-        </Button>
-        <Button variant="outline" onClick={() => setShowTemplateManager(true)}>
-          <FileText className="w-4 h-4 mr-2" />
-          Templates
-        </Button>
-      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-muted p-1 h-10">
-          <TabsTrigger value="status" className="flex items-center gap-2 text-sm">
-            <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Estado</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-10">
           <TabsTrigger value="table" className="flex items-center gap-2 text-sm">
             <List className="w-4 h-4" />
             <span className="hidden sm:inline">Tabla</span>
@@ -239,15 +211,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Mapa</span>
           </TabsTrigger>
-          <TabsTrigger value="validation" className="flex items-center gap-2 text-sm">
-            <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">Validar</span>
-          </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="status" className="mt-6">
-          <OperationStatusTracker operaciones={filteredOperaciones} />
-        </TabsContent>
         
         <TabsContent value="table" className="mt-6">
           <OperacionesTable 
@@ -255,6 +219,8 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -265,6 +231,8 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -275,43 +243,9 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onStartWizard={handleStartFlowWizard}
+            onCreateInmersion={handleCreateInmersion}
           />
-        </TabsContent>
-
-        <TabsContent value="validation" className="mt-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Validación de Operaciones</h3>
-            <div className="grid gap-4">
-              {filteredOperaciones.map((operacion) => (
-                <div key={operacion.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{operacion.nombre}</h4>
-                      <p className="text-sm text-gray-600">{operacion.codigo}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleValidateOperacion(operacion.id)}
-                      >
-                        <Shield className="w-4 h-4 mr-2" />
-                        Validar
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleStartFlowWizard(operacion.id)}
-                      >
-                        <Workflow className="w-4 h-4 mr-2" />
-                        Wizard
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </TabsContent>
       </Tabs>
 
@@ -320,6 +254,8 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         operacion={selectedOperacion}
         isOpen={showDetailModal}
         onClose={handleCloseDetail}
+        onStartWizard={handleStartFlowWizard}
+        onCreateInmersion={handleCreateInmersion}
       />
 
       {/* Dialogs */}
@@ -334,18 +270,13 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showTemplateManager} onOpenChange={setShowTemplateManager}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <OperationTemplateManager 
-            onCreateFromTemplate={handleCreateFromTemplate}
-          />
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={showValidationGateway} onOpenChange={setShowValidationGateway}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Validación de Operación</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-blue-600" />
+              Validación de Operación
+            </DialogTitle>
           </DialogHeader>
           {selectedOperacionForValidation && (
             <ValidationGateway 

@@ -4,30 +4,25 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { Plus, Calendar, Workflow, FileText } from "lucide-react";
+import { Plus, Calendar, Workflow } from "lucide-react";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
-import { OperationTemplateManager } from "@/components/operaciones/OperationTemplateManager";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
-import { useRouter } from '@/hooks/useRouter';
 import { useOperationNotifications } from '@/hooks/useOperationNotifications';
 import { toast } from '@/hooks/use-toast';
 
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
-  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>();
   
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
-  const { navigateTo } = useRouter();
   
   // Obtener parámetros de URL para manejar el estado inicial
   const wizardParam = searchParams.get('wizard');
-  const templateParam = searchParams.get('template');
 
   // Setup notifications para operaciones globales
   useOperationNotifications();
@@ -42,15 +37,10 @@ export default function Operaciones() {
       setWizardOperacionId(wizardParam);
     }
 
-    if (templateParam === 'manage') {
-      setShowTemplateManager(true);
-    }
-
     // Limpiar parámetros después de procesarlos
-    if (wizardParam || templateParam) {
+    if (wizardParam) {
       const newParams = new URLSearchParams(searchParams);
-      if (wizardParam) newParams.delete('wizard');
-      if (templateParam) newParams.delete('template');
+      newParams.delete('wizard');
       
       const newUrl = newParams.toString() ? 
         `${window.location.pathname}?${newParams.toString()}` : 
@@ -58,12 +48,12 @@ export default function Operaciones() {
       
       window.history.replaceState({}, '', newUrl);
     }
-  }, [wizardParam, templateParam]);
+  }, [wizardParam]);
 
   // Escuchar eventos de actualización de operaciones
   useEffect(() => {
     const handleOperationUpdated = (event: CustomEvent) => {
-      const { operacionId, type } = event.detail;
+      const { type } = event.detail;
       
       switch (type) {
         case 'hpt_completed':
@@ -82,7 +72,6 @@ export default function Operaciones() {
     };
 
     const handleOperationReady = (event: CustomEvent) => {
-      const { operacionId } = event.detail;
       toast({
         title: "¡Operación Lista!",
         description: "La operación está completamente configurada y lista para inmersiones.",
@@ -105,16 +94,6 @@ export default function Operaciones() {
   const handleCloseFlowWizard = () => {
     setShowFlowWizard(false);
     setWizardOperacionId(undefined);
-  };
-
-  const handleCreateFromTemplate = (template: any) => {
-    setShowTemplateManager(false);
-    setShowFlowWizard(true);
-    setWizardOperacionId(undefined);
-    toast({
-      title: "Template seleccionado",
-      description: `Iniciando creación basada en "${template.nombre}"`,
-    });
   };
 
   const handleWizardComplete = () => {
@@ -162,14 +141,6 @@ export default function Operaciones() {
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            onClick={() => setShowTemplateManager(true)}
-            className="hidden md:flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Templates
-          </Button>
-          <Button 
-            variant="outline" 
             onClick={() => setShowFlowWizard(true)}
           >
             <Workflow className="w-4 h-4 mr-2" />
@@ -196,13 +167,6 @@ export default function Operaciones() {
           onStepChange={(stepId) => console.log('Wizard step:', stepId)}
           onComplete={handleWizardComplete}
           onCancel={handleCloseFlowWizard}
-        />
-      )}
-
-      {/* Gestión de templates */}
-      {renderDialog(showTemplateManager, () => setShowTemplateManager(false),
-        <OperationTemplateManager 
-          onCreateFromTemplate={handleCreateFromTemplate}
         />
       )}
     </MainLayout>

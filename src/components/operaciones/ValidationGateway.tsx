@@ -11,15 +11,17 @@ import {
   Shield, 
   FileText, 
   Users,
-  Eye,
   RefreshCw,
   Loader2,
   ExternalLink,
-  Plus
+  Plus,
+  Play
 } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ValidationItem {
   id: string;
@@ -46,15 +48,10 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
   const { validateOperacionCompleteness } = useOperaciones();
   const { navigateTo } = useRouter();
 
-  useEffect(() => {
-    if (operacionId) {
-      performValidation();
-    }
-  }, [operacionId]);
-
-  const performValidation = async () => {
-    setIsValidating(true);
-    try {
+  // Query para datos de validación en tiempo real
+  const { data: validationData, refetch, isLoading } = useQuery({
+    queryKey: ['operation-validation', operacionId],
+    queryFn: async () => {
       const validation = await validateOperacionCompleteness(operacionId);
       
       const items: ValidationItem[] = [
@@ -105,6 +102,17 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
           canCreate: false
         },
         {
+          id: 'sitio-asignado',
+          category: 'equipos',
+          title: 'Sitio Asignado',
+          description: 'Sitio de trabajo asignado a la operación',
+          status: validation.sitioAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.sitioAsignado ? 'Sitio asignado correctamente' : 'No hay sitio asignado',
+          actionRequired: validation.sitioAsignado ? undefined : 'Asignar sitio de trabajo',
+          canCreate: false
+        },
+        {
           id: 'ready-execute',
           category: 'seguridad',
           title: 'Lista para Ejecutar',
@@ -117,8 +125,27 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
         }
       ];
 
-      setValidationItems(items);
+      return { validation, items };
+    },
+    refetchInterval: 3000, // Refrescar cada 3 segundos
+    enabled: !!operacionId
+  });
+
+  useEffect(() => {
+    if (validationData) {
+      setValidationItems(validationData.items);
       setLastValidation(new Date());
+    }
+  }, [validationData]);
+
+  const performValidation = async () => {
+    setIsValidating(true);
+    try {
+      await refetch();
+      toast({
+        title: "Validación actualizada",
+        description: "El estado de validación ha sido actualizado.",
+      });
     } catch (error) {
       console.error('Error validating operation:', error);
       toast({
@@ -133,12 +160,12 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
 
   const handleActionClick = (item: ValidationItem) => {
     if (item.actionUrl) {
-      navigateTo(item.actionUrl);
-    } else if (item.id === 'personal-asignado' || item.id === 'equipo-verificado') {
-      // Navegar de vuelta al wizard en el paso correcto
+      // Abrir en nueva pestaña para no perder el wizard
+      window.open(item.actionUrl, '_blank');
+    } else if (item.id === 'personal-asignado' || item.id === 'equipo-verificado' || item.id === 'sitio-asignado') {
       toast({
-        title: "Configuración requerida",
-        description: "Use el wizard de operación para completar esta asignación.",
+        title: "Use el wizard",
+        description: "Complete esta asignación en los pasos anteriores del wizard.",
       });
     }
   };
@@ -216,6 +243,19 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
   const handleCreateInmersion = () => {
     navigateTo(`/inmersiones?operacion=${operacionId}`);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p>Cargando validaciones...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -334,13 +374,9 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
                           className="flex items-center gap-1"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          Ir
+                          Ver
                         </Button>
                       )}
-                      
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -363,7 +399,7 @@ export const ValidationGateway = ({ operacionId, onValidationComplete }: Validat
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
+                <Play className="w-4 h-4" />
                 Crear Inmersión
               </Button>
             )}
