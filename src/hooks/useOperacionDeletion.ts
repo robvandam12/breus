@@ -25,10 +25,14 @@ export const useOperacionDeletion = () => {
       return operacionId;
     },
     onSuccess: (deletedId) => {
-      // Forzar actualización inmediata del cache
+      console.log('Force delete success, updating cache for:', deletedId);
+      
+      // Actualización inmediata y agresiva del cache
       queryClient.setQueryData(['operaciones'], (oldData: any) => {
         if (!oldData) return [];
-        return oldData.filter((op: any) => op.id !== deletedId);
+        const filtered = oldData.filter((op: any) => op.id !== deletedId);
+        console.log('Cache updated, old length:', oldData.length, 'new length:', filtered.length);
+        return filtered;
       });
       
       // Invalidar múltiples queries relacionadas
@@ -36,10 +40,8 @@ export const useOperacionDeletion = () => {
       queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
       queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
       
-      // Refetch forzado
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['operaciones'] });
-      }, 100);
+      // Forzar refetch inmediato
+      queryClient.refetchQueries({ queryKey: ['operaciones'] });
 
       toast({
         title: "Operación eliminada",
@@ -79,6 +81,8 @@ export const useOperacionDeletion = () => {
           .maybeSingle()
       ]);
 
+      console.log('Dependency check results:', { hptResult, anexoResult, inmersionResult });
+
       // Verificar si hay documentos firmados o inmersiones
       if (hptResult.data?.firmado || anexoResult.data?.firmado || inmersionResult.data) {
         throw new Error('La operación tiene documentos firmados o inmersiones asociadas');
@@ -95,20 +99,23 @@ export const useOperacionDeletion = () => {
         throw error;
       }
 
+      console.log('Operation deleted successfully');
       return operacionId;
     },
     onSuccess: (deletedId) => {
-      // Actualización optimista del cache
+      console.log('Check and delete success for:', deletedId);
+      
+      // Actualización inmediata del cache
       queryClient.setQueryData(['operaciones'], (oldData: any) => {
         if (!oldData) return [];
-        return oldData.filter((op: any) => op.id !== deletedId);
+        const filtered = oldData.filter((op: any) => op.id !== deletedId);
+        console.log('Cache updated after check delete, old length:', oldData.length, 'new length:', filtered.length);
+        return filtered;
       });
       
-      // Invalidar y refetch
+      // Invalidar y forzar refetch
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['operaciones'] });
-      }, 200);
+      queryClient.refetchQueries({ queryKey: ['operaciones'] });
 
       toast({
         title: "Operación eliminada",
@@ -125,9 +132,42 @@ export const useOperacionDeletion = () => {
     }
   });
 
+  const deleteWithCacheUpdate = async (operacionId: string) => {
+    try {
+      console.log('Starting deletion process for:', operacionId);
+      
+      // Intentar eliminación normal primero
+      await checkAndDeleteMutation.mutateAsync(operacionId);
+      
+      // Forzar actualización adicional del cache después de un delay
+      setTimeout(() => {
+        console.log('Additional cache refresh for:', operacionId);
+        queryClient.setQueryData(['operaciones'], (oldData: any) => {
+          if (!oldData) return [];
+          return oldData.filter((op: any) => op.id !== operacionId);
+        });
+      }, 1000);
+      
+    } catch (error) {
+      console.log('Normal delete failed, trying force delete:', error);
+      // Si falla, intentar eliminación forzada
+      await forceDeleteMutation.mutateAsync(operacionId);
+      
+      // Forzar actualización adicional del cache
+      setTimeout(() => {
+        queryClient.setQueryData(['operaciones'], (oldData: any) => {
+          if (!oldData) return [];
+          return oldData.filter((op: any) => op.id !== operacionId);
+        });
+        queryClient.refetchQueries({ queryKey: ['operaciones'] });
+      }, 1000);
+    }
+  };
+
   return {
     forceDelete: forceDeleteMutation.mutateAsync,
     checkAndDelete: checkAndDeleteMutation.mutateAsync,
+    deleteWithCacheUpdate,
     isDeleting: forceDeleteMutation.isPending || checkAndDeleteMutation.isPending
   };
 };

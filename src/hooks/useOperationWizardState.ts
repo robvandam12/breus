@@ -87,7 +87,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     nextStep,
     previousStep,
     setCurrentStepIndex
-  } = useWizardSteps(operacion, documentStatus, wizardOperacionId);
+  } = use WizardSteps(operacion, documentStatus, wizardOperacionId);
 
   const { isAutoSaving, lastSaveTime, triggerAutoSave } = useWizardAutoSave(wizardOperacionId);
 
@@ -110,19 +110,17 @@ export const useOperationWizardState = (operacionId?: string) => {
     }
 
     // Refrescar queries para actualizar estado
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
-      queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
-      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
-    }, 500);
+    queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
+    queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
+    queryClient.invalidateQueries({ queryKey: ['operaciones'] });
 
-    // Avanzar al siguiente paso automáticamente si no estamos en el último
-    if (currentStepIndex < steps.length - 1) {
-      setTimeout(() => {
-        nextStep();
-      }, 1000);
-    }
-  }, [currentStepIndex, steps.length, nextStep, queryClient, triggerAutoSave]);
+    // Avanzar al siguiente paso automáticamente después de completar
+    setTimeout(() => {
+      console.log('Auto-advancing to next step after completion');
+      nextStep();
+    }, 1500);
+    
+  }, [nextStep, queryClient, triggerAutoSave]);
 
   // Actualizar operacionId cuando cambie el prop
   useEffect(() => {

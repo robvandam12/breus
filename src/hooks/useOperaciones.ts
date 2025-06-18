@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +45,7 @@ export type Operacion = OperacionConRelaciones;
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
-  const { forceDelete, checkAndDelete, isDeleting } = useOperacionDeletion();
+  const { forceDelete, checkAndDelete, deleteWithCacheUpdate, isDeleting } = useOperacionDeletion();
 
   const { data: operaciones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['operaciones'],
@@ -71,7 +70,9 @@ export const useOperaciones = () => {
 
       console.log('Operaciones fetched:', data);
       return data as OperacionConRelaciones[];
-    }
+    },
+    staleTime: 30000, // 30 segundos
+    refetchInterval: 60000, // Refetch cada minuto
   });
 
   const createMutation = useMutation({
@@ -225,18 +226,16 @@ export const useOperaciones = () => {
     return updateMutation.mutateAsync({ id, data });
   };
 
-  // Usar el nuevo hook de eliminación
+  // Usar el método mejorado de eliminación
   const deleteOperacion = async (id: string) => {
-    try {
-      await checkAndDelete(id);
-    } catch (error) {
-      // Si falla la eliminación normal, intentar forzar eliminación para operaciones vacías
-      try {
-        await forceDelete(id);
-      } catch (forceError) {
-        throw forceError;
-      }
-    }
+    console.log('Attempting to delete operacion:', id);
+    await deleteWithCacheUpdate(id);
+    
+    // Forzar refetch adicional después de un delay
+    setTimeout(() => {
+      console.log('Final refresh after delete');
+      refetch();
+    }, 2000);
   };
 
   const checkCanDelete = async (operacionId: string) => {

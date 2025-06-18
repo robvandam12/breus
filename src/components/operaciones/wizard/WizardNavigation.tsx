@@ -26,6 +26,25 @@ export const WizardNavigation = ({
   onNext,
   onFinish
 }: WizardNavigationProps) => {
+  
+  const canGoNext = () => {
+    if (!currentStep) return false;
+    
+    // Permitir avanzar si el paso está completado O si puede navegar
+    return currentStep.status === 'completed' || currentStep.canNavigate;
+  };
+
+  const handleNext = () => {
+    console.log('Next button clicked, current step:', currentStep);
+    console.log('Can go next:', canGoNext());
+    
+    if (canGoNext()) {
+      onNext();
+    } else {
+      console.log('Cannot advance: step not ready');
+    }
+  };
+
   return (
     <div className="flex justify-between">
       <Button
@@ -39,8 +58,8 @@ export const WizardNavigation = ({
       <div className="flex gap-2">
         {currentStepIndex < totalSteps - 1 && (
           <Button
-            onClick={onNext}
-            disabled={!currentStep?.canNavigate && currentStep?.status !== 'completed'}
+            onClick={handleNext}
+            disabled={!canGoNext()}
             className="flex items-center gap-2"
           >
             Siguiente →

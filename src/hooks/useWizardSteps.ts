@@ -85,6 +85,12 @@ export const useWizardSteps = (operacion: any, documentStatus: any, wizardOperac
         sitioStep.status = 'completed';
         sitioStep.canNavigate = true;
       }
+      // Habilitar siguiente paso
+      const equipoStep = updatedSteps.find(s => s.id === 'equipo');
+      if (equipoStep && equipoStep.status === 'pending') {
+        equipoStep.status = 'active';
+        equipoStep.canNavigate = true;
+      }
     } else if (wizardOperacionId) {
       const sitioStep = updatedSteps.find(s => s.id === 'sitio');
       if (sitioStep) {
@@ -100,11 +106,11 @@ export const useWizardSteps = (operacion: any, documentStatus: any, wizardOperac
         equipoStep.status = 'completed';
         equipoStep.canNavigate = true;
       }
-    } else if (operacion.sitio_id) {
-      const equipoStep = updatedSteps.find(s => s.id === 'equipo');
-      if (equipoStep) {
-        equipoStep.status = 'active';
-        equipoStep.canNavigate = true;
+      // Habilitar siguiente paso
+      const hptStep = updatedSteps.find(s => s.id === 'hpt');
+      if (hptStep && hptStep.status === 'pending') {
+        hptStep.status = 'active';
+        hptStep.canNavigate = true;
       }
     }
 
@@ -115,11 +121,11 @@ export const useWizardSteps = (operacion: any, documentStatus: any, wizardOperac
         hptStep.status = 'completed';
         hptStep.canNavigate = true;
       }
-    } else if (operacion.equipo_buceo_id && operacion.supervisor_asignado_id) {
-      const hptStep = updatedSteps.find(s => s.id === 'hpt');
-      if (hptStep) {
-        hptStep.status = 'active';
-        hptStep.canNavigate = true;
+      // Habilitar siguiente paso
+      const anexoStep = updatedSteps.find(s => s.id === 'anexo-bravo');
+      if (anexoStep && anexoStep.status === 'pending') {
+        anexoStep.status = 'active';
+        anexoStep.canNavigate = true;
       }
     }
 
@@ -130,27 +136,21 @@ export const useWizardSteps = (operacion: any, documentStatus: any, wizardOperac
         anexoStep.status = 'completed';
         anexoStep.canNavigate = true;
       }
-    } else if (documentStatus?.hptReady) {
-      const anexoStep = updatedSteps.find(s => s.id === 'anexo-bravo');
-      if (anexoStep) {
-        anexoStep.status = 'active';
-        anexoStep.canNavigate = true;
-      }
-    }
-
-    // Validación
-    const allPrevCompleted = updatedSteps.slice(0, -1).every(s => s.status === 'completed');
-    if (allPrevCompleted) {
+      // Habilitar validación
       const validationStep = updatedSteps.find(s => s.id === 'validation');
-      if (validationStep) {
+      if (validationStep && validationStep.status === 'pending') {
         validationStep.status = 'active';
         validationStep.canNavigate = true;
       }
     }
 
-    // Permitir navegación a pasos completados o activos
-    updatedSteps.forEach(step => {
-      if (step.status === 'completed' || step.status === 'active') {
+    // IMPORTANTE: Permitir navegación hacia atrás a pasos completados
+    updatedSteps.forEach((step, index) => {
+      if (step.status === 'completed') {
+        step.canNavigate = true;
+      }
+      // Permitir ir a paso activo actual
+      if (step.status === 'active') {
         step.canNavigate = true;
       }
     });
@@ -166,24 +166,40 @@ export const useWizardSteps = (operacion: any, documentStatus: any, wizardOperac
 
   const goToStep = useCallback((stepIndex: number) => {
     const targetStep = currentSteps[stepIndex];
+    console.log('Attempting to go to step:', stepIndex, targetStep);
+    
     if (targetStep?.canNavigate) {
+      console.log('Navigation allowed, changing to step:', stepIndex);
       setCurrentStepIndex(stepIndex);
+    } else {
+      console.log('Navigation not allowed to step:', stepIndex, 'canNavigate:', targetStep?.canNavigate);
     }
   }, [currentSteps]);
 
   const nextStep = useCallback(() => {
     const nextIndex = currentStepIndex + 1;
+    console.log('Next step requested. Current:', currentStepIndex, 'Next:', nextIndex);
+    
     if (nextIndex < currentSteps.length) {
       const nextStepData = currentSteps[nextIndex];
+      console.log('Next step data:', nextStepData);
+      
       if (nextStepData?.canNavigate) {
+        console.log('Moving to next step:', nextIndex);
         setCurrentStepIndex(nextIndex);
+      } else {
+        console.log('Cannot navigate to next step:', nextIndex, 'Step not ready');
       }
+    } else {
+      console.log('Already at last step');
     }
   }, [currentStepIndex, currentSteps]);
 
   const previousStep = useCallback(() => {
     if (currentStepIndex > 0) {
-      setCurrentStepIndex(prev => prev - 1);
+      const prevIndex = currentStepIndex - 1;
+      console.log('Moving to previous step:', prevIndex);
+      setCurrentStepIndex(prevIndex);
     }
   }, [currentStepIndex]);
 
