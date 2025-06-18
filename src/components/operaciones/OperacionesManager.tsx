@@ -1,167 +1,107 @@
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
-import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
-import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
-import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
-import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
-import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
-import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Eye, Edit, Trash2, Play, Settings, Bug } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
-import { List, MapPin, Grid3X3, Workflow, CheckCircle } from "lucide-react";
+import { EditOperacionForm } from "./EditOperacionForm";
+import { OperacionFlowTester } from "./OperacionFlowTester";
 import { toast } from "@/hooks/use-toast";
-import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
-import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface OperacionesManagerProps {
   onStartWizard?: (operacionId?: string) => void;
 }
 
 export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) => {
-  const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showFlowWizard, setShowFlowWizard] = useState(false);
-  const [showValidationGateway, setShowValidationGateway] = useState(false);
-  const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
+  const [editingOperacion, setEditingOperacion] = useState<any>(null);
+  const [showTester, setShowTester] = useState(false);
+  const [deletingOperacion, setDeletingOperacion] = useState<string | null>(null);
   
   const { 
     operaciones, 
-    isLoading,
-    updateOperacion, 
+    isLoading, 
     deleteOperacion, 
-    checkCanDelete 
+    updateOperacion,
+    checkCanDelete,
+    isDeleting 
   } = useOperaciones();
 
-  const { validateBeforeInmersion } = useOperationInmersionIntegration();
-  
-  const {
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    filteredOperaciones
-  } = useOperacionesFilters(operaciones);
-
-  const handleViewDetail = (operacion: any) => {
-    setSelectedOperacion(operacion);
-    setShowDetailModal(true);
+  const handleEdit = (operacion: any) => {
+    console.log('Editing operation:', operacion);
+    setEditingOperacion(operacion);
   };
 
-  const handleStartFlowWizard = (operacionId?: string) => {
-    if (onStartWizard) {
-      onStartWizard(operacionId);
-    } else {
-      if (operacionId) {
-        setSelectedOperacion(operaciones.find(op => op.id === operacionId));
-      }
-      setShowFlowWizard(true);
-    }
-  };
-
-  const handleValidateOperacion = (operacionId: string) => {
-    setSelectedOperacionForValidation(operacionId);
-    setShowValidationGateway(true);
-  };
-
-  const handleCreateInmersion = async (operacionId: string) => {
-    try {
-      const validation = await validateBeforeInmersion(operacionId);
-      
-      if (!validation.canProceed) {
-        toast({
-          title: "Operación no lista",
-          description: validation.message,
-          variant: "destructive",
-        });
-        
-        // Mostrar wizard de validación
-        handleValidateOperacion(operacionId);
-        return;
-      }
-
-      // Redirigir a crear inmersión
-      window.location.href = `/inmersiones?operacion=${operacionId}`;
-    } catch (error) {
-      console.error('Error validating for inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo validar la operación para inmersiones",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = async (operacion: any) => {
-    setSelectedOperacion(operacion);
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (updatedData: any) => {
-    if (!selectedOperacion) return;
+  const handleEditSubmit = async (data: any) => {
+    if (!editingOperacion) return;
     
     try {
-      // Limpiar datos - manejar valores especiales
-      const cleanData = {
-        codigo: updatedData.codigo,
-        nombre: updatedData.nombre,
-        tareas: updatedData.tareas,
-        fecha_inicio: updatedData.fecha_inicio,
-        fecha_fin: updatedData.fecha_fin,
-        estado: updatedData.estado,
-        estado_aprobacion: updatedData.estado_aprobacion,
-        salmonera_id: updatedData.salmonera_id === '__empty__' ? null : updatedData.salmonera_id,
-        contratista_id: updatedData.contratista_id === '__empty__' ? null : updatedData.contratista_id,
-        sitio_id: updatedData.sitio_id === '__empty__' ? null : updatedData.sitio_id,
-        servicio_id: updatedData.servicio_id === '__empty__' ? null : updatedData.servicio_id,
-        equipo_buceo_id: updatedData.equipo_buceo_id === '__empty__' ? null : updatedData.equipo_buceo_id,
-        supervisor_asignado_id: updatedData.supervisor_asignado_id === '__empty__' ? null : updatedData.supervisor_asignado_id
-      };
-
-      // Remover campos undefined o vacíos
-      Object.keys(cleanData).forEach(key => {
-        if (cleanData[key as keyof typeof cleanData] === undefined || cleanData[key as keyof typeof cleanData] === '') {
-          delete cleanData[key as keyof typeof cleanData];
-        }
+      console.log('Submitting edit with data:', data);
+      await updateOperacion({ id: editingOperacion.id, data });
+      setEditingOperacion(null);
+      toast({
+        title: "Operación actualizada",
+        description: "Los cambios han sido guardados exitosamente.",
       });
-
-      await updateOperacion({ id: selectedOperacion.id, data: cleanData });
-      setShowEditModal(false);
-    } catch (error: any) {
-      console.error('Error updating operacion:', error);
+    } catch (error) {
+      console.error('Error updating operation:', error);
       toast({
         title: "Error",
-        description: `No se pudo actualizar la operación: ${error.message || 'Error desconocido'}`,
+        description: "No se pudo actualizar la operación.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (operacionId: string) => {
     try {
-      const { canDelete, reason } = await checkCanDelete(id);
-      if (!canDelete) {
+      console.log('Checking if operation can be deleted:', operacionId);
+      const deleteCheck = await checkCanDelete(operacionId);
+      
+      if (!deleteCheck.canDelete) {
         toast({
           title: "No se puede eliminar",
-          description: `La operación no se puede eliminar porque ${reason}.`,
+          description: `Esta operación no se puede eliminar porque ${deleteCheck.reason}`,
           variant: "destructive",
         });
         return;
       }
-      await deleteOperacion(id);
+
+      setDeletingOperacion(operacionId);
+    } catch (error) {
+      console.error('Error checking delete permission:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo verificar si la operación se puede eliminar.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingOperacion) return;
+    
+    try {
+      console.log('Deleting operation:', deletingOperacion);
+      await deleteOperacion(deletingOperacion);
+      setDeletingOperacion(null);
       toast({
         title: "Operación eliminada",
         description: "La operación ha sido eliminada exitosamente.",
       });
     } catch (error) {
+      console.error('Error deleting operation:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la operación.",
@@ -170,143 +110,206 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     }
   };
 
-  const handleSelect = (operacion: any) => {
-    handleViewDetail(operacion);
+  const getEstadoBadgeColor = (estado: string) => {
+    switch (estado) {
+      case 'activa':
+        return 'bg-green-100 text-green-800';
+      case 'pausada':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completada':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handleCloseDetail = () => {
-    setShowDetailModal(false);
-    setSelectedOperacion(null);
+  const getAprobacionBadgeColor = (estado: string) => {
+    switch (estado) {
+      case 'aprobada':
+        return 'bg-green-100 text-green-800';
+      case 'rechazada':
+        return 'bg-red-100 text-red-800';
+      case 'pendiente':
+      default:
+        return 'bg-orange-100 text-orange-800';
+    }
   };
-  
+
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap gap-4 items-center">
-          <Skeleton className="h-10 flex-1 min-w-64" />
-          <Skeleton className="h-10 w-48" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-96 w-full" />
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">Cargando operaciones...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (showTester) {
+    return (
+      <div className="space-y-4">
+        <Button 
+          variant="outline" 
+          onClick={() => setShowTester(false)}
+          className="mb-4"
+        >
+          ← Volver al Manager
+        </Button>
+        <OperacionFlowTester />
+      </div>
+    );
+  }
+
+  if (editingOperacion) {
+    return (
+      <div className="space-y-4">
+        <Button 
+          variant="outline" 
+          onClick={() => setEditingOperacion(null)}
+          className="mb-4"
+        >
+          ← Volver al Listado
+        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>Editar Operación: {editingOperacion.codigo}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EditOperacionForm
+              operacion={editingOperacion}
+              onSubmit={handleEditSubmit}
+              onCancel={() => setEditingOperacion(null)}
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <OperacionesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-10">
-          <TabsTrigger value="table" className="flex items-center gap-2 text-sm">
-            <List className="w-4 h-4" />
-            <span className="hidden sm:inline">Tabla</span>
-          </TabsTrigger>
-          <TabsTrigger value="cards" className="flex items-center gap-2 text-sm">
-            <Grid3X3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Tarjetas</span>
-          </TabsTrigger>
-          <TabsTrigger value="map" className="flex items-center gap-2 text-sm">
-            <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">Mapa</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="table" className="mt-6">
-          <OperacionesTable 
-            operaciones={filteredOperaciones}
-            onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
-          />
-        </TabsContent>
-        
-        <TabsContent value="cards" className="mt-6">
-          <OperacionCardView 
-            operaciones={filteredOperaciones}
-            onSelect={handleSelect}
-            onEdit={handleEdit}
-            onViewDetail={handleViewDetail}
-            onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
-          />
-        </TabsContent>
-        
-        <TabsContent value="map" className="mt-6">
-          <OperacionesMapView 
-            operaciones={filteredOperaciones}
-            onSelect={handleSelect}
-            onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Header con botones de acción */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Gestión de Operaciones</h2>
+          <p className="text-gray-600">
+            Total: {operaciones.length} operaciones
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowTester(true)}
+          className="flex items-center gap-2"
+        >
+          <Bug className="w-4 h-4" />
+          Testing
+        </Button>
+      </div>
 
-      {/* Modal de detalle */}
-      <OperacionDetailModal
-        operacion={selectedOperacion}
-        isOpen={showDetailModal}
-        onClose={handleCloseDetail}
-        onStartWizard={handleStartFlowWizard}
-        onCreateInmersion={handleCreateInmersion}
-      />
+      {/* Lista de operaciones */}
+      <div className="grid gap-4">
+        {operaciones.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-gray-500 mb-4">No hay operaciones registradas</p>
+              <Button onClick={() => onStartWizard && onStartWizard()}>
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Primera Operación
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          operaciones.map((operacion) => (
+            <Card key={operacion.id} className="transition-all hover:shadow-md">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg">{operacion.codigo}</h3>
+                      <Badge className={getEstadoBadgeColor(operacion.estado)}>
+                        {operacion.estado}
+                      </Badge>
+                      <Badge className={getAprobacionBadgeColor(operacion.estado_aprobacion || 'pendiente')}>
+                        {operacion.estado_aprobacion || 'pendiente'}
+                      </Badge>
+                    </div>
+                    <p className="text-gray-600 mb-2">{operacion.nombre}</p>
+                    <div className="text-sm text-gray-500 space-y-1">
+                      <div>Fecha inicio: {operacion.fecha_inicio}</div>
+                      {operacion.sitios && (
+                        <div>Sitio: {operacion.sitios.nombre} ({operacion.sitios.codigo})</div>
+                      )}
+                      {operacion.equipos_buceo && (
+                        <div>Equipo: {operacion.equipos_buceo.nombre}</div>
+                      )}
+                      {operacion.usuario_supervisor && (
+                        <div>Supervisor: {operacion.usuario_supervisor.nombre} {operacion.usuario_supervisor.apellido}</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(operacion)}
+                      className="flex items-center gap-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                      Editar
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStartWizard && onStartWizard(operacion.id)}
+                      className="flex items-center gap-1"
+                    >
+                      <Settings className="w-3 h-3" />
+                      Wizard
+                    </Button>
 
-      {/* Modal de edición */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Editar Operación</DialogTitle>
-          </DialogHeader>
-          {selectedOperacion && (
-            <EditOperacionForm
-              operacion={selectedOperacion}
-              onSubmit={handleEditSubmit}
-              onCancel={() => setShowEditModal(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de wizard completo */}
-      <Dialog open={showFlowWizard} onOpenChange={setShowFlowWizard}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <OperationFlowWizard 
-            operacionId={selectedOperacion?.id}
-            onStepChange={(stepId) => console.log('Wizard step:', stepId)}
-            onComplete={() => setShowFlowWizard(false)}
-            onCancel={() => setShowFlowWizard(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de validación */}
-      <Dialog open={showValidationGateway} onOpenChange={setShowValidationGateway}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-blue-600" />
-              Validación de Operación
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOperacionForValidation && (
-            <ValidationGateway 
-              operacionId={selectedOperacionForValidation}
-              onValidationComplete={() => setShowValidationGateway(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(operacion.id)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Eliminar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Eliminar operación?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Solo se pueden eliminar operaciones que no tengan documentos firmados o inmersiones asociadas.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

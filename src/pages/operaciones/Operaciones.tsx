@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { Plus, Calendar, Workflow } from "lucide-react";
+import { Plus, Calendar, Workflow, Bug } from "lucide-react";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
 import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
+import { OperacionFlowTester } from "@/components/operaciones/OperacionFlowTester";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { useOperationNotifications } from '@/hooks/useOperationNotifications';
@@ -16,17 +16,21 @@ import { toast } from '@/hooks/use-toast';
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
+  const [showTester, setShowTester] = useState(false);
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>();
   
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   
   const wizardParam = searchParams.get('wizard');
+  const testParam = searchParams.get('test');
 
   useOperationNotifications();
 
   useEffect(() => {
-    if (wizardParam === 'new') {
+    if (testParam === 'true') {
+      setShowTester(true);
+    } else if (wizardParam === 'new') {
       setShowFlowWizard(true);
       setWizardOperacionId(undefined);
     } else if (wizardParam) {
@@ -34,9 +38,10 @@ export default function Operaciones() {
       setWizardOperacionId(wizardParam);
     }
 
-    if (wizardParam) {
+    if (wizardParam || testParam) {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('wizard');
+      newParams.delete('test');
       
       const newUrl = newParams.toString() ? 
         `${window.location.pathname}?${newParams.toString()}` : 
@@ -44,7 +49,7 @@ export default function Operaciones() {
       
       window.history.replaceState({}, '', newUrl);
     }
-  }, [wizardParam, searchParams]);
+  }, [wizardParam, testParam, searchParams]);
 
   useEffect(() => {
     const handleOperationUpdated = (event: CustomEvent) => {
@@ -91,6 +96,10 @@ export default function Operaciones() {
     setWizardOperacionId(undefined);
   };
 
+  const handleCloseTester = () => {
+    setShowTester(false);
+  };
+
   const handleWizardComplete = () => {
     setShowFlowWizard(false);
     setWizardOperacionId(undefined);
@@ -134,6 +143,15 @@ export default function Operaciones() {
       icon={Calendar}
       headerChildren={
         <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setShowTester(true)} 
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Bug className="w-4 h-4" />
+            Testing
+          </Button>
           <Button onClick={() => setShowCreateForm(true)} variant="outline">
             <Plus className="w-4 h-4 mr-2" />
             Nueva Operación
@@ -163,6 +181,11 @@ export default function Operaciones() {
           onComplete={handleWizardComplete}
           onCancel={handleCloseFlowWizard}
         />
+      )}
+
+      {/* Testing de flujos */}
+      {renderDialog(showTester, handleCloseTester,
+        <OperacionFlowTester />
       )}
     </MainLayout>
   );
