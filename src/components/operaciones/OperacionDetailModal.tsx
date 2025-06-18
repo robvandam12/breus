@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from "@/components/ui/badge";
-import { Edit } from "lucide-react";
+import { Edit, Workflow, Play } from "lucide-react";
 import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
 import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
 import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
@@ -19,9 +19,17 @@ interface OperacionDetailModalProps {
   operacion: any;
   isOpen: boolean;
   onClose: () => void;
+  onStartWizard?: (operacionId?: string) => void;
+  onCreateInmersion?: (operacionId: string) => void;
 }
 
-const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
+const OperacionDetailModal = ({ 
+  operacion, 
+  isOpen, 
+  onClose, 
+  onStartWizard,
+  onCreateInmersion 
+}: OperacionDetailModalProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
@@ -63,6 +71,26 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
             <Badge className={getStatusColor(operacion.estado || 'activa')}>
               {operacion.estado || 'activa'}
             </Badge>
+            {onStartWizard && (
+              <Button 
+                variant="outline"
+                onClick={() => onStartWizard(operacion.id)}
+                className="flex items-center gap-2"
+              >
+                <Workflow className="w-4 h-4" />
+                Wizard
+              </Button>
+            )}
+            {onCreateInmersion && (
+              <Button 
+                variant="outline"
+                onClick={() => onCreateInmersion(operacion.id)}
+                className="flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                Crear Inmersión
+              </Button>
+            )}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <Button 
                 variant="outline"

@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,9 +11,18 @@ interface OperacionesTableProps {
   onViewDetail: (operacion: OperacionConRelaciones) => void;
   onEdit: (operacion: OperacionConRelaciones) => void;
   onDelete: (operacionId: string) => void;
+  onStartWizard?: (operacionId?: string) => void;
+  onCreateInmersion?: (operacionId: string) => void;
 }
 
-export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }: OperacionesTableProps) => {
+export const OperacionesTable = ({ 
+  operaciones, 
+  onViewDetail, 
+  onEdit, 
+  onDelete, 
+  onStartWizard,
+  onCreateInmersion 
+}: OperacionesTableProps) => {
   const [sortConfig, setSortConfig] = useState<{ key: keyof OperacionConRelaciones | string; direction: 'ascending' | 'descending' } | null>({ key: 'created_at', direction: 'descending' });
   
   const getEstadoBadgeColor = (estado: string) => {
@@ -187,6 +195,8 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
                     onView={() => onViewDetail(operacion)}
                     onEdit={() => onEdit(operacion)}
                     onDelete={() => onDelete(operacion.id)}
+                    onStartWizard={onStartWizard ? () => onStartWizard(operacion.id) : undefined}
+                    onCreateInmersion={onCreateInmersion ? () => onCreateInmersion(operacion.id) : undefined}
                   />
                 </div>
               </div>

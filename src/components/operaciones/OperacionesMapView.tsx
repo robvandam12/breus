@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter } from "lucide-react";
+import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter, Workflow, Play } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSitios } from "@/hooks/useSitios";
 import { LeafletMap } from "@/components/ui/leaflet-map";
@@ -14,6 +14,8 @@ interface OperacionesMapViewProps {
   onViewDetail: (operacion: any) => void;
   onEdit: (operacion: any) => void;
   onDelete: (operacionId: string) => void;
+  onStartWizard?: (operacionId?: string) => void;
+  onCreateInmersion?: (operacionId: string) => void;
 }
 
 export const OperacionesMapView = ({ 
@@ -21,7 +23,9 @@ export const OperacionesMapView = ({
   onSelect, 
   onViewDetail, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onStartWizard,
+  onCreateInmersion 
 }: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
   const [regionFilter, setRegionFilter] = useState<string>('all');
@@ -213,6 +217,26 @@ export const OperacionesMapView = ({
                   >
                     <Settings className="w-4 h-4" />
                   </Button>
+                  {onStartWizard && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStartWizard(operacion.id)}
+                      className="ios-button-sm"
+                    >
+                      <Workflow className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {onCreateInmersion && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCreateInmersion(operacion.id)}
+                      className="ios-button-sm"
+                    >
+                      <Play className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
