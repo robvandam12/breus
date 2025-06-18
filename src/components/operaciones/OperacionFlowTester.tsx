@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ export const OperacionFlowTester = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const { operaciones, checkCanDelete, validateOperacionCompleteness } = useOperaciones();
 
-  const addTestResult = (step: string, status: 'success' | 'error', message: string) => {
+  const addTestResult = (step: string, status: 'success' | 'error' | 'pending', message: string) => {
     setTestResults(prev => [...prev, {
       step,
       status,

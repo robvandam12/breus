@@ -11,7 +11,25 @@ import { StepPersonal } from './wizard-steps/StepPersonal';
 import { StepCondiciones } from './wizard-steps/StepCondiciones';
 import { StepResumen } from './wizard-steps/StepResumen';
 
-export const InmersionFormWizard = ({
+interface ValidationStatus {
+  hptReady: boolean;
+  anexoBravoReady: boolean;
+  canExecute: boolean;
+  message?: string;
+}
+
+export interface InmersionFormWizardProps {
+  formData: any;
+  handleInputChange: any;
+  handleSubmit: any;
+  handleBack: any;
+  isLoading: any;
+  isFormValid: any;
+  selectedOperacionId: any;
+  validationStatus?: ValidationStatus;
+}
+
+export const InmersionFormWizard: React.FC<InmersionFormWizardProps> = ({
   formData,
   handleInputChange,
   handleSubmit,
@@ -19,6 +37,7 @@ export const InmersionFormWizard = ({
   isLoading,
   isFormValid,
   selectedOperacionId,
+  validationStatus
 }) => {
   const [formStep, setFormStep] = useState(1);
   const { operaciones } = useOperaciones();
