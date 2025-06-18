@@ -15,13 +15,14 @@ interface WizardStep {
 export const useOperationWizardState = (operacionId?: string) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [stepData, setStepData] = useState<Record<string, any>>({});
+  const [persistedOperacionId, setPersistedOperacionId] = useState<string | undefined>(operacionId);
 
   const steps: WizardStep[] = [
     {
       id: 'operacion',
       title: 'Operación',
       description: 'Crear operación básica',
-      status: operacionId ? 'completed' : 'active',
+      status: persistedOperacionId ? 'completed' : 'active',
       required: true
     },
     {
@@ -61,11 +62,10 @@ export const useOperationWizardState = (operacionId?: string) => {
     }
   ];
 
-  // Obtener datos de la operación
-  const { data: operacion, isLoading } = useQuery({
-    queryKey: ['operacion-wizard', operacionId],
+  const { data: operacion, isLoading, refetch } = useQuery({
+    queryKey: ['operacion-wizard', persistedOperacionId],
     queryFn: async () => {
-      if (!operacionId) return null;
+      if (!persistedOperacionId) return null;
       
       const { data, error } = await supabase
         .from('operacion')
@@ -75,37 +75,37 @@ export const useOperationWizardState = (operacionId?: string) => {
           equipos_buceo:equipo_buceo_id(nombre),
           usuario_supervisor:supervisor_asignado_id(nombre, apellido)
         `)
-        .eq('id', operacionId)
+        .eq('id', persistedOperacionId)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!operacionId
+    enabled: !!persistedOperacionId
   });
 
-  // Calcular estado de los pasos basado en la operación actual
-  useEffect(() => {
-    if (!operacion) return;
+  // Función para verificar documentos
+  const checkDocuments = useCallback(async () => {
+    if (!persistedOperacionId) return;
 
-    const updatedSteps = [...steps];
-    
-    if (operacion.sitio_id) {
-      const sitioStep = updatedSteps.find(s => s.id === 'sitio');
-      if (sitioStep) sitioStep.status = 'completed';
-    }
-
-    if (operacion.equipo_buceo_id && operacion.supervisor_asignado_id) {
-      const equipoStep = updatedSteps.find(s => s.id === 'equipo');
-      if (equipoStep) equipoStep.status = 'completed';
-    }
-
-    // Verificar HPT y Anexo Bravo
-    const checkDocuments = async () => {
+    try {
       const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('*').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle(),
-        supabase.from('anexo_bravo').select('*').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle()
+        supabase.from('hpt').select('*').eq('operacion_id', persistedOperacionId).eq('firmado', true).maybeSingle(),
+        supabase.from('anexo_bravo').select('*').eq('operacion_id', persistedOperacionId).eq('firmado', true).maybeSingle()
       ]);
+
+      const updatedSteps = [...steps];
+      
+      // Actualizar estado de los pasos basado en la operación actual
+      if (operacion?.sitio_id) {
+        const sitioStep = updatedSteps.find(s => s.id === 'sitio');
+        if (sitioStep) sitioStep.status = 'completed';
+      }
+
+      if (operacion?.equipo_buceo_id && operacion?.supervisor_asignado_id) {
+        const equipoStep = updatedSteps.find(s => s.id === 'equipo');
+        if (equipoStep) equipoStep.status = 'completed';
+      }
 
       if (hptResult.data) {
         const hptStep = updatedSteps.find(s => s.id === 'hpt');
@@ -117,25 +117,28 @@ export const useOperationWizardState = (operacionId?: string) => {
         if (anexoStep) anexoStep.status = 'completed';
       }
 
-      // Si todos los pasos anteriores están completos, marcar validación como activa
       const allPrevCompleted = updatedSteps.slice(0, -1).every(s => s.status === 'completed');
       if (allPrevCompleted) {
         const validationStep = updatedSteps.find(s => s.id === 'validation');
         if (validationStep) validationStep.status = 'active';
       }
-    };
 
-    checkDocuments();
-  }, [operacion, operacionId]);
+      return updatedSteps;
+    } catch (error) {
+      console.error('Error checking documents:', error);
+      return steps;
+    }
+  }, [persistedOperacionId, operacion]);
 
-  // Encontrar el paso actual activo
+  useEffect(() => {
+    if (operacion) {
+      checkDocuments();
+    }
+  }, [operacion, checkDocuments]);
+
   const currentStep = steps[currentStepIndex];
-
-  // Calcular progreso
   const completedSteps = steps.filter(s => s.status === 'completed').length;
   const progress = (completedSteps / steps.length) * 100;
-
-  // Verificar si se puede finalizar
   const canFinish = steps.every(s => !s.required || s.status === 'completed');
 
   const goToStep = useCallback((stepIndex: number) => {
@@ -160,10 +163,21 @@ export const useOperationWizardState = (operacionId?: string) => {
       [stepId]: data
     }));
 
+    if (stepId === 'operacion' && data.operacionId) {
+      setPersistedOperacionId(data.operacionId);
+    }
+
     const stepIndex = steps.findIndex(s => s.id === stepId);
     if (stepIndex !== -1) {
       steps[stepIndex].status = 'completed';
       steps[stepIndex].data = data;
+    }
+
+    // Auto-advance to next step if not at the end
+    if (stepIndex < steps.length - 1) {
+      const nextStepIndex = stepIndex + 1;
+      steps[nextStepIndex].status = 'active';
+      setCurrentStepIndex(nextStepIndex);
     }
   }, [steps]);
 
@@ -176,9 +190,11 @@ export const useOperationWizardState = (operacionId?: string) => {
     operacion,
     isLoading,
     stepData,
+    persistedOperacionId,
     goToStep,
     nextStep,
     previousStep,
-    completeStep
+    completeStep,
+    refetch
   };
 };
