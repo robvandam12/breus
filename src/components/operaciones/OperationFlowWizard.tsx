@@ -1,33 +1,31 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings, Play, Save } from "lucide-react";
-import { CreateOperacionFormWithCallback } from "@/components/operaciones/CreateOperacionFormWithCallback";
-import { OperacionSitioAssignment } from "@/components/operaciones/OperacionSitioAssignment";
-import { EnhancedOperacionEquipoAssignment } from "@/components/operaciones/EnhancedOperacionEquipoAssignment";
-import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
-import { useOperationWizardState } from "@/hooks/useOperationWizardState";
-import { useOperationNotifications } from "@/hooks/useOperationNotifications";
-import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Circle, AlertCircle, Clock, Workflow } from 'lucide-react';
+import { useOperationWizardState } from '@/hooks/useOperationWizardState';
+import { CreateOperacionForm } from './CreateOperacionForm';
+import { OperacionSitioAssignment } from './OperacionSitioAssignment';
+import { OperacionEquipoAssignment } from './OperacionEquipoAssignment';
+import { ValidationGateway } from './ValidationGateway';
+import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface OperationFlowWizardProps {
   operacionId?: string;
+  onComplete: () => void;
+  onCancel: () => void;
   onStepChange?: (stepId: string) => void;
-  onComplete?: () => void;
-  onCancel?: () => void;
 }
 
 export const OperationFlowWizard = ({ 
   operacionId, 
-  onStepChange, 
   onComplete, 
-  onCancel 
+  onCancel,
+  onStepChange 
 }: OperationFlowWizardProps) => {
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-
   const {
     steps,
     currentStep,
@@ -37,26 +35,15 @@ export const OperationFlowWizard = ({
     operacion,
     operacionId: wizardOperacionId,
     isLoading,
+    isAutoSaving,
+    lastSaveTime,
     goToStep,
     nextStep,
     previousStep,
-    completeStep,
-    refetch,
-    triggerAutoSave
+    completeStep
   } = useOperationWizardState(operacionId);
 
-  const { notifyStepComplete } = useOperationNotifications(wizardOperacionId);
-
-  // Auto-save status indicator
-  useEffect(() => {
-    if (autoSaveStatus === 'saving') {
-      const timer = setTimeout(() => {
-        setAutoSaveStatus('saved');
-        setTimeout(() => setAutoSaveStatus('idle'), 2000);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [autoSaveStatus]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (onStepChange && currentStep) {
@@ -64,236 +51,312 @@ export const OperationFlowWizard = ({
     }
   }, [currentStep, onStepChange]);
 
-  const handleCreateOperacion = (newOperacionId: string) => {
-    completeStep('operacion', { operacionId: newOperacionId });
-    notifyStepComplete('Operación creada');
-    toast({
-      title: "Operación creada",
-      description: "Operación creada exitosamente. Continuando con la asignación de sitio.",
-    });
+  const handleStepComplete = async (stepId: string, data: any) => {
+    try {
+      setErrors(prev => ({ ...prev, [stepId]: '' }));
+      
+      // Validar datos según el paso
+      const validation = validateStepData(stepId, data);
+      if (!validation.isValid) {
+        setErrors(prev => ({ ...prev, [stepId]: validation.error }));
+        toast({
+          title: "Error de validación",
+          description: validation.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await completeStep(stepId, data);
+      
+      toast({
+        title: "Paso completado",
+        description: `${currentStep?.title} completado exitosamente.`
+      });
+    } catch (error) {
+      console.error('Error completing step:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setErrors(prev => ({ ...prev, [stepId]: errorMessage }));
+      toast({
+        title: "Error",
+        description: `No se pudo completar el paso: ${errorMessage}`,
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSitioAssigned = (sitioId: string) => {
-    completeStep('sitio', { sitioId });
-    notifyStepComplete('Sitio asignado');
-    toast({
-      title: "Sitio asignado",
-      description: "Sitio asignado exitosamente. Continuando con la asignación de equipo.",
-    });
-    setAutoSaveStatus('saving');
-    refetch();
+  const validateStepData = (stepId: string, data: any) => {
+    switch (stepId) {
+      case 'operacion':
+        if (!data.operacionId) {
+          return { isValid: false, error: 'No se pudo crear la operación' };
+        }
+        break;
+      case 'sitio':
+        if (!data.sitio_id) {
+          return { isValid: false, error: 'Debe seleccionar un sitio' };
+        }
+        break;
+      case 'equipo':
+        if (!data.equipo_buceo_id || !data.supervisor_asignado_id) {
+          return { isValid: false, error: 'Debe asignar equipo y supervisor' };
+        }
+        break;
+    }
+    return { isValid: true, error: '' };
   };
 
-  const handleEquipoAssigned = (equipoId: string, supervisorId: string) => {
-    completeStep('equipo', { equipoId, supervisorId });
-    notifyStepComplete('Equipo asignado');
-    toast({
-      title: "Equipo asignado",
-      description: "Equipo y supervisor asignados exitosamente.",
-    });
-    setAutoSaveStatus('saving');
-    refetch();
-  };
+  const handleFinish = async () => {
+    if (!canFinish) {
+      toast({
+        title: "Operación incompleta",
+        description: "Complete todos los pasos requeridos antes de finalizar.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const handleValidationComplete = () => {
-    completeStep('validation', { validated: true });
-    notifyStepComplete('Validación completada');
-    if (onComplete) {
+    try {
+      toast({
+        title: "¡Operación completada!",
+        description: "La operación está lista para ejecutarse."
+      });
       onComplete();
+    } catch (error) {
+      console.error('Error finishing wizard:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo finalizar la operación.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleCreateInmersion = () => {
-    if (wizardOperacionId) {
-      window.location.href = `/inmersiones?operacion=${wizardOperacionId}`;
-    }
-  };
-
-  const getStepIcon = (status: string, index: number) => {
-    switch (status) {
+  const getStepIcon = (step: any) => {
+    switch (step.status) {
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'active':
-        return <Settings className="w-5 h-5 text-blue-600 animate-spin" />;
+        return <Circle className="w-5 h-5 text-blue-600" />;
       case 'error':
         return <AlertCircle className="w-5 h-5 text-red-600" />;
       default:
-        return <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center text-xs text-gray-500">{index + 1}</div>;
+        return <Clock className="w-5 h-5 text-gray-400" />;
     }
   };
 
-  const getStepBadgeColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'active':
-        return 'bg-blue-100 text-blue-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
+  const renderStepContent = () => {
+    if (!currentStep) return null;
+
+    switch (currentStep.id) {
+      case 'operacion':
+        return (
+          <CreateOperacionForm
+            onSubmit={(data) => handleStepComplete('operacion', { operacionId: data.id })}
+            onCancel={onCancel}
+            autoFocus={true}
+          />
+        );
+      case 'sitio':
+        return (
+          <OperacionSitioAssignment
+            operacionId={wizardOperacionId}
+            onComplete={(data) => handleStepComplete('sitio', data)}
+            showTitle={false}
+          />
+        );
+      case 'equipo':
+        return (
+          <OperacionEquipoAssignment
+            operacionId={wizardOperacionId}
+            onComplete={(data) => handleStepComplete('equipo', data)}
+            showTitle={false}
+          />
+        );
+      case 'hpt':
+        return (
+          <div className="text-center space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Crear Documento HPT
+              </h3>
+              <p className="text-blue-700 mb-4">
+                Abra el HPT en una nueva pestaña para completar el documento.
+              </p>
+              <Button
+                onClick={() => window.open(`/hpt?operacion=${wizardOperacionId}`, '_blank')}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Abrir HPT
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600">
+              El wizard detectará automáticamente cuando el HPT esté firmado.
+            </p>
+          </div>
+        );
+      case 'anexo-bravo':
+        return (
+          <div className="text-center space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">
+                Crear Anexo Bravo
+              </h3>
+              <p className="text-green-700 mb-4">
+                Abra el Anexo Bravo en una nueva pestaña para completar el documento.
+              </p>
+              <Button
+                onClick={() => window.open(`/anexo-bravo?operacion=${wizardOperacionId}`, '_blank')}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Abrir Anexo Bravo
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600">
+              El wizard detectará automáticamente cuando el Anexo Bravo esté firmado.
+            </p>
+          </div>
+        );
+      case 'validation':
+        return (
+          <ValidationGateway
+            operacionId={wizardOperacionId!}
+            onValidationComplete={handleFinish}
+          />
+        );
       default:
-        return 'bg-gray-100 text-gray-600';
+        return <div>Paso no implementado</div>;
     }
   };
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-6xl mx-auto">
-        <CardContent className="p-8">
-          <div className="text-center">Cargando wizard...</div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Cargando wizard...</p>
+        </div>
+      </div>
     );
   }
 
-  const isLastStep = currentStepIndex === steps.length - 1;
-
   return (
-    <Card className="w-full max-w-6xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl">Wizard de Operación</CardTitle>
-          <div className="flex items-center gap-4">
-            {/* Auto-save status indicator */}
-            {autoSaveStatus !== 'idle' && (
-              <div className="flex items-center gap-2 text-sm">
-                <Save className={`w-4 h-4 ${autoSaveStatus === 'saving' ? 'animate-spin text-blue-600' : 'text-green-600'}`} />
-                <span className={autoSaveStatus === 'saving' ? 'text-blue-600' : 'text-green-600'}>
-                  {autoSaveStatus === 'saving' ? 'Guardando...' : 'Guardado'}
-                </span>
-              </div>
-            )}
-            <span className="text-sm text-gray-600">
-              {Math.round(progress)}% Completado
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Workflow className="w-6 h-6 text-blue-600" />
+            Wizard de Operación
+          </h2>
+          {operacion && (
+            <p className="text-gray-600 mt-1">
+              {operacion.codigo} - {operacion.nombre}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {isAutoSaving && (
+            <Badge variant="secondary" className="text-xs">
+              Guardando...
+            </Badge>
+          )}
+          {lastSaveTime && (
+            <span className="text-xs text-gray-500">
+              Guardado: {lastSaveTime.toLocaleTimeString()}
             </span>
-            <Progress value={progress} className="w-32" />
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Progress Steps con navegación libre */}
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div 
-              key={step.id} 
-              className={`flex flex-col items-center cursor-pointer transition-all hover:scale-105 ${
-                step.canNavigate || step.status === 'completed' ? 'opacity-100' : 'opacity-50'
-              } ${index === currentStepIndex ? 'scale-110' : ''}`}
-              onClick={() => goToStep(index)}
-            >
-              <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center mb-2 transition-all ${
-                step.status === 'completed' 
-                  ? 'border-green-500 bg-green-50 shadow-lg' 
-                  : step.status === 'active'
-                  ? 'border-blue-500 bg-blue-50 shadow-lg'
-                  : 'border-gray-300 bg-gray-50'
-              } ${(step.canNavigate || step.status === 'completed') ? 'hover:shadow-xl' : ''}`}>
-                {getStepIcon(step.status, index)}
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium">{step.title}</div>
-                <Badge className={`mt-1 ${getStepBadgeColor(step.status)}`}>
-                  {step.status === 'completed' ? 'Completado' : 
-                   step.status === 'active' ? 'Activo' : 'Pendiente'}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Current Step Content */}
-        <div className="border rounded-lg p-6 bg-gray-50 min-h-[400px]">
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              {getStepIcon(currentStep?.status || 'pending', currentStepIndex)}
-              {currentStep?.title}
-            </h3>
-            <p className="text-gray-600">{currentStep?.description}</p>
-          </div>
-
-          {/* Step Content */}
-          {currentStep?.id === 'operacion' && (
-            <CreateOperacionFormWithCallback 
-              onClose={() => onCancel && onCancel()}
-              onSuccess={handleCreateOperacion}
-            />
-          )}
-
-          {currentStep?.id === 'sitio' && wizardOperacionId && (
-            <OperacionSitioAssignment
-              operacionId={wizardOperacionId}
-              currentSitioId={operacion?.sitio_id}
-              onComplete={handleSitioAssigned}
-            />
-          )}
-
-          {currentStep?.id === 'equipo' && wizardOperacionId && (
-            <EnhancedOperacionEquipoAssignment
-              operacionId={wizardOperacionId}
-              currentEquipoId={operacion?.equipo_buceo_id}
-              currentSupervisorId={operacion?.supervisor_asignado_id}
-              onComplete={handleEquipoAssigned}
-            />
-          )}
-
-          {(currentStep?.id === 'hpt' || currentStep?.id === 'anexo-bravo' || currentStep?.id === 'validation') && wizardOperacionId && (
-            <ValidationGateway
-              operacionId={wizardOperacionId}
-              onValidationComplete={handleValidationComplete}
-            />
           )}
         </div>
+      </div>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={previousStep}
-            disabled={currentStepIndex === 0}
-            className="flex items-center gap-2"
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span>Progreso</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
+      </div>
+
+      {/* Steps Navigation */}
+      <div className="grid grid-cols-6 gap-2">
+        {steps.map((step, index) => (
+          <button
+            key={step.id}
+            onClick={() => goToStep(index)}
+            disabled={!step.canNavigate}
+            className={`p-2 rounded-lg text-xs font-medium transition-colors ${
+              index === currentStepIndex
+                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                : step.status === 'completed'
+                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                : step.canNavigate
+                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Anterior
-          </Button>
+            <div className="flex items-center justify-center gap-1 mb-1">
+              {getStepIcon(step)}
+              <span className="text-xs">{index + 1}</span>
+            </div>
+            <div className="truncate">{step.title}</div>
+          </button>
+        ))}
+      </div>
 
-          <div className="flex items-center gap-2">
-            {onCancel && (
-              <Button variant="ghost" onClick={onCancel}>
-                Cancelar
-              </Button>
-            )}
-            
-            {canFinish ? (
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleCreateInmersion}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Crear Inmersión
-                </Button>
-                <Button 
-                  onClick={handleValidationComplete}
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Finalizar Wizard
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={nextStep}
-                disabled={currentStepIndex === steps.length - 1 || !currentStep?.canNavigate}
-                className="flex items-center gap-2"
-              >
-                {isLastStep ? 'Finalizar Wizard' : 'Siguiente'}
-                {!isLastStep && <ArrowRight className="w-4 h-4" />}
-              </Button>
-            )}
-          </div>
+      {/* Current Step Error */}
+      {errors[currentStep?.id || ''] && (
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-red-800">
+            {errors[currentStep?.id || '']}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Step Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {getStepIcon(currentStep)}
+            {currentStep?.title}
+          </CardTitle>
+          <p className="text-sm text-gray-600">{currentStep?.description}</p>
+        </CardHeader>
+        <CardContent>
+          {renderStepContent()}
+        </CardContent>
+      </Card>
+
+      {/* Navigation */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={currentStepIndex === 0 ? onCancel : previousStep}
+        >
+          {currentStepIndex === 0 ? 'Cancelar' : 'Anterior'}
+        </Button>
+        
+        <div className="flex gap-2">
+          {currentStepIndex < steps.length - 1 && (
+            <Button
+              onClick={nextStep}
+              disabled={!currentStep?.canNavigate}
+            >
+              Siguiente
+            </Button>
+          )}
+          
+          {canFinish && currentStep?.id === 'validation' && (
+            <Button
+              onClick={handleFinish}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Finalizar
+            </Button>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

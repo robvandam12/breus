@@ -147,6 +147,12 @@ export const useOperaciones = () => {
     mutationFn: async (id: string) => {
       console.log('Deleting operacion:', id);
       
+      // Verificar primero si se puede eliminar
+      const canDeleteResult = await checkCanDelete(id);
+      if (!canDeleteResult.canDelete) {
+        throw new Error(`No se puede eliminar la operación: ${canDeleteResult.reason}`);
+      }
+      
       const { error } = await supabase
         .from('operacion')
         .delete()
@@ -157,10 +163,12 @@ export const useOperaciones = () => {
         throw error;
       }
 
-      console.log('Operacion deleted');
+      console.log('Operacion deleted successfully');
     },
     onSuccess: () => {
+      // Forzar actualización de cache
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.refetchQueries({ queryKey: ['operaciones'] });
       toast({
         title: "Operación eliminada",
         description: "La operación ha sido eliminada exitosamente.",
