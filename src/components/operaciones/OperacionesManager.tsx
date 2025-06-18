@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
+import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
 import { List, MapPin, Grid3X3, Workflow, CheckCircle } from "lucide-react";
@@ -97,13 +97,11 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     }
   };
 
-  // CORREGIDO: Cambiar para abrir modal de edición en lugar de actualizar directamente
   const handleEdit = async (operacion: any) => {
     setSelectedOperacion(operacion);
     setShowEditModal(true);
   };
 
-  // Nueva función para manejar la actualización desde el modal
   const handleUpdateOperacion = async (data: any) => {
     try {
       const cleanData = {
@@ -141,7 +139,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     }
   };
 
-  // CORREGIDO: Mejorar la lógica de eliminación para operaciones vacías
   const handleDelete = async (id: string) => {
     try {
       const { canDelete, reason } = await checkCanDelete(id);
