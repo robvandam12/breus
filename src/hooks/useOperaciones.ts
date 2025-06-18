@@ -177,62 +177,27 @@ export const useOperaciones = () => {
     }
   });
 
-  // FIX: Corregir query malformado - usar maybeSingle() para evitar errores 400
   const checkCanDelete = async (operacionId: string) => {
     try {
-      console.log('Checking if operation can be deleted:', operacionId);
-      
-      // Verificar si hay documentos firmados (HPT, Anexo Bravo, etc.)
+      // Verificar si hay documentos firmados (HPT, Anexo Bravo, etc.) - Corregido para evitar 400 error
       const [hptResult, anexoResult, inmersionResult] = await Promise.all([
-        supabase
-          .from('hpt')
-          .select('id')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle(),
-        
-        supabase
-          .from('anexo_bravo')
-          .select('id')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle(),
-        
-        supabase
-          .from('inmersion')
-          .select('inmersion_id')
-          .eq('operacion_id', operacionId)
-          .maybeSingle()
+        supabase.from('hpt').select('id').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
+        supabase.from('anexo_bravo').select('id').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
+        supabase.from('inmersion').select('inmersion_id').eq('operacion_id', operacionId).limit(1)
       ]);
 
-      if (hptResult.error && hptResult.error.code !== 'PGRST116') {
-        console.error('Error checking HPT:', hptResult.error);
-        return { canDelete: false, reason: 'error al verificar HPT' };
-      }
-
-      if (anexoResult.error && anexoResult.error.code !== 'PGRST116') {
-        console.error('Error checking Anexo Bravo:', anexoResult.error);
-        return { canDelete: false, reason: 'error al verificar Anexo Bravo' };
-      }
-
-      if (inmersionResult.error && inmersionResult.error.code !== 'PGRST116') {
-        console.error('Error checking inmersiones:', inmersionResult.error);
-        return { canDelete: false, reason: 'error al verificar inmersiones' };
-      }
-
-      if (hptResult.data) {
+      if (hptResult.data && hptResult.data.length > 0) {
         return { canDelete: false, reason: 'tiene documentos HPT firmados' };
       }
 
-      if (anexoResult.data) {
+      if (anexoResult.data && anexoResult.data.length > 0) {
         return { canDelete: false, reason: 'tiene documentos Anexo Bravo firmados' };
       }
 
-      if (inmersionResult.data) {
+      if (inmersionResult.data && inmersionResult.data.length > 0) {
         return { canDelete: false, reason: 'tiene inmersiones asociadas' };
       }
 
-      console.log('Operation can be deleted');
       return { canDelete: true, reason: '' };
     } catch (error) {
       console.error('Error checking if operation can be deleted:', error);
@@ -240,7 +205,7 @@ export const useOperaciones = () => {
     }
   };
 
-  // FIX: Corregir query malformado - usar maybeSingle() para evitar errores 400
+  // Función para validar completitud de operación - Corregida para evitar 400 error
   const validateOperacionCompleteness = async (operacionId: string) => {
     try {
       console.log('Validating operacion completeness:', operacionId);
@@ -252,55 +217,21 @@ export const useOperaciones = () => {
         .eq('id', operacionId)
         .single();
 
-      if (opError) {
-        console.error('Error fetching operacion:', opError);
-        throw opError;
-      }
+      if (opError) throw opError;
 
-      // Verificar documentos usando maybeSingle()
+      // Verificar documentos - Corregido para evitar 400 error
       const [hptResult, anexoResult] = await Promise.all([
-        supabase
-          .from('hpt')
-          .select('id, firmado')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle(),
-        
-        supabase
-          .from('anexo_bravo')
-          .select('id, firmado')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle()
+        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
+        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1)
       ]);
 
-      // Verificar errores reales (no PGRST116 que indica "no data found")
-      if (hptResult.error && hptResult.error.code !== 'PGRST116') {
-        console.error('Error checking HPT:', hptResult.error);
-        throw hptResult.error;
-      }
-
-      if (anexoResult.error && anexoResult.error.code !== 'PGRST116') {
-        console.error('Error checking Anexo Bravo:', anexoResult.error);
-        throw anexoResult.error;
-      }
-
-      const hptReady = !!hptResult.data;
-      const anexoBravoReady = !!anexoResult.data;
+      const hptReady = hptResult.data && hptResult.data.length > 0;
+      const anexoBravoReady = anexoResult.data && anexoResult.data.length > 0;
       const supervisorAsignado = !!operacion.supervisor_asignado_id;
       const equipoAsignado = !!operacion.equipo_buceo_id;
       const sitioAsignado = !!operacion.sitio_id;
 
       const canExecute = hptReady && anexoBravoReady && supervisorAsignado && equipoAsignado && sitioAsignado;
-
-      console.log('Validation result:', {
-        hptReady,
-        anexoBravoReady,
-        supervisorAsignado,
-        equipoAsignado,
-        sitioAsignado,
-        canExecute
-      });
 
       return {
         hptReady,

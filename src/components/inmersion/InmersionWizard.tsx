@@ -1,13 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Anchor, AlertTriangle } from 'lucide-react';
+import { Anchor } from 'lucide-react';
 import { InmersionOperationSelector } from './InmersionOperationSelector';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
-import { useOperationErrorHandler } from '@/hooks/useOperationErrorHandler';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InmersionFormWizard } from './InmersionFormWizard';
@@ -26,16 +23,9 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(initialOperationId ? 2 : 1);
   const [selectedOperacionId, setSelectedOperacionId] = useState(initialOperationId || '');
   const [isLoading, setIsLoading] = useState(false);
-  const [validationStatus, setValidationStatus] = useState<{
-    hptReady: boolean;
-    anexoBravoReady: boolean;
-    canExecute: boolean;
-    message?: string;
-  }>({ hptReady: false, anexoBravoReady: false, canExecute: false });
   
-  const { operaciones, validateOperacionCompleteness } = useOperaciones();
+  const { operaciones } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
-  const { handleAndShowError } = useOperationErrorHandler();
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -57,36 +47,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
     estado: 'planificada',
     equipo_buceo_id: ''
   });
-
-  // Validar operación al seleccionar
-  useEffect(() => {
-    const validateSelectedOperation = async () => {
-      if (!selectedOperacionId) return;
-
-      try {
-        console.log('Validating operation for immersion:', selectedOperacionId);
-        const validation = await validateOperacionCompleteness(selectedOperacionId);
-        setValidationStatus({
-          hptReady: validation.hptReady,
-          anexoBravoReady: validation.anexoBravoReady,
-          canExecute: validation.canExecute,
-          message: validation.canExecute 
-            ? 'Operación lista para inmersiones' 
-            : 'Operación incompleta - complete HPT y Anexo Bravo antes de crear inmersiones'
-        });
-      } catch (error) {
-        handleAndShowError(error, 'operation-validation');
-        setValidationStatus({
-          hptReady: false,
-          anexoBravoReady: false,
-          canExecute: false,
-          message: 'Error al validar operación'
-        });
-      }
-    };
-
-    validateSelectedOperation();
-  }, [selectedOperacionId, validateOperacionCompleteness, handleAndShowError]);
 
   // Auto-populate data when operation is selected
   useEffect(() => {
@@ -186,12 +146,17 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           description: "Los datos de la operación han sido cargados automáticamente.",
         });
       } catch (error) {
-        handleAndShowError(error, 'operation-data-population');
+        console.error('Error populating operation data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos de la operación.",
+          variant: "destructive",
+        });
       }
     };
 
     populateOperationData();
-  }, [selectedOperacionId, equipos, operaciones, handleAndShowError]);
+  }, [selectedOperacionId, equipos, operaciones]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setSelectedOperacionId(operacionId);
@@ -212,15 +177,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
       return;
     }
 
-    if (!validationStatus.canExecute) {
-      toast({
-        title: "Operación no válida",
-        description: "Complete HPT y Anexo Bravo antes de crear inmersiones",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const submitData = {
@@ -233,7 +189,12 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
       };
       await onComplete(submitData);
     } catch (error) {
-      handleAndShowError(error, 'inmersion-creation');
+      console.error('Error creating inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -296,27 +257,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           </Card>
         )}
 
-        {/* Validation Status Alert */}
-        <Alert className={validationStatus.canExecute ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
-          {validationStatus.canExecute ? (
-            <div className="flex items-center gap-2 text-green-800">
-              <span>✅ Operación validada</span>
-            </div>
-          ) : (
-            <AlertTriangle className="h-4 w-4" />
-          )}
-          <AlertDescription className={validationStatus.canExecute ? "text-green-800" : "text-yellow-800"}>
-            <strong>Estado de validación:</strong> {validationStatus.message}
-            {!validationStatus.canExecute && (
-              <div className="mt-2 text-sm">
-                • HPT: {validationStatus.hptReady ? '✅ Completado' : '❌ Pendiente'}
-                <br />
-                • Anexo Bravo: {validationStatus.anexoBravoReady ? '✅ Completado' : '❌ Pendiente'}
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
-
         <InmersionFormWizard
           formData={formData}
           handleInputChange={handleInputChange}
@@ -325,7 +265,6 @@ export const InmersionWizard: React.FC<InmersionWizardProps> = ({
           isLoading={isLoading}
           isFormValid={isFormValid}
           selectedOperacionId={selectedOperacionId}
-          validationStatus={validationStatus}
         />
       </div>
     );

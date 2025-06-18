@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings, Play, Save, Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings, Play, Save } from "lucide-react";
 import { CreateOperacionFormWithCallback } from "@/components/operaciones/CreateOperacionFormWithCallback";
 import { OperacionSitioAssignment } from "@/components/operaciones/OperacionSitioAssignment";
 import { EnhancedOperacionEquipoAssignment } from "@/components/operaciones/EnhancedOperacionEquipoAssignment";
@@ -26,6 +26,8 @@ export const OperationFlowWizard = ({
   onComplete, 
   onCancel 
 }: OperationFlowWizardProps) => {
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
   const {
     steps,
     currentStep,
@@ -35,7 +37,6 @@ export const OperationFlowWizard = ({
     operacion,
     operacionId: wizardOperacionId,
     isLoading,
-    autoSaveState, // NUEVO: Estado de auto-guardado
     goToStep,
     nextStep,
     previousStep,
@@ -46,6 +47,17 @@ export const OperationFlowWizard = ({
 
   const { notifyStepComplete } = useOperationNotifications(wizardOperacionId);
 
+  // Auto-save status indicator
+  useEffect(() => {
+    if (autoSaveStatus === 'saving') {
+      const timer = setTimeout(() => {
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [autoSaveStatus]);
+
   useEffect(() => {
     if (onStepChange && currentStep) {
       onStepChange(currentStep.id);
@@ -53,7 +65,6 @@ export const OperationFlowWizard = ({
   }, [currentStep, onStepChange]);
 
   const handleCreateOperacion = (newOperacionId: string) => {
-    console.log('Operation created in wizard:', newOperacionId);
     completeStep('operacion', { operacionId: newOperacionId });
     notifyStepComplete('Operación creada');
     toast({
@@ -63,29 +74,28 @@ export const OperationFlowWizard = ({
   };
 
   const handleSitioAssigned = (sitioId: string) => {
-    console.log('Site assigned in wizard:', sitioId);
     completeStep('sitio', { sitioId });
     notifyStepComplete('Sitio asignado');
     toast({
       title: "Sitio asignado",
       description: "Sitio asignado exitosamente. Continuando con la asignación de equipo.",
     });
+    setAutoSaveStatus('saving');
     refetch();
   };
 
   const handleEquipoAssigned = (equipoId: string, supervisorId: string) => {
-    console.log('Team assigned in wizard:', { equipoId, supervisorId });
     completeStep('equipo', { equipoId, supervisorId });
     notifyStepComplete('Equipo asignado');
     toast({
       title: "Equipo asignado",
       description: "Equipo y supervisor asignados exitosamente.",
     });
+    setAutoSaveStatus('saving');
     refetch();
   };
 
   const handleValidationComplete = () => {
-    console.log('Validation completed in wizard');
     completeStep('validation', { validated: true });
     notifyStepComplete('Validación completada');
     if (onComplete) {
@@ -95,7 +105,6 @@ export const OperationFlowWizard = ({
 
   const handleCreateInmersion = () => {
     if (wizardOperacionId) {
-      console.log('Redirecting to create immersion for operation:', wizardOperacionId);
       window.location.href = `/inmersiones?operacion=${wizardOperacionId}`;
     }
   };
@@ -126,39 +135,6 @@ export const OperationFlowWizard = ({
     }
   };
 
-  // MEJORA: Función para renderizar indicador de auto-guardado
-  const renderAutoSaveIndicator = () => {
-    const { status, lastSaved } = autoSaveState;
-    
-    switch (status) {
-      case 'saving':
-        return (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <Save className="w-4 h-4 animate-spin" />
-            <span>Guardando...</span>
-          </div>
-        );
-      case 'saved':
-        return (
-          <div className="flex items-center gap-2 text-sm text-green-600">
-            <Wifi className="w-4 h-4" />
-            <span>
-              Guardado {lastSaved && `a las ${lastSaved.toLocaleTimeString()}`}
-            </span>
-          </div>
-        );
-      case 'error':
-        return (
-          <div className="flex items-center gap-2 text-sm text-red-600">
-            <WifiOff className="w-4 h-4" />
-            <span>Error de guardado</span>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   if (isLoading) {
     return (
       <Card className="w-full max-w-6xl mx-auto">
@@ -177,34 +153,25 @@ export const OperationFlowWizard = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl">Wizard de Operación</CardTitle>
           <div className="flex items-center gap-4">
-            {/* MEJORA: Indicador de auto-guardado */}
-            {renderAutoSaveIndicator()}
-            
+            {/* Auto-save status indicator */}
+            {autoSaveStatus !== 'idle' && (
+              <div className="flex items-center gap-2 text-sm">
+                <Save className={`w-4 h-4 ${autoSaveStatus === 'saving' ? 'animate-spin text-blue-600' : 'text-green-600'}`} />
+                <span className={autoSaveStatus === 'saving' ? 'text-blue-600' : 'text-green-600'}>
+                  {autoSaveStatus === 'saving' ? 'Guardando...' : 'Guardado'}
+                </span>
+              </div>
+            )}
             <span className="text-sm text-gray-600">
               {Math.round(progress)}% Completado
             </span>
             <Progress value={progress} className="w-32" />
           </div>
         </div>
-        
-        {/* MEJORA: Información de la operación si existe */}
-        {operacion && (
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>Operación: <strong>{operacion.codigo}</strong></span>
-            <span>•</span>
-            <span>{operacion.nombre}</span>
-            {operacion.sitios && (
-              <>
-                <span>•</span>
-                <span>Sitio: {operacion.sitios.nombre}</span>
-              </>
-            )}
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* MEJORA: Progress Steps con navegación libre y mejor indicadores */}
+        {/* Progress Steps con navegación libre */}
         <div className="flex items-center justify-between">
           {steps.map((step, index) => (
             <div 
@@ -213,15 +180,12 @@ export const OperationFlowWizard = ({
                 step.canNavigate || step.status === 'completed' ? 'opacity-100' : 'opacity-50'
               } ${index === currentStepIndex ? 'scale-110' : ''}`}
               onClick={() => goToStep(index)}
-              title={step.canNavigate || step.status === 'completed' ? 'Click para navegar' : 'Complete pasos anteriores'}
             >
               <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center mb-2 transition-all ${
                 step.status === 'completed' 
                   ? 'border-green-500 bg-green-50 shadow-lg' 
                   : step.status === 'active'
                   ? 'border-blue-500 bg-blue-50 shadow-lg'
-                  : step.status === 'error'
-                  ? 'border-red-500 bg-red-50 shadow-lg'
                   : 'border-gray-300 bg-gray-50'
               } ${(step.canNavigate || step.status === 'completed') ? 'hover:shadow-xl' : ''}`}>
                 {getStepIcon(step.status, index)}
@@ -230,8 +194,7 @@ export const OperationFlowWizard = ({
                 <div className="text-sm font-medium">{step.title}</div>
                 <Badge className={`mt-1 ${getStepBadgeColor(step.status)}`}>
                   {step.status === 'completed' ? 'Completado' : 
-                   step.status === 'active' ? 'Activo' : 
-                   step.status === 'error' ? 'Error' : 'Pendiente'}
+                   step.status === 'active' ? 'Activo' : 'Pendiente'}
                 </Badge>
               </div>
             </div>
@@ -248,7 +211,7 @@ export const OperationFlowWizard = ({
             <p className="text-gray-600">{currentStep?.description}</p>
           </div>
 
-          {/* MEJORA: Step Content con mejor manejo de estados */}
+          {/* Step Content */}
           {currentStep?.id === 'operacion' && (
             <CreateOperacionFormWithCallback 
               onClose={() => onCancel && onCancel()}
@@ -281,7 +244,7 @@ export const OperationFlowWizard = ({
           )}
         </div>
 
-        {/* MEJORA: Navigation con mejor lógica */}
+        {/* Navigation */}
         <div className="flex items-center justify-between pt-4 border-t">
           <Button
             variant="outline"
@@ -312,7 +275,7 @@ export const OperationFlowWizard = ({
                 </Button>
                 <Button 
                   onClick={handleValidationComplete}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  className="flex items-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Finalizar Wizard
