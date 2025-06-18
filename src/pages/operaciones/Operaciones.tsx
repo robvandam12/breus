@@ -44,7 +44,7 @@ export default function Operaciones() {
       
       window.history.replaceState({}, '', newUrl);
     }
-  }, [wizardParam]);
+  }, [wizardParam, searchParams]);
 
   useEffect(() => {
     const handleOperationUpdated = (event: CustomEvent) => {
