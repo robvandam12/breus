@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ export const useOperationWizardState = (operacionId?: string) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [stepData, setStepData] = useState<Record<string, any>>({});
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>(operacionId);
+  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
   const steps: WizardStep[] = [
@@ -94,25 +96,75 @@ export const useOperationWizardState = (operacionId?: string) => {
     refetchInterval: 3000
   });
 
-  // Verificar documentos en tiempo real - Corregido con maybeSingle
+  // Verificar documentos en tiempo real - Corregido para evitar error 400
   const { data: documentStatus } = useQuery({
     queryKey: ['operation-documents', wizardOperacionId],
     queryFn: async () => {
       if (!wizardOperacionId) return { hptReady: false, anexoBravoReady: false };
       
       const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).maybeSingle(),
-        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).maybeSingle()
+        supabase.from('hpt').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1),
+        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', wizardOperacionId).eq('firmado', true).limit(1)
       ]);
 
       return {
-        hptReady: !!hptResult.data,
-        anexoBravoReady: !!anexoResult.data
+        hptReady: hptResult.data && hptResult.data.length > 0,
+        anexoBravoReady: anexoResult.data && anexoResult.data.length > 0
       };
     },
     enabled: !!wizardOperacionId,
     refetchInterval: 2000
   });
+
+  // Auto-guardado implementado
+  const autoSave = useCallback(async (data: any) => {
+    if (!wizardOperacionId || !data) return;
+
+    try {
+      // Filtrar valores vacíos y __empty__
+      const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== '' && value !== null && value !== undefined && value !== '__empty__') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+
+      if (Object.keys(cleanData).length === 0) return;
+
+      const { error } = await supabase
+        .from('operacion')
+        .update(cleanData)
+        .eq('id', wizardOperacionId);
+
+      if (error) throw error;
+
+      console.log('Auto-guardado exitoso:', cleanData);
+    } catch (error) {
+      console.error('Error en auto-guardado:', error);
+    }
+  }, [wizardOperacionId]);
+
+  // Trigger auto-guardado con debounce
+  const triggerAutoSave = useCallback((data: any) => {
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+    }
+
+    const timer = setTimeout(() => {
+      autoSave(data);
+    }, 2000); // Auto-guardado después de 2 segundos de inactividad
+
+    setAutoSaveTimer(timer);
+  }, [autoSave, autoSaveTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+      }
+    };
+  }, [autoSaveTimer]);
 
   // Calcular estado de los pasos dinámicamente
   const calculateStepsStatus = useCallback(() => {
@@ -235,6 +287,11 @@ export const useOperationWizardState = (operacionId?: string) => {
       setWizardOperacionId(data.operacionId);
     }
 
+    // Trigger auto-guardado para otros datos
+    if (stepId !== 'operacion' && data) {
+      triggerAutoSave(data);
+    }
+
     // Refrescar queries para actualizar estado
     queryClient.invalidateQueries({ queryKey: ['operacion-wizard'] });
     queryClient.invalidateQueries({ queryKey: ['operation-documents'] });
@@ -246,7 +303,7 @@ export const useOperationWizardState = (operacionId?: string) => {
         nextStep();
       }, 500);
     }
-  }, [currentStepIndex, currentSteps.length, nextStep, queryClient]);
+  }, [currentStepIndex, currentSteps.length, nextStep, queryClient, triggerAutoSave]);
 
   // Actualizar operacionId cuando cambie el prop
   useEffect(() => {
@@ -279,6 +336,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     nextStep,
     previousStep,
     completeStep,
-    refetch
+    refetch,
+    triggerAutoSave
   };
 };

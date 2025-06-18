@@ -109,6 +109,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     if (!selectedOperacion) return;
     
     try {
+      // Limpiar datos - manejar valores especiales
       const cleanData = {
         codigo: updatedData.codigo,
         nombre: updatedData.nombre,
@@ -117,16 +118,17 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         fecha_fin: updatedData.fecha_fin,
         estado: updatedData.estado,
         estado_aprobacion: updatedData.estado_aprobacion,
-        salmonera_id: updatedData.salmonera_id,
-        contratista_id: updatedData.contratista_id,
-        sitio_id: updatedData.sitio_id,
-        servicio_id: updatedData.servicio_id,
-        equipo_buceo_id: updatedData.equipo_buceo_id,
-        supervisor_asignado_id: updatedData.supervisor_asignado_id
+        salmonera_id: updatedData.salmonera_id === '__empty__' ? null : updatedData.salmonera_id,
+        contratista_id: updatedData.contratista_id === '__empty__' ? null : updatedData.contratista_id,
+        sitio_id: updatedData.sitio_id === '__empty__' ? null : updatedData.sitio_id,
+        servicio_id: updatedData.servicio_id === '__empty__' ? null : updatedData.servicio_id,
+        equipo_buceo_id: updatedData.equipo_buceo_id === '__empty__' ? null : updatedData.equipo_buceo_id,
+        supervisor_asignado_id: updatedData.supervisor_asignado_id === '__empty__' ? null : updatedData.supervisor_asignado_id
       };
 
+      // Remover campos undefined o vacíos
       Object.keys(cleanData).forEach(key => {
-        if (cleanData[key as keyof typeof cleanData] === undefined) {
+        if (cleanData[key as keyof typeof cleanData] === undefined || cleanData[key as keyof typeof cleanData] === '') {
           delete cleanData[key as keyof typeof cleanData];
         }
       });

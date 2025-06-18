@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings, Play, Save } from "lucide-react";
 import { CreateOperacionFormWithCallback } from "@/components/operaciones/CreateOperacionFormWithCallback";
 import { OperacionSitioAssignment } from "@/components/operaciones/OperacionSitioAssignment";
-import { OperacionEquipoAssignment } from "@/components/operaciones/OperacionEquipoAssignment";
+import { EnhancedOperacionEquipoAssignment } from "@/components/operaciones/EnhancedOperacionEquipoAssignment";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useOperationWizardState } from "@/hooks/useOperationWizardState";
 import { useOperationNotifications } from "@/hooks/useOperationNotifications";
@@ -26,6 +26,8 @@ export const OperationFlowWizard = ({
   onComplete, 
   onCancel 
 }: OperationFlowWizardProps) => {
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
   const {
     steps,
     currentStep,
@@ -39,10 +41,22 @@ export const OperationFlowWizard = ({
     nextStep,
     previousStep,
     completeStep,
-    refetch
+    refetch,
+    triggerAutoSave
   } = useOperationWizardState(operacionId);
 
   const { notifyStepComplete } = useOperationNotifications(wizardOperacionId);
+
+  // Auto-save status indicator
+  useEffect(() => {
+    if (autoSaveStatus === 'saving') {
+      const timer = setTimeout(() => {
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [autoSaveStatus]);
 
   useEffect(() => {
     if (onStepChange && currentStep) {
@@ -66,6 +80,7 @@ export const OperationFlowWizard = ({
       title: "Sitio asignado",
       description: "Sitio asignado exitosamente. Continuando con la asignación de equipo.",
     });
+    setAutoSaveStatus('saving');
     refetch();
   };
 
@@ -76,6 +91,7 @@ export const OperationFlowWizard = ({
       title: "Equipo asignado",
       description: "Equipo y supervisor asignados exitosamente.",
     });
+    setAutoSaveStatus('saving');
     refetch();
   };
 
@@ -137,6 +153,15 @@ export const OperationFlowWizard = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl">Wizard de Operación</CardTitle>
           <div className="flex items-center gap-4">
+            {/* Auto-save status indicator */}
+            {autoSaveStatus !== 'idle' && (
+              <div className="flex items-center gap-2 text-sm">
+                <Save className={`w-4 h-4 ${autoSaveStatus === 'saving' ? 'animate-spin text-blue-600' : 'text-green-600'}`} />
+                <span className={autoSaveStatus === 'saving' ? 'text-blue-600' : 'text-green-600'}>
+                  {autoSaveStatus === 'saving' ? 'Guardando...' : 'Guardado'}
+                </span>
+              </div>
+            )}
             <span className="text-sm text-gray-600">
               {Math.round(progress)}% Completado
             </span>
@@ -203,7 +228,7 @@ export const OperationFlowWizard = ({
           )}
 
           {currentStep?.id === 'equipo' && wizardOperacionId && (
-            <OperacionEquipoAssignment
+            <EnhancedOperacionEquipoAssignment
               operacionId={wizardOperacionId}
               currentEquipoId={operacion?.equipo_buceo_id}
               currentSupervisorId={operacion?.supervisor_asignado_id}

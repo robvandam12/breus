@@ -196,15 +196,15 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Salmonera</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar salmonera" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {salmoneras?.map((salmonera) => (
+                    <SelectItem value="__empty__">Sin asignar</SelectItem>
+                    {salmoneras?.filter(s => s.id && s.nombre).map((salmonera) => (
                       <SelectItem key={salmonera.id} value={salmonera.id}>
                         {salmonera.nombre}
                       </SelectItem>
@@ -222,15 +222,15 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Contratista</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar contratista" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {contratistas?.map((contratista) => (
+                    <SelectItem value="__empty__">Sin asignar</SelectItem>
+                    {contratistas?.filter(c => c.id && c.nombre).map((contratista) => (
                       <SelectItem key={contratista.id} value={contratista.id}>
                         {contratista.nombre}
                       </SelectItem>
@@ -250,15 +250,15 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sitio</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar sitio" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {sitios?.map((sitio) => (
+                    <SelectItem value="__empty__">Sin asignar</SelectItem>
+                    {sitios?.filter(s => s.id && s.nombre).map((sitio) => (
                       <SelectItem key={sitio.id} value={sitio.id}>
                         {sitio.nombre} ({sitio.codigo})
                       </SelectItem>
@@ -276,15 +276,15 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Equipo de Buceo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar equipo" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {equipos?.map((equipo) => (
+                    <SelectItem value="__empty__">Sin asignar</SelectItem>
+                    {equipos?.filter(e => e.id && e.nombre).map((equipo) => (
                       <SelectItem key={equipo.id} value={equipo.id}>
                         {equipo.nombre}
                       </SelectItem>
@@ -303,15 +303,15 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
           render={({ field }) => (
             <FormItem>
               <FormLabel>Supervisor Asignado</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+              <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar supervisor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Sin asignar</SelectItem>
-                  {supervisores.map((supervisor) => (
+                  <SelectItem value="__empty__">Sin asignar</SelectItem>
+                  {supervisores.filter(s => s.usuario_id && s.nombre).map((supervisor) => (
                     <SelectItem key={supervisor.usuario_id} value={supervisor.usuario_id}>
                       {supervisor.nombre} {supervisor.apellido}
                     </SelectItem>
