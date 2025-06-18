@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, Workflow, Play } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, Workflow, Play, Plus } from "lucide-react";
 
 interface OperacionesActionsProps {
   onView: () => void;
@@ -53,5 +53,31 @@ export const OperacionesActions = ({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+};
+
+interface DocumentCreationButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const DocumentCreationButton = ({ 
+  onClick, 
+  disabled = false, 
+  children, 
+  className = "" 
+}: DocumentCreationButtonProps) => {
+  return (
+    <Button
+      onClick={onClick}
+      disabled={disabled}
+      size="sm"
+      className={`flex items-center gap-2 ${className}`}
+    >
+      <Plus className="w-4 h-4" />
+      {children}
+    </Button>
   );
 };

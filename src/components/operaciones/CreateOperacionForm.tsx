@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useServicios } from "@/hooks/useServicios";
 import { toast } from "@/hooks/use-toast";
 
 export interface CreateOperacionFormProps {
@@ -33,7 +32,14 @@ export const CreateOperacionForm = ({ onClose, onSubmitOverride }: CreateOperaci
   const { createOperacion } = useOperaciones();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
-  const { servicios } = useServicios();
+
+  // Mock servicios data for now
+  const servicios = [
+    { id: '1', nombre: 'Mantenimiento de Redes' },
+    { id: '2', nombre: 'Inspección de Cascos' },
+    { id: '3', nombre: 'Limpieza de Fondos' },
+    { id: '4', nombre: 'Soldadura Subacuática' }
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
