@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,8 +71,7 @@ export const OperationFlowWizard = ({
       
       toast({
         title: "Paso completado",
-        description: `${currentStep?.title} completado exitosamente.`,
-        duration: 2000
+        description: `${currentStep?.title} completado exitosamente.`
       });
     } catch (error) {
       console.error('Error completing step:', error);

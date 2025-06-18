@@ -26,48 +26,48 @@ export const useOperationWizardState = (operacionId?: string) => {
   const steps: WizardStep[] = [
     {
       id: 'operacion',
-      title: 'Información Básica',
-      description: 'Datos generales de la operación',
+      title: 'Información General',
+      description: 'Datos básicos de la operación',
       status: wizardOperacionId ? 'completed' : 'active',
       required: true,
       canNavigate: true
     },
     {
       id: 'sitio',
-      title: 'Ubicación',
-      description: 'Seleccionar sitio de trabajo',
+      title: 'Ubicación de Trabajo',
+      description: 'Seleccionar sitio de la operación',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'equipo',
-      title: 'Equipo de Trabajo',
-      description: 'Asignar o crear equipo de buceo',
+      title: 'Equipo y Personal',
+      description: 'Asignar equipo de buceo y supervisor',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'hpt',
-      title: 'Planificación HPT',
-      description: 'Completar análisis de riesgos',
+      title: 'Análisis de Riesgos',
+      description: 'Completar documento HPT',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'anexo-bravo',
-      title: 'Anexo de Seguridad',
-      description: 'Completar protocolo de seguridad',
+      title: 'Protocolo de Seguridad',
+      description: 'Completar Anexo Bravo',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'validation',
-      title: 'Validación Final',
-      description: 'Verificar completitud de la operación',
+      title: 'Validación y Aprobación',
+      description: 'Verificar completitud y aprobar',
       status: 'pending',
       required: true,
       canNavigate: false
@@ -177,8 +177,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       // Mostrar notificación de guardado
       toast({
         title: "Cambios guardados",
-        description: "Los datos se han guardado automáticamente.",
-        duration: 1500
+        description: "Los datos se han guardado automáticamente."
       });
       
       // Actualizar cache
@@ -304,9 +303,9 @@ export const useOperationWizardState = (operacionId?: string) => {
       }
     }
 
-    // Permitir navegación a pasos completados
+    // Permitir navegación a pasos completados o activos
     updatedSteps.forEach(step => {
-      if (step.status === 'completed') {
+      if (step.status === 'completed' || step.status === 'active') {
         step.canNavigate = true;
       }
     });
@@ -326,7 +325,7 @@ export const useOperationWizardState = (operacionId?: string) => {
 
   const goToStep = useCallback((stepIndex: number) => {
     const targetStep = currentSteps[stepIndex];
-    if (targetStep?.canNavigate || targetStep?.status === 'completed') {
+    if (targetStep?.canNavigate) {
       console.log('Navigating to step:', stepIndex, targetStep.title);
       setCurrentStepIndex(stepIndex);
     } else {
@@ -342,7 +341,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < currentSteps.length) {
       const nextStepData = currentSteps[nextIndex];
-      if (nextStepData?.canNavigate || nextStepData?.status === 'completed') {
+      if (nextStepData?.canNavigate) {
         console.log('Moving to next step:', nextIndex);
         setCurrentStepIndex(nextIndex);
       }
