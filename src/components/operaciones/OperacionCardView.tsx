@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Settings, FileText, Activity, Trash2, Workflow, Play } from "lucide-react";
+import { MapPin, Calendar, Users, Settings, FileText, Activity, Trash2 } from "lucide-react";
 
 interface OperacionCardViewProps {
   operaciones: any[];
@@ -10,19 +10,9 @@ interface OperacionCardViewProps {
   onEdit: (operacion: any) => void;
   onViewDetail: (operacion: any) => void;
   onDelete: (operacionId: string) => void;
-  onStartWizard?: (operacionId?: string) => void;
-  onCreateInmersion?: (operacionId: string) => void;
 }
 
-export const OperacionCardView = ({ 
-  operaciones, 
-  onSelect, 
-  onEdit, 
-  onViewDetail, 
-  onDelete,
-  onStartWizard,
-  onCreateInmersion 
-}: OperacionCardViewProps) => {
+export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail, onDelete }: OperacionCardViewProps) => {
 
   const getStatusBadge = (estado: string) => {
     const colors = {
@@ -145,24 +135,6 @@ export const OperacionCardView = ({
                     >
                       <Settings className="w-4 h-4" />
                     </Button>
-                    {onStartWizard && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => onStartWizard(operacion.id)}
-                      >
-                        <Workflow className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {onCreateInmersion && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => onCreateInmersion(operacion.id)}
-                      >
-                        <Play className="w-4 h-4" />
-                      </Button>
-                    )}
                     <Button 
                       variant="destructive" 
                       size="sm"

@@ -1,35 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { useOperaciones, OperacionFormData } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { useSitios } from "@/hooks/useSitios";
-import { useEquiposBuceo } from "@/hooks/useEquiposBuceo";
-import { useUsuarios } from "@/hooks/useUsuarios";
-import { Loader2 } from "lucide-react";
-
-const formSchema = z.object({
-  codigo: z.string().min(1, "Código es requerido"),
-  nombre: z.string().min(1, "Nombre es requerido"),
-  tareas: z.string().optional(),
-  fecha_inicio: z.string().min(1, "Fecha de inicio es requerida"),
-  fecha_fin: z.string().optional(),
-  estado: z.enum(['activa', 'pausada', 'completada', 'cancelada']),
-  estado_aprobacion: z.enum(['pendiente', 'aprobada', 'rechazada']).optional(),
-  salmonera_id: z.string().optional(),
-  contratista_id: z.string().optional(),
-  sitio_id: z.string().optional(),
-  servicio_id: z.string().optional(),
-  equipo_buceo_id: z.string().optional(),
-  supervisor_asignado_id: z.string().optional(),
-});
+import { useToast } from "@/hooks/use-toast";
 
 interface EditOperacionFormProps {
   operacion: any;
@@ -38,301 +19,242 @@ interface EditOperacionFormProps {
 }
 
 export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperacionFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
   const { sitios } = useSitios();
-  const { equipos } = useEquiposBuceo();
-  const { usuarios } = useUsuarios();
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      codigo: operacion?.codigo || '',
-      nombre: operacion?.nombre || '',
-      tareas: operacion?.tareas || '',
-      fecha_inicio: operacion?.fecha_inicio || '',
-      fecha_fin: operacion?.fecha_fin || '',
-      estado: operacion?.estado || 'activa',
-      estado_aprobacion: operacion?.estado_aprobacion || 'pendiente',
-      salmonera_id: operacion?.salmonera_id || '',
-      contratista_id: operacion?.contratista_id || '',
-      sitio_id: operacion?.sitio_id || '',
-      servicio_id: operacion?.servicio_id || '',
-      equipo_buceo_id: operacion?.equipo_buceo_id || '',
-      supervisor_asignado_id: operacion?.supervisor_asignado_id || '',
-    }
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [formData, setFormData] = useState<OperacionFormData>({
+    codigo: operacion.codigo || '',
+    nombre: operacion.nombre || '',
+    sitio_id: operacion.sitio_id || '',
+    servicio_id: operacion.servicio_id || '',
+    salmonera_id: operacion.salmonera_id || '',
+    contratista_id: operacion.contratista_id || '',
+    fecha_inicio: operacion.fecha_inicio || '',
+    fecha_fin: operacion.fecha_fin || '',
+    tareas: operacion.tareas || '',
+    estado: operacion.estado || 'activa'
   });
 
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
+  console.log('Editing operacion:', operacion);
+  console.log('Form data:', formData);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      await onSubmit(values);
+      // Preparar datos limpios para la actualización
+      const dataToSubmit = {
+        codigo: formData.codigo,
+        nombre: formData.nombre,
+        sitio_id: formData.sitio_id || null,
+        servicio_id: formData.servicio_id || null,
+        salmonera_id: formData.salmonera_id || null,
+        contratista_id: formData.contratista_id || null,
+        fecha_inicio: formData.fecha_inicio,
+        fecha_fin: formData.fecha_fin || null,
+        tareas: formData.tareas || null,
+        estado: formData.estado
+      };
+
+      console.log('Submitting operacion update with data:', dataToSubmit);
+      
+      await onSubmit(dataToSubmit);
+      toast({
+        title: "Operación actualizada",
+        description: "La operación ha sido actualizada exitosamente.",
+      });
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error updating operation:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la operación.",
+        variant: "destructive",
+      });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  // Filtrar supervisores (usuarios con rol admin_servicio o superuser)
-  const supervisores = usuarios?.filter(u => 
-    u.rol === 'admin_servicio' || u.rol === 'superuser'
-  ) || [];
+  const handleChange = (field: keyof OperacionFormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="codigo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Código</FormLabel>
-                <FormControl>
-                  <Input placeholder="Código de la operación" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="estado"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar estado" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="activa">Activa</SelectItem>
-                    <SelectItem value="pausada">Pausada</SelectItem>
-                    <SelectItem value="completada">Completada</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="nombre"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre</FormLabel>
-              <FormControl>
-                <Input placeholder="Nombre de la operación" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="tareas"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tareas</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Descripción de las tareas a realizar" 
-                  {...field} 
-                  value={field.value || ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="fecha_inicio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fecha de Inicio</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="fecha_fin"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fecha de Fin</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="date" 
-                    {...field} 
-                    value={field.value || ''} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="salmonera_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Salmonera</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar salmonera" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__empty__">Sin asignar</SelectItem>
-                    {salmoneras?.filter(s => s.id && s.nombre).map((salmonera) => (
-                      <SelectItem key={salmonera.id} value={salmonera.id}>
-                        {salmonera.nombre}
-                      </SelectItem>
-                    )) || []}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="contratista_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contratista</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar contratista" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__empty__">Sin asignar</SelectItem>
-                    {contratistas?.filter(c => c.id && c.nombre).map((contratista) => (
-                      <SelectItem key={contratista.id} value={contratista.id}>
-                        {contratista.nombre}
-                      </SelectItem>
-                    )) || []}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="sitio_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sitio</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar sitio" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__empty__">Sin asignar</SelectItem>
-                    {sitios?.filter(s => s.id && s.nombre).map((sitio) => (
-                      <SelectItem key={sitio.id} value={sitio.id}>
-                        {sitio.nombre} ({sitio.codigo})
-                      </SelectItem>
-                    )) || []}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="equipo_buceo_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Equipo de Buceo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar equipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__empty__">Sin asignar</SelectItem>
-                    {equipos?.filter(e => e.id && e.nombre).map((equipo) => (
-                      <SelectItem key={equipo.id} value={equipo.id}>
-                        {equipo.nombre}
-                      </SelectItem>
-                    )) || []}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="supervisor_asignado_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Supervisor Asignado</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar supervisor" />
-                  </SelectTrigger>
-                </FormControl>
+    <Card className="ios-card max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Editar Operación</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="codigo">Código *</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => handleChange('codigo', e.target.value)}
+                className="ios-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="estado">Estado *</Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => handleChange('estado', value as any)}
+              >
+                <SelectTrigger className="ios-input">
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__empty__">Sin asignar</SelectItem>
-                  {supervisores.filter(s => s.usuario_id && s.nombre).map((supervisor) => (
-                    <SelectItem key={supervisor.usuario_id} value={supervisor.usuario_id}>
-                      {supervisor.nombre} {supervisor.apellido}
+                  <SelectItem value="activa">Activa</SelectItem>
+                  <SelectItem value="pausada">Pausada</SelectItem>
+                  <SelectItem value="completada">Completada</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="nombre">Nombre *</Label>
+            <Input
+              id="nombre"
+              value={formData.nombre}
+              onChange={(e) => handleChange('nombre', e.target.value)}
+              className="ios-input"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="salmonera_id">Salmonera</Label>
+              <Select
+                value={formData.salmonera_id || ''}
+                onValueChange={(value) => handleChange('salmonera_id', value)}
+              >
+                <SelectTrigger className="ios-input">
+                  <SelectValue placeholder="Seleccionar salmonera" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin salmonera</SelectItem>
+                  {salmoneras.map((salmonera) => (
+                    <SelectItem key={salmonera.id} value={salmonera.id}>
+                      {salmonera.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Actualizar Operación
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div>
+              <Label htmlFor="contratista_id">Contratista</Label>
+              <Select
+                value={formData.contratista_id || ''}
+                onValueChange={(value) => handleChange('contratista_id', value)}
+              >
+                <SelectTrigger className="ios-input">
+                  <SelectValue placeholder="Seleccionar contratista" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin contratista</SelectItem>
+                  {contratistas.map((contratista) => (
+                    <SelectItem key={contratista.id} value={contratista.id}>
+                      {contratista.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="sitio_id">Sitio</Label>
+            <Select
+              value={formData.sitio_id || ''}
+              onValueChange={(value) => handleChange('sitio_id', value)}
+            >
+              <SelectTrigger className="ios-input">
+                <SelectValue placeholder="Seleccionar sitio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sin sitio</SelectItem>
+                {sitios
+                  .filter(sitio => !formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id)
+                  .map((sitio) => (
+                    <SelectItem key={sitio.id} value={sitio.id}>
+                      {sitio.nombre}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fecha_inicio">Fecha de Inicio *</Label>
+              <Input
+                id="fecha_inicio"
+                type="date"
+                value={formData.fecha_inicio}
+                onChange={(e) => handleChange('fecha_inicio', e.target.value)}
+                className="ios-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="fecha_fin">Fecha de Fin</Label>
+              <Input
+                id="fecha_fin"
+                type="date"
+                value={formData.fecha_fin || ''}
+                onChange={(e) => handleChange('fecha_fin', e.target.value)}
+                className="ios-input"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="tareas">Descripción de Tareas</Label>
+            <Textarea
+              id="tareas"
+              value={formData.tareas || ''}
+              onChange={(e) => handleChange('tareas', e.target.value)}
+              className="ios-input min-h-[100px]"
+              placeholder="Describa las tareas a realizar..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="ios-button"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="ios-button bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isLoading ? 'Actualizando...' : 'Actualizar Operación'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

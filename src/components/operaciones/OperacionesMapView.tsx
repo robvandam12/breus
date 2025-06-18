@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter, Workflow, Play } from "lucide-react";
+import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSitios } from "@/hooks/useSitios";
 import { LeafletMap } from "@/components/ui/leaflet-map";
-import * as L from 'leaflet';
 
 interface OperacionesMapViewProps {
   operaciones: any[];
@@ -14,8 +14,6 @@ interface OperacionesMapViewProps {
   onViewDetail: (operacion: any) => void;
   onEdit: (operacion: any) => void;
   onDelete: (operacionId: string) => void;
-  onStartWizard?: (operacionId?: string) => void;
-  onCreateInmersion?: (operacionId: string) => void;
 }
 
 export const OperacionesMapView = ({ 
@@ -23,35 +21,10 @@ export const OperacionesMapView = ({
   onSelect, 
   onViewDetail, 
   onEdit, 
-  onDelete,
-  onStartWizard,
-  onCreateInmersion 
+  onDelete 
 }: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
   const [regionFilter, setRegionFilter] = useState<string>('all');
-  const mapRef = useRef<L.Map | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    // Crear mapa con zoom más alejado para ver ciudades completas - CORREGIDO
-    const map = L.map(mapContainerRef.current).setView([-39.8097, -73.2400], 5); // Sur de Chile, zoom 5
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    mapRef.current = map;
-
-    // Cleanup
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
 
   // Función para obtener color según estado de operación
   const getEstadoColor = (estado: string) => {
@@ -97,9 +70,9 @@ export const OperacionesMapView = ({
   // Obtener regiones únicas
   const regiones = Array.from(new Set(sitios.map(s => s?.region).filter(Boolean)));
 
-  // Calcular centro del mapa basado en las operaciones filtradas - CORREGIDO zoom
+  // Calcular centro del mapa basado en las operaciones filtradas
   const getMapCenter = () => {
-    if (filteredMarkers.length === 0) return { lat: -39.8097, lng: -73.2400 }; // Centro de Chile sur
+    if (filteredMarkers.length === 0) return { lat: -41.4693, lng: -72.9424 };
     
     const avgLat = filteredMarkers.reduce((sum, marker) => sum + marker.lat, 0) / filteredMarkers.length;
     const avgLng = filteredMarkers.reduce((sum, marker) => sum + marker.lng, 0) / filteredMarkers.length;
@@ -153,7 +126,7 @@ export const OperacionesMapView = ({
                 onClick: () => onViewDetail(marker.operacion)
               }))}
               showLocationSelector={false}
-              initialZoom={6}
+              initialZoom={8}
             />
           </div>
           
@@ -240,26 +213,6 @@ export const OperacionesMapView = ({
                   >
                     <Settings className="w-4 h-4" />
                   </Button>
-                  {onStartWizard && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onStartWizard(operacion.id)}
-                      className="ios-button-sm"
-                    >
-                      <Workflow className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {onCreateInmersion && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onCreateInmersion(operacion.id)}
-                      className="ios-button-sm"
-                    >
-                      <Play className="w-4 h-4" />
-                    </Button>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"

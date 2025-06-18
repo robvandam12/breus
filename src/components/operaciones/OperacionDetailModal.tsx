@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from "@/components/ui/badge";
-import { Edit, Workflow, Play } from "lucide-react";
+import { Edit } from "lucide-react";
 import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
 import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
 import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
@@ -19,17 +18,9 @@ interface OperacionDetailModalProps {
   operacion: any;
   isOpen: boolean;
   onClose: () => void;
-  onStartWizard?: (operacionId?: string) => void;
-  onCreateInmersion?: (operacionId: string) => void;
 }
 
-const OperacionDetailModal = ({ 
-  operacion, 
-  isOpen, 
-  onClose, 
-  onStartWizard,
-  onCreateInmersion 
-}: OperacionDetailModalProps) => {
+const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
@@ -53,44 +44,19 @@ const OperacionDetailModal = ({
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  // Validación para evitar errores de null
-  if (!operacion) {
-    return null;
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
         {/* Header del Modal */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre || 'Sin nombre'}</h2>
-            <p className="text-gray-600">Código: {operacion.codigo || 'Sin código'}</p>
+            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre}</h2>
+            <p className="text-gray-600">Código: {operacion.codigo}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge className={getStatusColor(operacion.estado || 'activa')}>
-              {operacion.estado || 'activa'}
+            <Badge className={getStatusColor(operacion.estado)}>
+              {operacion.estado}
             </Badge>
-            {onStartWizard && (
-              <Button 
-                variant="outline"
-                onClick={() => onStartWizard(operacion.id)}
-                className="flex items-center gap-2"
-              >
-                <Workflow className="w-4 h-4" />
-                Wizard
-              </Button>
-            )}
-            {onCreateInmersion && (
-              <Button 
-                variant="outline"
-                onClick={() => onCreateInmersion(operacion.id)}
-                className="flex items-center gap-2"
-              >
-                <Play className="w-4 h-4" />
-                Crear Inmersión
-              </Button>
-            )}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <Button 
                 variant="outline"

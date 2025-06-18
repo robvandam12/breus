@@ -2,227 +2,258 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertTriangle, FileText, Shield, Clock, ExternalLink } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock, 
+  Shield, 
+  FileText, 
+  Users,
+  Eye,
+  RefreshCw
+} from "lucide-react";
+
+interface ValidationItem {
+  id: string;
+  category: 'documentos' | 'personal' | 'equipos' | 'seguridad';
+  title: string;
+  description: string;
+  status: 'valid' | 'warning' | 'error' | 'pending';
+  required: boolean;
+  details?: string;
+}
 
 interface ValidationGatewayProps {
   operacionId: string;
-  onValidationComplete: () => void;
+  onValidationComplete?: () => void;
 }
 
 export const ValidationGateway = ({ operacionId, onValidationComplete }: ValidationGatewayProps) => {
   const [isValidating, setIsValidating] = useState(false);
+  const [lastValidation, setLastValidation] = useState<Date | null>(null);
 
-  // Verificar documentos existentes
-  const { data: documentStatus, refetch, isLoading } = useQuery({
-    queryKey: ['validation-documents', operacionId],
-    queryFn: async () => {
-      console.log('Checking document status for validation:', operacionId);
-      
-      const [hptResult, anexoResult] = await Promise.all([
-        supabase
-          .from('hpt')
-          .select('id, firmado, estado, codigo')
-          .eq('operacion_id', operacionId)
-          .maybeSingle(),
-        supabase
-          .from('anexo_bravo')
-          .select('id, firmado, estado, codigo')
-          .eq('operacion_id', operacionId)
-          .maybeSingle()
-      ]);
-
-      console.log('Document validation results:', { hptResult, anexoResult });
-
-      const hptCompleted = hptResult.data?.firmado && hptResult.data?.estado === 'firmado';
-      const anexoCompleted = anexoResult.data?.firmado && anexoResult.data?.estado === 'firmado';
-
-      return {
-        hptCompleted: !!hptCompleted,
-        anexoCompleted: !!anexoCompleted,
-        hptCount: hptResult.data ? 1 : 0,
-        anexoCount: anexoResult.data ? 1 : 0,
-        hptData: hptResult.data,
-        anexoData: anexoResult.data
-      };
+  // Mock validation items - en producción vendría del backend
+  const validationItems: ValidationItem[] = [
+    {
+      id: 'hpt-complete',
+      category: 'documentos',
+      title: 'HPT Completado',
+      description: 'Herramientas y Procedimientos de Trabajo documentados',
+      status: 'valid',
+      required: true
     },
-    refetchInterval: 3000
-  });
+    {
+      id: 'anexo-bravo',
+      category: 'seguridad',
+      title: 'Anexo Bravo',
+      description: 'Análisis de Riesgo y Seguridad completado',
+      status: 'valid',
+      required: true
+    },
+    {
+      id: 'personal-asignado',
+      category: 'personal',
+      title: 'Personal Asignado',
+      description: 'Supervisor y buzos certificados asignados',
+      status: 'warning',
+      required: true,
+      details: 'Falta certificación de buzo secundario'
+    },
+    {
+      id: 'equipo-verificado',
+      category: 'equipos',
+      title: 'Equipos Verificados',
+      description: 'Equipos de buceo y superficie verificados',
+      status: 'pending',
+      required: true
+    },
+    {
+      id: 'permisos-vigentes',
+      category: 'documentos',
+      title: 'Permisos Vigentes',
+      description: 'Permisos y autorizaciones vigentes',
+      status: 'error',
+      required: true,
+      details: 'Permiso ambiental vence en 2 días'
+    }
+  ];
 
-  const handleValidateAndContinue = async () => {
-    setIsValidating(true);
-    try {
-      console.log('Starting validation process for operation:', operacionId);
-      
-      // Refrescar estado de documentos
-      await refetch();
-      
-      if (!documentStatus?.hptCompleted || !documentStatus?.anexoCompleted) {
-        toast({
-          title: "Validación incompleta",
-          description: "Debe completar y firmar todos los documentos requeridos antes de continuar.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Marcar operación como validada
-      const { error } = await supabase
-        .from('operacion')
-        .update({ estado_aprobacion: 'aprobada' })
-        .eq('id', operacionId);
-
-      if (error) {
-        console.error('Error updating operation approval status:', error);
-        throw error;
-      }
-
-      console.log('Operation validation completed successfully');
-
-      toast({
-        title: "¡Validación completada!",
-        description: "La operación está completamente validada y lista para inmersiones."
-      });
-
-      onValidationComplete();
-    } catch (error) {
-      console.error('Error validating operation:', error);
-      toast({
-        title: "Error en validación",
-        description: "No se pudo completar la validación.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsValidating(false);
+  const getCategoryIcon = (category: ValidationItem['category']) => {
+    switch (category) {
+      case 'documentos':
+        return <FileText className="w-4 h-4" />;
+      case 'personal':
+        return <Users className="w-4 h-4" />;
+      case 'equipos':
+        return <Shield className="w-4 h-4" />;
+      case 'seguridad':
+        return <Shield className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
-  const handleCreateDocument = (type: 'hpt' | 'anexo') => {
-    const url = type === 'hpt' 
-      ? `/hpt?operacion=${operacionId}` 
-      : `/anexo-bravo?operacion=${operacionId}`;
-    window.open(url, '_blank');
+  const getStatusIcon = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      case 'error':
+        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-gray-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
   };
 
-  const getStatusIcon = (completed: boolean) => {
-    return completed ? (
-      <CheckCircle className="w-5 h-5 text-green-600" />
-    ) : (
-      <Clock className="w-5 h-5 text-yellow-600" />
-    );
+  const getStatusBadge = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <Badge className="bg-green-100 text-green-800">Válido</Badge>;
+      case 'warning':
+        return <Badge className="bg-yellow-100 text-yellow-800">Advertencia</Badge>;
+      case 'error':
+        return <Badge className="bg-red-100 text-red-800">Error</Badge>;
+      case 'pending':
+        return <Badge className="bg-gray-100 text-gray-800">Pendiente</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Desconocido</Badge>;
+    }
   };
 
-  const allDocumentsReady = documentStatus?.hptCompleted && documentStatus?.anexoCompleted;
+  const handleValidation = async () => {
+    setIsValidating(true);
+    // Simular validación
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsValidating(false);
+    setLastValidation(new Date());
+  };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">Cargando estado de documentos...</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const validItems = validationItems.filter(item => item.status === 'valid').length;
+  const totalItems = validationItems.length;
+  const requiredItems = validationItems.filter(item => item.required);
+  const validRequiredItems = requiredItems.filter(item => item.status === 'valid').length;
+  const hasErrors = validationItems.some(item => item.status === 'error' && item.required);
+  const canProceed = validRequiredItems === requiredItems.length && !hasErrors;
+
+  const categories = Array.from(new Set(validationItems.map(item => item.category)));
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-blue-600" />
-            Validación de Operación
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <div className="flex-1">
-                  <p className="font-medium">HPT (Herramientas y Procedimientos)</p>
-                  <p className="text-sm text-gray-600">
-                    {documentStatus?.hptCount || 0} documento(s) creado(s)
-                    {documentStatus?.hptData && ` - ${documentStatus.hptData.codigo}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {!documentStatus?.hptData && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCreateDocument('hpt')}
-                    className="flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Crear HPT
-                  </Button>
-                )}
-                {getStatusIcon(documentStatus?.hptCompleted || false)}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Shield className="w-4 h-4 text-green-600" />
-                <div className="flex-1">
-                  <p className="font-medium">Anexo Bravo</p>
-                  <p className="text-sm text-gray-600">
-                    {documentStatus?.anexoCount || 0} documento(s) creado(s)
-                    {documentStatus?.anexoData && ` - ${documentStatus.anexoData.codigo}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {!documentStatus?.anexoData && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCreateDocument('anexo')}
-                    className="flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Crear Anexo
-                  </Button>
-                )}
-                {getStatusIcon(documentStatus?.anexoCompleted || false)}
-              </div>
-            </div>
+            Portal de Validaciones
           </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={canProceed ? "default" : "destructive"}>
+              {validItems}/{totalItems} válidos
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleValidation}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} />
+              {isValidating ? 'Validando...' : 'Revalidar'}
+            </Button>
+          </div>
+        </CardTitle>
+        {lastValidation && (
+          <p className="text-sm text-gray-600">
+            Última validación: {lastValidation.toLocaleString('es-CL')}
+          </p>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Status General */}
+        {!canProceed && (
+          <Alert variant={hasErrors ? "destructive" : "default"}>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {hasErrors 
+                ? "Hay errores críticos que deben resolverse antes de proceder."
+                : "Hay validaciones pendientes que deben completarse."
+              }
+            </AlertDescription>
+          </Alert>
+        )}
 
-          {!allDocumentsReady && (
-            <Alert className="border-yellow-200 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-yellow-800">
-                <strong>Documentos pendientes:</strong> Complete y firme todos los documentos requeridos antes de continuar.
-                Los documentos se abren en nueva pestaña para facilitar el proceso.
-              </AlertDescription>
-            </Alert>
-          )}
+        {canProceed && (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>
+              Todas las validaciones requeridas han sido completadas. La operación puede proceder.
+            </AlertDescription>
+          </Alert>
+        )}
 
-          {allDocumentsReady && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription className="text-green-800">
-                <strong>¡Listo para continuar!</strong> Todos los documentos están completos y firmados.
-              </AlertDescription>
-            </Alert>
-          )}
+        {/* Validaciones por Categoría */}
+        {categories.map(category => {
+          const categoryItems = validationItems.filter(item => item.category === category);
+          
+          return (
+            <div key={category} className="space-y-3">
+              <h4 className="font-medium text-lg capitalize flex items-center gap-2">
+                {getCategoryIcon(category)}
+                {category}
+              </h4>
+              
+              <div className="space-y-2">
+                {categoryItems.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(item.status)}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{item.title}</p>
+                          {item.required && (
+                            <Badge variant="outline" className="text-xs">Requerido</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{item.description}</p>
+                        {item.details && (
+                          <p className="text-xs text-amber-600 mt-1">{item.details}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(item.status)}
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
 
-          <Button 
-            onClick={handleValidateAndContinue}
-            disabled={!allDocumentsReady || isValidating}
-            className="w-full"
-          >
-            {isValidating ? 'Validando...' : 'Aprobar y Continuar'}
+        {/* Acciones */}
+        <div className="flex justify-between pt-4 border-t">
+          <Button variant="outline">
+            Ver Detalles Completos
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+          
+          <Button 
+            onClick={onValidationComplete}
+            disabled={!canProceed}
+            className="flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Aprobar y Continuar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

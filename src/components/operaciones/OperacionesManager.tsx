@@ -1,38 +1,22 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
 import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
-import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
-import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
-import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
-import { List, MapPin, Grid3X3, Workflow, CheckCircle } from "lucide-react";
+import { List, MapPin, Grid3X3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
 import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface OperacionesManagerProps {
-  onStartWizard?: (operacionId?: string) => void;
-}
-
-export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) => {
+export const OperacionesManager = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showFlowWizard, setShowFlowWizard] = useState(false);
-  const [showValidationGateway, setShowValidationGateway] = useState(false);
-  const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
-  
   const { 
     operaciones, 
     isLoading,
@@ -40,8 +24,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     deleteOperacion, 
     checkCanDelete 
   } = useOperaciones();
-
-  const { validateBeforeInmersion } = useOperationInmersionIntegration();
   
   const {
     searchTerm,
@@ -56,85 +38,39 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     setShowDetailModal(true);
   };
 
-  const handleStartFlowWizard = (operacionId?: string) => {
-    if (onStartWizard) {
-      onStartWizard(operacionId);
-    } else {
-      if (operacionId) {
-        setSelectedOperacion(operaciones.find(op => op.id === operacionId));
-      }
-      setShowFlowWizard(true);
-    }
-  };
-
-  const handleValidateOperacion = (operacionId: string) => {
-    setSelectedOperacionForValidation(operacionId);
-    setShowValidationGateway(true);
-  };
-
-  const handleCreateInmersion = async (operacionId: string) => {
-    try {
-      const validation = await validateBeforeInmersion(operacionId);
-      
-      if (!validation.canProceed) {
-        toast({
-          title: "Operación no lista",
-          description: validation.message,
-          variant: "destructive",
-        });
-        
-        // Mostrar wizard de validación
-        handleValidateOperacion(operacionId);
-        return;
-      }
-
-      // Redirigir a crear inmersión
-      window.location.href = `/inmersiones?operacion=${operacionId}`;
-    } catch (error) {
-      console.error('Error validating for inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo validar la operación para inmersiones",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleEdit = async (operacion: any) => {
-    setSelectedOperacion(operacion);
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (updatedData: any) => {
-    if (!selectedOperacion) return;
-    
     try {
-      // Limpiar datos - manejar valores especiales
+      // Limpiar datos para enviar solo los campos válidos de la tabla operacion
       const cleanData = {
-        codigo: updatedData.codigo,
-        nombre: updatedData.nombre,
-        tareas: updatedData.tareas,
-        fecha_inicio: updatedData.fecha_inicio,
-        fecha_fin: updatedData.fecha_fin,
-        estado: updatedData.estado,
-        estado_aprobacion: updatedData.estado_aprobacion,
-        salmonera_id: updatedData.salmonera_id === '__empty__' ? null : updatedData.salmonera_id,
-        contratista_id: updatedData.contratista_id === '__empty__' ? null : updatedData.contratista_id,
-        sitio_id: updatedData.sitio_id === '__empty__' ? null : updatedData.sitio_id,
-        servicio_id: updatedData.servicio_id === '__empty__' ? null : updatedData.servicio_id,
-        equipo_buceo_id: updatedData.equipo_buceo_id === '__empty__' ? null : updatedData.equipo_buceo_id,
-        supervisor_asignado_id: updatedData.supervisor_asignado_id === '__empty__' ? null : updatedData.supervisor_asignado_id
+        codigo: operacion.codigo,
+        nombre: operacion.nombre,
+        tareas: operacion.tareas,
+        fecha_inicio: operacion.fecha_inicio,
+        fecha_fin: operacion.fecha_fin,
+        estado: operacion.estado,
+        estado_aprobacion: operacion.estado_aprobacion,
+        salmonera_id: operacion.salmonera_id,
+        contratista_id: operacion.contratista_id,
+        sitio_id: operacion.sitio_id,
+        servicio_id: operacion.servicio_id,
+        equipo_buceo_id: operacion.equipo_buceo_id,
+        supervisor_asignado_id: operacion.supervisor_asignado_id
       };
 
-      // Remover campos undefined o vacíos
+      // Remover campos undefined o null
       Object.keys(cleanData).forEach(key => {
-        if (cleanData[key as keyof typeof cleanData] === undefined || cleanData[key as keyof typeof cleanData] === '') {
+        if (cleanData[key as keyof typeof cleanData] === undefined) {
           delete cleanData[key as keyof typeof cleanData];
         }
       });
 
-      await updateOperacion({ id: selectedOperacion.id, data: cleanData });
-      setShowEditModal(false);
+      console.log('Sending cleaned data to update:', cleanData);
+      
+      await updateOperacion({ id: operacion.id, data: cleanData });
+      toast({
+        title: "Operación actualizada",
+        description: "La operación ha sido actualizada exitosamente.",
+      });
     } catch (error: any) {
       console.error('Error updating operacion:', error);
       toast({
@@ -223,8 +159,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -235,8 +169,6 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
         
@@ -247,66 +179,17 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onStartWizard={handleStartFlowWizard}
-            onCreateInmersion={handleCreateInmersion}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Modal de detalle */}
-      <OperacionDetailModal
-        operacion={selectedOperacion}
-        isOpen={showDetailModal}
-        onClose={handleCloseDetail}
-        onStartWizard={handleStartFlowWizard}
-        onCreateInmersion={handleCreateInmersion}
-      />
-
-      {/* Modal de edición */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Editar Operación</DialogTitle>
-          </DialogHeader>
-          {selectedOperacion && (
-            <EditOperacionForm
-              operacion={selectedOperacion}
-              onSubmit={handleEditSubmit}
-              onCancel={() => setShowEditModal(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de wizard completo */}
-      <Dialog open={showFlowWizard} onOpenChange={setShowFlowWizard}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <OperationFlowWizard 
-            operacionId={selectedOperacion?.id}
-            onStepChange={(stepId) => console.log('Wizard step:', stepId)}
-            onComplete={() => setShowFlowWizard(false)}
-            onCancel={() => setShowFlowWizard(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de validación */}
-      <Dialog open={showValidationGateway} onOpenChange={setShowValidationGateway}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-blue-600" />
-              Validación de Operación
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOperacionForValidation && (
-            <ValidationGateway 
-              operacionId={selectedOperacionForValidation}
-              onValidationComplete={() => setShowValidationGateway(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedOperacion && (
+        <OperacionDetailModal 
+          operacion={selectedOperacion}
+          isOpen={showDetailModal}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 };
