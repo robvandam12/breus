@@ -1,8 +1,8 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 
-export const useOperationNotifications = () => {
+export const useOperationNotifications = (operacionId?: string) => {
   useEffect(() => {
     const handleOperationNotification = (event: CustomEvent) => {
       const { type, message, title } = event.detail;
@@ -19,4 +19,15 @@ export const useOperationNotifications = () => {
       window.removeEventListener('operationNotification', handleOperationNotification as EventListener);
     };
   }, []);
+
+  const notifyStepComplete = useCallback((message: string) => {
+    toast({
+      title: "Paso completado",
+      description: message,
+    });
+  }, []);
+
+  return {
+    notifyStepComplete
+  };
 };
