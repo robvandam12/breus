@@ -76,7 +76,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     refetchInterval: 2000
   });
 
-  // Usar hooks separados
+  // Usar hooks separados - CORREGIDO: useWizardSteps en lugar de use WizardSteps
   const {
     steps,
     currentStep,
@@ -87,7 +87,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     nextStep,
     previousStep,
     setCurrentStepIndex
-  } = use WizardSteps(operacion, documentStatus, wizardOperacionId);
+  } = useWizardSteps(operacion, documentStatus, wizardOperacionId);
 
   const { isAutoSaving, lastSaveTime, triggerAutoSave } = useWizardAutoSave(wizardOperacionId);
 
