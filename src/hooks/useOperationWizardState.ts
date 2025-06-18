@@ -92,10 +92,10 @@ export const useOperationWizardState = (operacionId?: string) => {
       return data;
     },
     enabled: !!wizardOperacionId,
-    refetchInterval: 3000 // Refrescar cada 3 segundos para estado en tiempo real
+    refetchInterval: 3000
   });
 
-  // Verificar documentos en tiempo real
+  // Verificar documentos en tiempo real - corregir queries
   const { data: documentStatus } = useQuery({
     queryKey: ['operation-documents', wizardOperacionId],
     queryFn: async () => {
@@ -112,7 +112,7 @@ export const useOperationWizardState = (operacionId?: string) => {
       };
     },
     enabled: !!wizardOperacionId,
-    refetchInterval: 2000 // Refrescar documentos frecuentemente
+    refetchInterval: 2000
   });
 
   // Calcular estado de los pasos dinámicamente

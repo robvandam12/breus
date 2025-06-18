@@ -27,6 +27,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
   const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
   const [showValidationGateway, setShowValidationGateway] = useState(false);
   const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
@@ -99,38 +100,39 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
   };
 
   const handleEdit = async (operacion: any) => {
+    // En lugar de editar directamente, abrir modal de edición
+    setSelectedOperacion(operacion);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (updatedData: any) => {
+    if (!selectedOperacion) return;
+    
     try {
-      // Limpiar datos para enviar solo los campos válidos de la tabla operacion
       const cleanData = {
-        codigo: operacion.codigo,
-        nombre: operacion.nombre,
-        tareas: operacion.tareas,
-        fecha_inicio: operacion.fecha_inicio,
-        fecha_fin: operacion.fecha_fin,
-        estado: operacion.estado,
-        estado_aprobacion: operacion.estado_aprobacion,
-        salmonera_id: operacion.salmonera_id,
-        contratista_id: operacion.contratista_id,
-        sitio_id: operacion.sitio_id,
-        servicio_id: operacion.servicio_id,
-        equipo_buceo_id: operacion.equipo_buceo_id,
-        supervisor_asignado_id: operacion.supervisor_asignado_id
+        codigo: updatedData.codigo,
+        nombre: updatedData.nombre,
+        tareas: updatedData.tareas,
+        fecha_inicio: updatedData.fecha_inicio,
+        fecha_fin: updatedData.fecha_fin,
+        estado: updatedData.estado,
+        estado_aprobacion: updatedData.estado_aprobacion,
+        salmonera_id: updatedData.salmonera_id,
+        contratista_id: updatedData.contratista_id,
+        sitio_id: updatedData.sitio_id,
+        servicio_id: updatedData.servicio_id,
+        equipo_buceo_id: updatedData.equipo_buceo_id,
+        supervisor_asignado_id: updatedData.supervisor_asignado_id
       };
 
-      // Remover campos undefined o null
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key as keyof typeof cleanData] === undefined) {
           delete cleanData[key as keyof typeof cleanData];
         }
       });
 
-      console.log('Sending cleaned data to update:', cleanData);
-      
-      await updateOperacion({ id: operacion.id, data: cleanData });
-      toast({
-        title: "Operación actualizada",
-        description: "La operación ha sido actualizada exitosamente.",
-      });
+      await updateOperacion({ id: selectedOperacion.id, data: cleanData });
+      setShowEditModal(false);
     } catch (error: any) {
       console.error('Error updating operacion:', error);
       toast({
@@ -249,7 +251,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         </TabsContent>
       </Tabs>
 
-      {/* Modals */}
+      {/* Modal de detalle */}
       <OperacionDetailModal
         operacion={selectedOperacion}
         isOpen={showDetailModal}
@@ -258,7 +260,23 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         onCreateInmersion={handleCreateInmersion}
       />
 
-      {/* Dialogs */}
+      {/* Modal de edición */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Editar Operación</DialogTitle>
+          </DialogHeader>
+          {selectedOperacion && (
+            <EditOperacionForm
+              operacion={selectedOperacion}
+              onSubmit={handleEditSubmit}
+              onCancel={() => setShowEditModal(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de wizard completo */}
       <Dialog open={showFlowWizard} onOpenChange={setShowFlowWizard}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <OperationFlowWizard 
@@ -270,6 +288,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de validación */}
       <Dialog open={showValidationGateway} onOpenChange={setShowValidationGateway}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

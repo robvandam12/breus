@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +6,7 @@ import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter, Workf
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSitios } from "@/hooks/useSitios";
 import { LeafletMap } from "@/components/ui/leaflet-map";
+import * as L from 'leaflet';
 
 interface OperacionesMapViewProps {
   operaciones: any[];
@@ -29,6 +29,29 @@ export const OperacionesMapView = ({
 }: OperacionesMapViewProps) => {
   const { sitios } = useSitios();
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    // Crear mapa con zoom más alejado para ver ciudades completas
+    const map = L.map(mapContainerRef.current).setView([-33.4569, -70.6483], 6); // Chile central, zoom 6
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    mapRef.current = map;
+
+    // Cleanup
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
 
   // Función para obtener color según estado de operación
   const getEstadoColor = (estado: string) => {

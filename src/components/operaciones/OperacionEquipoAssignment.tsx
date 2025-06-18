@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Users, CheckCircle2, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -53,6 +53,33 @@ export const OperacionEquipoAssignment = ({
       if (error) throw error;
       return data;
     }
+  });
+
+  // Obtener miembros del equipo seleccionado
+  const { data: equipoMiembros = [] } = useQuery({
+    queryKey: ['equipo-miembros', selectedEquipo],
+    queryFn: async () => {
+      if (!selectedEquipo) return [];
+      
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .select(`
+          *,
+          usuario:usuario_id(
+            usuario_id,
+            nombre,
+            apellido,
+            rol,
+            estado_buzo
+          )
+        `)
+        .eq('equipo_id', selectedEquipo)
+        .eq('disponible', true);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEquipo
   });
 
   const handleAssignEquipo = async () => {
@@ -129,6 +156,26 @@ export const OperacionEquipoAssignment = ({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Mostrar miembros del equipo seleccionado */}
+        {selectedEquipo && equipoMiembros.length > 0 && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Miembros del Equipo
+            </h4>
+            <div className="space-y-2">
+              {equipoMiembros.map((miembro) => (
+                <div key={miembro.id} className="flex items-center justify-between text-sm">
+                  <span className="text-blue-800">
+                    {miembro.usuario?.nombre} {miembro.usuario?.apellido}
+                  </span>
+                  <span className="text-blue-600 font-medium">{miembro.rol_equipo}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Seleccionar Supervisor</label>

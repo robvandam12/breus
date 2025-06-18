@@ -12,7 +12,6 @@ interface CreateOperacionFormWithCallbackProps {
 export const CreateOperacionFormWithCallback = ({ onClose, onSuccess }: CreateOperacionFormWithCallbackProps) => {
   const { createOperacion } = useOperaciones();
 
-  // Create a modified version of CreateOperacionForm that handles the success callback
   const handleSubmit = async (formData: any) => {
     try {
       const newOperacion = await createOperacion(formData);

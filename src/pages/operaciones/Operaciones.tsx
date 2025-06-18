@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
@@ -21,14 +20,11 @@ export default function Operaciones() {
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   
-  // Obtener parámetros de URL para manejar el estado inicial
   const wizardParam = searchParams.get('wizard');
 
-  // Setup notifications para operaciones globales
   useOperationNotifications();
 
   useEffect(() => {
-    // Manejar parámetros de URL
     if (wizardParam === 'new') {
       setShowFlowWizard(true);
       setWizardOperacionId(undefined);
@@ -37,7 +33,6 @@ export default function Operaciones() {
       setWizardOperacionId(wizardParam);
     }
 
-    // Limpiar parámetros después de procesarlos
     if (wizardParam) {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('wizard');
@@ -50,7 +45,6 @@ export default function Operaciones() {
     }
   }, [wizardParam]);
 
-  // Escuchar eventos de actualización de operaciones
   useEffect(() => {
     const handleOperationUpdated = (event: CustomEvent) => {
       const { type } = event.detail;
@@ -139,16 +133,16 @@ export default function Operaciones() {
       icon={Calendar}
       headerChildren={
         <div className="flex items-center gap-2">
+          <Button onClick={() => setShowCreateForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Operación
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setShowFlowWizard(true)}
           >
             <Workflow className="w-4 h-4 mr-2" />
-            Wizard Completo
-          </Button>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Operación
+            Asistente Completo
           </Button>
         </div>
       }
