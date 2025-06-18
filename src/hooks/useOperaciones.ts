@@ -92,12 +92,27 @@ const useOperacionesMutations = () => {
 
   const checkCanDelete = async (operacionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
     try {
+      console.log('Checking if operation can be deleted:', operacionId);
+      
       const { data: hpts } = await supabase.from('hpt').select('id').eq('operacion_id', operacionId).limit(1);
-      if (hpts && hpts.length > 0) return { canDelete: false, reason: 'tiene documentos HPT asociados' };
+      if (hpts && hpts.length > 0) {
+        console.log('Operation has HPTs, cannot delete');
+        return { canDelete: false, reason: 'tiene documentos HPT asociados' };
+      }
+      
       const { data: anexos } = await supabase.from('anexo_bravo').select('id').eq('operacion_id', operacionId).limit(1);
-      if (anexos && anexos.length > 0) return { canDelete: false, reason: 'tiene documentos Anexo Bravo asociados' };
+      if (anexos && anexos.length > 0) {
+        console.log('Operation has Anexo Bravo, cannot delete');
+        return { canDelete: false, reason: 'tiene documentos Anexo Bravo asociados' };
+      }
+      
       const { data: inmersiones } = await supabase.from('inmersion').select('inmersion_id').eq('operacion_id', operacionId).limit(1);
-      if (inmersiones && inmersiones.length > 0) return { canDelete: false, reason: 'tiene inmersiones registradas' };
+      if (inmersiones && inmersiones.length > 0) {
+        console.log('Operation has immersions, cannot delete');
+        return { canDelete: false, reason: 'tiene inmersiones registradas' };
+      }
+      
+      console.log('Operation can be deleted');
       return { canDelete: true };
     } catch (error) {
       console.error('Error checking if operation can be deleted:', error);
@@ -129,11 +144,14 @@ const useOperacionesMutations = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
+      console.log('Updating operation:', id, data);
       const { error } = await supabase.from('operacion').update(data).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidar múltiples queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails'] });
       toast({ title: "Operación actualizada", description: "La operación ha sido actualizada exitosamente." });
     },
     onError: (error) => {
@@ -144,11 +162,15 @@ const useOperacionesMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting operation:', id);
       const { error } = await supabase.from('operacion').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidar múltiples queries relacionadas y refrescar
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails'] });
+      queryClient.removeQueries({ queryKey: ['operacionDetails'] }); // Remover queries específicas
       toast({ title: "Operación eliminada", description: "La operación ha sido eliminada exitosamente." });
     },
     onError: (error) => {
@@ -159,11 +181,13 @@ const useOperacionesMutations = () => {
 
   const markAsDeletedMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Marking operation as deleted:', id);
       const { error } = await supabase.from('operacion').update({ estado: 'cancelada', estado_aprobacion: 'eliminada' }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails'] });
       toast({ title: "Operación marcada como eliminada", description: "La operación ha sido marcada como eliminada para mantener trazabilidad." });
     },
     onError: (error) => {

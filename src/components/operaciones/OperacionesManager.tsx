@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
@@ -22,7 +23,8 @@ export const OperacionesManager = () => {
     isLoading,
     updateOperacion, 
     deleteOperacion, 
-    checkCanDelete 
+    checkCanDelete,
+    refetch
   } = useOperaciones();
   
   const {
@@ -67,6 +69,10 @@ export const OperacionesManager = () => {
       console.log('Sending cleaned data to update:', cleanData);
       
       await updateOperacion({ id: operacion.id, data: cleanData });
+      
+      // Refrescar los datos después de actualizar
+      await refetch();
+      
       toast({
         title: "Operación actualizada",
         description: "La operación ha sido actualizada exitosamente.",
@@ -83,7 +89,10 @@ export const OperacionesManager = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      console.log('Attempting to delete operation:', id);
+      
       const { canDelete, reason } = await checkCanDelete(id);
+      
       if (!canDelete) {
         toast({
           title: "No se puede eliminar",
@@ -92,15 +101,28 @@ export const OperacionesManager = () => {
         });
         return;
       }
+      
       await deleteOperacion(id);
+      
+      // Refrescar los datos después de eliminar
+      await refetch();
+      
       toast({
         title: "Operación eliminada",
         description: "La operación ha sido eliminada exitosamente.",
       });
-    } catch (error) {
+      
+      // Si el modal está abierto y es la operación eliminada, cerrarlo
+      if (selectedOperacion?.id === id) {
+        setShowDetailModal(false);
+        setSelectedOperacion(null);
+      }
+      
+    } catch (error: any) {
+      console.error('Error deleting operation:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar la operación.",
+        description: `No se pudo eliminar la operación: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     }

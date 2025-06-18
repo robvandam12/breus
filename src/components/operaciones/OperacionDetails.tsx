@@ -26,6 +26,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
   
   const handleCreateInmersion = async (data: any) => {
     try {
+      console.log('Creating inmersion with data:', data);
       await createInmersion(data);
       setShowCreateInmersion(false);
     } catch (error) {
@@ -60,7 +61,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const canCreateInmersiones = compliance?.canExecute;
+  const canCreateInmersiones = compliance?.canExecute || false;
 
   return (
     <div className="space-y-6 max-w-6xl">

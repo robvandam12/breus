@@ -22,7 +22,7 @@ interface OperacionInmersionesProps {
   onNewInmersion?: () => void;
 }
 
-export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewInmersion }: OperacionInmersionesProps) => {
+export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true, onNewInmersion }: OperacionInmersionesProps) => {
   const { inmersiones, isLoading, deleteInmersion } = useInmersiones();
   const { createBitacoraSupervisor, bitacorasSupervisor } = useBitacorasSupervisor();
   const { createBitacoraBuzo } = useBitacorasBuzo();
@@ -141,6 +141,21 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewI
     return (bitacorasSupervisor || []).some(b => b.inmersion_id === inmersionId);
   };
 
+  const handleNewInmersion = () => {
+    if (!canCreateInmersiones) {
+      toast({
+        title: "No se puede crear inmersión",
+        description: "Para crear inmersiones necesita: Equipo asignado, HPT firmado y Anexo Bravo firmado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (onNewInmersion) {
+      onNewInmersion();
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -161,14 +176,13 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewI
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Anchor className="w-5 h-5" />
-              Inmersiones de la Operación
+              Inmersiones de la Operación ({operacionInmersiones.length})
             </CardTitle>
             {onNewInmersion && (
               <Button
-                onClick={onNewInmersion}
+                onClick={handleNewInmersion}
                 size="sm"
-                disabled={!canCreateInmersiones}
-                title={!canCreateInmersiones ? "Complete los requisitos para crear inmersiones" : "Crear nueva inmersión"}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Inmersión
@@ -177,7 +191,7 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewI
           </div>
         </CardHeader>
         <CardContent>
-          {onNewInmersion && !canCreateInmersiones && (
+          {!canCreateInmersiones && (
             <Alert className="mb-4 border-yellow-200 bg-yellow-50">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-yellow-800">
@@ -191,9 +205,15 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones, onNewI
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No hay inmersiones registradas
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 Las inmersiones aparecerán aquí cuando sean creadas para esta operación.
               </p>
+              {onNewInmersion && canCreateInmersiones && (
+                <Button onClick={handleNewInmersion} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primera Inmersión
+                </Button>
+              )}
             </div>
           ) : (
             <Table>

@@ -26,16 +26,16 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState<OperacionFormData>({
-    codigo: operacion.codigo || '',
-    nombre: operacion.nombre || '',
-    sitio_id: operacion.sitio_id || '',
-    servicio_id: operacion.servicio_id || '',
-    salmonera_id: operacion.salmonera_id || '',
-    contratista_id: operacion.contratista_id || '',
-    fecha_inicio: operacion.fecha_inicio || '',
-    fecha_fin: operacion.fecha_fin || '',
-    tareas: operacion.tareas || '',
-    estado: operacion.estado || 'activa'
+    codigo: operacion?.codigo || '',
+    nombre: operacion?.nombre || '',
+    sitio_id: operacion?.sitio_id || '',
+    servicio_id: operacion?.servicio_id || '',
+    salmonera_id: operacion?.salmonera_id || '',
+    contratista_id: operacion?.contratista_id || '',
+    fecha_inicio: operacion?.fecha_inicio || '',
+    fecha_fin: operacion?.fecha_fin || '',
+    tareas: operacion?.tareas || '',
+    estado: operacion?.estado || 'activa'
   });
 
   console.log('Editing operacion:', operacion);
@@ -43,6 +43,16 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.codigo || !formData.nombre || !formData.fecha_inicio) {
+      toast({
+        title: "Campos requeridos",
+        description: "Código, nombre y fecha de inicio son obligatorios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -85,6 +95,19 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
       [field]: value
     }));
   };
+
+  // Validar que tenemos los datos necesarios
+  if (!operacion) {
+    return (
+      <Card className="ios-card max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="text-center text-gray-500">
+            No se encontraron datos de la operación
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="ios-card max-w-2xl mx-auto">
@@ -147,9 +170,11 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Sin salmonera</SelectItem>
-                  {salmoneras.map((salmonera) => (
+                  {salmoneras
+                    .filter(salmonera => salmonera && salmonera.id && salmonera.id.trim() !== '')
+                    .map((salmonera) => (
                     <SelectItem key={salmonera.id} value={salmonera.id}>
-                      {salmonera.nombre}
+                      {salmonera.nombre || 'Sin nombre'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -167,9 +192,11 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Sin contratista</SelectItem>
-                  {contratistas.map((contratista) => (
+                  {contratistas
+                    .filter(contratista => contratista && contratista.id && contratista.id.trim() !== '')
+                    .map((contratista) => (
                     <SelectItem key={contratista.id} value={contratista.id}>
-                      {contratista.nombre}
+                      {contratista.nombre || 'Sin nombre'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -189,10 +216,10 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
               <SelectContent>
                 <SelectItem value="">Sin sitio</SelectItem>
                 {sitios
-                  .filter(sitio => !formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id)
+                  .filter(sitio => sitio && sitio.id && sitio.id.trim() !== '' && (!formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id))
                   .map((sitio) => (
                     <SelectItem key={sitio.id} value={sitio.id}>
-                      {sitio.nombre}
+                      {sitio.nombre || 'Sin nombre'}
                     </SelectItem>
                   ))}
               </SelectContent>
