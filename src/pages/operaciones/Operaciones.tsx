@@ -4,9 +4,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { Plus, Calendar, Workflow } from "lucide-react";
+import { Calendar, Workflow } from "lucide-react";
 import { OperacionesManager } from "@/components/operaciones/OperacionesManager";
-import { CreateOperacionForm } from "@/components/operaciones/CreateOperacionForm";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
@@ -14,7 +13,6 @@ import { useOperationNotifications } from '@/hooks/useOperationNotifications';
 import { toast } from '@/hooks/use-toast';
 
 export default function Operaciones() {
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
   const [wizardOperacionId, setWizardOperacionId] = useState<string | undefined>();
   
@@ -82,10 +80,6 @@ export default function Operaciones() {
     };
   }, []);
 
-  const handleCloseCreateForm = () => {
-    setShowCreateForm(false);
-  };
-
   const handleCloseFlowWizard = () => {
     setShowFlowWizard(false);
     setWizardOperacionId(undefined);
@@ -134,28 +128,19 @@ export default function Operaciones() {
       icon={Calendar}
       headerChildren={
         <div className="flex items-center gap-3">
-          <Button onClick={() => setShowCreateForm(true)} variant="outline">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Operación
-          </Button>
           <Button 
             onClick={() => setShowFlowWizard(true)}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 flex items-center gap-2"
           >
-            <Workflow className="w-4 h-4 mr-2" />
-            Wizard Completo
+            <Workflow className="w-4 h-4" />
+            Asistente de Operación
           </Button>
         </div>
       }
     >
       <OperacionesManager onStartWizard={handleStartWizard} />
 
-      {/* Formulario de creación simple */}
-      {renderDialog(showCreateForm, handleCloseCreateForm, 
-        <CreateOperacionForm onClose={handleCloseCreateForm} />
-      )}
-
-      {/* Wizard de flujo completo */}
+      {/* Asistente de operación completo */}
       {renderDialog(showFlowWizard, handleCloseFlowWizard,
         <OperationFlowWizard 
           operacionId={wizardOperacionId}

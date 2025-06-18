@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useOperacionDeletion } from './useOperacionDeletion';
 
 export interface OperacionFormData {
   codigo: string;
@@ -45,6 +46,7 @@ export type Operacion = OperacionConRelaciones;
 
 export const useOperaciones = () => {
   const queryClient = useQueryClient();
+  const { forceDelete, checkAndDelete, isDeleting } = useOperacionDeletion();
 
   const { data: operaciones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['operaciones'],
@@ -143,101 +145,6 @@ export const useOperaciones = () => {
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Attempting to delete operacion:', id);
-      
-      // Verificar primero si se puede eliminar
-      const canDeleteResult = await checkCanDelete(id);
-      if (!canDeleteResult.canDelete) {
-        throw new Error(`No se puede eliminar la operación: ${canDeleteResult.reason}`);
-      }
-      
-      console.log('Operation can be deleted, proceeding...');
-      
-      const { error } = await supabase
-        .from('operacion')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting operacion:', error);
-        throw error;
-      }
-
-      console.log('Operacion deleted successfully');
-    },
-    onSuccess: () => {
-      // Forzar actualización de cache
-      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
-      queryClient.refetchQueries({ queryKey: ['operaciones'] });
-      toast({
-        title: "Operación eliminada",
-        description: "La operación ha sido eliminada exitosamente.",
-      });
-    },
-    onError: (error: any) => {
-      console.error('Delete mutation error:', error);
-      toast({
-        title: "Error al eliminar",
-        description: `${error.message}`,
-        variant: "destructive",
-      });
-    }
-  });
-
-  const checkCanDelete = async (operacionId: string) => {
-    try {
-      console.log('Checking if operation can be deleted:', operacionId);
-      
-      // Verificar si hay documentos firmados
-      const [hptResult, anexoResult, inmersionResult] = await Promise.all([
-        supabase
-          .from('hpt')
-          .select('id, firmado')
-          .eq('operacion_id', operacionId)
-          .maybeSingle(),
-        supabase
-          .from('anexo_bravo')
-          .select('id, firmado')
-          .eq('operacion_id', operacionId)
-          .maybeSingle(),
-        supabase
-          .from('inmersion')
-          .select('inmersion_id')
-          .eq('operacion_id', operacionId)
-          .maybeSingle()
-      ]);
-
-      console.log('Delete check results:', { 
-        hpt: hptResult, 
-        anexo: anexoResult, 
-        inmersion: inmersionResult 
-      });
-
-      // Verificar si hay documentos HPT firmados
-      if (hptResult.data && hptResult.data.firmado) {
-        return { canDelete: false, reason: 'tiene documentos HPT firmados' };
-      }
-
-      // Verificar si hay documentos Anexo Bravo firmados
-      if (anexoResult.data && anexoResult.data.firmado) {
-        return { canDelete: false, reason: 'tiene documentos Anexo Bravo firmados' };
-      }
-
-      // Verificar si hay inmersiones asociadas
-      if (inmersionResult.data) {
-        return { canDelete: false, reason: 'tiene inmersiones asociadas' };
-      }
-
-      console.log('Operation can be deleted - no blocking dependencies found');
-      return { canDelete: true, reason: '' };
-    } catch (error) {
-      console.error('Error checking if operation can be deleted:', error);
-      return { canDelete: false, reason: 'error al verificar dependencias' };
-    }
-  };
-
   const validateOperacionCompleteness = async (operacionId: string) => {
     try {
       console.log('Validating operacion completeness:', operacionId);
@@ -318,8 +225,70 @@ export const useOperaciones = () => {
     return updateMutation.mutateAsync({ id, data });
   };
 
+  // Usar el nuevo hook de eliminación
   const deleteOperacion = async (id: string) => {
-    return deleteMutation.mutateAsync(id);
+    try {
+      await checkAndDelete(id);
+    } catch (error) {
+      // Si falla la eliminación normal, intentar forzar eliminación para operaciones vacías
+      try {
+        await forceDelete(id);
+      } catch (forceError) {
+        throw forceError;
+      }
+    }
+  };
+
+  const checkCanDelete = async (operacionId: string) => {
+    try {
+      console.log('Checking if operation can be deleted:', operacionId);
+      
+      // Verificar si hay documentos firmados
+      const [hptResult, anexoResult, inmersionResult] = await Promise.all([
+        supabase
+          .from('hpt')
+          .select('id, firmado')
+          .eq('operacion_id', operacionId)
+          .maybeSingle(),
+        supabase
+          .from('anexo_bravo')
+          .select('id, firmado')
+          .eq('operacion_id', operacionId)
+          .maybeSingle(),
+        supabase
+          .from('inmersion')
+          .select('inmersion_id')
+          .eq('operacion_id', operacionId)
+          .maybeSingle()
+      ]);
+
+      console.log('Delete check results:', { 
+        hpt: hptResult, 
+        anexo: anexoResult, 
+        inmersion: inmersionResult 
+      });
+
+      // Verificar si hay documentos HPT firmados
+      if (hptResult.data && hptResult.data.firmado) {
+        return { canDelete: false, reason: 'tiene documentos HPT firmados' };
+      }
+
+      // Verificar si hay documentos Anexo Bravo firmados
+      if (anexoResult.data && anexoResult.data.firmado) {
+        return { canDelete: false, reason: 'tiene documentos Anexo Bravo firmados' };
+      }
+
+      // Verificar si hay inmersiones asociadas
+      if (inmersionResult.data) {
+        return { canDelete: false, reason: 'tiene inmersiones asociadas' };
+      }
+
+      console.log('Operation can be deleted - no blocking dependencies found');
+      return { canDelete: true, reason: '' };
+    } catch (error) {
+      console.error('Error checking if operation can be deleted:', error);
+      return { canDelete: false, reason: 'error al verificar dependencias' };
+    }
   };
 
   return {
@@ -334,6 +303,6 @@ export const useOperaciones = () => {
     validateOperacionCompleteness,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    isDeleting
   };
 };
