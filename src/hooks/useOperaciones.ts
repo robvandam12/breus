@@ -89,38 +89,50 @@ const useOperacionesMutations = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
 
+  // CORREGIDO: Mejorar la verificación de eliminación
   const checkCanDelete = async (operacionId: string): Promise<{ canDelete: boolean; reason?: string }> => {
     try {
       // Verificar documentos firmados
-      const [hptResult, anexoResult, inmersionResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
-        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
-        supabase.from('inmersion').select('inmersion_id').eq('operacion_id', operacionId).limit(1)
+      const [hptResult, anexoResult] = await Promise.all([
+        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).limit(1),
+        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).limit(1)
       ]);
 
-      if (hptResult.data && hptResult.data.length > 0) {
+      // Si hay documentos firmados, no se puede eliminar
+      const hptFirmado = hptResult.data?.some(doc => doc.firmado);
+      const anexoFirmado = anexoResult.data?.some(doc => doc.firmado);
+
+      if (hptFirmado) {
         return { canDelete: false, reason: 'tiene un documento HPT firmado asociado' };
       }
       
-      if (anexoResult.data && anexoResult.data.length > 0) {
+      if (anexoFirmado) {
         return { canDelete: false, reason: 'tiene un documento Anexo Bravo firmado asociado' };
       }
+
+      // Verificar inmersiones
+      const { data: inmersiones } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .eq('operacion_id', operacionId)
+        .limit(1);
       
-      if (inmersionResult.data && inmersionResult.data.length > 0) {
+      if (inmersiones && inmersiones.length > 0) {
         return { canDelete: false, reason: 'tiene inmersiones registradas' };
       }
 
-      // Verificar documentos adicionales
-      const [multixResult, bitacoraSupResult, bitacoraBuzoResult] = await Promise.all([
-        supabase.from('multix').select('id').eq('operacion_id', operacionId).limit(1),
-        supabase.from('bitacora_supervisor').select('bitacora_id').eq('inmersion_id', operacionId).limit(1),
-        supabase.from('bitacora_buzo').select('bitacora_id').eq('inmersion_id', operacionId).limit(1)
-      ]);
+      // Verificar otros documentos
+      const { data: multixData } = await supabase
+        .from('multix')
+        .select('id')
+        .eq('operacion_id', operacionId)
+        .limit(1);
 
-      if (multixResult.data && multixResult.data.length > 0) {
+      if (multixData && multixData.length > 0) {
         return { canDelete: false, reason: 'tiene documentos MULTIX asociados' };
       }
 
+      // Si no hay documentos firmados ni inmersiones, se puede eliminar
       return { canDelete: true };
     } catch (error) {
       console.error('Error checking if operation can be deleted:', error);

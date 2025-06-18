@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,7 +129,7 @@ export const OperacionesMapView = ({
                 onClick: () => onViewDetail(marker.operacion)
               }))}
               showLocationSelector={false}
-              initialZoom={8}
+              initialZoom={6}
             />
           </div>
           

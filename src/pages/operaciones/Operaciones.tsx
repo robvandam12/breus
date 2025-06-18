@@ -21,10 +21,8 @@ export default function Operaciones() {
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   
-  // Obtener parámetros de URL para manejar el estado inicial
   const wizardParam = searchParams.get('wizard');
 
-  // Setup notifications para operaciones globales
   useOperationNotifications();
 
   useEffect(() => {
@@ -139,16 +137,18 @@ export default function Operaciones() {
       icon={Calendar}
       headerChildren={
         <div className="flex items-center gap-2">
+          {/* CORREGIDO: Simplificar botones del header para mejor UX */}
           <Button 
             variant="outline" 
             onClick={() => setShowFlowWizard(true)}
+            className="flex items-center gap-2"
           >
-            <Workflow className="w-4 h-4 mr-2" />
-            Wizard Completo
+            <Workflow className="w-4 h-4" />
+            {isMobile ? 'Wizard' : 'Asistente Completo'}
           </Button>
           <Button onClick={() => setShowCreateForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Nueva Operación
+            {isMobile ? 'Nueva' : 'Nueva Operación'}
           </Button>
         </div>
       }
