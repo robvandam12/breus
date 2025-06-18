@@ -184,14 +184,12 @@ export const OperationFlowWizard = ({
             <p className="text-gray-600">{currentStep?.description}</p>
           </div>
 
-          {/* CORREGIDO: Remover botones internos de los componentes */}
+          {/* Step Content */}
           {currentStep?.id === 'operacion' && (
-            <div className="space-y-4">
-              <CreateOperacionFormWithCallback 
-                onClose={() => {}} // No mostrar botón cancelar interno
-                onSuccess={handleCreateOperacion}
-              />
-            </div>
+            <CreateOperacionFormWithCallback 
+              onClose={() => onCancel && onCancel()}
+              onSuccess={handleCreateOperacion}
+            />
           )}
 
           {currentStep?.id === 'sitio' && wizardOperacionId && (

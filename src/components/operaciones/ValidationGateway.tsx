@@ -1,239 +1,418 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Clock, AlertCircle, FileText, Shield, Users } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock, 
+  Shield, 
+  FileText, 
+  Users,
+  RefreshCw,
+  Loader2,
+  ExternalLink,
+  Plus,
+  Play
+} from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useRouter } from "@/hooks/useRouter";
+import { toast } from "@/hooks/use-toast";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface ValidationGatewayProps {
-  operacionId: string;
-  onValidationComplete: () => void;
+interface ValidationItem {
+  id: string;
+  category: 'documentos' | 'personal' | 'equipos' | 'seguridad';
+  title: string;
+  description: string;
+  status: 'valid' | 'warning' | 'error' | 'pending';
+  required: boolean;
+  details?: string;
+  actionRequired?: string;
+  actionUrl?: string;
+  canCreate?: boolean;
 }
 
-export const ValidationGateway = ({ 
-  operacionId, 
-  onValidationComplete 
-}: ValidationGatewayProps) => {
+interface ValidationGatewayProps {
+  operacionId: string;
+  onValidationComplete?: () => void;
+}
+
+export const ValidationGateway = ({ operacionId, onValidationComplete }: ValidationGatewayProps) => {
   const [isValidating, setIsValidating] = useState(false);
+  const [lastValidation, setLastValidation] = useState<Date | null>(null);
+  const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
+  const { validateOperacionCompleteness } = useOperaciones();
+  const { navigateTo } = useRouter();
 
-  // Obtener estado de la operación
-  const { data: operacion, refetch } = useQuery({
-    queryKey: ['operacion-validation', operacionId],
+  // Query para datos de validación en tiempo real
+  const { data: validationData, refetch, isLoading } = useQuery({
+    queryKey: ['operation-validation', operacionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          sitios:sitio_id(nombre),
-          equipos_buceo:equipo_buceo_id(nombre),
-          usuario_supervisor:supervisor_asignado_id(nombre, apellido)
-        `)
-        .eq('id', operacionId)
-        .single();
+      const validation = await validateOperacionCompleteness(operacionId);
+      
+      const items: ValidationItem[] = [
+        {
+          id: 'hpt-complete',
+          category: 'documentos',
+          title: 'HPT Completado',
+          description: 'Herramientas y Procedimientos de Trabajo documentados',
+          status: validation.hptReady ? 'valid' : 'error',
+          required: true,
+          details: validation.hptReady ? 'HPT completado y firmado' : 'HPT no existe o no está firmado',
+          actionRequired: validation.hptReady ? undefined : 'Crear y firmar HPT',
+          actionUrl: `/formularios/hpt?operacion=${operacionId}`,
+          canCreate: !validation.hptReady
+        },
+        {
+          id: 'anexo-bravo',
+          category: 'seguridad',
+          title: 'Anexo Bravo',
+          description: 'Análisis de Riesgo y Seguridad completado',
+          status: validation.anexoBravoReady ? 'valid' : 'error',
+          required: true,
+          details: validation.anexoBravoReady ? 'Anexo Bravo completado y firmado' : 'Anexo Bravo no existe o no está firmado',
+          actionRequired: validation.anexoBravoReady ? undefined : 'Crear y firmar Anexo Bravo',
+          actionUrl: `/formularios/anexo-bravo?operacion=${operacionId}`,
+          canCreate: !validation.anexoBravoReady
+        },
+        {
+          id: 'personal-asignado',
+          category: 'personal',
+          title: 'Supervisor Asignado',
+          description: 'Supervisor certificado asignado a la operación',
+          status: validation.supervisorAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.supervisorAsignado ? 'Supervisor asignado correctamente' : 'No hay supervisor asignado',
+          actionRequired: validation.supervisorAsignado ? undefined : 'Asignar supervisor',
+          canCreate: false
+        },
+        {
+          id: 'equipo-verificado',
+          category: 'equipos',
+          title: 'Equipo de Buceo',
+          description: 'Equipo de buceo asignado y verificado',
+          status: validation.equipoAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.equipoAsignado ? 'Equipo de buceo asignado' : 'No hay equipo de buceo asignado',
+          actionRequired: validation.equipoAsignado ? undefined : 'Asignar equipo de buceo',
+          canCreate: false
+        },
+        {
+          id: 'sitio-asignado',
+          category: 'equipos',
+          title: 'Sitio Asignado',
+          description: 'Sitio de trabajo asignado a la operación',
+          status: validation.sitioAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.sitioAsignado ? 'Sitio asignado correctamente' : 'No hay sitio asignado',
+          actionRequired: validation.sitioAsignado ? undefined : 'Asignar sitio de trabajo',
+          canCreate: false
+        },
+        {
+          id: 'ready-execute',
+          category: 'seguridad',
+          title: 'Lista para Ejecutar',
+          description: 'Operación cumple todos los requisitos',
+          status: validation.canExecute ? 'valid' : 'error',
+          required: true,
+          details: validation.canExecute ? 'Operación lista para inmersiones' : 'Faltan requisitos obligatorios',
+          actionRequired: validation.canExecute ? undefined : 'Completar todos los requisitos anteriores',
+          canCreate: false
+        }
+      ];
 
-      if (error) throw error;
-      return data;
-    }
+      return { validation, items };
+    },
+    refetchInterval: 3000, // Refrescar cada 3 segundos
+    enabled: !!operacionId
   });
 
-  // Verificar documentos
-  const { data: documentStatus } = useQuery({
-    queryKey: ['operation-documents-validation', operacionId],
-    queryFn: async () => {
-      try {
-        const [hptResult, anexoResult] = await Promise.all([
-          supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).limit(1),
-          supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).limit(1)
-        ]);
-
-        const hptExists = hptResult.data && hptResult.data.length > 0;
-        const hptSigned = hptExists && hptResult.data[0]?.firmado;
-        const anexoExists = anexoResult.data && anexoResult.data.length > 0;
-        const anexoSigned = anexoExists && anexoResult.data[0]?.firmado;
-
-        return {
-          hptExists,
-          hptSigned,
-          anexoExists,
-          anexoSigned
-        };
-      } catch (error) {
-        console.error('Error checking documents:', error);
-        return {
-          hptExists: false,
-          hptSigned: false,
-          anexoExists: false,
-          anexoSigned: false
-        };
-      }
-    },
-    refetchInterval: 3000
-  });
-
-  const validationItems = [
-    {
-      id: 'sitio',
-      title: 'Sitio Asignado',
-      description: 'Sitio de trabajo seleccionado',
-      status: operacion?.sitio_id ? 'completed' : 'pending',
-      icon: <FileText className="w-5 h-5" />,
-      detail: operacion?.sitios?.nombre || 'No asignado'
-    },
-    {
-      id: 'equipo',
-      title: 'Equipo de Buceo',
-      description: 'Equipo y supervisor asignados',
-      status: (operacion?.equipo_buceo_id && operacion?.supervisor_asignado_id) ? 'completed' : 'pending',
-      icon: <Users className="w-5 h-5" />,
-      detail: operacion?.equipos_buceo?.nombre || 'No asignado'
-    },
-    {
-      id: 'hpt',
-      title: 'HPT (Herramientas y Procedimientos)',
-      description: 'Documento HPT completado y firmado',
-      status: documentStatus?.hptSigned ? 'completed' : documentStatus?.hptExists ? 'warning' : 'pending',
-      icon: <Shield className="w-5 h-5" />,
-      detail: documentStatus?.hptSigned ? 'Firmado' : documentStatus?.hptExists ? 'Pendiente firma' : 'No creado'
-    },
-    {
-      id: 'anexo',
-      title: 'Anexo Bravo',
-      description: 'Análisis de seguridad completado y firmado',
-      status: documentStatus?.anexoSigned ? 'completed' : documentStatus?.anexoExists ? 'warning' : 'pending',
-      icon: <Shield className="w-5 h-5" />,
-      detail: documentStatus?.anexoSigned ? 'Firmado' : documentStatus?.anexoExists ? 'Pendiente firma' : 'No creado'
+  useEffect(() => {
+    if (validationData) {
+      setValidationItems(validationData.items);
+      setLastValidation(new Date());
     }
-  ];
+  }, [validationData]);
 
-  const completedItems = validationItems.filter(item => item.status === 'completed').length;
-  const progress = (completedItems / validationItems.length) * 100;
-  const isReady = completedItems === validationItems.length;
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'warning':
-        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
-      case 'warning':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
-      default:
-        return <Badge variant="outline">Pendiente</Badge>;
-    }
-  };
-
-  const handleApproveAndContinue = async () => {
-    if (!isReady) return;
-    
+  const performValidation = async () => {
     setIsValidating(true);
     try {
-      // Simular validación
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      onValidationComplete();
+      await refetch();
+      toast({
+        title: "Validación actualizada",
+        description: "El estado de validación ha sido actualizado.",
+      });
+    } catch (error) {
+      console.error('Error validating operation:', error);
+      toast({
+        title: "Error de validación",
+        description: "No se pudo validar la operación. Intente nuevamente.",
+        variant: "destructive",
+      });
     } finally {
       setIsValidating(false);
     }
   };
 
-  const handleCreateDocument = (type: 'hpt' | 'anexo') => {
-    const baseUrl = type === 'hpt' ? '/hpt' : '/anexo-bravo';
-    const url = `${baseUrl}?operacion=${operacionId}`;
-    window.open(url, '_blank');
+  const handleActionClick = (item: ValidationItem) => {
+    if (item.actionUrl) {
+      // Abrir en nueva pestaña para no perder el wizard
+      window.open(item.actionUrl, '_blank');
+    } else if (item.id === 'personal-asignado' || item.id === 'equipo-verificado' || item.id === 'sitio-asignado') {
+      toast({
+        title: "Use el wizard",
+        description: "Complete esta asignación en los pasos anteriores del wizard.",
+      });
+    }
   };
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="w-6 h-6 text-blue-600" />
-          Validación de Operación
-        </CardTitle>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
-              {completedItems} de {validationItems.length} requisitos completados
-            </span>
-            <span className="text-sm font-medium">{Math.round(progress)}%</span>
+  const getCategoryIcon = (category: ValidationItem['category']) => {
+    switch (category) {
+      case 'documentos':
+        return <FileText className="w-4 h-4" />;
+      case 'personal':
+        return <Users className="w-4 h-4" />;
+      case 'equipos':
+        return <Shield className="w-4 h-4" />;
+      case 'seguridad':
+        return <Shield className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusIcon = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      case 'error':
+        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-gray-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusBadge = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <Badge className="bg-green-100 text-green-800">Válido</Badge>;
+      case 'warning':
+        return <Badge className="bg-yellow-100 text-yellow-800">Advertencia</Badge>;
+      case 'error':
+        return <Badge className="bg-red-100 text-red-800">Error</Badge>;
+      case 'pending':
+        return <Badge className="bg-gray-100 text-gray-800">Pendiente</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Desconocido</Badge>;
+    }
+  };
+
+  const validItems = validationItems.filter(item => item.status === 'valid').length;
+  const totalItems = validationItems.length;
+  const requiredItems = validationItems.filter(item => item.required);
+  const validRequiredItems = requiredItems.filter(item => item.status === 'valid').length;
+  const hasErrors = validationItems.some(item => item.status === 'error' && item.required);
+  const canProceed = validRequiredItems === requiredItems.length && !hasErrors;
+
+  const categories = Array.from(new Set(validationItems.map(item => item.category)));
+
+  const handleValidationComplete = () => {
+    if (canProceed) {
+      onValidationComplete?.();
+      toast({
+        title: "Validación completada",
+        description: "La operación está lista para ejecutarse.",
+      });
+    } else {
+      toast({
+        title: "Validación incompleta",
+        description: "Hay elementos que requieren atención antes de proceder.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateInmersion = () => {
+    navigateTo(`/inmersiones?operacion=${operacionId}`);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p>Cargando validaciones...</p>
           </div>
-          <Progress value={progress} className="w-full" />
-        </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" />
+            Portal de Validaciones
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={canProceed ? "default" : "destructive"}>
+              {validItems}/{totalItems} válidos
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={performValidation}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              {isValidating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {isValidating ? 'Validando...' : 'Revalidar'}
+            </Button>
+          </div>
+        </CardTitle>
+        {lastValidation && (
+          <p className="text-sm text-gray-600">
+            Última validación: {lastValidation.toLocaleString('es-CL')}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
-        {isReady && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">
-              ✓ ¡Operación lista para ejecutarse! Todos los requisitos están completados.
-            </p>
-          </div>
+        {/* Status General */}
+        {!canProceed && (
+          <Alert variant={hasErrors ? "destructive" : "default"}>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {hasErrors 
+                ? "Hay errores críticos que deben resolverse antes de proceder."
+                : "Hay validaciones pendientes que deben completarse."
+              }
+            </AlertDescription>
+          </Alert>
         )}
 
-        <div className="space-y-4">
-          {validationItems.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                {item.icon}
-                <div>
-                  <h4 className="font-medium">{item.title}</h4>
-                  <p className="text-sm text-gray-600">{item.description}</p>
-                  <p className="text-sm text-gray-500">{item.detail}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {getStatusIcon(item.status)}
-                {getStatusBadge(item.status)}
-                {(item.id === 'hpt' && !documentStatus?.hptExists) && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleCreateDocument('hpt')}
-                  >
-                    Crear HPT
-                  </Button>
-                )}
-                {(item.id === 'anexo' && !documentStatus?.anexoExists) && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleCreateDocument('anexo')}
-                  >
-                    Crear Anexo
-                  </Button>
-                )}
+        {canProceed && (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>
+              Todas las validaciones requeridas han sido completadas. La operación puede proceder.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Validaciones por Categoría */}
+        {categories.map(category => {
+          const categoryItems = validationItems.filter(item => item.category === category);
+          
+          return (
+            <div key={category} className="space-y-3">
+              <h4 className="font-medium text-lg capitalize flex items-center gap-2">
+                {getCategoryIcon(category)}
+                {category === 'documentos' ? 'Documentos' : 
+                 category === 'personal' ? 'Personal' :
+                 category === 'equipos' ? 'Equipos' : 'Seguridad'}
+              </h4>
+              
+              <div className="space-y-2">
+                {categoryItems.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3 flex-1">
+                      {getStatusIcon(item.status)}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{item.title}</p>
+                          {item.required && (
+                            <Badge variant="outline" className="text-xs">Requerido</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{item.description}</p>
+                        {item.details && (
+                          <p className="text-xs text-gray-500 mt-1">{item.details}</p>
+                        )}
+                        {item.actionRequired && (
+                          <p className="text-xs text-blue-600 mt-1 font-medium">
+                            Acción: {item.actionRequired}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(item.status)}
+                      
+                      {item.canCreate && item.actionUrl && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Crear
+                        </Button>
+                      )}
+                      
+                      {item.actionUrl && !item.canCreate && item.status !== 'valid' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Ver
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
 
-        <div className="flex justify-end pt-4">
-          <Button 
-            onClick={handleApproveAndContinue}
-            disabled={!isReady || isValidating}
-            className="flex items-center gap-2"
-          >
-            {isValidating ? (
-              <>
-                <Clock className="w-4 h-4 animate-spin" />
-                Validando...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                {isReady ? 'Aprobar y Continuar' : 'Completar Requisitos'}
-              </>
-            )}
+        {/* Acciones */}
+        <div className="flex justify-between pt-4 border-t">
+          <Button variant="outline" onClick={performValidation}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refrescar Estado
           </Button>
+          
+          <div className="flex gap-2">
+            {canProceed && (
+              <Button 
+                onClick={handleCreateInmersion}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                Crear Inmersión
+              </Button>
+            )}
+            
+            <Button 
+              onClick={handleValidationComplete}
+              disabled={!canProceed}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {canProceed ? 'Aprobar y Continuar' : 'Validación Incompleta'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

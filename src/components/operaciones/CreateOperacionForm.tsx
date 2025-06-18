@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,9 @@ import { toast } from "@/hooks/use-toast";
 export interface CreateOperacionFormProps {
   onClose: () => void;
   onSubmitOverride?: (formData: any) => Promise<any>;
-  initialData?: any;
 }
 
-export const CreateOperacionForm = ({ onClose, onSubmitOverride, initialData }: CreateOperacionFormProps) => {
+export const CreateOperacionForm = ({ onClose, onSubmitOverride }: CreateOperacionFormProps) => {
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
@@ -40,23 +40,6 @@ export const CreateOperacionForm = ({ onClose, onSubmitOverride, initialData }: 
     { id: '3', nombre: 'Limpieza de Fondos' },
     { id: '4', nombre: 'Soldadura Subacuática' }
   ];
-
-  // Cargar datos iniciales si se proporciona
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        codigo: initialData.codigo || '',
-        nombre: initialData.nombre || '',
-        tareas: initialData.tareas || '',
-        fecha_inicio: initialData.fecha_inicio || '',
-        fecha_fin: initialData.fecha_fin || '',
-        estado: initialData.estado || 'activa',
-        salmonera_id: initialData.salmonera_id || '',
-        contratista_id: initialData.contratista_id || '',
-        servicio_id: initialData.servicio_id || ''
-      });
-    }
-  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +74,7 @@ export const CreateOperacionForm = ({ onClose, onSubmitOverride, initialData }: 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>{initialData ? 'Editar Operación' : 'Nueva Operación'}</CardTitle>
+        <CardTitle>Nueva Operación</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -208,7 +191,7 @@ export const CreateOperacionForm = ({ onClose, onSubmitOverride, initialData }: 
               Cancelar
             </Button>
             <Button type="submit">
-              {initialData ? 'Actualizar Operación' : 'Crear Operación'}
+              Crear Operación
             </Button>
           </div>
         </form>
