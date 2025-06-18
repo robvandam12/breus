@@ -34,15 +34,10 @@ export const CreateOperacionFormWithCallback = ({ onClose, onSuccess }: CreateOp
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Nueva Operación</h2>
-        <p className="mt-2 text-gray-600">
-          Complete la información básica de la operación
-        </p>
-      </div>
       <CreateOperacionForm 
         onClose={onClose}
         onSubmitOverride={handleSubmit}
+        hideButtons={true}
       />
     </div>
   );

@@ -179,22 +179,22 @@ export const useOperaciones = () => {
 
   const checkCanDelete = async (operacionId: string) => {
     try {
-      // Verificar si hay documentos firmados (HPT, Anexo Bravo, etc.)
+      // Verificar si hay documentos firmados (HPT, Anexo Bravo, etc.) - Corregido con maybeSingle
       const [hptResult, anexoResult, inmersionResult] = await Promise.all([
-        supabase.from('hpt').select('id').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
-        supabase.from('anexo_bravo').select('id').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
-        supabase.from('inmersion').select('id').eq('operacion_id', operacionId).limit(1)
+        supabase.from('hpt').select('id').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle(),
+        supabase.from('anexo_bravo').select('id').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle(),
+        supabase.from('inmersion').select('id').eq('operacion_id', operacionId).maybeSingle()
       ]);
 
-      if (hptResult.data && hptResult.data.length > 0) {
+      if (hptResult.data) {
         return { canDelete: false, reason: 'tiene documentos HPT firmados' };
       }
 
-      if (anexoResult.data && anexoResult.data.length > 0) {
+      if (anexoResult.data) {
         return { canDelete: false, reason: 'tiene documentos Anexo Bravo firmados' };
       }
 
-      if (inmersionResult.data && inmersionResult.data.length > 0) {
+      if (inmersionResult.data) {
         return { canDelete: false, reason: 'tiene inmersiones asociadas' };
       }
 
@@ -205,7 +205,7 @@ export const useOperaciones = () => {
     }
   };
 
-  // Función para validar completitud de operación
+  // Función para validar completitud de operación - Corregida con maybeSingle
   const validateOperacionCompleteness = async (operacionId: string) => {
     try {
       console.log('Validating operacion completeness:', operacionId);
@@ -219,14 +219,14 @@ export const useOperaciones = () => {
 
       if (opError) throw opError;
 
-      // Verificar documentos
+      // Verificar documentos - Corregido con maybeSingle
       const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1),
-        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).limit(1)
+        supabase.from('hpt').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle(),
+        supabase.from('anexo_bravo').select('id, firmado').eq('operacion_id', operacionId).eq('firmado', true).maybeSingle()
       ]);
 
-      const hptReady = hptResult.data && hptResult.data.length > 0;
-      const anexoBravoReady = anexoResult.data && anexoResult.data.length > 0;
+      const hptReady = !!hptResult.data;
+      const anexoBravoReady = !!anexoResult.data;
       const supervisorAsignado = !!operacion.supervisor_asignado_id;
       const equipoAsignado = !!operacion.equipo_buceo_id;
       const sitioAsignado = !!operacion.sitio_id;

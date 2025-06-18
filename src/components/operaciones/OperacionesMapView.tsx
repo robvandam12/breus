@@ -35,8 +35,8 @@ export const OperacionesMapView = ({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Crear mapa con zoom más alejado para ver ciudades completas
-    const map = L.map(mapContainerRef.current).setView([-33.4569, -70.6483], 6); // Chile central, zoom 6
+    // Crear mapa con zoom más alejado para ver ciudades completas - CORREGIDO
+    const map = L.map(mapContainerRef.current).setView([-39.8097, -73.2400], 5); // Sur de Chile, zoom 5
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
@@ -97,9 +97,9 @@ export const OperacionesMapView = ({
   // Obtener regiones únicas
   const regiones = Array.from(new Set(sitios.map(s => s?.region).filter(Boolean)));
 
-  // Calcular centro del mapa basado en las operaciones filtradas
+  // Calcular centro del mapa basado en las operaciones filtradas - CORREGIDO zoom
   const getMapCenter = () => {
-    if (filteredMarkers.length === 0) return { lat: -41.4693, lng: -72.9424 };
+    if (filteredMarkers.length === 0) return { lat: -39.8097, lng: -73.2400 }; // Centro de Chile sur
     
     const avgLat = filteredMarkers.reduce((sum, marker) => sum + marker.lat, 0) / filteredMarkers.length;
     const avgLng = filteredMarkers.reduce((sum, marker) => sum + marker.lng, 0) / filteredMarkers.length;
@@ -153,7 +153,7 @@ export const OperacionesMapView = ({
                 onClick: () => onViewDetail(marker.operacion)
               }))}
               showLocationSelector={false}
-              initialZoom={8}
+              initialZoom={6}
             />
           </div>
           

@@ -129,6 +129,8 @@ export const OperationFlowWizard = ({
     );
   }
 
+  const isLastStep = currentStepIndex === steps.length - 1;
+
   return (
     <Card className="w-full max-w-6xl mx-auto">
       <CardHeader>
@@ -260,8 +262,8 @@ export const OperationFlowWizard = ({
                 disabled={currentStepIndex === steps.length - 1 || !currentStep?.canNavigate}
                 className="flex items-center gap-2"
               >
-                Siguiente
-                <ArrowRight className="w-4 h-4" />
+                {isLastStep ? 'Finalizar Wizard' : 'Siguiente'}
+                {!isLastStep && <ArrowRight className="w-4 h-4" />}
               </Button>
             )}
           </div>

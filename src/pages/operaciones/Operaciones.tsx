@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
@@ -132,17 +133,17 @@ export default function Operaciones() {
       subtitle="Gestión completa de operaciones de buceo y documentos asociados"
       icon={Calendar}
       headerChildren={
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setShowCreateForm(true)}>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setShowCreateForm(true)} variant="outline">
             <Plus className="w-4 h-4 mr-2" />
             Nueva Operación
           </Button>
           <Button 
-            variant="outline" 
             onClick={() => setShowFlowWizard(true)}
+            className="bg-primary hover:bg-primary/90"
           >
             <Workflow className="w-4 h-4 mr-2" />
-            Asistente Completo
+            Wizard Completo
           </Button>
         </div>
       }

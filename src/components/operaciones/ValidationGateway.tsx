@@ -16,23 +16,23 @@ interface ValidationGatewayProps {
 export const ValidationGateway = ({ operacionId, onValidationComplete }: ValidationGatewayProps) => {
   const [isValidating, setIsValidating] = useState(false);
 
-  // Verificar documentos existentes
+  // Verificar documentos existentes - Corregido con maybeSingle
   const { data: documentStatus, refetch } = useQuery({
     queryKey: ['validation-documents', operacionId],
     queryFn: async () => {
       const [hptResult, anexoResult] = await Promise.all([
-        supabase.from('hpt').select('id, firmado, estado').eq('operacion_id', operacionId),
-        supabase.from('anexo_bravo').select('id, firmado, estado').eq('operacion_id', operacionId)
+        supabase.from('hpt').select('id, firmado, estado').eq('operacion_id', operacionId).maybeSingle(),
+        supabase.from('anexo_bravo').select('id, firmado, estado').eq('operacion_id', operacionId).maybeSingle()
       ]);
 
-      const hptCompleted = hptResult.data?.some(hpt => hpt.firmado && hpt.estado === 'firmado') || false;
-      const anexoCompleted = anexoResult.data?.some(anexo => anexo.firmado && anexo.estado === 'firmado') || false;
+      const hptCompleted = hptResult.data?.firmado && hptResult.data?.estado === 'firmado';
+      const anexoCompleted = anexoResult.data?.firmado && anexoResult.data?.estado === 'firmado';
 
       return {
-        hptCompleted,
-        anexoCompleted,
-        hptCount: hptResult.data?.length || 0,
-        anexoCount: anexoResult.data?.length || 0
+        hptCompleted: !!hptCompleted,
+        anexoCompleted: !!anexoCompleted,
+        hptCount: hptResult.data ? 1 : 0,
+        anexoCount: anexoResult.data ? 1 : 0
       };
     }
   });

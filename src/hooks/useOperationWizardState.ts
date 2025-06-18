@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,7 +94,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     refetchInterval: 3000
   });
 
-  // Verificar documentos en tiempo real - corregir queries
+  // Verificar documentos en tiempo real - Corregido con maybeSingle
   const { data: documentStatus } = useQuery({
     queryKey: ['operation-documents', wizardOperacionId],
     queryFn: async () => {
