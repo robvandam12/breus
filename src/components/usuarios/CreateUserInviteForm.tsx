@@ -99,7 +99,9 @@ export const CreateUserInviteForm = ({ onSubmit, onCancel, empresaType }: Create
             <SelectValue placeholder="Seleccionar rol..." />
           </SelectTrigger>
           <SelectContent>
-            {availableRoles.map((role) => (
+            {availableRoles
+              .filter(role => role.value && role.value.trim() !== '')
+              .map((role) => (
               <SelectItem key={role.value} value={role.value}>
                 {role.label}
               </SelectItem>

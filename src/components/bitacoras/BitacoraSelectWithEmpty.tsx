@@ -27,7 +27,7 @@ export const BitacoraSelectWithEmpty = ({
   emptyMessage,
   emptyDescription 
 }: BitacoraSelectWithEmptyProps) => {
-  if (options.length === 0) {
+  if (!options || options.length === 0) {
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -50,9 +50,11 @@ export const BitacoraSelectWithEmpty = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
+          {options
+            .filter(option => option && option.id && option.id.trim() !== '')
+            .map((option) => (
             <SelectItem key={option.id} value={option.id}>
-              {option.label}
+              {option.label || 'Sin nombre'}
             </SelectItem>
           ))}
         </SelectContent>
