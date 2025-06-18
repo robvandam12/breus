@@ -4,6 +4,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+export interface EquipoBuceoMiembro {
+  id: string;
+  usuario_id: string;
+  rol_equipo: string;
+  disponible: boolean;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    email?: string;
+  };
+}
+
 export interface EquipoBuceo {
   id: string;
   nombre: string;
@@ -14,6 +26,7 @@ export interface EquipoBuceo {
   activo: boolean;
   created_at: string;
   updated_at: string;
+  miembros?: EquipoBuceoMiembro[];
 }
 
 export interface EquipoBuceoFormData {
@@ -22,6 +35,7 @@ export interface EquipoBuceoFormData {
   tipo_empresa: string;
   empresa_id: string;
   estado?: 'disponible' | 'en_uso' | 'mantenimiento' | 'inactivo';
+  activo?: boolean;
 }
 
 export const useEquiposBuceo = () => {
@@ -33,7 +47,20 @@ export const useEquiposBuceo = () => {
       console.log('Fetching equipos de buceo...');
       const { data, error } = await supabase
         .from('equipos_buceo')
-        .select('*')
+        .select(`
+          *,
+          equipo_buceo_miembros!inner(
+            id,
+            usuario_id,
+            rol_equipo,
+            disponible,
+            usuario:usuario_id(
+              nombre,
+              apellido,
+              email
+            )
+          )
+        `)
         .eq('activo', true)
         .order('nombre', { ascending: true });
 
@@ -43,7 +70,12 @@ export const useEquiposBuceo = () => {
       }
 
       console.log('Equipos de buceo fetched:', data);
-      return data as EquipoBuceo[];
+      
+      // Transformar los datos para que coincidan con la interfaz
+      return (data || []).map(equipo => ({
+        ...equipo,
+        miembros: equipo.equipo_buceo_miembros || []
+      })) as EquipoBuceo[];
     }
   });
 
@@ -54,9 +86,12 @@ export const useEquiposBuceo = () => {
       const { data, error } = await supabase
         .from('equipos_buceo')
         .insert([{
-          ...equipoData,
+          nombre: equipoData.nombre,
+          descripcion: equipoData.descripcion,
+          tipo_empresa: equipoData.tipo_empresa,
+          empresa_id: equipoData.empresa_id,
           estado: equipoData.estado || 'disponible',
-          activo: true
+          activo: equipoData.activo !== false
         }])
         .select()
         .single();
