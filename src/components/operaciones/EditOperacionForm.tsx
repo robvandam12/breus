@@ -162,14 +162,14 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             <div>
               <Label htmlFor="salmonera_id">Salmonera</Label>
               <Select
-                value={formData.salmonera_id || ''}
-                onValueChange={(value) => handleChange('salmonera_id', value)}
+                value={formData.salmonera_id || 'none'}
+                onValueChange={(value) => handleChange('salmonera_id', value === 'none' ? '' : value)}
               >
                 <SelectTrigger className="ios-input">
                   <SelectValue placeholder="Seleccionar salmonera" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin salmonera</SelectItem>
+                  <SelectItem value="none">Sin salmonera</SelectItem>
                   {salmoneras
                     .filter(salmonera => salmonera && salmonera.id && salmonera.id.trim() !== '')
                     .map((salmonera) => (
@@ -184,14 +184,14 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
             <div>
               <Label htmlFor="contratista_id">Contratista</Label>
               <Select
-                value={formData.contratista_id || ''}
-                onValueChange={(value) => handleChange('contratista_id', value)}
+                value={formData.contratista_id || 'none'}
+                onValueChange={(value) => handleChange('contratista_id', value === 'none' ? '' : value)}
               >
                 <SelectTrigger className="ios-input">
                   <SelectValue placeholder="Seleccionar contratista" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin contratista</SelectItem>
+                  <SelectItem value="none">Sin contratista</SelectItem>
                   {contratistas
                     .filter(contratista => contratista && contratista.id && contratista.id.trim() !== '')
                     .map((contratista) => (
@@ -207,14 +207,14 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
           <div>
             <Label htmlFor="sitio_id">Sitio</Label>
             <Select
-              value={formData.sitio_id || ''}
-              onValueChange={(value) => handleChange('sitio_id', value)}
+              value={formData.sitio_id || 'none'}
+              onValueChange={(value) => handleChange('sitio_id', value === 'none' ? '' : value)}
             >
               <SelectTrigger className="ios-input">
                 <SelectValue placeholder="Seleccionar sitio" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin sitio</SelectItem>
+                <SelectItem value="none">Sin sitio</SelectItem>
                 {sitios
                   .filter(sitio => sitio && sitio.id && sitio.id.trim() !== '' && (!formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id))
                   .map((sitio) => (
