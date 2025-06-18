@@ -52,7 +52,7 @@ export const useEquiposBuceo = () => {
     },
   });
 
-  const createEquipo = useMutation({
+  const createEquipoMutation = useMutation({
     mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('equipos_buceo')
@@ -103,11 +103,15 @@ export const useEquiposBuceo = () => {
     },
   });
 
+  const createEquipo = async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
+    return createEquipoMutation.mutateAsync(equipoData);
+  };
+
   return {
     equipos,
     isLoading,
-    createEquipo: createEquipo.mutate,
+    createEquipo,
     addMiembro: addMiembro.mutate,
-    isCreating: createEquipo.isPending,
+    isCreating: createEquipoMutation.isPending,
   };
 };

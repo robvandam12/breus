@@ -99,8 +99,13 @@ export const EnhancedOperacionEquipoAssignment = ({
         nombre: newTeamName,
         descripcion: `Equipo creado para operación ${operacionId}`,
         tipo_empresa: 'contratista',
-        empresa_id: 'temp' // Se asignará después
+        empresa_id: 'temp', // Se asignará después
+        activo: true
       });
+
+      if (!newEquipo?.id) {
+        throw new Error('No se pudo crear el equipo');
+      }
 
       // Asignar miembros al equipo (supervisor + buzos)
       const miembros = [
@@ -113,7 +118,7 @@ export const EnhancedOperacionEquipoAssignment = ({
         ...selectedBuzos.map(buzoId => ({
           equipo_id: newEquipo.id,
           usuario_id: buzoId,
-          rol_equipo: 'buzo',
+          rol_equipo: 'buzo_principal',
           disponible: true
         }))
       ];
@@ -193,7 +198,7 @@ export const EnhancedOperacionEquipoAssignment = ({
                     <SelectValue placeholder="Seleccionar equipo de buceo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {equipos?.filter(e => e.estado === 'disponible').map((equipo) => (
+                    {equipos?.filter(e => e.activo).map((equipo) => (
                       <SelectItem key={equipo.id} value={equipo.id}>
                         {equipo.nombre} - {equipo.descripcion}
                       </SelectItem>
