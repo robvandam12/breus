@@ -26,48 +26,48 @@ export const useOperationWizardState = (operacionId?: string) => {
   const steps: WizardStep[] = [
     {
       id: 'operacion',
-      title: 'Operación',
-      description: 'Crear operación básica',
+      title: 'Información Básica',
+      description: 'Datos generales de la operación',
       status: wizardOperacionId ? 'completed' : 'active',
       required: true,
       canNavigate: true
     },
     {
       id: 'sitio',
-      title: 'Sitio',
-      description: 'Asignar sitio de trabajo',
+      title: 'Ubicación',
+      description: 'Seleccionar sitio de trabajo',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'equipo',
-      title: 'Equipo',
-      description: 'Asignar equipo de buceo y supervisor',
+      title: 'Equipo de Trabajo',
+      description: 'Asignar o crear equipo de buceo',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'hpt',
-      title: 'HPT',
-      description: 'Completar Herramientas y Procedimientos',
+      title: 'Planificación HPT',
+      description: 'Completar análisis de riesgos',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'anexo-bravo',
-      title: 'Anexo Bravo',
-      description: 'Completar análisis de seguridad',
+      title: 'Anexo de Seguridad',
+      description: 'Completar protocolo de seguridad',
       status: 'pending',
       required: true,
       canNavigate: false
     },
     {
       id: 'validation',
-      title: 'Validación',
-      description: 'Validar completitud de la operación',
+      title: 'Validación Final',
+      description: 'Verificar completitud de la operación',
       status: 'pending',
       required: true,
       canNavigate: false
@@ -140,7 +140,7 @@ export const useOperationWizardState = (operacionId?: string) => {
     refetchInterval: 2000
   });
 
-  // Auto-guardado mejorado
+  // Auto-guardado mejorado con mejor feedback
   const performAutoSave = useCallback(async (data: any) => {
     if (!wizardOperacionId || !data || isAutoSaving) return;
 
@@ -173,6 +173,13 @@ export const useOperationWizardState = (operacionId?: string) => {
 
       setLastSaveTime(new Date());
       console.log('Auto-save successful:', cleanData);
+      
+      // Mostrar notificación de guardado
+      toast({
+        title: "Cambios guardados",
+        description: "Los datos se han guardado automáticamente.",
+        duration: 1500
+      });
       
       // Actualizar cache
       queryClient.invalidateQueries({ queryKey: ['operacion-wizard', wizardOperacionId] });
@@ -217,7 +224,6 @@ export const useOperationWizardState = (operacionId?: string) => {
     if (!operacion) return steps;
 
     const updatedSteps = [...steps];
-    let foundFirstIncomplete = false;
     
     // Operación creada
     if (wizardOperacionId) {
@@ -235,12 +241,11 @@ export const useOperationWizardState = (operacionId?: string) => {
         sitioStep.status = 'completed';
         sitioStep.canNavigate = true;
       }
-    } else if (!foundFirstIncomplete) {
+    } else if (wizardOperacionId) {
       const sitioStep = updatedSteps.find(s => s.id === 'sitio');
       if (sitioStep) {
         sitioStep.status = 'active';
         sitioStep.canNavigate = true;
-        foundFirstIncomplete = true;
       }
     }
 
@@ -251,12 +256,11 @@ export const useOperationWizardState = (operacionId?: string) => {
         equipoStep.status = 'completed';
         equipoStep.canNavigate = true;
       }
-    } else if (!foundFirstIncomplete && operacion.sitio_id) {
+    } else if (operacion.sitio_id) {
       const equipoStep = updatedSteps.find(s => s.id === 'equipo');
       if (equipoStep) {
         equipoStep.status = 'active';
         equipoStep.canNavigate = true;
-        foundFirstIncomplete = true;
       }
     }
 
@@ -267,12 +271,11 @@ export const useOperationWizardState = (operacionId?: string) => {
         hptStep.status = 'completed';
         hptStep.canNavigate = true;
       }
-    } else if (!foundFirstIncomplete && operacion.equipo_buceo_id && operacion.supervisor_asignado_id) {
+    } else if (operacion.equipo_buceo_id && operacion.supervisor_asignado_id) {
       const hptStep = updatedSteps.find(s => s.id === 'hpt');
       if (hptStep) {
         hptStep.status = 'active';
         hptStep.canNavigate = true;
-        foundFirstIncomplete = true;
       }
     }
 
@@ -283,12 +286,11 @@ export const useOperationWizardState = (operacionId?: string) => {
         anexoStep.status = 'completed';
         anexoStep.canNavigate = true;
       }
-    } else if (!foundFirstIncomplete && documentStatus?.hptReady) {
+    } else if (documentStatus?.hptReady) {
       const anexoStep = updatedSteps.find(s => s.id === 'anexo-bravo');
       if (anexoStep) {
         anexoStep.status = 'active';
         anexoStep.canNavigate = true;
-        foundFirstIncomplete = true;
       }
     }
 
@@ -301,6 +303,13 @@ export const useOperationWizardState = (operacionId?: string) => {
         validationStep.canNavigate = true;
       }
     }
+
+    // Permitir navegación a pasos completados
+    updatedSteps.forEach(step => {
+      if (step.status === 'completed') {
+        step.canNavigate = true;
+      }
+    });
 
     return updatedSteps;
   }, [operacion, documentStatus, wizardOperacionId, steps]);

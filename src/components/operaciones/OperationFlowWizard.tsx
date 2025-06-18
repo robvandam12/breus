@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Circle, AlertCircle, Clock, Workflow } from 'lucide-react';
+import { CheckCircle, Circle, AlertCircle, Clock, Workflow, Save, Wifi, WifiOff } from 'lucide-react';
 import { useOperationWizardState } from '@/hooks/useOperationWizardState';
 import { CreateOperacionForm } from './CreateOperacionForm';
 import { OperacionSitioAssignment } from './OperacionSitioAssignment';
-import { OperacionEquipoAssignment } from './OperacionEquipoAssignment';
+import { EnhancedOperacionEquipoAssignment } from './EnhancedOperacionEquipoAssignment';
 import { ValidationGateway } from './ValidationGateway';
 import { DocumentValidationStatus } from './DocumentValidationStatus';
 import { toast } from '@/hooks/use-toast';
@@ -72,7 +72,8 @@ export const OperationFlowWizard = ({
       
       toast({
         title: "Paso completado",
-        description: `${currentStep?.title} completado exitosamente.`
+        description: `${currentStep?.title} completado exitosamente.`,
+        duration: 2000
       });
     } catch (error) {
       console.error('Error completing step:', error);
@@ -157,7 +158,7 @@ export const OperationFlowWizard = ({
               await handleStepComplete('operacion', { operacionId: data.id });
             }}
             onClose={onCancel}
-            hideButtons={false}
+            hideButtons={true}
           />
         );
       case 'sitio':
@@ -169,9 +170,16 @@ export const OperationFlowWizard = ({
         );
       case 'equipo':
         return (
-          <OperacionEquipoAssignment
-            operacionId={wizardOperacionId}
-            onComplete={(data) => handleStepComplete('equipo', data)}
+          <EnhancedOperacionEquipoAssignment
+            operacionId={wizardOperacionId!}
+            currentEquipoId={operacion?.equipo_buceo_id}
+            currentSupervisorId={operacion?.supervisor_asignado_id}
+            onComplete={(equipoId, supervisorId) => 
+              handleStepComplete('equipo', { 
+                equipo_buceo_id: equipoId, 
+                supervisor_asignado_id: supervisorId 
+              })
+            }
           />
         );
       case 'hpt':
@@ -245,7 +253,7 @@ export const OperationFlowWizard = ({
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Cargando wizard...</p>
+          <p>Cargando asistente de operación...</p>
         </div>
       </div>
     );
@@ -253,12 +261,12 @@ export const OperationFlowWizard = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header con estado de auto-guardado prominente */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Workflow className="w-6 h-6 text-blue-600" />
-            Wizard de Operación
+            Asistente de Operación
           </h2>
           {operacion && (
             <p className="text-gray-600 mt-1">
@@ -266,17 +274,28 @@ export const OperationFlowWizard = ({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {isAutoSaving && (
-            <Badge variant="secondary" className="text-xs">
-              Guardando...
-            </Badge>
-          )}
-          {lastSaveTime && (
-            <span className="text-xs text-gray-500">
-              Guardado: {lastSaveTime.toLocaleTimeString()}
-            </span>
-          )}
+        <div className="flex items-center gap-3">
+          {/* Estado de auto-guardado más visible */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50">
+            {isAutoSaving ? (
+              <>
+                <Save className="w-4 h-4 text-blue-600 animate-pulse" />
+                <span className="text-sm text-blue-600 font-medium">Guardando...</span>
+              </>
+            ) : lastSaveTime ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-600">
+                  Guardado {lastSaveTime.toLocaleTimeString()}
+                </span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-500">Sin guardar</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -286,31 +305,31 @@ export const OperationFlowWizard = ({
           <span>Progreso</span>
           <span>{Math.round(progress)}%</span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-3" />
       </div>
 
-      {/* Steps Navigation */}
+      {/* Steps Navigation - Mejorado */}
       <div className="grid grid-cols-6 gap-2">
         {steps.map((step, index) => (
           <button
             key={step.id}
             onClick={() => goToStep(index)}
-            disabled={!step.canNavigate}
-            className={`p-2 rounded-lg text-xs font-medium transition-colors ${
+            disabled={!step.canNavigate && step.status !== 'completed'}
+            className={`p-3 rounded-lg text-xs font-medium transition-all duration-200 ${
               index === currentStepIndex
-                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300 shadow-md'
                 : step.status === 'completed'
-                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                ? 'bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer'
                 : step.canNavigate
-                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
                 : 'bg-gray-50 text-gray-400 cursor-not-allowed'
             }`}
           >
             <div className="flex items-center justify-center gap-1 mb-1">
               {getStepIcon(step)}
-              <span className="text-xs">{index + 1}</span>
+              <span className="text-xs font-bold">{index + 1}</span>
             </div>
-            <div className="truncate">{step.title}</div>
+            <div className="truncate text-center">{step.title}</div>
           </button>
         ))}
       </div>
@@ -326,7 +345,7 @@ export const OperationFlowWizard = ({
       )}
 
       {/* Step Content */}
-      <Card>
+      <Card className="min-h-[400px]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {getStepIcon(currentStep)}
@@ -339,31 +358,34 @@ export const OperationFlowWizard = ({
         </CardContent>
       </Card>
 
-      {/* Navigation */}
+      {/* Navigation - Mejorado */}
       <div className="flex justify-between">
         <Button
           variant="outline"
           onClick={currentStepIndex === 0 ? onCancel : previousStep}
+          className="flex items-center gap-2"
         >
-          {currentStepIndex === 0 ? 'Cancelar' : 'Anterior'}
+          {currentStepIndex === 0 ? 'Cancelar' : '← Anterior'}
         </Button>
         
         <div className="flex gap-2">
           {currentStepIndex < steps.length - 1 && (
             <Button
               onClick={nextStep}
-              disabled={!currentStep?.canNavigate}
+              disabled={!currentStep?.canNavigate && currentStep?.status !== 'completed'}
+              className="flex items-center gap-2"
             >
-              Siguiente
+              Siguiente →
             </Button>
           )}
           
           {canFinish && currentStep?.id === 'validation' && (
             <Button
               onClick={handleFinish}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
             >
-              Finalizar
+              <CheckCircle className="w-4 h-4" />
+              Finalizar Operación
             </Button>
           )}
         </div>

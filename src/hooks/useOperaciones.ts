@@ -145,13 +145,15 @@ export const useOperaciones = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting operacion:', id);
+      console.log('Attempting to delete operacion:', id);
       
       // Verificar primero si se puede eliminar
       const canDeleteResult = await checkCanDelete(id);
       if (!canDeleteResult.canDelete) {
         throw new Error(`No se puede eliminar la operación: ${canDeleteResult.reason}`);
       }
+      
+      console.log('Operation can be deleted, proceeding...');
       
       const { error } = await supabase
         .from('operacion')
@@ -177,8 +179,8 @@ export const useOperaciones = () => {
     onError: (error: any) => {
       console.error('Delete mutation error:', error);
       toast({
-        title: "Error",
-        description: `No se pudo eliminar la operación: ${error.message}`,
+        title: "Error al eliminar",
+        description: `${error.message}`,
         variant: "destructive",
       });
     }
@@ -188,19 +190,17 @@ export const useOperaciones = () => {
     try {
       console.log('Checking if operation can be deleted:', operacionId);
       
-      // Verificar si hay documentos firmados - Usando maybeSingle para evitar errores 400
+      // Verificar si hay documentos firmados
       const [hptResult, anexoResult, inmersionResult] = await Promise.all([
         supabase
           .from('hpt')
-          .select('id')
+          .select('id, firmado')
           .eq('operacion_id', operacionId)
-          .eq('firmado', true)
           .maybeSingle(),
         supabase
           .from('anexo_bravo')
-          .select('id')
+          .select('id, firmado')
           .eq('operacion_id', operacionId)
-          .eq('firmado', true)
           .maybeSingle(),
         supabase
           .from('inmersion')
@@ -209,20 +209,28 @@ export const useOperaciones = () => {
           .maybeSingle()
       ]);
 
-      console.log('Delete check results:', { hptResult, anexoResult, inmersionResult });
+      console.log('Delete check results:', { 
+        hpt: hptResult, 
+        anexo: anexoResult, 
+        inmersion: inmersionResult 
+      });
 
-      if (hptResult.data) {
+      // Verificar si hay documentos HPT firmados
+      if (hptResult.data && hptResult.data.firmado) {
         return { canDelete: false, reason: 'tiene documentos HPT firmados' };
       }
 
-      if (anexoResult.data) {
+      // Verificar si hay documentos Anexo Bravo firmados
+      if (anexoResult.data && anexoResult.data.firmado) {
         return { canDelete: false, reason: 'tiene documentos Anexo Bravo firmados' };
       }
 
+      // Verificar si hay inmersiones asociadas
       if (inmersionResult.data) {
         return { canDelete: false, reason: 'tiene inmersiones asociadas' };
       }
 
+      console.log('Operation can be deleted - no blocking dependencies found');
       return { canDelete: true, reason: '' };
     } catch (error) {
       console.error('Error checking if operation can be deleted:', error);
@@ -246,7 +254,7 @@ export const useOperaciones = () => {
         throw opError;
       }
 
-      // Verificar documentos - Usando maybeSingle para evitar errores 400
+      // Verificar documentos
       const [hptResult, anexoResult] = await Promise.all([
         supabase
           .from('hpt')
