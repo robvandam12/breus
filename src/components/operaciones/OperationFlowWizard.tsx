@@ -10,6 +10,7 @@ import { CreateOperacionForm } from './CreateOperacionForm';
 import { OperacionSitioAssignment } from './OperacionSitioAssignment';
 import { OperacionEquipoAssignment } from './OperacionEquipoAssignment';
 import { ValidationGateway } from './ValidationGateway';
+import { DocumentValidationStatus } from './DocumentValidationStatus';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -152,9 +153,11 @@ export const OperationFlowWizard = ({
       case 'operacion':
         return (
           <CreateOperacionForm
-            onSubmit={(data) => handleStepComplete('operacion', { operacionId: data.id })}
-            onCancel={onCancel}
-            autoFocus={true}
+            onSubmitOverride={async (data) => {
+              await handleStepComplete('operacion', { operacionId: data.id });
+            }}
+            onClose={onCancel}
+            hideButtons={false}
           />
         );
       case 'sitio':
@@ -162,7 +165,6 @@ export const OperationFlowWizard = ({
           <OperacionSitioAssignment
             operacionId={wizardOperacionId}
             onComplete={(data) => handleStepComplete('sitio', data)}
-            showTitle={false}
           />
         );
       case 'equipo':
@@ -170,12 +172,11 @@ export const OperationFlowWizard = ({
           <OperacionEquipoAssignment
             operacionId={wizardOperacionId}
             onComplete={(data) => handleStepComplete('equipo', data)}
-            showTitle={false}
           />
         );
       case 'hpt':
         return (
-          <div className="text-center space-y-4">
+          <div className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-blue-800 mb-2">
                 Crear Documento HPT
@@ -190,14 +191,19 @@ export const OperationFlowWizard = ({
                 Abrir HPT
               </Button>
             </div>
-            <p className="text-sm text-gray-600">
-              El wizard detectará automáticamente cuando el HPT esté firmado.
-            </p>
+            <DocumentValidationStatus 
+              operacionId={wizardOperacionId!}
+              onDocumentCreate={(type) => {
+                if (type === 'hpt') {
+                  window.open(`/hpt?operacion=${wizardOperacionId}`, '_blank');
+                }
+              }}
+            />
           </div>
         );
       case 'anexo-bravo':
         return (
-          <div className="text-center space-y-4">
+          <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-green-800 mb-2">
                 Crear Anexo Bravo
@@ -212,9 +218,14 @@ export const OperationFlowWizard = ({
                 Abrir Anexo Bravo
               </Button>
             </div>
-            <p className="text-sm text-gray-600">
-              El wizard detectará automáticamente cuando el Anexo Bravo esté firmado.
-            </p>
+            <DocumentValidationStatus 
+              operacionId={wizardOperacionId!}
+              onDocumentCreate={(type) => {
+                if (type === 'anexo') {
+                  window.open(`/anexo-bravo?operacion=${wizardOperacionId}`, '_blank');
+                }
+              }}
+            />
           </div>
         );
       case 'validation':
