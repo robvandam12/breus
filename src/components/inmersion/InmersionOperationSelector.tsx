@@ -87,14 +87,16 @@ export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperac
               <SelectValue placeholder="Seleccione una operación" />
             </SelectTrigger>
             <SelectContent>
-              {operaciones.map((operacion) => (
+              {operaciones
+                .filter(operacion => operacion && operacion.id && operacion.id.trim() !== '')
+                .map((operacion) => (
                 <SelectItem key={operacion.id} value={operacion.id}>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{operacion.codigo}</span>
+                    <span className="font-medium">{operacion.codigo || 'Sin código'}</span>
                     <span>-</span>
-                    <span>{operacion.nombre}</span>
+                    <span>{operacion.nombre || 'Sin nombre'}</span>
                     <Badge variant="outline" className="ml-2">
-                      {operacion.estado}
+                      {operacion.estado || 'Sin estado'}
                     </Badge>
                   </div>
                 </SelectItem>
@@ -165,7 +167,7 @@ export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperac
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-blue-600" />
                   <span className="font-medium">Fecha:</span>
-                  <span>{new Date(selectedOperacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
+                  <span>{selectedOperacion.fecha_inicio ? new Date(selectedOperacion.fecha_inicio).toLocaleDateString('es-CL') : 'No especificada'}</span>
                 </div>
                 
                 <div className="flex items-center gap-2">

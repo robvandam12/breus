@@ -32,22 +32,26 @@ export const UserInviteForm = ({ onSubmit, onCancel }: UserInviteFormProps) => {
     { value: 'admin_servicio', label: 'Admin Servicio' },
     { value: 'supervisor', label: 'Supervisor' },
     { value: 'buzo', label: 'Buzo' },
-  ];
+  ].filter(role => role.value && role.value.trim() !== '');
 
-  const salmoneraOptions = salmoneras.map(s => ({
-    value: s.id,
-    label: `${s.nombre} (${s.rut})`,
-  }));
+  const salmoneraOptions = salmoneras
+    .filter(s => s && s.id && s.id.trim() !== '')
+    .map(s => ({
+      value: s.id,
+      label: `${s.nombre || 'Sin nombre'} (${s.rut || 'Sin RUT'})`,
+    }));
 
-  const contratistaOptions = contratistas.map(c => ({
-    value: c.id,
-    label: `${c.nombre} (${c.rut})`,
-  }));
+  const contratistaOptions = contratistas
+    .filter(c => c && c.id && c.id.trim() !== '')
+    .map(c => ({
+      value: c.id,
+      label: `${c.nombre || 'Sin nombre'} (${c.rut || 'Sin RUT'})`,
+    }));
 
   const tipoEmpresaOptions = [
     { value: 'salmonera', label: 'Salmonera' },
     { value: 'contratista', label: 'Contratista' },
-  ];
+  ].filter(tipo => tipo.value && tipo.value.trim() !== '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
