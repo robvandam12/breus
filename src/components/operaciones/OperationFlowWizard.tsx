@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Clock, Settings } from "lucide-react";
 import { CreateOperacionFormWithCallback } from "@/components/operaciones/CreateOperacionFormWithCallback";
@@ -34,17 +35,13 @@ export const OperationFlowWizard = ({
     canFinish,
     operacion,
     isLoading,
-    stepData,
-    persistedOperacionId,
     goToStep,
     nextStep,
     previousStep,
-    completeStep,
-    refetch
+    completeStep
   } = useOperationWizardState(operacionId);
 
-  const { notifyStepComplete } = useOperationNotifications(persistedOperacionId);
-  const [formCache, setFormCache] = useState<Record<string, any>>({});
+  const { notifyStepComplete } = useOperationNotifications(operacionId);
 
   useEffect(() => {
     if (onStepChange && currentStep) {
@@ -55,22 +52,19 @@ export const OperationFlowWizard = ({
   const handleCreateOperacion = (newOperacionId: string) => {
     completeStep('operacion', { operacionId: newOperacionId });
     notifyStepComplete('Operación creada');
-    toast({
-      title: "Operación creada",
-      description: "Puede continuar con el siguiente paso.",
-    });
+    nextStep();
   };
 
   const handleSitioAssigned = (sitioId: string) => {
     completeStep('sitio', { sitioId });
     notifyStepComplete('Sitio asignado');
-    refetch();
+    nextStep();
   };
 
   const handleEquipoAssigned = (equipoId: string, supervisorId: string) => {
     completeStep('equipo', { equipoId, supervisorId });
     notifyStepComplete('Equipo asignado');
-    refetch();
+    nextStep();
   };
 
   const handleValidationComplete = () => {
@@ -79,25 +73,6 @@ export const OperationFlowWizard = ({
     if (onComplete) {
       onComplete();
     }
-  };
-
-  const handleHPTCreated = () => {
-    completeStep('hpt', { hptCreated: true });
-    notifyStepComplete('HPT completado');
-    refetch();
-  };
-
-  const handleAnexoBravoCreated = () => {
-    completeStep('anexo-bravo', { anexoBravoCreated: true });
-    notifyStepComplete('Anexo Bravo completado');
-    refetch();
-  };
-
-  const handleFormDataChange = (stepId: string, data: any) => {
-    setFormCache(prev => ({
-      ...prev,
-      [stepId]: { ...prev[stepId], ...data }
-    }));
   };
 
   const getStepIcon = (status: string) => {
@@ -192,34 +167,30 @@ export const OperationFlowWizard = ({
             <CreateOperacionFormWithCallback 
               onClose={() => onCancel && onCancel()}
               onSuccess={handleCreateOperacion}
-              initialData={formCache.operacion || {}}
-              onDataChange={(data) => handleFormDataChange('operacion', data)}
             />
           )}
 
-          {currentStep?.id === 'sitio' && persistedOperacionId && (
+          {currentStep?.id === 'sitio' && operacion && (
             <OperacionSitioAssignment
-              operacionId={persistedOperacionId}
-              currentSitioId={operacion?.sitio_id}
+              operacionId={operacion.id}
+              currentSitioId={operacion.sitio_id}
               onComplete={handleSitioAssigned}
             />
           )}
 
-          {currentStep?.id === 'equipo' && persistedOperacionId && (
+          {currentStep?.id === 'equipo' && operacion && (
             <OperacionEquipoAssignment
-              operacionId={persistedOperacionId}
-              currentEquipoId={operacion?.equipo_buceo_id}
-              currentSupervisorId={operacion?.supervisor_asignado_id}
+              operacionId={operacion.id}
+              currentEquipoId={operacion.equipo_buceo_id}
+              currentSupervisorId={operacion.supervisor_asignado_id}
               onComplete={handleEquipoAssigned}
             />
           )}
 
-          {(currentStep?.id === 'hpt' || currentStep?.id === 'anexo-bravo' || currentStep?.id === 'validation') && persistedOperacionId && (
+          {(currentStep?.id === 'hpt' || currentStep?.id === 'anexo-bravo' || currentStep?.id === 'validation') && operacion && (
             <ValidationGateway
-              operacionId={persistedOperacionId}
+              operacionId={operacion.id}
               onValidationComplete={handleValidationComplete}
-              onHPTCreated={handleHPTCreated}
-              onAnexoBravoCreated={handleAnexoBravoCreated}
             />
           )}
         </div>

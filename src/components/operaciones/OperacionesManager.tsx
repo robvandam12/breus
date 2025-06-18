@@ -9,10 +9,11 @@ import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
 import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
 import { OperationFlowWizard } from "@/components/operaciones/OperationFlowWizard";
 import { OperationStatusTracker } from "@/components/operaciones/OperationStatusTracker";
+import { OperationTemplateManager } from "@/components/operaciones/OperationTemplateManager";
 import { ValidationGateway } from "@/components/operaciones/ValidationGateway";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useOperationInmersionIntegration } from "@/hooks/useOperationInmersionIntegration";
-import { List, MapPin, Grid3X3, Workflow, BarChart3, Shield } from "lucide-react";
+import { List, MapPin, Grid3X3, Workflow, BarChart3, FileText, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
 import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
@@ -29,6 +30,7 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFlowWizard, setShowFlowWizard] = useState(false);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showValidationGateway, setShowValidationGateway] = useState(false);
   const [selectedOperacionForValidation, setSelectedOperacionForValidation] = useState<string | null>(null);
   
@@ -82,10 +84,12 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
           variant: "destructive",
         });
         
+        // Mostrar wizard de validación
         handleValidateOperacion(operacionId);
         return;
       }
 
+      // Redirigir a crear inmersión
       window.location.href = `/inmersiones?operacion=${operacionId}`;
     } catch (error) {
       console.error('Error validating for inmersion:', error);
@@ -97,8 +101,18 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
     }
   };
 
+  const handleCreateFromTemplate = (template: any) => {
+    toast({
+      title: "Template seleccionado",
+      description: `Creando operación basada en "${template.nombre}"`,
+    });
+    setShowTemplateManager(false);
+    setShowFlowWizard(true);
+  };
+
   const handleEdit = async (operacion: any) => {
     try {
+      // Limpiar datos para enviar solo los campos válidos de la tabla operacion
       const cleanData = {
         codigo: operacion.codigo,
         nombre: operacion.nombre,
@@ -115,12 +129,15 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         supervisor_asignado_id: operacion.supervisor_asignado_id
       };
 
+      // Remover campos undefined o null
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key as keyof typeof cleanData] === undefined) {
           delete cleanData[key as keyof typeof cleanData];
         }
       });
 
+      console.log('Sending cleaned data to update:', cleanData);
+      
       await updateOperacion({ id: operacion.id, data: cleanData });
       toast({
         title: "Operación actualizada",
@@ -192,10 +209,15 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         setStatusFilter={setStatusFilter}
       />
 
+      {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => setShowFlowWizard(true)}>
           <Workflow className="w-4 h-4 mr-2" />
           Wizard Completo
+        </Button>
+        <Button variant="outline" onClick={() => setShowTemplateManager(true)}>
+          <FileText className="w-4 h-4 mr-2" />
+          Templates
         </Button>
       </div>
       
@@ -293,12 +315,14 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
         </TabsContent>
       </Tabs>
 
+      {/* Modals */}
       <OperacionDetailModal
         operacion={selectedOperacion}
         isOpen={showDetailModal}
         onClose={handleCloseDetail}
       />
 
+      {/* Dialogs */}
       <Dialog open={showFlowWizard} onOpenChange={setShowFlowWizard}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <OperationFlowWizard 
@@ -306,6 +330,14 @@ export const OperacionesManager = ({ onStartWizard }: OperacionesManagerProps) =
             onStepChange={(stepId) => console.log('Wizard step:', stepId)}
             onComplete={() => setShowFlowWizard(false)}
             onCancel={() => setShowFlowWizard(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTemplateManager} onOpenChange={setShowTemplateManager}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <OperationTemplateManager 
+            onCreateFromTemplate={handleCreateFromTemplate}
           />
         </DialogContent>
       </Dialog>

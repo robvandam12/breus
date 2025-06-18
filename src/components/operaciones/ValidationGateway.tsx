@@ -3,283 +3,382 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, AlertTriangle, FileText, Shield, Users, MapPin, ExternalLink } from "lucide-react";
-import { HPTWizard } from "@/components/hpt/HPTWizard";
-import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock, 
+  Shield, 
+  FileText, 
+  Users,
+  Eye,
+  RefreshCw,
+  Loader2,
+  ExternalLink,
+  Plus
+} from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { useHPT } from "@/hooks/useHPT";
-import { useAnexoBravo } from "@/hooks/useAnexoBravo";
+import { useRouter } from "@/hooks/useRouter";
 import { toast } from "@/hooks/use-toast";
+
+interface ValidationItem {
+  id: string;
+  category: 'documentos' | 'personal' | 'equipos' | 'seguridad';
+  title: string;
+  description: string;
+  status: 'valid' | 'warning' | 'error' | 'pending';
+  required: boolean;
+  details?: string;
+  actionRequired?: string;
+  actionUrl?: string;
+  canCreate?: boolean;
+}
 
 interface ValidationGatewayProps {
   operacionId: string;
   onValidationComplete?: () => void;
-  onHPTCreated?: () => void;
-  onAnexoBravoCreated?: () => void;
 }
 
-export const ValidationGateway = ({ 
-  operacionId, 
-  onValidationComplete,
-  onHPTCreated,
-  onAnexoBravoCreated 
-}: ValidationGatewayProps) => {
-  const [showHPTForm, setShowHPTForm] = useState(false);
-  const [showAnexoBravoForm, setShowAnexoBravoForm] = useState(false);
-  const [validation, setValidation] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
+export const ValidationGateway = ({ operacionId, onValidationComplete }: ValidationGatewayProps) => {
+  const [isValidating, setIsValidating] = useState(false);
+  const [lastValidation, setLastValidation] = useState<Date | null>(null);
+  const [validationItems, setValidationItems] = useState<ValidationItem[]>([]);
   const { validateOperacionCompleteness } = useOperaciones();
-  const { hpts, createHPT } = useHPT();
-  const { anexosBravo, createAnexoBravo } = useAnexoBravo();
+  const { navigateTo } = useRouter();
 
   useEffect(() => {
-    loadValidation();
+    if (operacionId) {
+      performValidation();
+    }
   }, [operacionId]);
 
-  const loadValidation = async () => {
+  const performValidation = async () => {
+    setIsValidating(true);
     try {
-      setLoading(true);
-      const result = await validateOperacionCompleteness(operacionId);
-      setValidation(result);
+      const validation = await validateOperacionCompleteness(operacionId);
+      
+      const items: ValidationItem[] = [
+        {
+          id: 'hpt-complete',
+          category: 'documentos',
+          title: 'HPT Completado',
+          description: 'Herramientas y Procedimientos de Trabajo documentados',
+          status: validation.hptReady ? 'valid' : 'error',
+          required: true,
+          details: validation.hptReady ? 'HPT completado y firmado' : 'HPT no existe o no está firmado',
+          actionRequired: validation.hptReady ? undefined : 'Crear y firmar HPT',
+          actionUrl: `/formularios/hpt?operacion=${operacionId}`,
+          canCreate: !validation.hptReady
+        },
+        {
+          id: 'anexo-bravo',
+          category: 'seguridad',
+          title: 'Anexo Bravo',
+          description: 'Análisis de Riesgo y Seguridad completado',
+          status: validation.anexoBravoReady ? 'valid' : 'error',
+          required: true,
+          details: validation.anexoBravoReady ? 'Anexo Bravo completado y firmado' : 'Anexo Bravo no existe o no está firmado',
+          actionRequired: validation.anexoBravoReady ? undefined : 'Crear y firmar Anexo Bravo',
+          actionUrl: `/formularios/anexo-bravo?operacion=${operacionId}`,
+          canCreate: !validation.anexoBravoReady
+        },
+        {
+          id: 'personal-asignado',
+          category: 'personal',
+          title: 'Supervisor Asignado',
+          description: 'Supervisor certificado asignado a la operación',
+          status: validation.supervisorAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.supervisorAsignado ? 'Supervisor asignado correctamente' : 'No hay supervisor asignado',
+          actionRequired: validation.supervisorAsignado ? undefined : 'Asignar supervisor',
+          canCreate: false
+        },
+        {
+          id: 'equipo-verificado',
+          category: 'equipos',
+          title: 'Equipo de Buceo',
+          description: 'Equipo de buceo asignado y verificado',
+          status: validation.equipoAsignado ? 'valid' : 'warning',
+          required: true,
+          details: validation.equipoAsignado ? 'Equipo de buceo asignado' : 'No hay equipo de buceo asignado',
+          actionRequired: validation.equipoAsignado ? undefined : 'Asignar equipo de buceo',
+          canCreate: false
+        },
+        {
+          id: 'ready-execute',
+          category: 'seguridad',
+          title: 'Lista para Ejecutar',
+          description: 'Operación cumple todos los requisitos',
+          status: validation.canExecute ? 'valid' : 'error',
+          required: true,
+          details: validation.canExecute ? 'Operación lista para inmersiones' : 'Faltan requisitos obligatorios',
+          actionRequired: validation.canExecute ? undefined : 'Completar todos los requisitos anteriores',
+          canCreate: false
+        }
+      ];
+
+      setValidationItems(items);
+      setLastValidation(new Date());
     } catch (error) {
       console.error('Error validating operation:', error);
       toast({
-        title: "Error",
-        description: "No se pudo validar la operación",
+        title: "Error de validación",
+        description: "No se pudo validar la operación. Intente nuevamente.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsValidating(false);
     }
   };
 
-  const handleCreateHPT = async (data: any) => {
-    try {
-      await createHPT({ ...data, operacion_id: operacionId });
-      setShowHPTForm(false);
-      await loadValidation();
-      if (onHPTCreated) onHPTCreated();
+  const handleActionClick = (item: ValidationItem) => {
+    if (item.actionUrl) {
+      navigateTo(item.actionUrl);
+    } else if (item.id === 'personal-asignado' || item.id === 'equipo-verificado') {
+      // Navegar de vuelta al wizard en el paso correcto
       toast({
-        title: "HPT creado",
-        description: "El HPT ha sido creado exitosamente",
-      });
-    } catch (error) {
-      console.error('Error creating HPT:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el HPT",
-        variant: "destructive",
+        title: "Configuración requerida",
+        description: "Use el wizard de operación para completar esta asignación.",
       });
     }
   };
 
-  const handleCreateAnexoBravo = async (data: any) => {
-    try {
-      await createAnexoBravo({ ...data, operacion_id: operacionId });
-      setShowAnexoBravoForm(false);
-      await loadValidation();
-      if (onAnexoBravoCreated) onAnexoBravoCreated();
-      toast({
-        title: "Anexo Bravo creado",
-        description: "El Anexo Bravo ha sido creado exitosamente",
-      });
-    } catch (error) {
-      console.error('Error creating Anexo Bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el Anexo Bravo",
-        variant: "destructive",
-      });
+  const getCategoryIcon = (category: ValidationItem['category']) => {
+    switch (category) {
+      case 'documentos':
+        return <FileText className="w-4 h-4" />;
+      case 'personal':
+        return <Users className="w-4 h-4" />;
+      case 'equipos':
+        return <Shield className="w-4 h-4" />;
+      case 'seguridad':
+        return <Shield className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
-  const handleFinalize = () => {
-    if (validation?.canExecute) {
-      toast({
-        title: "¡Operación Lista!",
-        description: "La operación cumple todos los requisitos y está lista para inmersiones",
-      });
-      if (onValidationComplete) {
-        onValidationComplete();
-      }
+  const getStatusIcon = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      case 'error':
+        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-gray-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
     }
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-8">
-          <div className="text-center">Validando operación...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const validationItems = [
-    {
-      id: 'sitio',
-      title: 'Sitio Asignado',
-      icon: <MapPin className="w-5 h-5" />,
-      completed: validation?.sitioAsignado,
-      required: true,
-      action: null
-    },
-    {
-      id: 'equipo',
-      title: 'Equipo de Buceo',
-      icon: <Users className="w-5 h-5" />,
-      completed: validation?.equipoAsignado,
-      required: true,
-      action: null
-    },
-    {
-      id: 'supervisor',
-      title: 'Supervisor Asignado',
-      icon: <Users className="w-5 h-5" />,
-      completed: validation?.supervisorAsignado,
-      required: true,
-      action: null
-    },
-    {
-      id: 'hpt',
-      title: 'HPT Firmado',
-      icon: <FileText className="w-5 h-5" />,
-      completed: validation?.hptReady,
-      required: true,
-      action: () => setShowHPTForm(true)
-    },
-    {
-      id: 'anexo-bravo',
-      title: 'Anexo Bravo Firmado',
-      icon: <Shield className="w-5 h-5" />,
-      completed: validation?.anexoBravoReady,
-      required: true,
-      action: () => setShowAnexoBravoForm(true)
+  const getStatusBadge = (status: ValidationItem['status']) => {
+    switch (status) {
+      case 'valid':
+        return <Badge className="bg-green-100 text-green-800">Válido</Badge>;
+      case 'warning':
+        return <Badge className="bg-yellow-100 text-yellow-800">Advertencia</Badge>;
+      case 'error':
+        return <Badge className="bg-red-100 text-red-800">Error</Badge>;
+      case 'pending':
+        return <Badge className="bg-gray-100 text-gray-800">Pendiente</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Desconocido</Badge>;
     }
-  ];
+  };
 
-  const completedItems = validationItems.filter(item => item.completed).length;
+  const validItems = validationItems.filter(item => item.status === 'valid').length;
   const totalItems = validationItems.length;
-  const progress = (completedItems / totalItems) * 100;
+  const requiredItems = validationItems.filter(item => item.required);
+  const validRequiredItems = requiredItems.filter(item => item.status === 'valid').length;
+  const hasErrors = validationItems.some(item => item.status === 'error' && item.required);
+  const canProceed = validRequiredItems === requiredItems.length && !hasErrors;
+
+  const categories = Array.from(new Set(validationItems.map(item => item.category)));
+
+  const handleValidationComplete = () => {
+    if (canProceed) {
+      onValidationComplete?.();
+      toast({
+        title: "Validación completada",
+        description: "La operación está lista para ejecutarse.",
+      });
+    } else {
+      toast({
+        title: "Validación incompleta",
+        description: "Hay elementos que requieren atención antes de proceder.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateInmersion = () => {
+    navigateTo(`/inmersiones?operacion=${operacionId}`);
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-blue-600" />
-              Validación de Operación
-            </CardTitle>
-            <Badge variant={validation?.canExecute ? "default" : "secondary"}>
-              {completedItems}/{totalItems} Completado
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" />
+            Portal de Validaciones
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={canProceed ? "default" : "destructive"}>
+              {validItems}/{totalItems} válidos
             </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={performValidation}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              {isValidating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {isValidating ? 'Validando...' : 'Revalidar'}
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+        </CardTitle>
+        {lastValidation && (
+          <p className="text-sm text-gray-600">
+            Última validación: {lastValidation.toLocaleString('es-CL')}
+          </p>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Status General */}
+        {!canProceed && (
+          <Alert variant={hasErrors ? "destructive" : "default"}>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {hasErrors 
+                ? "Hay errores críticos que deben resolverse antes de proceder."
+                : "Hay validaciones pendientes que deben completarse."
+              }
+            </AlertDescription>
+          </Alert>
+        )}
 
-          <div className="space-y-3">
-            {validationItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${
-                    item.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    {item.completed ? <CheckCircle2 className="w-4 h-4" /> : item.icon}
+        {canProceed && (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>
+              Todas las validaciones requeridas han sido completadas. La operación puede proceder.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Validaciones por Categoría */}
+        {categories.map(category => {
+          const categoryItems = validationItems.filter(item => item.category === category);
+          
+          return (
+            <div key={category} className="space-y-3">
+              <h4 className="font-medium text-lg capitalize flex items-center gap-2">
+                {getCategoryIcon(category)}
+                {category === 'documentos' ? 'Documentos' : 
+                 category === 'personal' ? 'Personal' :
+                 category === 'equipos' ? 'Equipos' : 'Seguridad'}
+              </h4>
+              
+              <div className="space-y-2">
+                {categoryItems.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3 flex-1">
+                      {getStatusIcon(item.status)}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{item.title}</p>
+                          {item.required && (
+                            <Badge variant="outline" className="text-xs">Requerido</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{item.description}</p>
+                        {item.details && (
+                          <p className="text-xs text-gray-500 mt-1">{item.details}</p>
+                        )}
+                        {item.actionRequired && (
+                          <p className="text-xs text-blue-600 mt-1 font-medium">
+                            Acción: {item.actionRequired}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(item.status)}
+                      
+                      {item.canCreate && item.actionUrl && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Crear
+                        </Button>
+                      )}
+                      
+                      {item.actionUrl && !item.canCreate && item.status !== 'valid' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(item)}
+                          className="flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Ir
+                        </Button>
+                      )}
+                      
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium">{item.title}</h4>
-                    <p className="text-sm text-gray-600">
-                      {item.completed ? 'Completado' : 'Pendiente'}
-                      {item.required && ' (Requerido)'}
-                    </p>
-                  </div>
-                </div>
-
-                {!item.completed && item.action && (
-                  <Button 
-                    size="sm" 
-                    onClick={item.action}
-                    className="flex items-center gap-2"
-                  >
-                    Crear
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                )}
-
-                {item.completed && (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          );
+        })}
 
-          {validation?.canExecute ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <h3 className="font-medium text-green-800">¡Operación Lista!</h3>
-              </div>
-              <p className="text-sm text-green-700 mb-3">
-                Todos los requisitos han sido completados. La operación está lista para crear inmersiones.
-              </p>
-              <Button onClick={handleFinalize} className="w-full">
-                Finalizar Validación
+        {/* Acciones */}
+        <div className="flex justify-between pt-4 border-t">
+          <Button variant="outline" onClick={performValidation}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refrescar Estado
+          </Button>
+          
+          <div className="flex gap-2">
+            {canProceed && (
+              <Button 
+                onClick={handleCreateInmersion}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Crear Inmersión
               </Button>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                <h3 className="font-medium text-yellow-800">Validación Incompleta</h3>
-              </div>
-              <p className="text-sm text-yellow-700">
-                Complete todos los elementos requeridos para proceder con inmersiones.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* HPT Dialog */}
-      <Dialog open={showHPTForm} onOpenChange={setShowHPTForm}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Crear HPT</DialogTitle>
-          </DialogHeader>
-          <HPTWizard
-            operacionId={operacionId}
-            onComplete={() => {
-              setShowHPTForm(false);
-              loadValidation();
-              if (onHPTCreated) onHPTCreated();
-            }}
-            onCancel={() => setShowHPTForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Anexo Bravo Dialog */}
-      <Dialog open={showAnexoBravoForm} onOpenChange={setShowAnexoBravoForm}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Crear Anexo Bravo</DialogTitle>
-          </DialogHeader>
-          <FullAnexoBravoForm
-            operacionId={operacionId}
-            onSubmit={handleCreateAnexoBravo}
-            onCancel={() => setShowAnexoBravoForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+            
+            <Button 
+              onClick={handleValidationComplete}
+              disabled={!canProceed}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {canProceed ? 'Aprobar y Continuar' : 'Validación Incompleta'}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
