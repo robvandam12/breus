@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useBitacorasSupervisor, BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { CreateBitacoraSupervisorForm } from "@/components/bitacoras/CreateBitacoraSupervisorForm";
-import { BitacoraSupervisorFormEnhanced } from "@/components/bitacoras/BitacoraSupervisorFormEnhanced";
 import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
 import { BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import type { Inmersion } from "@/types/inmersion";
 
-export const BitacorasSupervisor = () => {
+const BitacorasSupervisor = () => {
   const { operacionId } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -111,10 +109,15 @@ export const BitacorasSupervisor = () => {
             Volver
           </Button>
         </div>
-        <BitacoraSupervisorFormEnhanced
-          onSubmit={handleCreateBitacora}
-          onCancel={() => setShowCreateForm(false)}
-        />
+        {/* Crear un formulario básico sin componente enhanced */}
+        <Card>
+          <CardContent className="p-6">
+            <p>Formulario de creación básico aquí</p>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={() => setShowCreateForm(false)}>Cancelar</Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -164,7 +167,7 @@ export const BitacorasSupervisor = () => {
           <CardContent>
             <div className="grid gap-3">
               {operacionInmersiones.map((inmersion) => {
-                const tieneBitacora = operacionBitacoras.some(b => b.inmersion_id === inmersion.inmersion_id);
+                const tieneBitacora = Array.isArray(operacionBitacoras) && operacionBitacoras.some(b => b.inmersion_id === inmersion.inmersion_id);
                 return (
                   <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
@@ -318,3 +321,5 @@ export const BitacorasSupervisor = () => {
     </div>
   );
 };
+
+export default BitacorasSupervisor;

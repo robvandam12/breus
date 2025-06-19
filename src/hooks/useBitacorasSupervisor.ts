@@ -72,6 +72,7 @@ export interface BitacoraSupervisorFormData {
   comentarios_validacion?: string;
   estado_aprobacion?: string;
   operacion_id?: string;
+  equipo_buceo_id?: string;
 }
 
 export const useBitacorasSupervisor = () => {

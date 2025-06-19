@@ -31,7 +31,6 @@ interface InmersionData {
   hora_inicio: string;
   hora_fin?: string;
   operacion: any;
-  equipo_buceo_id?: string;
 }
 
 interface CreateBitacoraSupervisorFormProps {
@@ -78,7 +77,6 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
         firmado: false,
         estado_aprobacion: 'pendiente',
         // Pre-populate with inmersion and operation data
-        equipo_buceo_id: inmersionData.equipo_buceo_id,
         operacion_id: inmersionData.operacion?.id,
         empresa_nombre: inmersionData.operacion?.salmoneras?.nombre || inmersionData.operacion?.contratistas?.nombre || '',
         centro_nombre: inmersionData.operacion?.sitios?.nombre || '',
@@ -98,7 +96,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
         validacion_contratista: false,
         comentarios_validacion: '',
         diving_records: [],
-        // Campos opcionales
+        // Campos obligatorios
         supervisor: data.supervisor
       };
 
@@ -159,15 +157,6 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
                   <Users className="w-4 h-4 text-blue-600" />
                   <span><strong>Buzo Principal:</strong> {inmersionData.buzo_principal}</span>
                 </div>
-                {inmersionData.operacion?.equipos_buceo && (
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-green-600" />
-                    <span><strong>Equipo:</strong> {inmersionData.operacion.equipos_buceo.nombre}</span>
-                    <Badge variant="outline" className="bg-green-100 text-green-700 text-xs">
-                      Equipo Asignado
-                    </Badge>
-                  </div>
-                )}
               </div>
             </div>
             <div className="mt-3">

@@ -33,7 +33,7 @@ export interface BitacoraSupervisorData {
   
   // Inmersión relacionada
   inmersion_id: string;
-  supervisor?: string;
+  supervisor: string; // Hacer supervisor requerido
   
   // Buzos y asistentes (Paso 2)
   inmersiones_buzos?: Array<{
@@ -102,6 +102,7 @@ export const BitacoraWizardFromInmersion = ({
     codigo: `BS-${Date.now()}`,
     fecha: new Date().toISOString().split('T')[0],
     inmersion_id: inmersionId,
+    supervisor: '', // Inicializar como string vacío
     desarrollo_inmersion: '',
     evaluacion_general: '',
     inmersiones_buzos: [],
@@ -146,8 +147,8 @@ export const BitacoraWizardFromInmersion = ({
         ...prev,
         fecha: selectedInmersion.fecha_inmersion,
         lugar_trabajo: selectedOperation.nombre,
-        supervisor: selectedInmersion.supervisor,
-        supervisor_nombre_matricula: selectedInmersion.supervisor,
+        supervisor: selectedInmersion.supervisor || '', // Asegurar que no sea undefined
+        supervisor_nombre_matricula: selectedInmersion.supervisor || '',
         operacion_id: selectedOperation.id,
         equipo_buceo_id: selectedOperation.equipo_buceo_id,
         inmersiones_buzos: buzosEquipo,
@@ -212,7 +213,7 @@ export const BitacoraWizardFromInmersion = ({
         codigo: formData.codigo,
         fecha: formData.fecha,
         inmersion_id: formData.inmersion_id,
-        supervisor: formData.supervisor || '',
+        supervisor: formData.supervisor,
         desarrollo_inmersion: formData.desarrollo_inmersion,
         evaluacion_general: formData.evaluacion_general,
         incidentes: formData.incidentes,
@@ -234,7 +235,8 @@ export const BitacoraWizardFromInmersion = ({
         comentarios_validacion: formData.comentarios_validacion,
         operacion_id: formData.operacion_id,
         empresa_nombre: formData.empresa_nombre,
-        centro_nombre: formData.centro_nombre
+        centro_nombre: formData.centro_nombre,
+        equipo_buceo_id: formData.equipo_buceo_id
       };
       
       onComplete(formDataToSubmit);
@@ -277,6 +279,8 @@ export const BitacoraWizardFromInmersion = ({
           <BitacoraStep5DatosBuzos 
             data={formData} 
             onDataChange={updateFormData}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
           />
         );
       case 6:
@@ -314,30 +318,33 @@ export const BitacoraWizardFromInmersion = ({
       <CardContent>
         {renderStepContent()}
 
-        <div className="flex justify-between mt-6">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Anterior
-          </Button>
+        {/* Solo mostrar botones de navegación si no estamos en el paso 5 */}
+        {currentStep !== 5 && (
+          <div className="flex justify-between mt-6">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Anterior
+            </Button>
 
-          <div className="flex gap-2">
-            {currentStep < totalSteps ? (
-              <Button onClick={handleNext}>
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit}>
-                <Save className="h-4 w-4 mr-2" />
-                Finalizar Bitácora
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {currentStep < totalSteps ? (
+                <Button onClick={handleNext}>
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Finalizar Bitácora
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

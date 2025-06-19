@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,7 +57,7 @@ export const CreateInmersionForm = ({ operacionId, onSuccess, onCancel }: Create
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await createInmersion.mutateAsync({
+      await createInmersion({
         ...data,
         operacion_id: operacionId,
         estado: 'planificada',
