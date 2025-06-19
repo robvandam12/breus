@@ -20,13 +20,17 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
   const [manualBuzos, setManualBuzos] = useState<any[]>([]);
   const { equipos } = useEquiposBuceoEnhanced();
 
-  // Encontrar el equipo actual seleccionado
   const currentTeam = equipos.find(eq => eq.id === data.equipo_buceo_id);
 
   useEffect(() => {
     if (currentTeam?.miembros && Array.isArray(currentTeam.miembros)) {
-      // CORRECCIÓN CRÍTICA: Mapeo correcto de miembros
-      const buzos = currentTeam.miembros.map((miembro: any) => {
+      // CORRECCIÓN: Filtrar solo buzos, excluir supervisores
+      const soloMiembrosBuzos = currentTeam.miembros.filter((miembro: any) => {
+        const rol = miembro.rol_equipo || 'buzo';
+        return rol !== 'supervisor' && rol !== 'jefe_operaciones' && rol !== 'coordinador';
+      });
+      
+      const buzos = soloMiembrosBuzos.map((miembro: any) => {
         const nombre = miembro.nombre_completo || 
                      (miembro.nombre && miembro.apellido ? `${miembro.nombre} ${miembro.apellido}` : '') ||
                      'Miembro sin asignar';
@@ -40,7 +44,6 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
           rut,
           matricula,
           rol: miembro.rol_equipo || 'buzo',
-          // Datos técnicos con valores por defecto
           profundidad_max: 0,
           tiempo_total_fondo: '',
           tiempo_total_descompresion: '',
@@ -50,11 +53,10 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
         };
       });
       
-      console.log('Buzos procesados del equipo:', buzos);
+      console.log('Buzos procesados del equipo (sin supervisores):', buzos);
       setManualBuzos(buzos);
       onUpdate({ inmersiones_buzos: buzos });
     } else if (!currentTeam && data.inmersiones_buzos?.length === 0) {
-      // Si no hay equipo seleccionado, inicializar con array vacío
       setManualBuzos([]);
       onUpdate({ inmersiones_buzos: [] });
     }
@@ -101,7 +103,7 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900">Registro de Buzos</h2>
         <p className="mt-2 text-gray-600">
-          Personal que participó en las inmersiones
+          Personal buzo que participó en las inmersiones
         </p>
       </div>
 

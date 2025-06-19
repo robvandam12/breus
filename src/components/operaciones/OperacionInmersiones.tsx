@@ -48,15 +48,20 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
         title: "Inmersión eliminada",
         description: "La inmersión ha sido eliminada exitosamente.",
       });
-      // CORRECCIÓN: Mejorar invalidación de queries para múltiples inmersiones
-      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
-      queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
-      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
-      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       
-      // Forzar refetch inmediato
-      queryClient.refetchQueries({ queryKey: ['inmersiones'] });
-      queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] });
+      // CORRECCIÓN: Invalidación completa e inmediata de múltiples queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['inmersiones'] }),
+        queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] }),
+        queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] }),
+        queryClient.invalidateQueries({ queryKey: ['operaciones'] })
+      ]);
+      
+      // Forzar refetch inmediato y en paralelo
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['inmersiones'] }),
+        queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] })
+      ]);
       
       setShowDeleteDialog(false);
       setInmersionToDelete(null);
@@ -76,7 +81,6 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
   };
 
   const handleCreateBitacoraBuzo = (inmersionId: string) => {
-    // Verificar si existe bitácora de supervisor para esta inmersión
     const bitacoraSupervisorExiste = (bitacorasSupervisor || []).some(b => b.inmersion_id === inmersionId);
     
     if (!bitacoraSupervisorExiste) {
@@ -102,9 +106,11 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
       setShowBitacoraSupervisorForm(false);
       setSelectedInmersionId(null);
       
-      // CORRECCIÓN: Invalidar queries relacionadas después de crear bitácora
-      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
-      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
+      // CORRECCIÓN: Invalidación completa después de crear bitácora
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] }),
+        queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] })
+      ]);
     } catch (error) {
       console.error('Error creating bitacora supervisor:', error);
       toast({
@@ -125,9 +131,11 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
       setShowBitacoraBuzoForm(false);
       setSelectedInmersionId(null);
       
-      // CORRECCIÓN: Invalidar queries relacionadas después de crear bitácora
-      queryClient.invalidateQueries({ queryKey: ['bitacorasBuzo'] });
-      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
+      // CORRECCIÓN: Invalidación completa después de crear bitácora
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['bitacorasBuzo'] }),
+        queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] })
+      ]);
     } catch (error) {
       console.error('Error creating bitacora buzo:', error);
       toast({

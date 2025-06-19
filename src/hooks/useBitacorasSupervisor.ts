@@ -23,7 +23,7 @@ const bitacoraSupervisorFormSchema = z.object({
   supervisor_nombre_matricula: z.string().optional(),
   estado_mar: z.string().optional(),
   visibilidad_fondo: z.number().optional(),
-  inmersiones_buzos: z.array(z.any()).optional(), // CORRECCIÓN: Campo correcto
+  inmersiones_buzos: z.array(z.any()).optional(),
   equipos_utilizados: z.array(z.any()).optional(),
   trabajo_a_realizar: z.string().optional(),
   descripcion_trabajo: z.string().optional(),
@@ -32,10 +32,6 @@ const bitacoraSupervisorFormSchema = z.object({
   validacion_contratista: z.boolean().optional(),
   comentarios_validacion: z.string().optional(),
   diving_records: z.array(z.any()).optional(),
-  operacion_id: z.string().uuid().optional(),
-  empresa_nombre: z.string().optional(),
-  centro_nombre: z.string().optional(),
-  equipo_buceo_id: z.string().uuid().optional(),
 });
 
 export type BitacoraSupervisorFormData = z.infer<typeof bitacoraSupervisorFormSchema>;
@@ -78,18 +74,34 @@ export const useBitacorasSupervisor = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      // CORRECCIÓN CRÍTICA: Remover campos que no existen en la tabla
-      const { equipo_buceo_id, operacion_id, empresa_nombre, centro_nombre, ...dataToInsert } = formData as any;
-      
-      // Asegurar que la fecha esté presente
-      if (!dataToInsert.fecha) {
-        dataToInsert.fecha = new Date().toISOString().split('T')[0];
-      }
-      
-      // CORRECCIÓN: Asegurar que inmersiones_buzos sea un array válido
-      if (!Array.isArray(dataToInsert.inmersiones_buzos)) {
-        dataToInsert.inmersiones_buzos = [];
-      }
+      // CORRECCIÓN CRÍTICA: Solo usar campos que existen en la tabla bitacora_supervisor
+      const dataToInsert = {
+        codigo: formData.codigo,
+        inmersion_id: formData.inmersion_id,
+        supervisor: formData.supervisor || '',
+        desarrollo_inmersion: formData.desarrollo_inmersion,
+        incidentes: formData.incidentes || '',
+        evaluacion_general: formData.evaluacion_general,
+        fecha: formData.fecha || new Date().toISOString().split('T')[0],
+        firmado: formData.firmado || false,
+        estado_aprobacion: formData.estado_aprobacion || 'pendiente',
+        fecha_inicio_faena: formData.fecha_inicio_faena,
+        hora_inicio_faena: formData.hora_inicio_faena,
+        hora_termino_faena: formData.hora_termino_faena,
+        lugar_trabajo: formData.lugar_trabajo,
+        supervisor_nombre_matricula: formData.supervisor_nombre_matricula,
+        estado_mar: formData.estado_mar,
+        visibilidad_fondo: formData.visibilidad_fondo,
+        inmersiones_buzos: Array.isArray(formData.inmersiones_buzos) ? formData.inmersiones_buzos : [],
+        equipos_utilizados: Array.isArray(formData.equipos_utilizados) ? formData.equipos_utilizados : [],
+        trabajo_a_realizar: formData.trabajo_a_realizar,
+        descripcion_trabajo: formData.descripcion_trabajo,
+        embarcacion_apoyo: formData.embarcacion_apoyo,
+        observaciones_generales_texto: formData.observaciones_generales_texto,
+        validacion_contratista: formData.validacion_contratista || false,
+        comentarios_validacion: formData.comentarios_validacion,
+        diving_records: Array.isArray(formData.diving_records) ? formData.diving_records : [],
+      };
       
       if (!isOnline) {
         addPendingAction({ type: 'create', table: 'bitacora_supervisor', payload: dataToInsert });
@@ -99,7 +111,7 @@ export const useBitacorasSupervisor = () => {
         return newBitacora;
       }
       
-      const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert as any);
+      const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
