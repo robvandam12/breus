@@ -1,43 +1,68 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, FileText, Users, Waves } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useInmersiones } from "@/hooks/useInmersiones";
+import { Clock, FileText, Anchor, AlertTriangle } from "lucide-react";
+import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
+import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
 
 export const RecentActivity = () => {
-  const { operaciones, isLoading: operacionesLoading } = useOperaciones();
-  const { inmersiones, isLoading: inmersionesLoading } = useInmersiones();
+  const { bitacorasSupervisor } = useBitacorasSupervisor();
+  const { bitacorasBuzo } = useBitacorasBuzo();
 
-  // Asegurar que los datos sean arrays antes de usar slice
-  const recentOperaciones = Array.isArray(operaciones) ? operaciones.slice(0, 3) : [];
-  const recentInmersiones = Array.isArray(inmersiones) ? inmersiones.slice(0, 2) : [];
+  // Combine recent activities from bitácoras
+  const recentActivities = [
+    ...bitacorasSupervisor.slice(0, 2).map(bitacora => ({
+      id: bitacora.bitacora_id,
+      type: "bitacora_supervisor",
+      title: "Bitácora de Supervisor creada",
+      description: `${bitacora.supervisor} - ${bitacora.codigo}`,
+      time: "Hace 2 horas",
+      status: bitacora.firmado ? "completed" : "pending"
+    })),
+    ...bitacorasBuzo.slice(0, 2).map(bitacora => ({
+      id: bitacora.bitacora_id,
+      type: "bitacora_buzo",
+      title: "Bitácora de Buzo creada",
+      description: `${bitacora.buzo} - ${bitacora.codigo}`,
+      time: "Hace 4 horas",
+      status: bitacora.firmado ? "completed" : "pending"
+    })),
+    {
+      id: "alert1",
+      type: "alert",
+      title: "Certificación próxima a vencer",
+      description: "Carlos Silva - Matrícula vence en 15 días",
+      time: "Hace 6 horas",
+      status: "warning"
+    }
+  ].slice(0, 5);
 
-  if (operacionesLoading || inmersionesLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Actividad Reciente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "bitacora_supervisor":
+      case "bitacora_buzo":
+        return <FileText className="w-4 h-4" />;
+      case "inmersion":
+        return <Anchor className="w-4 h-4" />;
+      case "alert":
+        return <AlertTriangle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-blue-100 text-blue-800";
+      case "warning":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
     <Card>
@@ -47,59 +72,27 @@ export const RecentActivity = () => {
           Actividad Reciente
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Operaciones Recientes */}
-        {recentOperaciones.map((operacion) => (
-          <div key={operacion.id} className="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <FileText className="w-5 h-5 text-blue-600" />
+      <CardContent>
+        <div className="space-y-4">
+          {recentActivities.map((activity) => (
+            <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                {getActivityIcon(activity.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm text-gray-900">{activity.title}</p>
+                <p className="text-sm text-gray-600">{activity.description}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">{activity.time}</span>
+                  <Badge variant="secondary" className={getStatusColor(activity.status)}>
+                    {activity.status === "completed" ? "Completado" : 
+                     activity.status === "pending" ? "Pendiente" : "Advertencia"}
+                  </Badge>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {operacion.nombre}
-              </p>
-              <p className="text-sm text-gray-500">
-                Operación creada - {operacion.codigo}
-              </p>
-            </div>
-            <Badge variant={operacion.estado === 'activa' ? 'default' : 'secondary'}>
-              {operacion.estado}
-            </Badge>
-          </div>
-        ))}
-
-        {/* Inmersiones Recientes */}
-        {recentInmersiones.map((inmersion) => (
-          <div key={inmersion.inmersion_id} className="flex items-center space-x-4 p-3 bg-teal-50 rounded-lg">
-            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-              <Waves className="w-5 h-5 text-teal-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {inmersion.objetivo}
-              </p>
-              <p className="text-sm text-gray-500">
-                Inmersión - {inmersion.codigo}
-              </p>
-            </div>
-            <Badge variant={inmersion.estado === 'completada' ? 'default' : 'secondary'}>
-              {inmersion.estado}
-            </Badge>
-          </div>
-        ))}
-
-        {/* Mensaje cuando no hay actividad */}
-        {recentOperaciones.length === 0 && recentInmersiones.length === 0 && (
-          <div className="text-center py-6">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
-              No hay actividad reciente
-            </h3>
-            <p className="text-sm text-gray-500">
-              La actividad aparecerá aquí cuando se creen operaciones o inmersiones
-            </p>
-          </div>
-        )}
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

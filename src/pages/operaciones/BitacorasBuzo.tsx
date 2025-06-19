@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Plus } from "lucide-react";
@@ -6,7 +7,7 @@ import { BitacorasBuzoContent } from "@/components/bitacoras/BitacorasBuzoConten
 import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
+import { BitacoraBuzoCompleta } from "@/types/bitacoras";
 import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
@@ -28,20 +29,9 @@ const BitacorasBuzo = () => {
     updateBitacoraBuzoSignature
   } = useBitacorasBuzo();
 
-  const { bitacorasSupervisor, isLoading: loadingSupervisor } = useBitacorasSupervisor();
+  const { bitacorasSupervisor, loadingSupervisor } = useBitacorasSupervisor();
   
   const loading = loadingBuzo || loadingSupervisor;
-  
-  // Transformar bitacorasSupervisor a BitacoraSupervisorCompleta[] con type assertion
-  const bitacorasSupervisorCompletas: BitacoraSupervisorCompleta[] = bitacorasSupervisor.map(bitacora => ({
-    ...bitacora,
-    inmersion: null, // Por ahora null, se puede expandir para incluir datos de inmersión
-    supervisor_data: null,
-    aprobador_data: null,
-    inmersiones_buzos: bitacora.inmersiones_buzos || [],
-    equipos_utilizados: bitacora.equipos_utilizados || [],
-    diving_records: bitacora.diving_records || []
-  } as BitacoraSupervisorCompleta));
   
   const { 
     filters, 
@@ -118,7 +108,7 @@ const BitacorasBuzo = () => {
       <BitacorasBuzoContent
         filteredBitacorasBuzo={filteredBitacorasBuzo}
         bitacorasBuzo={bitacorasBuzo}
-        bitacorasSupervisor={bitacorasSupervisorCompletas}
+        bitacorasSupervisor={bitacorasSupervisor}
         hasSupervisorLogs={hasSupervisorLogs}
         filters={filters}
         onFiltersChange={setFilters}

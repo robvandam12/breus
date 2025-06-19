@@ -13,12 +13,10 @@ import { BitacoraStep6Firmas } from './steps/BitacoraStep6Firmas';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { useOperaciones } from '@/hooks/useOperaciones';
-import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 
 export interface BitacoraSupervisorData {
   // Información básica
   codigo: string;
-  fecha: string;
   fecha_inicio_faena?: string;
   fecha_termino_faena?: string;
   lugar_trabajo?: string;
@@ -33,7 +31,7 @@ export interface BitacoraSupervisorData {
   
   // Inmersión relacionada
   inmersion_id: string;
-  supervisor: string; // Hacer supervisor requerido
+  supervisor?: string;
   
   // Buzos y asistentes (Paso 2)
   inmersiones_buzos?: Array<{
@@ -88,7 +86,7 @@ export interface BitacoraSupervisorData {
 
 interface BitacoraWizardFromInmersionProps {
   inmersionId: string;
-  onComplete: (data: BitacoraSupervisorFormData) => void;
+  onComplete: (data: BitacoraSupervisorData) => void;
   onCancel: () => void;
 }
 
@@ -100,9 +98,7 @@ export const BitacoraWizardFromInmersion = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<BitacoraSupervisorData>({
     codigo: `BS-${Date.now()}`,
-    fecha: new Date().toISOString().split('T')[0],
     inmersion_id: inmersionId,
-    supervisor: '', // Inicializar como string vacío
     desarrollo_inmersion: '',
     evaluacion_general: '',
     inmersiones_buzos: [],
@@ -115,9 +111,7 @@ export const BitacoraWizardFromInmersion = ({
   const { equipos } = useEquiposBuceoEnhanced();
   const { operaciones } = useOperaciones();
   
-  const selectedInmersion = Array.isArray(inmersiones) 
-    ? inmersiones.find(i => i.inmersion_id === inmersionId)
-    : null;
+  const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
   const selectedOperation = selectedInmersion ? operaciones.find(op => op.id === selectedInmersion.operacion_id) : null;
   const assignedTeam = selectedOperation?.equipo_buceo_id 
     ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
@@ -145,10 +139,9 @@ export const BitacoraWizardFromInmersion = ({
 
       setFormData(prev => ({
         ...prev,
-        fecha: selectedInmersion.fecha_inmersion,
         lugar_trabajo: selectedOperation.nombre,
-        supervisor: selectedInmersion.supervisor || '', // Asegurar que no sea undefined
-        supervisor_nombre_matricula: selectedInmersion.supervisor || '',
+        supervisor: selectedInmersion.supervisor,
+        supervisor_nombre_matricula: selectedInmersion.supervisor,
         operacion_id: selectedOperation.id,
         equipo_buceo_id: selectedOperation.equipo_buceo_id,
         inmersiones_buzos: buzosEquipo,
@@ -208,38 +201,7 @@ export const BitacoraWizardFromInmersion = ({
 
   const handleSubmit = () => {
     if (validateStep(currentStep)) {
-      // Convertir BitacoraSupervisorData a BitacoraSupervisorFormData
-      const formDataToSubmit: BitacoraSupervisorFormData = {
-        codigo: formData.codigo,
-        fecha: formData.fecha,
-        inmersion_id: formData.inmersion_id,
-        supervisor: formData.supervisor,
-        desarrollo_inmersion: formData.desarrollo_inmersion,
-        evaluacion_general: formData.evaluacion_general,
-        incidentes: formData.incidentes,
-        lugar_trabajo: formData.lugar_trabajo,
-        fecha_inicio_faena: formData.fecha_inicio_faena,
-        hora_inicio_faena: formData.hora_inicio_faena,
-        hora_termino_faena: formData.hora_termino_faena,
-        supervisor_nombre_matricula: formData.supervisor_nombre_matricula,
-        estado_mar: formData.estado_mar,
-        visibilidad_fondo: formData.visibilidad_fondo,
-        inmersiones_buzos: formData.inmersiones_buzos,
-        equipos_utilizados: formData.equipos_utilizados,
-        trabajo_a_realizar: formData.trabajo_a_realizar,
-        descripcion_trabajo: formData.descripcion_trabajo,
-        embarcacion_apoyo: formData.embarcacion_apoyo,
-        observaciones_generales_texto: formData.observaciones_generales_texto,
-        diving_records: formData.diving_records,
-        validacion_contratista: formData.validacion_contratista,
-        comentarios_validacion: formData.comentarios_validacion,
-        operacion_id: formData.operacion_id,
-        empresa_nombre: formData.empresa_nombre,
-        centro_nombre: formData.centro_nombre,
-        equipo_buceo_id: formData.equipo_buceo_id
-      };
-      
-      onComplete(formDataToSubmit);
+      onComplete(formData);
     }
   };
 
@@ -278,9 +240,7 @@ export const BitacoraWizardFromInmersion = ({
         return (
           <BitacoraStep5DatosBuzos 
             data={formData} 
-            onDataChange={updateFormData}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
+            onUpdate={updateFormData}
           />
         );
       case 6:
@@ -318,33 +278,30 @@ export const BitacoraWizardFromInmersion = ({
       <CardContent>
         {renderStepContent()}
 
-        {/* Solo mostrar botones de navegación si no estamos en el paso 5 */}
-        {currentStep !== 5 && (
-          <div className="flex justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
+        <div className="flex justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Anterior
+          </Button>
 
-            <div className="flex gap-2">
-              {currentStep < totalSteps ? (
-                <Button onClick={handleNext}>
-                  Siguiente
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Finalizar Bitácora
-                </Button>
-              )}
-            </div>
+          <div className="flex gap-2">
+            {currentStep < totalSteps ? (
+              <Button onClick={handleNext}>
+                Siguiente
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit}>
+                <Save className="h-4 w-4 mr-2" />
+                Finalizar Bitácora
+              </Button>
+            )}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

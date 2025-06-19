@@ -100,17 +100,11 @@ export const useOperacionDetails = (operacionId: string) => {
         queryKey: ['operacionDetails', operacionId],
         queryFn: () => fetchOperacionDetails(operacionId),
         enabled: !!operacionId,
-        // CORRECCIÓN CRÍTICA: Configuración optimizada para mejor reactivity
-        staleTime: 0, // Siempre considerar datos como stale
-        gcTime: 5 * 60 * 1000, // Mantener en cache por 5 minutos
+        staleTime: 0, // CORRECCIÓN: Siempre refetch para detectar cambios de equipo
         refetchOnWindowFocus: true,
         refetchOnMount: true,
-        refetchOnReconnect: true,
-        // Polling cada 10 segundos para detectar cambios de equipo y documentos
-        refetchInterval: 10000,
-        // Retry automático en caso de fallos
-        retry: 3,
-        retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // CORRECCIÓN CRÍTICA: Agregar refetchInterval para detectar cambios de equipo
+        refetchInterval: 5000, // Revalidar cada 5 segundos
     });
 
     const createInmersionMutation = useMutation({
@@ -129,24 +123,16 @@ export const useOperacionDetails = (operacionId: string) => {
           console.log('Immersion creation successful, invalidating queries');
           toast({ title: "Inmersión creada", description: "La inmersión ha sido creada exitosamente." });
           
-          // CORRECCIÓN: Invalidación y refetch más agresiva para mejor reactivity
-          const invalidatePromises = [
-            queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] }),
-            queryClient.invalidateQueries({ queryKey: ['inmersiones'] }),
-            queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] }),
-            queryClient.invalidateQueries({ queryKey: ['operaciones'] }),
-            queryClient.invalidateQueries({ queryKey: ['equiposBuceo'] }),
-            queryClient.invalidateQueries({ queryKey: ['operacionCompliance'] })
-          ];
+          // CORRECCIÓN: Invalidar más queries para mejor reactivity
+          queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
+          queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+          queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
+          queryClient.invalidateQueries({ queryKey: ['operaciones'] }); // También invalidar operaciones
           
           // Forzar refetch inmediato de múltiples queries
-          const refetchPromises = [
-            queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] }),
-            queryClient.refetchQueries({ queryKey: ['inmersiones'] }),
-            queryClient.refetchQueries({ queryKey: ['operaciones'] })
-          ];
-          
-          Promise.all([...invalidatePromises, ...refetchPromises]).catch(console.error);
+          queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] });
+          queryClient.refetchQueries({ queryKey: ['inmersiones'] });
+          queryClient.refetchQueries({ queryKey: ['operaciones'] });
         },
         onError: (error: any) => {
           console.error('Error creating Inmersion:', error);
@@ -176,37 +162,19 @@ export const useOperacionDetails = (operacionId: string) => {
           hasTeam,
           canExecute,
           hpts: documentStatus.hpts,
-          anexosBravo: documentStatus.anexosBravo,
-          equipoBuceoId: data.operacion?.equipo_buceo_id
+          anexosBravo: documentStatus.anexosBravo
         });
         
         return { hasValidHPT, hasValidAnexo, canExecute, hasTeam };
-    }, [data?.documentStatus, data?.operacion?.equipo_buceo_id]); // CORRECCIÓN: Dependency mejorada
+    }, [data?.documentStatus]); // CORRECCIÓN: Dependency correcta para recalcular
 
-    // CORRECCIÓN: Función mejorada para refrescar manualmente los datos
+    // Función para refrescar manualmente los datos
     const refreshOperacionDetails = async () => {
-      console.log('Manually refreshing operation details with full cache invalidation');
-      
-      // Invalidar todas las queries relacionadas antes del refetch
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] }),
-        queryClient.invalidateQueries({ queryKey: ['operaciones'] }),
-        queryClient.invalidateQueries({ queryKey: ['inmersiones'] }),
-        queryClient.invalidateQueries({ queryKey: ['equiposBuceo'] }),
-        queryClient.invalidateQueries({ queryKey: ['hpt'] }),
-        queryClient.invalidateQueries({ queryKey: ['anexoBravo'] })
-      ]);
-      
-      // Refetch con datos frescos
+      console.log('Manually refreshing operation details');
       await refetch();
-      
-      console.log('Operation details refreshed successfully');
-    };
-
-    // CORRECCIÓN: Hook para detectar cambios de equipo automáticamente
-    const forceRefreshOnTeamChange = () => {
-      console.log('Forcing refresh due to team assignment change');
-      refreshOperacionDetails();
+      // CORRECCIÓN: También invalidar otras queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
     };
 
     return {
@@ -217,9 +185,6 @@ export const useOperacionDetails = (operacionId: string) => {
         error,
         createInmersion: createInmersionMutation.mutateAsync,
         compliance,
-        refreshOperacionDetails,
-        forceRefreshOnTeamChange,
-        // Exponer función para invalidar manualmente
-        invalidateCache: () => queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] })
+        refreshOperacionDetails
     };
 };
