@@ -23,7 +23,7 @@ const bitacoraSupervisorFormSchema = z.object({
   supervisor_nombre_matricula: z.string().optional(),
   estado_mar: z.string().optional(),
   visibilidad_fondo: z.number().optional(),
-  inmersiones_buzos: z.array(z.any()).optional(),
+  inmersiones_buzos: z.array(z.any()).optional(), // CORRECCIÓN: Campo correcto
   equipos_utilizados: z.array(z.any()).optional(),
   trabajo_a_realizar: z.string().optional(),
   descripcion_trabajo: z.string().optional(),
@@ -78,12 +78,17 @@ export const useBitacorasSupervisor = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      // Remover campos que no existen en la tabla
+      // CORRECCIÓN CRÍTICA: Remover campos que no existen en la tabla
       const { equipo_buceo_id, operacion_id, empresa_nombre, centro_nombre, ...dataToInsert } = formData as any;
       
       // Asegurar que la fecha esté presente
       if (!dataToInsert.fecha) {
         dataToInsert.fecha = new Date().toISOString().split('T')[0];
+      }
+      
+      // CORRECCIÓN: Asegurar que inmersiones_buzos sea un array válido
+      if (!Array.isArray(dataToInsert.inmersiones_buzos)) {
+        dataToInsert.inmersiones_buzos = [];
       }
       
       if (!isOnline) {
