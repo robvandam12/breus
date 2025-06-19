@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Plus } from "lucide-react";
@@ -33,7 +32,7 @@ const BitacorasBuzo = () => {
   
   const loading = loadingBuzo || loadingSupervisor;
   
-  // Transformar bitacorasSupervisor a BitacoraSupervisorCompleta[]
+  // Transformar bitacorasSupervisor a BitacoraSupervisorCompleta[] con type assertion
   const bitacorasSupervisorCompletas: BitacoraSupervisorCompleta[] = bitacorasSupervisor.map(bitacora => ({
     ...bitacora,
     inmersion: null, // Por ahora null, se puede expandir para incluir datos de inmersión
@@ -42,7 +41,7 @@ const BitacorasBuzo = () => {
     inmersiones_buzos: bitacora.inmersiones_buzos || [],
     equipos_utilizados: bitacora.equipos_utilizados || [],
     diving_records: bitacora.diving_records || []
-  }));
+  } as BitacoraSupervisorCompleta));
   
   const { 
     filters, 
