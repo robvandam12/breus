@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,11 +19,12 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
   const [manualBuzos, setManualBuzos] = useState<any[]>([]);
   const { equipos } = useEquiposBuceoEnhanced();
 
-  const currentTeam = equipos.find(eq => eq.id === data.equipo_buceo_id);
+  // Buscar el equipo actual, pero no acceder a equipo_buceo_id desde data ya que no existe
+  const currentTeam = equipos.find(eq => eq.id === data.inmersion?.equipo_buceo_id);
 
   useEffect(() => {
     if (currentTeam?.miembros && Array.isArray(currentTeam.miembros)) {
-      // CORRECCIÓN: Filtrar solo buzos, excluir supervisores
+      // Filtrar solo buzos, excluir supervisores
       const soloMiembrosBuzos = currentTeam.miembros.filter((miembro: any) => {
         const rol = miembro.rol_equipo || 'buzo';
         return rol !== 'supervisor' && rol !== 'jefe_operaciones' && rol !== 'coordinador';
@@ -56,11 +56,11 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
       console.log('Buzos procesados del equipo (sin supervisores):', buzos);
       setManualBuzos(buzos);
       onUpdate({ inmersiones_buzos: buzos });
-    } else if (!currentTeam && data.inmersiones_buzos?.length === 0) {
+    } else if (!currentTeam && (!data.inmersiones_buzos || data.inmersiones_buzos.length === 0)) {
       setManualBuzos([]);
       onUpdate({ inmersiones_buzos: [] });
     }
-  }, [currentTeam, data.equipo_buceo_id]);
+  }, [currentTeam, data.inmersion?.equipo_buceo_id]);
 
   const handleBuzoChange = (index: number, field: string, value: any) => {
     const updatedBuzos = [...manualBuzos];

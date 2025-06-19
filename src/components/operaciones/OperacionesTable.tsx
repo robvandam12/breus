@@ -3,8 +3,9 @@ import { useState, useMemo, useRef } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { OperacionesActions } from "./OperacionesComponents";
-import { ArrowUp, ArrowDown, ListX } from "lucide-react";
+import { ArrowUp, ArrowDown, ListX, Eye, Trash2 } from "lucide-react";
 import type { OperacionConRelaciones } from "@/hooks/useOperaciones";
 
 interface OperacionesTableProps {
@@ -183,7 +184,7 @@ export const OperacionesTable = ({ operaciones, onViewDetail, onEdit, onDelete }
                 </div>
                 
                 <div className="flex justify-end">
-                  {/* CORRECCIÓN: Solo botones Ver y Borrar, sin Editar */}
+                  {/* Solo botones Ver y Borrar, sin Editar */}
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"

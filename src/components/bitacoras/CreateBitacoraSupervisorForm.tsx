@@ -77,11 +77,7 @@ export const CreateBitacoraSupervisorForm = ({ inmersionData, onSubmit, onCancel
         fecha: new Date().toISOString().split('T')[0],
         firmado: false,
         estado_aprobacion: 'pendiente',
-        // Pre-populate with inmersion and operation data
-        equipo_buceo_id: inmersionData.equipo_buceo_id,
-        operacion_id: inmersionData.operacion?.id,
-        empresa_nombre: inmersionData.operacion?.salmoneras?.nombre || inmersionData.operacion?.contratistas?.nombre || '',
-        centro_nombre: inmersionData.operacion?.sitios?.nombre || '',
+        // Campos específicos de la tabla bitacora_supervisor
         fecha_inicio_faena: '',
         hora_inicio_faena: '',
         hora_termino_faena: '',

@@ -14,7 +14,6 @@ import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersionesData } from '@/hooks/useInmersionesData';
 import type { Inmersion } from '@/types/inmersion';
 
-
 interface CreateBitacoraSupervisorFormEnhancedProps {
   onSubmit: (data: Partial<BitacoraSupervisorFormData>) => void;
   onCancel: () => void;
@@ -86,7 +85,6 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
         profundidad_alcanzada: buzo.profundidad
       })),
       lugar_trabajo: operacionData?.sitio?.nombre || 'N/A',
-      empresa_nombre: operacionData?.salmonera?.nombre || operacionData?.contratista?.nombre,
     };
 
     onSubmit(submitData);
