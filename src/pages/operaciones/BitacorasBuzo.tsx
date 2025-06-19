@@ -24,12 +24,12 @@ const BitacorasBuzo = () => {
   
   const { 
     bitacorasBuzo, 
-    loadingBuzo,
+    isLoading: loadingBuzo,
     createBitacoraBuzo,
     updateBitacoraBuzoSignature
   } = useBitacorasBuzo();
 
-  const { bitacorasSupervisor, loadingSupervisor } = useBitacorasSupervisor();
+  const { bitacorasSupervisor, isLoading: loadingSupervisor } = useBitacorasSupervisor();
   
   const loading = loadingBuzo || loadingSupervisor;
   

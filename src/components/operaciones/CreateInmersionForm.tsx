@@ -63,6 +63,12 @@ export const CreateInmersionForm = ({ operacionId, onSuccess, onCancel }: Create
         estado: 'planificada',
         hpt_validado: false,
         anexo_bravo_validado: false,
+        buzo_asistente_id: null,
+        buzo_principal_id: null,
+        supervisor_id: null,
+        current_depth: null,
+        planned_bottom_time: null,
+        depth_history: [],
       });
       onSuccess();
     } catch (error) {

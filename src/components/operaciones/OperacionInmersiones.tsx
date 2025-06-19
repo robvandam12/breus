@@ -10,9 +10,10 @@ import { useOperacionDetails } from "@/hooks/useOperacionDetails";
 
 interface OperacionInmersionesProps {
   operacionId: string;
+  onNewInmersion?: () => void;
 }
 
-export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps) => {
+export const OperacionInmersiones = ({ operacionId, onNewInmersion }: OperacionInmersionesProps) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { inmersiones, isLoading } = useInmersiones();
   const { compliance } = useOperacionDetails(operacionId);

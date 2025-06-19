@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +105,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         <TabsContent value="inmersiones" className="space-y-4">
           <OperacionInmersiones 
             operacionId={operacionId}
-            canCreateInmersiones={canCreateInmersiones}
             onNewInmersion={() => setShowCreateInmersion(true)}
           />
         </TabsContent>
