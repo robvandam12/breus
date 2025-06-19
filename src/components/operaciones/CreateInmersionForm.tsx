@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,6 +70,20 @@ export const CreateInmersionForm = ({ operacionId, onSuccess, onCancel }: Create
         current_depth: null,
         planned_bottom_time: null,
         depth_history: [],
+        // Asegurar que todos los campos requeridos estén presentes
+        codigo: data.codigo,
+        objetivo: data.objetivo,
+        fecha_inmersion: new Date(data.fecha_inmersion),
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_fin || null,
+        buzo_principal: data.buzo_principal,
+        buzo_asistente: data.buzo_asistente || null,
+        supervisor: data.supervisor,
+        profundidad_max: data.profundidad_max,
+        temperatura_agua: data.temperatura_agua,
+        visibilidad: data.visibilidad,
+        corriente: data.corriente,
+        observaciones: data.observaciones || ''
       });
       onSuccess();
     } catch (error) {

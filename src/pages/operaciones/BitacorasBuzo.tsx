@@ -24,7 +24,7 @@ const BitacorasBuzo = () => {
   
   const { 
     bitacorasBuzo, 
-    isLoading: loadingBuzo,
+    loadingBuzo,
     createBitacoraBuzo,
     updateBitacoraBuzoSignature
   } = useBitacorasBuzo();
