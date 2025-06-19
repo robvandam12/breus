@@ -80,7 +80,7 @@ export const useBitacorasSupervisor = () => {
       );
       
       if (existingBitacora) {
-        throw new Error('Ya existe una bitácora de supervisor para esta inmersión. Solo se permite una bitácora por inmersión.');
+        throw new Error('Ya existe una bitácora de supervisor para esta inmersión. Solo se permite una bitácora por inmersión. Puede editarla desde la lista de bitácoras.');
       }
 
       // Preparar datos para inserción con validación de campos
@@ -181,6 +181,16 @@ export const useBitacorasSupervisor = () => {
     },
   });
 
+  // Función para obtener una bitácora específica por ID
+  const getBitacoraSupervisorById = (bitacoraId: string) => {
+    return bitacorasSupervisor.find(b => b.bitacora_id === bitacoraId);
+  };
+
+  // Función para verificar si una inmersión ya tiene bitácora
+  const hasExistingBitacora = (inmersionId: string) => {
+    return bitacorasSupervisor.some(b => b.inmersion_id === inmersionId);
+  };
+
   const updateBitacoraSupervisorSignature = useMutation({
     mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
       const payload = { supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
@@ -221,5 +231,7 @@ export const useBitacorasSupervisor = () => {
     createBitacoraSupervisor,
     updateBitacoraSupervisor,
     updateBitacoraSupervisorSignature,
+    getBitacoraSupervisorById,
+    hasExistingBitacora,
   };
 };

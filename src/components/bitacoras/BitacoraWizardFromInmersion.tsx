@@ -35,12 +35,19 @@ export interface BitacoraSupervisorData {
   
   // Buzos y asistentes (Paso 2)
   inmersiones_buzos?: Array<{
+    id?: string;
     nombre: string;
-    apellido: string;
+    apellido?: string;
     rut: string;
     rol: string;
     profundidad_trabajo?: number;
     tiempo_inmersion?: number;
+    profundidad_maxima?: number;
+    tiempo_fondo?: number;
+    tiempo_descompresion?: number;
+    hora_entrada_agua?: string;
+    hora_salida_agua?: string;
+    observaciones?: string;
     del_equipo_buceo: boolean;
   }>;
   buzos_asistentes?: Array<{
@@ -73,6 +80,7 @@ export interface BitacoraSupervisorData {
     tiempo_descompresion: number;
     equipos_usados: string[];
     observaciones?: string;
+    rol?: string;
   }>;
   
   // Control y validación
@@ -121,18 +129,27 @@ export const BitacoraWizardFromInmersion = ({
   useEffect(() => {
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo usando las propiedades correctas
-      const buzosEquipo = assignedTeam.miembros?.map(miembro => {
-        // Usar las propiedades correctas del tipo EquipoBuceoMiembro
+      const buzosEquipo = assignedTeam.miembros?.filter(miembro => {
+        const rol = (miembro.rol || 'buzo').toLowerCase();
+        return rol === 'buzo' || rol === 'buzo_principal' || rol === 'buzo_asistente';
+      }).map(miembro => {
         const nombreCompleto = miembro.nombre_completo || 'Sin nombre';
         const rol = miembro.rol || 'Buzo';
         
         return {
+          id: miembro.usuario_id || `temp_${Date.now()}_${Math.random()}`,
           nombre: nombreCompleto,
           apellido: '',
-          rut: '',
+          rut: miembro.rut || '',
           rol: rol,
           profundidad_trabajo: 0,
           tiempo_inmersion: 0,
+          profundidad_maxima: 0,
+          tiempo_fondo: 0,
+          tiempo_descompresion: 0,
+          hora_entrada_agua: '',
+          hora_salida_agua: '',
+          observaciones: '',
           del_equipo_buceo: true
         };
       }) || [];
@@ -152,11 +169,11 @@ export const BitacoraWizardFromInmersion = ({
 
   const steps = [
     { id: 1, title: "Información General", description: "Datos básicos de la bitácora" },
-    { id: 2, title: "Buzos y Asistentes", description: "Personal participante" },
+    { id: 2, title: "Buzos y Datos", description: "Personal buzo y datos de inmersión" },
     { id: 3, title: "Equipos Utilizados", description: "Equipos y herramientas" },
     { id: 4, title: "Trabajos Realizados", description: "Descripción de actividades" },
-    { id: 5, title: "Datos del Buceo", description: "Información detallada del buceo" },
-    { id: 6, title: "Firmas y Validación", description: "Validación final" }
+    { id: 5, title: "Resumen y Validación", description: "Resumen final y validación" },
+    { id: 6, title: "Firmas", description: "Firmas digitales" }
   ];
 
   const totalSteps = steps.length;
@@ -177,9 +194,9 @@ export const BitacoraWizardFromInmersion = ({
       case 4:
         return !!(formData.trabajo_a_realizar || formData.descripcion_trabajo);
       case 5:
-        return true; // Datos del buceo son opcionales pero recomendados
+        return true; // Resumen y validación
       case 6:
-        return true; // Validación final
+        return true; // Firmas
       default:
         return false;
     }
