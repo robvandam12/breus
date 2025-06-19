@@ -35,10 +35,24 @@ export const BitacoraStep2Enhanced = ({
   onPrevious,
   inmersionId
 }: BitacoraStep2EnhancedProps) => {
-  const { equipos, getEquipoMembers } = useEquiposBuceoEnhanced();
+  const { equipos } = useEquiposBuceoEnhanced();
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string>("");
   const [miembrosEquipo, setMiembrosEquipo] = useState<any[]>([]);
   const [buzosData, setBuzosData] = useState<BuzoData[]>([]);
+
+  // Función para obtener miembros del equipo
+  const getEquipoMembers = async (equipoId: string) => {
+    try {
+      const equipo = equipos.find(e => e.id === equipoId);
+      if (equipo && equipo.miembros) {
+        return equipo.miembros;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getting team members:', error);
+      return [];
+    }
+  };
 
   // Inicializar datos del equipo si ya existe
   useEffect(() => {
@@ -52,12 +66,12 @@ export const BitacoraStep2Enhanced = ({
     try {
       const members = await getEquipoMembers(equipoId);
       console.log('Loaded team members:', members);
-      setMiembrosEquipo(members);
+      setMiembrosEquipo(members || []);
       
       // Inicializar datos de buzos si no existen
       if (!data.inmersiones_buzos || data.inmersiones_buzos.length === 0) {
-        const initialBuzosData = members.map((member: any) => ({
-          nombre: `${member.usuario?.nombre || ''} ${member.usuario?.apellido || ''}`.trim(),
+        const initialBuzosData = (members || []).map((member: any) => ({
+          nombre: member.nombre_completo || `${member.usuario?.nombre || ''} ${member.usuario?.apellido || ''}`.trim(),
           rol: member.rol_equipo || 'buzo',
           matricula: member.usuario?.perfil_buzo?.matricula || '',
           tiempo_fondo: '',
@@ -180,7 +194,7 @@ export const BitacoraStep2Enhanced = ({
                   {miembrosEquipo.map((member, index) => (
                     <Badge key={index} variant="secondary" className="flex items-center gap-1">
                       <UserCheck className="w-3 h-3" />
-                      {member.usuario?.nombre} {member.usuario?.apellido} ({member.rol_equipo})
+                      {member.nombre_completo || `${member.usuario?.nombre || ''} ${member.usuario?.apellido || ''}`.trim()} ({member.rol_equipo})
                     </Badge>
                   ))}
                 </div>

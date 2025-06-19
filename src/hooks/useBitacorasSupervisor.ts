@@ -67,6 +67,9 @@ export interface BitacoraSupervisorFormData {
   observaciones_generales_texto?: string;
   diving_records?: any[];
   folio?: string;
+  firmado?: boolean;
+  validacion_contratista?: boolean;
+  comentarios_validacion?: string;
 }
 
 export const useBitacorasSupervisor = () => {
@@ -81,7 +84,16 @@ export const useBitacorasSupervisor = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Procesar los datos para asegurar que los campos JSON sean arrays
+      const processedData = (data || []).map(item => ({
+        ...item,
+        inmersiones_buzos: Array.isArray(item.inmersiones_buzos) ? item.inmersiones_buzos : [],
+        equipos_utilizados: Array.isArray(item.equipos_utilizados) ? item.equipos_utilizados : [],
+        diving_records: Array.isArray(item.diving_records) ? item.diving_records : []
+      }));
+      
+      return processedData;
     },
   });
 
@@ -89,7 +101,6 @@ export const useBitacorasSupervisor = () => {
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
       console.log('Creating bitacora supervisor with data:', formData);
       
-      // CORRECCIÓN CRÍTICA: Usar inmersiones_buzos en lugar de buzos_asistentes
       const dataToInsert = {
         inmersion_id: formData.inmersion_id,
         fecha: formData.fecha,
@@ -115,7 +126,9 @@ export const useBitacorasSupervisor = () => {
         observaciones_generales_texto: formData.observaciones_generales_texto,
         diving_records: formData.diving_records || [],
         folio: formData.folio,
-        firmado: false,
+        firmado: formData.firmado || false,
+        validacion_contratista: formData.validacion_contratista || false,
+        comentarios_validacion: formData.comentarios_validacion,
         estado_aprobacion: 'pendiente'
       };
       

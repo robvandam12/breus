@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,14 +46,16 @@ export const BitacoraStep5DatosBuzos = ({
     if (data.diving_records && data.diving_records.length > 0) {
       setDivingRecords(data.diving_records);
     } else {
-      // CORRECCIÓN: Generar registros tanto para buzos como para supervisores
       generateRecordsFromBuzos();
     }
   }, [data.inmersiones_buzos]);
 
   const generateRecordsFromBuzos = () => {
+    const records: DivingRecord[] = [];
+    
+    // Generar registros para buzos
     if (data.inmersiones_buzos && data.inmersiones_buzos.length > 0) {
-      const records: DivingRecord[] = data.inmersiones_buzos.map((buzo: any, index: number) => ({
+      const buzoRecords = data.inmersiones_buzos.map((buzo: any, index: number) => ({
         id: `record_${index}`,
         nombre: buzo.nombre || '',
         rol: buzo.rol || 'buzo',
@@ -72,35 +73,37 @@ export const BitacoraStep5DatosBuzos = ({
         visibilidad: data.visibilidad_fondo?.toString() || '',
         corriente: data.estado_mar || ''
       }));
+      
+      records.push(...buzoRecords);
+    }
 
-      // CORRECCIÓN: Agregar registro para el supervisor también
-      if (data.supervisor && data.supervisor.trim() !== '') {
-        records.push({
-          id: `supervisor_record`,
-          nombre: data.supervisor,
-          rol: 'supervisor',
-          matricula: data.supervisor_nombre_matricula || '',
-          tiempo_fondo: '',
-          profundidad_max: '',
-          objetivo_trabajo: 'Supervisión de operaciones de buceo',
-          observaciones: 'Supervisión y control de la operación',
-          estado_fisico_pre: 'normal',
-          estado_fisico_post: 'normal',
-          equipo_utilizado: 'Equipo de superficie',
-          hora_entrada: data.hora_inicio_faena || '',
-          hora_salida: data.hora_termino_faena || '',
-          temperatura_agua: data.temperatura_agua || '',
-          visibilidad: data.visibilidad_fondo?.toString() || '',
-          corriente: data.estado_mar || ''
-        });
-      }
-
-      setDivingRecords(records);
-      onDataChange({
-        ...data,
-        diving_records: records
+    // Generar registro para el supervisor
+    if (data.supervisor && data.supervisor.trim() !== '') {
+      records.push({
+        id: `supervisor_record`,
+        nombre: data.supervisor,
+        rol: 'supervisor',
+        matricula: data.supervisor_nombre_matricula || '',
+        tiempo_fondo: '',
+        profundidad_max: '',
+        objetivo_trabajo: 'Supervisión de operaciones de buceo',
+        observaciones: 'Supervisión y control de la operación',
+        estado_fisico_pre: 'normal',
+        estado_fisico_post: 'normal',
+        equipo_utilizado: 'Equipo de superficie',
+        hora_entrada: data.hora_inicio_faena || '',
+        hora_salida: data.hora_termino_faena || '',
+        temperatura_agua: data.temperatura_agua || '',
+        visibilidad: data.visibilidad_fondo?.toString() || '',
+        corriente: data.estado_mar || ''
       });
     }
+
+    setDivingRecords(records);
+    onDataChange({
+      ...data,
+      diving_records: records
+    });
   };
 
   const handleRecordChange = (recordId: string, field: keyof DivingRecord, value: string) => {

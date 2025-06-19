@@ -5,15 +5,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, FileText, AlertCircle } from "lucide-react";
-import { BitacoraSupervisorData } from "../BitacoraWizard";
+import { BitacoraSupervisorFormData } from "@/hooks/useBitacorasSupervisor";
 
 interface BitacoraStep5Props {
-  data: BitacoraSupervisorData;
-  onUpdate: (data: Partial<BitacoraSupervisorData>) => void;
+  data: BitacoraSupervisorFormData;
+  onUpdate: (data: Partial<BitacoraSupervisorFormData>) => void;
 }
 
 export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
-  const handleInputChange = (field: keyof BitacoraSupervisorData, value: any) => {
+  const handleInputChange = (field: keyof BitacoraSupervisorFormData, value: any) => {
     onUpdate({ [field]: value });
   };
 
@@ -118,7 +118,7 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
             </Label>
             <Textarea
               id="observaciones_generales"
-              value={data.observaciones_generales_texto}
+              value={data.observaciones_generales_texto || ''}
               onChange={(e) => handleInputChange('observaciones_generales_texto', e.target.value)}
               placeholder="Registre cualquier observación relevante sobre la faena, incidentes menores, condiciones especiales, recomendaciones, etc."
               rows={6}
@@ -140,7 +140,7 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="validacion_contratista"
-              checked={data.validacion_contratista}
+              checked={data.validacion_contratista || false}
               onCheckedChange={(checked) => handleInputChange('validacion_contratista', checked)}
             />
             <Label htmlFor="validacion_contratista" className="text-sm">
@@ -165,7 +165,7 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
             </Label>
             <Textarea
               id="comentarios_validacion"
-              value={data.comentarios_validacion}
+              value={data.comentarios_validacion || ''}
               onChange={(e) => handleInputChange('comentarios_validacion', e.target.value)}
               placeholder="Comentarios adicionales del contratista sobre la validación..."
               rows={3}
