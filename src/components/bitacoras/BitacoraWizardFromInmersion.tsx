@@ -130,21 +130,28 @@ export const BitacoraWizardFromInmersion = ({
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo usando las propiedades correctas
       const buzosEquipo = assignedTeam.miembros?.filter(miembro => {
-        const rol = (miembro.rol_equipo || 'buzo').toLowerCase();
+        // Usar 'any' temporalmente para acceder a las propiedades
+        const miembroAny = miembro as any;
+        const rol = (miembroAny.rol_equipo || miembroAny.rol || 'buzo').toLowerCase();
         return rol === 'buzo' || rol === 'buzo_principal' || rol === 'buzo_asistente';
       }).map(miembro => {
-        // Usar las propiedades correctas del miembro
-        const nombreCompleto = miembro.usuario?.nombre_completo || 
-                              (miembro.usuario?.nombre && miembro.usuario?.apellido 
-                                ? `${miembro.usuario.nombre} ${miembro.usuario.apellido}` 
-                                : 'Sin nombre');
-        const rol = miembro.rol_equipo || 'Buzo';
+        // Usar 'any' temporalmente para acceder a las propiedades
+        const miembroAny = miembro as any;
+        
+        // Intentar obtener el nombre de diferentes formas
+        const nombreCompleto = miembroAny.usuario?.nombre_completo || 
+                              miembroAny.nombre_completo ||
+                              (miembroAny.usuario?.nombre && miembroAny.usuario?.apellido 
+                                ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
+                                : miembroAny.nombre || 'Sin nombre');
+        
+        const rol = miembroAny.rol_equipo || miembroAny.rol || 'Buzo';
         
         return {
-          id: miembro.id || `temp_${Date.now()}_${Math.random()}`,
+          id: miembroAny.id || miembroAny.usuario_id || `temp_${Date.now()}_${Math.random()}`,
           nombre: nombreCompleto,
           apellido: '',
-          rut: miembro.usuario?.perfil_buzo?.rut || '',
+          rut: miembroAny.usuario?.perfil_buzo?.rut || miembroAny.rut || '',
           rol: rol,
           profundidad_trabajo: 0,
           tiempo_inmersion: 0,
