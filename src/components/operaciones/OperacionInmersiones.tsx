@@ -17,7 +17,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
   const { inmersiones, isLoading } = useInmersiones();
   const { compliance } = useOperacionDetails(operacionId);
 
-  // Asegurar que inmersiones sea un array antes de usar some
+  // Asegurar que inmersiones sea un array antes de usar filter
   const operacionInmersiones = Array.isArray(inmersiones) 
     ? inmersiones.filter(inmersion => inmersion.operacion_id === operacionId)
     : [];
@@ -100,9 +100,7 @@ export const OperacionInmersiones = ({ operacionId }: OperacionInmersionesProps)
             </div>
             <ul className="mt-2 ml-6 space-y-1 text-xs">
               {!compliance?.hasValidHPT && <li>• HPT firmado requerido</li>}
-              {!compliance?.hasValidAnexo && <li>• Anexo Bravo firmado requer
-
-ido</li>}
+              {!compliance?.hasValidAnexo && <li>• Anexo Bravo firmado requerido</li>}
               {!compliance?.hasTeam && <li>• Equipo de buceo asignado requerido</li>}
             </ul>
           </div>

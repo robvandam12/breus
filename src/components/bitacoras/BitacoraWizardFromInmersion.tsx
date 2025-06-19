@@ -13,10 +13,12 @@ import { BitacoraStep6Firmas } from './steps/BitacoraStep6Firmas';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 import { useOperaciones } from '@/hooks/useOperaciones';
+import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 
 export interface BitacoraSupervisorData {
   // Información básica
   codigo: string;
+  fecha: string;
   fecha_inicio_faena?: string;
   fecha_termino_faena?: string;
   lugar_trabajo?: string;
@@ -86,7 +88,7 @@ export interface BitacoraSupervisorData {
 
 interface BitacoraWizardFromInmersionProps {
   inmersionId: string;
-  onComplete: (data: BitacoraSupervisorData) => void;
+  onComplete: (data: BitacoraSupervisorFormData) => void;
   onCancel: () => void;
 }
 
@@ -98,6 +100,7 @@ export const BitacoraWizardFromInmersion = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<BitacoraSupervisorData>({
     codigo: `BS-${Date.now()}`,
+    fecha: new Date().toISOString().split('T')[0],
     inmersion_id: inmersionId,
     desarrollo_inmersion: '',
     evaluacion_general: '',
@@ -111,7 +114,9 @@ export const BitacoraWizardFromInmersion = ({
   const { equipos } = useEquiposBuceoEnhanced();
   const { operaciones } = useOperaciones();
   
-  const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
+  const selectedInmersion = Array.isArray(inmersiones) 
+    ? inmersiones.find(i => i.inmersion_id === inmersionId)
+    : null;
   const selectedOperation = selectedInmersion ? operaciones.find(op => op.id === selectedInmersion.operacion_id) : null;
   const assignedTeam = selectedOperation?.equipo_buceo_id 
     ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
@@ -139,6 +144,7 @@ export const BitacoraWizardFromInmersion = ({
 
       setFormData(prev => ({
         ...prev,
+        fecha: selectedInmersion.fecha_inmersion,
         lugar_trabajo: selectedOperation.nombre,
         supervisor: selectedInmersion.supervisor,
         supervisor_nombre_matricula: selectedInmersion.supervisor,
@@ -201,7 +207,37 @@ export const BitacoraWizardFromInmersion = ({
 
   const handleSubmit = () => {
     if (validateStep(currentStep)) {
-      onComplete(formData);
+      // Convertir BitacoraSupervisorData a BitacoraSupervisorFormData
+      const formDataToSubmit: BitacoraSupervisorFormData = {
+        codigo: formData.codigo,
+        fecha: formData.fecha,
+        inmersion_id: formData.inmersion_id,
+        supervisor: formData.supervisor || '',
+        desarrollo_inmersion: formData.desarrollo_inmersion,
+        evaluacion_general: formData.evaluacion_general,
+        incidentes: formData.incidentes,
+        lugar_trabajo: formData.lugar_trabajo,
+        fecha_inicio_faena: formData.fecha_inicio_faena,
+        hora_inicio_faena: formData.hora_inicio_faena,
+        hora_termino_faena: formData.hora_termino_faena,
+        supervisor_nombre_matricula: formData.supervisor_nombre_matricula,
+        estado_mar: formData.estado_mar,
+        visibilidad_fondo: formData.visibilidad_fondo,
+        inmersiones_buzos: formData.inmersiones_buzos,
+        equipos_utilizados: formData.equipos_utilizados,
+        trabajo_a_realizar: formData.trabajo_a_realizar,
+        descripcion_trabajo: formData.descripcion_trabajo,
+        embarcacion_apoyo: formData.embarcacion_apoyo,
+        observaciones_generales_texto: formData.observaciones_generales_texto,
+        diving_records: formData.diving_records,
+        validacion_contratista: formData.validacion_contratista,
+        comentarios_validacion: formData.comentarios_validacion,
+        operacion_id: formData.operacion_id,
+        empresa_nombre: formData.empresa_nombre,
+        centro_nombre: formData.centro_nombre
+      };
+      
+      onComplete(formDataToSubmit);
     }
   };
 
@@ -240,7 +276,7 @@ export const BitacoraWizardFromInmersion = ({
         return (
           <BitacoraStep5DatosBuzos 
             data={formData} 
-            onUpdate={updateFormData}
+            onDataChange={updateFormData}
           />
         );
       case 6:

@@ -70,6 +70,8 @@ export interface BitacoraSupervisorFormData {
   firmado?: boolean;
   validacion_contratista?: boolean;
   comentarios_validacion?: string;
+  estado_aprobacion?: string;
+  operacion_id?: string;
 }
 
 export const useBitacorasSupervisor = () => {
@@ -129,7 +131,7 @@ export const useBitacorasSupervisor = () => {
         firmado: formData.firmado || false,
         validacion_contratista: formData.validacion_contratista || false,
         comentarios_validacion: formData.comentarios_validacion,
-        estado_aprobacion: 'pendiente'
+        estado_aprobacion: formData.estado_aprobacion || 'pendiente'
       };
       
       console.log('Data to insert:', dataToInsert);
