@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -86,11 +85,7 @@ const BitacorasSupervisor = () => {
         observaciones_generales_texto: data.observaciones_generales_texto,
         validacion_contratista: data.validacion_contratista,
         comentarios_validacion: data.comentarios_validacion,
-        diving_records: data.diving_records || [],
-        operacion_id: data.operacion_id,
-        empresa_nombre: data.empresa_nombre,
-        centro_nombre: data.centro_nombre,
-        equipo_buceo_id: data.equipo_buceo_id
+        diving_records: data.diving_records || []
       };
       
       await createBitacoraSupervisor.mutateAsync(completeData);

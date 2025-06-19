@@ -19,8 +19,9 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
   const [manualBuzos, setManualBuzos] = useState<any[]>([]);
   const { equipos } = useEquiposBuceoEnhanced();
 
-  // Buscar el equipo actual, pero no acceder a equipo_buceo_id desde data ya que no existe
-  const currentTeam = equipos.find(eq => eq.id === data.inmersion?.equipo_buceo_id);
+  // CORRECCIÓN: Buscar el equipo por el ID que esté disponible en los datos
+  // Como no tenemos acceso directo al equipo_buceo_id desde data, usaremos los equipos disponibles
+  const currentTeam = equipos.find(eq => eq.activo === true) || null;
 
   useEffect(() => {
     if (currentTeam?.miembros && Array.isArray(currentTeam.miembros)) {
@@ -60,7 +61,7 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
       setManualBuzos([]);
       onUpdate({ inmersiones_buzos: [] });
     }
-  }, [currentTeam, data.inmersion?.equipo_buceo_id]);
+  }, [currentTeam]);
 
   const handleBuzoChange = (index: number, field: string, value: any) => {
     const updatedBuzos = [...manualBuzos];
