@@ -130,17 +130,21 @@ export const BitacoraWizardFromInmersion = ({
     if (selectedInmersion && selectedOperation && assignedTeam) {
       // Auto-poblar buzos del equipo usando las propiedades correctas
       const buzosEquipo = assignedTeam.miembros?.filter(miembro => {
-        const rol = (miembro.rol || 'buzo').toLowerCase();
+        const rol = (miembro.rol_equipo || 'buzo').toLowerCase();
         return rol === 'buzo' || rol === 'buzo_principal' || rol === 'buzo_asistente';
       }).map(miembro => {
-        const nombreCompleto = miembro.nombre_completo || 'Sin nombre';
-        const rol = miembro.rol || 'Buzo';
+        // Usar las propiedades correctas del miembro
+        const nombreCompleto = miembro.usuario?.nombre_completo || 
+                              (miembro.usuario?.nombre && miembro.usuario?.apellido 
+                                ? `${miembro.usuario.nombre} ${miembro.usuario.apellido}` 
+                                : 'Sin nombre');
+        const rol = miembro.rol_equipo || 'Buzo';
         
         return {
-          id: miembro.usuario_id || `temp_${Date.now()}_${Math.random()}`,
+          id: miembro.id || `temp_${Date.now()}_${Math.random()}`,
           nombre: nombreCompleto,
           apellido: '',
-          rut: miembro.rut || '',
+          rut: miembro.usuario?.perfil_buzo?.rut || '',
           rol: rol,
           profundidad_trabajo: 0,
           tiempo_inmersion: 0,
