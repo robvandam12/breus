@@ -1,278 +1,464 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Anchor } from 'lucide-react';
-import { InmersionOperationSelector } from './InmersionOperationSelector';
-import { useOperaciones } from '@/hooks/useOperaciones';
-import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { InmersionFormWizard } from './InmersionFormWizard';
 
-export interface InmersionWizardProps {
-  onComplete: (data: any) => Promise<void>;
-  onCancel: () => void;
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, ArrowRight, ArrowLeft, X } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { toast } from "@/hooks/use-toast";
+
+interface InmersionWizardProps {
   operationId?: string;
+  onComplete: (data: any) => void;
+  onCancel: () => void;
 }
 
-export const InmersionWizard: React.FC<InmersionWizardProps> = ({
-  onComplete,
-  onCancel,
-  operationId: initialOperationId
-}) => {
-  const [currentStep, setCurrentStep] = useState(initialOperationId ? 2 : 1);
-  const [selectedOperacionId, setSelectedOperacionId] = useState(initialOperationId || '');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const { operaciones } = useOperaciones();
-  const { equipos } = useEquiposBuceoEnhanced();
-
+export const InmersionWizard = ({ operationId, onComplete, onCancel }: InmersionWizardProps) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     codigo: '',
-    fecha_inmersion: new Date().toISOString().split('T')[0],
+    operacion_id: operationId || '',
+    fecha_inmersion: new Date(),
     hora_inicio: '',
     hora_fin: '',
-    supervisor: '',
-    supervisor_id: '',
-    buzo_principal: '',
-    buzo_principal_id: '',
-    buzo_asistente: '',
-    buzo_asistente_id: '',
     objetivo: '',
-    profundidad_max: 0,
-    temperatura_agua: 0,
-    visibilidad: 0,
-    corriente: 'sin_corriente',
+    profundidad_max: '',
+    temperatura_agua: '',
+    visibilidad: '',
+    corriente: '',
+    supervisor_nombre: '',
+    supervisor_apellido: '',
+    buzo_principal_nombre: '',
+    buzo_principal_apellido: '',
+    buzo_asistente_nombre: '',
+    buzo_asistente_apellido: '',
     observaciones: '',
     estado: 'planificada',
-    equipo_buceo_id: ''
+    planned_bottom_time: ''
   });
 
-  // Auto-populate data when operation is selected
+  const { operaciones } = useOperaciones();
+  const { profile, getFormDefaults } = useUserProfile();
+  const selectedOperation = operaciones.find(op => op.id === operationId);
+
   useEffect(() => {
-    const populateOperationData = async () => {
-      if (!selectedOperacionId) return;
+    if (profile) {
+      const defaults = getFormDefaults();
+      setFormData(prev => ({
+        ...prev,
+        supervisor_nombre: defaults.nombre,
+        supervisor_apellido: defaults.apellido,
+        buzo_principal_nombre: defaults.nombre,
+        buzo_principal_apellido: defaults.apellido,
+      }));
+    }
+  }, [profile]);
 
-      try {
-        console.log('Populating inmersion data for operation:', selectedOperacionId);
-        
-        // Get operation data
-        const { data: operacion, error: opError } = await supabase
-          .from('operacion')
-          .select(`
-            *,
-            salmoneras:salmonera_id (nombre),
-            sitios:sitio_id (nombre, ubicacion),
-            contratistas:contratista_id (nombre)
-          `)
-          .eq('id', selectedOperacionId)
-          .single();
-
-        if (opError) throw opError;
-
-        // Get assigned diving team with members and user details
-        const equipoAsignado = operacion.equipo_buceo_id 
-          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
-          : null;
-
-        console.log('Operation:', operacion);
-        console.log('Assigned team:', equipoAsignado);
-
-        // Generate unique code
-        const inmersionCode = `INM-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
-
-        // Auto-populate form data
-        const autoUpdates: Partial<typeof formData> = {
-          codigo: inmersionCode,
-          objetivo: `Inmersión para ${operacion.nombre}`,
-          observaciones: `Sitio: ${operacion.sitios?.nombre || 'No especificado'}`,
-          equipo_buceo_id: operacion.equipo_buceo_id || ''
-        };
-
-        // If there's an assigned team, get user details for each member
-        if (equipoAsignado?.miembros && Array.isArray(equipoAsignado.miembros)) {
-          // Find team members by role - using bracket notation for type safety
-          const supervisor = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'supervisor');
-          const buzoPrincipal = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_principal');
-          const buzoAsistente = equipoAsignado.miembros.find((m: any) => m.rol_equipo === 'buzo_asistente');
-          
-          // Get user details for each role from the usuario table
-          if (supervisor?.['usuario_id']) {
-            const { data: userData } = await supabase
-              .from('usuario')
-              .select('nombre, apellido')
-              .eq('usuario_id', supervisor['usuario_id'])
-              .single();
-            
-            if (userData) {
-              autoUpdates.supervisor = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.supervisor_id = supervisor['usuario_id'];
-            }
-          }
-          
-          if (buzoPrincipal?.['usuario_id']) {
-            const { data: userData } = await supabase
-              .from('usuario')
-              .select('nombre, apellido')
-              .eq('usuario_id', buzoPrincipal['usuario_id'])
-              .single();
-            
-            if (userData) {
-              autoUpdates.buzo_principal = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.buzo_principal_id = buzoPrincipal['usuario_id'];
-            }
-          }
-          
-          if (buzoAsistente?.['usuario_id']) {
-            const { data: userData } = await supabase
-              .from('usuario')
-              .select('nombre, apellido')
-              .eq('usuario_id', buzoAsistente['usuario_id'])
-              .single();
-            
-            if (userData) {
-              autoUpdates.buzo_asistente = `${userData.nombre} ${userData.apellido}`;
-              autoUpdates.buzo_asistente_id = buzoAsistente['usuario_id'];
-            }
-          }
-        }
-
-        setFormData(prev => ({ ...prev, ...autoUpdates }));
-        
-        console.log('Inmersion auto-populated data:', autoUpdates);
-        
-        toast({
-          title: "Datos cargados",
-          description: "Los datos de la operación han sido cargados automáticamente.",
-        });
-      } catch (error) {
-        console.error('Error populating operation data:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos de la operación.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    populateOperationData();
-  }, [selectedOperacionId, equipos, operaciones]);
-
-  const handleOperacionSelected = (operacionId: string) => {
-    setSelectedOperacionId(operacionId);
-    setCurrentStep(2);
-  };
+  useEffect(() => {
+    if (operationId && !formData.codigo) {
+      const timestamp = Date.now().toString().slice(-6);
+      const operationCode = selectedOperation?.codigo || 'OP';
+      setFormData(prev => ({
+        ...prev,
+        codigo: `INM-${operationCode}-${timestamp}`
+      }));
+    }
+  }, [operationId, selectedOperation]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = async () => {
-    if (!isFormValid()) {
-      toast({
-        title: "Formulario incompleto",
-        description: "Complete todos los campos requeridos",
-        variant: "destructive",
-      });
-      return;
+  const validateStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return formData.codigo && formData.operacion_id && formData.objetivo;
+      case 2:
+        return formData.fecha_inmersion && formData.hora_inicio && formData.profundidad_max;
+      case 3:
+        return formData.supervisor_nombre && formData.supervisor_apellido && 
+               formData.buzo_principal_nombre && formData.buzo_principal_apellido;
+      case 4:
+        return formData.temperatura_agua && formData.visibilidad && formData.corriente;
+      default:
+        return true;
     }
+  };
 
-    setIsLoading(true);
-    try {
-      const submitData = {
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      toast({
+        title: "Campos requeridos",
+        description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => prev - 1);
+  };
+
+  const handleSubmit = () => {
+    if (validateStep(currentStep)) {
+      const submissionData = {
         ...formData,
-        operacion_id: selectedOperacionId,
-        supervisor_id: formData.supervisor_id || null,
-        buzo_principal_id: formData.buzo_principal_id || null,
-        buzo_asistente_id: formData.buzo_asistente_id || null,
-        equipo_buceo_id: formData.equipo_buceo_id || null,
+        supervisor: `${formData.supervisor_nombre} ${formData.supervisor_apellido}`.trim(),
+        buzo_principal: `${formData.buzo_principal_nombre} ${formData.buzo_principal_apellido}`.trim(),
+        buzo_asistente: formData.buzo_asistente_nombre && formData.buzo_asistente_apellido 
+          ? `${formData.buzo_asistente_nombre} ${formData.buzo_asistente_apellido}`.trim()
+          : null,
+        profundidad_max: parseFloat(formData.profundidad_max),
+        temperatura_agua: parseFloat(formData.temperatura_agua),
+        visibilidad: parseFloat(formData.visibilidad),
+        planned_bottom_time: formData.planned_bottom_time ? parseInt(formData.planned_bottom_time) : null
       };
-      await onComplete(submitData);
-    } catch (error) {
-      console.error('Error creating inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la inmersión",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      onComplete(submissionData);
     }
   };
 
-  const isFormValid = () => {
-    return !!(
-      formData.codigo &&
-      formData.fecha_inmersion &&
-      formData.hora_inicio &&
-      formData.supervisor &&
-      formData.buzo_principal &&
-      formData.objetivo &&
-      selectedOperacionId
-    );
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="codigo">Código de Inmersión *</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => handleInputChange('codigo', e.target.value)}
+                  placeholder="INM-001"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="operacion">Operación *</Label>
+                <Select value={formData.operacion_id} onValueChange={(value) => handleInputChange('operacion_id', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar operación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operaciones.map((op) => (
+                      <SelectItem key={op.id} value={op.id}>
+                        {op.codigo} - {op.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="objetivo">Objetivo de la Inmersión *</Label>
+              <Textarea
+                id="objetivo"
+                value={formData.objetivo}
+                onChange={(e) => handleInputChange('objetivo', e.target.value)}
+                placeholder="Descripción del objetivo de la inmersión"
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Fecha de Inmersión *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.fecha_inmersion && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.fecha_inmersion ? format(formData.fecha_inmersion, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.fecha_inmersion}
+                      onSelect={(date) => handleInputChange('fecha_inmersion', date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label htmlFor="hora_inicio">Hora de Inicio *</Label>
+                <Input
+                  id="hora_inicio"
+                  type="time"
+                  value={formData.hora_inicio}
+                  onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="hora_fin">Hora de Fin</Label>
+                <Input
+                  id="hora_fin"
+                  type="time"
+                  value={formData.hora_fin}
+                  onChange={(e) => handleInputChange('hora_fin', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="profundidad_max">Profundidad Máxima (m) *</Label>
+                <Input
+                  id="profundidad_max"
+                  type="number"
+                  value={formData.profundidad_max}
+                  onChange={(e) => handleInputChange('profundidad_max', e.target.value)}
+                  placeholder="30"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="planned_bottom_time">Tiempo Planeado en Fondo (min)</Label>
+                <Input
+                  id="planned_bottom_time"
+                  type="number"
+                  value={formData.planned_bottom_time}
+                  onChange={(e) => handleInputChange('planned_bottom_time', e.target.value)}
+                  placeholder="45"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Personal de Buceo</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="supervisor_nombre">Nombre del Supervisor *</Label>
+                <Input
+                  id="supervisor_nombre"
+                  value={formData.supervisor_nombre}
+                  onChange={(e) => handleInputChange('supervisor_nombre', e.target.value)}
+                  placeholder="Juan"
+                />
+              </div>
+              <div>
+                <Label htmlFor="supervisor_apellido">Apellido del Supervisor *</Label>
+                <Input
+                  id="supervisor_apellido"
+                  value={formData.supervisor_apellido}
+                  onChange={(e) => handleInputChange('supervisor_apellido', e.target.value)}
+                  placeholder="Pérez"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="buzo_principal_nombre">Nombre del Buzo Principal *</Label>
+                <Input
+                  id="buzo_principal_nombre"
+                  value={formData.buzo_principal_nombre}
+                  onChange={(e) => handleInputChange('buzo_principal_nombre', e.target.value)}
+                  placeholder="María"
+                />
+              </div>
+              <div>
+                <Label htmlFor="buzo_principal_apellido">Apellido del Buzo Principal *</Label>
+                <Input
+                  id="buzo_principal_apellido"
+                  value={formData.buzo_principal_apellido}
+                  onChange={(e) => handleInputChange('buzo_principal_apellido', e.target.value)}
+                  placeholder="González"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="buzo_asistente_nombre">Nombre del Buzo Asistente</Label>
+                <Input
+                  id="buzo_asistente_nombre"
+                  value={formData.buzo_asistente_nombre}
+                  onChange={(e) => handleInputChange('buzo_asistente_nombre', e.target.value)}
+                  placeholder="Carlos"
+                />
+              </div>
+              <div>
+                <Label htmlFor="buzo_asistente_apellido">Apellido del Buzo Asistente</Label>
+                <Input
+                  id="buzo_asistente_apellido"
+                  value={formData.buzo_asistente_apellido}
+                  onChange={(e) => handleInputChange('buzo_asistente_apellido', e.target.value)}
+                  placeholder="López"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Condiciones del Ambiente</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="temperatura_agua">Temperatura del Agua (°C) *</Label>
+                <Input
+                  id="temperatura_agua"
+                  type="number"
+                  value={formData.temperatura_agua}
+                  onChange={(e) => handleInputChange('temperatura_agua', e.target.value)}
+                  placeholder="15"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="visibilidad">Visibilidad (m) *</Label>
+                <Input
+                  id="visibilidad"
+                  type="number"
+                  value={formData.visibilidad}
+                  onChange={(e) => handleInputChange('visibilidad', e.target.value)}
+                  placeholder="10"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="corriente">Corriente *</Label>
+                <Select value={formData.corriente} onValueChange={(value) => handleInputChange('corriente', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nula">Nula</SelectItem>
+                    <SelectItem value="ligera">Ligera</SelectItem>
+                    <SelectItem value="moderada">Moderada</SelectItem>
+                    <SelectItem value="fuerte">Fuerte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="observaciones">Observaciones</Label>
+              <Textarea
+                id="observaciones"
+                value={formData.observaciones}
+                onChange={(e) => handleInputChange('observaciones', e.target.value)}
+                placeholder="Observaciones adicionales sobre la inmersión"
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Paso no encontrado</div>;
+    }
   };
 
-  const renderOperationSelector = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Seleccionar Operación</h2>
-        <p className="mt-2 text-gray-600">
-          Escoja la operación para la cual desea crear la inmersión
-        </p>
-      </div>
+  const steps = [
+    { number: 1, title: "Información General" },
+    { number: 2, title: "Fecha y Horarios" },
+    { number: 3, title: "Personal de Buceo" },
+    { number: 4, title: "Condiciones" }
+  ];
 
-      <InmersionOperationSelector
-        onOperacionSelected={handleOperacionSelected}
-        selectedOperacionId={selectedOperacionId}
-      />
-
-      <div className="flex justify-end">
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Nueva Inmersión</h1>
         <Button variant="outline" onClick={onCancel}>
+          <X className="w-4 h-4 mr-2" />
           Cancelar
         </Button>
       </div>
+
+      {/* Progress Steps */}
+      <div className="flex justify-between mb-8">
+        {steps.map((step, index) => (
+          <div key={step.number} className="flex items-center">
+            <div className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
+              currentStep >= step.number
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-600"
+            )}>
+              {step.number}
+            </div>
+            <div className="ml-2">
+              <div className="text-sm font-medium">{step.title}</div>
+            </div>
+            {index < steps.length - 1 && (
+              <div className="hidden md:block w-16 h-px bg-gray-300 mx-4"></div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Paso {currentStep}: {steps[currentStep - 1]?.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderStep()}
+          </motion.div>
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={handlePrevious}
+          disabled={currentStep === 1}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Anterior
+        </Button>
+
+        {currentStep < steps.length ? (
+          <Button onClick={handleNext}>
+            Siguiente
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        ) : (
+          <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+            Crear Inmersión
+          </Button>
+        )}
+      </div>
     </div>
   );
-
-  const renderInmersionForm = () => {
-    const selectedOperation = operaciones.find(op => op.id === selectedOperacionId);
-    
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Detalles de la Inmersión</h2>
-          <p className="mt-2 text-gray-600">
-            Complete la información específica de la inmersión
-          </p>
-        </div>
-
-        {selectedOperation && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-800 flex items-center gap-2">
-                <Anchor className="w-5 h-5" />
-                Operación: {selectedOperation.codigo} - {selectedOperation.nombre}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        )}
-
-        <InmersionFormWizard
-          formData={formData}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          handleBack={() => setCurrentStep(1)}
-          isLoading={isLoading}
-          isFormValid={isFormValid}
-          selectedOperacionId={selectedOperacionId}
-        />
-      </div>
-    );
-  };
-
-  if (currentStep === 1) {
-    return renderOperationSelector();
-  }
-
-  return renderInmersionForm();
 };

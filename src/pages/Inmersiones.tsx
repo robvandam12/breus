@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
-import { Plus, Anchor, LayoutGrid, LayoutList } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Anchor, LayoutGrid, LayoutList, Edit, Eye } from "lucide-react";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -19,12 +21,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function Inmersiones() {
   const isMobile = useIsMobile();
   const [showWizard, setShowWizard] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(isMobile ? 'cards' : 'cards');
   const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [searchParams] = useSearchParams();
   const { navigateTo } = useRouter();
-  const { inmersiones, isLoading, createInmersion, refreshInmersiones } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, updateInmersion, refreshInmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
   
   const operacionId = searchParams.get('operacion');
@@ -67,6 +70,28 @@ export default function Inmersiones() {
     }
   };
 
+  const handleUpdateInmersion = async (data: any) => {
+    if (!selectedInmersion) return;
+    
+    try {
+      await updateInmersion({ id: selectedInmersion.inmersion_id, data });
+      toast({
+        title: "Inmersión actualizada",
+        description: "La inmersión ha sido actualizada exitosamente.",
+      });
+      setShowEditDialog(false);
+      setSelectedInmersion(null);
+      refreshInmersiones();
+    } catch (error) {
+      console.error('Error updating inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la inmersión.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCancelWizard = () => {
     setShowWizard(false);
     if (operacionId) {
@@ -92,6 +117,27 @@ export default function Inmersiones() {
     setSelectedInmersion(inmersion);
     setShowDetailModal(true);
   }, []);
+
+  const handleEditInmersion = useCallback((inmersion: Inmersion) => {
+    setSelectedInmersion(inmersion);
+    setShowEditDialog(true);
+  }, []);
+
+  // Funciones de acción para las inmersiones
+  const inmersionActions = [
+    {
+      label: "Ver Detalle",
+      icon: <Eye className="w-4 h-4" />,
+      onClick: handleViewInmersion,
+      variant: "default" as const
+    },
+    {
+      label: "Editar",
+      icon: <Edit className="w-4 h-4" />,
+      onClick: handleEditInmersion,
+      variant: "outline" as const
+    }
+  ];
 
   if (showWizard) {
     return (
@@ -158,6 +204,7 @@ export default function Inmersiones() {
                 onViewInmersion={handleViewInmersion}
                 onNewInmersion={() => setShowWizard(true)}
                 containerHeight={650}
+                actions={inmersionActions}
               />
             ) : (
               <VirtualizedInmersionsTable
@@ -166,12 +213,14 @@ export default function Inmersiones() {
                 getEstadoBadgeColor={getEstadoBadgeColor}
                 onViewInmersion={handleViewInmersion}
                 containerHeight={650}
+                actions={inmersionActions}
               />
             )}
           </>
         )}
       </div>
 
+      {/* Modal de Detalle */}
       <InmersionDetailModal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
@@ -179,6 +228,22 @@ export default function Inmersiones() {
         operacion={selectedInmersion ? getOperacionData(selectedInmersion.operacion_id) : undefined}
         getEstadoBadgeColor={getEstadoBadgeColor}
       />
+
+      {/* Modal de Edición */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Inmersión</DialogTitle>
+          </DialogHeader>
+          {selectedInmersion && (
+            <InmersionWizard
+              operationId={selectedInmersion.operacion_id}
+              onComplete={handleUpdateInmersion}
+              onCancel={() => setShowEditDialog(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
