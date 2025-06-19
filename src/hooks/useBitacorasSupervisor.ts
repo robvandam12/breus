@@ -74,7 +74,16 @@ export const useBitacorasSupervisor = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      // CORRECCIÓN CRÍTICA: Solo usar campos que existen en la tabla bitacora_supervisor
+      // VALIDACIÓN DE UNICIDAD: Verificar si ya existe una bitácora para esta inmersión
+      const existingBitacora = bitacorasSupervisor.find(
+        b => b.inmersion_id === formData.inmersion_id
+      );
+      
+      if (existingBitacora) {
+        throw new Error('Ya existe una bitácora de supervisor para esta inmersión. Solo se permite una bitácora por inmersión.');
+      }
+
+      // Preparar datos para inserción con validación de campos
       const dataToInsert = {
         codigo: formData.codigo,
         inmersion_id: formData.inmersion_id,
@@ -130,6 +139,48 @@ export const useBitacorasSupervisor = () => {
     },
   });
 
+  // Función para actualizar bitácora existente (permitir edición)
+  const updateBitacoraSupervisor = useMutation({
+    mutationFn: async ({ bitacoraId, formData }: { bitacoraId: string; formData: Partial<BitacoraSupervisorFormData> }) => {
+      const dataToUpdate = {
+        ...formData,
+        updated_at: new Date().toISOString(),
+        inmersiones_buzos: Array.isArray(formData.inmersiones_buzos) ? formData.inmersiones_buzos : [],
+        equipos_utilizados: Array.isArray(formData.equipos_utilizados) ? formData.equipos_utilizados : [],
+        diving_records: Array.isArray(formData.diving_records) ? formData.diving_records : [],
+      };
+
+      if (!isOnline) {
+        addPendingAction({ type: 'update', table: 'bitacora_supervisor', payload: { pk: { bitacora_id: bitacoraId }, data: dataToUpdate } });
+        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
+          oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...dataToUpdate } : b)
+        );
+        return;
+      }
+
+      const { error } = await supabase
+        .from('bitacora_supervisor')
+        .update(dataToUpdate)
+        .eq('bitacora_id', bitacoraId);
+
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      toast({
+        title: isOnline ? "Bitácora Actualizada" : "Cambios guardados (Offline)",
+        description: isOnline ? "Los cambios han sido guardados exitosamente." : "Se sincronizará cuando haya conexión.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al actualizar bitácora",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateBitacoraSupervisorSignature = useMutation({
     mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
       const payload = { supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
@@ -168,6 +219,7 @@ export const useBitacorasSupervisor = () => {
     loadingSupervisor,
     refetchSupervisor,
     createBitacoraSupervisor,
+    updateBitacoraSupervisor,
     updateBitacoraSupervisorSignature,
   };
 };
