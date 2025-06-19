@@ -7,7 +7,7 @@ import { BitacorasBuzoContent } from "@/components/bitacoras/BitacorasBuzoConten
 import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
-import { BitacoraBuzoCompleta } from "@/types/bitacoras";
+import { BitacoraBuzoCompleta, BitacoraSupervisorCompleta } from "@/types/bitacoras";
 import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
@@ -32,6 +32,14 @@ const BitacorasBuzo = () => {
   const { bitacorasSupervisor, isLoading: loadingSupervisor } = useBitacorasSupervisor();
   
   const loading = loadingBuzo || loadingSupervisor;
+  
+  // Transformar bitacorasSupervisor a BitacoraSupervisorCompleta[]
+  const bitacorasSupervisorCompletas: BitacoraSupervisorCompleta[] = bitacorasSupervisor.map(bitacora => ({
+    ...bitacora,
+    inmersion: null, // Por ahora null, se puede expandir para incluir datos de inmersión
+    supervisor_data: null,
+    aprobador_data: null
+  }));
   
   const { 
     filters, 
@@ -108,7 +116,7 @@ const BitacorasBuzo = () => {
       <BitacorasBuzoContent
         filteredBitacorasBuzo={filteredBitacorasBuzo}
         bitacorasBuzo={bitacorasBuzo}
-        bitacorasSupervisor={bitacorasSupervisor}
+        bitacorasSupervisor={bitacorasSupervisorCompletas}
         hasSupervisorLogs={hasSupervisorLogs}
         filters={filters}
         onFiltersChange={setFilters}

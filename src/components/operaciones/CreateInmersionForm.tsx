@@ -73,7 +73,7 @@ export const CreateInmersionForm = ({ operacionId, onSuccess, onCancel }: Create
         // Asegurar que todos los campos requeridos estén presentes
         codigo: data.codigo,
         objetivo: data.objetivo,
-        fecha_inmersion: new Date(data.fecha_inmersion),
+        fecha_inmersion: data.fecha_inmersion, // Ya es string del formulario
         hora_inicio: data.hora_inicio,
         hora_fin: data.hora_fin || null,
         buzo_principal: data.buzo_principal,
