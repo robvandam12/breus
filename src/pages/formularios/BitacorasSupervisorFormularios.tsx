@@ -319,7 +319,6 @@ const BitacorasSupervisorFormulariosPage = () => {
             setSelectedInmersionId('');
             setEditingBitacora(null);
           }}
-          editMode={!!editingBitacora}
         />
       </FormDialog>
     </MainLayout>
