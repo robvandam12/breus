@@ -63,24 +63,6 @@ const getBitacorasSupervisor = async (): Promise<BitacoraSupervisorCompleta[]> =
   return mappedData as unknown as BitacoraSupervisorCompleta[];
 };
 
-// CORRECCIÓN: Validación de bitácora única por supervisor por inmersión
-const validateUniqueBitacoraSupervisor = async (inmersionId: string, excludeBitacoraId?: string): Promise<boolean> => {
-  let query = supabase
-    .from('bitacora_supervisor')
-    .select('bitacora_id')
-    .eq('inmersion_id', inmersionId);
-    
-  if (excludeBitacoraId) {
-    query = query.neq('bitacora_id', excludeBitacoraId);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) throw new Error(error.message);
-  
-  return data.length === 0; // Retorna true si NO existe otra bitácora
-};
-
 export const useBitacorasSupervisor = () => {
   const queryClient = useQueryClient();
   const { isOnline, addPendingAction } = useOfflineSync();
@@ -92,13 +74,7 @@ export const useBitacorasSupervisor = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      // CORRECCIÓN: Validar unicidad antes de crear
-      const isUnique = await validateUniqueBitacoraSupervisor(formData.inmersion_id);
-      if (!isUnique) {
-        throw new Error('Ya existe una bitácora de supervisor para esta inmersión. Solo se permite una bitácora por inmersión.');
-      }
-
-      // Solo usar campos que existen en la tabla bitacora_supervisor
+      // CORRECCIÓN CRÍTICA: Solo usar campos que existen en la tabla bitacora_supervisor
       const dataToInsert = {
         codigo: formData.codigo,
         inmersion_id: formData.inmersion_id,
@@ -193,6 +169,5 @@ export const useBitacorasSupervisor = () => {
     refetchSupervisor,
     createBitacoraSupervisor,
     updateBitacoraSupervisorSignature,
-    validateUniqueBitacoraSupervisor, // NUEVO: Exportar función de validación
   };
 };

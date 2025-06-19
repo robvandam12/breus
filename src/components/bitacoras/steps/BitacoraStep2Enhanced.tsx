@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Users, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User, Clock, MapPin, AlertCircle, Users, CheckCircle } from "lucide-react";
 import { BitacoraSupervisorData } from "../BitacoraWizard";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
@@ -25,7 +25,7 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
 
   useEffect(() => {
     if (currentTeam?.miembros && Array.isArray(currentTeam.miembros)) {
-      // CORRECCIÓN: Filtrar solo buzos, excluir supervisores completamente
+      // Filtrar solo buzos, excluir supervisores
       const soloMiembrosBuzos = currentTeam.miembros.filter((miembro: any) => {
         const rol = miembro.rol_equipo || 'buzo';
         return rol !== 'supervisor' && rol !== 'jefe_operaciones' && rol !== 'coordinador';
@@ -153,105 +153,103 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
             <div className="space-y-4">
               {manualBuzos.map((buzo, index) => (
                 <Card key={buzo.id} className="border-l-4 border-l-teal-500">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <Label>Nombre</Label>
-                        <Input
-                          type="text"
-                          value={buzo.nombre}
-                          onChange={(e) => handleBuzoChange(index, 'nombre', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label>RUT</Label>
-                        <Input
-                          type="text"
-                          value={buzo.rut}
-                          onChange={(e) => handleBuzoChange(index, 'rut', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Matrícula</Label>
-                        <Input
-                          type="text"
-                          value={buzo.matricula}
-                          onChange={(e) => handleBuzoChange(index, 'matricula', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Profundidad Máx. (m)</Label>
-                        <Input
-                          type="number"
-                          value={buzo.profundidad_max}
-                          onChange={(e) => handleBuzoChange(index, 'profundidad_max', Number(e.target.value))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Tiempo Total Fondo</Label>
-                        <Input
-                          type="text"
-                          value={buzo.tiempo_total_fondo}
-                          onChange={(e) => handleBuzoChange(index, 'tiempo_total_fondo', e.target.value)}
-                          placeholder="ej: 45 min"
-                        />
-                      </div>
-                      <div>
-                        <Label>Tiempo Descompresión</Label>
-                        <Input
-                          type="text"
-                          value={buzo.tiempo_total_descompresion}
-                          onChange={(e) => handleBuzoChange(index, 'tiempo_total_descompresion', e.target.value)}
-                          placeholder="ej: 15 min"
-                        />
-                      </div>
-                      <div>
-                        <Label>Hora Entrada Agua</Label>
-                        <Input
-                          type="time"
-                          value={buzo.hora_entrada_agua}
-                          onChange={(e) => handleBuzoChange(index, 'hora_entrada_agua', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Hora Salida Agua</Label>
-                        <Input
-                          type="time"
-                          value={buzo.hora_salida_agua}
-                          onChange={(e) => handleBuzoChange(index, 'hora_salida_agua', e.target.value)}
-                        />
-                      </div>
-                      <div className="md:col-span-2 lg:col-span-1">
-                        <Label>Observaciones</Label>
-                        <Textarea
-                          value={buzo.observaciones}
-                          onChange={(e) => handleBuzoChange(index, 'observaciones', e.target.value)}
-                          rows={2}
-                          placeholder="Observaciones específicas del buzo..."
-                        />
-                      </div>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nombre</Label>
+                      <Input
+                        type="text"
+                        value={buzo.nombre}
+                        onChange={(e) => handleBuzoChange(index, 'nombre', e.target.value)}
+                      />
                     </div>
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteBuzo(buzo.id)}
-                      >
-                        Eliminar Buzo
-                      </Button>
+                    <div>
+                      <Label>RUT</Label>
+                      <Input
+                        type="text"
+                        value={buzo.rut}
+                        onChange={(e) => handleBuzoChange(index, 'rut', e.target.value)}
+                      />
                     </div>
+                    <div>
+                      <Label>Matrícula</Label>
+                      <Input
+                        type="text"
+                        value={buzo.matricula}
+                        onChange={(e) => handleBuzoChange(index, 'matricula', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Rol</Label>
+                      <Input
+                        type="text"
+                        value={buzo.rol}
+                        onChange={(e) => handleBuzoChange(index, 'rol', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Profundidad Máx.</Label>
+                      <Input
+                        type="number"
+                        value={buzo.profundidad_max}
+                        onChange={(e) => handleBuzoChange(index, 'profundidad_max', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Tiempo Total Fondo</Label>
+                      <Input
+                        type="text"
+                        value={buzo.tiempo_total_fondo}
+                        onChange={(e) => handleBuzoChange(index, 'tiempo_total_fondo', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Tiempo Descompresión</Label>
+                      <Input
+                        type="text"
+                        value={buzo.tiempo_total_descompresion}
+                        onChange={(e) => handleBuzoChange(index, 'tiempo_total_descompresion', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Hora Entrada Agua</Label>
+                      <Input
+                        type="text"
+                        value={buzo.hora_entrada_agua}
+                        onChange={(e) => handleBuzoChange(index, 'hora_entrada_agua', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Hora Salida Agua</Label>
+                      <Input
+                        type="text"
+                        value={buzo.hora_salida_agua}
+                        onChange={(e) => handleBuzoChange(index, 'hora_salida_agua', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Observaciones</Label>
+                      <Input
+                        type="text"
+                        value={buzo.observaciones}
+                        onChange={(e) => handleBuzoChange(index, 'observaciones', e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteBuzo(buzo.id)}
+                    >
+                      Eliminar
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
 
-          <div className="mt-4">
-            <Button onClick={handleAddManualBuzo} variant="outline" className="w-full">
-              <User className="w-4 h-4 mr-2" />
-              Agregar Buzo Manualmente
-            </Button>
-          </div>
+          <Button onClick={handleAddManualBuzo} className="w-full">
+            Agregar Buzo Manualmente
+          </Button>
         </CardContent>
       </Card>
 
@@ -270,10 +268,9 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
             </Label>
             <Textarea
               id="observaciones_generales"
-              placeholder="Espacio para detalles adicionales sobre el equipo, roles, condiciones especiales, etc."
+              placeholder="Espacio para detalles adicionales sobre el equipo, roles, etc."
               rows={4}
               className="mt-2"
-              value={data.observaciones_generales_texto || ''}
               onChange={handleObservacionesChange}
             />
           </div>

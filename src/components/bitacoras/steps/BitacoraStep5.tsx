@@ -21,6 +21,9 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
     const equiposCount = data.equipos_utilizados?.length || 0;
     const inmersionesCount = data.inmersiones_buzos?.length || 0;
     
+    // CORRECCIÓN: Agregar también conteo de registros de supervisores
+    const supervisoresCount = data.diving_records?.filter(record => record.rol === 'supervisor').length || 0;
+    
     return {
       fecha: data.fecha_inicio_faena || 'Sin fecha',
       lugar: data.lugar_trabajo || 'Sin especificar',
@@ -30,6 +33,7 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
         : 'Sin especificar',
       equipos: equiposCount,
       inmersiones: inmersionesCount,
+      supervisores: supervisoresCount, // CORRECCIÓN: Nuevo contador
       estado_mar: data.estado_mar || 'Sin especificar',
       visibilidad: data.visibilidad_fondo ? `${data.visibilidad_fondo}m` : 'Sin especificar'
     };
@@ -87,6 +91,12 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <span className="font-medium text-green-700">Inmersiones:</span>
                 <Badge variant="secondary">{resumen.inmersiones}</Badge>
+              </div>
+              
+              {/* CORRECCIÓN: Mostrar también supervisores registrados */}
+              <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                <span className="font-medium text-orange-700">Supervisores:</span>
+                <Badge variant="secondary">{resumen.supervisores}</Badge>
               </div>
               
               <div className="flex justify-between items-center p-3 bg-cyan-50 rounded-lg">
@@ -183,8 +193,9 @@ export const BitacoraStep5 = ({ data, onUpdate }: BitacoraStep5Props) => {
           <div className="text-sm text-blue-800">
             <strong>Información:</strong> Al completar este paso, la bitácora se guardará como borrador. 
             Posteriormente podrá firmarla desde la lista de bitácoras creadas.
+            {/* CORRECCIÓN: Mensaje más completo sobre registros */}
             <br />
-            <strong>Registros incluidos:</strong> {resumen.inmersiones} buzos han sido registrados en esta bitácora.
+            <strong>Registros incluidos:</strong> {resumen.inmersiones} buzos y {resumen.supervisores} supervisores han sido registrados.
           </div>
         </div>
       </div>

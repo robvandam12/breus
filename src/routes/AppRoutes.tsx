@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -28,8 +29,6 @@ const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSup
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
 const HPTFormularios = lazy(() => import("../pages/formularios/HPTFormularios"));
 const AnexoBravoFormularios = lazy(() => import("../pages/formularios/AnexoBravoFormularios"));
-const BitacorasSupervisorFormularios = lazy(() => import("../pages/formularios/BitacorasSupervisorFormularios"));
-const BitacorasBuzoFormularios = lazy(() => import("../pages/formularios/BitacorasBuzoFormularios"));
 const ProfileSetup = lazy(() => import("../pages/ProfileSetup"));
 const Reportes = lazy(() => import("../pages/Reportes"));
 const Configuracion = lazy(() => import("../pages/Configuracion"));
@@ -181,20 +180,6 @@ export const AppRoutes = () => (
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AnexoBravoFormularios />
-          </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/formularios/bitacoras-supervisor" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <BitacorasSupervisorFormularios />
-          </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/formularios/bitacoras-buzo" element={
-        <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <BitacorasBuzoFormularios />
           </Suspense>
         </ProtectedRoute>
       } />
