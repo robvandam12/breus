@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,14 +25,14 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
 
   useEffect(() => {
     if (currentTeam?.miembros && Array.isArray(currentTeam.miembros)) {
-      // CORRECCIÓN CRÍTICA: Mapeo correcto de miembros sin texto "sin nombre agregar"
+      // CORRECCIÓN CRÍTICA: Mapeo correcto de miembros
       const buzos = currentTeam.miembros.map((miembro: any) => {
         const nombre = miembro.nombre_completo || 
                      (miembro.nombre && miembro.apellido ? `${miembro.nombre} ${miembro.apellido}` : '') ||
-                     'Miembro sin nombre'; // CORRECCIÓN: Texto más apropiado
+                     'Miembro sin asignar';
         
-        const rut = miembro.rut || 'Sin RUT';
-        const matricula = miembro.matricula || 'Sin matrícula';
+        const rut = miembro.rut || 'Por asignar';
+        const matricula = miembro.matricula || 'Por asignar';
         
         return {
           id: miembro.usuario_id || miembro.id || `temp_${Date.now()}_${Math.random()}`,
@@ -70,8 +71,8 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
     const newBuzo = {
       id: `temp_${Date.now()}_${Math.random()}`,
       nombre: 'Nuevo Buzo',
-      rut: 'Sin RUT',
-      matricula: 'Sin matrícula',
+      rut: 'Por asignar',
+      matricula: 'Por asignar',
       rol: 'buzo',
       profundidad_max: 0,
       tiempo_total_fondo: '',
@@ -116,13 +117,13 @@ export const BitacoraStep2Enhanced = ({ data, onUpdate }: BitacoraStep2EnhancedP
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-blue-700">Empresa:</Label>
-                <p className="font-medium">{currentTeam.empresa_nombre || 'No especificada'}</p>
+                <Label className="text-blue-700">Tipo de Empresa:</Label>
+                <p className="font-medium">{currentTeam.tipo_empresa || 'No especificada'}</p>
               </div>
               <div>
                 <Label className="text-blue-700">Estado:</Label>
-                <Badge variant={currentTeam.estado === 'disponible' ? 'default' : 'secondary'}>
-                  {currentTeam.estado}
+                <Badge variant={currentTeam.activo ? 'default' : 'secondary'}>
+                  {currentTeam.activo ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
             </div>
