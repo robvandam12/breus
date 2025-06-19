@@ -100,9 +100,11 @@ export const useOperacionDetails = (operacionId: string) => {
         queryKey: ['operacionDetails', operacionId],
         queryFn: () => fetchOperacionDetails(operacionId),
         enabled: !!operacionId,
-        staleTime: 0, // Siempre refetch para mantener datos actualizados
+        staleTime: 0, // CORRECCIÓN: Siempre refetch para detectar cambios de equipo
         refetchOnWindowFocus: true,
         refetchOnMount: true,
+        // CORRECCIÓN CRÍTICA: Agregar refetchInterval para detectar cambios de equipo
+        refetchInterval: 5000, // Revalidar cada 5 segundos
     });
 
     const createInmersionMutation = useMutation({
@@ -121,14 +123,16 @@ export const useOperacionDetails = (operacionId: string) => {
           console.log('Immersion creation successful, invalidating queries');
           toast({ title: "Inmersión creada", description: "La inmersión ha sido creada exitosamente." });
           
-          // Invalidar y refrescar múltiples queries relacionadas
+          // CORRECCIÓN: Invalidar más queries para mejor reactivity
           queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
           queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
           queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
+          queryClient.invalidateQueries({ queryKey: ['operaciones'] }); // También invalidar operaciones
           
-          // Forzar refetch inmediato
+          // Forzar refetch inmediato de múltiples queries
           queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] });
           queryClient.refetchQueries({ queryKey: ['inmersiones'] });
+          queryClient.refetchQueries({ queryKey: ['operaciones'] });
         },
         onError: (error: any) => {
           console.error('Error creating Inmersion:', error);
@@ -162,12 +166,15 @@ export const useOperacionDetails = (operacionId: string) => {
         });
         
         return { hasValidHPT, hasValidAnexo, canExecute, hasTeam };
-    }, [data?.documentStatus]);
+    }, [data?.documentStatus]); // CORRECCIÓN: Dependency correcta para recalcular
 
     // Función para refrescar manualmente los datos
     const refreshOperacionDetails = async () => {
       console.log('Manually refreshing operation details');
       await refetch();
+      // CORRECCIÓN: También invalidar otras queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
     };
 
     return {

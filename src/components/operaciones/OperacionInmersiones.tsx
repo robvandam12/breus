@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTriangle } from "lucide-react";
+import { Anchor, Plus, Calendar, User, Clock, Edit, Trash2, FileText, AlertTriangle, MoreVertical } from "lucide-react";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
 import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
@@ -47,9 +48,16 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
         title: "Inmersión eliminada",
         description: "La inmersión ha sido eliminada exitosamente.",
       });
+      // CORRECCIÓN: Mejorar invalidación de queries para múltiples inmersiones
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
       queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      
+      // Forzar refetch inmediato
+      queryClient.refetchQueries({ queryKey: ['inmersiones'] });
+      queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] });
+      
       setShowDeleteDialog(false);
       setInmersionToDelete(null);
     } catch (error) {
@@ -93,6 +101,10 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
       });
       setShowBitacoraSupervisorForm(false);
       setSelectedInmersionId(null);
+      
+      // CORRECCIÓN: Invalidar queries relacionadas después de crear bitácora
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
     } catch (error) {
       console.error('Error creating bitacora supervisor:', error);
       toast({
@@ -112,6 +124,10 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
       });
       setShowBitacoraBuzoForm(false);
       setSelectedInmersionId(null);
+      
+      // CORRECCIÓN: Invalidar queries relacionadas después de crear bitácora
+      queryClient.invalidateQueries({ queryKey: ['bitacorasBuzo'] });
+      queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
     } catch (error) {
       console.error('Error creating bitacora buzo:', error);
       toast({
@@ -255,43 +271,43 @@ export const OperacionInmersiones = ({ operacionId, canCreateInmersiones = true,
                       </TableCell>
                       <TableCell>{inmersion.profundidad_max}m</TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <FileText className="w-4 h-4 mr-1" />
-                            Bit. Supervisor
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
-                            className={`${
-                              tieneBitSupervisor 
-                                ? "text-green-600 hover:text-green-700 hover:bg-green-50"
-                                : "text-gray-400 cursor-not-allowed"
-                            }`}
-                            disabled={!tieneBitSupervisor}
-                            title={!tieneBitSupervisor ? "Requiere bitácora de supervisor" : ""}
-                          >
-                            <FileText className="w-4 h-4 mr-1" />
-                            {!tieneBitSupervisor && <AlertTriangle className="w-3 h-3 ml-1" />}
-                            Bit. Buzo
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setInmersionToDelete(inmersion.inmersion_id);
-                              setShowDeleteDialog(true);
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        <div className="flex items-center justify-end">
+                          {/* CORRECCIÓN: Implementar dropdown de acciones como solicita el usuario */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleCreateBitacoraSupervisor(inmersion.inmersion_id)}
+                                className="flex items-center gap-2"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Crear Bitácora Supervisor
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCreateBitacoraBuzo(inmersion.inmersion_id)}
+                                disabled={!tieneBitSupervisor}
+                                className="flex items-center gap-2"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Crear Bitácora Buzo
+                                {!tieneBitSupervisor && <AlertTriangle className="w-3 h-3 ml-1" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setInmersionToDelete(inmersion.inmersion_id);
+                                  setShowDeleteDialog(true);
+                                }}
+                                className="flex items-center gap-2 text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -176,34 +176,34 @@ const useOperacionesMutations = () => {
     mutationFn: async (id: string) => {
       console.log('Attempting to delete operation:', id);
       
-      const { data: result, error } = await supabase
+      // CORECCIÓN CRÍTICA: Usar delete() sin .select().single() 
+      // porque la operación ya no existirá después del DELETE
+      const { error } = await supabase
         .from('operacion')
         .delete()
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
       
       if (error) {
         console.error('Delete operation error:', error);
         throw new Error(`Error al eliminar operación: ${error.message}`);
       }
       
-      console.log('Operation deleted successfully:', result);
-      return result;
+      console.log('Operation deleted successfully');
+      return { id }; // Devolver el ID para confirmar
     },
-    onSuccess: (deletedOperation) => {
+    onSuccess: (result) => {
       console.log('Delete mutation successful, invalidating queries');
       // Invalidar múltiples queries relacionadas y refrescar
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       queryClient.invalidateQueries({ queryKey: ['operacionDetails'] });
-      queryClient.removeQueries({ queryKey: ['operacionDetails', deletedOperation?.id] });
+      queryClient.removeQueries({ queryKey: ['operacionDetails', result.id] });
       
       // Forzar refetch inmediato
       queryClient.refetchQueries({ queryKey: ['operaciones'] });
       
       toast({ 
         title: "Operación eliminada", 
-        description: `La operación ${deletedOperation?.codigo || ''} ha sido eliminada exitosamente.` 
+        description: "La operación ha sido eliminada exitosamente." 
       });
     },
     onError: (error: any) => {
