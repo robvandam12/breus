@@ -38,7 +38,10 @@ const BitacorasBuzo = () => {
     ...bitacora,
     inmersion: null, // Por ahora null, se puede expandir para incluir datos de inmersión
     supervisor_data: null,
-    aprobador_data: null
+    aprobador_data: null,
+    inmersiones_buzos: bitacora.inmersiones_buzos || [],
+    equipos_utilizados: bitacora.equipos_utilizados || [],
+    diving_records: bitacora.diving_records || []
   }));
   
   const { 
