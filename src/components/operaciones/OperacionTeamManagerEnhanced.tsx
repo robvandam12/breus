@@ -63,18 +63,23 @@ export const OperacionTeamManagerEnhanced = ({
       return data;
     },
     onSuccess: () => {
+      // Invalidar múltiples queries para reflejar cambios inmediatamente
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['anexos-bravo'] });
+      queryClient.invalidateQueries({ queryKey: ['operacion-documents', operacionId] });
+      
       toast({
-        title: 'Equipo asignado',
-        description: 'El equipo de buceo ha sido asignado a la operación.',
+        title: 'Personal de buceo asignado',
+        description: 'El personal de buceo ha sido asignado a la operación.',
       });
     },
     onError: (error) => {
       console.error('Error assigning team:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo asignar el equipo a la operación.',
+        description: 'No se pudo asignar el personal de buceo a la operación.',
         variant: 'destructive',
       });
     },
@@ -93,18 +98,23 @@ export const OperacionTeamManagerEnhanced = ({
       return data;
     },
     onSuccess: () => {
+      // Invalidar múltiples queries para reflejar cambios inmediatamente
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['hpts'] });
+      queryClient.invalidateQueries({ queryKey: ['anexos-bravo'] });
+      queryClient.invalidateQueries({ queryKey: ['operacion-documents', operacionId] });
+      
       toast({
-        title: 'Equipo removido',
-        description: 'El equipo de buceo ha sido removido de la operación.',
+        title: 'Personal de buceo removido',
+        description: 'El personal de buceo ha sido removido de la operación.',
       });
     },
     onError: (error) => {
       console.error('Error removing team:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo remover el equipo de la operación.',
+        description: 'No se pudo remover el personal de buceo de la operación.',
         variant: 'destructive',
       });
     },
@@ -129,7 +139,7 @@ export const OperacionTeamManagerEnhanced = ({
       queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
       toast({
         title: 'Miembro agregado',
-        description: 'El miembro ha sido agregado al equipo.',
+        description: 'El miembro ha sido agregado al personal de buceo.',
       });
     },
   });
@@ -195,7 +205,7 @@ export const OperacionTeamManagerEnhanced = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
-            Equipo Asignado
+            Personal de Buceo Asignado
             <Badge variant="outline">
               {assignedTeam?.miembros?.length || 0} miembros
             </Badge>
@@ -220,7 +230,7 @@ export const OperacionTeamManagerEnhanced = ({
                   className="text-red-600 hover:text-red-700"
                 >
                   <X className="w-4 h-4 mr-2" />
-                  Remover Equipo
+                  Remover Personal
                 </Button>
               </>
             )}
@@ -229,7 +239,7 @@ export const OperacionTeamManagerEnhanced = ({
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Plus className="w-4 h-4 mr-2" />
-                  Crear Equipo
+                  Crear Personal de Buceo
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -247,19 +257,19 @@ export const OperacionTeamManagerEnhanced = ({
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Asignar Equipo
+                    Asignar Personal de Buceo
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Asignar Equipo de Buceo</DialogTitle>
+                    <DialogTitle>Asignar Personal de Buceo</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label>Equipo de Buceo</Label>
+                      <Label>Personal de Buceo</Label>
                       <Select value={selectedEquipoId} onValueChange={setSelectedEquipoId}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar equipo..." />
+                          <SelectValue placeholder="Seleccionar personal..." />
                         </SelectTrigger>
                         <SelectContent>
                           {availableEquipos.map((equipo) => (
@@ -273,7 +283,7 @@ export const OperacionTeamManagerEnhanced = ({
 
                     {selectedEquipo && selectedEquipo.miembros && (
                       <div className="space-y-2">
-                        <Label>Miembros del Equipo:</Label>
+                        <Label>Miembros del Personal:</Label>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
                           {selectedEquipo.miembros.map((miembro) => (
                             <div key={miembro.id} className="flex items-center justify-between p-2 bg-zinc-50 rounded">
@@ -295,7 +305,7 @@ export const OperacionTeamManagerEnhanced = ({
                         disabled={!selectedEquipoId || updateOperacionTeam.isPending}
                         className="flex-1"
                       >
-                        {updateOperacionTeam.isPending ? 'Asignando...' : 'Asignar Equipo'}
+                        {updateOperacionTeam.isPending ? 'Asignando...' : 'Asignar Personal'}
                       </Button>
                       <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
                         Cancelar
@@ -312,19 +322,19 @@ export const OperacionTeamManagerEnhanced = ({
         {!assignedTeam ? (
           <div className="text-center py-8 text-zinc-500">
             <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h3 className="font-medium text-zinc-900 mb-2">No hay equipo asignado</h3>
+            <h3 className="font-medium text-zinc-900 mb-2">No hay personal de buceo asignado</h3>
             <p className="text-sm text-zinc-500 mb-4">
-              Asigne un equipo de buceo para esta operación
+              Asigne personal de buceo para esta operación
             </p>
             <div className="flex gap-2 justify-center">
               <Button onClick={() => setIsCreateEquipoDialogOpen(true)} variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
-                Crear Equipo
+                Crear Personal
               </Button>
               {availableEquipos.length > 0 && (
                 <Button onClick={() => setIsAssignDialogOpen(true)} variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
-                  Asignar Equipo
+                  Asignar Personal
                 </Button>
               )}
             </div>
@@ -339,7 +349,7 @@ export const OperacionTeamManagerEnhanced = ({
                 )}
               </div>
               <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                Equipo Asignado
+                Personal Asignado
               </Badge>
             </div>
             
@@ -383,7 +393,7 @@ export const OperacionTeamManagerEnhanced = ({
                 )) || (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-zinc-500">
-                      No hay miembros en este equipo
+                      No hay miembros en este personal de buceo
                     </TableCell>
                   </TableRow>
                 )}
@@ -396,12 +406,12 @@ export const OperacionTeamManagerEnhanced = ({
         <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Agregar Miembro al Equipo</DialogTitle>
+              <DialogTitle>Agregar Miembro al Personal de Buceo</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">
               <div>
-                <Label className="block text-sm font-medium mb-2">Rol en el Equipo</Label>
+                <Label className="block text-sm font-medium mb-2">Rol en el Personal</Label>
                 <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -418,7 +428,7 @@ export const OperacionTeamManagerEnhanced = ({
                 onSelectUser={handleAddMember}
                 onInviteUser={handleAddMember}
                 allowedRoles={selectedRole === 'supervisor' ? ['supervisor'] : ['buzo']}
-                placeholder="Buscar usuario para agregar al equipo..."
+                placeholder="Buscar usuario para agregar al personal de buceo..."
                 salmoneraId={salmoneraId}
                 contratistaId={contratistaId}
               />

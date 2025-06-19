@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,18 +31,21 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
   const operacionHPTs = hpts.filter(hpt => hpt.operacion_id === operacionId);
   const operacionAnexos = anexosBravo.filter(anexo => anexo.operacion_id === operacionId);
 
-  // Check if operation has required team
+  // Check if operation has required team - reacciona a cambios inmediatamente
   useEffect(() => {
+    console.log('Checking team assignment for operation:', operacion);
     const checkTeamAssignment = () => {
       if (operacion?.equipo_buceo_id) {
+        console.log('Team assigned:', operacion.equipo_buceo_id);
         setHasTeamAssigned(true);
       } else {
+        console.log('No team assigned');
         setHasTeamAssigned(false);
       }
     };
 
     checkTeamAssignment();
-  }, [operacion, operacion?.equipo_buceo_id]);
+  }, [operacion, operacion?.equipo_buceo_id]); // Dependencias específicas para reactividad
 
   const handleDocumentDeleteAttempt = (documentType: string) => {
     toast({
@@ -107,6 +111,19 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
                   </div>
                 )}
               </div>
+              {/* Mostrar información del personal de buceo asignado */}
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs font-medium text-blue-600 mb-1">Personal de Buceo</p>
+                {hasTeamAssigned ? (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                    Personal asignado ✓
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
+                    Sin personal asignado
+                  </Badge>
+                )}
+              </div>
             </CardContent>
           )}
         </Card>
@@ -117,7 +134,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
         <Alert className="border-yellow-200 bg-yellow-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-yellow-800">
-            <strong>Equipo requerido:</strong> Asigne un equipo de buceo a esta operación en la pestaña "Equipo de Buceo" antes de crear documentos.
+            <strong>Personal de buceo requerido:</strong> Asigne personal de buceo a esta operación en la pestaña "Personal de Buceo" antes de crear documentos.
           </AlertDescription>
         </Alert>
       )}
@@ -155,7 +172,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
               icon={<FileText className="w-5 h-5 text-blue-600" />}
               emptyIcon={<FileText className="w-12 h-12 text-zinc-300 mx-auto mb-4" />}
               emptyMessage="No hay HPTs creados"
-              emptySubMessage="Cree el primer HPT para esta operación"
+              emptySubMessage={hasTeamAssigned ? "Cree el primer HPT para esta operación" : "Asigne personal de buceo primero"}
               onDocumentDeleteAttempt={handleDocumentDeleteAttempt}
               documentType="HPT"
             />
@@ -186,7 +203,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
               icon={<Shield className="w-5 h-5 text-green-600" />}
               emptyIcon={<Shield className="w-12 h-12 text-zinc-300 mx-auto mb-4" />}
               emptyMessage="No hay Anexos Bravo creados"
-              emptySubMessage="Cree el primer Anexo Bravo para esta operación"
+              emptySubMessage={hasTeamAssigned ? "Cree el primer Anexo Bravo para esta operación" : "Asigne personal de buceo primero"}
               onDocumentDeleteAttempt={handleDocumentDeleteAttempt}
               documentType="Anexo Bravo"
             />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,7 +82,7 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+              <TabsTrigger value="personal">Personal de Buceo</TabsTrigger>
               <TabsTrigger value="documentos">Documentos</TabsTrigger>
               <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
               <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -92,7 +93,7 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
               <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
             </TabsContent>
 
-            <TabsContent value="equipo" className="space-y-6">
+            <TabsContent value="personal" className="space-y-6">
               <OperacionTeamManagerEnhanced 
                 operacionId={operacion.id} 
                 salmoneraId={operacion.salmonera_id || undefined}
