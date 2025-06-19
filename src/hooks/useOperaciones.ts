@@ -145,8 +145,20 @@ const useOperacionesMutations = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<OperacionFormData> }) => {
       console.log('Updating operation:', id, data);
-      const { error } = await supabase.from('operacion').update(data).eq('id', id);
-      if (error) throw error;
+      const { data: result, error } = await supabase
+        .from('operacion')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Update operation error:', error);
+        throw error;
+      }
+      
+      console.log('Operation updated successfully:', result);
+      return result;
     },
     onSuccess: () => {
       // Invalidar múltiples queries relacionadas
@@ -162,20 +174,45 @@ const useOperacionesMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting operation:', id);
-      const { error } = await supabase.from('operacion').delete().eq('id', id);
-      if (error) throw error;
+      console.log('Attempting to delete operation:', id);
+      
+      const { data: result, error } = await supabase
+        .from('operacion')
+        .delete()
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Delete operation error:', error);
+        throw new Error(`Error al eliminar operación: ${error.message}`);
+      }
+      
+      console.log('Operation deleted successfully:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (deletedOperation) => {
+      console.log('Delete mutation successful, invalidating queries');
       // Invalidar múltiples queries relacionadas y refrescar
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       queryClient.invalidateQueries({ queryKey: ['operacionDetails'] });
-      queryClient.removeQueries({ queryKey: ['operacionDetails'] }); // Remover queries específicas
-      toast({ title: "Operación eliminada", description: "La operación ha sido eliminada exitosamente." });
+      queryClient.removeQueries({ queryKey: ['operacionDetails', deletedOperation?.id] });
+      
+      // Forzar refetch inmediato
+      queryClient.refetchQueries({ queryKey: ['operaciones'] });
+      
+      toast({ 
+        title: "Operación eliminada", 
+        description: `La operación ${deletedOperation?.codigo || ''} ha sido eliminada exitosamente.` 
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting operacion:', error);
-      toast({ title: "Error", description: "No se pudo eliminar la operación.", variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: `No se pudo eliminar la operación: ${error.message || 'Error desconocido'}`, 
+        variant: "destructive" 
+      });
     },
   });
 
