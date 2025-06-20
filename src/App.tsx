@@ -58,8 +58,8 @@ function App() {
             <Route path="/operaciones/network-maintenance" element={<NetworkMaintenance />} />
             
             {/* Módulos Operativos - Fase 2 */}
-            <Route path="/mantencion-redes" element={<MantencionRedes />} />
-            <Route path="/faenas-redes" element={<FaenasRedes />} />
+            <Route path="/operaciones/mantencion-redes" element={<MantencionRedes />} />
+            <Route path="/operaciones/faenas-redes" element={<FaenasRedes />} />
             <Route path="/reportes-avanzados" element={<ReportesAvanzados />} />
             <Route path="/integraciones" element={<Integraciones />} />
             

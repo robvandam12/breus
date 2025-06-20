@@ -24,6 +24,15 @@ export interface NetworkMaintenanceData {
   faenas_mantencion: FaenaMantencion[];
   faenas_redes: FaenaRedes[];
   
+  // Sistemas y equipos (Nuevo para Paso 5)
+  sistemas_equipos?: SistemaEquipo[];
+  
+  // Resumen y firmas (Nuevo para Paso 6)
+  observaciones_finales?: string;
+  contingencias?: string;
+  supervisor_responsable?: string;
+  firma_digital?: string;
+  
   // Control de formulario
   progreso: number;
   firmado: boolean;
@@ -80,6 +89,18 @@ export interface FaenaRedes {
   materiales_usados: string;
   estado_completado: boolean;
   observaciones: string;
+}
+
+// Nueva interfaz para Sistemas y Equipos (Paso 5)
+export interface SistemaEquipo {
+  id: string;
+  tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
+  nombre_equipo: string;
+  estado_operativo: 'operativo' | 'mantenimiento' | 'fuera_servicio';
+  observaciones: string;
+  trabajo_realizado: string;
+  responsable: string;
+  verificado: boolean;
 }
 
 // Interfaz para el formulario de Mantención de Redes

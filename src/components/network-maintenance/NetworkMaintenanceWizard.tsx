@@ -8,6 +8,8 @@ import { EncabezadoGeneral } from './steps/EncabezadoGeneral';
 import { DotacionBuceo } from './steps/DotacionBuceo';
 import { EquiposSuperficie } from './steps/EquiposSuperficie';
 import { FaenasMantencion } from './steps/FaenasMantencion';
+import { SistemasEquipos } from './steps/SistemasEquipos';
+import { ResumenFirmas } from './steps/ResumenFirmas';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
@@ -41,6 +43,7 @@ export const NetworkMaintenanceWizard = ({
     equipos_superficie: [],
     faenas_mantencion: [],
     faenas_redes: [],
+    sistemas_equipos: [],
     tipo_formulario: tipoFormulario,
     progreso: 0,
     firmado: false,
@@ -52,24 +55,19 @@ export const NetworkMaintenanceWizard = ({
     const baseSteps = [
       { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
       { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
-      { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" }
+      { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
+      { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
+      { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
+      { id: 6, title: "Resumen y Firmas", description: "Validación final" }
     ];
 
-    if (tipoFormulario === 'mantencion') {
-      return [
-        ...baseSteps,
-        { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
-        { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
-        { id: 6, title: "Resumen y Firmas", description: "Validación final" }
-      ];
-    } else {
-      return [
-        ...baseSteps,
-        { id: 4, title: "Iconografía", description: "Simbología utilizada" },
-        { id: 5, title: "Matriz de Actividades", description: "Actividades por jaula" },
-        { id: 6, title: "Resumen y Firmas", description: "Validación final" }
-      ];
+    if (tipoFormulario === 'faena') {
+      // Para faenas, el paso 4 sería diferente
+      baseSteps[3] = { id: 4, title: "Matriz de Actividades", description: "Actividades por jaula" };
+      baseSteps[4] = { id: 5, title: "Cambios de Pecera", description: "Registro de cambios" };
     }
+
+    return baseSteps;
   };
 
   const steps = getSteps();
@@ -89,11 +87,11 @@ export const NetworkMaintenanceWizard = ({
       case 3:
         return true; // Equipos son opcionales
       case 4:
-        return true; // Faenas/Iconografía son opcionales
+        return true; // Faenas son opcionales inicialmente
       case 5:
         return true; // Sistemas son opcionales
       case 6:
-        return true; // Validación final
+        return !!(formData.supervisor_responsable); // Requiere supervisor para firma
       default:
         return false;
     }
@@ -145,39 +143,25 @@ export const NetworkMaintenanceWizard = ({
           />
         );
       case 4:
-        if (tipoFormulario === 'mantencion') {
-          return (
-            <FaenasMantencion 
-              formData={formData} 
-              updateFormData={updateFormData}
-            />
-          );
-        } else {
-          return (
-            <div className="text-center py-8">
-              <Network className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Iconografía</h3>
-              <p className="text-gray-500">Componente en desarrollo...</p>
-            </div>
-          );
-        }
+        return (
+          <FaenasMantencion 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 5:
         return (
-          <div className="text-center py-8">
-            <Network className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {tipoFormulario === 'mantencion' ? 'Sistemas y Equipos' : 'Matriz de Actividades'}
-            </h3>
-            <p className="text-gray-500">Componente en desarrollo...</p>
-          </div>
+          <Siste masEquipos 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
         );
       case 6:
         return (
-          <div className="text-center py-8">
-            <Network className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Resumen y Firmas</h3>
-            <p className="text-gray-500">Componente en desarrollo...</p>
-          </div>
+          <ResumenFirmas 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
         );
       default:
         return null;
