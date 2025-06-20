@@ -41,7 +41,7 @@ export const ContextualInmersionCreator = ({
     } finally {
       setIsValidating(false);
     }
-  );
+  };
 
   const canCreate = isValid && !disabled;
 
