@@ -50,7 +50,7 @@ export const AdvancedReportsManager = () => {
         <CardContent className="py-8">
           <div className="text-center text-gray-500">
             <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Módulo de Reportes Avanzados no disponible</p>
+            <p className="text-lg font-medium">Módulo de Reportes Avanzados no disponible</p>
             <p className="text-sm">Contacta al administrador para activar este módulo</p>
           </div>
         </CardContent>
@@ -66,6 +66,7 @@ export const AdvancedReportsManager = () => {
         templateId: selectedTemplate,
         parametros: reportFilters
       });
+      setSelectedTemplate(""); // Limpiar selección después de generar
     } catch (error) {
       console.error('Error generating report:', error);
     }

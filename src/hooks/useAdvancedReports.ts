@@ -1,166 +1,163 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { useModularSystem } from "./useModularSystem";
 import { toast } from "@/hooks/use-toast";
 
 export interface ReportTemplate {
   id: string;
   nombre: string;
   descripcion: string;
-  tipo: 'operacional' | 'seguridad' | 'eficiencia' | 'personalizado';
-  configuracion: any;
-  created_at: string;
+  tipo: 'operacional' | 'seguridad' | 'eficiencia';
+  configuracion?: {
+    metricas?: string[];
+    filtros?: any;
+  };
   updated_at: string;
 }
 
 export interface GeneratedReport {
   id: string;
-  template_id: string;
   nombre: string;
   fecha_generacion: string;
   estado: 'generando' | 'completado' | 'error';
-  parametros: any;
-  resultados: any;
-  created_at: string;
+  resultados?: Record<string, any>;
 }
 
+// Mock data para desarrollo - en producción vendrá de la DB
+const mockTemplates: ReportTemplate[] = [
+  {
+    id: '1',
+    nombre: 'Análisis de Inmersiones por Sitio',
+    descripcion: 'Reporte detallado de performance por sitio de trabajo',
+    tipo: 'operacional',
+    configuracion: {
+      metricas: ['inmersiones_totales', 'tiempo_promedio', 'profundidad_max']
+    },
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    nombre: 'Alertas de Seguridad',
+    descripcion: 'Análisis de incidentes y alertas de seguridad',
+    tipo: 'seguridad',
+    configuracion: {
+      metricas: ['alertas_criticas', 'tiempo_respuesta', 'acciones_correctivas']
+    },
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    nombre: 'Eficiencia Operacional',
+    descripción: 'Métricas de rendimiento y eficiencia del equipo',
+    tipo: 'eficiencia',
+    configuracion: {
+      metricas: ['productividad', 'utilizacion_equipos', 'costos_operativos']
+    },
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const mockGeneratedReports: GeneratedReport[] = [
+  {
+    id: '1',
+    nombre: 'Análisis Mensual - Diciembre 2024',
+    fecha_generacion: new Date(Date.now() - 86400000).toISOString(),
+    estado: 'completado',
+    resultados: {
+      total_inmersiones: 45,
+      promedio_profundidad: 12.5,
+      eficiencia_general: '85%'
+    }
+  },
+];
+
 export const useAdvancedReports = () => {
-  const { profile } = useAuth();
-  const { isModuleActive, modules } = useModuleAccess();
+  const { hasModuleAccess, modules } = useModularSystem();
   const queryClient = useQueryClient();
 
-  const canAccessReports = isModuleActive(modules.REPORTS);
+  const canAccessReports = hasModuleAccess(modules.ADVANCED_REPORTING);
 
+  // Plantillas de reportes
   const { data: reportTemplates = [], isLoading: isLoadingTemplates } = useQuery({
-    queryKey: ['report-templates', profile?.salmonera_id],
+    queryKey: ['report-templates'],
     queryFn: async () => {
-      if (!canAccessReports) return [];
-      
-      // Simulación de plantillas hasta implementar tabla real
-      return [
-        {
-          id: '1',
-          nombre: 'Reporte Operacional Mensual',
-          descripcion: 'Análisis completo de operaciones del mes',
-          tipo: 'operacional',
-          configuracion: {
-            metricas: ['inmersiones', 'horas_buceo', 'eficiencia'],
-            period: 'monthly'
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          nombre: 'Dashboard de Seguridad',
-          descripcion: 'Monitoreo de alertas y incidentes de seguridad',
-          tipo: 'seguridad',
-          configuracion: {
-            alertas: ['depth_exceeded', 'time_exceeded'],
-            period: 'daily'
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ] as ReportTemplate[];
+      // Por ahora usamos mock data, más adelante conectar con Supabase
+      return mockTemplates;
     },
-    enabled: canAccessReports && !!profile?.salmonera_id,
+    enabled: canAccessReports,
   });
 
+  // Reportes generados
   const { data: generatedReports = [], isLoading: isLoadingReports } = useQuery({
-    queryKey: ['generated-reports', profile?.salmonera_id],
+    queryKey: ['generated-reports'],
     queryFn: async () => {
-      if (!canAccessReports) return [];
-      
-      // Simulación de reportes generados
-      return [
-        {
-          id: '1',
-          template_id: '1',
-          nombre: 'Reporte Operacional - Enero 2024',
-          fecha_generacion: '2024-01-31',
-          estado: 'completado',
-          parametros: { mes: 'enero', anio: 2024 },
-          resultados: { total_inmersiones: 145, horas_buceo: 580 },
-          created_at: new Date().toISOString()
-        }
-      ] as GeneratedReport[];
+      // Por ahora usamos mock data, más adelante conectar con Supabase
+      return mockGeneratedReports;
     },
-    enabled: canAccessReports && !!profile?.salmonera_id,
+    enabled: canAccessReports,
   });
 
+  // Generar nuevo reporte
   const generateReport = useMutation({
     mutationFn: async ({ templateId, parametros }: { templateId: string; parametros: any }) => {
-      if (!canAccessReports) {
-        throw new Error('Acceso denegado al módulo de reportes');
-      }
-
-      // Simulación de generación de reporte
+      // Simular generación de reporte
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const template = reportTemplates.find(t => t.id === templateId);
-      if (!template) {
-        throw new Error('Plantilla de reporte no encontrada');
-      }
+      if (!template) throw new Error('Plantilla no encontrada');
 
+      // En producción aquí se haría la llamada real para generar el reporte
       const newReport: GeneratedReport = {
-        id: `report-${Date.now()}`,
-        template_id: templateId,
+        id: Date.now().toString(),
         nombre: `${template.nombre} - ${new Date().toLocaleDateString()}`,
         fecha_generacion: new Date().toISOString(),
-        estado: 'generando',
-        parametros,
-        resultados: null,
-        created_at: new Date().toISOString()
+        estado: 'completado',
+        resultados: {
+          mensaje: 'Reporte generado exitosamente',
+          parametros_usados: parametros
+        }
       };
-
-      // Simulación de procesamiento
-      setTimeout(() => {
-        newReport.estado = 'completado';
-        newReport.resultados = {
-          total_inmersiones: Math.floor(Math.random() * 200),
-          horas_buceo: Math.floor(Math.random() * 800),
-          eficiencia: Math.floor(Math.random() * 100)
-        };
-        queryClient.invalidateQueries({ queryKey: ['generated-reports'] });
-      }, 3000);
 
       return newReport;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-reports'] });
       toast({
-        title: "Reporte generado",
-        description: "El reporte se está procesando.",
+        title: "Reporte Generado",
+        description: "El reporte ha sido generado exitosamente.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo generar el reporte.",
+        description: "No se pudo generar el reporte.",
         variant: "destructive",
       });
     },
   });
 
+  // Exportar reporte
   const exportReport = async (reportId: string, format: 'pdf' | 'excel' | 'csv') => {
-    if (!canAccessReports) {
-      throw new Error('Acceso denegado al módulo de reportes');
-    }
-
-    // Simulación de exportación
-    toast({
-      title: "Exportando reporte",
-      description: `Generando archivo ${format.toUpperCase()}...`,
-    });
-
-    // Simulación de descarga
-    setTimeout(() => {
+    try {
+      // Simular descarga
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast({
-        title: "Reporte exportado",
-        description: `Archivo ${format.toUpperCase()} listo para descarga.`,
+        title: "Exportación Iniciada",
+        description: `Descargando reporte en formato ${format.toUpperCase()}...`,
       });
-    }, 2000);
+      
+      // En producción aquí se haría la descarga real
+      console.log(`Exportando reporte ${reportId} en formato ${format}`);
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo exportar el reporte.",
+        variant: "destructive",
+      });
+    }
   };
 
   return {

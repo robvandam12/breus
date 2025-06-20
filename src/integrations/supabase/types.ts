@@ -581,6 +581,56 @@ export type Database = {
           },
         ]
       }
+      company_modules: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          company_id: string
+          company_type: string
+          configuration: Json | null
+          created_at: string | null
+          deactivated_at: string | null
+          id: string
+          is_active: boolean | null
+          module_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          company_id: string
+          company_type: string
+          configuration?: Json | null
+          created_at?: string | null
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          company_id?: string
+          company_type?: string
+          configuration?: Json | null
+          created_at?: string | null
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_modules_module_name_fkey"
+            columns: ["module_name"]
+            isOneToOne: false
+            referencedRelation: "system_modules"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       contractor_invitations: {
         Row: {
           admin_email: string
@@ -1095,26 +1145,32 @@ export type Database = {
           buzo_principal: string
           buzo_principal_id: string | null
           codigo: string
+          company_id: string | null
+          company_type: string | null
           corriente: string
           created_at: string
           current_depth: number | null
           depth_history: Json | null
           estado: string
+          external_operation_code: string | null
           fecha_inmersion: string
           hora_fin: string | null
           hora_inicio: string
           hpt_validado: boolean
           inmersion_id: string
+          is_independent: boolean | null
           objetivo: string
           observaciones: string | null
           operacion_id: string
           planned_bottom_time: number | null
+          priority: string | null
           profundidad_max: number
           supervisor: string
           supervisor_id: string | null
           temperatura_agua: number
           updated_at: string
           visibilidad: number
+          work_type: string | null
         }
         Insert: {
           anexo_bravo_validado?: boolean
@@ -1123,26 +1179,32 @@ export type Database = {
           buzo_principal: string
           buzo_principal_id?: string | null
           codigo: string
+          company_id?: string | null
+          company_type?: string | null
           corriente: string
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
           estado?: string
+          external_operation_code?: string | null
           fecha_inmersion: string
           hora_fin?: string | null
           hora_inicio: string
           hpt_validado?: boolean
           inmersion_id?: string
+          is_independent?: boolean | null
           objetivo: string
           observaciones?: string | null
           operacion_id: string
           planned_bottom_time?: number | null
+          priority?: string | null
           profundidad_max: number
           supervisor: string
           supervisor_id?: string | null
           temperatura_agua: number
           updated_at?: string
           visibilidad: number
+          work_type?: string | null
         }
         Update: {
           anexo_bravo_validado?: boolean
@@ -1151,26 +1213,32 @@ export type Database = {
           buzo_principal?: string
           buzo_principal_id?: string | null
           codigo?: string
+          company_id?: string | null
+          company_type?: string | null
           corriente?: string
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
           estado?: string
+          external_operation_code?: string | null
           fecha_inmersion?: string
           hora_fin?: string | null
           hora_inicio?: string
           hpt_validado?: boolean
           inmersion_id?: string
+          is_independent?: boolean | null
           objetivo?: string
           observaciones?: string | null
           operacion_id?: string
           planned_bottom_time?: number | null
+          priority?: string | null
           profundidad_max?: number
           supervisor?: string
           supervisor_id?: string | null
           temperatura_agua?: number
           updated_at?: string
           visibilidad?: number
+          work_type?: string | null
         }
         Relationships: [
           {
@@ -1689,6 +1757,66 @@ export type Database = {
           },
         ]
       }
+      operational_forms: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          form_data: Json
+          form_type: string
+          id: string
+          inmersion_id: string
+          module_name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          form_data?: Json
+          form_type: string
+          id?: string
+          inmersion_id: string
+          module_name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          form_data?: Json
+          form_type?: string
+          id?: string
+          inmersion_id?: string
+          module_name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_forms_inmersion_id_fkey"
+            columns: ["inmersion_id"]
+            isOneToOne: false
+            referencedRelation: "inmersion"
+            referencedColumns: ["inmersion_id"]
+          },
+          {
+            foreignKeyName: "operational_forms_module_name_fkey"
+            columns: ["module_name"]
+            isOneToOne: false
+            referencedRelation: "system_modules"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       salmonera_contratista: {
         Row: {
           contratista_id: string | null
@@ -1956,6 +2084,45 @@ export type Database = {
           },
         ]
       }
+      system_modules: {
+        Row: {
+          category: string
+          created_at: string | null
+          dependencies: string[] | null
+          description: string | null
+          display_name: string
+          id: string
+          is_core: boolean | null
+          name: string
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_core?: boolean | null
+          name: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_core?: boolean | null
+          name?: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       usuario: {
         Row: {
           apellido: string
@@ -2177,6 +2344,16 @@ export type Database = {
         }
         Returns: string
       }
+      get_company_active_modules: {
+        Args: { p_company_id: string; p_company_type: string }
+        Returns: {
+          module_name: string
+          display_name: string
+          description: string
+          category: string
+          configuration: Json
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2209,6 +2386,14 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_module_access: {
+        Args: {
+          p_company_id: string
+          p_company_type: string
+          p_module_name: string
+        }
+        Returns: boolean
       }
       is_super: {
         Args: Record<PropertyKey, never>
