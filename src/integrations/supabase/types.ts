@@ -1147,10 +1147,13 @@ export type Database = {
           codigo: string
           company_id: string | null
           company_type: string | null
+          contexto_operativo: string | null
           corriente: string
           created_at: string
           current_depth: number | null
           depth_history: Json | null
+          empresa_creadora_id: string | null
+          empresa_creadora_tipo: string | null
           estado: string
           external_operation_code: string | null
           fecha_inmersion: string
@@ -1165,10 +1168,12 @@ export type Database = {
           planned_bottom_time: number | null
           priority: string | null
           profundidad_max: number
+          requiere_validacion_previa: boolean | null
           supervisor: string
           supervisor_id: string | null
           temperatura_agua: number
           updated_at: string
+          validacion_contextual: Json | null
           visibilidad: number
           work_type: string | null
         }
@@ -1181,10 +1186,13 @@ export type Database = {
           codigo: string
           company_id?: string | null
           company_type?: string | null
+          contexto_operativo?: string | null
           corriente: string
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
+          empresa_creadora_id?: string | null
+          empresa_creadora_tipo?: string | null
           estado?: string
           external_operation_code?: string | null
           fecha_inmersion: string
@@ -1199,10 +1207,12 @@ export type Database = {
           planned_bottom_time?: number | null
           priority?: string | null
           profundidad_max: number
+          requiere_validacion_previa?: boolean | null
           supervisor: string
           supervisor_id?: string | null
           temperatura_agua: number
           updated_at?: string
+          validacion_contextual?: Json | null
           visibilidad: number
           work_type?: string | null
         }
@@ -1215,10 +1225,13 @@ export type Database = {
           codigo?: string
           company_id?: string | null
           company_type?: string | null
+          contexto_operativo?: string | null
           corriente?: string
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
+          empresa_creadora_id?: string | null
+          empresa_creadora_tipo?: string | null
           estado?: string
           external_operation_code?: string | null
           fecha_inmersion?: string
@@ -1233,10 +1246,12 @@ export type Database = {
           planned_bottom_time?: number | null
           priority?: string | null
           profundidad_max?: number
+          requiere_validacion_previa?: boolean | null
           supervisor?: string
           supervisor_id?: string | null
           temperatura_agua?: number
           updated_at?: string
+          validacion_contextual?: Json | null
           visibilidad?: number
           work_type?: string | null
         }
@@ -1754,6 +1769,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuario"
             referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
+      operacion_context: {
+        Row: {
+          created_at: string
+          empresa_destino_id: string | null
+          empresa_destino_tipo: string | null
+          empresa_origen_id: string
+          empresa_origen_tipo: string
+          estado_planificacion: string | null
+          id: string
+          metadatos: Json | null
+          operacion_id: string
+          requiere_anexo_bravo: boolean
+          requiere_documentos: boolean
+          requiere_hpt: boolean
+          tipo_contexto: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_destino_id?: string | null
+          empresa_destino_tipo?: string | null
+          empresa_origen_id: string
+          empresa_origen_tipo: string
+          estado_planificacion?: string | null
+          id?: string
+          metadatos?: Json | null
+          operacion_id: string
+          requiere_anexo_bravo?: boolean
+          requiere_documentos?: boolean
+          requiere_hpt?: boolean
+          tipo_contexto: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_destino_id?: string | null
+          empresa_destino_tipo?: string | null
+          empresa_origen_id?: string
+          empresa_origen_tipo?: string
+          estado_planificacion?: string | null
+          id?: string
+          metadatos?: Json | null
+          operacion_id?: string
+          requiere_anexo_bravo?: boolean
+          requiere_documentos?: boolean
+          requiere_hpt?: boolean
+          tipo_contexto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operacion_context_operacion_id_fkey"
+            columns: ["operacion_id"]
+            isOneToOne: true
+            referencedRelation: "operacion"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2377,6 +2451,10 @@ export type Database = {
           p_start_date?: string
           p_end_date?: string
         }
+        Returns: Json
+      }
+      get_operacion_full_context: {
+        Args: { p_operacion_id: string }
         Returns: Json
       }
       get_security_alert_stats: {

@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Network, Settings, Wrench } from "lucide-react";
+import { Plus, Network, Settings, Wrench, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NetworkMaintenanceWizard } from "@/components/network-maintenance/NetworkMaintenanceWizard";
 import { NetworkMaintenanceList } from "@/components/network-maintenance/NetworkMaintenanceList";
+import { ContextualOperationBadge } from "@/components/contextual/ContextualOperationBadge";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useContextualOperations } from '@/hooks/useContextualOperations';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export default function NetworkMaintenance() {
@@ -18,6 +21,8 @@ export default function NetworkMaintenance() {
   const [editingForm, setEditingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
   const [viewingForm, setViewingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
   const isMobile = useIsMobile();
+  
+  const { createOperacionWithContext } = useContextualOperations();
 
   const handleCreateNew = (tipo: 'mantencion' | 'faena') => {
     setTipoFormulario(tipo);
@@ -47,10 +52,27 @@ export default function NetworkMaintenance() {
     setViewingForm(null);
   };
 
+  // Crear operación temporal para formularios operativos directos
+  const createDirectOperation = async () => {
+    try {
+      const operacion = await createOperacionWithContext({
+        codigo: `NM-OP-${Date.now()}`,
+        nombre: `Operación ${tipoFormulario === 'mantencion' ? 'Mantención' : 'Faena'} - ${new Date().toLocaleDateString('es-CL')}`,
+        estado: 'activa',
+        fecha_inicio: new Date().toISOString().split('T')[0],
+        tareas: `Operación creada automáticamente para formulario de ${tipoFormulario}`
+      }, 'operativa_directa');
+      
+      setSelectedOperacion(operacion.id);
+      return operacion.id;
+    } catch (error) {
+      console.error('Error creating direct operation:', error);
+      return "temp-operacion-id"; // Fallback
+    }
+  };
+
   const renderWizard = () => {
     if (viewingForm) {
-      // Para vista de solo lectura, podríamos crear un componente separado
-      // Por ahora, usamos el wizard pero deshabilitado
       return (
         <div className="pointer-events-none opacity-75">
           <NetworkMaintenanceWizard 
@@ -94,6 +116,14 @@ export default function NetworkMaintenance() {
       }
     >
       <div className="space-y-6">
+        {/* Información contextual */}
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-blue-800">
+            <strong>Formularios Operativos Directos:</strong> Los formularios de mantención de redes se crean como operaciones independientes que no requieren documentación previa (HPT/Anexo Bravo).
+          </AlertDescription>
+        </Alert>
+
         {/* Cards informativos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
@@ -118,7 +148,12 @@ export default function NetworkMaintenance() {
               </ul>
               <Button 
                 className="w-full mt-4" 
-                onClick={() => handleCreateNew('mantencion')}
+                onClick={async () => {
+                  setTipoFormulario('mantencion');
+                  const operacionId = await createDirectOperation();
+                  setSelectedOperacion(operacionId);
+                  setShowCreateForm(true);
+                }}
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Crear Formulario de Mantención
@@ -141,7 +176,7 @@ export default function NetworkMaintenance() {
                 <li>• Encabezado general y dotación</li>
                 <li>• Iconografía y simbología</li>
                 <li>• Matriz Red/Lobera/Peceras</li>
-                <li>• Cambio de pecera por buzo</li>
+                <li>•⎇ Cambio de pecera por buzo</li>
                 <li>• Faenas de mantención</li>
                 <li>• Sistemas y apoyo faenas</li>
                 <li>• Resumen y firmas</li>
@@ -149,7 +184,12 @@ export default function NetworkMaintenance() {
               <Button 
                 className="w-full mt-4" 
                 variant="outline"
-                onClick={() => handleCreateNew('faena')}
+                onClick={async () => {
+                  setTipoFormulario('faena');
+                  const operacionId = await createDirectOperation();
+                  setSelectedOperacion(operacionId);
+                  setShowCreateForm(true);
+                }}
               >
                 <Wrench className="w-4 h-4 mr-2" />
                 Crear Formulario de Faena
@@ -180,6 +220,11 @@ export default function NetworkMaintenance() {
         <Drawer open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DrawerContent>
             <div className="p-4 pt-6 max-h-[90vh] overflow-y-auto">
+              {selectedOperacion && (
+                <div className="mb-4">
+                  <ContextualOperationBadge operacionId={selectedOperacion} showDetails />
+                </div>
+              )}
               {renderWizard()}
             </div>
           </DrawerContent>
@@ -187,6 +232,11 @@ export default function NetworkMaintenance() {
       ) : (
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            {selectedOperacion && (
+              <div className="mb-4">
+                <ContextualOperationBadge operacionId={selectedOperacion} showDetails />
+              </div>
+            )}
             {renderWizard()}
           </DialogContent>
         </Dialog>
