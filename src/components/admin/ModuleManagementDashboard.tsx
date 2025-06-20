@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,7 @@ export const ModuleManagementDashboard = () => {
     { key: 'network_maintenance', name: 'Mantención de Redes', icon: Settings, description: 'Mantenimiento preventivo y correctivo' },
     { key: 'network_operations', name: 'Faenas de Redes', icon: Zap, description: 'Operaciones de redes marinas' },
     { key: 'reports', name: 'Reportes Avanzados', icon: BarChart3, description: 'Sistema de reportes especializados' },
-    { key: 'integrations', name: 'Integraciones', icon: Zep, description: 'APIs externas y sincronización' },
+    { key: 'integrations', name: 'Integraciones', icon: Zap, description: 'APIs externas y sincronización' },
   ];
 
   const handleToggleModule = async (moduleName: string, enabled: boolean) => {
