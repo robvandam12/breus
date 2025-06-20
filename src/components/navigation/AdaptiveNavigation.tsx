@@ -8,6 +8,7 @@ import {
   BarChart3,
   Wrench,
   Network,
+  Zap,
 } from "lucide-react";
 
 interface NavigationItem {
@@ -75,13 +76,23 @@ export const useAdaptiveNavigation = (userRole?: string) => {
       });
     }
 
-    // Reportes
+    // Reportes Avanzados
     if (isModuleActive(modules.REPORTS)) {
       items.push({
-        title: "Reportes",
+        title: "Reportes Avanzados",
         icon: BarChart3,
-        url: "/reportes",
+        url: "/reportes-avanzados",
         moduleRequired: modules.REPORTS,
+      });
+    }
+
+    // Integraciones
+    if (isModuleActive(modules.INTEGRATIONS)) {
+      items.push({
+        title: "Integraciones",
+        icon: Zap,
+        url: "/integraciones",
+        moduleRequired: modules.INTEGRATIONS,
       });
     }
 
