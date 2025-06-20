@@ -123,22 +123,6 @@ export default function Inmersiones() {
     setShowEditDialog(true);
   }, []);
 
-  // Funciones de acción para las inmersiones
-  const inmersionActions = [
-    {
-      label: "Ver Detalle",
-      icon: <Eye className="w-4 h-4" />,
-      onClick: handleViewInmersion,
-      variant: "default" as const
-    },
-    {
-      label: "Editar",
-      icon: <Edit className="w-4 h-4" />,
-      onClick: handleEditInmersion,
-      variant: "outline" as const
-    }
-  ];
-
   if (showWizard) {
     return (
       <MainLayout
@@ -204,7 +188,6 @@ export default function Inmersiones() {
                 onViewInmersion={handleViewInmersion}
                 onNewInmersion={() => setShowWizard(true)}
                 containerHeight={650}
-                actions={inmersionActions}
               />
             ) : (
               <VirtualizedInmersionsTable
@@ -213,7 +196,6 @@ export default function Inmersiones() {
                 getEstadoBadgeColor={getEstadoBadgeColor}
                 onViewInmersion={handleViewInmersion}
                 containerHeight={650}
-                actions={inmersionActions}
               />
             )}
           </>
