@@ -44,7 +44,7 @@ export const ReportFiltersPanel = ({ filters, onFiltersChange }: ReportFiltersPa
               <Label>Fecha de inicio</Label>
               <DatePicker
                 date={filters.dateRange?.from}
-                onSelect={(date) => handleFilterChange('dateRange', {
+                onDateChange={(date) => handleFilterChange('dateRange', {
                   ...filters.dateRange,
                   from: date
                 })}
@@ -55,7 +55,7 @@ export const ReportFiltersPanel = ({ filters, onFiltersChange }: ReportFiltersPa
               <Label>Fecha de fin</Label>
               <DatePicker
                 date={filters.dateRange?.to}
-                onSelect={(date) => handleFilterChange('dateRange', {
+                onDateChange={(date) => handleFilterChange('dateRange', {
                   ...filters.dateRange,
                   to: date
                 })}
