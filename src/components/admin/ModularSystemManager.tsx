@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,15 +158,6 @@ export const ModularSystemManager = () => {
       {/* Lista de módulos */}
       {selectedCompany && (
         <div className="grid gap-4">
-          {systemModules
-            .reduce((acc, module) => {
-              const category = module.category;
-              if (!acc[category]) acc[category] = [];
-              acc[category].push(module);
-              return acc;
-            }, {} as Record<string, typeof systemModules>)
-            .map = Object.entries}
-          
           {Object.entries(
             systemModules.reduce((acc, module) => {
               const category = module.category;
@@ -242,8 +232,7 @@ export const ModularSystemManager = () => {
 
       {!selectedCompany && (
         <Card>
-          <Car
-          dContent className="py-12">
+          <CardContent className="py-12">
             <div className="text-center text-gray-500">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">Selecciona una empresa</p>
