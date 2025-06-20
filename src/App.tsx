@@ -14,7 +14,7 @@ import Configuracion from '@/pages/Configuracion';
 
 // Módulo de Planificación
 import Operaciones from '@/pages/operaciones/Operaciones';
-import MultiX from '@/pages/operaciones/MultiX';
+import NetworkMaintenance from '@/pages/operaciones/NetworkMaintenance';
 
 // Módulos Operativos - Fase 2
 import MantencionRedes from '@/pages/operaciones/MantencionRedes';
@@ -55,7 +55,7 @@ function App() {
             
             {/* Módulo de Planificación */}
             <Route path="/operaciones" element={<Operaciones />} />
-            <Route path="/operaciones/multix" element={<MultiX />} />
+            <Route path="/operaciones/network-maintenance" element={<NetworkMaintenance />} />
             
             {/* Módulos Operativos - Fase 2 */}
             <Route path="/mantencion-redes" element={<MantencionRedes />} />

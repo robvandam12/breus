@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -23,7 +22,7 @@ const EquipoBuceo = lazy(() => import("../pages/EquipoBuceo"));
 const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
 const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
-const MultiX = lazy(() => import("../pages/operaciones/MultiX"));
+const NetworkMaintenance = lazy(() => import("../pages/operaciones/NetworkMaintenance"));
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
 const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
@@ -137,10 +136,10 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      <Route path="/operaciones/multix" element={
+      <Route path="/operaciones/network-maintenance" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <MultiX />
+            <NetworkMaintenance />
           </Suspense>
         </ProtectedRoute>
       } />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,8 @@ import {
   Users, 
   Settings, 
   CheckCircle,
-  Save
+  Save,
+  FileText
 } from "lucide-react";
 import { useMaintenanceNetworks } from "@/hooks/useMaintenanceNetworks";
 import { toast } from "@/hooks/use-toast";
