@@ -241,9 +241,9 @@ export const AdvancedReportsManager = () => {
                             <div className="text-sm text-gray-600 mt-2">
                               <span className="font-medium">Resultados:</span>
                               <span className="ml-2">
-                                {Object.entries(report.resultados).map(([key, value]) => (
+                                {Object.entries(report.resultados as Record<string, any>).map(([key, value]) => (
                                   <span key={key} className="mr-3">
-                                    {key}: {value}
+                                    {key}: {String(value)}
                                   </span>
                                 ))}
                               </span>

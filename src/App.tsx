@@ -1,16 +1,15 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import { Toaster } from '@/components/ui/toaster';
 
 // Páginas principales
-import Dashboard from '@/pages/Dashboard';
+import Dashboard from '@/pages/Index';
 import Inmersiones from '@/pages/Inmersiones';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
-import ResetPassword from '@/pages/auth/ResetPassword';
 import Configuracion from '@/pages/Configuracion';
 
 // Módulo de Planificación
@@ -42,7 +41,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Páginas principales */}
             <Route path="/" element={<Dashboard />} />

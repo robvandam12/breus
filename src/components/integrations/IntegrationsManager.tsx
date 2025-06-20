@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Zap, CheckCircle, AlertTriangle, Clock, Play, Sync } from "lucide-react";
+import { Plus, Zap, CheckCircle, AlertTriangle, Clock, Play, RefreshCw } from "lucide-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import type { Integration, IntegrationLog } from "@/hooks/useIntegrations";
 
@@ -168,7 +167,17 @@ export const IntegrationsManager = () => {
               <CardTitle>Integraciones Configuradas</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
+              {!canAccessIntegrations ? (
+                <div className="text-center">
+                  <Zap className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Módulo de Integraciones
+                  </h3>
+                  <p className="text-gray-600">
+                    Este módulo no está habilitado para tu empresa.
+                  </p>
+                </div>
+              ) : isLoading ? (
                 <div className="animate-pulse space-y-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -189,18 +198,23 @@ export const IntegrationsManager = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-medium text-gray-900">{integration.nombre}</h3>
-                            {getTipoBadge(integration.tipo)}
-                            {getEstadoBadge(integration.estado)}
+                            <Badge className={integration.tipo === 'api' ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}>
+                              {integration.tipo.toUpperCase()}
+                            </Badge>
+                            <Badge className={
+                              integration.estado === 'activa' ? "bg-green-100 text-green-800" :
+                              integration.estado === 'error' ? "bg-red-100 text-red-800" :
+                              "bg-gray-100 text-gray-800"
+                            }>
+                              {integration.estado === 'activa' && <CheckCircle className="w-3 h-3 mr-1" />}
+                              {integration.estado === 'error' && <AlertTriangle className="w-3 h-3 mr-1" />}
+                              {integration.estado}
+                            </Badge>
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{integration.descripcion}</p>
                           {integration.ultima_sincronizacion && (
                             <p className="text-xs text-gray-500">
                               Última sincronización: {new Date(integration.ultima_sincronizacion).toLocaleString()}
-                            </p>
-                          )}
-                          {integration.proxima_sincronizacion && (
-                            <p className="text-xs text-gray-500">
-                              Próxima sincronización: {new Date(integration.proxima_sincronizacion).toLocaleString()}
                             </p>
                           )}
                         </div>
@@ -219,7 +233,7 @@ export const IntegrationsManager = () => {
                               variant="outline"
                               onClick={() => syncIntegration(integration.id)}
                             >
-                              <Sync className="w-4 h-4 mr-1" />
+                              <RefreshCw className="w-4 h-4 mr-1" />
                               Sync
                             </Button>
                           )}
@@ -255,7 +269,13 @@ export const IntegrationsManager = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium text-gray-900">{log.mensaje}</span>
-                            {getLogStatusBadge(log.estado)}
+                            <Badge className={
+                              log.estado === 'success' ? "bg-green-100 text-green-800" :
+                              log.estado === 'error' ? "bg-red-100 text-red-800" :
+                              "bg-yellow-100 text-yellow-800"
+                            }>
+                              {log.estado}
+                            </Badge>
                           </div>
                           <p className="text-xs text-gray-500">
                             {new Date(log.timestamp).toLocaleString()} - {log.tipo}
