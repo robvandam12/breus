@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextualValidation } from "./useContextualValidation";
-import type { Inmersion } from "@/types/inmersion";
 
 interface CreateInmersionData {
   // Campos básicos
@@ -31,6 +30,34 @@ interface CreateInmersionData {
   
   // Campo para inmersión con operación (planificación activa)
   operacion_id?: string;
+}
+
+interface InmersionResult {
+  inmersion_id: string;
+  codigo: string;
+  fecha_inmersion: string;
+  hora_inicio: string;
+  profundidad_max: number;
+  temperatura_agua: number;
+  visibilidad: number;
+  objetivo: string;
+  corriente: string;
+  buzo_principal: string;
+  supervisor: string;
+  buzo_asistente?: string;
+  observaciones?: string;
+  operacion_id?: string;
+  salmonera_id?: string;
+  contratista_id?: string;
+  sitio_id?: string;
+  estado: string;
+  created_at: string;
+  updated_at: string;
+  operacion?: any;
+  salmoneras?: any;
+  sitios?: any;
+  contratistas?: any;
+  operacion_nombre?: string;
 }
 
 export const useInmersionesEnhanced = (operacionId?: string) => {
@@ -80,7 +107,7 @@ export const useInmersionesEnhanced = (operacionId?: string) => {
                          `Inmersión ${inmersion.codigo}` ||
                          'Inmersión Independiente',
         depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
-      })) as Inmersion[];
+      })) as InmersionResult[];
     },
   });
 
@@ -134,15 +161,32 @@ export const useInmersionesEnhanced = (operacionId?: string) => {
         finalData.salmonera_id = profile.salmonera_id;
       }
 
+      // Preparar datos para inserción asegurando que codigo sea requerido
+      const insertData = {
+        codigo: finalData.codigo!, // Asegurar que existe
+        fecha_inmersion: finalData.fecha_inmersion,
+        hora_inicio: finalData.hora_inicio,
+        profundidad_max: finalData.profundidad_max,
+        temperatura_agua: finalData.temperatura_agua,
+        visibilidad: finalData.visibilidad,
+        objetivo: finalData.objetivo,
+        corriente: finalData.corriente,
+        buzo_principal: finalData.buzo_principal,
+        supervisor: finalData.supervisor,
+        buzo_asistente: finalData.buzo_asistente,
+        observaciones: finalData.observaciones || '',
+        operacion_id: finalData.operacion_id,
+        salmonera_id: finalData.salmonera_id,
+        contratista_id: finalData.contratista_id,
+        sitio_id: finalData.sitio_id,
+        anexo_bravo_validado: validation.context.hasModuloPlanificacion ? validation.isValid : true,
+        estado: 'planificada'
+      };
+
       // Crear la inmersión
       const { data, error } = await supabase
         .from('inmersion')
-        .insert({
-          ...finalData,
-          hpt_validado: validation.context.hasModuloPlanificacion ? validation.isValid : true,
-          anexo_bravo_validado: validation.context.hasModuloPlanificacion ? validation.isValid : true,
-          estado: 'planificada'
-        })
+        .insert(insertData)
         .select()
         .single();
 

@@ -1,6 +1,16 @@
+
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarMenu, SidebarToggle } from "@/components/ui/sidebar";
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarFooter, 
+  SidebarHeader, 
+  SidebarMenu, 
+  SidebarMenuItem, 
+  SidebarMenuButton,
+  SidebarTrigger 
+} from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -118,7 +128,7 @@ export const RoleBasedSidebar = () => {
       });
     }
 
-    const adminItems = profile.role === 'admin' ? [
+    const adminItems = (profile.role === 'superuser' || profile.role === 'admin_salmonera') ? [
       {
         title: "Admin",
         url: "/admin",
@@ -133,7 +143,7 @@ export const RoleBasedSidebar = () => {
       }
     ] : [];
 
-    const reportItems = profile.role === 'admin' ? [
+    const reportItems = (profile.role === 'superuser' || profile.role === 'admin_salmonera') ? [
       {
         title: "Reportes",
         url: "/reportes",
@@ -157,33 +167,36 @@ export const RoleBasedSidebar = () => {
   return (
     <Sidebar className="bg-gray-50 border-r">
       <SidebarHeader>
-        {/* Logo o título del sidebar */}
-        <a href="/dashboard" className="flex items-center space-x-2 font-semibold">
-          <Settings className="h-6 w-6" />
-          <span>BuceoApp</span>
-        </a>
+        <div className="flex items-center justify-between">
+          <a href="/dashboard" className="flex items-center space-x-2 font-semibold">
+            <Settings className="h-6 w-6" />
+            <span>BuceoApp</span>
+          </a>
+          <SidebarTrigger />
+        </div>
       </SidebarHeader>
-      <SidebarToggle />
+      
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarItem
-              key={item.title}
-              title={item.title}
-              href={item.url}
-              icon={item.icon}
-              iconColor={item.iconColor}
-              isActive={item.isActive}
-            />
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild isActive={item.isActive}>
+                <a href={item.url} className="flex items-center space-x-2">
+                  <item.icon className={`h-4 w-4 ${item.iconColor || ''}`} />
+                  <span>{item.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
+      
       <SidebarFooter>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-full rounded-md p-0 data-[state=open]:bg-muted">
               <Avatar className="mr-2 h-6 w-6">
-                <AvatarImage src={profile?.avatar_url || ""} alt={profile?.nombre || "User"} />
+                <AvatarImage src={""} alt={profile?.nombre || "User"} />
                 <AvatarFallback>{profile && profile.nombre && profile.apellido ? getInitials(profile.nombre, profile.apellido) : "UN"}</AvatarFallback>
               </Avatar>
               <span>{profile?.nombre || "Usuario"}</span>
