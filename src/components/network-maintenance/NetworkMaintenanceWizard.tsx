@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +10,8 @@ import { EquiposSuperficie } from './steps/EquiposSuperficie';
 import { FaenasMantencion } from './steps/FaenasMantencion';
 import { SistemasEquipos } from './steps/SistemasEquipos';
 import { ResumenFirmas } from './steps/ResumenFirmas';
+import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
+import { toast } from '@/hooks/use-toast';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
@@ -16,13 +19,15 @@ interface NetworkMaintenanceWizardProps {
   tipoFormulario: 'mantencion' | 'faena';
   onComplete: () => void;
   onCancel: () => void;
+  editingFormId?: string; // Para editar formularios existentes
 }
 
 export const NetworkMaintenanceWizard = ({ 
   operacionId, 
   tipoFormulario, 
   onComplete, 
-  onCancel 
+  onCancel,
+  editingFormId
 }: NetworkMaintenanceWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<NetworkMaintenanceData>({
@@ -49,6 +54,16 @@ export const NetworkMaintenanceWizard = ({
     estado: 'borrador'
   });
 
+  const { 
+    loading, 
+    createNetworkMaintenance, 
+    updateNetworkMaintenance, 
+    completeNetworkMaintenance 
+  } = useNetworkMaintenance();
+
+  const [savedFormId, setSavedFormId] = useState<string | null>(editingFormId || null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Diferentes pasos según el tipo de formulario
   const getSteps = () => {
     const baseSteps = [
@@ -74,7 +89,58 @@ export const NetworkMaintenanceWizard = ({
   const progress = (currentStep / totalSteps) * 100;
 
   const updateFormData = (newData: Partial<NetworkMaintenanceData>) => {
-    setFormData(prev => ({ ...prev, ...newData }));
+    setFormData(prev => {
+      const updated = { ...prev, ...newData };
+      setHasUnsavedChanges(true);
+      return updated;
+    });
+  };
+
+  // Guardado automático cada 30 segundos si hay cambios
+  useEffect(() => {
+    if (!hasUnsavedChanges || loading) return;
+
+    const autoSaveInterval = setInterval(async () => {
+      await handleSave(false); // Guardado silencioso
+    }, 30000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [hasUnsavedChanges, loading]);
+
+  const handleSave = async (showToast = true) => {
+    try {
+      if (savedFormId) {
+        // Actualizar formulario existente
+        await updateNetworkMaintenance(savedFormId, formData);
+      } else {
+        // Crear nuevo formulario
+        const result = await createNetworkMaintenance({
+          operacion_id: operacionId,
+          codigo: `NM-${Date.now()}`,
+          tipo_formulario: tipoFormulario,
+          network_maintenance_data: formData
+        });
+        setSavedFormId(result.id);
+      }
+      
+      setHasUnsavedChanges(false);
+      
+      if (showToast) {
+        toast({
+          title: "Guardado exitoso",
+          description: "El formulario ha sido guardado correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving form:', error);
+      if (showToast) {
+        toast({
+          title: "Error al guardar",
+          description: "No se pudo guardar el formulario",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const validateStep = (step: number): boolean => {
@@ -96,11 +162,21 @@ export const NetworkMaintenanceWizard = ({
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateStep(currentStep)) {
+      // Guardar progreso antes de avanzar
+      const updatedData = {
+        ...formData,
+        progreso: Math.max(formData.progreso, (currentStep / totalSteps) * 100)
+      };
+      updateFormData(updatedData);
+      
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
       }
+      
+      // Guardado automático al avanzar paso
+      await handleSave(false);
     }
   };
 
@@ -110,11 +186,37 @@ export const NetworkMaintenanceWizard = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateStep(currentStep)) {
-      // Aquí enviaríamos los datos
-      console.log('Network Maintenance data to submit:', formData);
-      onComplete();
+      try {
+        // Actualizar estado final
+        const finalData = {
+          ...formData,
+          progreso: 100,
+          estado: 'completado' as const,
+          firmado: true
+        };
+        
+        updateFormData(finalData);
+        
+        if (savedFormId) {
+          await completeNetworkMaintenance(savedFormId);
+        }
+        
+        toast({
+          title: "Formulario completado",
+          description: "El formulario de mantención de redes ha sido completado exitosamente",
+        });
+        
+        onComplete();
+      } catch (error) {
+        console.error('Error completing form:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo completar el formulario",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -175,14 +277,25 @@ export const NetworkMaintenanceWizard = ({
             <CardTitle className="flex items-center gap-2">
               <Network className="h-6 w-6" />
               Mantención de Redes - {tipoFormulario === 'mantencion' ? 'Mantención' : 'Faena'}
+              {hasUnsavedChanges && <span className="text-amber-500 text-sm">(Sin guardar)</span>}
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">
               Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
             </p>
           </div>
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => handleSave(true)}
+              disabled={loading || !hasUnsavedChanges}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Guardando...' : 'Guardar'}
+            </Button>
+            <Button variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          </div>
         </div>
         <Progress value={progress} className="w-full mt-4" />
       </CardHeader>
@@ -202,14 +315,14 @@ export const NetworkMaintenanceWizard = ({
 
           <div className="flex gap-2">
             {currentStep < totalSteps ? (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} disabled={loading}>
                 Siguiente
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} disabled={loading}>
                 <Save className="h-4 w-4 mr-2" />
-                Finalizar Mantención
+                {loading ? 'Procesando...' : 'Finalizar Mantención'}
               </Button>
             )}
           </div>

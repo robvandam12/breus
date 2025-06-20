@@ -7,22 +7,72 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Network, Settings, Wrench } from "lucide-react";
 import { NetworkMaintenanceWizard } from "@/components/network-maintenance/NetworkMaintenanceWizard";
+import { NetworkMaintenanceList } from "@/components/network-maintenance/NetworkMaintenanceList";
 import { useIsMobile } from '@/hooks/use-mobile';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export default function NetworkMaintenance() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena'>('mantencion');
   const [selectedOperacion, setSelectedOperacion] = useState<string>('');
+  const [editingForm, setEditingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
+  const [viewingForm, setViewingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
   const isMobile = useIsMobile();
 
   const handleCreateNew = (tipo: 'mantencion' | 'faena') => {
     setTipoFormulario(tipo);
+    setEditingForm(null);
+    setViewingForm(null);
+    setShowCreateForm(true);
+  };
+
+  const handleEdit = (formId: string, formData: NetworkMaintenanceData) => {
+    setEditingForm({ id: formId, data: formData });
+    setTipoFormulario(formData.tipo_formulario || 'mantencion');
+    setViewingForm(null);
+    setShowCreateForm(true);
+  };
+
+  const handleView = (formId: string, formData: NetworkMaintenanceData) => {
+    setViewingForm({ id: formId, data: formData });
+    setEditingForm(null);
+    setTipoFormulario(formData.tipo_formulario || 'mantencion');
     setShowCreateForm(true);
   };
 
   const handleCloseCreateForm = () => {
     setShowCreateForm(false);
     setSelectedOperacion('');
+    setEditingForm(null);
+    setViewingForm(null);
+  };
+
+  const renderWizard = () => {
+    if (viewingForm) {
+      // Para vista de solo lectura, podríamos crear un componente separado
+      // Por ahora, usamos el wizard pero deshabilitado
+      return (
+        <div className="pointer-events-none opacity-75">
+          <NetworkMaintenanceWizard 
+            operacionId={selectedOperacion || "temp-operacion-id"} 
+            tipoFormulario={tipoFormulario}
+            onComplete={handleCloseCreateForm}
+            onCancel={handleCloseCreateForm}
+            editingFormId={viewingForm.id}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <NetworkMaintenanceWizard 
+        operacionId={selectedOperacion || "temp-operacion-id"} 
+        tipoFormulario={tipoFormulario}
+        onComplete={handleCloseCreateForm}
+        onCancel={handleCloseCreateForm}
+        editingFormId={editingForm?.id}
+      />
+    );
   };
 
   return (
@@ -108,7 +158,7 @@ export default function NetworkMaintenance() {
           </Card>
         </div>
 
-        {/* Lista de formularios existentes - Por implementar */}
+        {/* Lista de formularios existentes */}
         <Card>
           <CardHeader>
             <CardTitle>Formularios de Mantención Recientes</CardTitle>
@@ -117,40 +167,27 @@ export default function NetworkMaintenance() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <Network className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500">No hay formularios registrados</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Los formularios creados aparecerán aquí
-              </p>
-            </div>
+            <NetworkMaintenanceList 
+              onEdit={handleEdit}
+              onView={handleView}
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* Modal/Drawer para crear formulario */}
+      {/* Modal/Drawer para crear/editar formulario */}
       {isMobile ? (
         <Drawer open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DrawerContent>
             <div className="p-4 pt-6 max-h-[90vh] overflow-y-auto">
-              <NetworkMaintenanceWizard 
-                operacionId={selectedOperacion || "temp-operacion-id"} 
-                tipoFormulario={tipoFormulario}
-                onComplete={handleCloseCreateForm}
-                onCancel={handleCloseCreateForm}
-              />
+              {renderWizard()}
             </div>
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-            <NetworkMaintenanceWizard 
-              operacionId={selectedOperacion || "temp-operacion-id"} 
-              tipoFormulario={tipoFormulario}
-              onComplete={handleCloseCreateForm}
-              onCancel={handleCloseCreateForm}
-            />
+            {renderWizard()}
           </DialogContent>
         </Dialog>
       )}

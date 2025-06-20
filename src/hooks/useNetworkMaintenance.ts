@@ -74,11 +74,6 @@ export const useNetworkMaintenance = () => {
 
       setNetworkMaintenanceData(data.form_data as unknown as NetworkMaintenanceData);
       
-      toast({
-        title: "Guardado",
-        description: "Cambios guardados exitosamente",
-      });
-
       return data;
     } catch (error: any) {
       console.error('Error updating Network Maintenance:', error);
@@ -103,7 +98,8 @@ export const useNetworkMaintenance = () => {
         .from('operational_forms')
         .select('*')
         .eq('inmersion_id', operacionId)
-        .eq('module_name', 'network_maintenance');
+        .eq('module_name', 'network_maintenance')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -112,6 +108,58 @@ export const useNetworkMaintenance = () => {
       console.error('Error fetching Network Maintenance:', error);
       setError(error.message);
       return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAllNetworkMaintenance = async () => {
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('operational_forms')
+        .select('*')
+        .eq('module_name', 'network_maintenance')
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching all Network Maintenance:', error);
+      setError(error.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getNetworkMaintenanceById = async (id: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('operational_forms')
+        .select('*')
+        .eq('id', id)
+        .eq('module_name', 'network_maintenance')
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching Network Maintenance by ID:', error);
+      setError(error.message);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -162,6 +210,8 @@ export const useNetworkMaintenance = () => {
     createNetworkMaintenance,
     updateNetworkMaintenance,
     getNetworkMaintenanceByOperacion,
+    getAllNetworkMaintenance,
+    getNetworkMaintenanceById,
     completeNetworkMaintenance
   };
 };
