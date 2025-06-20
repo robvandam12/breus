@@ -22,6 +22,9 @@ import FaenasRedes from '@/pages/operaciones/FaenasRedes';
 import ReportesAvanzados from '@/pages/reportes/ReportesAvanzados';
 import Integraciones from '@/pages/integraciones/Integraciones';
 
+// Fase 3 - Gestión de Módulos
+import ModuleManagement from '@/pages/admin/ModuleManagement';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -56,6 +59,9 @@ function App() {
             <Route path="/faenas-redes" element={<FaenasRedes />} />
             <Route path="/reportes-avanzados" element={<ReportesAvanzados />} />
             <Route path="/integraciones" element={<Integraciones />} />
+            
+            {/* Fase 3 - Administración */}
+            <Route path="/admin/module-management" element={<ModuleManagement />} />
           </Routes>
           <Toaster />
         </Router>

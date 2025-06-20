@@ -9,6 +9,7 @@ import {
   Wrench,
   Network,
   Zap,
+  Shield,
 } from "lucide-react";
 
 interface NavigationItem {
@@ -96,6 +97,16 @@ export const useAdaptiveNavigation = (userRole?: string) => {
       });
     }
 
+    // Gestión de Módulos (solo para administradores)
+    if (userRole === 'superuser' || userRole === 'admin_salmonera' || userRole === 'admin_servicio') {
+      items.push({
+        title: "Gestión de Módulos",
+        icon: Shield,
+        url: "/admin/module-management",
+        roleRequired: 'admin',
+      });
+    }
+
     // Configuración (siempre disponible)
     items.push({
       title: "Configuración",
@@ -110,7 +121,10 @@ export const useAdaptiveNavigation = (userRole?: string) => {
       }
       
       // Filtrar por rol si es necesario
-      if (item.roleRequired && userRole !== item.roleRequired) {
+      if (item.roleRequired === 'admin' && 
+          userRole !== 'superuser' && 
+          userRole !== 'admin_salmonera' && 
+          userRole !== 'admin_servicio') {
         return false;
       }
       

@@ -1233,6 +1233,123 @@ export type Database = {
         }
         Relationships: []
       }
+      module_activation_logs: {
+        Row: {
+          action: string
+          company_id: string
+          company_type: string
+          created_at: string
+          id: string
+          module_name: string
+          new_state: Json | null
+          performed_by: string | null
+          previous_state: Json | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          company_id: string
+          company_type: string
+          created_at?: string
+          id?: string
+          module_name: string
+          new_state?: Json | null
+          performed_by?: string | null
+          previous_state?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          company_type?: string
+          created_at?: string
+          id?: string
+          module_name?: string
+          new_state?: Json | null
+          performed_by?: string | null
+          previous_state?: Json | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      module_configurations: {
+        Row: {
+          company_id: string
+          company_type: string
+          config_data: Json
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          module_name: string
+          updated_at: string
+          usage_limits: Json | null
+        }
+        Insert: {
+          company_id: string
+          company_type: string
+          config_data?: Json
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          module_name: string
+          updated_at?: string
+          usage_limits?: Json | null
+        }
+        Update: {
+          company_id?: string
+          company_type?: string
+          config_data?: Json
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          module_name?: string
+          updated_at?: string
+          usage_limits?: Json | null
+        }
+        Relationships: []
+      }
+      module_usage_stats: {
+        Row: {
+          active_users: number
+          company_id: string
+          company_type: string
+          created_at: string
+          date_recorded: string
+          id: string
+          module_name: string
+          operations_count: number
+          performance_metrics: Json | null
+          usage_count: number
+        }
+        Insert: {
+          active_users?: number
+          company_id: string
+          company_type: string
+          created_at?: string
+          date_recorded?: string
+          id?: string
+          module_name: string
+          operations_count?: number
+          performance_metrics?: Json | null
+          usage_count?: number
+        }
+        Update: {
+          active_users?: number
+          company_id?: string
+          company_type?: string
+          created_at?: string
+          date_recorded?: string
+          id?: string
+          module_name?: string
+          operations_count?: number
+          performance_metrics?: Json | null
+          usage_count?: number
+        }
+        Relationships: []
+      }
       multix: {
         Row: {
           codigo: string
@@ -2074,6 +2191,15 @@ export type Database = {
       }
       get_immersion_stats: {
         Args: { p_start_date: string; p_end_date: string }
+        Returns: Json
+      }
+      get_module_stats: {
+        Args: {
+          p_company_id: string
+          p_company_type: string
+          p_start_date?: string
+          p_end_date?: string
+        }
         Returns: Json
       }
       get_security_alert_stats: {
