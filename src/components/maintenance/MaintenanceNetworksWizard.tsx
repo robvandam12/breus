@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,19 +8,17 @@ import {
   Network, 
   Users, 
   Settings, 
-  FileText,
-  Save,
   CheckCircle,
-  AlertCircle
+  Save
 } from "lucide-react";
 import { useMaintenanceNetworks } from "@/hooks/useMaintenanceNetworks";
 import { toast } from "@/hooks/use-toast";
 
-// Importar los pasos existentes del MultiX pero renombrados
-import { EncabezadoGeneral } from "../multix/steps/EncabezadoGeneral";
-import { DotacionBuceo } from "../multix/steps/DotacionBuceo";
-import { EquiposSuperficie } from "../multix/steps/EquiposSuperficie";
-import { FaenasMantencion } from "../multix/steps/FaenasMantencion";
+// Importar los pasos de Network Maintenance
+import { EncabezadoGeneral } from "../network-maintenance/steps/EncabezadoGeneral";
+import { DotacionBuceo } from "../network-maintenance/steps/DotacionBuceo";
+import { EquiposSuperficie } from "../network-maintenance/steps/EquiposSuperficie";
+import { FaenasMantencion } from "../network-maintenance/steps/FaenasMantencion";
 
 interface MaintenanceNetworksWizardProps {
   inmersionId: string;
@@ -38,7 +35,7 @@ export const MaintenanceNetworksWizard = ({
 }: MaintenanceNetworksWizardProps) => {
   const [activeStep, setActiveStep] = useState("general");
   const [formData, setFormData] = useState({
-    // Datos generales requeridos por MultiX
+    // Datos generales requeridos
     lugar_trabajo: existingForm?.form_data?.lugar_trabajo || '',
     fecha: existingForm?.form_data?.fecha || new Date().toISOString().split('T')[0],
     temperatura: existingForm?.form_data?.temperatura || 0,
@@ -63,7 +60,7 @@ export const MaintenanceNetworksWizard = ({
     // Tipo de formulario
     tipo_formulario: existingForm?.form_type || 'mantencion',
     
-    // Control requerido por MultiX
+    // Control requerido
     progreso: 0,
     firmado: false,
     estado: 'borrador' as const,

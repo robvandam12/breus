@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, Settings, Wrench } from "lucide-react";
-import { MultiXWizard } from "@/components/multix/MultiXWizard";
+import { Plus, Network, Settings, Wrench } from "lucide-react";
+import { NetworkMaintenanceWizard } from "@/components/network-maintenance/NetworkMaintenanceWizard";
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export default function MultiX() {
+export default function NetworkMaintenance() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena'>('mantencion');
   const [selectedOperacion, setSelectedOperacion] = useState<string>('');
@@ -27,9 +27,9 @@ export default function MultiX() {
 
   return (
     <MainLayout
-      title="MultiX - Formularios"
-      subtitle="Boletas de Mantención y Faena de Redes"
-      icon={FileText}
+      title="Mantención de Redes"
+      subtitle="Formularios operativos para mantención y faenas de redes de cultivo"
+      icon={Network}
       headerChildren={
         <div className="flex gap-2">
           <Button onClick={() => handleCreateNew('mantencion')}>
@@ -50,10 +50,10 @@ export default function MultiX() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-blue-600" />
-                Boleta de Mantención de Redes
+                Formulario de Mantención de Redes
               </CardTitle>
               <CardDescription>
-                Formulario para registro de trabajos de mantención en redes, sistemas y equipos
+                Registro completo de trabajos de mantención en redes, sistemas y equipos de cultivo
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -71,7 +71,7 @@ export default function MultiX() {
                 onClick={() => handleCreateNew('mantencion')}
               >
                 <Settings className="w-4 h-4 mr-2" />
-                Crear Boleta de Mantención
+                Crear Formulario de Mantención
               </Button>
             </CardContent>
           </Card>
@@ -80,10 +80,10 @@ export default function MultiX() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wrench className="h-5 w-5 text-green-600" />
-                Boleta de Faena de Redes
+                Formulario de Faena de Redes
               </CardTitle>
               <CardDescription>
-                Formulario para registro de faenas específicas de redes y cambios de franjas
+                Registro específico de faenas operativas y cambios en sistemas de redes
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -102,7 +102,7 @@ export default function MultiX() {
                 onClick={() => handleCreateNew('faena')}
               >
                 <Wrench className="w-4 h-4 mr-2" />
-                Crear Boleta de Faena
+                Crear Formulario de Faena
               </Button>
             </CardContent>
           </Card>
@@ -111,14 +111,14 @@ export default function MultiX() {
         {/* Lista de formularios existentes - Por implementar */}
         <Card>
           <CardHeader>
-            <CardTitle>Formularios MultiX Recientes</CardTitle>
+            <CardTitle>Formularios de Mantención Recientes</CardTitle>
             <CardDescription>
-              Historial de boletas de mantención y faena
+              Historial de formularios de mantención y faenas de redes
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <Network className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-500">No hay formularios registrados</p>
               <p className="text-sm text-gray-400 mt-2">
                 Los formularios creados aparecerán aquí
@@ -133,7 +133,7 @@ export default function MultiX() {
         <Drawer open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DrawerContent>
             <div className="p-4 pt-6 max-h-[90vh] overflow-y-auto">
-              <MultiXWizard 
+              <NetworkMaintenanceWizard 
                 operacionId={selectedOperacion || "temp-operacion-id"} 
                 tipoFormulario={tipoFormulario}
                 onComplete={handleCloseCreateForm}
@@ -145,7 +145,7 @@ export default function MultiX() {
       ) : (
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-            <MultiXWizard 
+            <NetworkMaintenanceWizard 
               operacionId={selectedOperacion || "temp-operacion-id"} 
               tipoFormulario={tipoFormulario}
               onComplete={handleCloseCreateForm}

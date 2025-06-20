@@ -1,16 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import type { MultiXData, MultiXFormData } from '@/types/multix';
+import type { NetworkMaintenanceData, NetworkMaintenanceFormData } from '@/types/network-maintenance';
 
-export const useMultiX = () => {
+export const useNetworkMaintenance = () => {
   const [loading, setLoading] = useState(false);
-  const [multiXData, setMultiXData] = useState<MultiXData | null>(null);
+  const [networkMaintenanceData, setNetworkMaintenanceData] = useState<NetworkMaintenanceData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const createMultiX = async (formData: MultiXFormData) => {
+  const createNetworkMaintenance = async (formData: NetworkMaintenanceFormData) => {
     if (!user) {
       throw new Error('Usuario no autenticado');
     }
@@ -20,16 +21,14 @@ export const useMultiX = () => {
 
     try {
       const { data, error } = await supabase
-        .from('multix')
+        .from('operational_forms')
         .insert({
-          operacion_id: formData.operacion_id,
-          codigo: formData.codigo,
-          tipo_formulario: formData.tipo_formulario,
-          multix_data: formData.multix_data as any,
-          user_id: user.id,
-          fecha: formData.multix_data.fecha,
-          estado: 'borrador',
-          progreso: 0
+          inmersion_id: formData.operacion_id,
+          module_name: 'network_maintenance',
+          form_type: formData.tipo_formulario,
+          form_data: formData.network_maintenance_data as any,
+          created_by: user.id,
+          status: 'draft'
         })
         .select()
         .single();
@@ -37,17 +36,17 @@ export const useMultiX = () => {
       if (error) throw error;
 
       toast({
-        title: "MultiX creado",
+        title: "Mantención de Redes creada",
         description: `Formulario ${formData.tipo_formulario} creado exitosamente`,
       });
 
       return data;
     } catch (error: any) {
-      console.error('Error creating MultiX:', error);
+      console.error('Error creating Network Maintenance:', error);
       setError(error.message);
       toast({
         title: "Error",
-        description: "No se pudo crear el formulario MultiX",
+        description: "No se pudo crear el formulario de mantención de redes",
         variant: "destructive",
       });
       throw error;
@@ -56,15 +55,15 @@ export const useMultiX = () => {
     }
   };
 
-  const updateMultiX = async (id: string, updates: Partial<MultiXData>) => {
+  const updateNetworkMaintenance = async (id: string, updates: Partial<NetworkMaintenanceData>) => {
     setLoading(true);
     setError(null);
 
     try {
       const { data, error } = await supabase
-        .from('multix')
+        .from('operational_forms')
         .update({
-          multix_data: updates as any,
+          form_data: updates as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -73,8 +72,7 @@ export const useMultiX = () => {
 
       if (error) throw error;
 
-      // Safe conversion using unknown as intermediate type
-      setMultiXData(data.multix_data as unknown as MultiXData);
+      setNetworkMaintenanceData(data.form_data as unknown as NetworkMaintenanceData);
       
       toast({
         title: "Guardado",
@@ -83,7 +81,7 @@ export const useMultiX = () => {
 
       return data;
     } catch (error: any) {
-      console.error('Error updating MultiX:', error);
+      console.error('Error updating Network Maintenance:', error);
       setError(error.message);
       toast({
         title: "Error",
@@ -96,21 +94,22 @@ export const useMultiX = () => {
     }
   };
 
-  const getMultiXByOperacion = async (operacionId: string) => {
+  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
     setLoading(true);
     setError(null);
 
     try {
       const { data, error } = await supabase
-        .from('multix')
+        .from('operational_forms')
         .select('*')
-        .eq('operacion_id', operacionId);
+        .eq('inmersion_id', operacionId)
+        .eq('module_name', 'network_maintenance');
 
       if (error) throw error;
 
       return data || [];
     } catch (error: any) {
-      console.error('Error fetching MultiX:', error);
+      console.error('Error fetching Network Maintenance:', error);
       setError(error.message);
       return [];
     } finally {
@@ -118,23 +117,16 @@ export const useMultiX = () => {
     }
   };
 
-  const signMultiX = async (id: string, firmas: any) => {
+  const completeNetworkMaintenance = async (id: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const currentData = multiXData || {};
-      const updatedData = {
-        ...currentData,
-        firmas
-      };
-
       const { data, error } = await supabase
-        .from('multix')
+        .from('operational_forms')
         .update({
-          firmado: true,
-          estado: 'firmado',
-          multix_data: updatedData as any
+          status: 'completed',
+          completed_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -143,17 +135,17 @@ export const useMultiX = () => {
       if (error) throw error;
 
       toast({
-        title: "Formulario firmado",
-        description: "El formulario MultiX ha sido firmado exitosamente",
+        title: "Formulario completado",
+        description: "El formulario de mantención de redes ha sido completado exitosamente",
       });
 
       return data;
     } catch (error: any) {
-      console.error('Error signing MultiX:', error);
+      console.error('Error completing Network Maintenance:', error);
       setError(error.message);
       toast({
         title: "Error",
-        description: "No se pudo firmar el formulario",
+        description: "No se pudo completar el formulario",
         variant: "destructive",
       });
       throw error;
@@ -165,11 +157,11 @@ export const useMultiX = () => {
   return {
     loading,
     error,
-    multiXData,
-    setMultiXData,
-    createMultiX,
-    updateMultiX,
-    getMultiXByOperacion,
-    signMultiX
+    networkMaintenanceData,
+    setNetworkMaintenanceData,
+    createNetworkMaintenance,
+    updateNetworkMaintenance,
+    getNetworkMaintenanceByOperacion,
+    completeNetworkMaintenance
   };
 };

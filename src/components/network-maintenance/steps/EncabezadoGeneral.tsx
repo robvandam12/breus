@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Clock, MapPin, Thermometer, Anchor } from "lucide-react";
-import type { MultiXData } from '@/types/multix';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface EncabezadoGeneralProps {
-  formData: MultiXData;
-  updateFormData: (data: Partial<MultiXData>) => void;
+  formData: NetworkMaintenanceData;
+  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
   errors?: Record<string, string>;
 }
 
@@ -20,7 +19,7 @@ export const EncabezadoGeneral = ({
   errors = {} 
 }: EncabezadoGeneralProps) => {
   
-  const handleInputChange = (field: keyof MultiXData, value: any) => {
+  const handleInputChange = (field: keyof NetworkMaintenanceData, value: any) => {
     updateFormData({ [field]: value });
   };
 
@@ -42,7 +41,7 @@ export const EncabezadoGeneral = ({
           Encabezado General
         </h3>
         <p className="text-sm text-gray-600">
-          Información básica de la operación MultiX
+          Información básica de la operación de mantención de redes
         </p>
       </div>
 

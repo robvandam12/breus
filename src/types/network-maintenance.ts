@@ -1,5 +1,5 @@
 
-export interface MultiXData {
+export interface NetworkMaintenanceData {
   // Datos generales
   fecha: string;
   hora_inicio: string;
@@ -82,10 +82,10 @@ export interface FaenaRedes {
   observaciones: string;
 }
 
-// Interfaz para el formulario MultiX
-export interface MultiXFormData {
+// Interfaz para el formulario de Mantención de Redes
+export interface NetworkMaintenanceFormData {
   operacion_id: string;
   codigo: string;
   tipo_formulario: 'mantencion' | 'faena';
-  multix_data: MultiXData;
+  network_maintenance_data: NetworkMaintenanceData;
 }

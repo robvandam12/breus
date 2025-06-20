@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Wrench, Network, Clock } from "lucide-react";
-import type { MultiXData } from '@/types/multix';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface FaenaMantencion {
   id: string;
@@ -37,8 +36,8 @@ interface FaenaRedes {
 }
 
 interface FaenasMantencionProps {
-  formData: MultiXData;
-  updateFormData: (data: Partial<MultiXData>) => void;
+  formData: NetworkMaintenanceData;
+  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
   errors?: Record<string, string>;
 }
 
@@ -137,7 +136,7 @@ export const FaenasMantencion = ({
           Faenas de Mantenimiento y Redes
         </h3>
         <p className="text-sm text-gray-600">
-          Registro de trabajos de mantenimiento y operaciones en redes
+          Registro de trabajos de mantenimiento y operaciones en redes de cultivo
         </p>
       </div>
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Users, Clock, Award } from "lucide-react";
-import type { MultiXData, DotacionBuceo as DotacionBuceoType } from '@/types/multix';
+import type { NetworkMaintenanceData, DotacionBuceo as DotacionBuceoType } from '@/types/network-maintenance';
 
 interface DotacionBuceoStepProps {
-  formData: MultiXData;
-  updateFormData: (data: Partial<MultiXData>) => void;
+  formData: NetworkMaintenanceData;
+  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
   errors?: Record<string, string>;
 }
 
@@ -92,7 +91,7 @@ export const DotacionBuceo = ({
           Dotación de Buceo
         </h3>
         <p className="text-sm text-gray-600">
-          Gestión de personal y roles asignados para la operación
+          Gestión de personal y roles asignados para la mantención de redes
         </p>
       </div>
 

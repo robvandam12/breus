@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Settings, Gauge } from "lucide-react";
-import type { MultiXData, EquipoSuperficie } from '@/types/multix';
+import type { NetworkMaintenanceData, EquipoSuperficie } from '@/types/network-maintenance';
 
 interface EquiposSuperficieProps {
-  formData: MultiXData;
-  updateFormData: (data: Partial<MultiXData>) => void;
+  formData: NetworkMaintenanceData;
+  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
   errors?: Record<string, string>;
 }
 
@@ -56,7 +55,7 @@ export const EquiposSuperficie = ({
           Equipos de Superficie
         </h3>
         <p className="text-sm text-gray-600">
-          Registro de compresores y equipos utilizados en superficie
+          Registro de compresores y equipos utilizados para mantención de redes
         </p>
       </div>
 
