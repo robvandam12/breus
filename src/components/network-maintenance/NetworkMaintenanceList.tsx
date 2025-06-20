@@ -38,7 +38,7 @@ export const NetworkMaintenanceList = ({
   const loadForms = async () => {
     try {
       setLoading(true);
-      let result: NetworkMaintenanceForm[] = [];
+      let result: any[] = [];
       
       if (operacionId) {
         result = await getNetworkMaintenanceByOperacion(operacionId);
@@ -47,7 +47,17 @@ export const NetworkMaintenanceList = ({
         result = await getAllNetworkMaintenance();
       }
       
-      setForms(result);
+      // Convertir los datos de Supabase a nuestro formato
+      const formattedForms: NetworkMaintenanceForm[] = result.map(item => ({
+        id: item.id,
+        form_data: item.form_data as NetworkMaintenanceData,
+        status: item.status,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        inmersion_id: item.inmersion_id
+      }));
+      
+      setForms(formattedForms);
     } catch (error) {
       console.error('Error loading forms:', error);
     } finally {

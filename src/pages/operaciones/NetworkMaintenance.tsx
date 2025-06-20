@@ -28,7 +28,7 @@ export default function NetworkMaintenance() {
 
   const handleEdit = (formId: string, formData: NetworkMaintenanceData) => {
     setEditingForm({ id: formId, data: formData });
-    setTipoFormulario(formData.tipo_formulario || 'mantencion');
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
     setViewingForm(null);
     setShowCreateForm(true);
   };
@@ -36,7 +36,7 @@ export default function NetworkMaintenance() {
   const handleView = (formId: string, formData: NetworkMaintenanceData) => {
     setViewingForm({ id: formId, data: formData });
     setEditingForm(null);
-    setTipoFormulario(formData.tipo_formulario || 'mantencion');
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
     setShowCreateForm(true);
   };
 
