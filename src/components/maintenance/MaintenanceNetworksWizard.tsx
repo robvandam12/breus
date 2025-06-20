@@ -91,10 +91,10 @@ export const MaintenanceNetworksWizard = ({
     );
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      ...updates
     }));
   };
 
@@ -243,28 +243,28 @@ export const MaintenanceNetworksWizard = ({
         <TabsContent value="general" className="mt-6">
           <EncabezadoGeneral
             formData={formData}
-            onFormDataChange={handleInputChange}
+            updateFormData={updateFormData}
           />
         </TabsContent>
 
         <TabsContent value="dotacion" className="mt-6">
           <DotacionBuceo
             formData={formData}
-            onFormDataChange={handleInputChange}
+            updateFormData={updateFormData}
           />
         </TabsContent>
 
         <TabsContent value="equipos" className="mt-6">
           <EquiposSuperficie
             formData={formData}
-            onFormDataChange={handleInputChange}
+            updateFormData={updateFormData}
           />
         </TabsContent>
 
         <TabsContent value="faenas" className="mt-6">
           <FaenasMantencion
             formData={formData}
-            onFormDataChange={handleInputChange}
+            updateFormData={updateFormData}
           />
         </TabsContent>
       </Tabs>
