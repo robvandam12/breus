@@ -38,26 +38,22 @@ export const MaintenanceNetworksWizard = ({
 }: MaintenanceNetworksWizardProps) => {
   const [activeStep, setActiveStep] = useState("general");
   const [formData, setFormData] = useState({
-    // Datos generales
+    // Datos generales requeridos por MultiX
+    lugar_trabajo: existingForm?.form_data?.lugar_trabajo || '',
     fecha: existingForm?.form_data?.fecha || new Date().toISOString().split('T')[0],
+    temperatura: existingForm?.form_data?.temperatura || 0,
     hora_inicio: existingForm?.form_data?.hora_inicio || '',
     hora_termino: existingForm?.form_data?.hora_termino || '',
-    lugar_trabajo: existingForm?.form_data?.lugar_trabajo || '',
-    temperatura: existingForm?.form_data?.temperatura || '',
-    profundidad_max: existingForm?.form_data?.profundidad_max || '',
-    estado_puerto: existingForm?.form_data?.estado_puerto || '',
+    profundidad_max: existingForm?.form_data?.profundidad_max || 0,
     nave_maniobras: existingForm?.form_data?.nave_maniobras || '',
-    matricula_nave: existingForm?.form_data?.matricula_nave || '',
-    
-    // Campos requeridos por MultiXData pero opcionales aquí
     team_s: existingForm?.form_data?.team_s || '',
     team_be: existingForm?.form_data?.team_be || '',
     team_bi: existingForm?.form_data?.team_bi || '',
+    matricula_nave: existingForm?.form_data?.matricula_nave || '',
+    estado_puerto: existingForm?.form_data?.estado_puerto || '',
     
-    // Dotación
+    // Dotación y equipos
     dotacion: existingForm?.form_data?.dotacion || [],
-    
-    // Equipos
     equipos_superficie: existingForm?.form_data?.equipos_superficie || [],
     
     // Faenas específicas
@@ -67,7 +63,7 @@ export const MaintenanceNetworksWizard = ({
     // Tipo de formulario
     tipo_formulario: existingForm?.form_type || 'mantencion',
     
-    // Campos adicionales requeridos
+    // Control requerido por MultiX
     progreso: 0,
     firmado: false,
     estado: 'borrador' as const,
@@ -247,28 +243,28 @@ export const MaintenanceNetworksWizard = ({
         <TabsContent value="general" className="mt-6">
           <EncabezadoGeneral
             formData={formData}
-            handleInputChange={handleInputChange}
+            onFormDataChange={handleInputChange}
           />
         </TabsContent>
 
         <TabsContent value="dotacion" className="mt-6">
           <DotacionBuceo
             formData={formData}
-            handleInputChange={handleInputChange}
+            onFormDataChange={handleInputChange}
           />
         </TabsContent>
 
         <TabsContent value="equipos" className="mt-6">
           <EquiposSuperficie
             formData={formData}
-            handleInputChange={handleInputChange}
+            onFormDataChange={handleInputChange}
           />
         </TabsContent>
 
         <TabsContent value="faenas" className="mt-6">
           <FaenasMantencion
             formData={formData}
-            handleInputChange={handleInputChange}
+            onFormDataChange={handleInputChange}
           />
         </TabsContent>
       </Tabs>

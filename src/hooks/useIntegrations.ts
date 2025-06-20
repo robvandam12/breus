@@ -1,6 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useModularSystem } from "./useModularSystem";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 export interface Integration {
@@ -28,6 +30,7 @@ export interface IntegrationLog {
 
 export const useIntegrations = () => {
   const { hasModuleAccess, modules } = useModularSystem();
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
 
   const canAccessIntegrations = hasModuleAccess(modules.EXTERNAL_INTEGRATIONS);

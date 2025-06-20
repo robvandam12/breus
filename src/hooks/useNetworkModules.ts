@@ -47,6 +47,26 @@ export interface NetworkForm {
   approved_at?: string;
 }
 
+export interface NetworkMaintenanceTask {
+  id: string;
+  descripcion: string;
+  fecha_programada: string;
+  estado: 'programada' | 'en_proceso' | 'completada' | 'cancelada';
+  prioridad: 'critica' | 'alta' | 'media' | 'baja';
+  estimacion_horas: number;
+  equipos_involucrados: string[];
+}
+
+export interface NetworkOperation {
+  id: string;
+  descripcion: string;
+  fecha_ejecucion: string;
+  estado: 'planificada' | 'ejecutando' | 'completada' | 'suspendida';
+  tipo_faena: 'instalacion' | 'cambio_red' | 'reparacion' | 'inspeccion';
+  supervisor_id: string;
+  equipo_asignado: string[];
+}
+
 export const useNetworkModules = () => {
   const { hasModuleAccess, modules } = useModularSystem();
   const { profile } = useAuth();
@@ -54,7 +74,7 @@ export const useNetworkModules = () => {
 
   // Verificar acceso a módulos de red
   const canAccessMaintenanceModule = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
-  const canAccessOperationsModule = hasModuleAccess(modules.MAINTENANCE_NETWORKS); // Usando el mismo módulo por ahora
+  const canAccessOperationsModule = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
 
   // Obtener formularios de redes
   const { data: networkForms = [], isLoading, refetch } = useQuery({
@@ -216,5 +236,75 @@ export const useNetworkModules = () => {
     isCreating: createNetworkForm.isPending,
     isUpdating: updateNetworkForm.isPending,
     isDeleting: deleteNetworkForm.isPending,
+  };
+};
+
+// Hook específico para mantenimiento
+export const useNetworkMaintenance = () => {
+  const { hasModuleAccess, modules } = useModularSystem();
+  
+  const canAccessMaintenance = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
+
+  // Mock data para desarrollo
+  const maintenanceTasks: NetworkMaintenanceTask[] = [
+    {
+      id: '1',
+      descripcion: 'Mantenimiento preventivo Red Norte',
+      fecha_programada: '2024-01-20',
+      estado: 'programada',
+      prioridad: 'alta',
+      estimacion_horas: 4,
+      equipos_involucrados: ['Compressor A', 'ROV-1']
+    },
+    {
+      id: '2',
+      descripcion: 'Reparación urgente Sector B',
+      fecha_programada: '2024-01-18',
+      estado: 'en_proceso',
+      prioridad: 'critica',
+      estimacion_horas: 6,
+      equipos_involucrados: ['Compressor B', 'ROV-2']
+    }
+  ];
+
+  return {
+    maintenanceTasks,
+    isLoading: false,
+    canAccessMaintenance,
+  };
+};
+
+// Hook específico para operaciones
+export const useNetworkOperations = () => {
+  const { hasModuleAccess, modules } = useModularSystem();
+  
+  const canAccessOperations = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
+
+  // Mock data para desarrollo
+  const networkOperations: NetworkOperation[] = [
+    {
+      id: '1',
+      descripcion: 'Instalación nueva red Jaula 5',
+      fecha_ejecucion: '2024-01-22',
+      estado: 'planificada',
+      tipo_faena: 'instalacion',
+      supervisor_id: 'supervisor-1',
+      equipo_asignado: ['Equipo A', 'Equipo B']
+    },
+    {
+      id: '2',
+      descripcion: 'Cambio de red dañada Sector C',
+      fecha_ejecucion: '2024-01-19',
+      estado: 'ejecutando',
+      tipo_faena: 'cambio_red',
+      supervisor_id: 'supervisor-2',
+      equipo_asignado: ['Equipo C']
+    }
+  ];
+
+  return {
+    networkOperations,
+    isLoading: false,
+    canAccessOperations,
   };
 };
