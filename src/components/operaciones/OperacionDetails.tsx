@@ -1,131 +1,114 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin, Calendar, Users, CheckCircle, AlertTriangle } from "lucide-react";
-import { InmersionWizard } from '@/components/inmersion/InmersionWizard';
-import { OperacionTeamTab } from '@/components/operaciones/OperacionTeamTab';
-import { OperacionDocuments } from '@/components/operaciones/OperacionDocuments';
-import { OperacionTimeline } from '@/components/operaciones/OperacionTimeline';
-import { OperacionInmersiones } from '@/components/operaciones/OperacionInmersiones';
-import { useOperacionDetails } from '@/hooks/useOperacionDetails';
-import { OperacionResumenTab } from '@/components/operaciones/OperacionResumenTab';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Calendar, ListChecks, Users, Edit } from "lucide-react";
+import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
+import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
+import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
+import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
+import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
+import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { Header } from "@/components/layout/Header";
+import { useOperaciones } from "@/hooks/useOperaciones";
 
-interface OperacionDetailsProps {
-  operacionId: string;
-  onClose: () => void;
+interface OperacionDetailProps {
+  operacion: any;
 }
 
-export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId, onClose }) => {
-  const [showCreateInmersion, setShowCreateInmersion] = useState(false);
-  const [activeTab, setActiveTab] = useState('resumen');
-  
-  const { operacion, isLoading, createInmersion, compliance } = useOperacionDetails(operacionId);
-  
-  const handleCreateInmersion = async (data: any) => {
+const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
+  const [activeTab, setActiveTab] = useState("general");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { updateOperacion } = useOperaciones();
+
+  const handleEditOperacion = async (data: any) => {
     try {
-      console.log('Creating inmersion with data:', data);
-      await createInmersion(data);
-      setShowCreateInmersion(false);
+      await updateOperacion({ id: operacion.id, data });
+      setIsEditDialogOpen(false);
     } catch (error) {
-      console.error('Error al crear la inmersión desde el componente:', error);
+      console.error('Error updating operacion:', error);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-500 mt-4">Cargando detalles...</p>
-      </div>
-    );
-  }
-
-  if (!operacion) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-gray-500">No se encontró la operación</p>
-      </div>
-    );
-  }
-
-  const getStatusColor = (estado: string) => {
-    const colors = {
-      'activa': 'bg-green-100 text-green-700',
-      'pausada': 'bg-yellow-100 text-yellow-700',
-      'completada': 'bg-blue-100 text-blue-700',
-      'cancelada': 'bg-red-100 text-red-700'
-    };
-    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
-  };
-
   return (
-    <div className="space-y-6 max-w-6xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">{operacion.nombre}</h2>
-          <p className="text-gray-600">Código: {operacion.codigo}</p>
-        </div>
-        <Badge className={getStatusColor(operacion.estado)}>
-          {operacion.estado}
-        </Badge>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-white">
+        <RoleBasedSidebar />
+        <motion.main
+          className="flex-1 flex flex-col bg-white"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <Header
+            title={operacion.nombre}
+            subtitle={`Detalles de la operación ${operacion.codigo}`}
+            icon={Calendar}
+          >
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <Button 
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Editar Operación
+              </Button>
+              <DialogContent className="max-w-3xl">
+                <EditOperacionForm
+                  operacion={operacion}
+                  onSubmit={handleEditOperacion}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </Header>
+
+          <div className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="equipo">Personal de Buceo</TabsTrigger>
+                <TabsTrigger value="documentos">Documentos</TabsTrigger>
+                <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-6">
+                <OperacionInfo operacion={operacion} />
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
+
+              <TabsContent value="equipo" className="space-y-6">
+                <OperacionTeamManagerEnhanced 
+                  operacionId={operacion.id} 
+                  salmoneraId={operacion.salmonera_id || undefined}
+                  contratistaId={operacion.contratista_id || undefined}
+                />
+              </TabsContent>
+
+              <TabsContent value="documentos" className="space-y-6">
+                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+              </TabsContent>
+
+              <TabsContent value="inmersiones" className="space-y-6">
+                <OperacionInmersiones operacionId={operacion.id} />
+              </TabsContent>
+
+              <TabsContent value="timeline" className="space-y-6">
+                <OperacionTimeline operacionId={operacion.id} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </motion.main>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="equipo">Personal de Buceo</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos</TabsTrigger>
-          <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="resumen" className="space-y-4">
-          <OperacionResumenTab operacion={operacion} compliance={compliance} />
-        </TabsContent>
-
-        <TabsContent value="equipo" className="space-y-4">
-          <OperacionTeamTab 
-            operacionId={operacionId} 
-            operacion={operacion}
-          />
-        </TabsContent>
-
-        <TabsContent value="documentos" className="space-y-4">
-          <OperacionDocuments 
-            operacionId={operacionId} 
-            operacion={operacion}
-          />
-        </TabsContent>
-
-        <TabsContent value="inmersiones" className="space-y-4">
-          <OperacionInmersiones 
-            operacionId={operacionId}
-            onNewInmersion={() => setShowCreateInmersion(true)}
-          />
-        </TabsContent>
-
-        <TabsContent value="historial" className="space-y-4">
-          <OperacionTimeline operacionId={operacionId} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Dialogs */}
-      <Dialog open={showCreateInmersion} onOpenChange={setShowCreateInmersion}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Nueva Inmersión</DialogTitle>
-          </DialogHeader>
-          <InmersionWizard
-            operationId={operacionId}
-            onComplete={handleCreateInmersion}
-            onCancel={() => setShowCreateInmersion(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+    </SidebarProvider>
   );
 };
+
+export default OperacionDetail;

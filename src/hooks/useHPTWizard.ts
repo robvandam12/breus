@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -101,9 +102,8 @@ export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
     id: string;
     nombre: string;
     apellido: string;
-    rol: string;
-    matricula: string;
-    rut: string;
+    empresa: string;
+    cargo: string;
   }>;
 }
 
