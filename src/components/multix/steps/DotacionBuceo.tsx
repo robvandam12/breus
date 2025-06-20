@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Users, Clock, Award } from "lucide-react";
-import type { MultiXData, DotacionBuceo } from '@/types/multix';
+import type { MultiXData, DotacionBuceo as DotacionBuceoType } from '@/types/multix';
 
-interface DotacionBuceoProps {
+interface DotacionBuceoStepProps {
   formData: MultiXData;
   updateFormData: (data: Partial<MultiXData>) => void;
   errors?: Record<string, string>;
@@ -28,12 +28,12 @@ export const DotacionBuceo = ({
   formData, 
   updateFormData, 
   errors = {} 
-}: DotacionBuceoProps) => {
+}: DotacionBuceoStepProps) => {
   
-  const [editingMember, setEditingMember] = useState<DotacionBuceo | null>(null);
+  const [editingMember, setEditingMember] = useState<DotacionBuceoType | null>(null);
 
   const addMember = () => {
-    const newMember: DotacionBuceo = {
+    const newMember: DotacionBuceoType = {
       id: `member-${Date.now()}`,
       rol: 'buzo',
       nombre: '',
@@ -48,7 +48,7 @@ export const DotacionBuceo = ({
     setEditingMember(newMember);
   };
 
-  const updateMember = (id: string, updates: Partial<DotacionBuceo>) => {
+  const updateMember = (id: string, updates: Partial<DotacionBuceoType>) => {
     const updatedDotacion = formData.dotacion.map(member =>
       member.id === id ? { ...member, ...updates } : member
     );
