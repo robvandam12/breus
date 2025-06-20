@@ -10,6 +10,7 @@ import {
   Network,
   Zap,
   Shield,
+  Bell,
 } from "lucide-react";
 
 interface NavigationItem {
@@ -97,14 +98,22 @@ export const useAdaptiveNavigation = (userRole?: string) => {
       });
     }
 
-    // Gestión de Módulos (solo para administradores)
+    // Gestión para administradores
     if (userRole === 'superuser' || userRole === 'admin_salmonera' || userRole === 'admin_servicio') {
-      items.push({
-        title: "Gestión de Módulos",
-        icon: Shield,
-        url: "/admin/module-management",
-        roleRequired: 'admin',
-      });
+      items.push(
+        {
+          title: "Gestión de Módulos",
+          icon: Shield,
+          url: "/admin/module-management",
+          roleRequired: 'admin',
+        },
+        {
+          title: "Notificaciones",
+          icon: Bell,
+          url: "/admin/notifications",
+          roleRequired: 'admin',
+        }
+      );
     }
 
     // Configuración (siempre disponible)

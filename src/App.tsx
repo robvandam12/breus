@@ -25,6 +25,9 @@ import Integraciones from '@/pages/integraciones/Integraciones';
 // Fase 3 - Gestión de Módulos
 import ModuleManagement from '@/pages/admin/ModuleManagement';
 
+// Fase 4 - Sistema de Notificaciones y Alertas
+import NotificationManagement from '@/pages/admin/NotificationManagement';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -62,6 +65,9 @@ function App() {
             
             {/* Fase 3 - Administración */}
             <Route path="/admin/module-management" element={<ModuleManagement />} />
+            
+            {/* Fase 4 - Notificaciones y Alertas */}
+            <Route path="/admin/notifications" element={<NotificationManagement />} />
           </Routes>
           <Toaster />
         </Router>

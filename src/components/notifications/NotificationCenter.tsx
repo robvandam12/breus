@@ -1,207 +1,292 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, X, Check, AlertTriangle, Info, CheckCircle, XCircle } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useNotifications, type Notification } from '@/hooks/useNotifications';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  Bell, 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle, 
+  Info,
+  Shield,
+  Clock,
+  User,
+  Settings,
+  MarkAllRead,
+} from "lucide-react";
+import { useNotificationSystem } from "@/hooks/useNotificationSystem";
+import { cn } from "@/lib/utils";
 
-export const NotificationCenter = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { 
-    notifications, 
-    isLoading, 
-    markAsRead, 
-    deleteNotification,
-    refreshNotifications 
-  } = useNotifications();
+interface NotificationCenterProps {
+  trigger?: React.ReactNode;
+}
 
-  const markAllAsRead = async () => {
-    try {
-      const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-      if (unreadIds.length === 0) return;
+export const NotificationCenter = ({ trigger }: NotificationCenterProps) => {
+  const {
+    notifications,
+    securityAlerts,
+    unreadCount,
+    criticalAlertsCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    acknowledgeAlert,
+    isMarkingAsRead,
+    isAcknowledging,
+  } = useNotificationSystem();
 
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .in('id', unreadIds);
-
-      if (error) throw error;
-
-      await refreshNotifications();
-      toast({
-        title: "Notificaciones marcadas",
-        description: "Todas las notificaciones han sido marcadas como leídas"
-      });
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-  useEffect(() => {
-    // Suscripción en tiempo real para nuevas notificaciones
-    const channel = supabase
-      .channel('notifications-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          
-          // Mostrar toast para notificaciones críticas
-          if (newNotification.type === 'error' || newNotification.type === 'warning') {
-            toast({
-              title: newNotification.title,
-              description: newNotification.message,
-              variant: newNotification.type === 'error' ? 'destructive' : 'default'
-            });
-          }
-          
-          refreshNotifications();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refreshNotifications]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const [activeTab, setActiveTab] = useState("notifications");
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
       case 'error':
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <Info className="w-4 h-4 text-blue-600" />;
+        return <Info className="w-4 h-4 text-blue-500" />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'success':
-        return 'border-l-green-500 bg-green-50';
-      case 'warning':
-        return 'border-l-yellow-500 bg-yellow-50';
-      case 'error':
-        return 'border-l-red-500 bg-red-50';
+  const getAlertPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
-        return 'border-l-blue-500 bg-blue-50';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
     }
   };
+
+  const handleNotificationClick = async (notificationId: string, isRead: boolean, link?: string) => {
+    if (!isRead) {
+      await markAsRead(notificationId);
+    }
+    
+    if (link) {
+      window.location.href = link;
+    }
+  };
+
+  const handleAlertAcknowledge = async (alertId: string) => {
+    await acknowledgeAlert(alertId);
+  };
+
+  const defaultTrigger = (
+    <Button variant="ghost" size="sm" className="relative">
+      <Bell className="w-4 h-4" />
+      {(unreadCount > 0 || criticalAlertsCount > 0) && (
+        <Badge 
+          variant="destructive" 
+          className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+        >
+          {Math.min(unreadCount + criticalAlertsCount, 99)}
+        </Badge>
+      )}
+    </Button>
+  );
 
   return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative"
-      >
-        <Bell className="w-4 h-4" />
-        {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </Badge>
-        )}
-      </Button>
+    <Sheet>
+      <SheetTrigger asChild>
+        {trigger || defaultTrigger}
+      </SheetTrigger>
+      <SheetContent className="w-[400px] sm:w-[500px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Centro de Notificaciones
+          </SheetTitle>
+        </SheetHeader>
 
-      {isOpen && (
-        <Card className="absolute right-0 top-12 w-96 max-h-96 z-50 shadow-lg">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Notificaciones</CardTitle>
-              <div className="flex gap-1">
+        <div className="mt-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="notifications" className="relative">
+                Notificaciones
                 {unreadCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                    <Check className="w-4 h-4" />
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="relative">
+                Alertas
+                {criticalAlertsCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {criticalAlertsCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="notifications" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium">Notificaciones Recientes</h3>
+                {unreadCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => markAllAsRead()}
+                    disabled={isMarkingAsRead}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Marcar todas como leídas
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
               </div>
-            </div>
-            {unreadCount > 0 && (
-              <p className="text-xs text-gray-600">{unreadCount} sin leer</p>
-            )}
-          </CardHeader>
-          
-          <CardContent className="p-0">
-            <ScrollArea className="h-80">
-              {isLoading ? (
-                <div className="p-4 text-center text-gray-500">
-                  Cargando notificaciones...
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No hay notificaciones
-                </div>
-              ) : (
-                <div className="space-y-2 p-2">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 border-l-4 rounded-r-lg ${getNotificationColor(notification.type)} ${
-                        !notification.read ? 'font-medium' : 'opacity-75'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 flex-1">
-                          {getNotificationIcon(notification.type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {notification.title}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {new Date(notification.created_at).toLocaleString('es-CL')}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-1">
-                          {!notification.read && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => markAsRead(notification.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Check className="w-3 h-3" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteNotification(notification.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
+
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-2">
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No hay notificaciones</p>
                     </div>
-                  ))}
+                  ) : (
+                    notifications.map((notification) => (
+                      <Card
+                        key={notification.id}
+                        className={cn(
+                          "cursor-pointer transition-colors hover:bg-gray-50",
+                          !notification.read && "border-l-4 border-l-blue-500 bg-blue-50/30"
+                        )}
+                        onClick={() => handleNotificationClick(
+                          notification.id,
+                          notification.read,
+                          notification.metadata?.link
+                        )}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            {getNotificationIcon(notification.type)}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium truncate">
+                                  {notification.title}
+                                </h4>
+                                {!notification.read && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                                <Clock className="w-3 h-3" />
+                                {new Date(notification.created_at).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium">Alertas de Seguridad</h3>
+                <Badge variant="outline" className="text-xs">
+                  {securityAlerts.filter(a => !a.acknowledged).length} pendientes
+                </Badge>
+              </div>
+
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-2">
+                  {securityAlerts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No hay alertas de seguridad</p>
+                    </div>
+                  ) : (
+                    securityAlerts.map((alert) => (
+                      <Card
+                        key={alert.id}
+                        className={cn(
+                          "transition-colors",
+                          !alert.acknowledged && "border-l-4 border-l-red-500"
+                        )}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Shield className={cn(
+                              "w-5 h-5 flex-shrink-0",
+                              alert.priority === 'critical' ? "text-red-500" :
+                              alert.priority === 'high' ? "text-orange-500" :
+                              alert.priority === 'medium' ? "text-yellow-500" :
+                              "text-blue-500"
+                            )} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <Badge className={getAlertPriorityColor(alert.priority)}>
+                                  {alert.priority.toUpperCase()}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  {alert.type}
+                                </span>
+                              </div>
+                              
+                              <div className="text-sm mb-2">
+                                <strong>Inmersión:</strong> {(alert.inmersion as any)?.codigo}
+                              </div>
+                              
+                              {alert.details && (
+                                <div className="text-sm text-gray-600 mb-2">
+                                  {Object.entries(alert.details).map(([key, value]) => (
+                                    <div key={key}>
+                                      <strong>{key}:</strong> {String(value)}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between mt-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(alert.created_at).toLocaleString()}
+                                </div>
+                                
+                                {!alert.acknowledged ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleAlertAcknowledge(alert.id)}
+                                    disabled={isAcknowledging}
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Reconocer
+                                  </Button>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-xs text-green-600">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Reconocida
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };

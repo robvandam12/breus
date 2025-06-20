@@ -1,15 +1,14 @@
 
+import React from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
-import { Header } from "@/components/layout/Header";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { BottomNavBar } from "@/components/navigation/BottomNavBar";
+import { HeaderWithNotifications } from "@/components/layout/HeaderWithNotifications";
 
 interface MainLayoutProps {
   children: React.ReactNode;
   title: string;
-  subtitle: string;
-  icon: React.ElementType;
+  subtitle?: string;
+  icon?: React.ElementType;
   headerChildren?: React.ReactNode;
   className?: string;
   contentClassName?: string;
@@ -24,23 +23,22 @@ export const MainLayout = ({
   className = "",
   contentClassName = ""
 }: MainLayoutProps) => {
-  const isMobile = useIsMobile();
-  
   return (
     <SidebarProvider>
-      <div className={`min-h-screen flex w-full bg-background ${className}`}>
+      <div className={`min-h-screen flex w-full bg-white ${className}`}>
         <RoleBasedSidebar />
-        <main className="flex-1 flex flex-col pb-16 md:pb-0">
-          <Header title={title} subtitle={subtitle} icon={icon}>
+        <main className={`flex-1 flex flex-col ${contentClassName}`}>
+          <HeaderWithNotifications 
+            title={title} 
+            subtitle={subtitle} 
+            icon={icon}
+          >
             {headerChildren}
-          </Header>
-          <div className="flex-1 overflow-auto bg-muted/20">
-            <div className={`p-4 sm:p-6 max-w-full ${contentClassName}`}>
-              {children}
-            </div>
+          </HeaderWithNotifications>
+          <div className="flex-1 p-6">
+            {children}
           </div>
         </main>
-        {isMobile && <BottomNavBar />}
       </div>
     </SidebarProvider>
   );
