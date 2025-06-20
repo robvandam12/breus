@@ -16,7 +16,7 @@ import {
   Clock,
   User,
   Settings,
-  MarkAllRead,
+  CheckCheck,
 } from "lucide-react";
 import { useNotificationSystem } from "@/hooks/useNotificationSystem";
 import { cn } from "@/lib/utils";
@@ -139,7 +139,7 @@ export const NotificationCenter = ({ trigger }: NotificationCenterProps) => {
                     onClick={() => markAllAsRead()}
                     disabled={isMarkingAsRead}
                   >
-                    <CheckCircle className="w-4 h-4 mr-1" />
+                    <CheckCheck className="w-4 h-4 mr-1" />
                     Marcar todas como leídas
                   </Button>
                 )}
