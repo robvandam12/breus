@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
 import { HPTStep1 } from "./steps/HPTStep1";
 import { HPTStep2 } from "./steps/HPTStep2";
-import { HPTStep3 } from "./steps/HPTStep3";
+import { HPTStep3Personal } from "./steps/HPTStep3Personal";
 import { HPTStep4 } from "./steps/HPTStep4";
 import { HPTStep5 } from "./steps/HPTStep5";
 import { HPTStep6 } from "./steps/HPTStep6";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HPTWizardProps {
@@ -29,6 +30,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
   const { toast } = useToast();
   const { operaciones } = useOperaciones();
   const { equipos } = useEquiposBuceoEnhanced();
+  const { getFormDefaults } = useUserProfile();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
 
@@ -68,33 +70,67 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
         if (error) throw error;
 
         const operacion = opData;
+        const defaults = getFormDefaults();
         
-        // Find supervisor from team members if equipo is assigned
+        // Find assigned team
         let supervisor = null;
+        let teamMembers = [];
         if (operacion.equipo_buceo_id) {
           const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-          supervisor = equipo?.miembros?.find(m => 
-            m.rol === 'supervisor'
-          );
+          if (equipo?.miembros) {
+            supervisor = equipo.miembros.find(m => 
+              (m as any).rol === 'supervisor' || (m as any).rol_equipo === 'supervisor'
+            );
+            teamMembers = equipo.miembros;
+          }
         }
 
         // Generate folio based on operation
         const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
         
+        // Auto-populate with operation and user data
         updateData({
           operacion_id: currentOperacionId,
           folio,
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-          supervisor_nombre: supervisor?.nombre_completo || '',
+          supervisor_nombre: supervisor ? 
+            ((supervisor as any).nombre_completo || 
+             ((supervisor as any).usuario?.nombre && (supervisor as any).usuario?.apellido 
+               ? `${(supervisor as any).usuario.nombre} ${(supervisor as any).usuario.apellido}` 
+               : defaults.nombre + ' ' + defaults.apellido)) : 
+            (defaults.nombre + ' ' + defaults.apellido),
           centro_trabajo_nombre: operacion.sitios?.nombre || '',
           lugar_especifico: operacion.sitios?.ubicacion || '',
           plan_trabajo: operacion.tareas || '',
-          descripcion_tarea: operacion.nombre || 'Operación de buceo comercial'
+          descripcion_tarea: operacion.nombre || 'Operación de buceo comercial',
+          // Pre-populate team data
+          buzos: teamMembers.filter(m => {
+            const rol = (m as any).rol || (m as any).rol_equipo || '';
+            return rol.toLowerCase().includes('buzo');
+          }).map(miembro => {
+            const miembroAny = miembro as any;
+            const nombreCompleto = miembroAny.nombre_completo || 
+                                  (miembroAny.usuario?.nombre && miembroAny.usuario?.apellido 
+                                    ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
+                                    : 'Sin nombre');
+            const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
+            
+            return {
+              id: miembroAny.id || `temp_${Date.now()}_${Math.random()}`,
+              nombre: nombre || '',
+              apellido: apellidoParts.join(' ') || '',
+              rol: miembroAny.rol || miembroAny.rol_equipo || 'Buzo Principal',
+              matricula: miembroAny.usuario?.perfil_buzo?.matricula || '',
+              rut: miembroAny.usuario?.perfil_buzo?.rut || ''
+            };
+          }),
+          asistentes: [] // Empty initially, can be added manually
         });
 
-        console.log('Operation data populated:', {
+        console.log('HPT data populated:', {
           operacion,
           supervisor,
+          teamMembers,
           folio
         });
 
@@ -109,7 +145,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
     };
 
     populateOperationData();
-  }, [currentOperacionId, equipos, updateData, toast, hptId]);
+  }, [currentOperacionId, equipos, updateData, toast, hptId, getFormDefaults]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setCurrentOperacionId(operacionId);
@@ -147,7 +183,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
       case 2:
         return <HPTStep2 data={data} onUpdate={updateData} operacionId={currentOperacionId || ''} />;
       case 3:
-        return <HPTStep3 data={data} onUpdate={updateData} />;
+        return <HPTStep3Personal data={data} onUpdate={updateData} />;
       case 4:
         return <HPTStep4 data={data} onUpdate={updateData} />;
       case 5:

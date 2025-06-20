@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -119,6 +120,13 @@ const BitacorasSupervisor = () => {
     setIsCreateDialogOpen(true);
   };
 
+  const handleContinueWithInmersion = () => {
+    if (selectedInmersionId) {
+      // Close the selector and show the wizard directly
+      setIsCreateDialogOpen(true);
+    }
+  };
+
   const headerActions = (
     <BitacoraViewControls
       viewMode={viewMode}
@@ -213,6 +221,7 @@ const BitacorasSupervisor = () => {
                           bitacora={bitacora}
                           type="supervisor"
                           onSign={handleSignSupervisor}
+                          onViewDetails={handleViewDetails}
                         />
                       ))}
                     </TableBody>
@@ -244,6 +253,7 @@ const BitacorasSupervisor = () => {
         </div>
       )}
 
+      {/* Dialog para seleccionar inmersión y crear bitácora */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent variant="form" className="max-w-7xl max-h-[85vh] overflow-y-auto p-0">
           <div className="p-6">
@@ -275,7 +285,7 @@ const BitacorasSupervisor = () => {
                     Cancelar
                   </Button>
                   <Button 
-                    onClick={() => {}} 
+                    onClick={handleContinueWithInmersion} 
                     disabled={!selectedInmersionId}
                   >
                     Continuar
