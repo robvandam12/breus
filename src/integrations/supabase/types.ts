@@ -1203,6 +1203,36 @@ export type Database = {
           },
         ]
       }
+      module_access: {
+        Row: {
+          activo: boolean
+          configuracion: Json | null
+          created_at: string
+          empresa_id: string
+          id: string
+          modulo_nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          configuracion?: Json | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          modulo_nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          configuracion?: Json | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          modulo_nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       multix: {
         Row: {
           codigo: string

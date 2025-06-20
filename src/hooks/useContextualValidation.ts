@@ -101,10 +101,10 @@ export const useContextualValidation = () => {
     const errors: string[] = [];
 
     try {
-      // Verificar que la inmersión existe
+      // Verificar que la inmersión existe - usar columna correcta
       const { data: inmersion } = await supabase
         .from('inmersion')
-        .select('id, estado')
+        .select('inmersion_id, estado')
         .eq('inmersion_id', inmersionId)
         .single();
 
