@@ -90,7 +90,7 @@ export const useMaintenanceNetworks = () => {
           form_type: formData.form_type,
           form_data: formData.form_data,
           status: formData.status || 'draft',
-          created_by: profile?.usuario_id,
+          created_by: profile?.id,
         })
         .select()
         .single();
@@ -129,7 +129,7 @@ export const useMaintenanceNetworks = () => {
 
       if (data.status === 'approved') {
         updateData.approved_at = new Date().toISOString();
-        updateData.approved_by = profile?.usuario_id;
+        updateData.approved_by = profile?.id;
       }
 
       const { data: updatedData, error } = await supabase

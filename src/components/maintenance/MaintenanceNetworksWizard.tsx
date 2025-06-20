@@ -49,6 +49,11 @@ export const MaintenanceNetworksWizard = ({
     nave_maniobras: existingForm?.form_data?.nave_maniobras || '',
     matricula_nave: existingForm?.form_data?.matricula_nave || '',
     
+    // Campos requeridos por MultiXData pero opcionales aquí
+    team_s: existingForm?.form_data?.team_s || '',
+    team_be: existingForm?.form_data?.team_be || '',
+    team_bi: existingForm?.form_data?.team_bi || '',
+    
     // Dotación
     dotacion: existingForm?.form_data?.dotacion || [],
     
@@ -61,6 +66,11 @@ export const MaintenanceNetworksWizard = ({
     
     // Tipo de formulario
     tipo_formulario: existingForm?.form_type || 'mantencion',
+    
+    // Campos adicionales requeridos
+    progreso: 0,
+    firmado: false,
+    estado: 'borrador' as const,
   });
 
   const { 
@@ -96,6 +106,7 @@ export const MaintenanceNetworksWizard = ({
     try {
       const maintenanceForm = {
         inmersion_id: inmersionId,
+        module_name: 'maintenance_networks',
         form_type: formData.tipo_formulario as 'mantencion' | 'faena_redes',
         form_data: formData,
         status: 'draft' as const,
@@ -123,6 +134,7 @@ export const MaintenanceNetworksWizard = ({
     try {
       const maintenanceForm = {
         inmersion_id: inmersionId,
+        module_name: 'maintenance_networks',
         form_type: formData.tipo_formulario as 'mantencion' | 'faena_redes',
         form_data: formData,
         status: 'completed' as const,

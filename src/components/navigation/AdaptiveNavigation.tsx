@@ -35,19 +35,19 @@ export const useAdaptiveNavigation = (userRole?: string) => {
     ];
 
     // Módulo de Planificación (Operaciones, HPT, Anexo Bravo)
-    if (isModuleActive(modules.PLANNING)) {
+    if (isModuleActive(modules.PLANNING_OPERATIONS)) {
       items.push(
         {
           title: "Operaciones",
           icon: Calendar,
           url: "/operaciones",
-          moduleRequired: modules.PLANNING,
+          moduleRequired: modules.PLANNING_OPERATIONS,
         },
         {
           title: "Documentos",
           icon: FileText,
           url: "/documentos",
-          moduleRequired: modules.PLANNING,
+          moduleRequired: modules.PLANNING_OPERATIONS,
         }
       );
     }
@@ -60,41 +60,41 @@ export const useAdaptiveNavigation = (userRole?: string) => {
     });
 
     // Módulos Operativos
-    if (isModuleActive(modules.NETWORK_MAINTENANCE)) {
+    if (isModuleActive(modules.MAINTENANCE_NETWORKS)) {
       items.push({
         title: "Mantención de Redes",
         icon: Wrench,
         url: "/mantencion-redes",
-        moduleRequired: modules.NETWORK_MAINTENANCE,
+        moduleRequired: modules.MAINTENANCE_NETWORKS,
       });
     }
 
-    if (isModuleActive(modules.NETWORK_OPERATIONS)) {
+    if (isModuleActive(modules.MAINTENANCE_NETWORKS)) {
       items.push({
         title: "Faenas de Redes",
         icon: Network,
         url: "/faenas-redes",
-        moduleRequired: modules.NETWORK_OPERATIONS,
+        moduleRequired: modules.MAINTENANCE_NETWORKS,
       });
     }
 
     // Reportes Avanzados
-    if (isModuleActive(modules.REPORTS)) {
+    if (isModuleActive(modules.ADVANCED_REPORTING)) {
       items.push({
         title: "Reportes Avanzados",
         icon: BarChart3,
         url: "/reportes-avanzados",
-        moduleRequired: modules.REPORTS,
+        moduleRequired: modules.ADVANCED_REPORTING,
       });
     }
 
     // Integraciones
-    if (isModuleActive(modules.INTEGRATIONS)) {
+    if (isModuleActive(modules.EXTERNAL_INTEGRATIONS)) {
       items.push({
         title: "Integraciones",
         icon: Zap,
         url: "/integraciones",
-        moduleRequired: modules.INTEGRATIONS,
+        moduleRequired: modules.EXTERNAL_INTEGRATIONS,
       });
     }
 

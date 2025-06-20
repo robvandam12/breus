@@ -49,7 +49,7 @@ const mockTemplates: ReportTemplate[] = [
   {
     id: '3',
     nombre: 'Eficiencia Operacional',
-    descripción: 'Métricas de rendimiento y eficiencia del equipo',
+    descripcion: 'Métricas de rendimiento y eficiencia del equipo',
     tipo: 'eficiencia',
     configuracion: {
       metricas: ['productividad', 'utilizacion_equipos', 'costos_operativos']

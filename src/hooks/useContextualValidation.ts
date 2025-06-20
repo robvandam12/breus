@@ -22,7 +22,7 @@ export const useContextualValidation = () => {
 
   // Validar creación de inmersión según contexto modular
   const validateInmersionCreation = async (data?: any): Promise<ValidationResult> => {
-    const hasPlanningModule = isModuleActive(modules.PLANNING);
+    const hasPlanningModule = isModuleActive(modules.PLANNING_OPERATIONS);
     const warnings: string[] = [];
     const errors: string[] = [];
 

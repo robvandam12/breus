@@ -114,7 +114,7 @@ export const useModularSystem = () => {
           company_type: companyType,
           module_name: moduleName,
           is_active: isActive,
-          activated_by: isActive ? profile?.usuario_id : null,
+          activated_by: isActive ? profile?.id : null,
           configuration: {},
         }, {
           onConflict: 'company_id,company_type,module_name'

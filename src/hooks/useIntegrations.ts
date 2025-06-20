@@ -1,8 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { useModularSystem } from "./useModularSystem";
 import { toast } from "@/hooks/use-toast";
 
 export interface Integration {
@@ -29,11 +27,10 @@ export interface IntegrationLog {
 }
 
 export const useIntegrations = () => {
-  const { profile } = useAuth();
-  const { isModuleActive, modules } = useModuleAccess();
+  const { hasModuleAccess, modules } = useModularSystem();
   const queryClient = useQueryClient();
 
-  const canAccessIntegrations = isModuleActive(modules.INTEGRATIONS);
+  const canAccessIntegrations = hasModuleAccess(modules.EXTERNAL_INTEGRATIONS);
 
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ['integrations', profile?.salmonera_id],
