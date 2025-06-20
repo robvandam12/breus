@@ -125,10 +125,10 @@ export const BitacoraWizardFromInmersion = ({
     ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
     : null;
 
-  // Auto-poblar datos de la inmersión y equipo
+  // Auto-poblar datos de la inmersión y personal de buceo
   useEffect(() => {
     if (selectedInmersion && selectedOperation && assignedTeam) {
-      // Auto-poblar buzos del equipo usando las propiedades correctas
+      // Auto-poblar buzos del personal usando las propiedades correctas
       const buzosEquipo = assignedTeam.miembros?.filter(miembro => {
         // Usar 'any' temporalmente para acceder a las propiedades
         const miembroAny = miembro as any;
@@ -145,12 +145,16 @@ export const BitacoraWizardFromInmersion = ({
                                 ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
                                 : miembroAny.nombre || 'Sin nombre');
         
+        // Separar nombre y apellido
+        const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
+        const apellido = apellidoParts.join(' ');
+        
         const rol = miembroAny.rol_equipo || miembroAny.rol || 'Buzo';
         
         return {
           id: miembroAny.id || miembroAny.usuario_id || `temp_${Date.now()}_${Math.random()}`,
-          nombre: nombreCompleto,
-          apellido: '',
+          nombre: nombre || 'Sin nombre',
+          apellido: apellido || '',
           rut: miembroAny.usuario?.perfil_buzo?.rut || miembroAny.rut || '',
           rol: rol,
           profundidad_trabajo: 0,
@@ -294,6 +298,11 @@ export const BitacoraWizardFromInmersion = ({
             </CardTitle>
             <CardDescription>
               Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
+              {assignedTeam && (
+                <div className="mt-1 text-xs text-blue-600">
+                  Personal de Buceo: {assignedTeam.nombre}
+                </div>
+              )}
             </CardDescription>
           </div>
           <Button variant="outline" onClick={onCancel}>

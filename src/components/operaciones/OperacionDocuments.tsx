@@ -45,7 +45,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     };
 
     checkTeamAssignment();
-  }, [operacion, operacion?.equipo_buceo_id]); // Dependencias específicas para reactividad
+  }, [operacion, operacion?.equipo_buceo_id]);
 
   const handleDocumentDeleteAttempt = (documentType: string) => {
     toast({
