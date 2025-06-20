@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -9,15 +8,17 @@ import { getOperationCompleteData, validateOperationDocuments } from './useOpera
 import { useInmersionExecution } from './useInmersionExecution';
 import { useInmersionFiles } from './useInmersionFiles';
 import { useInmersionSecurity } from './useInmersionSecurity';
+import { usePreDiveValidation } from './usePreDiveValidation';
 
 export { validateOperationDocuments };
 export type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData };
 
-// CRUD operations
+// CRUD operations with contextual validation
 const useInmersionesCRUD = (operacionId?: string) => {
   const queryClient = useQueryClient();
   const { isOnline, addPendingAction } = useOfflineSync();
   const { checkForSecurityBreaches } = useInmersionSecurity();
+  const { createImmersionWithValidation } = usePreDiveValidation();
 
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['inmersiones', operacionId],
@@ -55,7 +56,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
   });
 
   const createInmersionMutation = useMutation({
-    mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
+    mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) =>
+      {
       if (!isOnline) {
         const tempId = `offline_${Date.now()}`;
         const payload = { ...inmersionData, hpt_validado: false, anexo_bravo_validado: false };
@@ -66,59 +68,12 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
-      const operationData = await getOperationCompleteData(inmersionData.operacion_id);
-      
-      let finalData = { ...inmersionData };
-
-      if (operationData) {
-        if (!finalData.supervisor && operationData.hpt?.supervisor) {
-          finalData.supervisor = operationData.hpt.supervisor;
-        } else if (!finalData.supervisor && operationData.anexoBravo?.supervisor) {
-          finalData.supervisor = operationData.anexoBravo.supervisor;
-        }
-
-        if (operationData.equipoBuceo?.miembros) {
-          const buzoPrincipal = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'supervisor');
-          const buzoAsistente = operationData.equipoBuceo.miembros.find(m => m.rol_equipo === 'buzo_asistente' || m.rol_equipo === 'buzo');
-
-          if (!finalData.buzo_principal && buzoPrincipal?.nombre) {
-            finalData.buzo_principal = buzoPrincipal.nombre;
-            finalData.buzo_principal_id = buzoPrincipal.usuario_id;
-          }
-
-          if (!finalData.buzo_asistente && buzoAsistente?.nombre) {
-            finalData.buzo_asistente = buzoAsistente.nombre;
-            finalData.buzo_asistente_id = buzoAsistente.usuario_id;
-          }
-        }
-
-        if (!finalData.codigo) {
-          const timestamp = Date.now().toString().slice(-6);
-          finalData.codigo = `INM-${operationData.operacion.codigo}-${timestamp}`;
-        }
-      }
-
-      const { data, error } = await supabase
-        .from('inmersion')
-        .insert({
-          ...finalData,
-          hpt_validado: false,
-          anexo_bravo_validado: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Usar validación contextual mejorada
+      return await createImmersionWithValidation(inmersionData);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
-      toast({
-        title: isOnline ? "Inmersión creada" : "Inmersión guardada (Offline)",
-        description: isOnline 
-          ? "La inmersión ha sido creada exitosamente con datos auto-poblados."
-          : "La inmersión se sincronizará cuando haya conexión.",
-      });
+      // El toast ya se maneja en createImmersionWithValidation
     },
     onError: (error) => {
       console.error('Error creating inmersion:', error);

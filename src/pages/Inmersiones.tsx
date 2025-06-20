@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Anchor, LayoutGrid, LayoutList, Edit, Eye } from "lucide-react";
-import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
+import { Plus, Anchor, LayoutGrid, LayoutList, Info } from "lucide-react";
+import { IndependentInmersionWizard } from "@/components/inmersion/IndependentInmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useRouter } from "@/hooks/useRouter";
@@ -17,6 +16,8 @@ import { VirtualizedInmersionsTable } from '@/components/inmersiones/Virtualized
 import { useInmersionesFiltersAdvanced } from '@/hooks/useInmersionesFiltersAdvanced';
 import type { Inmersion } from '@/types/inmersion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useModuleAccess } from '@/hooks/useModuleAccess';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Inmersiones() {
   const isMobile = useIsMobile();
@@ -29,6 +30,7 @@ export default function Inmersiones() {
   const { navigateTo } = useRouter();
   const { inmersiones, isLoading, createInmersion, updateInmersion, refreshInmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
+  const { canPlanOperations, isModuleActive, modules } = useModuleAccess();
   
   const operacionId = searchParams.get('operacion');
 
@@ -51,10 +53,6 @@ export default function Inmersiones() {
   const handleCreateInmersion = async (data: any) => {
     try {
       await createInmersion(data);
-      toast({
-        title: "Inmersión creada",
-        description: "La inmersión ha sido creada exitosamente.",
-      });
       setShowWizard(false);
       
       if (operacionId) {
@@ -62,11 +60,7 @@ export default function Inmersiones() {
       }
     } catch (error) {
       console.error('Error creating inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la inmersión.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -127,10 +121,10 @@ export default function Inmersiones() {
     return (
       <MainLayout
         title="Nueva Inmersión"
-        subtitle="Crear inmersión de buceo"
+        subtitle={canPlanOperations ? "Crear inmersión de buceo" : "Crear inmersión independiente"}
         icon={Anchor}
       >
-        <InmersionWizard
+        <IndependentInmersionWizard
           operationId={operacionId || undefined}
           onComplete={handleCreateInmersion}
           onCancel={handleCancelWizard}
@@ -162,6 +156,17 @@ export default function Inmersiones() {
       }
     >
       <div className="space-y-6">
+        {/* Contexto Modular */}
+        {!canPlanOperations && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-blue-800">
+              <strong>Modo Independiente:</strong> El módulo de planificación no está activo. 
+              Las inmersiones se pueden crear directamente sin requerir operaciones o documentos previos.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Filtros avanzados */}
         <InmersionesAdvancedFilters
           filters={filters}
@@ -218,7 +223,7 @@ export default function Inmersiones() {
             <DialogTitle>Editar Inmersión</DialogTitle>
           </DialogHeader>
           {selectedInmersion && (
-            <InmersionWizard
+            <IndependentInmersionWizard
               operationId={selectedInmersion.operacion_id}
               onComplete={handleUpdateInmersion}
               onCancel={() => setShowEditDialog(false)}

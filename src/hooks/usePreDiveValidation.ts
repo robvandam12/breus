@@ -2,13 +2,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useModuleAccess } from './useModuleAccess';
+import { useContextualValidation } from './useContextualValidation';
 
 export interface ValidationResult {
   isValid: boolean;
-  hptStatus: 'missing' | 'pending' | 'signed';
-  anexoBravoStatus: 'missing' | 'pending' | 'signed';
+  hptStatus: 'missing' | 'pending' | 'signed' | 'not_required';
+  anexoBravoStatus: 'missing' | 'pending' | 'signed' | 'not_required';
   errors: string[];
   warnings: string[];
+  context: {
+    moduleActive: boolean;
+    requiresDocuments: boolean;
+    allowDirectCreation: boolean;
+  };
 }
 
 export interface OperationValidation {
@@ -20,137 +27,137 @@ export interface OperationValidation {
 export const usePreDiveValidation = () => {
   const [validations, setValidations] = useState<OperationValidation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { canPlanOperations, isModuleActive, modules } = useModuleAccess();
+  const { validateInmersionCreation } = useContextualValidation();
 
   const validateOperation = async (operationId: string): Promise<ValidationResult> => {
     try {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // Verificar HPT - Más permisivo
-      const { data: hptData } = await supabase
-        .from('hpt')
-        .select('id, firmado, estado, progreso')
-        .eq('operacion_id', operationId);
+      // Contexto modular
+      const context = {
+        moduleActive: canPlanOperations,
+        requiresDocuments: canPlanOperations,
+        allowDirectCreation: !canPlanOperations,
+      };
 
-      let hptStatus: 'missing' | 'pending' | 'signed' = 'missing';
-      if (hptData && hptData.length > 0) {
-        const hpt = hptData[0];
-        if (hpt.firmado && hpt.estado === 'firmado') {
-          hptStatus = 'signed';
+      let hptStatus: ValidationResult['hptStatus'] = 'not_required';
+      let anexoBravoStatus: ValidationResult['anexoBravoStatus'] = 'not_required';
+
+      // Solo validar documentos si el módulo de planificación está activo
+      if (canPlanOperations) {
+        // Verificar HPT
+        const { data: hptData } = await supabase
+          .from('hpt')
+          .select('id, firmado, estado, progreso')
+          .eq('operacion_id', operationId);
+
+        if (hptData && hptData.length > 0) {
+          const hpt = hptData[0];
+          if (hpt.firmado && hpt.estado === 'firmado') {
+            hptStatus = 'signed';
+          } else {
+            hptStatus = 'pending';
+            warnings.push('HPT existe pero no está firmado');
+          }
         } else {
-          hptStatus = 'pending';
-          warnings.push('HPT existe pero no está firmado');
+          hptStatus = 'missing';
+          warnings.push('HPT no encontrado para esta operación');
+        }
+
+        // Verificar Anexo Bravo
+        const { data: anexoData } = await supabase
+          .from('anexo_bravo')
+          .select('id, firmado, estado, progreso, checklist_completo')
+          .eq('operacion_id', operationId);
+
+        if (anexoData && anexoData.length > 0) {
+          const anexo = anexoData[0];
+          if (anexo.firmado && anexo.estado === 'firmado') {
+            anexoBravoStatus = 'signed';
+          } else {
+            anexoBravoStatus = 'pending';
+            warnings.push('Anexo Bravo existe pero no está firmado');
+          }
+        } else {
+          anexoBravoStatus = 'missing';
+          warnings.push('Anexo Bravo no encontrado para esta operación');
         }
       } else {
-        warnings.push('HPT no encontrado para esta operación');
+        // Módulo no activo - documentos no requeridos
+        warnings.push('Módulo de planificación no activo - Documentos no requeridos');
       }
 
-      // Verificar Anexo Bravo - Más permisivo
-      const { data: anexoData } = await supabase
-        .from('anexo_bravo')
-        .select('id, firmado, estado, progreso, checklist_completo')
-        .eq('operacion_id', operationId);
-
-      let anexoBravoStatus: 'missing' | 'pending' | 'signed' = 'missing';
-      if (anexoData && anexoData.length > 0) {
-        const anexo = anexoData[0];
-        if (anexo.firmado && anexo.estado === 'firmado') {
-          anexoBravoStatus = 'signed';
-        } else {
-          anexoBravoStatus = 'pending';
-          warnings.push('Anexo Bravo existe pero no está firmado');
-        }
-      } else {
-        warnings.push('Anexo Bravo no encontrado para esta operación');
-      }
-
-      // Ahora SIEMPRE es válido - solo advertencias
-      const isValid = true;
+      // Validación final contextual
+      const isValid = canPlanOperations 
+        ? (hptStatus === 'signed' && anexoBravoStatus === 'signed')
+        : true; // Si no hay módulo de planificación, siempre es válido
 
       return {
         isValid,
         hptStatus,
         anexoBravoStatus,
         errors,
-        warnings
+        warnings,
+        context
       };
 
     } catch (error) {
       console.error('Error validating operation:', error);
       return {
-        isValid: true, // Incluso en error, permitir creación
-        hptStatus: 'missing',
-        anexoBravoStatus: 'missing',
-        errors: [],
-        warnings: ['Error al validar la operación - se permite continuar']
+        isValid: !canPlanOperations, // Si no hay planificación, permitir
+        hptStatus: canPlanOperations ? 'missing' : 'not_required',
+        anexoBravoStatus: canPlanOperations ? 'missing' : 'not_required',
+        errors: canPlanOperations ? ['Error al validar la operación'] : [],
+        warnings: canPlanOperations ? [] : ['Modo independiente - validación no requerida'],
+        context: {
+          moduleActive: canPlanOperations,
+          requiresDocuments: canPlanOperations,
+          allowDirectCreation: !canPlanOperations,
+        }
       };
     }
   };
 
-  const validateAllActiveOperations = async () => {
-    setIsLoading(true);
-    try {
-      // Obtener todas las operaciones activas
-      const { data: operations, error } = await supabase
-        .from('operacion')
-        .select('id, nombre')
-        .eq('estado', 'activa');
-
-      if (error) throw error;
-
-      if (operations && operations.length > 0) {
-        const validationPromises = operations.map(async (op) => {
-          const validation = await validateOperation(op.id);
-          return {
-            operationId: op.id,
-            operationName: op.nombre,
-            validation
-          };
-        });
-
-        const results = await Promise.all(validationPromises);
-        setValidations(results);
-
-        // Solo mostrar información, no bloquear
-        const operationsWithWarnings = results.filter(r => r.validation.warnings.length > 0);
-        if (operationsWithWarnings.length > 0) {
-          toast({
-            title: "Información de Validación",
-            description: `${operationsWithWarnings.length} operación(es) tienen advertencias menores`,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error validating operations:', error);
-      // No mostrar error, solo continuar
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const createImmersionWithValidation = async (immersionData: any) => {
-    console.log('Creating immersion (validation disabled):', immersionData.operacion_id);
+    console.log('Creating immersion with contextual validation:', immersionData);
     
-    // Validar pero no bloquear
-    const validation = await validateOperation(immersionData.operacion_id);
+    // Usar validación contextual
+    const validation = await validateInmersionCreation(immersionData);
     
+    if (!validation.canProceed) {
+      const errorMessage = validation.errors.join(', ');
+      throw new Error(`No se puede crear la inmersión: ${errorMessage}`);
+    }
+
     if (validation.warnings.length > 0) {
       const warningMessage = validation.warnings.join(', ');
-      console.warn('Advertencias de validación (no bloquean):', warningMessage);
+      console.warn('Advertencias de validación:', warningMessage);
       
       toast({
         title: "Información",
-        description: `Se creará la inmersión con advertencias: ${warningMessage}`,
+        description: `Inmersión creada con advertencias: ${warningMessage}`,
       });
     }
 
-    // Crear la inmersión SIEMPRE
+    // Determinar estados de validación según contexto
+    const hptValidado = validation.context.requiresDocuments 
+      ? (immersionData.operacion_id ? await checkDocumentSigned('hpt', immersionData.operacion_id) : false)
+      : true; // Si no requiere documentos, marcar como validado
+
+    const anexoBravoValidado = validation.context.requiresDocuments
+      ? (immersionData.operacion_id ? await checkDocumentSigned('anexo_bravo', immersionData.operacion_id) : false)
+      : true; // Si no requiere documentos, marcar como validado
+
+    // Crear la inmersión
     const { data, error } = await supabase
       .from('inmersion')
       .insert([{
         ...immersionData,
-        hpt_validado: validation.hptStatus === 'signed',
-        anexo_bravo_validado: validation.anexoBravoStatus === 'signed'
+        hpt_validado: hptValidado,
+        anexo_bravo_validado: anexoBravoValidado
       }])
       .select()
       .single();
@@ -159,21 +166,37 @@ export const usePreDiveValidation = () => {
     
     toast({
       title: "Inmersión creada",
-      description: "La inmersión ha sido creada exitosamente.",
+      description: canPlanOperations 
+        ? "La inmersión ha sido creada con validaciones completas."
+        : "La inmersión ha sido creada en modo independiente.",
     });
     
     return data;
   };
 
-  useEffect(() => {
-    validateAllActiveOperations();
-  }, []);
+  // Helper para verificar documentos firmados
+  const checkDocumentSigned = async (docType: 'hpt' | 'anexo_bravo', operacionId: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase
+        .from(docType)
+        .select('firmado, estado')
+        .eq('operacion_id', operacionId)
+        .eq('firmado', true)
+        .eq('estado', 'firmado')
+        .single();
+      
+      return !!data;
+    } catch {
+      return false;
+    }
+  };
 
   return {
     validations,
     isLoading,
     validateOperation,
-    validateAllActiveOperations,
-    createImmersionWithValidation
+    createImmersionWithValidation,
+    canPlanOperations,
+    contextualMode: !canPlanOperations,
   };
 };
