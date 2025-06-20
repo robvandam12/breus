@@ -44,6 +44,9 @@ export interface DotacionBuceo {
   contratista?: boolean;
 }
 
+// Alias para compatibilidad con DotacionBuceo.tsx
+export type DotacionMiembro = DotacionBuceo;
+
 export interface EquipoSuperficie {
   id: string;
   equipo_sup: 'Compresor 1' | 'Compresor 2';
@@ -77,4 +80,12 @@ export interface FaenaRedes {
   materiales_usados: string;
   estado_completado: boolean;
   observaciones: string;
+}
+
+// Interfaz para el formulario MultiX
+export interface MultiXFormData {
+  operacion_id: string;
+  codigo: string;
+  tipo_formulario: 'mantencion' | 'faena';
+  multix_data: MultiXData;
 }

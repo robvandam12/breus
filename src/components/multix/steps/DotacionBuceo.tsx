@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Users, Clock, Award } from "lucide-react";
-import type { MultiXData, DotacionMiembro } from '@/types/multix';
+import type { MultiXData, DotacionBuceo } from '@/types/multix';
 
 interface DotacionBuceoProps {
   formData: MultiXData;
@@ -16,17 +16,10 @@ interface DotacionBuceoProps {
 }
 
 const ROLES_DISPONIBLES = [
-  'Supervisor',
-  'Buzo Emergencia 1', 
-  'Buzo Emergencia 2',
-  'Buzo N°1',
-  'Buzo N°2', 
-  'Buzo N°3',
-  'Buzo N°4',
-  'Buzo N°5',
-  'Buzo N°6',
-  'Buzo N°7',
-  'Buzo N°8'
+  'supervisor',
+  'buzo', 
+  'asistente',
+  'operador_superficie'
 ] as const;
 
 const EQUIPOS_DISPONIBLES = ['Liviano', 'Mediano'] as const;
@@ -37,12 +30,12 @@ export const DotacionBuceo = ({
   errors = {} 
 }: DotacionBuceoProps) => {
   
-  const [editingMember, setEditingMember] = useState<DotacionMiembro | null>(null);
+  const [editingMember, setEditingMember] = useState<DotacionBuceo | null>(null);
 
   const addMember = () => {
-    const newMember: DotacionMiembro = {
+    const newMember: DotacionBuceo = {
       id: `member-${Date.now()}`,
-      rol: 'Buzo N°1',
+      rol: 'buzo',
       nombre: '',
       apellido: '',
       matricula: '',
@@ -55,7 +48,7 @@ export const DotacionBuceo = ({
     setEditingMember(newMember);
   };
 
-  const updateMember = (id: string, updates: Partial<DotacionMiembro>) => {
+  const updateMember = (id: string, updates: Partial<DotacionBuceo>) => {
     const updatedDotacion = formData.dotacion.map(member =>
       member.id === id ? { ...member, ...updates } : member
     );
@@ -71,8 +64,8 @@ export const DotacionBuceo = ({
   };
 
   const getRoleColor = (rol: string) => {
-    if (rol === 'Supervisor') return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (rol.includes('Emergencia')) return 'bg-red-100 text-red-800 border-red-200';
+    if (rol === 'supervisor') return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (rol === 'operador_superficie') return 'bg-red-100 text-red-800 border-red-200';
     return 'bg-green-100 text-green-800 border-green-200';
   };
 
@@ -80,6 +73,16 @@ export const DotacionBuceo = ({
     return formData.dotacion.some(member => 
       member.rol === rol && member.id !== currentId
     );
+  };
+
+  const getRoleDisplayName = (rol: string) => {
+    switch (rol) {
+      case 'supervisor': return 'Supervisor';
+      case 'buzo': return 'Buzo';
+      case 'asistente': return 'Asistente';
+      case 'operador_superficie': return 'Operador Superficie';
+      default: return rol;
+    }
   };
 
   return (
@@ -102,24 +105,30 @@ export const DotacionBuceo = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
-                {formData.dotacion.filter(m => m.rol === 'Supervisor').length}
+                {formData.dotacion.filter(m => m.rol === 'supervisor').length}
               </div>
               <div className="text-sm text-blue-600">Supervisores</div>
             </div>
             <div className="text-center p-3 bg-red-50 rounded-lg">
               <div className="text-2xl font-bold text-red-600">
-                {formData.dotacion.filter(m => m.rol.includes('Emergencia')).length}
+                {formData.dotacion.filter(m => m.rol === 'operador_superficie').length}
               </div>
-              <div className="text-sm text-red-600">Buzos Emergencia</div>
+              <div className="text-sm text-red-600">Operadores Superficie</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {formData.dotacion.filter(m => m.rol.startsWith('Buzo N°')).length}
+                {formData.dotacion.filter(m => m.rol === 'buzo').length}
               </div>
-              <div className="text-sm text-green-600">Buzos Operativos</div>
+              <div className="text-sm text-green-600">Buzos</div>
+            </div>
+            <div className="text-center p-3 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {formData.dotacion.filter(m => m.rol === 'asistente').length}
+              </div>
+              <div className="text-sm text-yellow-600">Asistentes</div>
             </div>
           </div>
         </CardContent>
@@ -150,7 +159,7 @@ export const DotacionBuceo = ({
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(member.rol)}`}>
-                        {member.rol}
+                        {getRoleDisplayName(member.rol)}
                       </span>
                       {member.contratista && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
@@ -272,7 +281,7 @@ export const DotacionBuceo = ({
                           value={rol}
                           disabled={isRoleUsed(rol, editingMember.id)}
                         >
-                          {rol} {isRoleUsed(rol, editingMember.id) && '(Ya asignado)'}
+                          {getRoleDisplayName(rol)} {isRoleUsed(rol, editingMember.id) && '(Ya asignado)'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -376,7 +385,7 @@ export const DotacionBuceo = ({
           <div>
             <p className="text-sm font-medium text-blue-900">Gestión de Dotación</p>
             <ul className="text-sm text-blue-700 mt-1 space-y-1">
-              <li>• Cada rol puede ser asignado solo a una persona</li>
+              <li>• Cada rol puede ser asignado a múltiples personas</li>
               <li>• Los campos de nombre y apellido son obligatorios</li>
               <li>• Los horarios y profundidad son opcionales</li>
               <li>• Marca como contratista si corresponde</li>

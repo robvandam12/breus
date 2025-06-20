@@ -39,6 +39,8 @@ export const MultiXWizard = ({
     estado_puerto: '',
     dotacion: [],
     equipos_superficie: [],
+    faenas_mantencion: [],
+    faenas_redes: [],
     tipo_formulario: tipoFormulario,
     progreso: 0,
     firmado: false,
