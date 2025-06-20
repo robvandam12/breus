@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Clock, Users, Plus, Trash2, Calendar } from "lucide-react";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
 
 interface AnexoBravoStep4Props {
   data: any;
@@ -12,16 +14,29 @@ interface AnexoBravoStep4Props {
 
 export const AnexoBravoStep4 = ({ data, onUpdate }: AnexoBravoStep4Props) => {
   const trabajadores = data.anexo_bravo_trabajadores || [];
+  const { getFormDefaults } = useUserProfile();
+  const { equipos } = useEquiposBuceoEnhanced();
 
   const handleInputChange = (field: string, value: any) => {
     onUpdate({ [field]: value });
   };
 
   const addTrabajador = () => {
-    const newTrabajadores = [
-      ...trabajadores,
-      { nombre: '', rut: '' }
-    ];
+    const defaults = getFormDefaults();
+    const newTrabajador = { 
+      nombre: '', 
+      apellido: '', 
+      rut: '' 
+    };
+
+    // Si es el primer trabajador, poblar con datos del usuario
+    if (trabajadores.length === 0) {
+      newTrabajador.nombre = defaults.nombre || '';
+      newTrabajador.apellido = defaults.apellido || '';
+      newTrabajador.rut = defaults.rut || '';
+    }
+
+    const newTrabajadores = [...trabajadores, newTrabajador];
     onUpdate({ anexo_bravo_trabajadores: newTrabajadores });
   };
 
@@ -37,6 +52,15 @@ export const AnexoBravoStep4 = ({ data, onUpdate }: AnexoBravoStep4Props) => {
       [field]: value
     };
     onUpdate({ anexo_bravo_trabajadores: newTrabajadores });
+  };
+
+  // Auto-poblar datos del relator con información del usuario
+  const handleRelatorDefault = () => {
+    const defaults = getFormDefaults();
+    const defaultRelator = `${defaults.nombre} ${defaults.apellido}`.trim();
+    if (defaultRelator && !data.bitacora_relator) {
+      handleInputChange('bitacora_relator', defaultRelator);
+    }
   };
 
   return (
@@ -91,12 +115,22 @@ export const AnexoBravoStep4 = ({ data, onUpdate }: AnexoBravoStep4Props) => {
 
           <div>
             <Label htmlFor="bitacora_relator">Relator</Label>
-            <Input
-              id="bitacora_relator"
-              value={data.bitacora_relator || ''}
-              onChange={(e) => handleInputChange('bitacora_relator', e.target.value)}
-              placeholder="Nombre del relator de la bitácora"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="bitacora_relator"
+                value={data.bitacora_relator || ''}
+                onChange={(e) => handleInputChange('bitacora_relator', e.target.value)}
+                placeholder="Nombre del relator de la bitácora"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRelatorDefault}
+                className="whitespace-nowrap"
+              >
+                Usar mis datos
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -141,14 +175,24 @@ export const AnexoBravoStep4 = ({ data, onUpdate }: AnexoBravoStep4Props) => {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <Label htmlFor={`nombre-${index}`}>Nombre Completo</Label>
+                        <Label htmlFor={`nombre-${index}`}>Nombre</Label>
                         <Input
                           id={`nombre-${index}`}
                           value={trabajador.nombre || ''}
                           onChange={(e) => updateTrabajador(index, 'nombre', e.target.value)}
-                          placeholder="Nombre y apellidos"
+                          placeholder="Nombre"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`apellido-${index}`}>Apellido</Label>
+                        <Input
+                          id={`apellido-${index}`}
+                          value={trabajador.apellido || ''}
+                          onChange={(e) => updateTrabajador(index, 'apellido', e.target.value)}
+                          placeholder="Apellido"
                         />
                       </div>
                       

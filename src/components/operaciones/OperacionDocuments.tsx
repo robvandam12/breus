@@ -45,7 +45,10 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
     };
 
     checkTeamAssignment();
-  }, [operacion, operacion?.equipo_buceo_id]);
+  }, [operacion?.equipo_buceo_id]); // Asegurar que solo observe este campo específico
+
+  // Forzar re-render cuando cambie el equipo_buceo_id
+  const teamAssignmentKey = operacion?.equipo_buceo_id || 'no-team';
 
   const handleDocumentDeleteAttempt = (documentType: string) => {
     toast({
@@ -56,7 +59,7 @@ export const OperacionDocuments = ({ operacionId, operacion }: OperacionDocument
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={teamAssignmentKey}>
       {/* Información de la Operación */}
       {operacion && (
         <Card className="border-blue-100 bg-blue-25">

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -33,6 +33,7 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
   const { getFormDefaults } = useUserProfile();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
+  const [isDataPopulated, setIsDataPopulated] = useState(false);
 
   const {
     currentStep,
@@ -49,107 +50,110 @@ export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, 
     setAutoSaveEnabled
   } = useHPTWizard(currentOperacionId, hptId);
 
-  // Pre-populate data when operation is selected
-  useEffect(() => {
-    const populateOperationData = async () => {
-      if (!currentOperacionId || hptId) return; // Don't populate if editing
+  // Pre-populate data when operation is selected - only once
+  const populateOperationData = useCallback(async () => {
+    if (!currentOperacionId || hptId || isDataPopulated) return;
 
-      try {
-        // Get operation with related data
-        const { data: opData, error } = await supabase
-          .from('operacion')
-          .select(`
-            *,
-            sitios:sitio_id (nombre, ubicacion),
-            contratistas:contratista_id (nombre),
-            salmoneras:salmonera_id (nombre)
-          `)
-          .eq('id', currentOperacionId)
-          .single();
+    try {
+      setIsDataPopulated(true); // Evitar loops infinitos
+      
+      // Get operation with related data
+      const { data: opData, error } = await supabase
+        .from('operacion')
+        .select(`
+          *,
+          sitios:sitio_id (nombre, ubicacion),
+          contratistas:contratista_id (nombre),
+          salmoneras:salmonera_id (nombre)
+        `)
+        .eq('id', currentOperacionId)
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        const operacion = opData;
-        const defaults = getFormDefaults();
-        
-        // Find assigned team
-        let supervisor = null;
-        let teamMembers = [];
-        if (operacion.equipo_buceo_id) {
-          const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-          if (equipo?.miembros) {
-            supervisor = equipo.miembros.find(m => 
-              (m as any).rol === 'supervisor' || (m as any).rol_equipo === 'supervisor'
-            );
-            teamMembers = equipo.miembros;
-          }
+      const operacion = opData;
+      const defaults = getFormDefaults();
+      
+      // Find assigned team
+      let supervisor = null;
+      let teamMembers = [];
+      if (operacion.equipo_buceo_id) {
+        const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
+        if (equipo?.miembros) {
+          supervisor = equipo.miembros.find(m => 
+            (m as any).rol === 'supervisor' || (m as any).rol_equipo === 'supervisor'
+          );
+          teamMembers = equipo.miembros;
         }
-
-        // Generate folio based on operation
-        const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
-        
-        // Auto-populate with operation and user data
-        updateData({
-          operacion_id: currentOperacionId,
-          folio,
-          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-          supervisor_nombre: supervisor ? 
-            ((supervisor as any).nombre_completo || 
-             ((supervisor as any).usuario?.nombre && (supervisor as any).usuario?.apellido 
-               ? `${(supervisor as any).usuario.nombre} ${(supervisor as any).usuario.apellido}` 
-               : defaults.nombre + ' ' + defaults.apellido)) : 
-            (defaults.nombre + ' ' + defaults.apellido),
-          centro_trabajo_nombre: operacion.sitios?.nombre || '',
-          lugar_especifico: operacion.sitios?.ubicacion || '',
-          plan_trabajo: operacion.tareas || '',
-          descripcion_tarea: operacion.nombre || 'Operación de buceo comercial',
-          // Pre-populate team data
-          buzos: teamMembers.filter(m => {
-            const rol = (m as any).rol || (m as any).rol_equipo || '';
-            return rol.toLowerCase().includes('buzo');
-          }).map(miembro => {
-            const miembroAny = miembro as any;
-            const nombreCompleto = miembroAny.nombre_completo || 
-                                  (miembroAny.usuario?.nombre && miembroAny.usuario?.apellido 
-                                    ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
-                                    : 'Sin nombre');
-            const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
-            
-            return {
-              id: miembroAny.id || `temp_${Date.now()}_${Math.random()}`,
-              nombre: nombre || '',
-              apellido: apellidoParts.join(' ') || '',
-              rol: miembroAny.rol || miembroAny.rol_equipo || 'Buzo Principal',
-              matricula: miembroAny.usuario?.perfil_buzo?.matricula || '',
-              rut: miembroAny.usuario?.perfil_buzo?.rut || ''
-            };
-          }),
-          asistentes: [] // Empty initially, can be added manually
-        });
-
-        console.log('HPT data populated:', {
-          operacion,
-          supervisor,
-          teamMembers,
-          folio
-        });
-
-      } catch (error) {
-        console.error('Error populating operation data:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos de la operación",
-          variant: "destructive",
-        });
       }
-    };
 
+      // Generate folio based on operation - único y estable
+      const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
+      
+      console.log('HPT data populated:', {
+        operacion,
+        supervisor,
+        teamMembers,
+        folio
+      });
+
+      // Auto-populate with operation and user data
+      updateData({
+        operacion_id: currentOperacionId,
+        folio,
+        empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+        supervisor_nombre: supervisor ? 
+          ((supervisor as any).nombre_completo || 
+           ((supervisor as any).usuario?.nombre && (supervisor as any).usuario?.apellido 
+             ? `${(supervisor as any).usuario.nombre} ${(supervisor as any).usuario.apellido}` 
+             : defaults.nombre + ' ' + defaults.apellido)) : 
+          (defaults.nombre + ' ' + defaults.apellido),
+        centro_trabajo_nombre: operacion.sitios?.nombre || '',
+        lugar_especifico: operacion.sitios?.ubicacion || '',
+        plan_trabajo: operacion.tareas || '',
+        descripcion_tarea: operacion.nombre || 'Operación de buceo comercial',
+        // Pre-populate team data
+        buzos: teamMembers.filter(m => {
+          const rol = (m as any).rol || (m as any).rol_equipo || '';
+          return rol.toLowerCase().includes('buzo');
+        }).map(miembro => {
+          const miembroAny = miembro as any;
+          const nombreCompleto = miembroAny.nombre_completo || 
+                                (miembroAny.usuario?.nombre && miembroAny.usuario?.apellido 
+                                  ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
+                                  : 'Sin nombre');
+          const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
+          
+          return {
+            id: miembroAny.id || `temp_${Date.now()}_${Math.random()}`,
+            nombre: nombre || '',
+            apellido: apellidoParts.join(' ') || '',
+            rol: miembroAny.rol || miembroAny.rol_equipo || 'Buzo Principal',
+            matricula: miembroAny.usuario?.perfil_buzo?.matricula || '',
+            rut: miembroAny.usuario?.perfil_buzo?.rut || ''
+          };
+        }),
+        asistentes: [] // Empty initially, can be added manually
+      });
+
+    } catch (error) {
+      console.error('Error populating operation data:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos de la operación",
+        variant: "destructive",
+      });
+    }
+  }, [currentOperacionId, equipos, updateData, toast, hptId, getFormDefaults, isDataPopulated]);
+
+  useEffect(() => {
     populateOperationData();
-  }, [currentOperacionId, equipos, updateData, toast, hptId, getFormDefaults]);
+  }, [populateOperationData]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setCurrentOperacionId(operacionId);
     setShowOperacionSelector(false);
+    setIsDataPopulated(false); // Reset para permitir nueva población
   };
 
   const handleNext = () => {

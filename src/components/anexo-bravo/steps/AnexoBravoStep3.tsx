@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, AlertTriangle, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Settings, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface AnexoBravoStep3Props {
   data: any;
@@ -12,6 +15,7 @@ interface AnexoBravoStep3Props {
 
 export const AnexoBravoStep3 = ({ data, onUpdate }: AnexoBravoStep3Props) => {
   const checklist = data.anexo_bravo_checklist || {};
+  const [openObservations, setOpenObservations] = useState<Record<string, boolean>>({});
 
   const equiposInsumos = [
     { key: 'compresor', label: 'Compresor', categoria: 'equipo_principal' },
@@ -60,6 +64,13 @@ export const AnexoBravoStep3 = ({ data, onUpdate }: AnexoBravoStep3Props) => {
       }
     };
     onUpdate({ anexo_bravo_checklist: newChecklist });
+  };
+
+  const toggleObservations = (equipoKey: string) => {
+    setOpenObservations(prev => ({
+      ...prev,
+      [equipoKey]: !prev[equipoKey]
+    }));
   };
 
   const getEquiposPorCategoria = () => {
@@ -151,26 +162,44 @@ export const AnexoBravoStep3 = ({ data, onUpdate }: AnexoBravoStep3Props) => {
                           {equipo.label}
                         </Label>
                       </div>
-                      {checklist[equipo.key]?.verificado && (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        {checklist[equipo.key]?.verificado && (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleObservations(equipo.key)}
+                          className="p-1 h-8 w-8"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     
-                    <div className="ml-6">
-                      <Label htmlFor={`obs_${equipo.key}`} className="text-xs text-gray-600">
-                        Observaciones
-                      </Label>
-                      <Textarea
-                        id={`obs_${equipo.key}`}
-                        value={checklist[equipo.key]?.observaciones || ''}
-                        onChange={(e) => 
-                          handleChecklistChange(equipo.key, 'observaciones', e.target.value)
-                        }
-                        placeholder="Observaciones específicas del equipo..."
-                        rows={2}
-                        className="text-xs"
-                      />
-                    </div>
+                    <Collapsible 
+                      open={openObservations[equipo.key]} 
+                      onOpenChange={() => toggleObservations(equipo.key)}
+                    >
+                      <CollapsibleContent className="ml-6">
+                        <div className="mt-2">
+                          <Label htmlFor={`obs_${equipo.key}`} className="text-xs text-gray-600">
+                            Observaciones
+                          </Label>
+                          <Textarea
+                            id={`obs_${equipo.key}`}
+                            value={checklist[equipo.key]?.observaciones || ''}
+                            onChange={(e) => 
+                              handleChecklistChange(equipo.key, 'observaciones', e.target.value)
+                            }
+                            placeholder="Observaciones específicas del equipo..."
+                            rows={2}
+                            className="text-xs mt-1"
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 ))}
               </CardContent>
