@@ -38,13 +38,14 @@ export const OperacionTeamManagerEnhanced = ({
     ? equipos.find(e => e.id === operacion.equipo_buceo_id)
     : null;
 
-  // Filtrar equipos disponibles según salmonera y contratista
+  // Filtrar equipos disponibles (los equipos no tienen salmonera_id y contratista_id directamente)
   const equiposDisponibles = equipos.filter(equipo => {
-    const matchesSalmonera = !salmoneraId || equipo.salmonera_id === salmoneraId;
-    const matchesContratista = !contratistaId || equipo.contratista_id === contratistaId;
-    const isAvailable = equipo.estado === 'disponible' || equipo.id === operacion?.equipo_buceo_id;
+    // Para ahora, mostrar todos los equipos disponibles
+    // En el futuro, se puede implementar filtrado por empresa
+    const isAvailable = !equipo.activo || equipo.activo === true;
+    const isNotCurrentlyAssigned = equipo.id === operacion?.equipo_buceo_id;
     
-    return matchesSalmonera && matchesContratista && isAvailable;
+    return (isAvailable || isNotCurrentlyAssigned);
   });
 
   useEffect(() => {
@@ -234,7 +235,7 @@ export const OperacionTeamManagerEnhanced = ({
                       <div>
                         <div className="font-medium">{equipo.nombre}</div>
                         <div className="text-xs text-gray-500">
-                          {equipo.miembros?.length || 0} miembros - {equipo.estado}
+                          {equipo.miembros?.length || 0} miembros - {equipo.activo ? 'Activo' : 'Inactivo'}
                         </div>
                       </div>
                     </div>

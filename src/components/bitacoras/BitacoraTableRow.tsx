@@ -11,6 +11,7 @@ interface BitacoraTableRowProps {
   bitacora: any;
   type: 'supervisor' | 'buzo';
   onSign: (id: string, signatureData: string) => void;
+  onViewDetails?: (bitacoraId: string) => void;
   currentUserName?: string;
   currentUserRole?: string;
 }
@@ -19,6 +20,7 @@ export const BitacoraTableRow = ({
   bitacora, 
   type, 
   onSign, 
+  onViewDetails,
   currentUserName = 'Usuario',
   currentUserRole = 'Usuario'
 }: BitacoraTableRowProps) => {
@@ -49,6 +51,12 @@ export const BitacoraTableRow = ({
     setShowSignatureModal(false);
   };
 
+  const handleViewClick = () => {
+    if (onViewDetails) {
+      onViewDetails(bitacora.bitacora_id);
+    }
+  };
+
   return (
     <>
       <TableRow>
@@ -70,7 +78,7 @@ export const BitacoraTableRow = ({
         </TableCell>
         <TableCell className="text-right">
           <div className="flex items-center gap-2 justify-end">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleViewClick}>
               <Eye className="w-4 h-4" />
             </Button>
             {!bitacora.firmado && (

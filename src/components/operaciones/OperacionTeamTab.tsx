@@ -114,13 +114,13 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
         </Card>
       )}
 
-      {/* Equipo de Buceo Asignado */}
+      {/* Personal de Buceo Asignado */}
       <Card className="ios-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              Equipo de Buceo Asignado
+              Personal de Buceo Asignado
             </CardTitle>
             <Button
               onClick={() => setShowTeamManager(true)}
@@ -128,7 +128,7 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
               className="ios-button flex items-center gap-2"
             >
               <Edit className="w-4 h-4" />
-              {equipoAsignado ? 'Cambiar Equipo' : 'Asignar Equipo'}
+              {equipoAsignado ? 'Cambiar Personal' : 'Asignar Personal'}
             </Button>
           </div>
         </CardHeader>
@@ -140,7 +140,7 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                   <h3 className="font-medium text-green-800">{equipoAsignado.nombre}</h3>
                   <Badge className="bg-green-100 text-green-700">
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Equipo Asignado
+                    Personal Asignado
                   </Badge>
                 </div>
                 {equipoAsignado.descripcion && (
@@ -148,37 +148,37 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
                 )}
               </div>
               
-              {/* Gestión de Miembros del Equipo */}
+              {/* Gestión de Miembros del Personal */}
               {equipoAsignado.miembros && equipoAsignado.miembros.length > 0 ? (
                 <PersonalManager
-                  title="Miembros del Equipo"
-                  description="Gestione los miembros asignados a este equipo de buceo"
+                  title="Miembros del Personal"
+                  description="Gestione los miembros asignados a este personal de buceo"
                   personal={equipoAsignado.miembros}
                   onAddMember={handleAddMember}
                   onRemoveMember={handleRemoveMember}
                   onUpdateRole={handleUpdateRole}
                   allowedRoles={['supervisor', 'buzo_principal', 'buzo_asistente']}
-                  emptyStateMessage="Este equipo no tiene miembros asignados"
-                  addButtonText="Agregar Miembro al Equipo"
+                  emptyStateMessage="Este personal no tiene miembros asignados"
+                  addButtonText="Agregar Miembro al Personal"
                 />
               ) : (
                 <div className="border rounded-lg p-6">
                   <Alert className="border-yellow-200 bg-yellow-50 mb-4">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="text-yellow-800">
-                      <strong>Sin miembros asignados:</strong> Este equipo no tiene miembros. Agregue miembros para poder crear documentos de operación (HPT, Anexo Bravo) o inmersiones.
+                      <strong>Sin miembros asignados:</strong> Este personal no tiene miembros. Agregue miembros para poder crear documentos de operación (HPT, Anexo Bravo) o inmersiones.
                     </AlertDescription>
                   </Alert>
                   
                   <PersonalManager
-                    title="Agregar Miembros al Equipo"
-                    description="Este equipo necesita miembros para funcionar"
+                    title="Agregar Miembros al Personal"
+                    description="Este personal necesita miembros para funcionar"
                     personal={[]}
                     onAddMember={handleAddMember}
                     onRemoveMember={handleRemoveMember}
                     onUpdateRole={handleUpdateRole}
                     allowedRoles={['supervisor', 'buzo_principal', 'buzo_asistente']}
-                    emptyStateMessage="Este equipo no tiene miembros asignados"
+                    emptyStateMessage="Este personal no tiene miembros asignados"
                     addButtonText="Agregar Primer Miembro"
                   />
                 </div>
@@ -189,35 +189,34 @@ export const OperacionTeamTab = ({ operacionId, operacion }: OperacionTeamTabPro
               <Alert className="border-red-200 bg-red-50 mb-4">
                 <Shield className="h-4 w-4" />
                 <AlertDescription className="text-red-800">
-                  <strong>Sin equipo asignado:</strong> Debe asignar un equipo de buceo a esta operación antes de crear documentos (HPT, Anexo Bravo) o inmersiones.
+                  <strong>Sin personal asignado:</strong> Debe asignar personal de buceo a esta operación antes de crear documentos (HPT, Anexo Bravo) o inmersiones.
                 </AlertDescription>
               </Alert>
               <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-              <p className="text-zinc-500 mb-2">No hay equipo de buceo asignado</p>
-              <p className="text-sm text-zinc-400">Asigne un equipo de buceo para esta operación</p>
+              <p className="text-zinc-500 mb-2">No hay personal de buceo asignado</p>
+              <p className="text-sm text-zinc-400">Asigne personal de buceo para esta operación</p>
               <Button 
                 onClick={() => setShowTeamManager(true)}
                 className="ios-button mt-4 bg-blue-600 hover:bg-blue-700"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Asignar Equipo
+                Asignar Personal
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog para gestión de equipo */}
+      {/* Dialog para gestión de personal */}
       <Dialog open={showTeamManager} onOpenChange={setShowTeamManager}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Gestionar Equipo de Buceo</DialogTitle>
+            <DialogTitle>Gestionar Personal de Buceo</DialogTitle>
           </DialogHeader>
           <OperacionTeamManagerEnhanced
             operacionId={operacionId}
             salmoneraId={operacion?.salmonera_id}
             contratistaId={operacion?.contratista_id}
-            onClose={() => setShowTeamManager(false)}
           />
         </DialogContent>
       </Dialog>

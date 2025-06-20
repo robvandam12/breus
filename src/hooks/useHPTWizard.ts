@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useHPT, HPTFormData } from '@/hooks/useHPT';
 import { toast } from '@/hooks/use-toast';
@@ -88,6 +87,24 @@ export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
     supervisor_servicio_url?: string;
     supervisor_mandante_url?: string;
   };
+
+  // Personal de buceo (para compatibilidad con HPTStep3Personal)
+  buzos: Array<{
+    id: string;
+    nombre: string;
+    apellido: string;
+    rol: string;
+    matricula: string;
+    rut: string;
+  }>;
+  asistentes: Array<{
+    id: string;
+    nombre: string;
+    apellido: string;
+    rol: string;
+    matricula: string;
+    rut: string;
+  }>;
 }
 
 const initialData: HPTWizardData = {
@@ -153,7 +170,9 @@ const initialData: HPTWizardData = {
   hpt_firmas: {
     supervisor_servicio_url: '',
     supervisor_mandante_url: ''
-  }
+  },
+  buzos: [],
+  asistentes: []
 };
 
 export const useHPTWizard = (operacionId?: string, hptId?: string) => {
@@ -183,20 +202,27 @@ export const useHPTWizard = (operacionId?: string, hptId?: string) => {
     },
     {
       id: 3,
+      title: "Personal de Buceo",
+      description: "Gestión del personal asignado",
+      fields: ['buzos', 'asistentes'],
+      isValid: true // Siempre válido
+    },
+    {
+      id: 4,
       title: "Estándares de Riesgos Críticos",
       description: "Identificación de ERC aplicables",
       fields: ['hpt_erc'],
       isValid: true // Siempre válido
     },
     {
-      id: 4,
+      id: 5,
       title: "Medidas Clave",
       description: "Verificación de medidas de control",
       fields: ['hpt_medidas', 'hpt_riesgos_comp'],
       isValid: true // Siempre válido
     },
     {
-      id: 5,
+      id: 6,
       title: "Difusión y Firmas",
       description: "Registro de difusión y firmas",
       fields: ['hpt_conocimiento', 'hpt_firmas'],

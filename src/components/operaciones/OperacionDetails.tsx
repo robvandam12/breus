@@ -61,8 +61,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const canCreateInmersiones = compliance?.canExecute || false;
-
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Header */}
@@ -79,7 +77,7 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="equipo">Equipo de Buceo</TabsTrigger>
+          <TabsTrigger value="equipo">Personal de Buceo</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
@@ -106,7 +104,6 @@ export const OperacionDetails: React.FC<OperacionDetailsProps> = ({ operacionId,
         <TabsContent value="inmersiones" className="space-y-4">
           <OperacionInmersiones 
             operacionId={operacionId}
-            canCreateInmersiones={canCreateInmersiones}
             onNewInmersion={() => setShowCreateInmersion(true)}
           />
         </TabsContent>
