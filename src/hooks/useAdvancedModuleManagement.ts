@@ -42,6 +42,18 @@ interface ModuleActivationLog {
   created_at: string;
 }
 
+interface ModuleStatsResult {
+  total_usage: number;
+  active_modules: number;
+  avg_daily_usage: number;
+  usage_by_module: Record<string, number>;
+  usage_trend: Array<{
+    date: string;
+    usage: number;
+    active_users: number;
+  }>;
+}
+
 export const useAdvancedModuleManagement = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
@@ -270,7 +282,18 @@ export const useAdvancedModuleManagement = () => {
       });
 
       if (error) throw error;
-      return data;
+      
+      // Validar y transformar los datos con tipos seguros
+      const rawData = data as any;
+      const result: ModuleStatsResult = {
+        total_usage: Number(rawData?.total_usage || 0),
+        active_modules: Number(rawData?.active_modules || 0),
+        avg_daily_usage: Number(rawData?.avg_daily_usage || 0),
+        usage_by_module: rawData?.usage_by_module || {},
+        usage_trend: rawData?.usage_trend || []
+      };
+      
+      return result;
     },
     enabled: canManageModules,
   });

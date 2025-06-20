@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -20,7 +19,6 @@ import {
   XCircle,
   TrendingUp,
   Clock,
-  AlertTriangle
 } from "lucide-react";
 import { useAdvancedModuleManagement } from "@/hooks/useAdvancedModuleManagement";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,7 +66,7 @@ export const ModuleManagementDashboard = () => {
     { key: 'network_maintenance', name: 'Mantención de Redes', icon: Settings, description: 'Mantenimiento preventivo y correctivo' },
     { key: 'network_operations', name: 'Faenas de Redes', icon: Zap, description: 'Operaciones de redes marinas' },
     { key: 'reports', name: 'Reportes Avanzados', icon: BarChart3, description: 'Sistema de reportes especializados' },
-    { key: 'integrations', name: 'Integraciones', icon: Zap, description: 'APIs externas y sincronización' },
+    { key: 'integrations', name: 'Integraciones', icon: Zep, description: 'APIs externas y sincronización' },
   ];
 
   const handleToggleModule = async (moduleName: string, enabled: boolean) => {
