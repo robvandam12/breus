@@ -39,6 +39,9 @@ interface OperacionFullContextResult {
   es_legacy: boolean;
 }
 
+// Tipo para el contexto de operación
+type TipoContexto = 'planificada' | 'operativa_directa';
+
 export const useContextualOperations = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -115,7 +118,7 @@ export const useContextualOperations = () => {
   // Crear operación con contexto específico
   const createOperacionWithContext = async (
     operacionData: any,
-    tipoContexto: 'planificada' | 'operativa_directa' = 'planificada'
+    tipoContexto: TipoContexto = 'planificada'
   ) => {
     setLoading(true);
     try {
@@ -129,16 +132,23 @@ export const useContextualOperations = () => {
       if (operacionError) throw operacionError;
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      const defaultTipo: 'planificada' | 'operativa_directa' = 'planificada';
+      const defaultTipo: TipoContexto = 'planificada';
       if (tipoContexto !== defaultTipo) {
+        const contextUpdate: Partial<{
+          tipo_contexto: TipoContexto;
+          requiere_documentos: boolean;
+          requiere_hpt: boolean;
+          requiere_anexo_bravo: boolean;
+        }> = {
+          tipo_contexto: tipoContexto,
+          requiere_documentos: tipoContexto === 'planificada',
+          requiere_hpt: tipoContexto === 'planificada',
+          requiere_anexo_bravo: tipoContexto === 'planificada'
+        };
+
         const { error: contextError } = await supabase
           .from('operacion_context')
-          .update({
-            tipo_contexto: tipoContexto,
-            requiere_documentos: tipoContexto === 'planificada',
-            requiere_hpt: tipoContexto === 'planificada',
-            requiere_anexo_bravo: tipoContexto === 'planificada'
-          })
+          .update(contextUpdate)
           .eq('operacion_id', operacion.id);
 
         if (contextError) {
