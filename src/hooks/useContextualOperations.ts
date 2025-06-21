@@ -31,6 +31,14 @@ export interface ContextualValidationResult {
   errors: string[];
 }
 
+// Interfaz para el resultado de la función RPC
+interface OperacionFullContextResult {
+  operacion: any;
+  contexto: any;
+  tiene_contexto: boolean;
+  es_legacy: boolean;
+}
+
 export const useContextualOperations = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -48,8 +56,11 @@ export const useContextualOperations = () => {
       const warnings: string[] = [];
       const errors: string[] = [];
 
+      // Castear el resultado a nuestro tipo esperado
+      const result = data as OperacionFullContextResult;
+
       // Si es operación legacy (sin contexto)
-      if (data.es_legacy) {
+      if (result.es_legacy) {
         warnings.push('Operación legacy: requiere validación HPT y Anexo Bravo tradicional');
         return {
           isValid: true,
@@ -64,8 +75,8 @@ export const useContextualOperations = () => {
         };
       }
 
-      const contexto = data.contexto as OperacionContext;
-      const esOperativaDirecta = contexto.tipo_contexto === 'operativa_directa';
+      const contexto = result.contexto as OperacionContext;
+      const esOperativaDirecta = contexto?.tipo_contexto === 'operativa_directa';
 
       if (esOperativaDirecta) {
         warnings.push('Operación directa: validación documental no requerida');
@@ -74,9 +85,9 @@ export const useContextualOperations = () => {
       return {
         isValid: true,
         contexto,
-        requiere_documentos: contexto.requiere_documentos,
-        requiere_hpt: contexto.requiere_hpt,
-        requiere_anexo_bravo: contexto.requiere_anexo_bravo,
+        requiere_documentos: contexto?.requiere_documentos || false,
+        requiere_hpt: contexto?.requiere_hpt || false,
+        requiere_anexo_bravo: contexto?.requiere_anexo_bravo || false,
         es_operativa_directa: esOperativaDirecta,
         es_legacy: false,
         warnings,
@@ -118,7 +129,8 @@ export const useContextualOperations = () => {
       if (operacionError) throw operacionError;
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      if (tipoContexto !== 'planificada') {
+      const defaultTipo = 'planificada';
+      if (tipoContexto !== defaultTipo) {
         const { error: contextError } = await supabase
           .from('operacion_context')
           .update({
@@ -200,7 +212,9 @@ export const useContextualOperations = () => {
     }
 
     // Validaciones adicionales específicas para inmersiones
-    if (result.es_legacy || (result.contexto && result.contexto.tipo_contexto === 'planificada')) {
+    const needsValidation = result.es_legacy || (result.contexto && result.contexto.tipo_contexto === 'planificada');
+    
+    if (needsValidation) {
       // Para operaciones planificadas o legacy, verificar documentos si son requeridos
       if (result.requiere_hpt) {
         const { data: hptData } = await supabase
@@ -208,7 +222,7 @@ export const useContextualOperations = () => {
           .select('id')
           .eq('operacion_id', operacionId)
           .eq('firmado', true)
-          .single();
+          .maybeSingle();
 
         if (!hptData) {
           result.errors.push('HPT firmado requerido para esta operación');
@@ -222,7 +236,7 @@ export const useContextualOperations = () => {
           .select('id')
           .eq('operacion_id', operacionId)
           .eq('firmado', true)
-          .single();
+          .maybeSingle();
 
         if (!anexoData) {
           result.errors.push('Anexo Bravo firmado requerido para esta operación');
