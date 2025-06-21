@@ -56,8 +56,8 @@ export const useContextualOperations = () => {
       const warnings: string[] = [];
       const errors: string[] = [];
 
-      // Castear el resultado a nuestro tipo esperado
-      const result = data as OperacionFullContextResult;
+      // Convertir a unknown primero, luego a nuestro tipo esperado
+      const result = data as unknown as OperacionFullContextResult;
 
       // Si es operación legacy (sin contexto)
       if (result.es_legacy) {
@@ -129,7 +129,7 @@ export const useContextualOperations = () => {
       if (operacionError) throw operacionError;
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      const defaultTipo = 'planificada';
+      const defaultTipo: 'planificada' | 'operativa_directa' = 'planificada';
       if (tipoContexto !== defaultTipo) {
         const { error: contextError } = await supabase
           .from('operacion_context')
