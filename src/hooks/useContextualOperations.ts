@@ -132,7 +132,7 @@ export const useContextualOperations = () => {
       if (operacionError) throw operacionError;
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      const defaultTipo: TipoContexto = 'planificada';
+      const defaultTipo = 'planificada';
       if (tipoContexto !== defaultTipo) {
         const esPlanificada = tipoContexto === 'planificada';
         
