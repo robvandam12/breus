@@ -134,6 +134,8 @@ export const useContextualOperations = () => {
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
       const defaultTipo: TipoContexto = 'planificada';
       if (tipoContexto !== defaultTipo) {
+        const esPlanificada = tipoContexto === 'planificada';
+        
         const contextUpdate: Partial<{
           tipo_contexto: TipoContexto;
           requiere_documentos: boolean;
@@ -141,9 +143,9 @@ export const useContextualOperations = () => {
           requiere_anexo_bravo: boolean;
         }> = {
           tipo_contexto: tipoContexto,
-          requiere_documentos: tipoContexto === 'planificada',
-          requiere_hpt: tipoContexto === 'planificada',
-          requiere_anexo_bravo: tipoContexto === 'planificada'
+          requiere_documentos: esPlanificada,
+          requiere_hpt: esPlanificada,
+          requiere_anexo_bravo: esPlanificada
         };
 
         const { error: contextError } = await supabase
