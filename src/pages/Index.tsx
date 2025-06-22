@@ -15,11 +15,16 @@ export default function Index() {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  useEffect(() => {
-    // No hacer nada si está cargando
-    if (loading) return;
+  console.log('Index.tsx - Render state:', { user: !!user, profile: !!profile, loading });
 
-    console.log('Index.tsx - Auth state:', { user: !!user, profile, loading });
+  useEffect(() => {
+    console.log('Index.tsx - useEffect triggered:', { user: !!user, profile, loading });
+
+    // Wait for auth to finish loading
+    if (loading) {
+      console.log('Index.tsx - Still loading, waiting...');
+      return;
+    }
 
     // Redirect if not authenticated
     if (!user) {
@@ -28,14 +33,14 @@ export default function Index() {
       return;
     }
 
-    // Check if new user needs onboarding (only if they don't have basic profile info)
+    // Check if user needs onboarding (basic profile setup)
     if (user && profile && !profile.nombre && !profile.apellido) {
-      console.log('Index.tsx - New user detected, redirecting to onboarding');
+      console.log('Index.tsx - User needs basic profile setup');
       navigate('/onboarding', { replace: true });
       return;
     }
 
-    // Check if buzo needs onboarding (but don't redirect, show onboarding component)
+    // Check if buzo needs onboarding
     if (profile?.role === 'buzo') {
       const onboardingCompleted = localStorage.getItem('onboarding_completed');
       if (!onboardingCompleted) {
@@ -45,33 +50,40 @@ export default function Index() {
     }
   }, [loading, user, profile, navigate]);
 
-  // Show loading spinner
+  // Show loading while auth is initializing
   if (loading) {
+    console.log('Index.tsx - Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">Inicializando aplicación...</p>
         </div>
       </div>
     );
   }
 
-  // If no user, don't render anything (will redirect)
+  // Don't render anything while redirecting
   if (!user) {
+    console.log('Index.tsx - No user, returning null (should redirect)');
     return null;
   }
 
-  // Show onboarding for buzos who haven't seen it
+  // Show onboarding for buzos
   if (showOnboarding && profile?.role === 'buzo') {
+    console.log('Index.tsx - Showing buzo onboarding');
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
+  console.log('Index.tsx - Rendering dashboard for role:', profile?.role);
+
   const getDashboardContent = () => {
     if (!profile) {
+      console.log('Index.tsx - No profile, showing restricted view');
       return <BuzoRestrictedView />;
     }
     
+    console.log('Index.tsx - Showing dashboard for role:', profile.role);
     switch (profile.role) {
       case 'superuser':
       case 'admin_salmonera':

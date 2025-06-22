@@ -48,15 +48,15 @@ export const useAuthProvider = (): AuthContextType => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Función para obtener el path del dashboard basado en el rol
+  console.log('useAuth - Current state:', { user: !!user, profile: !!profile, loading });
+
   const getDashboardPath = (): string => {
+    console.log('getDashboardPath - Profile role:', profile?.role);
     if (!profile) return '/';
     
     switch (profile.role) {
       case 'superuser':
-        return '/';
       case 'admin_salmonera':
-        return '/';
       case 'admin_servicio':
         return '/';
       case 'supervisor':
@@ -68,63 +68,9 @@ export const useAuthProvider = (): AuthContextType => {
     }
   };
 
-  useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        // Get initial session
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        console.log('useAuth - Initial session:', initialSession?.user?.email);
-        
-        if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          await fetchUserProfile(initialSession.user.id);
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log('useAuth - Auth state change:', event, session?.user?.email);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('useAuth - Fetching profile for user:', userId);
+      console.log('fetchUserProfile - Fetching for user:', userId);
       
       const { data, error } = await supabase
         .from('usuario')
@@ -133,6 +79,7 @@ export const useAuthProvider = (): AuthContextType => {
         .single() as { data: UsuarioRow | null; error: any };
 
       if (error && error.code !== 'PGRST116') {
+        console.error('fetchUserProfile - Error:', error);
         throw error;
       }
 
@@ -149,25 +96,87 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
-        console.log('useAuth - Profile loaded:', userProfile.role, userProfile.nombre);
+        console.log('fetchUserProfile - Profile loaded:', userProfile);
         setProfile(userProfile);
       } else {
-        console.log('useAuth - No profile found for user');
+        console.log('fetchUserProfile - No profile found');
         setProfile(null);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar el perfil del usuario",
-        variant: "destructive",
-      });
+      console.error('fetchUserProfile - Error:', error);
+      setProfile(null);
     }
   };
 
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        console.log('initializeAuth - Starting...');
+        
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log('initializeAuth - Initial session:', !!initialSession);
+        
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          await fetchUserProfile(initialSession.user.id);
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error('initializeAuth - Error:', error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        if (mounted) {
+          console.log('initializeAuth - Setting loading to false');
+          setLoading(false);
+        }
+      }
+    };
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('onAuthStateChange - Event:', event, 'Session:', !!session);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          setLoading(false);
+        }
+      }
+    );
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const signIn = async (email: string, password: string): Promise<{ success: boolean; redirectPath?: string }> => {
     try {
-      console.log('useAuth - Attempting sign in for:', email);
+      console.log('signIn - Attempting for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -180,15 +189,16 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Has iniciado sesión exitosamente",
       });
 
-      // Esperar un momento para que se cargue el perfil
+      // Wait for profile to load
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      console.log('signIn - Success, redirectPath:', getDashboardPath());
       return { 
         success: true, 
         redirectPath: getDashboardPath() 
       };
     } catch (error: any) {
-      console.error('Error signing in:', error);
+      console.error('signIn - Error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al iniciar sesión",
@@ -211,7 +221,6 @@ export const useAuthProvider = (): AuthContextType => {
 
       if (error) throw error;
 
-      // Create user profile in usuario table
       if (data.user) {
         const { error: profileError } = await supabase
           .from('usuario')
@@ -233,7 +242,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Revisa tu email para confirmar tu cuenta",
       });
     } catch (error: any) {
-      console.error('Error signing up:', error);
+      console.error('signUp - Error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al crear la cuenta",
@@ -248,7 +257,6 @@ export const useAuthProvider = (): AuthContextType => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Clear state immediately
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -258,7 +266,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Has cerrado sesión exitosamente",
       });
     } catch (error: any) {
-      console.error('Error signing out:', error);
+      console.error('signOut - Error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al cerrar sesión",
@@ -279,7 +287,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Revisa tu email para restablecer tu contraseña",
       });
     } catch (error: any) {
-      console.error('Error resetting password:', error);
+      console.error('resetPassword - Error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al enviar email de recuperación",
@@ -293,7 +301,7 @@ export const useAuthProvider = (): AuthContextType => {
     if (!profile) return false;
 
     const rolePermissions = {
-      superuser: ['*'], // All permissions
+      superuser: ['*'],
       admin_salmonera: [
         'manage_salmonera',
         'manage_sitios',
