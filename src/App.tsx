@@ -7,7 +7,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { SimpleProtectedRoute } from '@/components/auth/SimpleProtectedRoute';
 import { PageWithSidebarSkeleton } from '@/components/layout/PageWithSidebarSkeleton';
 
-// Lazy load pages
+// Lazy load pages with proper error boundaries
 const Login = lazy(() => import('@/pages/auth/Login'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
@@ -33,89 +33,177 @@ const queryClient = new QueryClient({
   },
 });
 
+// Error boundary component
+const LazyComponentWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Suspense fallback={<PageWithSidebarSkeleton />}>
+      {children}
+    </Suspense>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              
-              {/* Protected routes */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={
+          <Routes>
+            {/* Public routes */}
+            <Route 
+              path="/login" 
+              element={
+                <LazyComponentWrapper>
+                  <Login />
+                </LazyComponentWrapper>
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                <LazyComponentWrapper>
+                  <Register />
+                </LazyComponentWrapper>
+              } 
+            />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <LazyComponentWrapper>
+                  <ForgotPassword />
+                </LazyComponentWrapper>
+              } 
+            />
+            
+            {/* Protected routes */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route 
+              path="/dashboard" 
+              element={
                 <SimpleProtectedRoute>
-                  <Dashboard />
+                  <LazyComponentWrapper>
+                    <Dashboard />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/inmersiones" element={
+              } 
+            />
+            <Route 
+              path="/inmersiones" 
+              element={
                 <SimpleProtectedRoute>
-                  <Inmersiones />
+                  <LazyComponentWrapper>
+                    <Inmersiones />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/hpt" element={
+              } 
+            />
+            <Route 
+              path="/hpt" 
+              element={
                 <SimpleProtectedRoute>
-                  <HPT />
+                  <LazyComponentWrapper>
+                    <HPT />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/anexo-bravo" element={
+              } 
+            />
+            <Route 
+              path="/anexo-bravo" 
+              element={
                 <SimpleProtectedRoute>
-                  <AnexoBravo />
+                  <LazyComponentWrapper>
+                    <AnexoBravo />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/bitacoras" element={
+              } 
+            />
+            <Route 
+              path="/bitacoras" 
+              element={
                 <SimpleProtectedRoute>
-                  <Bitacoras />
+                  <LazyComponentWrapper>
+                    <Bitacoras />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/reportes" element={
+              } 
+            />
+            <Route 
+              path="/reportes" 
+              element={
                 <SimpleProtectedRoute>
-                  <Reportes />
+                  <LazyComponentWrapper>
+                    <Reportes />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/reportes/operativos" element={
+              } 
+            />
+            <Route 
+              path="/reportes/operativos" 
+              element={
                 <SimpleProtectedRoute>
-                  <ReportesOperativos />
+                  <LazyComponentWrapper>
+                    <ReportesOperativos />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/admin" element={
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
                 <SimpleProtectedRoute>
-                  <Admin />
+                  <LazyComponentWrapper>
+                    <Admin />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              
-              {/* Operaciones routes */}
-              <Route path="/operaciones/planificar" element={
+              } 
+            />
+            
+            {/* Operaciones routes */}
+            <Route 
+              path="/operaciones/planificar" 
+              element={
                 <SimpleProtectedRoute>
-                  <PlanificarOperaciones />
+                  <LazyComponentWrapper>
+                    <PlanificarOperaciones />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/operaciones/mantencion-redes" element={
+              } 
+            />
+            <Route 
+              path="/operaciones/mantencion-redes" 
+              element={
                 <SimpleProtectedRoute>
-                  <MantencionRedes />
+                  <LazyComponentWrapper>
+                    <MantencionRedes />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              <Route path="/operaciones/faenas-redes" element={
+              } 
+            />
+            <Route 
+              path="/operaciones/faenas-redes" 
+              element={
                 <SimpleProtectedRoute>
-                  <FaenasRedes />
+                  <LazyComponentWrapper>
+                    <FaenasRedes />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              
-              {/* Integration routes */}
-              <Route path="/integraciones" element={
+              } 
+            />
+            
+            {/* Integration routes */}
+            <Route 
+              path="/integraciones" 
+              element={
                 <SimpleProtectedRoute>
-                  <Integraciones />
+                  <LazyComponentWrapper>
+                    <Integraciones />
+                  </LazyComponentWrapper>
                 </SimpleProtectedRoute>
-              } />
-              
-              {/* Fallback for unknown routes */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Suspense>
+              } 
+            />
+            
+            {/* Fallback for unknown routes */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </Router>
         <Toaster />
       </AuthProvider>
