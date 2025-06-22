@@ -49,29 +49,24 @@ export const useAuthProvider = (): AuthContextType => {
   const [loading, setLoading] = useState(true);
 
   const getDashboardPath = (): string => {
-    if (!profile) return '/';
-    
-    switch (profile.role) {
-      case 'superuser':
-      case 'admin_salmonera':
-      case 'admin_servicio':
-      case 'supervisor':
-      case 'buzo':
-        return '/';
-      default:
-        return '/';
-    }
+    return '/';
   };
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
         .eq('usuario_id', userId)
         .single() as { data: UsuarioRow | null; error: any };
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('No profile found for user:', userId);
+          return null;
+        }
         console.error('Error fetching profile:', error);
         return null;
       }
@@ -79,7 +74,7 @@ export const useAuthProvider = (): AuthContextType => {
       if (data) {
         const userProfile: UserProfile = {
           id: data.usuario_id,
-          email: data.email || user?.email || '',
+          email: data.email || '',
           role: data.rol || 'buzo',
           nombre: data.nombre || '',
           apellido: data.apellido || '',
@@ -89,8 +84,10 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
+        console.log('Profile fetched successfully:', userProfile);
         return userProfile;
       }
+      
       return null;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -101,35 +98,70 @@ export const useAuthProvider = (): AuthContextType => {
   useEffect(() => {
     let mounted = true;
 
-    const handleAuthChange = async (event: string, session: Session | null) => {
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth...');
+        
+        // Get initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+        }
+
+        if (mounted) {
+          console.log('Initial session:', !!initialSession);
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          // Fetch profile if user exists
+          if (initialSession?.user) {
+            console.log('User found, fetching profile...');
+            const userProfile = await fetchUserProfile(initialSession.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in initializeAuth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
-      console.log('Auth change:', event, !!session);
+      console.log('Auth state change:', event, !!session);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        const userProfile = await fetchUserProfile(session.user.id);
-        if (mounted) {
-          setProfile(userProfile);
-        }
+        // Defer profile fetching to avoid blocking
+        setTimeout(async () => {
+          if (mounted) {
+            const userProfile = await fetchUserProfile(session.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
+          }
+        }, 0);
       } else {
         setProfile(null);
       }
       
-      if (mounted) {
+      if (event === 'SIGNED_IN') {
         setLoading(false);
       }
-    };
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthChange('initial', session);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    initializeAuth();
 
     return () => {
       mounted = false;
@@ -139,6 +171,8 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; redirectPath?: string }> => {
     try {
+      console.log('Attempting sign in for:', email);
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -146,6 +180,8 @@ export const useAuthProvider = (): AuthContextType => {
 
       if (error) throw error;
 
+      console.log('Sign in successful');
+      
       toast({
         title: "Bienvenido",
         description: "Has iniciado sesión exitosamente",

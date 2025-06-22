@@ -6,12 +6,14 @@ import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
 import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  console.log('Index - loading:', loading, 'user:', !!user, 'profile:', profile?.role);
 
   // Show loading while auth is initializing
   if (loading) {
@@ -27,26 +29,33 @@ export default function Index() {
 
   // This should not happen as ProtectedRoute handles auth
   if (!user) {
+    console.log('Index - No user found, this should not happen with ProtectedRoute');
     return null;
   }
 
-  // Show onboarding for buzos if needed (only once profile is loaded)
-  if (profile?.role === 'buzo' && !showOnboarding) {
-    const onboardingCompleted = localStorage.getItem('onboarding_completed');
-    if (!onboardingCompleted) {
-      setShowOnboarding(true);
+  // Check for onboarding only after profile is available
+  useEffect(() => {
+    if (profile?.role === 'buzo' && !showOnboarding) {
+      const onboardingCompleted = localStorage.getItem('onboarding_completed');
+      if (!onboardingCompleted) {
+        setShowOnboarding(true);
+      }
     }
-  }
+  }, [profile, showOnboarding]);
 
   if (showOnboarding && profile?.role === 'buzo') {
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
   const getDashboardContent = () => {
-    // Show default dashboard if profile is not loaded yet
+    // Show customizable dashboard for all roles initially
+    // If profile is not loaded yet, show default dashboard
     if (!profile) {
+      console.log('Index - No profile yet, showing default dashboard');
       return <CustomizableDashboard />;
     }
+    
+    console.log('Index - Showing dashboard for role:', profile.role);
     
     switch (profile.role) {
       case 'superuser':
