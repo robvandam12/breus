@@ -1,8 +1,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Chrome } from 'lucide-react';
-import { signInWithGoogle } from '@/integrations/supabase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GoogleAuthButtonProps {
   loading?: boolean;
@@ -11,6 +11,24 @@ interface GoogleAuthButtonProps {
 
 export const GoogleAuthButton = ({ loading, onAuthStart }: GoogleAuthButtonProps) => {
   const { toast } = useToast();
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      throw error;
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
