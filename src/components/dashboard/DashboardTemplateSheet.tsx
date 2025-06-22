@@ -1,3 +1,4 @@
+
 import {
   Sheet,
   SheetContent,
@@ -49,6 +50,7 @@ export const DashboardTemplateSheet = ({
         await saveAsTemplate({
             name: newTemplateName,
             description: newTemplateDescription,
+            type: 'user',
             layout_config: currentLayouts,
             widget_configs: currentWidgets,
         });
