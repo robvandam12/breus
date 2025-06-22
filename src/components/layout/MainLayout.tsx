@@ -8,11 +8,22 @@ interface MainLayoutProps {
   title?: string;
   subtitle?: string;
   icon?: LucideIcon;
+  headerChildren?: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
 }
 
-export const MainLayout = ({ children, title, subtitle, icon: Icon }: MainLayoutProps) => {
+export const MainLayout = ({ 
+  children, 
+  title, 
+  subtitle, 
+  icon: Icon, 
+  headerChildren,
+  className = "",
+  contentClassName = ""
+}: MainLayoutProps) => {
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className={`min-h-screen flex bg-gray-50 ${className}`}>
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-sm border-r border-gray-200 fixed left-0 top-0 h-full z-10">
         <SidebarContent />
@@ -21,20 +32,27 @@ export const MainLayout = ({ children, title, subtitle, icon: Icon }: MainLayout
       {/* Main Content */}
       <div className="flex-1 ml-64">
         {/* Header */}
-        {(title || subtitle) && (
+        {(title || subtitle || headerChildren) && (
           <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center gap-3">
-              {Icon && <Icon className="w-6 h-6 text-blue-600" />}
-              <div>
-                {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
-                {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {Icon && <Icon className="w-6 h-6 text-blue-600" />}
+                <div>
+                  {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
+                  {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+                </div>
               </div>
+              {headerChildren && (
+                <div className="flex items-center gap-3">
+                  {headerChildren}
+                </div>
+              )}
             </div>
           </div>
         )}
         
         {/* Page Content */}
-        <div className="p-6">
+        <div className={`p-6 ${contentClassName}`}>
           {children}
         </div>
       </div>

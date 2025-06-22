@@ -2,11 +2,12 @@
 import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { LucideIcon } from 'lucide-react';
 
 interface PageLoadingSkeletonProps {
   title: string;
   subtitle: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   showKPIs?: boolean;
   showTable?: boolean;
   showHeaderActions?: boolean;

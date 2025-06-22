@@ -2,11 +2,12 @@
 import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
+import { LucideIcon } from 'lucide-react';
 
 interface BitacoraPageSkeletonProps {
   title: string;
   subtitle: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   showStats?: boolean;
   showFilters?: boolean;
   showTable?: boolean;

@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { MainLayout } from "@/components/layout/MainLayout";
+import { LucideIcon } from 'lucide-react';
 
 interface BitacoraPageLayoutProps {
   title: string;
   subtitle: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   headerActions?: React.ReactNode;
   children: React.ReactNode;
   maxWidth?: 'full' | '7xl' | '6xl' | '5xl';

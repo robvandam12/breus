@@ -2,11 +2,12 @@
 import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { LucideIcon } from 'lucide-react';
 
 interface SimplePageSkeletonProps {
   title: string;
   subtitle: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   showForm?: boolean;
   showCards?: boolean;
   cardCount?: number;
