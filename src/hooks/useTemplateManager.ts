@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { DashboardTemplate } from './useDashboardTemplates';
@@ -27,7 +28,7 @@ export const useTemplateManager = ({ setDashboardState, currentRole, defaultWidg
             try {
                 const { layout_config, widget_configs, name: templateName } = template;
 
-                const allLayoutItems = Object.values(layout_config).flat();
+                const allLayoutItems = Object.values(layout_config).flat() as Layout[];
                 const invalidWidgetIds = allLayoutItems
                     .map(item => item.i as WidgetType)
                     .filter(widgetId => !widgetRegistry[widgetId]);

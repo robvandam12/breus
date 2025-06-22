@@ -4,6 +4,38 @@ import { type Role } from './widgetRegistry';
 
 export const cols = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 };
 
+export const breakpoints = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
+
+// Función para prevenir solapamientos en los layouts
+export const preventOverlapping = (layouts: Layouts): Layouts => {
+  const processedLayouts: Layouts = {};
+  
+  Object.keys(layouts).forEach(bp => {
+    const layout = layouts[bp as keyof Layouts];
+    if (Array.isArray(layout)) {
+      // Ordenar por posición Y, luego X
+      const sortedLayout = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+      
+      // Ajustar posiciones para evitar solapamientos
+      const adjustedLayout = sortedLayout.map((item, index) => {
+        if (index === 0) return item;
+        
+        const prevItem = sortedLayout[index - 1];
+        const minY = prevItem.y + prevItem.h;
+        
+        return {
+          ...item,
+          y: Math.max(item.y, minY)
+        };
+      });
+      
+      processedLayouts[bp as keyof Layouts] = adjustedLayout;
+    }
+  });
+  
+  return processedLayouts;
+};
+
 // Layout específico para superuser con widgets administrativos
 const superuserLayout: Layout[] = [
   // Panel de control del sistema - ancho completo

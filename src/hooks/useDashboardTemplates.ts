@@ -1,9 +1,10 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { type Role } from '@/components/dashboard/widgetRegistry';
 import { getLayoutsForRole } from '@/components/dashboard/layouts';
+import { toast } from '@/hooks/use-toast';
 
 export interface DashboardTemplate {
   id: string;
@@ -85,6 +86,7 @@ const systemTemplates: DashboardTemplate[] = [
 
 export const useDashboardTemplates = () => {
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: userTemplates = [], isLoading: isLoadingUserTemplates } = useQuery({
     queryKey: ['dashboard-templates', profile?.id],
@@ -103,6 +105,39 @@ export const useDashboardTemplates = () => {
     enabled: !!profile?.id,
   });
 
+  const saveAsTemplateMutation = useMutation({
+    mutationFn: async (template: Omit<DashboardTemplate, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+      if (!profile?.id) throw new Error('Usuario no autenticado');
+
+      const { data, error } = await supabase
+        .from('dashboard_templates')
+        .insert({
+          ...template,
+          created_by: profile.id,
+          type: 'user'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-templates', profile?.id] });
+      toast({
+        title: 'Plantilla guardada',
+        description: 'Tu plantilla ha sido guardada exitosamente.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error al guardar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Combinar templates del sistema con templates de usuario
   const allTemplates = [
     ...systemTemplates,
@@ -114,5 +149,7 @@ export const useDashboardTemplates = () => {
     systemTemplates,
     userTemplates,
     isLoading: isLoadingUserTemplates,
+    saveAsTemplate: saveAsTemplateMutation.mutate,
+    isSavingTemplate: saveAsTemplateMutation.isPending,
   };
 };
