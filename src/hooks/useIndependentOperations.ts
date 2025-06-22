@@ -14,15 +14,24 @@ export interface OperationalContext {
   requires_documents: boolean;
   allows_direct_operations: boolean;
   active_modules: string[];
+  configuration: Record<string, any>;
 }
 
 export interface IndependentInmersion {
   inmersion_id: string;
   codigo: string;
   fecha_inmersion: string;
+  hora_inicio: string;
+  hora_fin?: string;
   buzo_principal: string;
+  buzo_asistente?: string;
   supervisor: string;
   objetivo: string;
+  profundidad_max: number;
+  temperatura_agua: number;
+  visibilidad: number;
+  corriente: string;
+  observaciones?: string;
   estado: string;
   context_type: 'planned' | 'direct';
   requires_validation: boolean;
@@ -55,25 +64,52 @@ export const useIndependentOperations = () => {
       
       if (!companyId) return;
 
-      // Crear un contexto simulado por ahora (hasta que se implemente la tabla en BD)
-      const simulatedContext: OperationalContext = {
-        id: 'temp-context',
-        company_id: companyId,
-        company_type: companyType,
-        context_type: hasModuleAccess(modules.PLANNING_OPERATIONS) ? 'mixed' : 'direct',
-        requires_planning: hasModuleAccess(modules.PLANNING_OPERATIONS),
-        requires_documents: hasModuleAccess(modules.PLANNING_OPERATIONS) && companyType === 'salmonera',
-        allows_direct_operations: true,
-        active_modules: [
-          modules.CORE_IMMERSIONS,
-          ...(hasModuleAccess(modules.PLANNING_OPERATIONS) ? [modules.PLANNING_OPERATIONS] : []),
-          ...(hasModuleAccess(modules.MAINTENANCE_NETWORKS) ? [modules.MAINTENANCE_NETWORKS] : []),
-          ...(hasModuleAccess(modules.ADVANCED_REPORTING) ? [modules.ADVANCED_REPORTING] : []),
-          ...(hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) ? [modules.EXTERNAL_INTEGRATIONS] : [])
-        ]
-      };
+      // Intentar obtener contexto de la base de datos
+      const { data: contextData, error } = await supabase
+        .from('operational_contexts')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('company_type', companyType)
+        .maybeSingle();
 
-      setOperationalContext(simulatedContext);
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error loading operational context:', error);
+      }
+
+      // Si no existe contexto, crear uno por defecto
+      if (!contextData) {
+        const defaultContext: OperationalContext = {
+          id: 'temp-context',
+          company_id: companyId,
+          company_type: companyType,
+          context_type: companyType === 'salmonera' ? 'mixed' : 'direct',
+          requires_planning: companyType === 'salmonera',
+          requires_documents: companyType === 'salmonera',
+          allows_direct_operations: true,
+          active_modules: [
+            modules.CORE_IMMERSIONS,
+            ...(hasModuleAccess(modules.PLANNING_OPERATIONS) ? [modules.PLANNING_OPERATIONS] : []),
+            ...(hasModuleAccess(modules.MAINTENANCE_NETWORKS) ? [modules.MAINTENANCE_NETWORKS] : []),
+            ...(hasModuleAccess(modules.ADVANCED_REPORTING) ? [modules.ADVANCED_REPORTING] : []),
+            ...(hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) ? [modules.EXTERNAL_INTEGRATIONS] : [])
+          ],
+          configuration: {}
+        };
+
+        setOperationalContext(defaultContext);
+      } else {
+        setOperationalContext({
+          id: contextData.id,
+          company_id: contextData.company_id,
+          company_type: contextData.company_type,
+          context_type: contextData.context_type,
+          requires_planning: contextData.requires_planning,
+          requires_documents: contextData.requires_documents,
+          allows_direct_operations: contextData.allows_direct_operations,
+          active_modules: contextData.active_modules || [modules.CORE_IMMERSIONS],
+          configuration: contextData.configuration || {}
+        });
+      }
 
     } catch (error: any) {
       console.error('Error loading operational context:', error);
@@ -140,18 +176,32 @@ export const useIndependentOperations = () => {
         }
       }
 
-      // Crear inmersión con contexto independiente
+      // Preparar datos de inmersión con todos los campos requeridos
       const inmersionCompleta = {
-        ...inmersionData,
-        contexto_operativo: contextType,
-        requiere_validacion_previa: requiresValidation,
-        empresa_creadora_id: companyId,
-        empresa_creadora_tipo: companyType,
-        validacion_contextual: {
+        codigo: inmersionData.codigo || '',
+        fecha_inmersion: inmersionData.fecha_inmersion || new Date().toISOString().split('T')[0],
+        hora_inicio: inmersionData.hora_inicio || '08:00',
+        hora_fin: inmersionData.hora_fin,
+        buzo_principal: inmersionData.buzo_principal || '',
+        buzo_asistente: inmersionData.buzo_asistente,
+        supervisor: inmersionData.supervisor || '',
+        objetivo: inmersionData.objetivo || 'mantenimiento',
+        profundidad_max: inmersionData.profundidad_max || 0,
+        temperatura_agua: inmersionData.temperatura_agua || 0,
+        visibilidad: inmersionData.visibilidad || 0,
+        corriente: inmersionData.corriente || 'nula',
+        observaciones: inmersionData.observaciones || '',
+        estado: 'planificada',
+        context_type: contextType,
+        requires_validation: requiresValidation,
+        validation_status: requiresValidation ? 'pending' : 'not_required',
+        company_id: companyId,
+        company_type: companyType,
+        operacion_id: inmersionData.operacion_id,
+        metadata: {
           operational_context: operationalContext.context_type,
           active_modules: operationalContext.active_modules,
           created_independently: !inmersionData.operacion_id,
-          validation_status: requiresValidation ? 'pending' : 'not_required',
           ...inmersionData.metadata
         }
       };
@@ -224,11 +274,11 @@ export const useIndependentOperations = () => {
             estado
           )
         `)
-        .eq('empresa_creadora_id', companyId)
-        .eq('empresa_creadora_tipo', companyType);
+        .eq('company_id', companyId)
+        .eq('company_type', companyType);
 
       if (filters?.context_type) {
-        query = query.eq('contexto_operativo', filters.context_type);
+        query = query.eq('context_type', filters.context_type);
       }
 
       if (filters?.estado) {

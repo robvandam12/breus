@@ -1147,6 +1147,7 @@ export type Database = {
           codigo: string
           company_id: string | null
           company_type: string | null
+          context_type: string | null
           contexto_operativo: string | null
           corriente: string
           created_at: string
@@ -1162,6 +1163,7 @@ export type Database = {
           hpt_validado: boolean
           inmersion_id: string
           is_independent: boolean | null
+          metadata: Json | null
           objetivo: string
           observaciones: string | null
           operacion_id: string
@@ -1169,11 +1171,13 @@ export type Database = {
           priority: string | null
           profundidad_max: number
           requiere_validacion_previa: boolean | null
+          requires_validation: boolean | null
           supervisor: string
           supervisor_id: string | null
           temperatura_agua: number
           updated_at: string
           validacion_contextual: Json | null
+          validation_status: string | null
           visibilidad: number
           work_type: string | null
         }
@@ -1186,6 +1190,7 @@ export type Database = {
           codigo: string
           company_id?: string | null
           company_type?: string | null
+          context_type?: string | null
           contexto_operativo?: string | null
           corriente: string
           created_at?: string
@@ -1201,6 +1206,7 @@ export type Database = {
           hpt_validado?: boolean
           inmersion_id?: string
           is_independent?: boolean | null
+          metadata?: Json | null
           objetivo: string
           observaciones?: string | null
           operacion_id: string
@@ -1208,11 +1214,13 @@ export type Database = {
           priority?: string | null
           profundidad_max: number
           requiere_validacion_previa?: boolean | null
+          requires_validation?: boolean | null
           supervisor: string
           supervisor_id?: string | null
           temperatura_agua: number
           updated_at?: string
           validacion_contextual?: Json | null
+          validation_status?: string | null
           visibilidad: number
           work_type?: string | null
         }
@@ -1225,6 +1233,7 @@ export type Database = {
           codigo?: string
           company_id?: string | null
           company_type?: string | null
+          context_type?: string | null
           contexto_operativo?: string | null
           corriente?: string
           created_at?: string
@@ -1240,6 +1249,7 @@ export type Database = {
           hpt_validado?: boolean
           inmersion_id?: string
           is_independent?: boolean | null
+          metadata?: Json | null
           objetivo?: string
           observaciones?: string | null
           operacion_id?: string
@@ -1247,11 +1257,13 @@ export type Database = {
           priority?: string | null
           profundidad_max?: number
           requiere_validacion_previa?: boolean | null
+          requires_validation?: boolean | null
           supervisor?: string
           supervisor_id?: string | null
           temperatura_agua?: number
           updated_at?: string
           validacion_contextual?: Json | null
+          validation_status?: string | null
           visibilidad?: number
           work_type?: string | null
         }
@@ -1830,6 +1842,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operational_contexts: {
+        Row: {
+          active_modules: string[]
+          allows_direct_operations: boolean
+          company_id: string
+          company_type: string
+          configuration: Json
+          context_type: string
+          created_at: string
+          id: string
+          requires_documents: boolean
+          requires_planning: boolean
+          updated_at: string
+        }
+        Insert: {
+          active_modules?: string[]
+          allows_direct_operations?: boolean
+          company_id: string
+          company_type: string
+          configuration?: Json
+          context_type?: string
+          created_at?: string
+          id?: string
+          requires_documents?: boolean
+          requires_planning?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active_modules?: string[]
+          allows_direct_operations?: boolean
+          company_id?: string
+          company_type?: string
+          configuration?: Json
+          context_type?: string
+          created_at?: string
+          id?: string
+          requires_documents?: boolean
+          requires_planning?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       operational_forms: {
         Row: {
