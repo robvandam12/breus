@@ -133,10 +133,10 @@ export const useContextualOperations = () => {
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
       const defaultTipo: TipoContexto = 'planificada';
+      // Calcular si es planificada antes del bloque condicional
+      const esPlanificada = tipoContexto === 'planificada';
+      
       if (tipoContexto !== defaultTipo) {
-        // Calcular si es planificada antes del bloque condicional
-        const esPlanificada = tipoContexto === 'planificada';
-        
         const contextUpdate: Partial<{
           tipo_contexto: TipoContexto;
           requiere_documentos: boolean;
