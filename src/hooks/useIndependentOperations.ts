@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -98,16 +97,29 @@ export const useIndependentOperations = () => {
 
         setOperationalContext(defaultContext);
       } else {
+        // Convertir datos de Supabase a nuestro tipo con validación de tipos
+        const safeContextType = (['planned', 'direct', 'mixed'] as const).includes(contextData.context_type as any) 
+          ? contextData.context_type as 'planned' | 'direct' | 'mixed'
+          : 'direct';
+        
+        const safeCompanyType = (['salmonera', 'contratista'] as const).includes(contextData.company_type as any)
+          ? contextData.company_type as 'salmonera' | 'contratista'
+          : 'contratista';
+
+        const safeConfiguration = typeof contextData.configuration === 'object' && contextData.configuration !== null
+          ? contextData.configuration as Record<string, any>
+          : {};
+
         setOperationalContext({
           id: contextData.id,
           company_id: contextData.company_id,
-          company_type: contextData.company_type,
-          context_type: contextData.context_type,
+          company_type: safeCompanyType,
+          context_type: safeContextType,
           requires_planning: contextData.requires_planning,
           requires_documents: contextData.requires_documents,
           allows_direct_operations: contextData.allows_direct_operations,
-          active_modules: contextData.active_modules || [modules.CORE_IMMERSIONS],
-          configuration: contextData.configuration || {}
+          active_modules: Array.isArray(contextData.active_modules) ? contextData.active_modules : [modules.CORE_IMMERSIONS],
+          configuration: safeConfiguration
         });
       }
 
