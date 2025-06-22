@@ -34,26 +34,16 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If profile is still loading, wait
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando perfil...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check role-based access
-  if (requiredRole && profile.role !== requiredRole) {
-    // Redirect to appropriate dashboard instead of access denied
+  // Allow access even if profile is not loaded yet - avoid infinite loading
+  // Profile will be loaded asynchronously
+  
+  // Check role-based access only if profile is loaded and role is required
+  if (requiredRole && profile && profile.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 
   // Check permission-based access (future implementation)
-  if (requiredPermission) {
+  if (requiredPermission && profile) {
     // This would use the hasPermission method from useAuth
     // For now, just allow access
   }

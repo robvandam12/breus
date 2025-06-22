@@ -6,53 +6,15 @@ import { BuzoRestrictedView } from "@/components/dashboard/BuzoRestrictedView";
 import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
-  const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  console.log('Index.tsx - Render state:', { user: !!user, profile: !!profile, loading });
-
-  useEffect(() => {
-    console.log('Index.tsx - useEffect triggered:', { user: !!user, profile, loading });
-
-    // Wait for auth to finish loading
-    if (loading) {
-      console.log('Index.tsx - Still loading, waiting...');
-      return;
-    }
-
-    // Redirect if not authenticated
-    if (!user) {
-      console.log('Index.tsx - No user found, redirecting to login');
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    // Check if user needs onboarding (basic profile setup)
-    if (user && profile && !profile.nombre && !profile.apellido) {
-      console.log('Index.tsx - User needs basic profile setup');
-      navigate('/onboarding', { replace: true });
-      return;
-    }
-
-    // Check if buzo needs onboarding
-    if (profile?.role === 'buzo') {
-      const onboardingCompleted = localStorage.getItem('onboarding_completed');
-      if (!onboardingCompleted) {
-        console.log('Index.tsx - Showing buzo onboarding');
-        setShowOnboarding(true);
-      }
-    }
-  }, [loading, user, profile, navigate]);
 
   // Show loading while auth is initializing
   if (loading) {
-    console.log('Index.tsx - Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -63,27 +25,29 @@ export default function Index() {
     );
   }
 
-  // Don't render anything while redirecting
+  // This should not happen as ProtectedRoute handles auth
   if (!user) {
-    console.log('Index.tsx - No user, returning null (should redirect)');
     return null;
   }
 
-  // Show onboarding for buzos
+  // Show onboarding for buzos if needed (only once profile is loaded)
+  if (profile?.role === 'buzo' && !showOnboarding) {
+    const onboardingCompleted = localStorage.getItem('onboarding_completed');
+    if (!onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  }
+
   if (showOnboarding && profile?.role === 'buzo') {
-    console.log('Index.tsx - Showing buzo onboarding');
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
-  console.log('Index.tsx - Rendering dashboard for role:', profile?.role);
-
   const getDashboardContent = () => {
+    // Show default dashboard if profile is not loaded yet
     if (!profile) {
-      console.log('Index.tsx - No profile, showing restricted view');
-      return <BuzoRestrictedView />;
+      return <CustomizableDashboard />;
     }
     
-    console.log('Index.tsx - Showing dashboard for role:', profile.role);
     switch (profile.role) {
       case 'superuser':
       case 'admin_salmonera':

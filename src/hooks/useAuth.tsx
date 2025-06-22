@@ -48,19 +48,14 @@ export const useAuthProvider = (): AuthContextType => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('useAuth - Current state:', { user: !!user, profile: !!profile, loading });
-
   const getDashboardPath = (): string => {
-    console.log('getDashboardPath - Profile role:', profile?.role);
     if (!profile) return '/';
     
     switch (profile.role) {
       case 'superuser':
       case 'admin_salmonera':
       case 'admin_servicio':
-        return '/';
       case 'supervisor':
-        return '/';
       case 'buzo':
         return '/';
       default:
@@ -70,8 +65,6 @@ export const useAuthProvider = (): AuthContextType => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('fetchUserProfile - Fetching for user:', userId);
-      
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
@@ -79,8 +72,8 @@ export const useAuthProvider = (): AuthContextType => {
         .single() as { data: UsuarioRow | null; error: any };
 
       if (error && error.code !== 'PGRST116') {
-        console.error('fetchUserProfile - Error:', error);
-        throw error;
+        console.error('Error fetching profile:', error);
+        return null;
       }
 
       if (data) {
@@ -96,77 +89,47 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
-        console.log('fetchUserProfile - Profile loaded:', userProfile);
-        setProfile(userProfile);
-      } else {
-        console.log('fetchUserProfile - No profile found');
-        setProfile(null);
+        return userProfile;
       }
+      return null;
     } catch (error) {
-      console.error('fetchUserProfile - Error:', error);
-      setProfile(null);
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        console.log('initializeAuth - Starting...');
-        
-        // Get initial session
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        console.log('initializeAuth - Initial session:', !!initialSession);
-        
-        if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          await fetchUserProfile(initialSession.user.id);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error('initializeAuth - Error:', error);
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-      } finally {
+    const handleAuthChange = async (event: string, session: Session | null) => {
+      if (!mounted) return;
+      
+      console.log('Auth change:', event, !!session);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const userProfile = await fetchUserProfile(session.user.id);
         if (mounted) {
-          console.log('initializeAuth - Setting loading to false');
-          setLoading(false);
+          setProfile(userProfile);
         }
+      } else {
+        setProfile(null);
+      }
+      
+      if (mounted) {
+        setLoading(false);
       }
     };
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log('onAuthStateChange - Event:', event, 'Session:', !!session);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          setLoading(false);
-        }
-      }
-    );
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleAuthChange('initial', session);
+    });
 
-    initializeAuth();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
       mounted = false;
@@ -176,7 +139,6 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; redirectPath?: string }> => {
     try {
-      console.log('signIn - Attempting for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -189,16 +151,12 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Has iniciado sesión exitosamente",
       });
 
-      // Wait for profile to load
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('signIn - Success, redirectPath:', getDashboardPath());
       return { 
         success: true, 
-        redirectPath: getDashboardPath() 
+        redirectPath: '/'
       };
     } catch (error: any) {
-      console.error('signIn - Error:', error);
+      console.error('Login error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al iniciar sesión",
@@ -242,7 +200,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Revisa tu email para confirmar tu cuenta",
       });
     } catch (error: any) {
-      console.error('signUp - Error:', error);
+      console.error('Signup error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al crear la cuenta",
@@ -266,7 +224,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Has cerrado sesión exitosamente",
       });
     } catch (error: any) {
-      console.error('signOut - Error:', error);
+      console.error('Logout error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al cerrar sesión",
@@ -287,7 +245,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: "Revisa tu email para restablecer tu contraseña",
       });
     } catch (error: any) {
-      console.error('resetPassword - Error:', error);
+      console.error('Reset password error:', error);
       toast({
         title: "Error",
         description: error.message || "Error al enviar email de recuperación",
