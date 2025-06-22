@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -40,7 +41,6 @@ const BuzoOnboardingPage = lazy(() => import("../pages/BuzoOnboardingPage"));
 const BuzoOperaciones = lazy(() => import("../pages/buzo/BuzoOperaciones"));
 const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
 const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
-
 const SuperuserModules = lazy(() => import("../pages/admin/SuperuserModules"));
 const SystemMonitoring = lazy(() => import("../pages/admin/SystemMonitoring"));
 
@@ -125,6 +125,16 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+      
+      {/* Nuevas rutas modulares para operaciones */}
+      <Route path="/operaciones/planificar" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <Operaciones />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -186,7 +196,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Other Protected Routes */}
+      {/* Reportes Routes */}
       <Route path="/reportes" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -194,6 +204,25 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+      
+      {/* Nueva ruta para reportes avanzados */}
+      <Route path="/reportes/avanzados" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <Reportes />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
+      {/* Integraciones Route */}
+      <Route path="/integraciones" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <Configuracion />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
       <Route path="/configuracion" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -287,5 +316,3 @@ export const AppRoutes = () => (
     </Routes>
   </BrowserRouter>
 );
-
-export { AppRoutes };
