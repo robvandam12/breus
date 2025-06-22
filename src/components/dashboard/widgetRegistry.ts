@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Widget Components (Lazy Loaded)
@@ -16,6 +17,13 @@ const AlertsPanelWidget = React.lazy(() => import('./widgets/AlertsPanelWidget')
 const NotificationWidget = React.lazy(() => import('./widgets/NotificationWidget'));
 const BuzoStatsWidget = React.lazy(() => import('./widgets/BuzoStatsWidget'));
 
+// Nuevos widgets para superuser
+const SystemControlPanelWidget = React.lazy(() => import('./widgets/SystemControlPanelWidget'));
+const ModuleStatusWidget = React.lazy(() => import('./widgets/ModuleStatusWidget'));
+const GlobalSecurityAlertsWidget = React.lazy(() => import('./widgets/GlobalSecurityAlertsWidget'));
+const UsageStatsWidget = React.lazy(() => import('./widgets/UsageStatsWidget'));
+const InvitationManagementWidget = React.lazy(() => import('./widgets/InvitationManagementWidget'));
+
 // Widget Config Components
 const TeamStatusWidgetConfig = React.lazy(() => import('./widgets/configs/TeamStatusWidgetConfig'));
 const AlertsPanelWidgetConfig = React.lazy(() => import('./widgets/configs/AlertsPanelWidgetConfig'));
@@ -33,6 +41,13 @@ import { EquipmentStatusWidgetSkeleton } from './widgets/skeletons/EquipmentStat
 import { NotificationWidgetSkeleton } from './widgets/skeletons/NotificationWidgetSkeleton';
 import { BuzoStatsWidgetSkeleton } from './widgets/skeletons/BuzoStatsWidgetSkeleton';
 
+// Nuevos skeletons para superuser
+import { SystemControlPanelWidgetSkeleton } from './widgets/skeletons/SystemControlPanelWidgetSkeleton';
+import { ModuleStatusWidgetSkeleton } from './widgets/skeletons/ModuleStatusWidgetSkeleton';
+import { GlobalSecurityAlertsWidgetSkeleton } from './widgets/skeletons/GlobalSecurityAlertsWidgetSkeleton';
+import { UsageStatsWidgetSkeleton } from './widgets/skeletons/UsageStatsWidgetSkeleton';
+import { InvitationManagementWidgetSkeleton } from './widgets/skeletons/InvitationManagementWidgetSkeleton';
+
 export type Role = 'admin_servicio' | 'admin_salmonera' | 'admin_contratista' | 'supervisor' | 'buzo' | 'superuser';
 
 export type WidgetType =
@@ -49,7 +64,12 @@ export type WidgetType =
     'global-metrics' |
     'alerts-panel' |
     'notifications' |
-    'buzo-stats';
+    'buzo-stats' |
+    'system-control-panel' |
+    'module-status' |
+    'global-security-alerts' |
+    'usage-stats' |
+    'invitation-management';
 
 export interface WidgetConfig {
   name: string;
@@ -63,7 +83,7 @@ export interface WidgetConfig {
     static?: boolean;
   };
   isHeavy?: boolean;
-  category?: 'metrics' | 'alerts' | 'actions' | 'status' | 'content';
+  category?: 'metrics' | 'alerts' | 'actions' | 'status' | 'content' | 'admin';
   roles?: Role[];
 }
 
@@ -194,5 +214,54 @@ export const widgetRegistry: Record<WidgetType, WidgetConfig> = {
     defaultLayout: { w: 12, h: 4 },
     category: 'metrics',
     roles: ['buzo']
+  },
+  
+  // Nuevos widgets para superuser
+  'system-control-panel': {
+    name: 'Panel de Control del Sistema',
+    description: 'Métricas globales y control del sistema completo',
+    component: SystemControlPanelWidget,
+    skeleton: SystemControlPanelWidgetSkeleton,
+    defaultLayout: { w: 12, h: 6 },
+    isHeavy: true,
+    category: 'admin',
+    roles: ['superuser']
+  },
+  'module-status': {
+    name: 'Estado de Módulos',
+    description: 'Estado de activación de módulos por empresa',
+    component: ModuleStatusWidget,
+    skeleton: ModuleStatusWidgetSkeleton,
+    defaultLayout: { w: 6, h: 8 },
+    category: 'admin',
+    roles: ['superuser']
+  },
+  'global-security-alerts': {
+    name: 'Alertas de Seguridad Globales',
+    description: 'Vista unificada de todas las alertas de seguridad del sistema',
+    component: GlobalSecurityAlertsWidget,
+    skeleton: GlobalSecurityAlertsWidgetSkeleton,
+    defaultLayout: { w: 6, h: 8 },
+    category: 'admin',
+    roles: ['superuser']
+  },
+  'usage-stats': {
+    name: 'Estadísticas de Uso',
+    description: 'Métricas de adopción y uso del sistema por empresa',
+    component: UsageStatsWidget,
+    skeleton: UsageStatsWidgetSkeleton,
+    defaultLayout: { w: 8, h: 6 },
+    isHeavy: true,
+    category: 'admin',
+    roles: ['superuser']
+  },
+  'invitation-management': {
+    name: 'Gestión de Invitaciones',
+    description: 'Panel de control de invitaciones de contratistas',
+    component: InvitationManagementWidget,
+    skeleton: InvitationManagementWidgetSkeleton,
+    defaultLayout: { w: 4, h: 8 },
+    category: 'admin',
+    roles: ['superuser']
   }
 };
