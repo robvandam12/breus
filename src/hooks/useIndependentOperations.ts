@@ -30,6 +30,7 @@ export interface IndependentInmersion {
   company_id: string;
   company_type: string;
   metadata: Record<string, any>;
+  operacion_id?: string;
 }
 
 export const useIndependentOperations = () => {
@@ -54,47 +55,25 @@ export const useIndependentOperations = () => {
       
       if (!companyId) return;
 
-      // Verificar si existe contexto operativo
-      const { data: contextData, error: contextError } = await supabase
-        .from('operational_contexts')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('company_type', companyType)
-        .maybeSingle();
+      // Crear un contexto simulado por ahora (hasta que se implemente la tabla en BD)
+      const simulatedContext: OperationalContext = {
+        id: 'temp-context',
+        company_id: companyId,
+        company_type: companyType,
+        context_type: hasModuleAccess(modules.PLANNING_OPERATIONS) ? 'mixed' : 'direct',
+        requires_planning: hasModuleAccess(modules.PLANNING_OPERATIONS),
+        requires_documents: hasModuleAccess(modules.PLANNING_OPERATIONS) && companyType === 'salmonera',
+        allows_direct_operations: true,
+        active_modules: [
+          modules.CORE_IMMERSIONS,
+          ...(hasModuleAccess(modules.PLANNING_OPERATIONS) ? [modules.PLANNING_OPERATIONS] : []),
+          ...(hasModuleAccess(modules.MAINTENANCE_NETWORKS) ? [modules.MAINTENANCE_NETWORKS] : []),
+          ...(hasModuleAccess(modules.ADVANCED_REPORTING) ? [modules.ADVANCED_REPORTING] : []),
+          ...(hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) ? [modules.EXTERNAL_INTEGRATIONS] : [])
+        ]
+      };
 
-      if (contextError && contextError.code !== 'PGRST116') {
-        throw contextError;
-      }
-
-      if (!contextData) {
-        // Crear contexto por defecto basado en módulos activos
-        const defaultContext = {
-          company_id: companyId,
-          company_type: companyType,
-          context_type: hasModuleAccess(modules.PLANNING_OPERATIONS) ? 'mixed' : 'direct',
-          requires_planning: hasModuleAccess(modules.PLANNING_OPERATIONS),
-          requires_documents: hasModuleAccess(modules.PLANNING_OPERATIONS) && companyType === 'salmonera',
-          allows_direct_operations: true,
-          active_modules: [
-            modules.CORE_IMMERSIONS,
-            ...(hasModuleAccess(modules.PLANNING_OPERATIONS) ? [modules.PLANNING_OPERATIONS] : []),
-            ...(hasModuleAccess(modules.MAINTENANCE_NETWORKS) ? [modules.MAINTENANCE_NETWORKS] : []),
-            ...(hasModuleAccess(modules.ADVANCED_REPORTING) ? [modules.ADVANCED_REPORTING] : []),
-            ...(hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) ? [modules.EXTERNAL_INTEGRATIONS] : [])
-          ]
-        };
-
-        const { data: newContext, error: createError } = await supabase
-          .from('operational_contexts')
-          .insert(defaultContext)
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setOperationalContext(newContext);
-      } else {
-        setOperationalContext(contextData);
-      }
+      setOperationalContext(simulatedContext);
 
     } catch (error: any) {
       console.error('Error loading operational context:', error);
@@ -133,7 +112,7 @@ export const useIndependentOperations = () => {
       }
 
       // Si requiere validación, verificar documentos
-      if (requiresValidation && contextType === 'planned') {
+      if (requiresValidation && contextType === 'planned' && inmersionData.operacion_id) {
         // Verificar HPT si está disponible el módulo de planificación
         if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
           const { data: hptData } = await supabase
@@ -164,15 +143,15 @@ export const useIndependentOperations = () => {
       // Crear inmersión con contexto independiente
       const inmersionCompleta = {
         ...inmersionData,
-        context_type: contextType,
-        requires_validation: requiresValidation,
-        validation_status: requiresValidation ? 'pending' : 'not_required',
-        company_id: companyId,
-        company_type: companyType,
-        metadata: {
+        contexto_operativo: contextType,
+        requiere_validacion_previa: requiresValidation,
+        empresa_creadora_id: companyId,
+        empresa_creadora_tipo: companyType,
+        validacion_contextual: {
           operational_context: operationalContext.context_type,
           active_modules: operationalContext.active_modules,
           created_independently: !inmersionData.operacion_id,
+          validation_status: requiresValidation ? 'pending' : 'not_required',
           ...inmersionData.metadata
         }
       };
@@ -245,11 +224,11 @@ export const useIndependentOperations = () => {
             estado
           )
         `)
-        .eq('company_id', companyId)
-        .eq('company_type', companyType);
+        .eq('empresa_creadora_id', companyId)
+        .eq('empresa_creadora_tipo', companyType);
 
       if (filters?.context_type) {
-        query = query.eq('context_type', filters.context_type);
+        query = query.eq('contexto_operativo', filters.context_type);
       }
 
       if (filters?.estado) {

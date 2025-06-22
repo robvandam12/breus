@@ -40,7 +40,7 @@ export const InmersionContextualForm = ({
     visibilidad: editingInmersion?.visibilidad || 0,
     corriente: editingInmersion?.corriente || '',
     observaciones: editingInmersion?.observaciones || '',
-    context_type: editingInmersion?.context_type || 'direct',
+    context_type: (editingInmersion?.contexto_operativo || 'direct') as 'planned' | 'direct',
     operacion_id: operacionId || editingInmersion?.operacion_id || null
   });
 
@@ -90,7 +90,7 @@ export const InmersionContextualForm = ({
     try {
       const inmersionData = {
         ...formData,
-        context_type: isDirectMode ? 'direct' : 'planned',
+        context_type: isDirectMode ? 'direct' as const : 'planned' as const,
         estado: 'planificada'
       };
 
@@ -178,7 +178,7 @@ export const InmersionContextualForm = ({
               <Input
                 id="codigo"
                 value={formData.codigo}
-                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,codigo:e.target.value}))}
                 placeholder="Ej: INM-2024-001"
                 required
               />
@@ -190,7 +190,7 @@ export const InmersionContextualForm = ({
                 id="fecha"
                 type="date"
                 value={formData.fecha_inmersion}
-                onChange={(e) => setFormData(prev => ({ ...prev, fecha_inmersion: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,fecha_inmersion:e.target.value}))}
                 required
               />
             </div>
@@ -204,7 +204,7 @@ export const InmersionContextualForm = ({
                 id="hora_inicio"
                 type="time"
                 value={formData.hora_inicio}
-                onChange={(e) => setFormData(prev => ({ ...prev, hora_inicio: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,hora_inicio:e.target.value}))}
                 required
               />
             </div>
@@ -215,7 +215,7 @@ export const InmersionContextualForm = ({
                 id="hora_fin"
                 type="time"
                 value={formData.hora_fin}
-                onChange={(e) => setFormData(prev => ({ ...prev, hora_fin: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,hora_fin:e.target.value}))}
               />
             </div>
           </div>
@@ -227,7 +227,7 @@ export const InmersionContextualForm = ({
               <Input
                 id="buzo_principal"
                 value={formData.buzo_principal}
-                onChange={(e) => setFormData(prev => ({ ...prev, buzo_principal: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,buzo_principal:e.target.value}))}
                 placeholder="Nombre del buzo principal"
                 required
               />
@@ -238,7 +238,7 @@ export const InmersionContextualForm = ({
               <Input
                 id="buzo_asistente"
                 value={formData.buzo_asistente}
-                onChange={(e) => setFormData(prev => ({ ...prev, buzo_asistente: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,buzo_asistente:e.target.value}))}
                 placeholder="Nombre del buzo asistente"
               />
             </div>
@@ -248,7 +248,7 @@ export const InmersionContextualForm = ({
               <Input
                 id="supervisor"
                 value={formData.supervisor}
-                onChange={(e) => setFormData(prev => ({ ...prev, supervisor: e.target.value }))}
+                onChange={(e)=>setFormData(prev=>({...prev,supervisor:e.target.value}))}
                 placeholder="Nombre del supervisor"
                 required
               />
@@ -260,7 +260,7 @@ export const InmersionContextualForm = ({
             <Label htmlFor="objetivo">Objetivo de la Inmersión</Label>
             <Select 
               value={formData.objetivo} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, objetivo: value }))}
+              onValueChange={(value)=>setFormData(prev=>({...prev,objetivo:value}))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona el objetivo" />
@@ -287,7 +287,7 @@ export const InmersionContextualForm = ({
                 type="number"
                 step="0.1"
                 value={formData.profundidad_max}
-                onChange={(e) => setFormData(prev => ({ ...prev, profundidad_max: parseFloat(e.target.value) || 0 }))}
+                onChange={(e)=>setFormData(prev=>({...prev,profundidad_max:parseFloat(e.target.value)||0}))}
                 required
               />
             </div>
@@ -299,7 +299,7 @@ export const InmersionContextualForm = ({
                 type="number"
                 step="0.1"
                 value={formData.temperatura_agua}
-                onChange={(e) => setFormData(prev => ({ ...prev, temperatura_agua: parseFloat(e.target.value) || 0 }))}
+                onChange={(e)=>setFormData(prev=>({...prev,temperatura_agua:parseFloat(e.target.value)||0}))}
                 required
               />
             </div>
@@ -311,17 +311,17 @@ export const InmersionContextualForm = ({
                 type="number"
                 step="0.1"
                 value={formData.visibilidad}
-                onChange={(e) => setFormData(prev => ({ ...prev, visibilidad: parseFloat(e.target.value) || 0 }))}
+                onChange={(e)=>setFormData(prev=>({...prev,visibilidad:parseFloat(e.target.value)||0}))}
                 required
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="corriente">Condiciones de Corriente</Label>
+            <Label htmlFor="corriente">Condicioncipales de Corriente</Label>
             <Select 
               value={formData.corriente} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, corriente: value }))}
+              onValueChange={(value)=>setFormData(prev=>({...prev,corriente:value}))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona las condiciones" />
@@ -342,7 +342,7 @@ export const InmersionContextualForm = ({
             <Textarea
               id="observaciones"
               value={formData.observaciones}
-              onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+              onChange={(e)=>setFormData(prev=>({...prev,observaciones:e.target.value}))}
               placeholder="Observaciones adicionales sobre la inmersión..."
               rows={3}
             />
@@ -353,7 +353,7 @@ export const InmersionContextualForm = ({
             <Button variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || validationMessages.some(m => m.includes('requiere'))}>
+            <Button type="submit" disabled={loading || validationMessages.some(m=>m.includes('requiere'))}>
               {loading ? 'Creando...' : editingInmersion ? 'Actualizar' : 'Crear Inmersión'}
             </Button>
           </div>

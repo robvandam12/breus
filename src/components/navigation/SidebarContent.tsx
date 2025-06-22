@@ -63,7 +63,7 @@ export const SidebarContent = () => {
           title: 'Planificar Operaciones',
           path: '/operaciones/planificar',
           icon: Plus,
-          show: canPlanOperations && profile?.rol !== 'buzo',
+          show: canPlanOperations && profile?.role !== 'buzo',
           badge: 'Opcional'
         },
         {
@@ -94,7 +94,7 @@ export const SidebarContent = () => {
       isCollapsible: true,
       isOpen: documentosOpen,
       setOpen: setDocumentosOpen,
-      show: canPlanOperations && profile?.rol !== 'buzo',
+      show: canPlanOperations && profile?.role !== 'buzo',
       children: [
         {
           title: 'HPT',
@@ -143,13 +143,13 @@ export const SidebarContent = () => {
       title: 'Administración',
       icon: Settings,
       path: '/admin',
-      show: profile?.rol === 'superuser' || profile?.rol === 'admin_salmonera' || profile?.rol === 'admin_servicio'
+      show: profile?.role === 'superuser' || profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio'
     },
     {
       title: 'Integraciones',
       icon: Globe,
       path: '/integraciones',
-      show: canUseIntegrations && (profile?.rol === 'superuser' || profile?.rol === 'admin_salmonera'),
+      show: canUseIntegrations && (profile?.role === 'superuser' || profile?.role === 'admin_salmonera'),
       badge: 'API'
     }
   ];

@@ -1,8 +1,9 @@
+
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PageWithSidebarSkeleton } from '@/components/layout/PageWithSidebarSkeleton';
 
@@ -10,18 +11,18 @@ import { PageWithSidebarSkeleton } from '@/components/layout/PageWithSidebarSkel
 const Login = lazy(() => import('@/pages/auth/Login'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Dashboard = lazy(() => import('@/pages/Index'));
 const Inmersiones = lazy(() => import('@/pages/Inmersiones'));
-const HPT = lazy(() => import('@/pages/HPT'));
-const AnexoBravo = lazy(() => import('@/pages/AnexoBravo'));
-const Bitacoras = lazy(() => import('@/pages/Bitacoras'));
+const HPT = lazy(() => import('@/pages/formularios/HPT'));
+const AnexoBravo = lazy(() => import('@/pages/formularios/AnexoBravo'));
+const Bitacoras = lazy(() => import('@/pages/operaciones/BitacorasBuzo'));
 const Reportes = lazy(() => import('@/pages/Reportes'));
-const ReportesOperativos = lazy(() => import('@/pages/reportes/ReportesOperativos'));
-const Admin = lazy(() => import('@/pages/Admin'));
-const PlanificarOperaciones = lazy(() => import('@/pages/operaciones/PlanificarOperaciones'));
+const ReportesOperativos = lazy(() => import('@/pages/reportes/ReportesAvanzados'));
+const Admin = lazy(() => import('@/pages/admin/AdminSalmoneraPage'));
+const PlanificarOperaciones = lazy(() => import('@/pages/operaciones/Operaciones'));
 const MantencionRedes = lazy(() => import('@/pages/operaciones/MantencionRedes'));
 const FaenasRedes = lazy(() => import('@/pages/operaciones/FaenasRedes'));
-const Integraciones = lazy(() => import('@/pages/Integraciones'));
+const Integraciones = lazy(() => import('@/pages/integraciones/Integraciones'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
