@@ -26,6 +26,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Tipos específicos para el formulario
+type AlertType = 'performance' | 'security' | 'system' | 'user_activity';
+type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+interface NewAlertForm {
+  type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  source: string;
+}
+
 export const SystemMonitoringDashboard = () => {
   const {
     systemAlerts,
@@ -40,7 +52,7 @@ export const SystemMonitoringDashboard = () => {
 
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [newAlertForm, setNewAlertForm] = useState({
+  const [newAlertForm, setNewAlertForm] = useState<NewAlertForm>({
     type: 'system',
     severity: 'medium',
     title: '',
@@ -152,9 +164,12 @@ export const SystemMonitoringDashboard = () => {
             <div className="space-y-4">
               <div>
                 <Label>Tipo</Label>
-                <Select value={newAlertForm.type} onValueChange={(value) => 
-                  setNewAlertForm(prev => ({ ...prev, type: value }))
-                }>
+                <Select 
+                  value={newAlertForm.type} 
+                  onValueChange={(value: AlertType) => 
+                    setNewAlertForm(prev => ({ ...prev, type: value }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -168,9 +183,12 @@ export const SystemMonitoringDashboard = () => {
               </div>
               <div>
                 <Label>Severidad</Label>
-                <Select value={newAlertForm.severity} onValueChange={(value) => 
-                  setNewAlertForm(prev => ({ ...prev, severity: value }))
-                }>
+                <Select 
+                  value={newAlertForm.severity} 
+                  onValueChange={(value: AlertSeverity) => 
+                    setNewAlertForm(prev => ({ ...prev, severity: value }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

@@ -2212,6 +2212,81 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          source: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      system_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          recorded_at: string | null
+          threshold_critical: number | null
+          threshold_warning: number | null
+          unit: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          recorded_at?: string | null
+          threshold_critical?: number | null
+          threshold_warning?: number | null
+          unit: string
+          value: number
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          recorded_at?: string | null
+          threshold_critical?: number | null
+          threshold_warning?: number | null
+          unit?: string
+          value?: number
+        }
+        Relationships: []
+      }
       system_modules: {
         Row: {
           category: string
