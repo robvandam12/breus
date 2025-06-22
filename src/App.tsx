@@ -1,38 +1,33 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/components/auth/AuthProvider';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { PageWithSidebarSkeleton } from '@/components/layout/PageWithSidebarSkeleton';
 
-// Páginas principales
-import Dashboard from '@/pages/Index';
-import Inmersiones from '@/pages/Inmersiones';
-import Login from '@/pages/auth/Login';
-import Register from '@/pages/auth/Register';
-import ForgotPassword from '@/pages/auth/ForgotPassword';
-import Configuracion from '@/pages/Configuracion';
-
-// Módulo de Planificación
-import Operaciones from '@/pages/operaciones/Operaciones';
-import NetworkMaintenance from '@/pages/operaciones/NetworkMaintenance';
-
-// Módulos Operativos - Fase 2
-import MantencionRedes from '@/pages/operaciones/MantencionRedes';
-import FaenasRedes from '@/pages/operaciones/FaenasRedes';
-import ReportesAvanzados from '@/pages/reportes/ReportesAvanzados';
-import Integraciones from '@/pages/integraciones/Integraciones';
-
-// Fase 3 - Gestión de Módulos
-import ModuleManagement from '@/pages/admin/ModuleManagement';
-
-// Fase 4 - Sistema de Notificaciones y Alertas
-import NotificationManagement from '@/pages/admin/NotificationManagement';
+// Lazy load pages
+const Login = lazy(() => import('@/pages/auth/Login'));
+const Register = lazy(() => import('@/pages/auth/Register'));
+const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Inmersiones = lazy(() => import('@/pages/Inmersiones'));
+const HPT = lazy(() => import('@/pages/HPT'));
+const AnexoBravo = lazy(() => import('@/pages/AnexoBravo'));
+const Bitacoras = lazy(() => import('@/pages/Bitacoras'));
+const Reportes = lazy(() => import('@/pages/Reportes'));
+const ReportesOperativos = lazy(() => import('@/pages/reportes/ReportesOperativos'));
+const Admin = lazy(() => import('@/pages/Admin'));
+const PlanificarOperaciones = lazy(() => import('@/pages/operaciones/PlanificarOperaciones'));
+const MantencionRedes = lazy(() => import('@/pages/operaciones/MantencionRedes'));
+const FaenasRedes = lazy(() => import('@/pages/operaciones/FaenasRedes'));
+const Integraciones = lazy(() => import('@/pages/Integraciones'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      gcTime: 1000 * 60 * 30, // 30 minutos
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
     },
   },
 });
@@ -42,35 +37,86 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Routes>
-            {/* Autenticación */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            
-            {/* Páginas principales */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/inmersiones" element={<Inmersiones />} />
-            <Route path="/configuracion" element={<Configuracion />} />
-            
-            {/* Módulo de Planificación */}
-            <Route path="/operaciones" element={<Operaciones />} />
-            <Route path="/operaciones/network-maintenance" element={<NetworkMaintenance />} />
-            
-            {/* Módulos Operativos - Fase 2 */}
-            <Route path="/operaciones/mantencion-redes" element={<MantencionRedes />} />
-            <Route path="/operaciones/faenas-redes" element={<FaenasRedes />} />
-            <Route path="/reportes-avanzados" element={<ReportesAvanzados />} />
-            <Route path="/integraciones" element={<Integraciones />} />
-            
-            {/* Fase 3 - Administración */}
-            <Route path="/admin/module-management" element={<ModuleManagement />} />
-            
-            {/* Fase 4 - Notificaciones y Alertas */}
-            <Route path="/admin/notifications" element={<NotificationManagement />} />
-          </Routes>
-          <Toaster />
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<Register />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/inmersiones" element={
+                <ProtectedRoute>
+                  <Inmersiones />
+                </ProtectedRoute>
+              } />
+              <Route path="/hpt" element={
+                <ProtectedRoute>
+                  <HPT />
+                </ProtectedRoute>
+              } />
+              <Route path="/anexo-bravo" element={
+                <ProtectedRoute>
+                  <AnexoBravo />
+                </ProtectedRoute>
+              } />
+              <Route path="/bitacoras" element={
+                <ProtectedRoute>
+                  <Bitacoras />
+                </ProtectedRoute>
+              } />
+              <Route path="/reportes" element={
+                <ProtectedRoute>
+                  <Reportes />
+                </ProtectedRoute>
+              } />
+              <Route path="/reportes/operativos" element={
+                <ProtectedRoute>
+                  <ReportesOperativos />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              } />
+              
+              {/* Operaciones routes */}
+              <Route path="/operaciones/planificar" element={
+                <ProtectedRoute>
+                  <PlanificarOperaciones />
+                </ProtectedRoute>
+              } />
+              <Route path="/operaciones/mantencion-redes" element={
+                <ProtectedRoute>
+                  <MantencionRedes />
+                </ProtectedRoute>
+              } />
+              <Route path="/operaciones/faenas-redes" element={
+                <ProtectedRoute>
+                  <FaenasRedes />
+                </ProtectedRoute>
+              } />
+              
+              {/* Integration routes */}
+              <Route path="/integraciones" element={
+                <ProtectedRoute>
+                  <Integraciones />
+                </ProtectedRoute>
+              } />
+              
+              {/* Fallback for unknown routes */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
         </Router>
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );

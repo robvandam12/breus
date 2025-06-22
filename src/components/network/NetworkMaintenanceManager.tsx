@@ -2,29 +2,41 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Settings, Clock, AlertTriangle, CheckCircle, Calendar } from "lucide-react";
-import { useNetworkMaintenance } from "@/hooks/useNetworkModules";
-import type { NetworkMaintenanceTask } from "@/hooks/useNetworkModules";
+import { 
+  Network, 
+  Plus, 
+  Settings, 
+  FileText, 
+  Activity,
+  Eye,
+  Edit
+} from "lucide-react";
+import { useMaintenanceNetworks } from "@/hooks/useMaintenanceNetworks";
+import { NetworkMaintenanceWizard } from "@/components/network-maintenance/NetworkMaintenanceWizard";
+import { NetworkMaintenanceList } from "@/components/network-maintenance/NetworkMaintenanceList";
 
 export const NetworkMaintenanceManager = () => {
-  const { maintenanceTasks, isLoading, canAccessMaintenance } = useNetworkMaintenance();
-  const [selectedTask, setSelectedTask] = useState<NetworkMaintenanceTask | null>(null);
+  const [activeView, setActiveView] = useState<'list' | 'create' | 'edit'>('list');
+  const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
+  const [editingFormId, setEditingFormId] = useState<string>('');
+  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena'>('mantencion');
 
-  if (!canAccessMaintenance) {
+  const { canAccessModule, maintenanceForms, isLoading } = useMaintenanceNetworks();
+
+  if (!canAccessModule) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Settings className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Módulo de Mantención de Redes
-            </h3>
-            <p className="text-gray-600">
-              Este módulo no está habilitado para tu empresa.
+      <Card className="max-w-2xl mx-auto mt-8">
+        <CardContent className="py-12">
+          <div className="text-center text-gray-500">
+            <Network className="w-16 h-16 mx-auto mb-6 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">Módulo de Mantención de Redes</h3>
+            <p className="text-gray-600 mb-4">
+              Este módulo no está disponible para tu organización
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Contacta al administrador para activar este módulo.
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para solicitar acceso a este módulo
             </p>
           </div>
         </CardContent>
@@ -32,169 +44,199 @@ export const NetworkMaintenanceManager = () => {
     );
   }
 
-  const getStatusBadge = (estado: string) => {
-    switch (estado) {
-      case 'programada':
-        return <Badge className="bg-blue-100 text-blue-800"><Calendar className="w-3 h-3 mr-1" />Programada</Badge>;
-      case 'en_proceso':
-        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />En Proceso</Badge>;
-      case 'completada':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completada</Badge>;
-      case 'cancelada':
-        return <Badge className="bg-red-100 text-red-800">Cancelada</Badge>;
-      default:
-        return <Badge>Desconocido</Badge>;
-    }
+  const handleCreateForm = (type: 'mantencion' | 'faena') => {
+    setSelectedFormType(type);
+    setActiveView('create');
   };
 
-  const getPriorityBadge = (prioridad: string) => {
-    switch (prioridad) {
-      case 'critica':
-        return <Badge className="bg-red-100 text-red-800"><AlertTriangle className="w-3 h-3 mr-1" />Crítica</Badge>;
-      case 'alta':
-        return <Badge className="bg-orange-100 text-orange-800">Alta</Badge>;
-      case 'media':
-        return <Badge className="bg-yellow-100 text-yellow-800">Media</Badge>;
-      case 'baja':
-        return <Badge className="bg-green-100 text-green-800">Baja</Badge>;
-      default:
-        return <Badge>Normal</Badge>;
-    }
+  const handleEditForm = (formId: string, formData: any) => {
+    setEditingFormId(formId);
+    setSelectedInmersionId(formData.inmersion_id);
+    setSelectedFormType(formData.form_type);
+    setActiveView('edit');
   };
 
-  if (isLoading) {
+  const handleViewForm = (formId: string, formData: any) => {
+    // TODO: Implementar vista de solo lectura
+    console.log('View form:', formId, formData);
+  };
+
+  const handleBackToList = () => {
+    setActiveView('list');
+    setEditingFormId('');
+    setSelectedInmersionId('');
+  };
+
+  if (activeView === 'create' || activeView === 'edit') {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToList}
+            className="flex items-center gap-2"
+          >
+            ← Volver a la lista
+          </Button>
+        </div>
+        
+        <NetworkMaintenanceWizard
+          operacionId={selectedInmersionId}
+          tipoFormulario={selectedFormType}
+          onComplete={handleBackToList}
+          onCancel={handleBackToList}
+          editingFormId={editingFormId || undefined}
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Mantención de Redes</h2>
-          <p className="text-gray-600">Gestión de tareas de mantenimiento preventivo y correctivo</p>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            <Network className="w-8 h-8 text-blue-600" />
+            Mantención de Redes
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Administra formularios de mantenimiento y faenas de redes marinas
+          </p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Tarea
-        </Button>
+        
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => handleCreateForm('mantencion')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Mantención
+          </Button>
+          
+          <Button 
+            variant="outline"
+            onClick={() => handleCreateForm('faena')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Faena
+          </Button>
+        </div>
       </div>
 
-      {/* Estadísticas */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Programadas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {maintenanceTasks.filter(t => t.estado === 'programada').length}
-                </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Formularios</p>
+                <p className="text-2xl font-bold">{maintenanceForms.length}</p>
               </div>
+              <FileText className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">En Proceso</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {maintenanceTasks.filter(t => t.estado === 'en_proceso').length}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Mantenimientos</p>
+                <p className="text-2xl font-bold">
+                  {maintenanceForms.filter(f => f.form_type === 'mantencion').length}
                 </p>
               </div>
+              <Settings className="w-8 h-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completadas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {maintenanceTasks.filter(t => t.estado === 'completada').length}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Faenas</p>
+                <p className="text-2xl font-bold">
+                  {maintenanceForms.filter(f => f.form_type === 'faena_redes').length}
                 </p>
               </div>
+              <Network className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Críticas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {maintenanceTasks.filter(t => t.prioridad === 'critica').length}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Completados</p>
+                <p className="text-2xl font-bold">
+                  {maintenanceForms.filter(f => f.status === 'completed').length}
                 </p>
               </div>
+              <Activity className="w-8 h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Lista de Tareas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tareas de Mantención</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {maintenanceTasks.length === 0 ? (
-            <div className="text-center py-8">
-              <Settings className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500">No hay tareas de mantención programadas</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Crea una nueva tarea para comenzar
-              </p>
+      {/* Forms Management */}
+      <Tabs defaultValue="all" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="mantencion">Mantenimientos</TabsTrigger>
+          <TabsTrigger value="faenas">Faenas</TabsTrigger>
+          <TabsTrigger value="completed">Completados</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          <NetworkMaintenanceList
+            onEdit={handleEditForm}
+            onView={handleViewForm}
+          />
+        </TabsContent>
+
+        <TabsContent value="mantencion" className="space-y-4">
+          <NetworkMaintenanceList
+            onEdit={handleEditForm}
+            onView={handleViewForm}
+          />
+        </TabsContent>
+
+        <TabsContent value="faenas" className="space-y-4">
+          <NetworkMaintenanceList
+            onEdit={handleEditForm}
+            onView={handleViewForm}
+          />
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          <NetworkMaintenanceList
+            onEdit={handleEditForm}
+            onView={handleViewForm}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Help Section */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <Network className="w-6 h-6 text-blue-600 mt-1" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">
+                Módulo de Mantención de Redes
+              </h3>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p>• <strong>Mantenimientos:</strong> Registra trabajos de mantenimiento preventivo y correctivo</p>
+                <p>• <strong>Faenas:</strong> Documenta operaciones específicas en redes de cultivo</p>
+                <p>• <strong>Formularios operativos:</strong> Captura datos para análisis y reportes</p>
+                <p>• <strong>Trazabilidad completa:</strong> Seguimiento desde planificación hasta ejecución</p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {maintenanceTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setSelectedTask(task)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{task.descripcion}</h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Fecha programada: {new Date(task.fecha_programada).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Estimado: {task.estimacion_horas} horas
-                      </p>
-                      {task.equipos_involucrados.length > 0 && (
-                        <p className="text-sm text-gray-600">
-                          Equipos: {task.equipos_involucrados.join(', ')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2 items-end">
-                      {getStatusBadge(task.estado)}
-                      {getPriorityBadge(task.prioridad)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
