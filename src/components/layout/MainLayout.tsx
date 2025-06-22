@@ -22,6 +22,8 @@ export const MainLayout = ({
   className = "",
   contentClassName = ""
 }: MainLayoutProps) => {
+  console.log('MainLayout: Rendering with props:', { title, subtitle, className, contentClassName });
+  
   return (
     <div className={`min-h-screen flex bg-gray-50 ${className}`}>
       {/* Sidebar */}

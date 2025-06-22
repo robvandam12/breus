@@ -51,12 +51,41 @@ const BreusLogo = ({ size = 32 }: { size?: number }) => (
 );
 
 export const ModularSidebar = () => {
+  console.log('ModularSidebar: Rendering started');
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
-  const { hasModuleAccess, modules } = useModularSystem();
-  const { salmoneras } = useSalmoneras();
-  const { contratistas } = useContratistas();
+  
+  console.log('ModularSidebar: Profile data:', profile);
+  
+  // Provide fallback values for hooks to prevent crashes
+  let hasModuleAccess, modules;
+  try {
+    const moduleSystem = useModularSystem();
+    hasModuleAccess = moduleSystem.hasModuleAccess;
+    modules = moduleSystem.modules;
+  } catch (error) {
+    console.error('ModularSidebar: Error with useModularSystem:', error);
+    hasModuleAccess = () => false;
+    modules = {
+      PLANNING_OPERATIONS: 'planning',
+      MAINTENANCE_NETWORKS: 'networks', 
+      ADVANCED_REPORTING: 'reports',
+      EXTERNAL_INTEGRATIONS: 'integrations'
+    };
+  }
+
+  let salmoneras = [];
+  let contratistas = [];
+  try {
+    const salmonerasData = useSalmoneras();
+    const contratistasData = useContratistas();
+    salmoneras = salmonerasData.salmoneras || [];
+    contratistas = contratistasData.contratistas || [];
+  } catch (error) {
+    console.error('ModularSidebar: Error with company hooks:', error);
+  }
   
   const [operacionesOpen, setOperacionesOpen] = useState(true);
   const [documentosOpen, setDocumentosOpen] = useState(false);
@@ -66,19 +95,29 @@ export const ModularSidebar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Verificar acceso a módulos
-  const canPlanOperations = hasModuleAccess(modules.PLANNING_OPERATIONS);
-  const canManageNetworks = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
-  const canAccessReports = hasModuleAccess(modules.ADVANCED_REPORTING);
-  const canUseIntegrations = hasModuleAccess(modules.EXTERNAL_INTEGRATIONS);
+  // Verificar acceso a módulos con fallbacks
+  const canPlanOperations = hasModuleAccess ? hasModuleAccess(modules.PLANNING_OPERATIONS) : false;
+  const canManageNetworks = hasModuleAccess ? hasModuleAccess(modules.MAINTENANCE_NETWORKS) : false;
+  const canAccessReports = hasModuleAccess ? hasModuleAccess(modules.ADVANCED_REPORTING) : false;
+  const canUseIntegrations = hasModuleAccess ? hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) : false;
 
-  // Verificar roles
-  const isSuperuser = profile?.role === 'superuser';
-  const isAdminSalmonera = profile?.role === 'admin_salmonera';
-  const isAdminServicio = profile?.role === 'admin_servicio';
-  const isSupervisor = profile?.role === 'supervisor';
-  const isBuzo = profile?.role === 'buzo';
+  // Verificar roles con fallbacks
+  const role = profile?.role || 'buzo';
+  const isSuperuser = role === 'superuser';
+  const isAdminSalmonera = role === 'admin_salmonera';
+  const isAdminServicio = role === 'admin_servicio';
+  const isSupervisor = role === 'supervisor';
+  const isBuzo = role === 'buzo';
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
+
+  console.log('ModularSidebar: User role and permissions:', {
+    role,
+    isAssigned,
+    canPlanOperations,
+    canManageNetworks,
+    canAccessReports,
+    canUseIntegrations
+  });
 
   const navigationItems = [
     // Core - Siempre visible
@@ -305,23 +344,27 @@ export const ModularSidebar = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión exitosamente.",
-      });
+      if (toast) {
+        toast({
+          title: "Sesión cerrada",
+          description: "Has cerrado sesión exitosamente.",
+        });
+      }
     } catch (error) {
       console.error('Error during logout:', error);
-      toast({
-        title: "Error",
-        description: "Error al cerrar sesión.",
-        variant: "destructive",
-      });
+      if (toast) {
+        toast({
+          title: "Error",
+          description: "Error al cerrar sesión.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const getUserDisplayName = () => {
     if (profile) {
-      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
+      return `${profile.nombre || ''} ${profile.apellido || ''}`.trim() || profile.email || 'Usuario';
     }
     return 'Usuario';
   };
@@ -354,6 +397,8 @@ export const ModularSidebar = () => {
     }
     return null;
   };
+
+  console.log('ModularSidebar: About to render sidebar');
 
   return (
     <div className="flex flex-col h-full">
