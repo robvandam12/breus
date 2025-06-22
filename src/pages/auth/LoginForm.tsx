@@ -29,6 +29,7 @@ export default function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "Bienvenido a Breus",
       });
+      // Redirigir a la página principal, el Index.tsx se encargará del dashboard apropiado
       navigate('/');
     } catch (error: any) {
       console.error('Login error:', error);

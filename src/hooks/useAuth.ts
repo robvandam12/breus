@@ -61,10 +61,12 @@ export const useAuthProvider = (): AuthContextType => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Defer profile fetch to avoid blocking auth state
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);

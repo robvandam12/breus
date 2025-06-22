@@ -1,7 +1,7 @@
 
 import { Suspense } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { ModularSidebar } from "@/components/navigation/ModularSidebar";
 import { SidebarSkeleton } from '@/components/navigation/SidebarSkeleton';
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,12 +29,11 @@ const DashboardContentSkeleton = () => (
     </>
 );
 
-
 export const DashboardWithSidebarSkeleton = () => (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <Suspense fallback={<SidebarSkeleton />}>
-            <RoleBasedSidebar />
+            <ModularSidebar />
         </Suspense>
         <main className="flex-1 flex flex-col bg-white">
             <DashboardContentSkeleton />

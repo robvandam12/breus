@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SupervisorView } from "@/components/dashboard/SupervisorView";
 import { BuzoDashboard } from "@/components/dashboard/BuzoDashboard";
@@ -6,12 +7,13 @@ import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,12 @@ export default function Index() {
         setShowOnboarding(true);
       }
     }
-  }, [loading, user, profile, navigate]);
+
+    // Redirect from /dashboard to / if user is on old dashboard route
+    if (location.pathname === '/dashboard') {
+      navigate('/', { replace: true });
+    }
+  }, [loading, user, profile, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -52,14 +59,6 @@ export default function Index() {
   const getDashboardContent = () => {
     const isAssigned = profile?.salmonera_id || profile?.servicio_id;
     
-    // Verificar si el perfil del buzo está completo
-    const isProfileComplete = () => {
-      if (!profile?.perfil_buzo) return false;
-      const requiredFields = ['rut', 'telefono', 'direccion', 'ciudad', 'region', 'nacionalidad'];
-      const perfilBuzo = profile.perfil_buzo as any;
-      return requiredFields.every(field => perfilBuzo[field]?.toString().trim());
-    };
-
     switch (profile?.role) {
       case 'superuser':
       case 'admin_salmonera':
@@ -68,7 +67,6 @@ export default function Index() {
       case 'supervisor':
         return <SupervisorView />;
       case 'buzo':
-        // Usar el nuevo dashboard específico para buzos
         return <BuzoDashboard />;
       default:
         return <BuzoRestrictedView />;

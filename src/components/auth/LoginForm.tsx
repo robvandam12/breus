@@ -22,7 +22,8 @@ export const LoginForm = () => {
 
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+      // Redirigir a la página principal, el Index.tsx se encargará de mostrar el dashboard apropiado
+      navigate('/');
     } catch (error) {
       // Error handling is done in the signIn function
     } finally {
