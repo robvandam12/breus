@@ -47,20 +47,16 @@ export const useSystemMonitoring = () => {
 
   const canMonitorSystem = profile?.role === 'superuser';
 
-  // Obtener alertas del sistema usando consulta SQL directa
+  // Obtener alertas del sistema
   const { data: systemAlerts = [], isLoading: isLoadingAlerts } = useQuery({
     queryKey: ['system-alerts'],
-    queryFn: async () => {
+    queryFn: async (): Promise<SystemAlert[]> => {
       try {
         const { data, error } = await supabase
-          .rpc('sql', {
-            query: `
-              SELECT id, type, severity, title, message, source, metadata, resolved, resolved_by, resolved_at, created_at
-              FROM system_alerts 
-              ORDER BY created_at DESC 
-              LIMIT 100
-            `
-          });
+          .from('system_alerts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (error) {
           console.warn('Error fetching system alerts, using mock data:', error);
@@ -88,7 +84,7 @@ export const useSystemMonitoring = () => {
               resolved: false,
               created_at: new Date(Date.now() - 3600000).toISOString(),
             }
-          ] as SystemAlert[];
+          ];
         }
         return data as SystemAlert[];
       } catch (error) {
@@ -116,27 +112,23 @@ export const useSystemMonitoring = () => {
             resolved: false,
             created_at: new Date(Date.now() - 3600000).toISOString(),
           }
-        ] as SystemAlert[];
+        ];
       }
     },
     enabled: canMonitorSystem,
     refetchInterval: 30000, // Actualizar cada 30 segundos
   });
 
-  // Obtener métricas del sistema usando consulta SQL directa
+  // Obtener métricas del sistema
   const { data: systemMetrics = [], isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['system-metrics'],
-    queryFn: async () => {
+    queryFn: async (): Promise<SystemMetric[]> => {
       try {
         const { data, error } = await supabase
-          .rpc('sql', {
-            query: `
-              SELECT id, metric_name, value, unit, threshold_warning, threshold_critical, recorded_at, metadata
-              FROM system_metrics 
-              WHERE recorded_at >= NOW() - INTERVAL '24 hours'
-              ORDER BY recorded_at DESC
-            `
-          });
+          .from('system_metrics')
+          .select('*')
+          .gte('recorded_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .order('recorded_at', { ascending: false });
 
         if (error) {
           console.warn('Error fetching system metrics, using mock data:', error);
@@ -162,7 +154,7 @@ export const useSystemMonitoring = () => {
               recorded_at: new Date().toISOString(),
               metadata: { total: '8192MB' },
             }
-          ] as SystemMetric[];
+          ];
         }
         return data as SystemMetric[];
       } catch (error) {
@@ -188,7 +180,7 @@ export const useSystemMonitoring = () => {
             recorded_at: new Date().toISOString(),
             metadata: { total: '8192MB' },
           }
-        ] as SystemMetric[];
+        ];
       }
     },
     enabled: canMonitorSystem,
@@ -198,7 +190,7 @@ export const useSystemMonitoring = () => {
   // Obtener estadísticas de monitoreo
   const { data: monitoringStats } = useQuery({
     queryKey: ['monitoring-stats'],
-    queryFn: async () => {
+    queryFn: async (): Promise<MonitoringStats> => {
       // Calcular estadísticas basadas en alertas y métricas
       const activeAlerts = systemAlerts.filter(a => !a.resolved).length;
       const resolvedAlerts24h = systemAlerts.filter(a => 
@@ -223,28 +215,29 @@ export const useSystemMonitoring = () => {
         total_operations_today: Math.round(45 + Math.random() * 20),
         error_rate_24h: Math.round((Math.random() * 2) * 100) / 100,
         user_activity_score: Math.round(85 + Math.random() * 10),
-      } as MonitoringStats;
+      };
     },
     enabled: canMonitorSystem && systemAlerts.length >= 0,
     refetchInterval: 60000,
   });
 
-  // Resolver alerta usando SQL directo
+  // Resolver alerta
   const resolveAlertMutation = useMutation({
     mutationFn: async ({ alertId, notes }: { alertId: string; notes?: string }) => {
       try {
         const { data, error } = await supabase
-          .rpc('sql', {
-            query: `
-              UPDATE system_alerts 
-              SET resolved = true, 
-                  resolved_by = '${profile?.id}', 
-                  resolved_at = NOW(),
-                  metadata = metadata || '{"resolution_notes": "${notes || ''}"}'::jsonb
-              WHERE id = '${alertId}'
-              RETURNING *
-            `
-          });
+          .from('system_alerts')
+          .update({
+            resolved: true,
+            resolved_by: profile?.id,
+            resolved_at: new Date().toISOString(),
+            metadata: {
+              ...systemAlerts.find(a => a.id === alertId)?.metadata,
+              resolution_notes: notes || ''
+            }
+          })
+          .eq('id', alertId)
+          .select();
 
         if (error) throw error;
         return data;
@@ -271,18 +264,22 @@ export const useSystemMonitoring = () => {
     },
   });
 
-  // Crear alerta personalizada usando SQL directo
+  // Crear alerta personalizada
   const createAlertMutation = useMutation({
     mutationFn: async (alert: Omit<SystemAlert, 'id' | 'created_at' | 'resolved'>) => {
       try {
         const { data, error } = await supabase
-          .rpc('sql', {
-            query: `
-              INSERT INTO system_alerts (type, severity, title, message, source, metadata, resolved)
-              VALUES ('${alert.type}', '${alert.severity}', '${alert.title}', '${alert.message}', '${alert.source}', '${JSON.stringify(alert.metadata)}'::jsonb, false)
-              RETURNING *
-            `
-          });
+          .from('system_alerts')
+          .insert({
+            type: alert.type,
+            severity: alert.severity,
+            title: alert.title,
+            message: alert.message,
+            source: alert.source,
+            metadata: alert.metadata,
+            resolved: false
+          })
+          .select();
 
         if (error) throw error;
         return data;
