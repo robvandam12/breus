@@ -271,7 +271,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/buzo/reportes" element={
-        <ProtectedRoute require requireddRole="buzo">
+        <ProtectedRoute requiredRole="buzo">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BuzoReportesPage />
           </Suspense>
