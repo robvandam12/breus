@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { SimpleProtectedRoute } from '@/components/auth/SimpleProtectedRoute';
 import { PageWithSidebarSkeleton } from '@/components/layout/PageWithSidebarSkeleton';
 
 // Lazy load pages
@@ -41,75 +41,75 @@ function App() {
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Routes>
               {/* Public routes */}
-              <Route path="/auth/login" element={<Login />} />
-              <Route path="/auth/register" element={<Register />} />
-              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               
               {/* Protected routes */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Dashboard />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/inmersiones" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Inmersiones />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/hpt" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <HPT />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/anexo-bravo" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <AnexoBravo />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/bitacoras" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Bitacoras />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/reportes" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Reportes />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/reportes/operativos" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <ReportesOperativos />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Admin />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               
               {/* Operaciones routes */}
               <Route path="/operaciones/planificar" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <PlanificarOperaciones />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/operaciones/mantencion-redes" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <MantencionRedes />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               <Route path="/operaciones/faenas-redes" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <FaenasRedes />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               
               {/* Integration routes */}
               <Route path="/integraciones" element={
-                <ProtectedRoute>
+                <SimpleProtectedRoute>
                   <Integraciones />
-                </ProtectedRoute>
+                </SimpleProtectedRoute>
               } />
               
               {/* Fallback for unknown routes */}
