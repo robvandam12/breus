@@ -1,16 +1,16 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { toast } from '@/hooks/use-toast';
 
 interface ModuleConfiguration {
   id: string;
   module_name: string;
   company_id: string;
   company_type: 'salmonera' | 'contratista';
-  config_data: Record<string, any>;
-  usage_limits: Record<string, any>;
+  config_data: any;
+  usage_limits: any;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ interface ModuleUsageStats {
   usage_count: number;
   active_users: number;
   operations_count: number;
-  performance_metrics: Record<string, any>;
+  performance_metrics: any;
 }
 
 interface ModuleActivationLog {
@@ -35,44 +35,36 @@ interface ModuleActivationLog {
   company_id: string;
   company_type: 'salmonera' | 'contratista';
   action: 'activated' | 'deactivated' | 'configured';
-  previous_state: Record<string, any>;
-  new_state: Record<string, any>;
+  previous_state: any;
+  new_state: any;
   reason?: string;
   performed_by?: string;
   created_at: string;
 }
 
-interface ModuleStatsResult {
+interface AdvancedModuleStats {
   total_usage: number;
-  active_modules: number;
   avg_daily_usage: number;
   usage_by_module: Record<string, number>;
-  usage_trend: Array<{
-    date: string;
-    usage: number;
-    active_users: number;
-  }>;
+  active_companies: number;
+  module_adoption_rate: number;
 }
 
 export const useAdvancedModuleManagement = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // Verificar si el usuario puede gestionar módulos
-  const canManageModules = profile?.role === 'superuser' || 
-                          profile?.role === 'admin_salmonera' || 
-                          profile?.role === 'admin_servicio';
+  // Verificar si el usuario puede gestionar módulos (solo superuser)
+  const canManageModules = profile?.role === 'superuser';
 
   // Obtener configuraciones de módulos
   const { data: moduleConfigurations = [], isLoading: isLoadingConfigs } = useQuery({
-    queryKey: ['module-configurations', profile?.salmonera_id || profile?.servicio_id],
+    queryKey: ['module-configurations'],
     queryFn: async () => {
-      if (!canManageModules) return [];
-      
       const { data, error } = await supabase
         .from('module_configurations')
         .select('*')
-        .order('module_name');
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
       return data as ModuleConfiguration[];
@@ -82,10 +74,8 @@ export const useAdvancedModuleManagement = () => {
 
   // Obtener estadísticas de uso
   const { data: usageStats = [], isLoading: isLoadingStats } = useQuery({
-    queryKey: ['module-usage-stats', profile?.salmonera_id || profile?.servicio_id],
+    queryKey: ['module-usage-stats'],
     queryFn: async () => {
-      if (!canManageModules) return [];
-      
       const { data, error } = await supabase
         .from('module_usage_stats')
         .select('*')
@@ -100,10 +90,8 @@ export const useAdvancedModuleManagement = () => {
 
   // Obtener logs de activación
   const { data: activationLogs = [], isLoading: isLoadingLogs } = useQuery({
-    queryKey: ['module-activation-logs', profile?.salmonera_id || profile?.servicio_id],
+    queryKey: ['module-activation-logs'],
     queryFn: async () => {
-      if (!canManageModules) return [];
-      
       const { data, error } = await supabase
         .from('module_activation_logs')
         .select('*')
@@ -116,22 +104,48 @@ export const useAdvancedModuleManagement = () => {
     enabled: canManageModules,
   });
 
+  // Obtener estadísticas avanzadas
+  const { data: advancedStats } = useQuery({
+    queryKey: ['advanced-module-stats'],
+    queryFn: async () => {
+      // Calcular estadísticas agregadas
+      const totalUsage = usageStats.reduce((acc, stat) => acc + stat.usage_count, 0);
+      const avgDailyUsage = usageStats.length > 0 ? totalUsage / usageStats.length : 0;
+      
+      const usageByModule = usageStats.reduce((acc, stat) => {
+        acc[stat.module_name] = (acc[stat.module_name] || 0) + stat.usage_count;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const activeCompanies = new Set(moduleConfigurations.filter(c => c.enabled).map(c => c.company_id)).size;
+      const totalCompanies = new Set(moduleConfigurations.map(c => c.company_id)).size;
+      const moduleAdoptionRate = totalCompanies > 0 ? (activeCompanies / totalCompanies) * 100 : 0;
+
+      return {
+        total_usage: totalUsage,
+        avg_daily_usage: Math.round(avgDailyUsage),
+        usage_by_module: usageByModule,
+        active_companies: activeCompanies,
+        module_adoption_rate: Math.round(moduleAdoptionRate),
+      } as AdvancedModuleStats;
+    },
+    enabled: canManageModules && usageStats.length > 0 && moduleConfigurations.length > 0,
+  });
+
   // Configurar módulo
-  const configureModule = useMutation({
-    mutationFn: async ({
-      moduleName,
-      companyId,
-      companyType,
-      configData,
-      usageLimits,
-      enabled
-    }: {
-      moduleName: string;
-      companyId: string;
-      companyType: 'salmonera' | 'contratista';
-      configData: Record<string, any>;
-      usageLimits?: Record<string, any>;
-      enabled: boolean;
+  const configureModuleMutation = useMutation({
+    mutationFn: async ({ 
+      moduleName, 
+      companyId, 
+      companyType, 
+      configData, 
+      usageLimits 
+    }: { 
+      moduleName: string; 
+      companyId: string; 
+      companyType: 'salmonera' | 'contratista'; 
+      configData: any; 
+      usageLimits?: any; 
     }) => {
       const { data, error } = await supabase
         .from('module_configurations')
@@ -141,9 +155,7 @@ export const useAdvancedModuleManagement = () => {
           company_type: companyType,
           config_data: configData,
           usage_limits: usageLimits || {},
-          enabled,
-          updated_at: new Date().toISOString(),
-          created_by: profile?.id
+          created_by: profile?.id,
         }, {
           onConflict: 'module_name,company_id,company_type'
         })
@@ -152,7 +164,7 @@ export const useAdvancedModuleManagement = () => {
 
       if (error) throw error;
 
-      // Registrar en logs
+      // Registrar log de configuración
       await supabase
         .from('module_activation_logs')
         .insert({
@@ -160,8 +172,8 @@ export const useAdvancedModuleManagement = () => {
           company_id: companyId,
           company_type: companyType,
           action: 'configured',
-          new_state: { enabled, config_data: configData },
-          performed_by: profile?.id
+          new_state: { config_data: configData, usage_limits: usageLimits },
+          performed_by: profile?.id,
         });
 
       return data;
@@ -169,61 +181,53 @@ export const useAdvancedModuleManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['module-configurations'] });
       queryClient.invalidateQueries({ queryKey: ['module-activation-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['module-access'] });
       toast({
-        title: "Configuración actualizada",
-        description: "La configuración del módulo se ha actualizado correctamente",
+        title: 'Módulo Configurado',
+        description: 'La configuración del módulo se ha actualizado exitosamente.',
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "No se pudo actualizar la configuración del módulo",
-        variant: "destructive",
+        title: 'Error de Configuración',
+        description: 'No se pudo configurar el módulo.',
+        variant: 'destructive',
       });
     },
   });
 
-  // Activar/desactivar módulo
-  const toggleModule = useMutation({
-    mutationFn: async ({
-      moduleName,
-      companyId,
-      companyType,
-      enabled,
-      reason
-    }: {
-      moduleName: string;
-      companyId: string;
-      companyType: 'salmonera' | 'contratista';
-      enabled: boolean;
-      reason?: string;
+  // Activar/Desactivar módulo
+  const toggleModuleMutation = useMutation({
+    mutationFn: async ({ 
+      moduleName, 
+      companyId, 
+      companyType, 
+      enabled, 
+      reason 
+    }: { 
+      moduleName: string; 
+      companyId: string; 
+      companyType: 'salmonera' | 'contratista'; 
+      enabled: boolean; 
+      reason?: string; 
     }) => {
-      // Primero actualizar module_access (tabla existente)
-      const { error: accessError } = await supabase
-        .from('module_access')
-        .upsert({
-          empresa_id: companyId,
-          modulo_nombre: moduleName,
-          activo: enabled,
-          configuracion: {}
-        }, {
-          onConflict: 'empresa_id,modulo_nombre'
-        });
+      // Obtener estado anterior
+      const { data: currentConfig } = await supabase
+        .from('module_configurations')
+        .select('*')
+        .eq('module_name', moduleName)
+        .eq('company_id', companyId)
+        .eq('company_type', companyType)
+        .single();
 
-      if (accessError) throw accessError;
-
-      // Luego actualizar configuración avanzada
       const { data, error } = await supabase
         .from('module_configurations')
         .upsert({
           module_name: moduleName,
           company_id: companyId,
           company_type: companyType,
-          config_data: {},
           enabled,
-          updated_at: new Date().toISOString(),
-          created_by: profile?.id
+          config_data: currentConfig?.config_data || {},
+          created_by: profile?.id,
         }, {
           onConflict: 'module_name,company_id,company_type'
         })
@@ -232,7 +236,7 @@ export const useAdvancedModuleManagement = () => {
 
       if (error) throw error;
 
-      // Registrar en logs
+      // Registrar log de activación/desactivación
       await supabase
         .from('module_activation_logs')
         .insert({
@@ -240,74 +244,48 @@ export const useAdvancedModuleManagement = () => {
           company_id: companyId,
           company_type: companyType,
           action: enabled ? 'activated' : 'deactivated',
+          previous_state: currentConfig ? { enabled: currentConfig.enabled } : {},
           new_state: { enabled },
           reason,
-          performed_by: profile?.id
+          performed_by: profile?.id,
         });
 
       return data;
     },
-    onSuccess: (_, { enabled }) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['module-configurations'] });
       queryClient.invalidateQueries({ queryKey: ['module-activation-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['module-access'] });
       toast({
-        title: enabled ? "Módulo activado" : "Módulo desactivado",
-        description: `El módulo se ha ${enabled ? 'activado' : 'desactivado'} correctamente`,
+        title: variables.enabled ? 'Módulo Activado' : 'Módulo Desactivado',
+        description: `El módulo ha sido ${variables.enabled ? 'activado' : 'desactivado'} exitosamente.`,
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Error",
-        description: "No se pudo cambiar el estado del módulo",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No se pudo cambiar el estado del módulo.',
+        variant: 'destructive',
       });
     },
   });
 
-  // Obtener estadísticas avanzadas
-  const { data: advancedStats } = useQuery({
-    queryKey: ['advanced-module-stats', profile?.salmonera_id || profile?.servicio_id],
-    queryFn: async () => {
-      if (!canManageModules) return null;
-      
-      const empresaId = profile?.salmonera_id || profile?.servicio_id;
-      const companyType = profile?.salmonera_id ? 'salmonera' : 'contratista';
-      
-      if (!empresaId) return null;
-
-      const { data, error } = await supabase.rpc('get_module_stats', {
-        p_company_id: empresaId,
-        p_company_type: companyType
-      });
-
-      if (error) throw error;
-      
-      // Validar y transformar los datos con tipos seguros
-      const rawData = data as any;
-      const result: ModuleStatsResult = {
-        total_usage: Number(rawData?.total_usage || 0),
-        active_modules: Number(rawData?.active_modules || 0),
-        avg_daily_usage: Number(rawData?.avg_daily_usage || 0),
-        usage_by_module: rawData?.usage_by_module || {},
-        usage_trend: rawData?.usage_trend || []
-      };
-      
-      return result;
-    },
-    enabled: canManageModules,
-  });
+  const isLoading = isLoadingConfigs || isLoadingStats || isLoadingLogs;
 
   return {
+    // Data
     moduleConfigurations,
     usageStats,
     activationLogs,
     advancedStats,
-    isLoading: isLoadingConfigs || isLoadingStats || isLoadingLogs,
+    isLoading,
+    
+    // Permissions
     canManageModules,
-    configureModule: configureModule.mutateAsync,
-    toggleModule: toggleModule.mutateAsync,
-    isConfiguring: configureModule.isPending,
-    isToggling: toggleModule.isPending,
+    
+    // Actions
+    configureModule: configureModuleMutation.mutate,
+    toggleModule: toggleModuleMutation.mutate,
+    isConfiguring: configureModuleMutation.isPending,
+    isToggling: toggleModuleMutation.isPending,
   };
 };
