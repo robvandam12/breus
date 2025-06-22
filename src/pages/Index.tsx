@@ -7,20 +7,19 @@ import { BuzoOnboarding } from "@/components/onboarding/BuzoOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Index() {
   const { profile, user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     // No hacer nada si está cargando
     if (loading) return;
 
-    console.log('Index.tsx - Auth state:', { user: !!user, profile, pathname: location.pathname });
+    console.log('Index.tsx - Auth state:', { user: !!user, profile, loading });
 
     // Redirect if not authenticated
     if (!user) {
@@ -29,17 +28,10 @@ export default function Index() {
       return;
     }
 
-    // Redirect new users to onboarding (only if they don't have basic profile info)
+    // Check if new user needs onboarding (only if they don't have basic profile info)
     if (user && profile && !profile.nombre && !profile.apellido) {
       console.log('Index.tsx - New user detected, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
-      return;
-    }
-
-    // Handle /dashboard to / redirect
-    if (location.pathname === '/dashboard') {
-      console.log('Index.tsx - Redirecting from /dashboard to /');
-      navigate('/', { replace: true });
       return;
     }
 
@@ -51,7 +43,7 @@ export default function Index() {
         setShowOnboarding(true);
       }
     }
-  }, [loading, user, profile, navigate, location.pathname]);
+  }, [loading, user, profile, navigate]);
 
   // Show loading spinner
   if (loading) {
@@ -76,9 +68,11 @@ export default function Index() {
   }
 
   const getDashboardContent = () => {
-    const isAssigned = profile?.salmonera_id || profile?.servicio_id;
+    if (!profile) {
+      return <BuzoRestrictedView />;
+    }
     
-    switch (profile?.role) {
+    switch (profile.role) {
       case 'superuser':
       case 'admin_salmonera':
       case 'admin_servicio':
@@ -93,7 +87,9 @@ export default function Index() {
   };
 
   const getDashboardTitle = () => {
-    switch (profile?.role) {
+    if (!profile) return "Dashboard";
+    
+    switch (profile.role) {
       case 'superuser':
         return "Panel de Administración";
       case 'admin_salmonera':
@@ -110,7 +106,9 @@ export default function Index() {
   };
 
   const getDashboardSubtitle = () => {
-    switch (profile?.role) {
+    if (!profile) return "Panel de control";
+    
+    switch (profile.role) {
       case 'superuser':
         return "Gestión completa del sistema";
       case 'admin_salmonera':

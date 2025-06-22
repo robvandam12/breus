@@ -23,12 +23,13 @@ export interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; redirectPath?: string }>;
   signUp: (email: string, password: string, profile: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   hasPermission: (permission: string) => boolean;
   isRole: (role: string) => boolean;
+  getDashboardPath: () => string;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +48,26 @@ export const useAuthProvider = (): AuthContextType => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Función para obtener el path del dashboard basado en el rol
+  const getDashboardPath = (): string => {
+    if (!profile) return '/';
+    
+    switch (profile.role) {
+      case 'superuser':
+        return '/';
+      case 'admin_salmonera':
+        return '/';
+      case 'admin_servicio':
+        return '/';
+      case 'supervisor':
+        return '/';
+      case 'buzo':
+        return '/';
+      default:
+        return '/';
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -58,10 +79,10 @@ export const useAuthProvider = (): AuthContextType => {
         if (!mounted) return;
         
         console.log('useAuth - Initial session:', initialSession?.user?.email);
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
         
-        if (initialSession?.user) {
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
           await fetchUserProfile(initialSession.user.id);
         }
       } catch (error) {
@@ -79,6 +100,7 @@ export const useAuthProvider = (): AuthContextType => {
         if (!mounted) return;
         
         console.log('useAuth - Auth state change:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -143,7 +165,7 @@ export const useAuthProvider = (): AuthContextType => {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; redirectPath?: string }> => {
     try {
       console.log('useAuth - Attempting sign in for:', email);
       const { error } = await supabase.auth.signInWithPassword({
@@ -157,6 +179,14 @@ export const useAuthProvider = (): AuthContextType => {
         title: "Bienvenido",
         description: "Has iniciado sesión exitosamente",
       });
+
+      // Esperar un momento para que se cargue el perfil
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return { 
+        success: true, 
+        redirectPath: getDashboardPath() 
+      };
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast({
@@ -164,7 +194,7 @@ export const useAuthProvider = (): AuthContextType => {
         description: error.message || "Error al iniciar sesión",
         variant: "destructive",
       });
-      throw error;
+      return { success: false };
     }
   };
 
@@ -174,6 +204,7 @@ export const useAuthProvider = (): AuthContextType => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: profileData
         }
       });
@@ -216,6 +247,11 @@ export const useAuthProvider = (): AuthContextType => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // Clear state immediately
+      setUser(null);
+      setProfile(null);
+      setSession(null);
 
       toast({
         title: "Sesión cerrada",
@@ -303,5 +339,6 @@ export const useAuthProvider = (): AuthContextType => {
     resetPassword,
     hasPermission,
     isRole,
+    getDashboardPath,
   };
 };

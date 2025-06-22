@@ -21,9 +21,11 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
-      // Redirigir a la página principal, el Index.tsx se encargará de mostrar el dashboard apropiado
-      navigate('/');
+      const result = await signIn(email, password);
+      if (result.success) {
+        // Redireccionar al dashboard apropiado según el rol
+        navigate(result.redirectPath || '/');
+      }
     } catch (error) {
       // Error handling is done in the signIn function
     } finally {

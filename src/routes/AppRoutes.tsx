@@ -53,7 +53,7 @@ const FullPageLoader = () => (
 export const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      {/* Auth Routes */}
+      {/* Auth Routes - No protection needed */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -76,7 +76,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Core Protected Routes */}
+      {/* Main Dashboard - Protected */}
       <Route path="/" element={
         <ProtectedRoute>
           <Suspense fallback={<DashboardWithSidebarSkeleton />}>
@@ -108,7 +108,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Equipo Routes */}
+      {/* Equipment Routes */}
       <Route path="/equipo-de-buceo" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -117,7 +117,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Operaciones Routes */}
+      {/* Operations Routes */}
       <Route path="/operaciones" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -125,8 +125,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      
-      {/* Nuevas rutas modulares para operaciones */}
       <Route path="/operaciones/planificar" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -134,7 +132,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -156,6 +153,8 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+
+      {/* Immersions Route */}
       <Route path="/inmersiones" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -180,7 +179,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
 
-      {/* Formularios Routes */}
+      {/* Forms Routes */}
       <Route path="/formularios/hpt" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -196,7 +195,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Reportes Routes */}
+      {/* Reports Routes */}
       <Route path="/reportes" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -204,8 +203,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      
-      {/* Nueva ruta para reportes avanzados */}
       <Route path="/reportes/avanzados" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -214,7 +211,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Integraciones Route */}
+      {/* Integrations Route */}
       <Route path="/integraciones" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -222,7 +219,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      
       <Route path="/configuracion" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -267,8 +263,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-
-      {/* Nuevas rutas para superusers */}
       <Route path="/admin/modules" element={
         <ProtectedRoute requiredRole="superuser">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -284,7 +278,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
 
-      {/* Rutas específicas para buzos */}
+      {/* Buzo Specific Routes */}
       <Route path="/buzo/operaciones" element={
         <ProtectedRoute requiredRole="buzo">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
