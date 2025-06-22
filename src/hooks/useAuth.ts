@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,6 +50,7 @@ export const useAuthProvider = (): AuthContextType => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('useAuth - Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -61,15 +63,13 @@ export const useAuthProvider = (): AuthContextType => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
+        console.log('useAuth - Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer profile fetch to avoid blocking auth state
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
+          // Fetch profile immediately after auth change
+          await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
           setLoading(false);
@@ -82,6 +82,8 @@ export const useAuthProvider = (): AuthContextType => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('useAuth - Fetching profile for user:', userId);
+      
       // Use manual typing for the usuario table query
       const { data, error } = await supabase
         .from('usuario')
@@ -107,7 +109,11 @@ export const useAuthProvider = (): AuthContextType => {
           updated_at: data.updated_at,
           perfil_buzo: data.perfil_buzo || undefined
         };
+        console.log('useAuth - Profile loaded:', userProfile.role, userProfile.nombre);
         setProfile(userProfile);
+      } else {
+        console.log('useAuth - No profile found for user');
+        setProfile(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -124,6 +130,7 @@ export const useAuthProvider = (): AuthContextType => {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log('useAuth - Attempting sign in for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
