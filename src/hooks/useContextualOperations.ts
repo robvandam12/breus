@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -132,10 +131,8 @@ export const useContextualOperations = () => {
       if (operacionError) throw operacionError;
 
       // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      const defaultTipo = 'planificada';
+      const defaultTipo: TipoContexto = 'planificada';
       if (tipoContexto !== defaultTipo) {
-        const esPlanificada = tipoContexto === 'planificada';
-        
         const contextUpdate: Partial<{
           tipo_contexto: TipoContexto;
           requiere_documentos: boolean;
@@ -143,9 +140,9 @@ export const useContextualOperations = () => {
           requiere_anexo_bravo: boolean;
         }> = {
           tipo_contexto: tipoContexto,
-          requiere_documentos: esPlanificada,
-          requiere_hpt: esPlanificada,
-          requiere_anexo_bravo: esPlanificada
+          requiere_documentos: tipoContexto === 'planificada',
+          requiere_hpt: tipoContexto === 'planificada',
+          requiere_anexo_bravo: tipoContexto === 'planificada'
         };
 
         const { error: contextError } = await supabase
