@@ -43,6 +43,9 @@ export const useModularSystem = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
+  // Los superusers tienen acceso completo automáticamente
+  const isSuperuser = profile?.role === 'superuser';
+
   // Obtener todos los módulos del sistema
   const { data: systemModules = [], isLoading: loadingSystemModules } = useQuery({
     queryKey: ['system-modules'],
@@ -61,6 +64,17 @@ export const useModularSystem = () => {
   const { data: activeModules = [], isLoading: loadingActiveModules } = useQuery({
     queryKey: ['active-modules', profile?.salmonera_id || profile?.servicio_id],
     queryFn: async () => {
+      // Si es superuser, devolver todos los módulos como activos
+      if (isSuperuser) {
+        return systemModules.map(module => ({
+          module_name: module.name,
+          display_name: module.display_name,
+          description: module.description,
+          category: module.category,
+          configuration: {}
+        })) as ActiveModule[];
+      }
+
       if (!profile?.salmonera_id && !profile?.servicio_id) return [];
       
       const companyId = profile.salmonera_id || profile.servicio_id;
@@ -75,21 +89,27 @@ export const useModularSystem = () => {
       if (error) throw error;
       return data as ActiveModule[];
     },
-    enabled: !!(profile?.salmonera_id || profile?.servicio_id),
+    enabled: !!(profile?.salmonera_id || profile?.servicio_id || isSuperuser),
   });
 
   // Verificar si un módulo específico está activo
   const hasModuleAccess = (moduleName: string): boolean => {
+    // Superusers tienen acceso a todo
+    if (isSuperuser) return true;
+    
     return activeModules.some(module => module.module_name === moduleName);
   };
 
   // Verificar múltiples módulos
   const hasAnyModule = (moduleNames: string[]): boolean => {
+    if (isSuperuser) return true;
     return moduleNames.some(name => hasModuleAccess(name));
   };
 
   // Obtener configuración específica de un módulo
   const getModuleConfig = (moduleName: string): any => {
+    if (isSuperuser) return {}; // Configuración por defecto para superusers
+    
     const module = activeModules.find(m => m.module_name === moduleName);
     return module?.configuration || {};
   };
@@ -148,7 +168,7 @@ export const useModularSystem = () => {
     
     // Módulos opcionales
     PLANNING_OPERATIONS: 'planning_operations',
-    MAINTENANCE_NETWORKS: 'maintenance_networks', // antes MultiX
+    MAINTENANCE_NETWORKS: 'maintenance_networks',
     ADVANCED_REPORTING: 'advanced_reporting',
     EXTERNAL_INTEGRATIONS: 'external_integrations',
   };
@@ -168,13 +188,14 @@ export const useModularSystem = () => {
     toggleModule: toggleModule.mutateAsync,
     isToggling: toggleModule.isPending,
     
-    // Helpers específicos
-    canPlanOperations: hasModuleAccess(modules.PLANNING_OPERATIONS),
-    canManageNetworks: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
-    canAccessAdvancedReports: hasModuleAccess(modules.ADVANCED_REPORTING),
-    canUseIntegrations: hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
+    // Helpers específicos (siempre true para superusers)
+    canPlanOperations: isSuperuser || hasModuleAccess(modules.PLANNING_OPERATIONS),
+    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS),
+    canAccessAdvancedReports: isSuperuser || hasModuleAccess(modules.ADVANCED_REPORTING),
+    canUseIntegrations: isSuperuser || hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
     
     // Constantes
     modules,
+    isSuperuser,
   };
 };

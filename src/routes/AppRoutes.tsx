@@ -41,6 +41,9 @@ const BuzoOperaciones = lazy(() => import("../pages/buzo/BuzoOperaciones"));
 const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
 const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
 
+const SuperuserModules = lazy(() => import("../pages/admin/SuperuserModules"));
+const SystemMonitoring = lazy(() => import("../pages/admin/SystemMonitoring"));
+
 const FullPageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <LoadingSpinner text="Cargando página..." />
@@ -236,6 +239,22 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
 
+      {/* Nuevas rutas para superusers */}
+      <Route path="/admin/modules" element={
+        <ProtectedRoute requiredRole="superuser">
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <SuperuserModules />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system-monitoring" element={
+        <ProtectedRoute requiredRole="superuser">
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <SystemMonitoring />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+
       {/* Rutas específicas para buzos */}
       <Route path="/buzo/operaciones" element={
         <ProtectedRoute requiredRole="buzo">
@@ -252,7 +271,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/buzo/reportes" element={
-        <ProtectedRoute requiredRole="buzo">
+        <ProtectedRoute require requireddRole="buzo">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BuzoReportesPage />
           </Suspense>
@@ -268,3 +287,5 @@ export const AppRoutes = () => (
     </Routes>
   </BrowserRouter>
 );
+
+export { AppRoutes };

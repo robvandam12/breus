@@ -11,15 +11,16 @@ import {
   BarChart3,
   Shield,
   Network,
-  Wrench,
-  Globe,
-  ChevronDown,
   Plus,
   Anchor,
   Book,
   Building,
   Users,
-  LogOut
+  LogOut,
+  ChevronDown,
+  Wrench,
+  Globe,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -51,41 +52,14 @@ const BreusLogo = ({ size = 32 }: { size?: number }) => (
 );
 
 export const ModularSidebar = () => {
-  console.log('ModularSidebar: Rendering started');
-  
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
   
-  console.log('ModularSidebar: Profile data:', profile);
-  
-  // Provide fallback values for hooks to prevent crashes
-  let hasModuleAccess, modules;
-  try {
-    const moduleSystem = useModularSystem();
-    hasModuleAccess = moduleSystem.hasModuleAccess;
-    modules = moduleSystem.modules;
-  } catch (error) {
-    console.error('ModularSidebar: Error with useModularSystem:', error);
-    hasModuleAccess = () => false;
-    modules = {
-      PLANNING_OPERATIONS: 'planning',
-      MAINTENANCE_NETWORKS: 'networks', 
-      ADVANCED_REPORTING: 'reports',
-      EXTERNAL_INTEGRATIONS: 'integrations'
-    };
-  }
-
-  let salmoneras = [];
-  let contratistas = [];
-  try {
-    const salmonerasData = useSalmoneras();
-    const contratistasData = useContratistas();
-    salmoneras = salmonerasData.salmoneras || [];
-    contratistas = contratistasData.contratistas || [];
-  } catch (error) {
-    console.error('ModularSidebar: Error with company hooks:', error);
-  }
+  // Obtener datos de módulos con manejo de errores mejorado
+  const moduleSystem = useModularSystem();
+  const { salmoneras = [] } = useSalmoneras();
+  const { contratistas = [] } = useContratistas();
   
   const [operacionesOpen, setOperacionesOpen] = useState(true);
   const [documentosOpen, setDocumentosOpen] = useState(false);
@@ -95,13 +69,7 @@ export const ModularSidebar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Verificar acceso a módulos con fallbacks
-  const canPlanOperations = hasModuleAccess ? hasModuleAccess(modules.PLANNING_OPERATIONS) : false;
-  const canManageNetworks = hasModuleAccess ? hasModuleAccess(modules.MAINTENANCE_NETWORKS) : false;
-  const canAccessReports = hasModuleAccess ? hasModuleAccess(modules.ADVANCED_REPORTING) : false;
-  const canUseIntegrations = hasModuleAccess ? hasModuleAccess(modules.EXTERNAL_INTEGRATIONS) : false;
-
-  // Verificar roles con fallbacks
+  // Verificar roles con fallbacks seguros
   const role = profile?.role || 'buzo';
   const isSuperuser = role === 'superuser';
   const isAdminSalmonera = role === 'admin_salmonera';
@@ -110,25 +78,23 @@ export const ModularSidebar = () => {
   const isBuzo = role === 'buzo';
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
 
-  console.log('ModularSidebar: User role and permissions:', {
-    role,
-    isAssigned,
-    canPlanOperations,
-    canManageNetworks,
-    canAccessReports,
-    canUseIntegrations
-  });
+  // Para superusers: acceso completo a todo
+  // Para otros roles: verificar módulos específicos
+  const canPlanOperations = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.PLANNING_OPERATIONS || 'planning_operations') : false);
+  const canManageNetworks = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.MAINTENANCE_NETWORKS || 'maintenance_networks') : false);
+  const canAccessReports = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.ADVANCED_REPORTING || 'advanced_reporting') : false);
+  const canUseIntegrations = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.EXTERNAL_INTEGRATIONS || 'external_integrations') : false);
 
   const navigationItems = [
-    // Core - Siempre visible
+    // Dashboard - Siempre visible
     {
       title: 'Dashboard',
       icon: Activity,
-      path: '/dashboard',
+      path: '/',
       show: true
     },
 
-    // Operaciones - Depende del rol y módulos
+    // Operaciones
     {
       title: 'Operaciones',
       icon: Calendar,
@@ -138,65 +104,70 @@ export const ModularSidebar = () => {
       show: !isBuzo || (isBuzo && isAssigned),
       children: [
         {
-          title: 'Planificar',
+          title: 'Ver Operaciones',
+          path: '/operaciones',
+          icon: Calendar,
+          show: true
+        },
+        {
+          title: 'Planificar Operaciones',
           path: '/operaciones/planificar',
           icon: Plus,
           show: canPlanOperations && !isBuzo,
           badge: 'Planificación'
         },
         {
-          title: 'Inmersiones',
-          path: '/inmersiones',
-          icon: Anchor,
-          show: true
-        },
-        {
-          title: 'Mantención de Redes',
-          path: '/operaciones/mantencion-redes',
-          icon: Network,
-          show: canManageNetworks,
-          badge: 'Redes'
-        },
-        {
-          title: 'Faenas de Redes',
-          path: '/operaciones/faenas-redes',
-          icon: Wrench,
-          show: canManageNetworks,
-          badge: 'Redes'
-        }
-      ]
-    },
-
-    // Documentos - Solo si tiene módulo de planificación
-    {
-      title: 'Documentos',
-      icon: FileText,
-      isCollapsible: true,
-      isOpen: documentosOpen,
-      setOpen: setDocumentosOpen,
-      show: canPlanOperations && !isBuzo,
-      children: [
-        {
           title: 'HPT',
-          path: '/hpt',
+          path: '/operaciones/hpt',
           icon: Shield,
-          show: true
+          show: !isBuzo || isSupervisor
         },
         {
           title: 'Anexo Bravo',
-          path: '/anexo-bravo',
+          path: '/operaciones/anexo-bravo',
           icon: FileText,
-          show: true
+          show: !isBuzo || isSupervisor
+        },
+        {
+          title: 'Mantención de Redes',
+          path: '/operaciones/network-maintenance',
+          icon: Network,
+          show: canManageNetworks,
+          badge: 'Redes'
         }
       ]
     },
 
-    // Bitácoras - Siempre visible para usuarios asignados
+    // Inmersiones - Siempre visible para usuarios asignados
+    {
+      title: 'Inmersiones',
+      icon: Anchor,
+      path: '/inmersiones',
+      show: !isBuzo || (isBuzo && isAssigned)
+    },
+
+    // Bitácoras
     {
       title: 'Bitácoras',
       icon: Book,
-      path: '/bitacoras',
-      show: !isBuzo || (isBuzo && isAssigned)
+      isCollapsible: true,
+      isOpen: documentosOpen,
+      setOpen: setDocumentosOpen,
+      show: !isBuzo || (isBuzo && isAssigned),
+      children: [
+        {
+          title: 'Bitácoras Supervisor',
+          path: '/bitacoras/supervisor',
+          icon: Shield,
+          show: isSupervisor || isAdminServicio || isSuperuser
+        },
+        {
+          title: 'Bitácoras Buzo',
+          path: '/bitacoras/buzo',
+          icon: Users,
+          show: true
+        }
+      ]
     },
 
     // Reportes
@@ -215,9 +186,9 @@ export const ModularSidebar = () => {
           show: true
         },
         {
-          title: 'Reportes Operativos',
-          path: '/reportes/operativos',
-          icon: Network,
+          title: 'Reportes Avanzados',
+          path: '/reportes/avanzados',
+          icon: Zap,
           show: canAccessReports,
           badge: 'Avanzado'
         }
@@ -231,7 +202,7 @@ export const ModularSidebar = () => {
       isCollapsible: true,
       isOpen: empresasOpen,
       setOpen: setEmpresasOpen,
-      show: isAdminSalmonera || isSuperuser,
+      show: isAdminSalmonera || isAdminServicio || isSuperuser,
       children: [
         {
           title: 'Salmoneras',
@@ -254,6 +225,14 @@ export const ModularSidebar = () => {
       ]
     },
 
+    // Equipo de Buceo
+    {
+      title: 'Equipo de Buceo',
+      icon: Wrench,
+      path: '/equipo-de-buceo',
+      show: isAdminSalmonera || isAdminServicio || isSupervisor || isSuperuser
+    },
+
     // Integraciones
     {
       title: 'Integraciones',
@@ -273,10 +252,36 @@ export const ModularSidebar = () => {
       show: isSuperuser || isAdminSalmonera || isAdminServicio,
       children: [
         {
-          title: 'Panel Admin',
-          path: '/admin',
-          icon: Settings,
+          title: 'Gestión de Usuarios',
+          path: '/admin/users',
+          icon: Users,
           show: isSuperuser || isAdminSalmonera || isAdminServicio
+        },
+        {
+          title: 'Roles y Permisos',
+          path: '/admin/roles',
+          icon: Shield,
+          show: isSuperuser
+        },
+        {
+          title: 'Gestión de Módulos',
+          path: '/admin/modules',
+          icon: Settings,
+          show: isSuperuser,
+          badge: 'Super'
+        },
+        {
+          title: 'Monitoreo del Sistema',
+          path: '/admin/system-monitoring',
+          icon: Activity,
+          show: isSuperuser,
+          badge: 'Super'
+        },
+        {
+          title: 'Configuración',
+          path: '/configuracion',
+          icon: Settings,
+          show: isAdminSalmonera || isAdminServicio || isSuperuser
         }
       ]
     }
@@ -296,13 +301,14 @@ export const ModularSidebar = () => {
             <Button
               variant="ghost"
               className={cn(
-                "w-full justify-between h-12 px-4",
-                "hover:bg-gray-100 transition-colors"
+                "w-full justify-between h-12 px-4 mb-1",
+                "hover:bg-blue-50 hover:text-blue-700 transition-colors",
+                "text-gray-700 font-medium"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="h-5 w-5 text-gray-600" />
-                <span className="font-medium">{item.title}</span>
+                <item.icon className="h-5 w-5" />
+                <span>{item.title}</span>
               </div>
               <ChevronDown className={cn(
                 "h-4 w-4 transition-transform",
@@ -310,7 +316,7 @@ export const ModularSidebar = () => {
               )} />
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="pl-4 space-y-1">
+          <CollapsibleContent className="space-y-1">
             {item.children?.map((child: any) => (
               renderNavItem(child)
             ))}
@@ -324,16 +330,17 @@ export const ModularSidebar = () => {
         key={item.title}
         variant="ghost"
         className={cn(
-          "w-full justify-start h-12 px-4",
-          "hover:bg-gray-100 transition-colors",
-          isActive(item.path) && "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
+          "w-full justify-start h-12 px-4 mb-1",
+          "hover:bg-blue-50 hover:text-blue-700 transition-colors",
+          "text-gray-700 font-medium",
+          isActive(item.path) && "bg-blue-100 text-blue-700 border-r-2 border-blue-700"
         )}
         onClick={() => navigate(item.path)}
       >
-        <item.icon className="h-5 w-5 mr-3 text-gray-600" />
+        <item.icon className="h-5 w-5 mr-3" />
         <span className="flex-1 text-left">{item.title}</span>
         {item.badge && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs ml-auto">
             {item.badge}
           </Badge>
         )}
@@ -344,21 +351,17 @@ export const ModularSidebar = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      if (toast) {
-        toast({
-          title: "Sesión cerrada",
-          description: "Has cerrado sesión exitosamente.",
-        });
-      }
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
     } catch (error) {
       console.error('Error during logout:', error);
-      if (toast) {
-        toast({
-          title: "Error",
-          description: "Error al cerrar sesión.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -370,20 +373,14 @@ export const ModularSidebar = () => {
   };
 
   const getRoleDisplayName = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'Super Usuario';
-      case 'admin_salmonera':
-        return 'Admin Salmonera';
-      case 'admin_servicio':
-        return 'Admin Servicio';
-      case 'supervisor':
-        return 'Supervisor';
-      case 'buzo':
-        return 'Buzo';
-      default:
-        return 'Usuario';
-    }
+    const roleLabels = {
+      superuser: 'Super Usuario',
+      admin_salmonera: 'Admin Salmonera',
+      admin_servicio: 'Admin Servicio',
+      supervisor: 'Supervisor',
+      buzo: 'Buzo'
+    };
+    return roleLabels[role as keyof typeof roleLabels] || 'Usuario';
   };
 
   const getCompanyName = () => {
@@ -398,20 +395,16 @@ export const ModularSidebar = () => {
     return null;
   };
 
-  console.log('ModularSidebar: About to render sidebar');
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white border-r border-gray-200">
       {/* Header */}
-      <div className="p-6 border-b">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <BreusLogo size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Breus</h2>
-            <p className="text-sm text-gray-600">Sistema Modular de Buceo</p>
-          </div>
+      <div className="flex items-center gap-3 p-6 border-b border-gray-200">
+        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+          <BreusLogo size={24} />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Breus</h2>
+          <p className="text-sm text-gray-600">Sistema Modular</p>
         </div>
       </div>
       
@@ -421,27 +414,28 @@ export const ModularSidebar = () => {
       </nav>
 
       {/* Module Status */}
-      <div className="p-4 border-t bg-gray-50">
+      <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="text-xs text-gray-500 mb-2">Módulos Activos:</div>
         <div className="flex flex-wrap gap-1">
           <Badge variant="outline" className="text-xs">Core</Badge>
-          {canPlanOperations && <Badge variant="outline" className="text-xs">Planificación</Badge>}
-          {canManageNetworks && <Badge variant="outline" className="text-xs">Redes</Badge>}
-          {canAccessReports && <Badge variant="outline" className="text-xs">Reportes+</Badge>}
-          {canUseIntegrations && <Badge variant="outline" className="text-xs">API</Badge>}
+          {(canPlanOperations || isSuperuser) && <Badge variant="outline" className="text-xs">Planificación</Badge>}
+          {(canManageNetworks || isSuperuser) && <Badge variant="outline" className="text-xs">Redes</Badge>}
+          {(canAccessReports || isSuperuser) && <Badge variant="outline" className="text-xs">Reportes+</Badge>}
+          {(canUseIntegrations || isSuperuser) && <Badge variant="outline" className="text-xs">API</Badge>}
+          {isSuperuser && <Badge variant="default" className="text-xs bg-red-600">SUPER</Badge>}
         </div>
       </div>
 
       {/* User Footer */}
-      <div className="p-4 border-t bg-gray-50">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-white border">
-          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border">
+          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
             <span className="text-white font-medium text-sm">
               {getUserDisplayName().charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{getUserDisplayName()}</p>
             <p className="text-xs text-gray-500 truncate">{getRoleDisplayName(profile?.role)}</p>
             {getCompanyName() && (
               <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
@@ -451,7 +445,7 @@ export const ModularSidebar = () => {
             variant="ghost"
             size="sm"
             onClick={handleLogout}  
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-gray-200"
           >
             <LogOut className="w-4 h-4" />
           </Button>
