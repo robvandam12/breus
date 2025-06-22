@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,
   CollapsibleContent,
@@ -113,8 +112,7 @@ export const ModularSidebar = () => {
           title: 'Planificar Operaciones',
           path: '/operaciones/planificar',
           icon: Plus,
-          show: canPlanOperations && !isBuzo,
-          badge: 'Planificación'
+          show: canPlanOperations && !isBuzo
         },
         {
           title: 'HPT',
@@ -132,8 +130,7 @@ export const ModularSidebar = () => {
           title: 'Mantención de Redes',
           path: '/operaciones/network-maintenance',
           icon: Network,
-          show: canManageNetworks,
-          badge: 'Redes'
+          show: canManageNetworks
         }
       ]
     },
@@ -189,8 +186,7 @@ export const ModularSidebar = () => {
           title: 'Reportes Avanzados',
           path: '/reportes/avanzados',
           icon: Zap,
-          show: canAccessReports,
-          badge: 'Avanzado'
+          show: canAccessReports
         }
       ]
     },
@@ -238,8 +234,7 @@ export const ModularSidebar = () => {
       title: 'Integraciones',
       icon: Globe,
       path: '/integraciones',
-      show: canUseIntegrations && (isSuperuser || isAdminSalmonera || isAdminServicio),
-      badge: 'API'
+      show: canUseIntegrations && (isSuperuser || isAdminSalmonera || isAdminServicio)
     },
 
     // Administración
@@ -267,15 +262,13 @@ export const ModularSidebar = () => {
           title: 'Gestión de Módulos',
           path: '/admin/modules',
           icon: Settings,
-          show: isSuperuser,
-          badge: 'Super'
+          show: isSuperuser
         },
         {
           title: 'Monitoreo del Sistema',
           path: '/admin/system-monitoring',
           icon: Activity,
-          show: isSuperuser,
-          badge: 'Super'
+          show: isSuperuser
         },
         {
           title: 'Configuración',
@@ -339,11 +332,6 @@ export const ModularSidebar = () => {
       >
         <item.icon className="h-5 w-5 mr-3" />
         <span className="flex-1 text-left">{item.title}</span>
-        {item.badge && (
-          <Badge variant="secondary" className="text-xs ml-auto">
-            {item.badge}
-          </Badge>
-        )}
       </Button>
     );
   };
@@ -412,19 +400,6 @@ export const ModularSidebar = () => {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navigationItems.map(renderNavItem)}
       </nav>
-
-      {/* Module Status */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="text-xs text-gray-500 mb-2">Módulos Activos:</div>
-        <div className="flex flex-wrap gap-1">
-          <Badge variant="outline" className="text-xs">Core</Badge>
-          {(canPlanOperations || isSuperuser) && <Badge variant="outline" className="text-xs">Planificación</Badge>}
-          {(canManageNetworks || isSuperuser) && <Badge variant="outline" className="text-xs">Redes</Badge>}
-          {(canAccessReports || isSuperuser) && <Badge variant="outline" className="text-xs">Reportes+</Badge>}
-          {(canUseIntegrations || isSuperuser) && <Badge variant="outline" className="text-xs">API</Badge>}
-          {isSuperuser && <Badge variant="default" className="text-xs bg-red-600">SUPER</Badge>}
-        </div>
-      </div>
 
       {/* User Footer */}
       <div className="p-4 border-t border-gray-200 bg-white">
