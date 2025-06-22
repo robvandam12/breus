@@ -15,62 +15,59 @@ export default function Index() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [redirectHandled, setRedirectHandled] = useState(false);
 
   useEffect(() => {
-    // Solo ejecutar redirecciones una vez y cuando no esté cargando
-    if (loading || redirectHandled) return;
+    // No hacer nada si está cargando
+    if (loading) return;
 
-    console.log('Index.tsx - Checking redirections:', { user: !!user, profile, pathname: location.pathname });
+    console.log('Index.tsx - Auth state:', { user: !!user, profile, pathname: location.pathname });
 
     // Redirect if not authenticated
     if (!user) {
       console.log('Index.tsx - No user found, redirecting to login');
-      setRedirectHandled(true);
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
 
     // Redirect new users to onboarding (only if they don't have basic profile info)
     if (user && profile && !profile.nombre && !profile.apellido) {
       console.log('Index.tsx - New user detected, redirecting to onboarding');
-      setRedirectHandled(true);
-      navigate('/onboarding');
+      navigate('/onboarding', { replace: true });
       return;
     }
 
     // Handle /dashboard to / redirect
     if (location.pathname === '/dashboard') {
       console.log('Index.tsx - Redirecting from /dashboard to /');
-      setRedirectHandled(true);
       navigate('/', { replace: true });
       return;
     }
 
     // Check if buzo needs onboarding (but don't redirect, show onboarding component)
-    if (user && profile && profile.role === 'buzo') {
+    if (profile?.role === 'buzo') {
       const onboardingCompleted = localStorage.getItem('onboarding_completed');
       if (!onboardingCompleted) {
         console.log('Index.tsx - Showing buzo onboarding');
         setShowOnboarding(true);
       }
     }
+  }, [loading, user, profile, navigate, location.pathname]);
 
-    // Mark redirections as handled
-    setRedirectHandled(true);
-  }, [loading, user, profile, navigate, location.pathname, redirectHandled]);
-
-  // Reset redirect flag when user or profile changes
-  useEffect(() => {
-    setRedirectHandled(false);
-  }, [user?.id, profile?.id]);
-
+  // Show loading spinner
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
       </div>
     );
+  }
+
+  // If no user, don't render anything (will redirect)
+  if (!user) {
+    return null;
   }
 
   // Show onboarding for buzos who haven't seen it

@@ -48,43 +48,62 @@ export const useAuthProvider = (): AuthContextType => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('useAuth - Initial session:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setLoading(false);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log('useAuth - Initial session:', initialSession?.user?.email);
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        if (initialSession?.user) {
+          await fetchUserProfile(initialSession.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('useAuth - Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch profile immediately after auth change
           await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
-          setLoading(false);
         }
+        
+        setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('useAuth - Fetching profile for user:', userId);
       
-      // Use manual typing for the usuario table query
       const { data, error } = await supabase
         .from('usuario')
         .select('*')
@@ -95,7 +114,6 @@ export const useAuthProvider = (): AuthContextType => {
         throw error;
       }
 
-      // Transform data to match UserProfile interface
       if (data) {
         const userProfile: UserProfile = {
           id: data.usuario_id,
@@ -122,13 +140,10 @@ export const useAuthProvider = (): AuthContextType => {
         description: "No se pudo cargar el perfil del usuario",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
     try {
       console.log('useAuth - Attempting sign in for:', email);
       const { error } = await supabase.auth.signInWithPassword({
@@ -150,13 +165,10 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, profileData: Partial<UserProfile>) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -197,8 +209,6 @@ export const useAuthProvider = (): AuthContextType => {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -216,7 +226,6 @@ export const useAuthProvider = (): AuthContextType => {
       toast({
         title: "Error",
         description: error.message || "Error al cerrar sesión",
-        variant: "destructive",
       });
     }
   };
