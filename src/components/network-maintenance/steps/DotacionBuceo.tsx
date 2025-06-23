@@ -1,245 +1,253 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Users, UserCheck } from "lucide-react";
-import type { NetworkMaintenanceData, DotacionBuceo } from '@/types/network-maintenance';
+import { Trash2, Plus, Users, UserCheck, Clock, Waves } from "lucide-react";
+import type { NetworkMaintenanceFormProps, PersonalBuceo } from '@/types/network-maintenance';
 
-interface DotacionBuceoProps {
-  formData: NetworkMaintenanceData;
-  updateFormData: (updates: Partial<NetworkMaintenanceData>) => void;
-}
-
-export const DotacionBuceo = ({ formData, updateFormData }: DotacionBuceoProps) => {
+export const DotacionBuceo = ({ 
+  formData, 
+  updateFormData, 
+  errors = {} 
+}: NetworkMaintenanceFormProps) => {
+  
   const dotacion = formData.dotacion || [];
 
-  const agregarMiembro = () => {
-    const nuevoMiembro: DotacionBuceo = {
-      id: Date.now().toString(),
+  const addPersonal = () => {
+    const newPersonal: PersonalBuceo = {
+      id: `personal-${Date.now()}`,
       nombre: '',
-      apellido: '',
-      rol: 'buzo',
-      matricula: '',
-      equipo: '',
-      hora_inicio_buzo: '',
-      hora_fin_buzo: '',
-      profundidad: 0,
-      contratista: false
+      rol: 'buzo_industrial',
+      certificaciones: [],
+      tiempo_inmersion: 0,
+      profundidad_max: 0,
+      observaciones: ''
     };
-
-    updateFormData({
-      dotacion: [...dotacion, nuevoMiembro]
-    });
+    
+    const updatedDotacion = [...dotacion, newPersonal];
+    updateFormData({ dotacion: updatedDotacion });
   };
 
-  const actualizarMiembro = (id: string, campo: keyof DotacionBuceo, valor: any) => {
-    const dotacionActualizada = dotacion.map(miembro =>
-      miembro.id === id ? { ...miembro, [campo]: valor } : miembro
+  const updatePersonal = (id: string, updates: Partial<PersonalBuceo>) => {
+    const updatedDotacion = dotacion.map((personal: PersonalBuceo) =>
+      personal.id === id ? { ...personal, ...updates } : personal
     );
-    updateFormData({ dotacion: dotacionActualizada });
+    updateFormData({ dotacion: updatedDotacion });
   };
 
-  const eliminarMiembro = (id: string) => {
-    const dotacionActualizada = dotacion.filter(miembro => miembro.id !== id);
-    updateFormData({ dotacion: dotacionActualizada });
+  const removePersonal = (id: string) => {
+    const updatedDotacion = dotacion.filter((personal: PersonalBuceo) => personal.id !== id);
+    updateFormData({ dotacion: updatedDotacion });
   };
 
-  const contarPorRol = (rol: string) => {
-    return dotacion.filter(miembro => miembro.rol === rol).length;
+  const getRolColor = (rol: string) => {
+    switch (rol) {
+      case 'supervisor': return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'buzo_especialista': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'buzo_industrial': return 'text-green-600 bg-green-50 border-green-200';
+      case 'buzo_aprendiz': return 'text-orange-600 bg-orange-50 border-orange-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getRolLabel = (rol: string) => {
+    switch (rol) {
+      case 'supervisor': return 'Supervisor';
+      case 'buzo_especialista': return 'Buzo Especialista';
+      case 'buzo_industrial': return 'Buzo Industrial';
+      case 'buzo_aprendiz': return 'Buzo Aprendiz';
+      default: return rol;
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Dotación de Buceo
-          </h3>
-          <p className="text-sm text-gray-600">
-            Personal asignado para la operación de mantención de redes
-          </p>
-        </div>
-        <Button onClick={agregarMiembro} variant="outline">
-          <Plus className="w-4 h-4 mr-2" />
-          Agregar Miembro
-        </Button>
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Dotación de Buceo
+        </h3>
+        <p className="text-sm text-gray-600">
+          Registra el personal de buceo asignado a la operación
+        </p>
       </div>
 
-      {/* Resumen de roles */}
+      {/* Resumen de dotación */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Resumen por Roles</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4" />
+            Resumen de Personal ({dotacion.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'supervisor').length}
+              </div>
+              <div className="text-sm text-purple-600">Supervisores</div>
+            </div>
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{contarPorRol('buzo')}</div>
-              <div className="text-sm text-blue-600">Buzos</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_especialista').length}
+              </div>
+              <div className="text-sm text-blue-600">Especialistas</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{contarPorRol('supervisor')}</div>
-              <div className="text-sm text-green-600">Supervisores</div>
+              <div className="text-2xl font-bold text-green-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_industrial').length}
+              </div>
+              <div className="text-sm text-green-600">Industriales</div>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">{contarPorRol('asistente')}</div>
-              <div className="text-sm text-orange-600">Asistentes</div>
-            </div>
-            <div className="text-center p-3 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{contarPorRol('operador_superficie')}</div>
-              <div className="text-sm text-purple-600">Operadores</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_aprendiz').length}
+              </div>
+              <div className="text-sm text-orange-600">Aprendices</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de miembros */}
-      <div className="space-y-4">
-        {dotacion.map((miembro, index) => (
-          <Card key={miembro.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  Miembro {index + 1}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => eliminarMiembro(miembro.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor={`nombre_${miembro.id}`}>Nombre *</Label>
-                  <Input
-                    id={`nombre_${miembro.id}`}
-                    value={miembro.nombre}
-                    onChange={(e) => actualizarMiembro(miembro.id, 'nombre', e.target.value)}
-                    placeholder="Nombre"
-                  />
-                </div>
+      {/* Lista de personal */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserCheck className="h-4 w-4" />
+              Personal de Buceo
+            </CardTitle>
+            <Button onClick={addPersonal} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Personal
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {dotacion.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="mx-auto h-12 w-12 mb-4 text-gray-300" />
+              <p>No hay personal registrado</p>
+              <p className="text-sm">Agrega el personal de buceo para continuar</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {dotacion.map((personal: PersonalBuceo) => (
+                <Card key={personal.id} className={`border ${getRolColor(personal.rol)}`}>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <Label htmlFor={`nombre-${personal.id}`}>Nombre Completo *</Label>
+                        <Input
+                          id={`nombre-${personal.id}`}
+                          value={personal.nombre}
+                          onChange={(e) => updatePersonal(personal.id, { nombre: e.target.value })}
+                          placeholder="Nombre y apellidos"
+                        />
+                      </div>
 
-                <div>
-                  <Label htmlFor={`apellido_${miembro.id}`}>Apellido</Label>
-                  <Input
-                    id={`apellido_${miembro.id}`}
-                    value={miembro.apellido || ''}
-                    onChange={(e) => actualizarMiembro(miembro.id, 'apellido', e.target.value)}
-                    placeholder="Apellido"
-                  />
-                </div>
+                      <div>
+                        <Label htmlFor={`rol-${personal.id}`}>Rol</Label>
+                        <Select
+                          value={personal.rol}
+                          onValueChange={(value) => updatePersonal(personal.id, { rol: value as any })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="supervisor">Supervisor</SelectItem>
+                            <SelectItem value="buzo_especialista">Buzo Especialista</SelectItem>
+                            <SelectItem value="buzo_industrial">Buzo Industrial</SelectItem>
+                            <SelectItem value="buzo_aprendiz">Buzo Aprendiz</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-                <div>
-                  <Label htmlFor={`rol_${miembro.id}`}>Rol *</Label>
-                  <Select
-                    value={miembro.rol}
-                    onValueChange={(value) => actualizarMiembro(miembro.id, 'rol', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="buzo">Buzo</SelectItem>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="asistente">Asistente de Buceo</SelectItem>
-                      <SelectItem value="operador_superficie">Operador de Superficie</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <Label htmlFor={`tiempo-${personal.id}`}>Tiempo Inmersión (min)</Label>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <Input
+                            id={`tiempo-${personal.id}`}
+                            type="number"
+                            min="0"
+                            value={personal.tiempo_inmersion || 0}
+                            onChange={(e) => updatePersonal(personal.id, { tiempo_inmersion: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`matricula_${miembro.id}`}>Matrícula/Certificación</Label>
-                  <Input
-                    id={`matricula_${miembro.id}`}
-                    value={miembro.matricula || ''}
-                    onChange={(e) => actualizarMiembro(miembro.id, 'matricula', e.target.value)}
-                    placeholder="Ej: BUZ-12345"
-                  />
-                </div>
+                      <div>
+                        <Label htmlFor={`profundidad-${personal.id}`}>Profundidad Máx (m)</Label>
+                        <div className="flex items-center gap-2">
+                          <Waves className="h-4 w-4 text-gray-400" />
+                          <Input
+                            id={`profundidad-${personal.id}`}
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={personal.profundidad_max || 0}
+                            onChange={(e) => updatePersonal(personal.id, { profundidad_max: parseFloat(e.target.value) || 0 })}
+                            placeholder="0.0"
+                          />
+                        </div>
+                      </div>
 
-                <div>
-                  <Label htmlFor={`equipo_${miembro.id}`}>Equipo Asignado</Label>
-                  <Input
-                    id={`equipo_${miembro.id}`}
-                    value={miembro.equipo || ''}
-                    onChange={(e) => actualizarMiembro(miembro.id, 'equipo', e.target.value)}
-                    placeholder="Ej: Equipo de buceo #1"
-                  />
-                </div>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`px-2 py-1 rounded-md text-sm font-medium ${getRolColor(personal.rol)}`}>
+                          {getRolLabel(personal.rol)}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePersonal(personal.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
 
-              {miembro.rol === 'buzo' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor={`hora_inicio_${miembro.id}`}>Hora Inicio Buceo</Label>
-                    <Input
-                      id={`hora_inicio_${miembro.id}`}
-                      type="time"
-                      value={miembro.hora_inicio_buzo || ''}
-                      onChange={(e) => actualizarMiembro(miembro.id, 'hora_inicio_buzo', e.target.value)}
-                    />
-                  </div>
+                    {personal.observaciones !== undefined && (
+                      <div className="mt-4">
+                        <Label htmlFor={`obs-${personal.id}`}>Observaciones</Label>
+                        <Input
+                          id={`obs-${personal.id}`}
+                          value={personal.observaciones}
+                          onChange={(e) => updatePersonal(personal.id, { observaciones: e.target.value })}
+                          placeholder="Observaciones adicionales..."
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                  <div>
-                    <Label htmlFor={`hora_fin_${miembro.id}`}>Hora Fin Buceo</Label>
-                    <Input
-                      id={`hora_fin_${miembro.id}`}
-                      type="time"
-                      value={miembro.hora_fin_buzo || ''}
-                      onChange={(e) => actualizarMiembro(miembro.id, 'hora_fin_buzo', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor={`profundidad_${miembro.id}`}>Profundidad Máxima (m)</Label>
-                    <Input
-                      id={`profundidad_${miembro.id}`}
-                      type="number"
-                      step="0.1"
-                      value={miembro.profundidad || 0}
-                      onChange={(e) => actualizarMiembro(miembro.id, 'profundidad', parseFloat(e.target.value) || 0)}
-                      placeholder="0.0"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`contratista_${miembro.id}`}
-                  checked={miembro.contratista || false}
-                  onCheckedChange={(checked) => actualizarMiembro(miembro.id, 'contratista', checked)}
-                />
-                <Label htmlFor={`contratista_${miembro.id}`}>
-                  Personal de empresa contratista
-                </Label>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {dotacion.length === 0 && (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No hay personal asignado</p>
-                <p className="text-sm">Agrega miembros de la dotación para continuar</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Información de ayuda */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <Users className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">Dotación de Buceo</p>
+            <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <li>• Al menos un supervisor debe estar presente en cada operación</li>
+              <li>• Los tiempos de inmersión se registran para control de seguridad</li>
+              <li>• La profundidad máxima debe cumplir con las certificaciones del personal</li>
+              <li>• Cada rol tiene responsabilidades específicas en la operación</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

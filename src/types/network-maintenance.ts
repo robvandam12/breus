@@ -1,64 +1,33 @@
 
-export interface NetworkMaintenanceData {
-  // Datos generales
-  fecha: string;
-  hora_inicio: string;
-  hora_termino: string;
-  lugar_trabajo: string;
-  temperatura: number;
-  profundidad_max: number;
-  estado_puerto: string;
-  nave_maniobras: string;
-  matricula_nave: string;
-  
-  // Teams
-  team_s: string;
-  team_be: string;
-  team_bi: string;
-  
-  // Dotación y equipos
-  dotacion: DotacionBuceo[];
-  equipos_superficie: EquipoSuperficie[];
-  
-  // Faenas específicas
-  faenas_mantencion: FaenaMantencion[];
-  faenas_redes: FaenaRedes[];
-  
-  // Sistemas y equipos (Paso 5)
-  sistemas_equipos: SistemaEquipo[];
-  
-  // Resumen y firmas (Paso 6)
-  observaciones_finales?: string;
-  contingencias?: string;
-  supervisor_responsable?: string;
-  firma_digital?: string;
-  
-  // Control de formulario
-  progreso: number;
-  firmado: boolean;
-  estado: 'borrador' | 'completado' | 'aprobado';
-  tipo_formulario?: string;
-}
+// Base interfaces for network maintenance forms
 
-export interface DotacionBuceo {
+export interface PersonalBuceo {
   id: string;
   nombre: string;
-  apellido?: string;
-  rol: 'buzo' | 'asistente' | 'supervisor' | 'operador_superficie';
-  matricula?: string;
-  equipo?: string;
-  hora_inicio_buzo?: string;
-  hora_fin_buzo?: string;
-  profundidad?: number;
-  contratista?: boolean;
+  rol: 'supervisor' | 'buzo_especialista' | 'buzo_industrial' | 'buzo_aprendiz';
+  certificaciones: string[];
+  tiempo_inmersion?: number; // en minutos
+  profundidad_max?: number; // en metros
+  observaciones?: string;
 }
 
 export interface EquipoSuperficie {
   id: string;
-  equipo_sup: 'Compresor 1' | 'Compresor 2';
-  matricula_eq: string;
-  horometro_ini: number;
-  horometro_fin: number;
+  tipo: 'compresor' | 'winche' | 'grua' | 'embarcacion' | 'otro';
+  marca: string;
+  modelo: string;
+  numero_serie?: string;
+  estado: 'operativo' | 'mantenimiento' | 'fuera_servicio';
+  observaciones?: string;
+}
+
+export interface SistemaEquipo {
+  id: string;
+  sistema: 'comunicaciones' | 'aire_comprimido' | 'emergencia' | 'navegacion' | 'otro';
+  descripcion: string;
+  estado: 'operativo' | 'falla' | 'mantenimiento';
+  responsable: string;
+  observaciones?: string;
 }
 
 export interface FaenaMantencion {
@@ -88,20 +57,49 @@ export interface FaenaRedes {
   observaciones: string;
 }
 
-export interface SistemaEquipo {
-  id: string;
-  tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
-  nombre_equipo: string;
-  estado_operativo: 'operativo' | 'mantenimiento' | 'fuera_servicio';
-  observaciones: string;
-  trabajo_realizado: string;
-  responsable: string;
-  verificado: boolean;
+export interface NetworkMaintenanceData {
+  // Información general
+  lugar_trabajo: string;
+  fecha: string;
+  temperatura: number;
+  hora_inicio: string;
+  hora_termino: string;
+  profundidad_max: number;
+  nave_maniobras: string;
+  team_s: string;
+  team_be: string;
+  team_bi: string;
+  matricula_nave: string;
+  estado_puerto: string;
+  
+  // Personal y equipos
+  dotacion: PersonalBuceo[];
+  equipos_superficie: EquipoSuperficie[];
+  sistemas_equipos: SistemaEquipo[];
+  
+  // Faenas
+  faenas_mantencion: FaenaMantencion[];
+  faenas_redes: FaenaRedes[];
+  
+  // Control
+  tipo_formulario: 'mantencion' | 'faena_redes'; // Corregir tipo
+  progreso: number;
+  firmado: boolean;
+  estado: 'borrador' | 'completado' | 'archivado';
+  
+  // Firmas y responsables
+  supervisor_responsable?: string;
+  firma_supervisor?: string;
+  fecha_firma?: string;
+  
+  // Observaciones generales
+  observaciones_generales?: string;
+  condiciones_climaticas?: string;
+  incidentes?: string;
 }
 
-export interface NetworkMaintenanceFormData {
-  operacion_id: string;
-  codigo: string;
-  tipo_formulario: 'mantencion' | 'faena';
-  network_maintenance_data: NetworkMaintenanceData;
+export interface NetworkMaintenanceFormProps {
+  formData: NetworkMaintenanceData;
+  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
+  errors?: Record<string, string>;
 }

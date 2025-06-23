@@ -3,10 +3,14 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Network, Settings, Wrench, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NetworkMaintenanceWizard } from "@/components/network-maintenance/NetworkMaintenanceWizard";
+import { NetworkMaintenanceList } from "@/components/network-maintenance/NetworkMaintenanceList";
+import { ContextualOperationBadge } from "@/components/contextual/ContextualOperationBadge";
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useContextualOperations } from '@/hooks/useContextualOperations';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
@@ -14,33 +18,83 @@ export default function NetworkMaintenance() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena'>('mantencion');
   const [selectedOperacion, setSelectedOperacion] = useState<string>('');
+  const [editingForm, setEditingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
+  const [viewingForm, setViewingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
+  const isMobile = useIsMobile();
+  
+  const { createOperacionWithContext } = useContextualOperations();
 
-  const { createDirectOperation } = useContextualOperations();
-
-  const handleCreateNew = async (tipo: 'mantencion' | 'faena') => {
+  const handleCreateNew = (tipo: 'mantencion' | 'faena') => {
     setTipoFormulario(tipo);
-    
-    try {
-      const operacion = await createDirectOperation({
-        codigo: `NM-OP-${Date.now()}`,
-        nombre: `Operación ${tipo === 'mantencion' ? 'Mantención' : 'Faena'} - ${new Date().toLocaleDateString('es-CL')}`,
-        estado: 'activa',
-        fecha_inicio: new Date().toISOString().split('T')[0],
-        tareas: `Operación creada automáticamente para formulario de ${tipo}`
-      });
-      
-      setSelectedOperacion(operacion.id);
-      setShowCreateForm(true);
-    } catch (error) {
-      console.error('Error creating direct operation:', error);
-      setSelectedOperacion("temp-operacion-id");
-      setShowCreateForm(true);
-    }
+    setEditingForm(null);
+    setViewingForm(null);
+    setShowCreateForm(true);
+  };
+
+  const handleEdit = (formId: string, formData: NetworkMaintenanceData) => {
+    setEditingForm({ id: formId, data: formData });
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
+    setViewingForm(null);
+    setShowCreateForm(true);
+  };
+
+  const handleView = (formId: string, formData: NetworkMaintenanceData) => {
+    setViewingForm({ id: formId, data: formData });
+    setEditingForm(null);
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
+    setShowCreateForm(true);
   };
 
   const handleCloseCreateForm = () => {
     setShowCreateForm(false);
     setSelectedOperacion('');
+    setEditingForm(null);
+    setViewingForm(null);
+  };
+
+  // Crear operación temporal para formularios operativos directos
+  const createDirectOperation = async () => {
+    try {
+      const operacion = await createOperacionWithContext({
+        codigo: `NM-OP-${Date.now()}`,
+        nombre: `Operación ${tipoFormulario === 'mantencion' ? 'Mantención' : 'Faena'} - ${new Date().toLocaleDateString('es-CL')}`,
+        estado: 'activa',
+        fecha_inicio: new Date().toISOString().split('T')[0],
+        tareas: `Operación creada automáticamente para formulario de ${tipoFormulario}`
+      }, 'operativa_directa');
+      
+      setSelectedOperacion(operacion.id);
+      return operacion.id;
+    } catch (error) {
+      console.error('Error creating direct operation:', error);
+      return "temp-operacion-id"; // Fallback
+    }
+  };
+
+  const renderWizard = () => {
+    if (viewingForm) {
+      return (
+        <div className="pointer-events-none opacity-75">
+          <NetworkMaintenanceWizard 
+            operacionId={selectedOperacion || "temp-operacion-id"} 
+            tipoFormulario={tipoFormulario}
+            onComplete={handleCloseCreateForm}
+            onCancel={handleCloseCreateForm}
+            editingFormId={viewingForm.id}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <NetworkMaintenanceWizard 
+        operacionId={selectedOperacion || "temp-operacion-id"} 
+        tipoFormulario={tipoFormulario}
+        onComplete={handleCloseCreateForm}
+        onCancel={handleCloseCreateForm}
+        editingFormId={editingForm?.id}
+      />
+    );
   };
 
   return (
@@ -72,7 +126,7 @@ export default function NetworkMaintenance() {
 
         {/* Cards informativos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-blue-600" />
@@ -83,17 +137,23 @@ export default function NetworkMaintenance() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2 mb-4">
+              <ul className="text-sm text-gray-600 space-y-2">
                 <li>• Encabezado general y dotación</li>
                 <li>• Equipos de superficie</li>
-                <li>• Faenas de mantención</li>
+                <li>• Faenas de mantención (Red/Lobera/Peceras)</li>
                 <li>• Sistemas y equipos operacionales</li>
+                <li>• Apoyo a faenas</li>
                 <li>• Resumen de inmersiones</li>
                 <li>• Contingencias y firmas</li>
               </ul>
               <Button 
-                className="w-full" 
-                onClick={() => handleCreateNew('mantencion')}
+                className="w-full mt-4" 
+                onClick={async () => {
+                  setTipoFormulario('mantencion');
+                  const operacionId = await createDirectOperation();
+                  setSelectedOperacion(operacionId);
+                  setShowCreateForm(true);
+                }}
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Crear Formulario de Mantención
@@ -101,7 +161,7 @@ export default function NetworkMaintenance() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wrench className="h-5 w-5 text-green-600" />
@@ -112,18 +172,24 @@ export default function NetworkMaintenance() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2 mb-4">
+              <ul className="text-sm text-gray-600 space-y-2">
                 <li>• Encabezado general y dotación</li>
-                <li>• Equipos de superficie</li>
-                <li>• Faenas específicas de redes</li>
-                <li>• Sistemas de apoyo</li>
-                <li>• Registro de cambios</li>
+                <li>• Iconografía y simbología</li>
+                <li>• Matriz Red/Lobera/Peceras</li>
+                <li>•⎇ Cambio de pecera por buzo</li>
+                <li>• Faenas de mantención</li>
+                <li>• Sistemas y apoyo faenas</li>
                 <li>• Resumen y firmas</li>
               </ul>
               <Button 
-                className="w-full" 
+                className="w-full mt-4" 
                 variant="outline"
-                onClick={() => handleCreateNew('faena')}
+                onClick={async () => {
+                  setTipoFormulario('faena');
+                  const operacionId = await createDirectOperation();
+                  setSelectedOperacion(operacionId);
+                  setShowCreateForm(true);
+                }}
               >
                 <Wrench className="w-4 h-4 mr-2" />
                 Crear Formulario de Faena
@@ -132,50 +198,49 @@ export default function NetworkMaintenance() {
           </Card>
         </div>
 
-        {/* Estadísticas rápidas */}
+        {/* Lista de formularios existentes */}
         <Card>
           <CardHeader>
-            <CardTitle>Resumen de Actividad</CardTitle>
+            <CardTitle>Formularios de Mantención Recientes</CardTitle>
             <CardDescription>
-              Estadísticas de formularios de mantención de redes
+              Historial de formularios de mantención y faenas de redes
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">0</div>
-                <div className="text-sm text-blue-600">Mantenciones Hoy</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">0</div>
-                <div className="text-sm text-green-600">Faenas Completadas</div>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">0</div>
-                <div className="text-sm text-orange-600">En Progreso</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">0</div>
-                <div className="text-sm text-purple-600">Total Este Mes</div>
-              </div>
-            </div>
+            <NetworkMaintenanceList 
+              onEdit={handleEdit}
+              onView={handleView}
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* Modal para crear/editar formulario */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          {selectedOperacion && (
-            <NetworkMaintenanceWizard 
-              operacionId={selectedOperacion} 
-              tipoFormulario={tipoFormulario}
-              onComplete={handleCloseCreateForm}
-              onCancel={handleCloseCreateForm}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal/Drawer para crear/editar formulario */}
+      {isMobile ? (
+        <Drawer open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DrawerContent>
+            <div className="p-4 pt-6 max-h-[90vh] overflow-y-auto">
+              {selectedOperacion && (
+                <div className="mb-4">
+                  <ContextualOperationBadge operacionId={selectedOperacion} showDetails />
+                </div>
+              )}
+              {renderWizard()}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            {selectedOperacion && (
+              <div className="mb-4">
+                <ContextualOperationBadge operacionId={selectedOperacion} showDetails />
+              </div>
+            )}
+            {renderWizard()}
+          </DialogContent>
+        </Dialog>
+      )}
     </MainLayout>
   );
 }

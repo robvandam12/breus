@@ -1,339 +1,275 @@
 
-import React from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { 
-  Calendar, 
+  Home, 
+  Users, 
+  Building2, 
+  Waves, 
+  ClipboardList, 
   FileText, 
-  Book,
-  Folder,
-  Anchor,
+  Settings, 
   BarChart3,
-  Settings,
-  Shield,
-  LogOut,
-  Users,
-  Building,
   Network,
-  Menu
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
-import { useModularSystem } from "@/hooks/useModularSystem";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { useContratistas } from "@/hooks/useContratistas";
-import { toast } from "@/hooks/use-toast";
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useContextualOperations } from '@/hooks/useContextualOperations';
+import { Button } from '@/components/ui/button';
 
-const BreusLogo = ({ size = 32 }: { size?: number }) => (
-  <svg 
-    version="1.2" 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 500 305" 
-    width={size} 
-    height={(size * 305) / 500}
-    className="fill-white"
-  >
-    <path d="m355.2 201.7c-33.7 40.1-84.1 67.3-135.9 73.1-4.5 0.6-8.4 4.5-7.7 9.7 0.6 4.5 4.5 7.8 8.4 7.8h0.6c55.7-5.9 111.3-35 147.5-79 3.2-3.8 2.6-9-1.3-12.2-2.6-3.3-8.4-3.3-11.6 0.6z"/>
-    <path d="m276.3 68.5h-0.7l-64-45.3c-2-1.3-4.5-1.9-6.5-1.3-1.9 0.7-4.5 2-5.2 3.9l-19.4 29.7c-77.6 8.5-146.1 62.1-170.1 114.5 0 0.7 0 1.3-0.6 2 0 0.6 0 1.3 0 1.3 0 0.6 0 1.2 0 1.2 0 0.7 0 1.3 0.6 2 16.2 35.6 60.8 80.2 116.5 102.2l9.7-15.6 69.8-103.4c2.6-3.9 1.3-9.7-2.6-12.3-3.9-2.6-9.7-1.3-12.3 2.6l-68.5 103.4-3.3 3.9c-43.9-20-76.3-53-91.1-84 23.9-48.6 88.6-97.1 161.6-101.6l20.1-29.1 18.1 12.9 33 25.3c40.7 14.2 73.7 40.1 93.8 64.6 3.2 3.9 8.4 4.6 12.2 1.3 3.9-3.2 4.6-8.4 1.3-12.3-20.7-25.2-53-51-92.4-65.9z"/>
-    <path d="m486.4 84.6c-3.2-3.2-9-3.2-12.2 0l-82.8 82.8c-2 2-2.6 3.9-2.6 5.9 0 2.5 0.6 4.5 2.6 6.4l82.8 82.8c1.9 1.9 3.8 2.6 6.4 2.6 2.6 0 4.6-0.7 6.5-2.6 3.2-3.2 3.2-9.1 0-12.3l-77.6-76.9 76.9-76.4c3.3-3.2 3.3-9 0-12.3z"/>
-    <path fillRule="evenodd" d="m112.6 162.3c-8.9 0-16.1-7.3-16.1-16.2 0-9 7.2-16.2 16.1-16.2 9 0 16.2 7.2 16.2 16.2 0 8.9-7.2 16.2-16.2 16.2z"/>
-    <path d="m218.1 202.4l28.4-42.7c2.6-3.9 1.3-9.7-2.6-12.3-3.9-2.6-9.7-1.3-12.3 2.6l-0.6 0.6-26.5 41.4-12.3 18.8c-2.6 3.8-1.3 9.7 2.6 12.3 3.8 2.5 9.7 1.2 12.3-2.6l11-18.1c0-0.7 0 0 0 0z"/>
-  </svg>
-);
-
-interface MenuItem {
+interface NavigationItem {
+  id: string;
   title: string;
-  icon: React.ElementType;
-  url: string;
+  icon: any;
+  path: string;
+  roles: string[];
+  moduleRequired?: string;
   badge?: string;
-  module?: string;
 }
 
 export const ModularSidebar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const { profile, signOut } = useAuth();
-  const { hasModuleAccess, modules } = useModularSystem();
-  const { salmoneras } = useSalmoneras();
-  const { contratistas } = useContratistas();
+  const { profile } = useAuth();
+  const { 
+    canAccessNetworkMaintenance,
+    canPlanOperations,
+    canAccessAdvancedReports,
+    operationalContext
+  } = useContextualOperations();
 
-  const getUserRole = () => {
-    return profile?.role || 'buzo';
-  };
-
-  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-
-  const getMenuItems = (): MenuItem[] => {
-    const role = getUserRole();
-    const baseItems: MenuItem[] = [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-      }
-    ];
-
-    // Si el usuario no está asignado a una empresa, solo mostrar perfil
-    if (role === 'buzo' && !isAssigned) {
-      return [
-        ...baseItems,
-        {
-          title: "Mi Perfil",
-          icon: Users,
-          url: "/profile-setup",
-        }
-      ];
+  const navigationItems: NavigationItem[] = [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      icon: Home,
+      path: '/',
+      roles: ['superuser', 'salmonera', 'contratista', 'supervisor', 'buzo']
+    },
+    {
+      id: 'operaciones',
+      title: 'Operaciones',
+      icon: ClipboardList,
+      path: '/operaciones',
+      roles: ['superuser', 'salmonera', 'contratista'],
+      moduleRequired: 'planning_operations',
+      badge: canPlanOperations ? 'PRO' : undefined
+    },
+    {
+      id: 'inmersiones',
+      title: 'Inmersiones',
+      icon: Waves,
+      path: '/inmersiones',
+      roles: ['superuser', 'salmonera', 'contratista', 'supervisor']
+    },
+    {
+      id: 'maintenance-networks',
+      title: 'Mantención Redes',
+      icon: Network,
+      path: '/operaciones/mantencion-redes',
+      roles: ['superuser', 'salmonera', 'contratista', 'supervisor'],
+      moduleRequired: 'maintenance_networks',
+      badge: canAccessNetworkMaintenance ? 'MOD' : undefined
+    },
+    {
+      id: 'bitacoras',
+      title: 'Bitácoras',
+      icon: FileText,
+      path: '/bitacoras',
+      roles: ['superuser', 'salmonera', 'contratista', 'supervisor', 'buzo']
+    },
+    {
+      id: 'personal',
+      title: 'Personal',
+      icon: Users,
+      path: '/personal',
+      roles: ['superuser', 'salmonera', 'contratista']
+    },
+    {
+      id: 'empresas',
+      title: 'Empresas',
+      icon: Building2,
+      path: '/empresas',
+      roles: ['superuser']
+    },
+    {
+      id: 'reportes',
+      title: 'Reportes',
+      icon: BarChart3,
+      path: '/reportes',
+      roles: ['superuser', 'salmonera', 'contratista'],
+      badge: canAccessAdvancedReports ? 'ADV' : undefined
+    },
+    {
+      id: 'configuracion',
+      title: 'Configuración',
+      icon: Settings,
+      path: '/configuracion',
+      roles: ['superuser', 'salmonera', 'contratista']
     }
+  ];
 
-    // Items principales para usuarios asignados
-    const mainItems: MenuItem[] = [
-      ...baseItems,
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      }
-    ];
-
-    // Formularios modulares
-    const formItems: MenuItem[] = [];
+  const hasAccess = (item: NavigationItem): boolean => {
+    if (!profile?.role) return false;
     
-    if (hasModuleAccess(modules.HPT)) {
-      formItems.push({
-        title: "HPT",
-        icon: FileText,
-        url: "/formularios/hpt",
-        module: modules.HPT
-      });
-    }
-
-    if (hasModuleAccess(modules.ANEXO_BRAVO)) {
-      formItems.push({
-        title: "Anexo Bravo",
-        icon: FileText,
-        url: "/formularios/anexo-bravo",
-        module: modules.ANEXO_BRAVO
-      });
-    }
-
-    if (hasModuleAccess(modules.MAINTENANCE_NETWORKS)) {
-      formItems.push({
-        title: "Mantención de Redes",
-        icon: Network,
-        url: "/operaciones/network-maintenance",
-        module: modules.MAINTENANCE_NETWORKS
-      });
-    }
-
-    // Bitácoras
-    const bitacoraItems: MenuItem[] = [
-      {
-        title: "Bitácora Supervisor",
-        icon: Book,
-        url: "/bitacoras/supervisor"
-      },
-      {
-        title: "Bitácora Buzo",
-        icon: Book,
-        url: "/bitacoras/buzo"
-      }
-    ];
-
-    // Items adicionales según rol
-    const additionalItems: MenuItem[] = [
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      }
-    ];
-
-    // Items de empresa según rol
-    const companyItems: MenuItem[] = [];
+    // Check role access - usar 'role' en lugar de 'rol'
+    if (!item.roles.includes(profile.role)) return false;
     
-    if (role === 'admin_salmonera') {
-      companyItems.push(
-        {
-          title: "Sitios",
-          icon: Building,
-          url: "/empresas/sitios"
-        },
-        {
-          title: "Contratistas",
-          icon: Building,
-          url: "/empresas/contratistas"
-        }
-      );
-    } else if (role === 'admin_servicio') {
-      companyItems.push({
-        title: "Mi Empresa",
-        icon: Building,
-        url: "/empresas/contratistas"
-      });
-    }
-
-    // Items de admin para superuser
-    const adminItems: MenuItem[] = [];
-    if (role === 'superuser') {
-      adminItems.push(
-        {
-          title: "Salmoneras",
-          icon: Folder,
-          url: "/empresas/salmoneras"
-        },
-        {
-          title: "Usuarios",
-          icon: Shield,
-          url: "/admin/users"
-        }
-      );
-    }
-
-    return [
-      ...mainItems,
-      ...formItems,
-      ...bitacoraItems,
-      ...additionalItems,
-      ...companyItems,
-      ...adminItems,
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
+    // Check module access
+    if (item.moduleRequired) {
+      switch (item.moduleRequired) {
+        case 'planning_operations':
+          return canPlanOperations;
+        case 'maintenance_networks':
+          return canAccessNetworkMaintenance;
+        case 'advanced_reports':
+          return canAccessAdvancedReports;
+        default:
+          return false;
       }
-    ];
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Error",
-        description: "Error al cerrar sesión.",
-        variant: "destructive",
-      });
     }
+    
+    return true;
   };
 
-  const getUserDisplayName = () => {
-    if (profile) {
-      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
+  const filteredNavigation = navigationItems.filter(hasAccess);
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
     }
-    return 'Usuario';
+    return location.pathname.startsWith(path);
   };
 
-  const getRoleDisplayName = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'Super Usuario';
-      case 'admin_salmonera':
-        return 'Admin Salmonera';
-      case 'admin_servicio':
-        return 'Admin Servicio';
-      case 'supervisor':
-        return 'Supervisor';
-      case 'buzo':
-        return 'Buzo';
-      default:
-        return 'Usuario';
-    }
+  const getContextualInfo = () => {
+    if (!operationalContext) return null;
+    
+    const contextInfo = {
+      'planned': { label: 'Planificado', color: 'bg-blue-500' },
+      'direct': { label: 'Directo', color: 'bg-green-500' },
+      'mixed': { label: 'Mixto', color: 'bg-purple-500' }
+    };
+    
+    return contextInfo[operationalContext.context_type] || null;
   };
 
-  const getCompanyName = () => {
-    if (profile?.salmonera_id) {
-      return salmoneras.find(salmonera => salmonera.id === profile?.salmonera_id)?.nombre;
-    } else if (profile?.servicio_id) {
-      return contratistas.find(contratista => contratista.id === profile?.servicio_id)?.nombre;
-    }
-    return null;
-  };
-
-  const menuItems = getMenuItems();
+  const contextInfo = getContextualInfo();
 
   return (
-    <div className="h-full flex flex-col">
+    <aside className={cn(
+      "fixed left-0 top-0 z-50 h-full transition-all duration-300 ease-in-out ios-sidebar",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/30">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center ios-icon">
-            <BreusLogo size={20} />
+      <div className="flex items-center justify-between p-4">
+        {!isCollapsed && (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg ios-icon">
+              <Waves className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-gray-900 text-lg">Breus</h1>
+              <p className="text-xs text-gray-500">Sistema Acuicultura</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-lg text-white">Breus</h2>
-            <p className="text-xs text-slate-300">Gestión de Buceo</p>
+        )}
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="h-8 w-8 p-0 ios-nav-button rounded-lg"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4 text-gray-700" />
+          ) : (
+            <ChevronLeft className="h-4 w-4 text-gray-700" />
+          )}
+        </Button>
+      </div>
+
+      {/* Context Indicator */}
+      {!isCollapsed && contextInfo && (
+        <div className="px-4 py-2 mb-2">
+          <div className="flex items-center gap-2 text-xs bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
+            <div className={cn("w-2 h-2 rounded-full", contextInfo.color)} />
+            <span className="text-gray-700 font-medium">Contexto: {contextInfo.label}</span>
           </div>
         </div>
-      </div>
-      
+      )}
+
       {/* Navigation */}
-      <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
-        <div className="sidebar-group-label">Navegación Principal</div>
-        <nav className="space-y-1">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.url;
-            return (
-              <Link
-                key={item.title}
-                to={item.url}
-                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="flex-1">{item.title}</span>
-                {item.badge && (
-                  <Badge variant="secondary" className="h-5 text-xs bg-slate-600 text-slate-200">
-                    {item.badge}
-                  </Badge>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-      
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide">
+        {filteredNavigation.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          
+          return (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={cn(
+                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
+                "relative group overflow-hidden ios-nav-button",
+                active 
+                  ? "ios-nav-button-active" 
+                  : "hover:bg-white/10",
+                isCollapsed && "justify-center px-2"
+              )}
+            >
+              <Icon className={cn(
+                "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                active ? "text-blue-700" : "text-gray-600"
+              )} />
+              
+              {!isCollapsed && (
+                <>
+                  <span className={cn(
+                    "font-medium flex-1 truncate transition-colors",
+                    active ? "text-blue-700" : "text-gray-700"
+                  )}>
+                    {item.title}
+                  </span>
+                  
+                  {item.badge && (
+                    <span className={cn(
+                      "px-2 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm",
+                      active 
+                        ? "bg-blue-100/80 text-blue-700" 
+                        : "bg-white/20 text-gray-600"
+                    )}>
+                      {item.badge}
+                    </span>
+                  )}
+                </>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* User Info */}
-      <div className="p-4 border-t border-slate-700/30">
-        <div className="sidebar-user-info">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center ios-avatar">
-              <span className="text-white font-medium text-sm">
-                {getUserDisplayName().charAt(0).toUpperCase()}
+      {!isCollapsed && profile && (
+        <div className="p-4 mt-auto">
+          <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center ios-avatar">
+              <span className="text-white text-sm font-semibold">
+                {profile.nombre?.charAt(0) || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{getUserDisplayName()}</p>
-              <p className="text-xs text-slate-300 truncate">{getRoleDisplayName(getUserRole())}</p>
-              {getCompanyName() && (
-                <p className="text-xs text-blue-400 truncate font-medium">{getCompanyName()}</p>
-              )}
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {profile.nombre} {profile.apellido}
+              </p>
+              <p className="text-xs text-gray-600 capitalize truncate">
+                {profile.role}
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="h-8 w-8 p-0 text-slate-300 hover:text-white hover:bg-slate-700"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </aside>
   );
 };

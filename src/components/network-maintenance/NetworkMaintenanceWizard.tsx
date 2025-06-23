@@ -16,7 +16,7 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
   operacionId: string;
-  tipoFormulario: 'mantencion' | 'faena';
+  tipoFormulario: 'mantencion' | 'faena_redes'; // Corregir tipo aquí
   onComplete: () => void;
   onCancel: () => void;
   editingFormId?: string;
@@ -47,7 +47,7 @@ export const NetworkMaintenanceWizard = ({
     equipos_superficie: [],
     faenas_mantencion: [],
     faenas_redes: [],
-    sistemas_equipos: [],
+    sistemas_equipos: [], // Agregar esta línea
     tipo_formulario: tipoFormulario,
     progreso: 0,
     firmado: false,
@@ -64,15 +64,27 @@ export const NetworkMaintenanceWizard = ({
   const [savedFormId, setSavedFormId] = useState<string | null>(editingFormId || null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const steps = [
-    { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
-    { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
-    { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
-    { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
-    { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
-    { id: 6, title: "Resumen y Firmas", description: "Validación final" }
-  ];
+  // Diferentes pasos según el tipo de formulario
+  const getSteps = () => {
+    const baseSteps = [
+      { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
+      { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
+      { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
+      { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
+      { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
+      { id: 6, title: "Resumen y Firmas", description: "Validación final" }
+    ];
 
+    if (tipoFormulario === 'faena') {
+      // Para faenas, el paso 4 sería diferente
+      baseSteps[3] = { id: 4, title: "Matriz de Actividades", description: "Actividades por jaula" };
+      baseSteps[4] = { id: 5, title: "Cambios de Pecera", description: "Registro de cambios" };
+    }
+
+    return baseSteps;
+  };
+
+  const steps = getSteps();
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
 
