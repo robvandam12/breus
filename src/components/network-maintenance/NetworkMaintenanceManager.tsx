@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { es } from 'date-fns/locale';
 
 export const NetworkMaintenanceManager = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena'>('mantencion');
+  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena_redes'>('mantencion');
   const [editingForm, setEditingForm] = useState<string | null>(null);
 
   const {
@@ -22,7 +23,7 @@ export const NetworkMaintenanceManager = () => {
     isCreating,
   } = useMaintenanceNetworks();
 
-  const handleCreateNew = (type: 'mantencion' | 'faena') => {
+  const handleCreateNew = (type: 'mantencion' | 'faena_redes') => {
     setSelectedFormType(type);
     setEditingForm(null);
     setShowCreateForm(true);
@@ -66,7 +67,7 @@ export const NetworkMaintenanceManager = () => {
       ]
     },
     {
-      id: 'faena',
+      id: 'faena_redes',
       title: 'Faenas de Redes',
       description: 'Registro específico de trabajos en redes de cultivo',
       icon: Wrench,
@@ -165,7 +166,7 @@ export const NetworkMaintenanceManager = () => {
               </ul>
               <Button 
                 className="w-full" 
-                onClick={() => handleCreateNew(moduleType.id as any)}
+                onClick={() => handleCreateNew(moduleType.id as 'mantencion' | 'faena_redes')}
                 disabled={moduleType.coming_soon}
                 variant={moduleType.coming_soon ? "outline" : "default"}
               >
@@ -193,7 +194,7 @@ export const NetworkMaintenanceManager = () => {
             <TabsList>
               <TabsTrigger value="all">Todos</TabsTrigger>
               <TabsTrigger value="mantencion">Mantención</TabsTrigger>
-              <TabsTrigger value="faena">Faenas</TabsTrigger>
+              <TabsTrigger value="faena_redes">Faenas</TabsTrigger>
             </TabsList>
 
             <TabsContent value="all">
@@ -261,9 +262,9 @@ export const NetworkMaintenanceManager = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="faena">
+            <TabsContent value="faena_redes">
               <div className="space-y-4">
-                {getFormsByType('faena').map((form) => (
+                {getFormsByType('faena_redes').map((form) => (
                   <div key={form.id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">

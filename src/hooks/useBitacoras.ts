@@ -7,9 +7,9 @@ import { toast } from './use-toast';
 export interface Bitacora {
   id: string;
   fecha: string;
-  created_by: string;
+  user_id: string;
   firmado: boolean;
-  status: string;
+  estado: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,7 +22,7 @@ export const useBitacoras = () => {
     queryKey: ['bitacoras'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('bitacoras_buzo')
+        .from('bitacora_buzo')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -34,10 +34,10 @@ export const useBitacoras = () => {
   const createBitacora = useMutation({
     mutationFn: async (bitacoraData: Partial<Bitacora>) => {
       const { data, error } = await supabase
-        .from('bitacoras_buzo')
+        .from('bitacora_buzo')
         .insert([{
           ...bitacoraData,
-          created_by: profile?.id
+          user_id: profile?.usuario_id
         }])
         .select()
         .single();

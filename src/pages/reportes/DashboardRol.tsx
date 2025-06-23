@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,18 +16,18 @@ export default function DashboardRol() {
   const { inmersiones = [] } = useInmersiones();
   const { bitacoras = [] } = useBitacoras();
 
-  const role = profile?.role || 'buzo';
+  const role = profile?.rol || 'buzo';
 
   // Métricas contextuales por rol
   const roleMetrics = useMemo(() => {
     const userInmersiones = inmersiones.filter(i => 
-      i.buzo_principal === profile?.id || 
-      i.supervisor === profile?.id ||
+      i.buzo_principal === profile?.nombre || 
+      i.supervisor === profile?.nombre ||
       (role === 'admin_salmonera' || role === 'superuser')
     );
 
     const userBitacoras = bitacoras.filter(b => 
-      b.created_by === profile?.id ||
+      b.user_id === profile?.usuario_id ||
       (role === 'admin_salmonera' || role === 'superuser')
     );
 
@@ -45,7 +46,14 @@ export default function DashboardRol() {
             },
             {
               label: 'Horas de Inmersión',
-              value: userInmersiones.reduce((sum, i) => sum + (i.duracion_real || 0), 0),
+              value: userInmersiones.reduce((sum, i) => {
+                if (i.hora_inicio && i.hora_fin) {
+                  const inicio = new Date(`2000-01-01 ${i.hora_inicio}`);
+                  const fin = new Date(`2000-01-01 ${i.hora_fin}`);
+                  return sum + (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+                }
+                return sum;
+              }, 0),
               icon: Clock,
               color: 'green',
               trend: '+8%'
@@ -89,7 +97,7 @@ export default function DashboardRol() {
             {
               label: 'Eficiencia del Equipo',
               value: userInmersiones.length > 0 ? 
-                (userInmersiones.filter(i => i.estado === 'completada').length / userInmersiones.length) * 100 : 0,
+                Math.round((userInmersiones.filter(i => i.estado === 'completada').length / userInmersiones.length) * 100) : 0,
               icon: Target,
               color: 'purple',
               trend: '+3%'
@@ -250,11 +258,11 @@ export default function DashboardRol() {
                     <p className="text-3xl font-bold text-gray-900">
                       {typeof metric.value === 'number' && metric.label.includes('%') 
                         ? `${metric.value}%` 
-                        : metric.value}
+                        : Math.round(metric.value)}
                     </p>
                     <p className="text-sm text-green-600 mt-1">{metric.trend}</p>
                   </div>
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-${metric.color}-100 text-${metric.color}-600`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getColorClasses(metric.color)}`}>
                     <metric.icon className="w-6 h-6" />
                   </div>
                 </div>

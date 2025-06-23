@@ -16,7 +16,6 @@ import AdminRoles from "./pages/admin/AdminRoles";
 import AdminModules from "./pages/admin/ModuleManagement";
 import SystemMonitoring from "./pages/admin/SystemMonitoring";
 import Operaciones from "./pages/operaciones/Operaciones";
-import PlanificarOperaciones from "./pages/operaciones/PlanificarOperaciones";
 import HPT from "./pages/operaciones/HPT";
 import AnexoBravo from "./pages/operaciones/AnexoBravo";
 import NetworkMaintenance from "./pages/operaciones/NetworkMaintenance";
@@ -91,14 +90,6 @@ const AppRoutes = () => (
       element={
         <SimpleProtectedRoute>
           <Operaciones />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/planificar"
-      element={
-        <SimpleProtectedRoute>
-          <PlanificarOperaciones />
         </SimpleProtectedRoute>
       }
     />
