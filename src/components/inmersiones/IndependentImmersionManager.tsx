@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Anchor, Calendar, Users, MapPin, Clock, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Anchor, Calendar, Users, MapPin, Clock, Eye, Edit, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
 import { useInmersionesContextual } from "@/hooks/useInmersionesContextual";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { UniversalConfirmation } from "@/components/ui/universal-confirmation";
@@ -322,7 +322,7 @@ export const IndependentImmersionManager = () => {
             operationId="" // Sin operación para inmersiones independientes
             onComplete={viewMode === 'create' ? handleCreateSubmit : handleUpdateSubmit}
             onCancel={() => setShowCreateForm(false)}
-            editingData={viewMode !== 'create' ? selectedImmersion : undefined}
+            initialData={viewMode !== 'create' ? selectedImmersion : undefined}
             readOnly={viewMode === 'view'}
           />
         </DialogContent>
