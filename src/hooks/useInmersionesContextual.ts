@@ -1,133 +1,82 @@
 
-import { useInmersiones as useBaseInmersiones } from './useInmersiones';
-import { useContextualOperations } from './useContextualOperations';
-import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { useOperationalContext } from './useOperationalContext';
+import { useModularSystem } from './useModularSystem';
 
-export const useInmersionesContextual = (operacionId?: string) => {
-  const baseHook = useBaseInmersiones(operacionId);
-  const { validateInmersionCreation, operationalContext } = useContextualOperations();
+export const useInmersionesContextual = () => {
+  const { profile } = useAuth();
+  const { operationalContext, canCreateDirectImmersions } = useOperationalContext();
+  const { hasModuleAccess, modules } = useModularSystem();
 
-  const createInmersionWithContext = async (inmersionData: any) => {
-    try {
-      console.log('Creating immersion with contextual validation...');
-      
-      // Validación contextual antes de crear
-      const validation = await validateInmersionCreation(inmersionData.operacion_id);
-      
-      if (!validation.isValid) {
-        const errorMessage = validation.errors.join(', ');
-        throw new Error(`Validación contextual falló: ${errorMessage}`);
+  const { data: inmersiones, isLoading } = useQuery({
+    queryKey: ['inmersiones-contextual', profile?.id],
+    queryFn: async () => {
+      if (!profile) return [];
+
+      let query = supabase
+        .from('inmersion')
+        .select(`
+          *,
+          operacion:operacion_id(
+            id,
+            nombre,
+            codigo,
+            estado
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      // Filtrar según el contexto del usuario
+      if (profile.salmonera_id) {
+        // Salmonera ve todas las inmersiones de sus operaciones
+        query = query.or(
+          `operacion.salmonera_id.eq.${profile.salmonera_id},empresa_creadora_id.eq.${profile.salmonera_id}`
+        );
+      } else if (profile.servicio_id) {
+        // Contratista ve sus inmersiones y las de operaciones asignadas
+        query = query.or(
+          `empresa_creadora_id.eq.${profile.servicio_id},operacion.contratista_id.eq.${profile.servicio_id}`
+        );
+      } else {
+        // Usuario individual ve solo sus inmersiones
+        query = query.or(
+          `supervisor_id.eq.${profile.id},buzo_principal_id.eq.${profile.id},buzo_asistente_id.eq.${profile.id}`
+        );
       }
 
-      // Mostrar advertencias si las hay
-      if (validation.warnings.length > 0) {
-        const warningMessage = validation.warnings.join(', ');
-        toast({
-          title: "Información",
-          description: warningMessage,
-          variant: "default",
-        });
-      }
+      const { data, error } = await query;
+      if (error) throw error;
 
-      // Establecer contexto en los datos de inmersión
-      const contextualData = {
-        ...inmersionData,
-        context_type: inmersionData.operacion_id ? 'planned' : 'direct',
-        requires_validation: validation.requiresDocuments,
-        validation_status: validation.requiresDocuments ? 'pending' : 'not_required',
-        metadata: {
-          ...inmersionData.metadata,
-          operational_context: operationalContext?.context_type,
-          company_type: operationalContext?.company_type,
-          created_via: 'contextual_flow'
-        }
-      };
+      return data || [];
+    },
+    enabled: !!profile,
+  });
 
-      console.log('Contextual immersion data:', contextualData);
-
-      // Usar el método base para crear la inmersión
-      return await baseHook.createInmersion(contextualData);
-
-    } catch (error: any) {
-      console.error('Error creating contextual immersion:', error);
-      
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear la inmersión con validación contextual",
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
+  // Obtener estadísticas contextuales
+  const estadisticas = {
+    total: inmersiones?.length || 0,
+    planificadas: inmersiones?.filter(i => i.operacion_id && !i.is_independent).length || 0,
+    independientes: inmersiones?.filter(i => !i.operacion_id || i.is_independent).length || 0,
+    completadas: inmersiones?.filter(i => i.estado === 'completada').length || 0,
+    enProceso: inmersiones?.filter(i => i.estado === 'en_proceso').length || 0,
   };
 
-  const createDirectImmersion = async (inmersionData: any) => {
-    try {
-      console.log('Creating direct immersion...');
-      
-      // Validar inmersión directa
-      const validation = await validateInmersionCreation();
-      
-      if (!validation.isValid) {
-        const errorMessage = validation.errors.join(', ');
-        throw new Error(`No se puede crear inmersión directa: ${errorMessage}`);
-      }
-
-      // Datos para inmersión directa
-      const directData = {
-        ...inmersionData,
-        operacion_id: null, // Sin operación asociada
-        context_type: 'direct',
-        requires_validation: false,
-        validation_status: 'not_required',
-        metadata: {
-          ...inmersionData.metadata,
-          operational_context: 'direct',
-          company_type: operationalContext?.company_type,
-          created_via: 'direct_flow'
-        }
-      };
-
-      // Mostrar advertencias si las hay
-      if (validation.warnings.length > 0) {
-        const warningMessage = validation.warnings.join(', ');
-        toast({
-          title: "Inmersión Directa",
-          description: warningMessage,
-          variant: "default",
-        });
-      }
-
-      console.log('Direct immersion data:', directData);
-      return await baseHook.createInmersion(directData);
-
-    } catch (error: any) {
-      console.error('Error creating direct immersion:', error);
-      
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear la inmersión directa",
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
+  // Verificar capacidades según módulos activos
+  const capacidades = {
+    puedeCrearInmersiones: canCreateDirectImmersions(),
+    puedeCrearOperaciones: hasModuleAccess(modules.PLANNING_OPERATIONS),
+    puedeCrearFormulariosMantencion: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
+    puedeAccederReportesAvanzados: hasModuleAccess(modules.ADVANCED_REPORTING),
   };
 
   return {
-    ...baseHook,
-    
-    // Métodos contextuales
-    createInmersion: createInmersionWithContext,
-    createDirectImmersion,
-    
-    // Mantener método original como alternativa
-    createInmersionDirect: baseHook.createInmersion,
-    
-    // Información contextual
+    inmersiones,
+    isLoading,
+    estadisticas,
+    capacidades,
     operationalContext,
-    canCreateDirectImmersion: operationalContext?.allows_direct_operations || false,
-    requiresPlanning: operationalContext?.requires_planning || false,
-    requiresDocuments: operationalContext?.requires_documents || false,
+    canCreateDirectImmersion: canCreateDirectImmersions(),
   };
 };

@@ -1,47 +1,99 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Settings, 
+  Users, 
+  Building2, 
   BarChart3, 
   Activity, 
-  Users, 
-  Zap, 
   Shield, 
-  CheckCircle, 
+  Search,
+  Plus,
+  CheckCircle,
   XCircle,
-  TrendingUp,
-  Clock,
+  AlertTriangle
 } from "lucide-react";
-import { useAdvancedModuleManagement } from "@/hooks/useAdvancedModuleManagement";
-import { useAuth } from "@/hooks/useAuth";
+import { useModularSystem } from "@/hooks/useModularSystem";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { CompanyModuleManager } from "./CompanyModuleManager";
+import { ModuleStatsPanel } from "./ModuleStatsPanel";
 
 export const ModuleManagementDashboard = () => {
-  const {
-    moduleConfigurations,
-    usageStats,
-    activationLogs,
-    advancedStats,
-    isLoading,
-    canManageModules,
-    configureModule,
-    toggleModule,
-    isConfiguring,
-    isToggling,
-  } = useAdvancedModuleManagement();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompanyType, setSelectedCompanyType] = useState<'all' | 'salmonera' | 'contratista'>('all');
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
 
-  const { profile } = useAuth();
-  const [selectedModule, setSelectedModule] = useState<string>('');
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [toggleReason, setToggleReason] = useState('');
+  const { systemModules, isSuperuser, isLoading: loadingModules } = useModularSystem();
 
-  if (!canManageModules) {
+  // Obtener empresas (salmoneras y contratistas)
+  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+    queryKey: ['companies-for-modules'],
+    queryFn: async () => {
+      const [salmoneras, contratistas] = await Promise.all([
+        supabase.from('salmoneras').select('id, nombre, rut, estado').eq('estado', 'activa'),
+        supabase.from('contratistas').select('id, nombre, rut, estado').eq('estado', 'activo')
+      ]);
+
+      const allCompanies = [
+        ...(salmoneras.data || []).map(s => ({ ...s, type: 'salmonera' as const })),
+        ...(contratistas.data || []).map(c => ({ ...c, type: 'contratista' as const }))
+      ];
+
+      return allCompanies;
+    },
+    enabled: isSuperuser,
+  });
+
+  // Obtener estadísticas de módulos
+  const { data: moduleStats } = useQuery({
+    queryKey: ['module-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_modules')
+        .select('module_name, company_type, is_active, company_id');
+
+      if (error) throw error;
+
+      const stats = {
+        totalModules: systemModules.length,
+        activeModules: 0,
+        companiesWithModules: new Set(),
+        moduleUsage: {} as Record<string, number>
+      };
+
+      data?.forEach(module => {
+        if (module.is_active) {
+          stats.activeModules++;
+          stats.companiesWithModules.add(module.company_id);
+          stats.moduleUsage[module.module_name] = (stats.moduleUsage[module.module_name] || 0) + 1;
+        }
+      });
+
+      return {
+        ...stats,
+        companiesWithModules: stats.companiesWithModules.size
+      };
+    },
+    enabled: isSuperuser && systemModules.length > 0,
+  });
+
+  const filteredCompanies = companies.filter(company => {
+    const matchesSearch = company.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.rut.includes(searchTerm);
+    const matchesType = selectedCompanyType === 'all' || company.type === selectedCompanyType;
+    return matchesSearch && matchesType;
+  });
+
+  if (!isSuperuser) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -59,306 +111,197 @@ export const ModuleManagementDashboard = () => {
     );
   }
 
-  const availableModules = [
-    { key: 'planning', name: 'Planificación', icon: BarChart3, description: 'Operaciones, HPT, Anexo Bravo' },
-    { key: 'core_operations', name: 'Operaciones Core', icon: Activity, description: 'Inmersiones, Bitácoras básicas' },
-    { key: 'network_maintenance', name: 'Mantención de Redes', icon: Settings, description: 'Mantenimiento preventivo y correctivo' },
-    { key: 'network_operations', name: 'Faenas de Redes', icon: Zap, description: 'Operaciones de redes marinas' },
-    { key: 'reports', name: 'Reportes Avanzados', icon: BarChart3, description: 'Sistema de reportes especializados' },
-    { key: 'integrations', name: 'Integraciones', icon: Zap, description: 'APIs externas y sincronización' },
-  ];
-
-  const handleToggleModule = async (moduleName: string, enabled: boolean) => {
-    const empresaId = profile?.salmonera_id || profile?.servicio_id;
-    const companyType = profile?.salmonera_id ? 'salmonera' : 'contratista';
-    
-    if (!empresaId) return;
-
-    try {
-      await toggleModule({
-        moduleName,
-        companyId: empresaId,
-        companyType,
-        enabled,
-        reason: toggleReason
-      });
-      setToggleReason('');
-    } catch (error) {
-      console.error('Error toggling module:', error);
-    }
-  };
-
-  const getModuleStatus = (moduleName: string) => {
-    const config = moduleConfigurations.find(c => c.module_name === moduleName);
-    return config?.enabled ?? false;
-  };
-
-  const getModuleUsage = (moduleName: string) => {
-    const usage = usageStats.filter(s => s.module_name === moduleName);
-    return usage.reduce((acc, curr) => acc + curr.usage_count, 0);
-  };
+  if (loadingModules || loadingCompanies) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Módulos</h1>
-          <p className="text-gray-600">Panel de administración y configuración de módulos del sistema</p>
-        </div>
+      {/* Header con estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Settings className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Módulos Disponibles</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.totalModules || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Módulos Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.activeModules || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Empresas Registradas</p>
+                <p className="text-2xl font-bold text-gray-900">{companies.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-orange-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Empresas con Módulos</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.companiesWithModules || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="companies" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="modules">Módulos</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="companies">Gestión por Empresa</TabsTrigger>
+          <TabsTrigger value="modules">Vista por Módulos</TabsTrigger>
+          <TabsTrigger value="stats">Estadísticas y Reportes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Módulos Activos</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {moduleConfigurations.filter(m => m.enabled).length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Uso Total</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {advancedStats?.total_usage || 0}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <TrendingUp className="h-8 w-8 text-purple-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Promedio Diario</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {Math.round(advancedStats?.avg_daily_usage || 0)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Activity className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Configuraciones</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {moduleConfigurations.length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Estado rápido de módulos */}
+        <TabsContent value="companies" className="space-y-6">
+          {/* Filtros */}
           <Card>
             <CardHeader>
-              <CardTitle>Estado de Módulos</CardTitle>
+              <CardTitle>Filtros de Búsqueda</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableModules.map((module) => {
-                  const isEnabled = getModuleStatus(module.key);
-                  const usage = getModuleUsage(module.key);
-                  
-                  return (
-                    <div key={module.key} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <module.icon className="w-5 h-5" />
-                          <h3 className="font-medium">{module.name}</h3>
-                        </div>
-                        <Badge className={isEnabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                          {isEnabled ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">{module.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Uso: {usage}</span>
-                        <Switch
-                          checked={isEnabled}
-                          onCheckedChange={(checked) => handleToggleModule(module.key, checked)}
-                          disabled={isToggling}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="search">Buscar Empresa</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="search"
+                      placeholder="Nombre o RUT..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="type">Tipo de Empresa</Label>
+                  <Select value={selectedCompanyType} onValueChange={(value: any) => setSelectedCompanyType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="salmonera">Salmoneras</SelectItem>
+                      <SelectItem value="contratista">Contratistas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Lista de empresas */}
+          <div className="grid grid-cols-1 gap-4">
+            {filteredCompanies.map((company) => (
+              <Card key={`${company.type}-${company.id}`} className="border-l-4 border-l-blue-500">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">{company.nombre}</h3>
+                        <Badge variant={company.type === 'salmonera' ? 'default' : 'secondary'}>
+                          {company.type === 'salmonera' ? 'Salmonera' : 'Contratista'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {company.rut}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedCompany(company.id)}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Gestionar Módulos
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredCompanies.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No se encontraron empresas
+                </h3>
+                <p className="text-gray-600">
+                  Ajusta los filtros de búsqueda o agrega nuevas empresas al sistema.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="modules" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            {availableModules.map((module) => {
-              const config = moduleConfigurations.find(c => c.module_name === module.key);
-              const usage = getModuleUsage(module.key);
-              
-              return (
-                <Card key={module.key}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <module.icon className="w-6 h-6" />
-                          <h3 className="text-lg font-semibold">{module.name}</h3>
-                          <Badge className={config?.enabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                            {config?.enabled ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                        </div>
-                        <p className="text-gray-600 mb-3">{module.description}</p>
-                        <div className="flex gap-4 text-sm text-gray-500">
-                          <span>Uso: {usage} operaciones</span>
-                          {config && (
-                            <span>Configurado: {new Date(config.updated_at).toLocaleDateString()}</span>
-                          )}
-                        </div>
+          <div className="grid grid-cols-1 gap-4">
+            {systemModules.map((module) => (
+              <Card key={module.name}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold">{module.display_name}</h3>
+                        <Badge className={module.is_core ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                          {module.is_core ? 'Core' : 'Opcional'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {module.category}
+                        </Badge>
                       </div>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Settings className="w-4 h-4 mr-1" />
-                              Configurar
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Configurar {module.name}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Estado del Módulo</Label>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Switch
-                                    checked={config?.enabled ?? false}
-                                    onCheckedChange={(checked) => handleToggleModule(module.key, checked)}
-                                    disabled={isToggling}
-                                  />
-                                  <span className="text-sm">{config?.enabled ? 'Activado' : 'Desactivado'}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <Label htmlFor="reason">Razón del cambio (opcional)</Label>
-                                <Textarea
-                                  id="reason"
-                                  value={toggleReason}
-                                  onChange={(e) => setToggleReason(e.target.value)}
-                                  placeholder="Describe la razón del cambio..."
-                                />
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Switch
-                          checked={config?.enabled ?? false}
-                          onCheckedChange={(checked) => handleToggleModule(module.key, checked)}
-                          disabled={isToggling}
-                        />
+                      <p className="text-gray-600 mb-3">{module.description}</p>
+                      <div className="text-sm text-gray-500">
+                        <span>Uso: {moduleStats?.moduleUsage[module.name] || 0} empresas</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas de Uso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {advancedStats?.usage_by_module ? (
-                <div className="space-y-4">
-                  {Object.entries(advancedStats.usage_by_module).map(([moduleName, usage]) => (
-                    <div key={moduleName} className="flex justify-between items-center">
-                      <span className="font-medium">{moduleName}</span>
-                      <Badge>{usage as number} usos</Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No hay datos de uso disponibles</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="logs" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registro de Activaciones</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {activationLogs.length === 0 ? (
-                <p className="text-gray-500">No hay logs de activación disponibles</p>
-              ) : (
-                <div className="space-y-3">
-                  {activationLogs.map((log) => (
-                    <div key={log.id} className="border rounded-lg p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className={
-                              log.action === 'activated' ? "bg-green-100 text-green-800" :
-                              log.action === 'deactivated' ? "bg-red-100 text-red-800" :
-                              "bg-blue-100 text-blue-800"
-                            }>
-                              {log.action === 'activated' && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {log.action === 'deactivated' && <XCircle className="w-3 h-3 mr-1" />}
-                              {log.action === 'configured' && <Settings className="w-3 h-3 mr-1" />}
-                              {log.action}
-                            </Badge>
-                            <span className="font-medium">{log.module_name}</span>
-                          </div>
-                          {log.reason && (
-                            <p className="text-sm text-gray-600">{log.reason}</p>
-                          )}
-                        </div>
-                        <div className="text-right text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(log.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="stats" className="space-y-6">
+          <ModuleStatsPanel />
         </TabsContent>
       </Tabs>
+
+      {/* Modal para gestión específica de empresa */}
+      {selectedCompany && (
+        <CompanyModuleManager
+          companyId={selectedCompany}
+          onClose={() => setSelectedCompany('')}
+        />
+      )}
     </div>
   );
 };
