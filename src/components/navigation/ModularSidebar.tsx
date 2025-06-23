@@ -484,10 +484,10 @@ export function ModularSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans bg-white" collapsible="icon" variant="sidebar">
-      <SidebarHeader className="border-b border-border/40 p-3 bg-white">
+    <Sidebar className="font-sans bg-white shadow-none border-none" collapsible="icon" variant="sidebar">
+      <SidebarHeader className="p-4 bg-white border-none">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center min-w-8">
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center min-w-8">
             <BreusLogo size={20} />
           </div>
           {open && (
@@ -499,23 +499,23 @@ export function ModularSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-1 bg-white">
+      <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-1">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2 px-2">
             {open ? 'Navegación Principal' : ''}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
+            <SidebarMenu className="space-y-1">
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full py-2 px-2 h-auto min-h-[36px] my-0.5">
-                          <item.icon className="w-4 h-4 min-w-4" />
+                        <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none">
+                          <item.icon className="w-5 h-5 min-w-5" />
                           {open && (
                             <>
-                              <span className="flex-1 text-left truncate">{item.title}</span>
+                              <span className="flex-1 text-left truncate font-medium">{item.title}</span>
                               <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90 min-w-4" />
                             </>
                           )}
@@ -523,12 +523,12 @@ export function ModularSidebar() {
                       </CollapsibleTrigger>
                       {open && (
                         <CollapsibleContent>
-                          <SidebarMenuSub className="ml-3 border-l border-border/20">
+                          <SidebarMenuSub className="ml-4 mt-1 space-y-1">
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild className="py-1.5 px-2 h-auto min-h-[32px] my-0.5">
+                                <SidebarMenuSubButton asChild className="py-2 px-3 h-auto min-h-[36px] rounded-lg hover:bg-gray-50 transition-colors duration-200">
                                   <Link to={subItem.url} className="truncate">
-                                    <span className="truncate">{subItem.title}</span>
+                                    <span className="truncate text-sm">{subItem.title}</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
@@ -538,14 +538,14 @@ export function ModularSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="w-full py-2 px-2 h-auto min-h-[36px] my-0.5">
+                    <SidebarMenuButton asChild className="w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none">
                       <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <item.icon className="w-4 h-4 min-w-4" />
-                          {open && <span className="truncate">{item.title}</span>}
+                          <item.icon className="w-5 h-5 min-w-5" />
+                          {open && <span className="truncate font-medium">{item.title}</span>}
                         </div>
                         {open && item.badge && (
-                          <Badge variant="secondary" className="h-5 text-xs min-w-5 ml-2">
+                          <Badge variant="secondary" className="h-5 text-xs min-w-5 ml-2 bg-blue-100 text-blue-700 border-none">
                             {item.badge}
                           </Badge>
                         )}
@@ -559,8 +559,8 @@ export function ModularSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-border/40 p-3 bg-white">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
+      <SidebarFooter className="p-4 bg-white border-none">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center min-w-8">
             <span className="text-white font-medium text-sm">
               {getUserDisplayName().charAt(0).toUpperCase()}
@@ -579,7 +579,7 @@ export function ModularSidebar() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="h-8 w-8 p-0 min-w-8"
+                className="h-8 w-8 p-0 min-w-8 hover:bg-gray-200 rounded-lg"
               >
                 <LogOut className="w-4 h-4" />
               </Button>

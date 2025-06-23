@@ -8,6 +8,14 @@ import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
 import { toast } from '@/hooks/use-toast';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
+// Import the existing step components
+import { EncabezadoGeneral } from "./steps/EncabezadoGeneral";
+import { DotacionBuceo } from "./steps/DotacionBuceo";
+import { EquiposSuperficie } from "./steps/EquiposSuperficie";
+import { FaenasMantencion } from "./steps/FaenasMantencion";
+import { SistemasEquipos } from "./steps/SistemasEquipos";
+import { ResumenFirmas } from "./steps/ResumenFirmas";
+
 interface NetworkMaintenanceWizardProps {
   operacionId?: string;
   tipoFormulario: 'mantencion' | 'faena_redes';
@@ -199,16 +207,52 @@ export const NetworkMaintenanceWizard = ({
   };
 
   const renderStepContent = () => {
-    // Por ahora renderizamos un placeholder para cada paso
-    return (
-      <div className="p-6 text-center">
-        <h3 className="text-lg font-semibold mb-2">{steps[currentStep - 1]?.title}</h3>
-        <p className="text-gray-600">{steps[currentStep - 1]?.description}</p>
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm">Contenido del paso {currentStep} será implementado próximamente</p>
-        </div>
-      </div>
-    );
+    switch (currentStep) {
+      case 1:
+        return (
+          <EncabezadoGeneral
+            data={formData}
+            onDataChange={updateFormData}
+          />
+        );
+      case 2:
+        return (
+          <DotacionBuceo
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
+      case 3:
+        return (
+          <EquiposSuperficie
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
+      case 4:
+        return (
+          <FaenasMantencion
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
+      case 5:
+        return (
+          <SistemasEquipos
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
+      case 6:
+        return (
+          <ResumenFirmas
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
+      default:
+        return <div>Paso no encontrado</div>;
+    }
   };
 
   return (
