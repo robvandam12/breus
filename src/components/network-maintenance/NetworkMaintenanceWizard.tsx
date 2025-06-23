@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,10 @@ import type { NetworkMaintenanceData, NetworkMaintenanceFormData } from '@/types
 
 interface NetworkMaintenanceWizardProps {
   operacionId: string;
+  tipoFormulario?: 'mantencion' | 'faena';
   onComplete?: () => void;
+  onCancel?: () => void;
+  editingFormId?: string;
 }
 
 const PASOS = [
@@ -31,7 +33,13 @@ const PASOS = [
   { id: 6, titulo: 'Resumen y Firmas', descripción: 'Revisión final y firmas digitales' }
 ];
 
-export const NetworkMaintenanceWizard = ({ operacionId, onComplete }: NetworkMaintenanceWizardProps) => {
+export const NetworkMaintenanceWizard = ({ 
+  operacionId, 
+  tipoFormulario = 'mantencion',
+  onComplete,
+  onCancel,
+  editingFormId
+}: NetworkMaintenanceWizardProps) => {
   const [pasoActual, setPasoActual] = useState(1);
   const [formData, setFormData] = useState<NetworkMaintenanceData>({
     // Datos generales
@@ -70,7 +78,8 @@ export const NetworkMaintenanceWizard = ({ operacionId, onComplete }: NetworkMai
     // Control de formulario
     progreso: 0,
     firmado: false,
-    estado: 'borrador'
+    estado: 'borrador',
+    tipo_formulario: tipoFormulario
   });
 
   const { createNetworkMaintenance, loading } = useNetworkMaintenance();
@@ -193,7 +202,9 @@ export const NetworkMaintenanceWizard = ({ operacionId, onComplete }: NetworkMai
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Mantención de Redes</CardTitle>
+              <CardTitle className="text-xl">
+                {tipoFormulario === 'faena' ? 'Faena de Redes' : 'Mantención de Redes'}
+              </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
                 Paso {pasoActual} de {PASOS.length}: {PASOS[pasoActual - 1]?.titulo}
               </p>
@@ -228,6 +239,15 @@ export const NetworkMaintenanceWizard = ({ operacionId, onComplete }: NetworkMai
             </Button>
 
             <div className="flex gap-2">
+              {onCancel && (
+                <Button
+                  variant="ghost"
+                  onClick={onCancel}
+                >
+                  Cancelar
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 onClick={guardarBorrador}
