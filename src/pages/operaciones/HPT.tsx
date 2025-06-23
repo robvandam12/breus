@@ -29,7 +29,7 @@ export default function HPT() {
       title="HPT - Hoja de Planificación de Trabajo"
       subtitle="Gestión de documentos de planificación para operaciones de buceo"
       icon={FileText}
-      headerActions={
+      actions={
         <Button onClick={() => setShowWizard(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Crear HPT
