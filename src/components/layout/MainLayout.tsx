@@ -9,6 +9,9 @@ interface MainLayoutProps {
   subtitle?: string;
   icon?: LucideIcon;
   actions?: ReactNode;
+  headerChildren?: ReactNode; // Agregar compatibilidad
+  className?: string;
+  contentClassName?: string;
 }
 
 export const MainLayout = ({ 
@@ -16,15 +19,21 @@ export const MainLayout = ({
   title, 
   subtitle, 
   icon: Icon,
-  actions 
+  actions,
+  headerChildren, // Soportar ambos nombres
+  className = "",
+  contentClassName = ""
 }: MainLayoutProps) => {
+  // Usar headerChildren si se proporciona, sino usar actions
+  const headerActions = headerChildren || actions;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50/50 to-blue-50/30 flex w-full">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50/30 to-blue-50/20 flex w-full ${className}`}>
       <ModularSidebar />
       
       <main className="flex-1 ml-16 lg:ml-64 transition-all duration-300">
-        {(title || subtitle || Icon || actions) && (
-          <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-6 py-4">
+        {(title || subtitle || Icon || headerActions) && (
+          <header className="bg-white/60 backdrop-blur-sm px-6 py-4 sticky top-0 z-40">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {Icon && (
@@ -41,16 +50,16 @@ export const MainLayout = ({
                   )}
                 </div>
               </div>
-              {actions && (
+              {headerActions && (
                 <div className="flex items-center gap-3">
-                  {actions}
+                  {headerActions}
                 </div>
               )}
             </div>
           </header>
         )}
         
-        <div className="p-6">
+        <div className={`p-6 ${contentClassName}`}>
           {children}
         </div>
       </main>

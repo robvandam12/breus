@@ -82,7 +82,7 @@ export interface NetworkMaintenanceData {
   faenas_redes: FaenaRedes[];
   
   // Control
-  tipo_formulario: 'mantencion' | 'faena';
+  tipo_formulario: 'mantencion' | 'faena_redes'; // Corregir tipo
   progreso: number;
   firmado: boolean;
   estado: 'borrador' | 'completado' | 'archivado';

@@ -112,10 +112,10 @@ export const ModularSidebar = () => {
   ];
 
   const hasAccess = (item: NavigationItem): boolean => {
-    if (!profile?.rol) return false;
+    if (!profile?.role) return false;
     
-    // Check role access
-    if (!item.roles.includes(profile.rol)) return false;
+    // Check role access - usar 'role' en lugar de 'rol'
+    if (!item.roles.includes(profile.role)) return false;
     
     // Check module access
     if (item.moduleRequired) {
@@ -256,15 +256,15 @@ export const ModularSidebar = () => {
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center ios-avatar">
               <span className="text-white text-sm font-semibold">
-                {profile.nombres?.charAt(0) || 'U'}
+                {profile.nombre?.charAt(0) || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {profile.nombres} {profile.apellidos}
+                {profile.nombre} {profile.apellido}
               </p>
               <p className="text-xs text-gray-600 capitalize truncate">
-                {profile.rol}
+                {profile.role}
               </p>
             </div>
           </div>

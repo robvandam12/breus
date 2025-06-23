@@ -8,9 +8,8 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export interface NetworkMaintenanceRecord {
   id: string;
-  operacion_id?: string;
   inmersion_id: string;
-  codigo: string;
+  codigo?: string;
   tipo_formulario: 'mantencion' | 'faena_redes';
   network_maintenance_data: NetworkMaintenanceData;
   status: 'draft' | 'completed' | 'archived';
@@ -26,9 +25,9 @@ export const useNetworkMaintenance = () => {
 
   // Get all network maintenance records
   const { data: records = [], isLoading } = useQuery({
-    queryKey: ['network-maintenance', profile?.id],
+    queryKey: ['network-maintenance', profile?.usuario_id],
     queryFn: async () => {
-      if (!profile?.id) throw new Error('No user profile');
+      if (!profile?.usuario_id) throw new Error('No user profile');
 
       const { data, error } = await supabase
         .from('operational_forms')
@@ -40,23 +39,22 @@ export const useNetworkMaintenance = () => {
       
       return data.map(record => ({
         id: record.id,
-        operacion_id: record.operacion_id,
         inmersion_id: record.inmersion_id,
-        codigo: record.codigo || `NM-${record.id.slice(0, 8)}`,
+        codigo: `NM-${record.id.slice(0, 8)}`,
         tipo_formulario: record.form_type as 'mantencion' | 'faena_redes',
-        network_maintenance_data: record.form_data as NetworkMaintenanceData,
+        network_maintenance_data: record.form_data as unknown as NetworkMaintenanceData,
         status: record.status as 'draft' | 'completed' | 'archived',
         created_at: record.created_at,
         updated_at: record.updated_at,
-        created_by: record.created_by
+        created_by: record.created_by || ''
       })) as NetworkMaintenanceRecord[];
     },
-    enabled: !!profile?.id,
+    enabled: !!profile?.usuario_id,
   });
 
   // Create network maintenance record
   const createNetworkMaintenance = async (data: {
-    operacion_id?: string;
+    inmersion_id: string;
     codigo: string;
     tipo_formulario: 'mantencion' | 'faena_redes';
     network_maintenance_data: NetworkMaintenanceData;
@@ -66,14 +64,12 @@ export const useNetworkMaintenance = () => {
       const { data: result, error } = await supabase
         .from('operational_forms')
         .insert({
-          operacion_id: data.operacion_id,
-          inmersion_id: data.operacion_id, // For now, using operacion_id as inmersion_id
+          inmersion_id: data.inmersion_id,
           module_name: 'maintenance_networks',
           form_type: data.tipo_formulario,
-          codigo: data.codigo,
-          form_data: data.network_maintenance_data,
+          form_data: data.network_maintenance_data as any,
           status: 'draft',
-          created_by: profile?.id,
+          created_by: profile?.usuario_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -110,7 +106,7 @@ export const useNetworkMaintenance = () => {
       const { data: result, error } = await supabase
         .from('operational_forms')
         .update({
-          form_data: data,
+          form_data: data as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -157,13 +153,13 @@ export const useNetworkMaintenance = () => {
     }
   };
 
-  // Get by operation
-  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
+  // Get by inmersion
+  const getNetworkMaintenanceByInmersion = async (inmersionId: string) => {
     const { data, error } = await supabase
       .from('operational_forms')
       .select('*')
       .eq('module_name', 'maintenance_networks')
-      .eq('operacion_id', operacionId)
+      .eq('inmersion_id', inmersionId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -189,7 +185,7 @@ export const useNetworkMaintenance = () => {
     createNetworkMaintenance,
     updateNetworkMaintenance,
     completeNetworkMaintenance,
-    getNetworkMaintenanceByOperacion,
+    getNetworkMaintenanceByInmersion,
     getAllNetworkMaintenance,
   };
 };
