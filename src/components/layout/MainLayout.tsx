@@ -1,67 +1,51 @@
 
 import React from 'react';
-import { ModularSidebar } from '@/components/navigation/ModularSidebar';
-import { LucideIcon } from 'lucide-react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { ModularSidebar } from "@/components/navigation/ModularSidebar";
 
 interface MainLayoutProps {
-  children: React.ReactNode;
-  title?: string;
+  title: string;
   subtitle?: string;
-  icon?: LucideIcon;
-  headerChildren?: React.ReactNode;
-  className?: string;
-  contentClassName?: string;
+  icon?: React.ElementType;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
-export const MainLayout = ({ 
-  children, 
+export const MainLayout: React.FC<MainLayoutProps> = ({ 
   title, 
   subtitle, 
   icon: Icon, 
-  headerChildren,
-  className = "",
-  contentClassName = ""
-}: MainLayoutProps) => {
-  console.log('MainLayout: Rendering with props:', { title, subtitle, className, contentClassName });
-  
+  children, 
+  actions 
+}) => {
   return (
     <SidebarProvider>
-      <div className={`min-h-screen flex w-full bg-gray-50 ${className}`}>
-        {/* Sidebar Modular */}
+      <div className="min-h-screen flex w-full bg-gray-50">
         <ModularSidebar />
-        
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 px-6 py-4 border-b border-gray-100 flex items-center gap-4">
-            <SidebarTrigger className="md:hidden" />
-            
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-4 min-w-0">
-                {Icon && (
-                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {Icon && <Icon className="w-8 h-8 text-blue-600" />}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                {subtitle && (
+                  <p className="text-gray-600 text-sm mt-1">{subtitle}</p>
                 )}
-                <div className="min-w-0">
-                  {title && <h1 className="text-2xl font-bold text-gray-900 truncate">{title}</h1>}
-                  {subtitle && <p className="text-sm text-gray-600 mt-1 truncate">{subtitle}</p>}
-                </div>
               </div>
-              {headerChildren && (
-                <div className="flex items-center gap-3">
-                  {headerChildren}
-                </div>
-              )}
             </div>
+            {actions && (
+              <div className="flex items-center gap-3">
+                {actions}
+              </div>
+            )}
           </div>
           
-          {/* Page Content */}
-          <div className={`flex-1 p-6 overflow-auto ${contentClassName}`}>
+          {/* Content */}
+          <div className="flex-1 overflow-auto p-6">
             {children}
           </div>
-        </div>
+        </main>
       </div>
     </SidebarProvider>
   );

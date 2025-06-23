@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { SimpleProtectedRoute } from "@/components/auth/SimpleProtectedRoute";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Import pages
 import Index from "./pages/Index";
@@ -37,180 +37,200 @@ const queryClient = new QueryClient();
 const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
+    
+    {/* Dashboard - Available to all authenticated users */}
     <Route
       path="/"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute>
           <Index />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
       }
     />
-    <Route
-      path="/configuracion"
-      element={
-        <SimpleProtectedRoute>
-          <Configuracion />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/users"
-      element={
-        <SimpleProtectedRoute>
-          <AdminUsers />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/roles"
-      element={
-        <SimpleProtectedRoute>
-          <AdminRoles />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/modules"
-      element={
-        <SimpleProtectedRoute>
-          <AdminModules />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/system-monitoring"
-      element={
-        <SimpleProtectedRoute>
-          <SystemMonitoring />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones"
-      element={
-        <SimpleProtectedRoute>
-          <Operaciones />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/hpt"
-      element={
-        <SimpleProtectedRoute>
-          <HPT />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/anexo-bravo"
-      element={
-        <SimpleProtectedRoute>
-          <AnexoBravo />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/network-maintenance"
-      element={
-        <SimpleProtectedRoute>
-          <NetworkMaintenance />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/inmersiones"
-      element={
-        <SimpleProtectedRoute>
-          <Inmersiones />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/bitacoras/supervisor"
-      element={
-        <SimpleProtectedRoute>
-          <BitacorasSupervisor />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/bitacoras/buzo"
-      element={
-        <SimpleProtectedRoute>
-          <BitacorasBuzo />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes"
-      element={
-        <SimpleProtectedRoute>
-          <Reportes />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/operativos"
-      element={
-        <SimpleProtectedRoute>
-          <ReportesOperativos />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/dashboard-rol"
-      element={
-        <SimpleProtectedRoute>
-          <DashboardRol />
-        </SimpleProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/comparativas"
-      element={
-        <SimpleProtectedRoute>
-          <Comparativas />
-        </SimpleProtectedRoute>
-      }
-    />
+    
+    {/* Empresa Management - Role-based access */}
     <Route
       path="/empresas/salmoneras"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute requiredRole="superuser">
           <EmpresasSalmoneras />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
       }
     />
     <Route
       path="/empresas/sitios"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute>
           <EmpresasSitios />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
       }
     />
     <Route
       path="/empresas/contratistas"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute>
           <EmpresasContratistas />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
       }
     />
+    
+    {/* Team Management */}
     <Route
       path="/equipo-de-buceo"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute>
           <EquipoDeBuceo />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
+      }
+    />
+    
+    {/* Operations - Module-dependent */}
+    <Route
+      path="/operaciones"
+      element={
+        <ProtectedRoute>
+          <Operaciones />
+        </ProtectedRoute>
       }
     />
     <Route
+      path="/operaciones/hpt"
+      element={
+        <ProtectedRoute>
+          <HPT />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/operaciones/anexo-bravo"
+      element={
+        <ProtectedRoute>
+          <AnexoBravo />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/operaciones/network-maintenance"
+      element={
+        <ProtectedRoute>
+          <NetworkMaintenance />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Immersions - Core functionality */}
+    <Route
+      path="/inmersiones"
+      element={
+        <ProtectedRoute>
+          <Inmersiones />
+        </ProtectedRoute>
+      }
+    />
+    
+    {/* Bitacoras - Role-based */}
+    <Route
+      path="/bitacoras/supervisor"
+      element={
+        <ProtectedRoute>
+          <BitacorasSupervisor />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/bitacoras/buzo"
+      element={
+        <ProtectedRoute>
+          <BitacorasBuzo />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Reports */}
+    <Route
+      path="/reportes"
+      element={
+        <ProtectedRoute>
+          <Reportes />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/reportes/operativos"
+      element={
+        <ProtectedRoute>
+          <ReportesOperativos />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/reportes/dashboard-rol"
+      element={
+        <ProtectedRoute>
+          <DashboardRol />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/reportes/comparativas"
+      element={
+        <ProtectedRoute>
+          <Comparativas />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Configuration */}
+    <Route
+      path="/configuracion"
+      element={
+        <ProtectedRoute>
+          <Configuracion />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Admin Routes - Superuser only */}
+    <Route
+      path="/admin/users"
+      element={
+        <ProtectedRoute requiredRole="superuser">
+          <AdminUsers />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/roles"
+      element={
+        <ProtectedRoute requiredRole="superuser">
+          <AdminRoles />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/modules"
+      element={
+        <ProtectedRoute requiredRole="superuser">
+          <AdminModules />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/system-monitoring"
+      element={
+        <ProtectedRoute requiredRole="superuser">
+          <SystemMonitoring />
+        </ProtectedRoute>
+      }
+    />
+
+    {/* Integrations */}
+    <Route
       path="/integraciones"
       element={
-        <SimpleProtectedRoute>
+        <ProtectedRoute>
           <Integraciones />
-        </SimpleProtectedRoute>
+        </ProtectedRoute>
       }
     />
   </Routes>
