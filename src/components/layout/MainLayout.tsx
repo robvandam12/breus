@@ -25,17 +25,17 @@ export const MainLayout = ({
   console.log('MainLayout: Rendering with props:', { title, subtitle, className, contentClassName });
   
   return (
-    <div className={`min-h-screen flex bg-gradient-to-br from-gray-50 to-gray-100 ${className}`}>
+    <div className={`min-h-screen flex bg-gray-50 ${className}`}>
       {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-white/95 to-gray-50/95 backdrop-blur-xl fixed left-0 top-0 h-full z-20 border-r border-gray-200/30">
+      <div className="w-64 bg-white shadow-sm border-r border-gray-200 fixed left-0 top-0 h-full z-10">
         <SidebarContent />
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 ml-64 min-h-screen">
+      <div className="flex-1 ml-64">
         {/* Header */}
         {(title || subtitle || headerChildren) && (
-          <div className="bg-white/80 backdrop-blur-sm px-6 py-4 border-b border-gray-200/30">
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {Icon && <Icon className="w-6 h-6 text-blue-600" />}

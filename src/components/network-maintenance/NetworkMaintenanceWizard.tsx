@@ -1,284 +1,333 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, Save, Check } from "lucide-react";
-import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
-import { useToast } from '@/hooks/use-toast';
-
-// Importar todos los pasos
+import { ArrowLeft, ArrowRight, Save, Network } from "lucide-react";
 import { EncabezadoGeneral } from './steps/EncabezadoGeneral';
 import { DotacionBuceo } from './steps/DotacionBuceo';
 import { EquiposSuperficie } from './steps/EquiposSuperficie';
-import { FaenasRedesStep } from './steps/FaenasRedes';
+import { FaenasMantencion } from './steps/FaenasMantencion';
 import { SistemasEquipos } from './steps/SistemasEquipos';
 import { ResumenFirmas } from './steps/ResumenFirmas';
-
-import type { NetworkMaintenanceData, NetworkMaintenanceFormData } from '@/types/network-maintenance';
+import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
+import { toast } from '@/hooks/use-toast';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
   operacionId: string;
-  tipoFormulario?: 'mantencion' | 'faena';
-  onComplete?: () => void;
-  onCancel?: () => void;
-  editingFormId?: string;
+  tipoFormulario: 'mantencion' | 'faena';
+  onComplete: () => void;
+  onCancel: () => void;
+  editingFormId?: string; // Para editar formularios existentes
 }
-
-const PASOS = [
-  { id: 1, titulo: 'Encabezado General', descripcion: 'Información básica de la operación' },
-  { id: 2, titulo: 'Dotación de Buceo', descripcion: 'Personal y equipos de buceo' },
-  { id: 3, titulo: 'Equipos de Superficie', descripcion: 'Compresores y equipos auxiliares' },
-  { id: 4, titulo: 'Faenas de Redes', descripcion: 'Trabajos específicos en redes' },
-  { id: 5, titulo: 'Sistemas y Equipos', descripción: 'Equipos operacionales de la instalación' },
-  { id: 6, titulo: 'Resumen y Firmas', descripción: 'Revisión final y firmas digitales' }
-];
 
 export const NetworkMaintenanceWizard = ({ 
   operacionId, 
-  tipoFormulario = 'mantencion',
-  onComplete,
+  tipoFormulario, 
+  onComplete, 
   onCancel,
   editingFormId
 }: NetworkMaintenanceWizardProps) => {
-  const [pasoActual, setPasoActual] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<NetworkMaintenanceData>({
-    // Datos generales
+    lugar_trabajo: '',
     fecha: '',
+    temperatura: 0,
     hora_inicio: '',
     hora_termino: '',
-    lugar_trabajo: '',
-    temperatura: 0,
     profundidad_max: 0,
-    estado_puerto: '',
     nave_maniobras: '',
-    matricula_nave: '',
-    
-    // Teams
     team_s: '',
     team_be: '',
     team_bi: '',
-    
-    // Dotación y equipos
+    matricula_nave: '',
+    estado_puerto: '',
     dotacion: [],
     equipos_superficie: [],
-    
-    // Faenas específicas
     faenas_mantencion: [],
-    faenas_redes: [], // Nueva propiedad para fase 4
-    
-    // Sistemas y equipos (Paso 5)
+    faenas_redes: [],
     sistemas_equipos: [],
-    
-    // Resumen y firmas (Paso 6)
-    observaciones_finales: '',
-    contingencias: '',
-    supervisor_responsable: '',
-    firma_digital: '',
-    
-    // Control de formulario
+    tipo_formulario: tipoFormulario,
     progreso: 0,
     firmado: false,
-    estado: 'borrador',
-    tipo_formulario: tipoFormulario
+    estado: 'borrador'
   });
 
-  const { createNetworkMaintenance, loading } = useNetworkMaintenance();
-  const { toast } = useToast();
+  const { 
+    loading, 
+    createNetworkMaintenance, 
+    updateNetworkMaintenance, 
+    completeNetworkMaintenance 
+  } = useNetworkMaintenance();
 
-  const updateFormData = (updates: Partial<NetworkMaintenanceData>) => {
-    setFormData(prev => ({
-      ...prev,
-      ...updates,
-      progreso: Math.round(((pasoActual - 1) / (PASOS.length - 1)) * 100)
-    }));
+  const [savedFormId, setSavedFormId] = useState<string | null>(editingFormId || null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Diferentes pasos según el tipo de formulario
+  const getSteps = () => {
+    const baseSteps = [
+      { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
+      { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
+      { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
+      { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
+      { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
+      { id: 6, title: "Resumen y Firmas", description: "Validación final" }
+    ];
+
+    if (tipoFormulario === 'faena') {
+      // Para faenas, el paso 4 sería diferente
+      baseSteps[3] = { id: 4, title: "Matriz de Actividades", description: "Actividades por jaula" };
+      baseSteps[4] = { id: 5, title: "Cambios de Pecera", description: "Registro de cambios" };
+    }
+
+    return baseSteps;
   };
 
-  const validarPaso = (paso: number): boolean => {
-    switch (paso) {
+  const steps = getSteps();
+  const totalSteps = steps.length;
+  const progress = (currentStep / totalSteps) * 100;
+
+  const updateFormData = (newData: Partial<NetworkMaintenanceData>) => {
+    setFormData(prev => {
+      const updated = { ...prev, ...newData };
+      setHasUnsavedChanges(true);
+      return updated;
+    });
+  };
+
+  // Guardado automático cada 30 segundos si hay cambios
+  useEffect(() => {
+    if (!hasUnsavedChanges || loading) return;
+
+    const autoSaveInterval = setInterval(async () => {
+      await handleSave(false); // Guardado silencioso
+    }, 30000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [hasUnsavedChanges, loading]);
+
+  const handleSave = async (showToast = true) => {
+    try {
+      if (savedFormId) {
+        // Actualizar formulario existente
+        await updateNetworkMaintenance(savedFormId, formData);
+      } else {
+        // Crear nuevo formulario
+        const result = await createNetworkMaintenance({
+          operacion_id: operacionId,
+          codigo: `NM-${Date.now()}`,
+          tipo_formulario: tipoFormulario,
+          network_maintenance_data: formData
+        });
+        setSavedFormId(result.id);
+      }
+      
+      setHasUnsavedChanges(false);
+      
+      if (showToast) {
+        toast({
+          title: "Guardado exitoso",
+          description: "El formulario ha sido guardado correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving form:', error);
+      if (showToast) {
+        toast({
+          title: "Error al guardar",
+          description: "No se pudo guardar el formulario",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
       case 1:
-        return Boolean(formData.fecha && formData.hora_inicio && formData.lugar_trabajo);
+        return !!(formData.lugar_trabajo && formData.fecha && formData.hora_inicio);
       case 2:
         return formData.dotacion.length > 0;
       case 3:
-        return formData.equipos_superficie.length > 0;
+        return true; // Equipos son opcionales
       case 4:
-        return formData.faenas_redes.length > 0;
+        return true; // Faenas son opcionales inicialmente
       case 5:
-        return true; // Opcional
+        return true; // Sistemas son opcionales
       case 6:
-        return Boolean(formData.supervisor_responsable);
+        return !!(formData.supervisor_responsable); // Requiere supervisor para firma
       default:
-        return true;
+        return false;
     }
   };
 
-  const siguientePaso = () => {
-    if (validarPaso(pasoActual)) {
-      setPasoActual(prev => Math.min(prev + 1, PASOS.length));
-    } else {
-      toast({
-        title: "Campos requeridos",
-        description: "Complete todos los campos obligatorios para continuar.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const pasoAnterior = () => {
-    setPasoActual(prev => Math.max(prev - 1, 1));
-  };
-
-  const guardarBorrador = async () => {
-    try {
-      const formSubmitData: NetworkMaintenanceFormData = {
-        operacion_id: operacionId,
-        codigo: `MR-${Date.now()}`,
-        tipo_formulario: 'mantencion',
-        network_maintenance_data: formData
+  const handleNext = async () => {
+    if (validateStep(currentStep)) {
+      // Guardar progreso antes de avanzar
+      const updatedData = {
+        ...formData,
+        progreso: Math.max(formData.progreso, (currentStep / totalSteps) * 100)
       };
-
-      await createNetworkMaintenance(formSubmitData);
-      toast({
-        title: "Borrador guardado",
-        description: "El formulario ha sido guardado como borrador.",
-      });
-    } catch (error) {
-      console.error('Error saving draft:', error);
+      updateFormData(updatedData);
+      
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
+      
+      // Guardado automático al avanzar paso
+      await handleSave(false);
     }
   };
 
-  const completarFormulario = async () => {
-    if (!validarPaso(6)) {
-      toast({
-        title: "Formulario incompleto",
-        description: "Complete todos los campos requeridos.",
-        variant: "destructive",
-      });
-      return;
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
     }
+  };
 
-    try {
-      const formSubmitData: NetworkMaintenanceFormData = {
-        operacion_id: operacionId,
-        codigo: `MR-${Date.now()}`,
-        tipo_formulario: 'mantencion',
-        network_maintenance_data: {
+  const handleSubmit = async () => {
+    if (validateStep(currentStep)) {
+      try {
+        // Actualizar estado final
+        const finalData = {
           ...formData,
-          estado: 'completado',
+          progreso: 100,
+          estado: 'completado' as const,
           firmado: true
+        };
+        
+        updateFormData(finalData);
+        
+        if (savedFormId) {
+          await completeNetworkMaintenance(savedFormId);
         }
-      };
-
-      await createNetworkMaintenance(formSubmitData);
-      onComplete?.();
-    } catch (error) {
-      console.error('Error completing form:', error);
+        
+        toast({
+          title: "Formulario completado",
+          description: "El formulario de mantención de redes ha sido completado exitosamente",
+        });
+        
+        onComplete();
+      } catch (error) {
+        console.error('Error completing form:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo completar el formulario",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const renderPasoActual = () => {
-    switch (pasoActual) {
+  const renderStepContent = () => {
+    switch (currentStep) {
       case 1:
-        return <EncabezadoGeneral formData={formData} updateFormData={updateFormData} />;
+        return (
+          <EncabezadoGeneral 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 2:
-        return <DotacionBuceo formData={formData} updateFormData={updateFormData} />;
+        return (
+          <DotacionBuceo 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 3:
-        return <EquiposSuperficie formData={formData} updateFormData={updateFormData} />;
+        return (
+          <EquiposSuperficie 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 4:
-        return <FaenasRedesStep formData={formData} updateFormData={updateFormData} />;
+        return (
+          <FaenasMantencion 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 5:
-        return <SistemasEquipos formData={formData} updateFormData={updateFormData} />;
+        return (
+          <SistemasEquipos 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       case 6:
-        return <ResumenFirmas formData={formData} updateFormData={updateFormData} />;
+        return (
+          <ResumenFirmas 
+            formData={formData} 
+            updateFormData={updateFormData}
+          />
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header del Wizard */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">
-                {tipoFormulario === 'faena' ? 'Faena de Redes' : 'Mantención de Redes'}
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Paso {pasoActual} de {PASOS.length}: {PASOS[pasoActual - 1]?.titulo}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Progreso</p>
-              <p className="font-semibold">{Math.round(((pasoActual - 1) / (PASOS.length - 1)) * 100)}%</p>
-            </div>
+    <Card className="w-full max-w-5xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Network className="h-6 w-6" />
+              Mantención de Redes - {tipoFormulario === 'mantencion' ? 'Mantención' : 'Faena'}
+              {hasUnsavedChanges && <span className="text-amber-500 text-sm">(Sin guardar)</span>}
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
+            </p>
           </div>
-          <Progress value={((pasoActual - 1) / (PASOS.length - 1)) * 100} className="w-full" />
-        </CardHeader>
-      </Card>
-
-      {/* Contenido del paso actual */}
-      <Card>
-        <CardContent className="p-6">
-          {renderPasoActual()}
-        </CardContent>
-      </Card>
-
-      {/* Controles de navegación */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={pasoAnterior}
-              disabled={pasoActual === 1}
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => handleSave(true)}
+              disabled={loading || !hasUnsavedChanges}
             >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Anterior
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Guardando...' : 'Guardar'}
             </Button>
-
-            <div className="flex gap-2">
-              {onCancel && (
-                <Button
-                  variant="ghost"
-                  onClick={onCancel}
-                >
-                  Cancelar
-                </Button>
-              )}
-              
-              <Button
-                variant="outline"
-                onClick={guardarBorrador}
-                disabled={loading}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Borrador
-              </Button>
-
-              {pasoActual === PASOS.length ? (
-                <Button
-                  onClick={completarFormulario}
-                  disabled={loading || !validarPaso(pasoActual)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Completar Formulario
-                </Button>
-              ) : (
-                <Button
-                  onClick={siguientePaso}
-                  disabled={!validarPaso(pasoActual)}
-                >
-                  Siguiente
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
+            <Button variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        <Progress value={progress} className="w-full mt-4" />
+      </CardHeader>
+
+      <CardContent>
+        {renderStepContent()}
+
+        <div className="flex justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Anterior
+          </Button>
+
+          <div className="flex gap-2">
+            {currentStep < totalSteps ? (
+              <Button onClick={handleNext} disabled={loading}>
+                Siguiente
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={loading}>
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'Procesando...' : 'Finalizar Mantención'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

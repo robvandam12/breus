@@ -295,23 +295,23 @@ export const ModularSidebar = () => {
               variant="ghost"
               className={cn(
                 "w-full justify-between rounded-xl px-4 py-3 mb-2 transition-all duration-300 ease-out",
-                "bg-gray-100/80 hover:bg-blue-100/90 hover:shadow-sm backdrop-blur-sm",
-                "text-gray-800 font-medium text-sm border border-gray-200/60",
-                "hover:border-blue-300/60 hover:scale-[1.02] active:scale-[0.98]",
+                "bg-white/70 hover:bg-blue-50/80 hover:shadow-sm backdrop-blur-sm",
+                "text-gray-700 font-medium text-sm border border-gray-100/50",
+                "hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98]",
                 "ios-button group"
               )}
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                  <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-700" />
+                  <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-600" />
                 </div>
-                <span className="truncate transition-colors duration-200 group-hover:text-blue-800">
+                <span className="truncate transition-colors duration-200 group-hover:text-blue-700">
                   {item.title}
                 </span>
               </div>
               <ChevronDown className={cn(
                 "w-4 h-4 flex-shrink-0 transition-all duration-300 ease-out",
-                "text-gray-500 group-hover:text-blue-600",
+                "text-gray-400 group-hover:text-blue-500",
                 item.isOpen && "rotate-180"
               )} />
             </Button>
@@ -331,19 +331,19 @@ export const ModularSidebar = () => {
         variant="ghost"
         className={cn(
           "w-full justify-start rounded-xl px-4 py-3 mb-2 transition-all duration-300 ease-out",
-          "bg-gray-100/80 hover:bg-blue-100/90 hover:shadow-sm backdrop-blur-sm",
-          "text-gray-800 font-medium text-sm border border-gray-200/60",
-          "hover:border-blue-300/60 hover:scale-[1.02] active:scale-[0.98]",
+          "bg-white/70 hover:bg-blue-50/80 hover:shadow-sm backdrop-blur-sm",
+          "text-gray-700 font-medium text-sm border border-gray-100/50",
+          "hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98]",
           "ios-button group",
-          isActive(item.path) && "bg-blue-200/90 text-blue-900 border-blue-400/60 shadow-sm scale-[1.02]"
+          isActive(item.path) && "bg-blue-100/80 text-blue-700 border-blue-300/50 shadow-sm scale-[1.02]"
         )}
         onClick={() => navigate(item.path)}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-            <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-700" />
+            <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-600" />
           </div>
-          <span className="truncate transition-colors duration-200 group-hover:text-blue-800">
+          <span className="truncate transition-colors duration-200 group-hover:text-blue-700">
             {item.title}
           </span>
         </div>
@@ -399,15 +399,15 @@ export const ModularSidebar = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-100/95 to-gray-50/95 backdrop-blur-xl min-w-[280px] max-w-[320px] w-[300px]">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50/80 to-white/90 border-r border-gray-200/50 backdrop-blur-xl ios-sidebar min-w-[280px] max-w-[320px] w-[300px]">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+      <div className="flex items-center gap-3 p-6 border-b border-gray-200/50 bg-white/40 backdrop-blur-sm">
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg ios-icon">
           <BreusLogo size={28} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold truncate">Breus</h2>
-          <p className="text-sm text-blue-100 truncate">Sistema Modular</p>
+          <h2 className="text-xl font-bold text-gray-900 truncate">Breus</h2>
+          <p className="text-sm text-gray-600 truncate">Sistema Modular</p>
         </div>
       </div>
       
@@ -417,25 +417,25 @@ export const ModularSidebar = () => {
       </nav>
 
       {/* User Footer */}
-      <div className="p-4 bg-gradient-to-r from-gray-200/80 to-gray-100/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/90 border border-gray-300/50 shadow-sm backdrop-blur-sm">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+      <div className="p-4 border-t border-gray-200/50 bg-white/40 backdrop-blur-sm">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/80 border border-gray-200/50 shadow-sm ios-card backdrop-blur-sm">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg ios-avatar flex-shrink-0">
             <span className="text-white font-semibold text-lg">
               {getUserDisplayName().charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{getUserDisplayName()}</p>
-            <p className="text-xs text-gray-600 truncate">{getRoleDisplayName(profile?.role)}</p>
+            <p className="text-xs text-gray-500 truncate">{getRoleDisplayName(profile?.role)}</p>
             {getCompanyName() && (
-              <p className="text-xs text-blue-700 truncate font-medium">{getCompanyName()}</p>
+              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
             )}
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLogout}  
-            className="h-10 w-10 p-0 rounded-xl hover:bg-gray-200/80 transition-all duration-200 flex-shrink-0"
+            className="h-10 w-10 p-0 rounded-xl hover:bg-gray-100 transition-all duration-200 ios-button flex-shrink-0"
           >
             <LogOut className="w-4 h-4" />
           </Button>
