@@ -1,271 +1,237 @@
 
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
-export interface OperacionContext {
+export interface OperationalContext {
   id: string;
-  operacion_id: string;
-  tipo_contexto: 'planificada' | 'operativa_directa';
-  empresa_origen_id: string;
-  empresa_origen_tipo: 'salmonera' | 'contratista';
-  empresa_destino_id?: string;
-  empresa_destino_tipo?: 'salmonera' | 'contratista';
-  requiere_documentos: boolean;
-  requiere_hpt: boolean;
-  requiere_anexo_bravo: boolean;
-  estado_planificacion?: string;
-  metadatos: Record<string, any>;
+  company_id: string;
+  company_type: 'salmonera' | 'contratista';
+  context_type: 'planned' | 'direct' | 'mixed';
+  requires_planning: boolean;
+  requires_documents: boolean;
+  allows_direct_operations: boolean;
+  active_modules: string[];
+  configuration: Record<string, any>;
 }
 
-export interface ContextualValidationResult {
+interface ValidationResult {
   isValid: boolean;
-  contexto: OperacionContext | null;
-  requiere_documentos: boolean;
-  requiere_hpt: boolean;
-  requiere_anexo_bravo: boolean;
-  es_operativa_directa: boolean;
-  es_legacy: boolean;
-  warnings: string[];
   errors: string[];
+  warnings: string[];
+  context: OperationalContext | null;
+  requiresDocuments: boolean;
+  allowsDirectOperations: boolean;
 }
-
-// Interfaz para el resultado de la función RPC
-interface OperacionFullContextResult {
-  operacion: any;
-  contexto: any;
-  tiene_contexto: boolean;
-  es_legacy: boolean;
-}
-
-// Tipo para el contexto de operación
-type TipoContexto = 'planificada' | 'operativa_directa';
 
 export const useContextualOperations = () => {
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Obtener contexto completo de una operación
-  const getOperacionContext = async (operacionId: string): Promise<ContextualValidationResult> => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_operacion_full_context', {
-        p_operacion_id: operacionId
-      });
-
-      if (error) throw error;
-
-      const warnings: string[] = [];
-      const errors: string[] = [];
-
-      // Convertir a unknown primero, luego a nuestro tipo esperado
-      const result = data as unknown as OperacionFullContextResult;
-
-      // Si es operación legacy (sin contexto)
-      if (result.es_legacy) {
-        warnings.push('Operación legacy: requiere validación HPT y Anexo Bravo tradicional');
-        return {
-          isValid: true,
-          contexto: null,
-          requiere_documentos: true,
-          requiere_hpt: true,
-          requiere_anexo_bravo: true,
-          es_operativa_directa: false,
-          es_legacy: true,
-          warnings,
-          errors
-        };
+  // Obtener contexto operativo actual
+  const { data: operationalContext, isLoading } = useQuery({
+    queryKey: ['operational-context', profile?.salmonera_id || profile?.servicio_id],
+    queryFn: async () => {
+      if (!profile?.salmonera_id && !profile?.servicio_id) {
+        throw new Error('Usuario sin empresa asignada');
       }
 
-      const contexto = result.contexto as OperacionContext;
-      const esOperativaDirecta = contexto?.tipo_contexto === 'operativa_directa';
+      const companyId = profile.salmonera_id || profile.servicio_id;
+      const companyType = profile.salmonera_id ? 'salmonera' : 'contratista';
 
-      if (esOperativaDirecta) {
-        warnings.push('Operación directa: validación documental no requerida');
+      const { data, error } = await supabase
+        .from('operational_contexts')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('company_type', companyType)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
 
-      return {
-        isValid: true,
-        contexto,
-        requiere_documentos: contexto?.requiere_documentos || false,
-        requiere_hpt: contexto?.requiere_hpt || false,
-        requiere_anexo_bravo: contexto?.requiere_anexo_bravo || false,
-        es_operativa_directa: esOperativaDirecta,
-        es_legacy: false,
-        warnings,
-        errors
-      };
+      // Si no existe contexto, crear uno por defecto
+      if (!data) {
+        return createDefaultContext(companyId!, companyType);
+      }
 
-    } catch (error: any) {
-      console.error('Error getting operation context:', error);
+      return data as OperationalContext;
+    },
+    enabled: !!(profile?.salmonera_id || profile?.servicio_id),
+  });
+
+  const createDefaultContext = async (companyId: string, companyType: 'salmonera' | 'contratista'): Promise<OperationalContext> => {
+    const defaultContext = {
+      company_id: companyId,
+      company_type: companyType,
+      context_type: companyType === 'salmonera' ? 'mixed' as const : 'direct' as const,
+      requires_planning: companyType === 'salmonera',
+      requires_documents: companyType === 'salmonera',
+      allows_direct_operations: true,
+      active_modules: ['core_immersions', 'basic_reporting'] as string[],
+      configuration: {}
+    };
+
+    const { data, error } = await supabase
+      .from('operational_contexts')
+      .insert(defaultContext)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as OperationalContext;
+  };
+
+  // Validar si se puede crear una inmersión directamente
+  const validateDirectImmersion = async (): Promise<ValidationResult> => {
+    if (!operationalContext) {
       return {
         isValid: false,
-        contexto: null,
-        requiere_documentos: true,
-        requiere_hpt: true,
-        requiere_anexo_bravo: true,
-        es_operativa_directa: false,
-        es_legacy: true,
+        errors: ['No se pudo determinar el contexto operativo'],
         warnings: [],
-        errors: [error.message || 'Error al obtener contexto de operación']
+        context: null,
+        requiresDocuments: false,
+        allowsDirectOperations: false
       };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Crear operación con contexto específico
-  const createOperacionWithContext = async (
-    operacionData: any,
-    tipoContexto: TipoContexto = 'planificada'
-  ) => {
-    setLoading(true);
-    try {
-      // Crear operación (el trigger creará el contexto automáticamente)
-      const { data: operacion, error: operacionError } = await supabase
-        .from('operacion')
-        .insert([operacionData])
-        .select()
-        .single();
-
-      if (operacionError) throw operacionError;
-
-      // Si se requiere un contexto específico diferente al por defecto, actualizarlo
-      const defaultTipo: TipoContexto = 'planificada';
-      // Calcular si es planificada antes del bloque condicional
-      const esPlanificada = tipoContexto === 'planificada';
-      
-      if (tipoContexto !== defaultTipo) {
-        const contextUpdate: Partial<{
-          tipo_contexto: TipoContexto;
-          requiere_documentos: boolean;
-          requiere_hpt: boolean;
-          requiere_anexo_bravo: boolean;
-        }> = {
-          tipo_contexto: tipoContexto,
-          requiere_documentos: esPlanificada,
-          requiere_hpt: esPlanificada,
-          requiere_anexo_bravo: esPlanificada
-        };
-
-        const { error: contextError } = await supabase
-          .from('operacion_context')
-          .update(contextUpdate)
-          .eq('operacion_id', operacion.id);
-
-        if (contextError) {
-          console.warn('Error updating context:', contextError);
-          // No es crítico, continuar
-        }
-      }
-
-      toast({
-        title: "Operación creada",
-        description: `Operación ${tipoContexto} creada exitosamente`,
-      });
-
-      return operacion;
-
-    } catch (error: any) {
-      console.error('Error creating contextual operation:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo crear la operación: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Actualizar contexto de operación
-  const updateOperacionContext = async (
-    operacionId: string,
-    contextUpdates: Partial<OperacionContext>
-  ) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('operacion_context')
-        .update(contextUpdates)
-        .eq('operacion_id', operacionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Contexto actualizado",
-        description: "El contexto de la operación ha sido actualizado",
-      });
-
-      return data;
-
-    } catch (error: any) {
-      console.error('Error updating operation context:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo actualizar el contexto: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Validar si se puede crear inmersión según contexto
-  const validateInmersionCreation = async (operacionId: string): Promise<ContextualValidationResult> => {
-    const result = await getOperacionContext(operacionId);
-    
-    if (!result.isValid) {
-      return result;
     }
 
-    // Validaciones adicionales específicas para inmersiones
-    const needsValidation = result.es_legacy || (result.contexto && result.contexto.tipo_contexto === 'planificada');
-    
-    if (needsValidation) {
-      // Para operaciones planificadas o legacy, verificar documentos si son requeridos
-      if (result.requiere_hpt) {
-        const { data: hptData } = await supabase
-          .from('hpt')
-          .select('id')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle();
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-        if (!hptData) {
-          result.errors.push('HPT firmado requerido para esta operación');
-          result.isValid = false;
-        }
-      }
+    // Verificar si se permite operación directa
+    if (!operationalContext.allows_direct_operations) {
+      errors.push('El contexto operativo no permite inmersiones directas');
+    }
 
-      if (result.requiere_anexo_bravo) {
-        const { data: anexoData } = await supabase
-          .from('anexo_bravo')
-          .select('id')
-          .eq('operacion_id', operacionId)
-          .eq('firmado', true)
-          .maybeSingle();
-
-        if (!anexoData) {
-          result.errors.push('Anexo Bravo firmado requerido para esta operación');
-          result.isValid = false;
-        }
+    // Para contratistas, verificar que puedan operar sin planificación
+    if (operationalContext.company_type === 'contratista') {
+      if (operationalContext.context_type === 'planned') {
+        errors.push('Los contratistas requieren operaciones planificadas por la salmonera');
+      } else {
+        warnings.push('Inmersión directa - asegúrate de tener coordinación con la salmonera');
       }
     }
 
-    return result;
+    // Para salmoneras, pueden crear tanto planificadas como directas
+    if (operationalContext.company_type === 'salmonera') {
+      if (operationalContext.requires_planning && operationalContext.context_type !== 'mixed') {
+        warnings.push('Se recomienda planificar la operación antes de crear inmersiones');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      context: operationalContext,
+      requiresDocuments: operationalContext.requires_documents,
+      allowsDirectOperations: operationalContext.allows_direct_operations
+    };
+  };
+
+  // Validar creación de inmersión con operación específica
+  const validateInmersionCreation = async (operacionId?: string): Promise<ValidationResult> => {
+    if (!operationalContext) {
+      return {
+        isValid: false,
+        errors: ['No se pudo determinar el contexto operativo'],
+        warnings: [],
+        context: null,
+        requiresDocuments: false,
+        allowsDirectOperations: false
+      };
+    }
+
+    // Si no hay operación, validar inmersión directa
+    if (!operacionId) {
+      return await validateDirectImmersion();
+    }
+
+    // Si hay operación, verificar que exista y esté válida
+    const { data: operacion, error } = await supabase
+      .from('operacion')
+      .select('*')
+      .eq('id', operacionId)
+      .single();
+
+    if (error || !operacion) {
+      return {
+        isValid: false,
+        errors: ['La operación especificada no existe o no es accesible'],
+        warnings: [],
+        context: operationalContext,
+        requiresDocuments: operationalContext.requires_documents,
+        allowsDirectOperations: operationalContext.allows_direct_operations
+      };
+    }
+
+    // Validación exitosa con operación
+    return {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      context: operationalContext,
+      requiresDocuments: operationalContext.requires_documents,
+      allowsDirectOperations: operationalContext.allows_direct_operations
+    };
+  };
+
+  // Obtener módulos activos
+  const getActiveModules = (): string[] => {
+    return operationalContext?.active_modules || ['core_immersions'];
+  };
+
+  // Verificar si un módulo está activo
+  const isModuleActive = (moduleId: string): boolean => {
+    const activeModules = getActiveModules();
+    return activeModules.includes(moduleId);
+  };
+
+  // Obtener configuración del contexto
+  const getContextConfiguration = () => {
+    return operationalContext?.configuration || {};
+  };
+
+  // Determinar flujo de trabajo
+  const getWorkflowType = (): 'planned' | 'direct' | 'mixed' => {
+    return operationalContext?.context_type || 'direct';
+  };
+
+  // Verificar si requiere planificación
+  const requiresPlanning = (): boolean => {
+    return operationalContext?.requires_planning || false;
+  };
+
+  // Verificar si requiere documentos
+  const requiresDocuments = (): boolean => {
+    return operationalContext?.requires_documents || false;
+  };
+
+  // Verificar si permite operaciones directas
+  const allowsDirectOperations = (): boolean => {
+    return operationalContext?.allows_direct_operations || true;
   };
 
   return {
-    loading,
-    getOperacionContext,
-    createOperacionWithContext,
-    updateOperacionContext,
+    operationalContext,
+    isLoading,
+    validateDirectImmersion,
     validateInmersionCreation,
+    getActiveModules,
+    isModuleActive,
+    getContextConfiguration,
+    getWorkflowType,
+    requiresPlanning,
+    requiresDocuments,
+    allowsDirectOperations,
+    
+    // Helpers para UI
+    canCreateDirectImmersion: allowsDirectOperations(),
+    canPlanOperations: operationalContext?.company_type === 'salmonera' && requiresPlanning(),
+    canAccessNetworkMaintenance: isModuleActive('maintenance_networks'),
+    canAccessAdvancedReports: isModuleActive('advanced_reporting'),
+    canUseIntegrations: isModuleActive('external_integrations'),
   };
 };
