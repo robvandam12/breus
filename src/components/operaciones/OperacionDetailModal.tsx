@@ -14,6 +14,7 @@ import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
 import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useModularSystem } from "@/hooks/useModularSystem";
 
 interface OperacionDetailModalProps {
   operacion: any;
@@ -25,6 +26,12 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
+  const { 
+    canPlanOperations, 
+    canManageNetworks, 
+    hasModuleAccess,
+    isSuperuser 
+  } = useModularSystem();
 
   const handleEditOperacion = async (data: any) => {
     try {
@@ -45,6 +52,64 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
+  // Definir pestañas disponibles según módulos activos
+  const availableTabs = [
+    { id: "general", title: "General", required: true },
+    ...(canPlanOperations || isSuperuser ? [{ id: "personal", title: "Personal de Buceo", required: false }] : []),
+    ...(canPlanOperations || isSuperuser ? [{ id: "documentos", title: "Documentos", required: false }] : []),
+    { id: "inmersiones", title: "Inmersiones", required: true },
+    ...(canManageNetworks || isSuperuser ? [{ id: "formularios", title: "Formularios Operativos", required: false }] : []),
+    { id: "timeline", title: "Timeline", required: true }
+  ];
+
+  // Ajustar activeTab si la pestaña actual no está disponible
+  React.useEffect(() => {
+    const isTabAvailable = availableTabs.some(tab => tab.id === activeTab);
+    if (!isTabAvailable) {
+      setActiveTab("general");
+    }
+  }, [availableTabs, activeTab]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "general":
+        return <OperacionInfo operacion={operacion} />;
+      case "personal":
+        return (
+          <OperacionTeamManagerEnhanced 
+            operacionId={operacion.id} 
+            salmoneraId={operacion.salmonera_id || undefined}
+            contratistaId={operacion.contratista_id || undefined}
+          />
+        );
+      case "documentos":
+        return <OperacionDocuments operacionId={operacion.id} operacion={operacion} />;
+      case "inmersiones":
+        return <OperacionInmersiones operacionId={operacion.id} />;
+      case "formularios":
+        return (
+          <div className="space-y-4">
+            <div className="text-center p-8 bg-gray-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-700">Formularios Operativos</h3>
+              <p className="text-gray-600 mt-2">
+                Accede a los formularios de mantención de redes y faenas operativas
+              </p>
+              <Button 
+                className="mt-4" 
+                onClick={() => window.open('/operaciones/network-maintenance', '_blank')}
+              >
+                Ir a Mantención de Redes
+              </Button>
+            </div>
+          </div>
+        );
+      case "timeline":
+        return <OperacionTimeline operacionId={operacion.id} />;
+      default:
+        return <div>Contenido no encontrado</div>;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
@@ -58,59 +123,40 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
             <Badge className={getStatusColor(operacion.estado)}>
               {operacion.estado}
             </Badge>
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <Button 
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Editar Operación
-              </Button>
-              <DialogContent className="max-w-3xl">
-                <EditOperacionForm
-                  operacion={operacion}
-                  onSubmit={handleEditOperacion}
-                  onCancel={() => setIsEditDialogOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
+            {(canPlanOperations || isSuperuser) && (
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar Operación
+                </Button>
+                <DialogContent className="max-w-3xl">
+                  <EditOperacionForm
+                    operacion={operacion}
+                    onSubmit={handleEditOperacion}
+                    onCancel={() => setIsEditDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
 
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="personal">Personal de Buceo</TabsTrigger>
-              <TabsTrigger value="documentos">Documentos</TabsTrigger>
-              <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
+              {availableTabs.map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.title}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
-            <TabsContent value="general" className="space-y-6">
-              <OperacionInfo operacion={operacion} />
-              <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-            </TabsContent>
-
-            <TabsContent value="personal" className="space-y-6">
-              <OperacionTeamManagerEnhanced 
-                operacionId={operacion.id} 
-                salmoneraId={operacion.salmonera_id || undefined}
-                contratistaId={operacion.contratista_id || undefined}
-              />
-            </TabsContent>
-
-            <TabsContent value="documentos" className="space-y-6">
-              <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
-            </TabsContent>
-
-            <TabsContent value="inmersiones" className="space-y-6">
-              <OperacionInmersiones operacionId={operacion.id} />
-            </TabsContent>
-
-            <TabsContent value="timeline" className="space-y-6">
-              <OperacionTimeline operacionId={operacion.id} />
+            <TabsContent value={activeTab} className="space-y-6">
+              {renderTabContent()}
             </TabsContent>
           </Tabs>
         </div>

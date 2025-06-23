@@ -168,7 +168,7 @@ export const useModularSystem = () => {
     
     // Módulos opcionales
     PLANNING_OPERATIONS: 'planning_operations',
-    MAINTENANCE_NETWORKS: 'maintenance_networks',
+    MAINTENANCE_NETWORKS: 'maintenance_networks', // Renombrado de MultiX
     ADVANCED_REPORTING: 'advanced_reporting',
     EXTERNAL_INTEGRATIONS: 'external_integrations',
   };
@@ -190,7 +190,7 @@ export const useModularSystem = () => {
     
     // Helpers específicos (siempre true para superusers)
     canPlanOperations: isSuperuser || hasModuleAccess(modules.PLANNING_OPERATIONS),
-    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS),
+    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS), // Renombrado
     canAccessAdvancedReports: isSuperuser || hasModuleAccess(modules.ADVANCED_REPORTING),
     canUseIntegrations: isSuperuser || hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
     

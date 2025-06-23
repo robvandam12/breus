@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Calendar, 
@@ -41,6 +40,7 @@ import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useModularSystem } from "@/hooks/useModularSystem";
 
 const BreusLogo = ({ size = 32 }: { size?: number }) => (
   <svg 
@@ -63,6 +63,7 @@ interface MenuSubItem {
   title: string;
   url: string;
   roleRequired?: string;
+  moduleRequired?: string;
 }
 
 interface MenuItem {
@@ -72,6 +73,7 @@ interface MenuItem {
   badge?: string;
   items?: MenuSubItem[];
   roleRequired?: string;
+  moduleRequired?: string;
 }
 
 const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] => {
@@ -109,15 +111,16 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
-        badge: "12"
+        badge: "12",
+        moduleRequired: "planning_operations"
       },
       {
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -164,15 +167,16 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
-        badge: "12"
+        badge: "12",
+        moduleRequired: "planning_operations"
       },
       {
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -220,15 +224,16 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
-        badge: "12"
+        badge: "12",
+        moduleRequired: "planning_operations"
       },
       {
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -283,15 +288,16 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Operaciones",
         icon: Calendar,
         url: "/operaciones",
-        badge: "25"
+        badge: "25",
+        moduleRequired: "planning_operations"
       },
       {
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -418,18 +424,29 @@ export function ModularSidebar() {
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
   const { open, setOpen } = useSidebar();
+  const { hasModuleAccess, isSuperuser } = useModularSystem();
 
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
   const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
 
   const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roleRequired) return true;
-    return profile?.role === item.roleRequired;
+    // Filtrar por rol
+    if (item.roleRequired && !isSuperuser && profile?.role !== item.roleRequired) return false;
+    
+    // Filtrar por módulo
+    if (item.moduleRequired && !isSuperuser && !hasModuleAccess(item.moduleRequired)) return false;
+    
+    return true;
   }).map(item => ({
     ...item,
     items: item.items?.filter(subItem => {
-      if (!subItem.roleRequired) return true;
-      return profile?.role === subItem.roleRequired;
+      // Filtrar subitems por rol
+      if (subItem.roleRequired && !isSuperuser && profile?.role !== subItem.roleRequired) return false;
+      
+      // Filtrar subitems por módulo
+      if (subItem.moduleRequired && !isSuperuser && !hasModuleAccess(subItem.moduleRequired)) return false;
+      
+      return true;
     })
   }));
 

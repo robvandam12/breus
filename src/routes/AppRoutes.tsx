@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -106,7 +105,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Personal Routes - CHANGED FROM equipo-de-buceo */}
+      {/* Personal Routes */}
       <Route path="/personal-de-buceo" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -130,7 +129,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      {/* CONSOLIDATED: Using only /operaciones/hpt - removed /formularios/hpt */}
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -138,7 +136,6 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      {/* CONSOLIDATED: Using only /operaciones/anexo-bravo - removed /formularios/anexo-bravo */}
       <Route path="/operaciones/anexo-bravo" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -146,6 +143,7 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+      {/* UPDATED: Mantención de Redes (ex-MultiX) */}
       <Route path="/operaciones/network-maintenance" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
