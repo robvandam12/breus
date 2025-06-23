@@ -55,82 +55,8 @@ export default function Comparativas() {
       profundidadPromedio: 12.8,
       costoOperativo: 780000,
       satisfaccion: 4.7
-    },
-    {
-      id: 'centro-oeste',
-      name: 'Centro Oeste',
-      inmersiones: 28,
-      eficiencia: 90,
-      tiempoPromedio: 3.5,
-      incidentes: 1,
-      personal: 9,
-      profundidadPromedio: 16.1,
-      costoOperativo: 820000,
-      satisfaccion: 4.5
     }
   ], []);
-
-  const contractorData = useMemo(() => [
-    {
-      id: 'buceo-austral',
-      name: 'Buceo Austral',
-      inmersiones: 75,
-      eficiencia: 94,
-      tiempoPromedio: 3.1,
-      experiencia: 15,
-      certificaciones: 8,
-      satisfaccion: 4.8
-    },
-    {
-      id: 'servicios-marinos',
-      name: 'Servicios Marinos',
-      inmersiones: 68,
-      eficiencia: 91,
-      tiempoPromedio: 3.4,
-      experiencia: 12,
-      certificaciones: 6,
-      satisfaccion: 4.6
-    },
-    {
-      id: 'aqua-tech',
-      name: 'Aqua Tech',
-      inmersiones: 52,
-      eficiencia: 87,
-      tiempoPromedio: 3.9,
-      experiencia: 8,
-      certificaciones: 5,
-      satisfaccion: 4.3
-    }
-  ], []);
-
-  const getTopPerformers = (data: any[], metric: string) => {
-    return [...data].sort((a, b) => b[metric] - a[metric]).slice(0, 3);
-  };
-
-  const getTrendIcon = (value: number, threshold: number = 0) => {
-    if (value > threshold) return <TrendingUp className="w-4 h-4 text-green-600" />;
-    if (value < threshold) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Minus className="w-4 h-4 text-gray-600" />;
-  };
-
-  const radarData = useMemo(() => {
-    if (comparisonType === 'centros') {
-      return centerData.map(center => ({
-        name: center.name,
-        eficiencia: center.eficiencia,
-        satisfaccion: center.satisfaccion * 20, // Escalar a 100
-        costo: 100 - (center.costoOperativo / 10000), // Invertir para que menor costo = mejor
-        personal: (center.personal / 15) * 100 // Escalar a 100
-      }));
-    }
-    return contractorData.map(contractor => ({
-      name: contractor.name,
-      eficiencia: contractor.eficiencia,
-      satisfaccion: contractor.satisfaccion * 20,
-      experiencia: (contractor.experiencia / 20) * 100,
-      certificaciones: (contractor.certificaciones / 10) * 100
-    }));
-  }, [comparisonType, centerData, contractorData]);
 
   return (
     <MainLayout
@@ -147,17 +73,6 @@ export default function Comparativas() {
               <SelectItem value="centros">Centros de Cultivo</SelectItem>
               <SelectItem value="contratistas">Contratistas</SelectItem>
               <SelectItem value="periodos">Períodos de Tiempo</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as any)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Mes</SelectItem>
-              <SelectItem value="quarter">Trimestre</SelectItem>
-              <SelectItem value="year">Año</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -180,12 +95,11 @@ export default function Comparativas() {
               {/* Top Eficiencia */}
               <div>
                 <h4 className="font-medium mb-4 flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-gold-500" />
+                  <Trophy className="w-4 h-4 text-yellow-500" />
                   Eficiencia Operativa
                 </h4>
                 <div className="space-y-3">
-                  {getTopPerformers(comparisonType === 'centros' ? centerData : contractorData, 'eficiencia')
-                    .map((item, index) => (
+                  {centerData.slice(0, 3).map((item, index) => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <Badge variant={index === 0 ? "default" : "outline"} className="w-6 h-6 p-0 flex items-center justify-center text-xs">
@@ -195,7 +109,7 @@ export default function Comparativas() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-green-600">{item.eficiencia}%</span>
-                        {getTrendIcon(5)}
+                        <TrendingUp className="w-4 h-4 text-green-600" />
                       </div>
                     </div>
                   ))}
@@ -205,12 +119,11 @@ export default function Comparativas() {
               {/* Top Inmersiones */}
               <div>
                 <h4 className="font-medium mb-4 flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-silver-500" />
+                  <Trophy className="w-4 h-4 text-gray-500" />
                   Cantidad de Inmersiones
                 </h4>
                 <div className="space-y-3">
-                  {getTopPerformers(comparisonType === 'centros' ? centerData : contractorData, 'inmersiones')
-                    .map((item, index) => (
+                  {centerData.slice(0, 3).map((item, index) => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <Badge variant={index === 0 ? "default" : "outline"} className="w-6 h-6 p-0 flex items-center justify-center text-xs">
@@ -220,7 +133,7 @@ export default function Comparativas() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-blue-600">{item.inmersiones}</span>
-                        {getTrendIcon(3)}
+                        <TrendingUp className="w-4 h-4 text-green-600" />
                       </div>
                     </div>
                   ))}
@@ -230,12 +143,11 @@ export default function Comparativas() {
               {/* Top Satisfacción */}
               <div>
                 <h4 className="font-medium mb-4 flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-bronze-500" />
+                  <Trophy className="w-4 h-4 text-orange-500" />
                   Satisfacción
                 </h4>
                 <div className="space-y-3">
-                  {getTopPerformers(comparisonType === 'centros' ? centerData : contractorData, 'satisfaccion')
-                    .map((item, index) => (
+                  {centerData.slice(0, 3).map((item, index) => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <Badge variant={index === 0 ? "default" : "outline"} className="w-6 h-6 p-0 flex items-center justify-center text-xs">
@@ -245,7 +157,7 @@ export default function Comparativas() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-purple-600">{item.satisfaccion}/5</span>
-                        {getTrendIcon(0.1)}
+                        <TrendingUp className="w-4 h-4 text-green-600" />
                       </div>
                     </div>
                   ))}
@@ -257,10 +169,9 @@ export default function Comparativas() {
 
         {/* Análisis Comparativo */}
         <Tabs defaultValue="performance" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="performance">Rendimiento</TabsTrigger>
             <TabsTrigger value="efficiency">Eficiencia</TabsTrigger>
-            <TabsTrigger value="radar">Análisis Radar</TabsTrigger>
             <TabsTrigger value="trends">Tendencias</TabsTrigger>
           </TabsList>
 
@@ -271,7 +182,7 @@ export default function Comparativas() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={comparisonType === 'centros' ? centerData : contractorData}>
+                  <BarChart data={centerData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -285,82 +196,28 @@ export default function Comparativas() {
           </TabsContent>
 
           <TabsContent value="efficiency" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Eficiencia vs Costo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={comparisonType === 'centros' ? centerData : []}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="eficiencia" fill="#22c55e" name="Eficiencia %" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tiempo Promedio por Operación</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {(comparisonType === 'centros' ? centerData : contractorData).map((item, index) => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            index === 0 ? 'bg-green-500' : 
-                            index === 1 ? 'bg-blue-500' : 
-                            index === 2 ? 'bg-orange-500' : 'bg-purple-500'
-                          }`} />
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">{item.tiempoPromedio}h</p>
-                          <p className="text-sm text-gray-600">promedio</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="radar" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Análisis Multidimensional</CardTitle>
-                <CardDescription>
-                  Comparación integral de múltiples métricas de rendimiento
-                </CardDescription>
+                <CardTitle>Análisis de Eficiencia</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={500}>
-                  <RadarChart data={radarData[0] ? [radarData[0], radarData[1], radarData[2]] : []}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="name" />
-                    <PolarRadiusAxis domain={[0, 100]} />
-                    <Radar name="Eficiencia" dataKey="eficiencia" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
-                    <Radar name="Satisfacción" dataKey="satisfaccion" stroke="#22c55e" fill="#22c55e" fillOpacity={0.1} />
-                    {comparisonType === 'centros' ? (
-                      <>
-                        <Radar name="Costo" dataKey="costo" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                        <Radar name="Personal" dataKey="personal" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} />
-                      </>
-                    ) : (
-                      <>
-                        <Radar name="Experiencia" dataKey="experiencia" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                        <Radar name="Certificaciones" dataKey="certificaciones" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} />
-                      </>
-                    )}
-                    <Tooltip />
-                  </RadarChart>
-                </ResponsiveContainer>
+                <div className="space-y-4">
+                  {centerData.map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          index === 0 ? 'bg-green-500' : 
+                          index === 1 ? 'bg-blue-500' : 'bg-orange-500'
+                        }`} />
+                        <span className="font-medium">{item.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{item.eficiencia}%</p>
+                        <p className="text-sm text-gray-600">eficiencia</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,9 +49,9 @@ export default function ReportesOperativos() {
     const inmersionesPlanificadas = filteredInmersiones.filter(i => i.estado === 'planificada').length;
 
     // Métricas de tiempo
-    const inmersionesConDuracion = filteredInmersiones.filter(i => i.duracion_estimada);
+    const inmersionesConDuracion = filteredInmersiones.filter(i => i.duracion_real);
     const tiempoPromedioInmersion = inmersionesConDuracion.length > 0 
-      ? inmersionesConDuracion.reduce((sum, i) => sum + (i.duracion_estimada || 0), 0) / inmersionesConDuracion.length 
+      ? inmersionesConDuracion.reduce((sum, i) => sum + (i.duracion_real || 0), 0) / inmersionesConDuracion.length 
       : 0;
 
     // Eficiencia operativa
@@ -60,7 +59,7 @@ export default function ReportesOperativos() {
 
     // Distribución por profundidad
     const profundidadPromedio = filteredInmersiones.length > 0
-      ? filteredInmersiones.reduce((sum, i) => sum + (i.profundidad_maxima || 0), 0) / filteredInmersiones.length
+      ? filteredInmersiones.reduce((sum, i) => sum + (i.profundidad_max || 0), 0) / filteredInmersiones.length
       : 0;
 
     return {
