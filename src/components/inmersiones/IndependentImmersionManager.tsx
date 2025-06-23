@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Anchor, Calendar, Users, MapPin, Clock, Eye, Edit, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
 import { useInmersionesContextual } from "@/hooks/useInmersionesContextual";
+import { useInmersiones } from "@/hooks/useInmersiones";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { UniversalConfirmation } from "@/components/ui/universal-confirmation";
 import { useUniversalConfirmation } from "@/hooks/useUniversalConfirmation";
@@ -17,14 +18,20 @@ export const IndependentImmersionManager = () => {
   const [selectedImmersion, setSelectedImmersion] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
   
+  // Use contextual hook for permissions and filtering
   const { 
     inmersiones, 
-    createDirectImmersion, 
-    updateInmersion, 
-    deleteInmersion,
-    canCreateDirectImmersion,
-    isCreating
+    isLoading: isLoadingContextual,
+    canCreateDirectImmersion 
   } = useInmersionesContextual();
+
+  // Use CRUD hook for operations
+  const {
+    createInmersion,
+    updateInmersion,
+    deleteInmersion,
+    isCreating
+  } = useInmersiones();
 
   const {
     isOpen,
@@ -36,10 +43,10 @@ export const IndependentImmersionManager = () => {
     setIsOpen
   } = useUniversalConfirmation();
 
-  // Filtrar solo inmersiones independientes (sin operación asociada)
-  const independentImmersions = inmersiones.filter(
+  // Filter only independent immersions (without operation or marked as independent)
+  const independentImmersions = inmersiones?.filter(
     inmersion => !inmersion.operacion_id || inmersion.is_independent
-  );
+  ) || [];
 
   const handleCreateNew = () => {
     setSelectedImmersion(null);
@@ -86,10 +93,11 @@ export const IndependentImmersionManager = () => {
 
   const handleCreateSubmit = async (data: any) => {
     try {
-      await createDirectImmersion({
+      await createInmersion({
         ...data,
         is_independent: true,
-        contexto_operativo: 'independiente'
+        contexto_operativo: 'independiente',
+        operacion_id: null // Ensure no operation is associated
       });
       setShowCreateForm(false);
       toast({
@@ -98,6 +106,11 @@ export const IndependentImmersionManager = () => {
       });
     } catch (error) {
       console.error('Error creating independent immersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión independiente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -116,6 +129,11 @@ export const IndependentImmersionManager = () => {
       });
     } catch (error) {
       console.error('Error updating immersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la inmersión.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -128,6 +146,14 @@ export const IndependentImmersionManager = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoadingContextual) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -145,7 +171,7 @@ export const IndependentImmersionManager = () => {
         
         <Button 
           onClick={handleCreateNew}
-          disabled={!canCreateDirectImmersion}
+          disabled={!canCreateDirectImmersion()}
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -154,7 +180,7 @@ export const IndependentImmersionManager = () => {
       </div>
 
       {/* Alert informativo */}
-      {!canCreateDirectImmersion && (
+      {!canCreateDirectImmersion() && (
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-amber-800">
@@ -231,7 +257,7 @@ export const IndependentImmersionManager = () => {
             <p className="text-gray-600 mb-6">
               Comienza creando tu primera inmersión independiente
             </p>
-            {canCreateDirectImmersion && (
+            {canCreateDirectImmersion() && (
               <Button onClick={handleCreateNew}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Primera Inmersión

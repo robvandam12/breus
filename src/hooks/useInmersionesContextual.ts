@@ -10,7 +10,7 @@ export const useInmersionesContextual = () => {
   const { operationalContext, canCreateDirectImmersions } = useOperationalContext();
   const { hasModuleAccess, modules } = useModularSystem();
 
-  const { data: inmersiones, isLoading } = useQuery({
+  const { data: inmersiones = [], isLoading } = useQuery({
     queryKey: ['inmersiones-contextual', profile?.id],
     queryFn: async () => {
       if (!profile) return [];
@@ -77,6 +77,6 @@ export const useInmersionesContextual = () => {
     estadisticas,
     capacidades,
     operationalContext,
-    canCreateDirectImmersion: canCreateDirectImmersions(),
+    canCreateDirectImmersion: canCreateDirectImmersions,
   };
 };
