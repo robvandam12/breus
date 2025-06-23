@@ -1,4 +1,3 @@
-
 export interface NetworkMaintenanceData {
   // Datos generales
   fecha: string;
@@ -37,7 +36,7 @@ export interface NetworkMaintenanceData {
   progreso: number;
   firmado: boolean;
   estado: 'borrador' | 'completado' | 'aprobado';
-  tipo_formulario?: string;
+  tipo_formulario?: 'mantencion' | 'faena_redes';
 }
 
 export interface DotacionBuceo {
@@ -107,6 +106,6 @@ export interface SistemaEquipo {
 export interface NetworkMaintenanceFormData {
   operacion_id: string;
   codigo: string;
-  tipo_formulario: 'mantencion' | 'faena';
+  tipo_formulario: 'mantencion' | 'faena_redes';
   network_maintenance_data: NetworkMaintenanceData;
 }
