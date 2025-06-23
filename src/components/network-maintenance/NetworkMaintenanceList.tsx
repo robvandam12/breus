@@ -13,9 +13,15 @@ import { toast } from '@/hooks/use-toast';
 
 interface NetworkMaintenanceListProps {
   operacionId?: string;
+  onEdit?: (formId: string, formData: any) => void;
+  onView?: (formId: string, formData: any) => void;
 }
 
-export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ operacionId }) => {
+export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
+  operacionId,
+  onEdit: onEditProp,
+  onView: onViewProp
+}) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedForm, setSelectedForm] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -51,15 +57,23 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
   };
 
   const handleEdit = (form: any) => {
-    setSelectedForm(form);
-    setViewMode('edit');
-    setShowCreateForm(true);
+    if (onEditProp) {
+      onEditProp(form.id, form);
+    } else {
+      setSelectedForm(form);
+      setViewMode('edit');
+      setShowCreateForm(true);
+    }
   };
 
   const handleView = (form: any) => {
-    setSelectedForm(form);
-    setViewMode('view');
-    setShowCreateForm(true);
+    if (onViewProp) {
+      onViewProp(form.id, form);
+    } else {
+      setSelectedForm(form);
+      setViewMode('view');
+      setShowCreateForm(true);
+    }
   };
 
   const handleDelete = (form: any) => {
@@ -242,26 +256,28 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
         </div>
       )}
 
-      {/* Modal para crear/editar formulario */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {viewMode === 'create' && 'Nuevo Formulario de Mantención'}
-              {viewMode === 'edit' && 'Editar Formulario'}
-              {viewMode === 'view' && 'Ver Formulario'}
-            </DialogTitle>
-          </DialogHeader>
-          <NetworkMaintenanceWizard
-            operacionId={operacionId}
-            tipoFormulario="mantencion"
-            onComplete={() => setShowCreateForm(false)}
-            onCancel={() => setShowCreateForm(false)}
-            editingFormId={viewMode !== 'create' ? selectedForm?.id : undefined}
-            readOnly={viewMode === 'view'}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Modal para crear/editar formulario - solo se muestra si no hay callbacks externos */}
+      {!onEditProp && !onViewProp && (
+        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {viewMode === 'create' && 'Nuevo Formulario de Mantención'}
+                {viewMode === 'edit' && 'Editar Formulario'}
+                {viewMode === 'view' && 'Ver Formulario'}
+              </DialogTitle>
+            </DialogHeader>
+            <NetworkMaintenanceWizard
+              operacionId={operacionId}
+              tipoFormulario="mantencion"
+              onComplete={() => setShowCreateForm(false)}
+              onCancel={() => setShowCreateForm(false)}
+              editingFormId={viewMode !== 'create' ? selectedForm?.id : undefined}
+              readOnly={viewMode === 'view'}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Modal de confirmación universal */}
       <UniversalConfirmation
