@@ -21,30 +21,38 @@ interface InmersionWizardProps {
   operationId?: string;
   onComplete: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
+  readOnly?: boolean;
 }
 
-export const InmersionWizard = ({ operationId, onComplete, onCancel }: InmersionWizardProps) => {
+export const InmersionWizard = ({ 
+  operationId, 
+  onComplete, 
+  onCancel, 
+  initialData,
+  readOnly = false 
+}: InmersionWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    codigo: '',
-    operacion_id: operationId || '',
-    fecha_inmersion: new Date(),
-    hora_inicio: '',
-    hora_fin: '',
-    objetivo: '',
-    profundidad_max: '',
-    temperatura_agua: '',
-    visibilidad: '',
-    corriente: '',
-    supervisor_nombre: '',
-    supervisor_apellido: '',
-    buzo_principal_nombre: '',
-    buzo_principal_apellido: '',
-    buzo_asistente_nombre: '',
-    buzo_asistente_apellido: '',
-    observaciones: '',
-    estado: 'planificada',
-    planned_bottom_time: ''
+    codigo: initialData?.codigo || '',
+    operacion_id: operationId || initialData?.operacion_id || '',
+    fecha_inmersion: initialData?.fecha_inmersion ? new Date(initialData.fecha_inmersion) : new Date(),
+    hora_inicio: initialData?.hora_inicio || '',
+    hora_fin: initialData?.hora_fin || '',
+    objetivo: initialData?.objetivo || '',
+    profundidad_max: initialData?.profundidad_max?.toString() || '',
+    temperatura_agua: initialData?.temperatura_agua?.toString() || '',
+    visibilidad: initialData?.visibilidad?.toString() || '',
+    corriente: initialData?.corriente || '',
+    supervisor_nombre: initialData?.supervisor_nombre || '',
+    supervisor_apellido: initialData?.supervisor_apellido || '',
+    buzo_principal_nombre: initialData?.buzo_principal_nombre || '',
+    buzo_principal_apellido: initialData?.buzo_principal_apellido || '',
+    buzo_asistente_nombre: initialData?.buzo_asistente_nombre || '',
+    buzo_asistente_apellido: initialData?.buzo_asistente_apellido || '',
+    observaciones: initialData?.observaciones || '',
+    estado: initialData?.estado || 'planificada',
+    planned_bottom_time: initialData?.planned_bottom_time?.toString() || ''
   });
 
   const { operaciones } = useOperaciones();
@@ -52,7 +60,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
   const selectedOperation = operaciones.find(op => op.id === operationId);
 
   useEffect(() => {
-    if (profile) {
+    if (profile && !initialData) {
       const defaults = getFormDefaults();
       setFormData(prev => ({
         ...prev,
@@ -62,10 +70,10 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
         buzo_principal_apellido: defaults.apellido,
       }));
     }
-  }, [profile]);
+  }, [profile, initialData]);
 
   useEffect(() => {
-    if (operationId && !formData.codigo) {
+    if (operationId && !formData.codigo && !initialData) {
       const timestamp = Date.now().toString().slice(-6);
       const operationCode = selectedOperation?.codigo || 'OP';
       setFormData(prev => ({
@@ -73,9 +81,10 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
         codigo: `INM-${operationCode}-${timestamp}`
       }));
     }
-  }, [operationId, selectedOperation]);
+  }, [operationId, selectedOperation, initialData]);
 
   const handleInputChange = (field: string, value: any) => {
+    if (readOnly) return;
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -99,7 +108,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
+    if (readOnly || validateStep(currentStep)) {
       setCurrentStep(prev => prev + 1);
     } else {
       toast({
@@ -115,6 +124,11 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
   };
 
   const handleSubmit = () => {
+    if (readOnly) {
+      onCancel();
+      return;
+    }
+    
     if (validateStep(currentStep)) {
       const submissionData = {
         ...formData,
@@ -145,12 +159,17 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.codigo}
                   onChange={(e) => handleInputChange('codigo', e.target.value)}
                   placeholder="INM-001"
+                  disabled={readOnly}
                 />
               </div>
               
               <div>
                 <Label htmlFor="operacion">Operación *</Label>
-                <Select value={formData.operacion_id} onValueChange={(value) => handleInputChange('operacion_id', value)}>
+                <Select 
+                  value={formData.operacion_id} 
+                  onValueChange={(value) => handleInputChange('operacion_id', value)}
+                  disabled={readOnly}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar operación" />
                   </SelectTrigger>
@@ -173,6 +192,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                 onChange={(e) => handleInputChange('objetivo', e.target.value)}
                 placeholder="Descripción del objetivo de la inmersión"
                 rows={3}
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -186,7 +206,11 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                 <Label>Fecha de Inmersión *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.fecha_inmersion && "text-muted-foreground")}>
+                    <Button 
+                      variant="outline" 
+                      className={cn("w-full justify-start text-left font-normal", !formData.fecha_inmersion && "text-muted-foreground")}
+                      disabled={readOnly}
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.fecha_inmersion ? format(formData.fecha_inmersion, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                     </Button>
@@ -197,6 +221,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                       selected={formData.fecha_inmersion}
                       onSelect={(date) => handleInputChange('fecha_inmersion', date)}
                       initialFocus
+                      disabled={readOnly}
                     />
                   </PopoverContent>
                 </Popover>
@@ -209,6 +234,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   type="time"
                   value={formData.hora_inicio}
                   onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
+                  disabled={readOnly}
                 />
               </div>
 
@@ -219,6 +245,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   type="time"
                   value={formData.hora_fin}
                   onChange={(e) => handleInputChange('hora_fin', e.target.value)}
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -232,6 +259,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.profundidad_max}
                   onChange={(e) => handleInputChange('profundidad_max', e.target.value)}
                   placeholder="30"
+                  disabled={readOnly}
                 />
               </div>
 
@@ -243,6 +271,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.planned_bottom_time}
                   onChange={(e) => handleInputChange('planned_bottom_time', e.target.value)}
                   placeholder="45"
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -262,6 +291,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.supervisor_nombre}
                   onChange={(e) => handleInputChange('supervisor_nombre', e.target.value)}
                   placeholder="Juan"
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -271,6 +301,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.supervisor_apellido}
                   onChange={(e) => handleInputChange('supervisor_apellido', e.target.value)}
                   placeholder="Pérez"
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -283,6 +314,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.buzo_principal_nombre}
                   onChange={(e) => handleInputChange('buzo_principal_nombre', e.target.value)}
                   placeholder="María"
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -292,6 +324,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.buzo_principal_apellido}
                   onChange={(e) => handleInputChange('buzo_principal_apellido', e.target.value)}
                   placeholder="González"
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -304,6 +337,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.buzo_asistente_nombre}
                   onChange={(e) => handleInputChange('buzo_asistente_nombre', e.target.value)}
                   placeholder="Carlos"
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -313,6 +347,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.buzo_asistente_apellido}
                   onChange={(e) => handleInputChange('buzo_asistente_apellido', e.target.value)}
                   placeholder="López"
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -333,6 +368,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.temperatura_agua}
                   onChange={(e) => handleInputChange('temperatura_agua', e.target.value)}
                   placeholder="15"
+                  disabled={readOnly}
                 />
               </div>
 
@@ -344,12 +380,17 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                   value={formData.visibilidad}
                   onChange={(e) => handleInputChange('visibilidad', e.target.value)}
                   placeholder="10"
+                  disabled={readOnly}
                 />
               </div>
 
               <div>
                 <Label htmlFor="corriente">Corriente *</Label>
-                <Select value={formData.corriente} onValueChange={(value) => handleInputChange('corriente', value)}>
+                <Select 
+                  value={formData.corriente} 
+                  onValueChange={(value) => handleInputChange('corriente', value)}
+                  disabled={readOnly}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
@@ -371,6 +412,7 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
                 onChange={(e) => handleInputChange('observaciones', e.target.value)}
                 placeholder="Observaciones adicionales sobre la inmersión"
                 rows={3}
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -391,10 +433,12 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Nueva Inmersión</h1>
+        <h1 className="text-2xl font-bold">
+          {readOnly ? 'Ver Inmersión' : initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}
+        </h1>
         <Button variant="outline" onClick={onCancel}>
           <X className="w-4 h-4 mr-2" />
-          Cancelar
+          {readOnly ? 'Cerrar' : 'Cancelar'}
         </Button>
       </div>
 
@@ -438,27 +482,37 @@ export const InmersionWizard = ({ operationId, onComplete, onCancel }: Inmersion
       </Card>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 1}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Anterior
-        </Button>
+      {!readOnly && (
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Anterior
+          </Button>
 
-        {currentStep < steps.length ? (
-          <Button onClick={handleNext}>
-            Siguiente
-            <ArrowRight className="w-4 h-4 ml-2" />
+          {currentStep < steps.length ? (
+            <Button onClick={handleNext}>
+              Siguiente
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+              {initialData ? 'Actualizar Inmersión' : 'Crear Inmersión'}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {readOnly && (
+        <div className="flex justify-center">
+          <Button onClick={onCancel} variant="outline">
+            Cerrar
           </Button>
-        ) : (
-          <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-            Crear Inmersión
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
