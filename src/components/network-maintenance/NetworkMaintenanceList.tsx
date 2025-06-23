@@ -3,215 +3,203 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Network, Edit, Eye, Calendar, User, MapPin, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Filter, Plus, Eye, Edit2, Trash2 } from "lucide-react";
 import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
-
-interface NetworkMaintenanceForm {
-  id: string;
-  form_data: NetworkMaintenanceData;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  inmersion_id: string;
-}
+import { toast } from '@/hooks/use-toast';
 
 interface NetworkMaintenanceListProps {
-  operacionId?: string;
-  onEdit: (formId: string, formData: NetworkMaintenanceData) => void;
-  onView: (formId: string, formData: NetworkMaintenanceData) => void;
+  onCreateNew?: () => void;
+  onEdit?: (formId: string) => void;
+  onView?: (formId: string) => void;
 }
 
 export const NetworkMaintenanceList = ({ 
-  operacionId, 
+  onCreateNew, 
   onEdit, 
   onView 
 }: NetworkMaintenanceListProps) => {
-  const [forms, setForms] = useState<NetworkMaintenanceForm[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { getNetworkMaintenanceByOperacion, getAllNetworkMaintenance } = useNetworkMaintenance();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [networkMaintenanceForms, setNetworkMaintenanceForms] = useState<any[]>([]);
 
+  const { 
+    loading, 
+    getNetworkMaintenanceByOperacion
+  } = useNetworkMaintenance();
+
+  // Por ahora mostraremos una lista vacía hasta que tengamos operaciones
   useEffect(() => {
-    loadForms();
-  }, [operacionId]);
+    // Aquí podrías cargar formularios de una operación específica
+    // const loadForms = async () => {
+    //   const forms = await getNetworkMaintenanceByOperacion('operacion-id');
+    //   setNetworkMaintenanceForms(forms);
+    // };
+    // loadForms();
+  }, []);
 
-  const loadForms = async () => {
-    try {
-      setLoading(true);
-      let result: any[] = [];
-      
-      if (operacionId) {
-        result = await getNetworkMaintenanceByOperacion(operacionId);
-      } else {
-        // Cargar todos los formularios del usuario
-        result = await getAllNetworkMaintenance();
-      }
-      
-      // Convertir los datos de Supabase a nuestro formato
-      const formattedForms: NetworkMaintenanceForm[] = result.map(item => ({
-        id: item.id,
-        form_data: item.form_data as NetworkMaintenanceData,
-        status: item.status,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        inmersion_id: item.inmersion_id
-      }));
-      
-      setForms(formattedForms);
-    } catch (error) {
-      console.error('Error loading forms:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStatusBadge = (status: string, firmado?: boolean) => {
-    if (firmado) {
-      return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
-    }
+  const filteredForms = networkMaintenanceForms.filter(form => {
+    const matchesSearch = form.network_maintenance_data?.lugar_trabajo?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || form.network_maintenance_data?.estado === statusFilter;
+    const matchesType = typeFilter === 'all' || form.network_maintenance_data?.tipo_formulario === typeFilter;
     
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft':
-        return <Badge className="bg-gray-100 text-gray-800">Borrador</Badge>;
-      case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Finalizado</Badge>;
+      case 'completado':
+        return 'bg-green-100 text-green-800';
+      case 'borrador':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'aprobado':
+        return 'bg-blue-100 text-blue-800';
       default:
-        return <Badge className="bg-yellow-100 text-yellow-800">En Progreso</Badge>;
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'mantencion':
+        return 'bg-blue-100 text-blue-800';
+      case 'faena':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  if (loading) {
-    return (
+  return (
+    <div className="space-y-6">
+      {/* Filtros y búsqueda */}
       <Card>
-        <CardContent className="py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-500 mt-2">Cargando formularios...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+        <CardHeader>
+          <CardTitle className="text-lg">Formularios de Mantención de Redes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por lugar de trabajo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="borrador">Borrador</SelectItem>
+                <SelectItem value="completado">Completado</SelectItem>
+                <SelectItem value="aprobado">Aprobado</SelectItem>
+              </SelectContent>
+            </Select>
 
-  if (forms.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center text-gray-500">
-            <Network className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No hay formularios registrados</p>
-            <p className="text-sm">Los formularios creados aparecerán aquí</p>
-            <Button variant="outline" className="mt-4" onClick={loadForms}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualizar
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los tipos</SelectItem>
+                <SelectItem value="mantencion">Mantención</SelectItem>
+                <SelectItem value="faena">Faena</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button onClick={onCreateNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Formulario
             </Button>
           </div>
         </CardContent>
       </Card>
-    );
-  }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">
-          {forms.length} formulario{forms.length !== 1 ? 's' : ''} encontrado{forms.length !== 1 ? 's' : ''}
-        </p>
-        <Button variant="ghost" size="sm" onClick={loadForms} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
-      </div>
-      
-      {forms.map((form) => (
-        <Card key={form.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Network className="w-4 h-4" />
-                  {form.form_data.tipo_formulario === 'mantencion' ? 'Mantención' : 'Faena'} de Redes
-                  {getStatusBadge(form.status, form.form_data.firmado)}
-                </CardTitle>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  {form.form_data.lugar_trabajo && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {form.form_data.lugar_trabajo}
+      {/* Lista de formularios */}
+      <div className="space-y-4">
+        {loading ? (
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p>Cargando formularios...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : filteredForms.length === 0 ? (
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center text-gray-500">
+                <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">No se encontraron formularios</p>
+                <p className="text-sm">
+                  {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+                    ? 'Intenta ajustar los filtros de búsqueda'
+                    : 'Crea tu primer formulario de mantención de redes'
+                  }
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredForms.map((form, index) => (
+            <Card key={form.id || index} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg">
+                        {form.network_maintenance_data?.lugar_trabajo || 'Sin lugar especificado'}
+                      </h3>
+                      <Badge className={getStatusColor(form.network_maintenance_data?.estado || 'borrador')}>
+                        {form.network_maintenance_data?.estado || 'Borrador'}
+                      </Badge>
+                      <Badge className={getTypeColor(form.network_maintenance_data?.tipo_formulario || 'mantencion')}>
+                        {form.network_maintenance_data?.tipo_formulario === 'mantencion' ? 'Mantención' : 'Faena'}
+                      </Badge>
                     </div>
-                  )}
-                  {form.form_data.fecha && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {form.form_data.fecha}
+                    
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <span className="font-medium">Fecha:</span> {form.network_maintenance_data?.fecha || 'No especificada'}
+                      </p>
+                      <p>
+                        <span className="font-medium">Progreso:</span> {form.network_maintenance_data?.progreso || 0}%
+                      </p>
+                      {form.network_maintenance_data?.dotacion?.length > 0 && (
+                        <p>
+                          <span className="font-medium">Personal:</span> {form.network_maintenance_data.dotacion.length} miembros
+                        </p>
+                      )}
                     </div>
-                  )}
-                  {form.form_data.supervisor_responsable && (
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {form.form_data.supervisor_responsable}
-                    </div>
-                  )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onView?.(form.id)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => onEdit?.(form.id)}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onView(form.id, form.form_data)}
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  Ver
-                </Button>
-                {!form.form_data.firmado && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(form.id, form.form_data)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-600">Dotación:</span>
-                <p>{form.form_data.dotacion?.length || 0} personas</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Equipos:</span>
-                <p>{form.form_data.equipos_superficie?.length || 0} equipos</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Faenas:</span>
-                <p>{(form.form_data.faenas_mantencion?.length || 0) + (form.form_data.faenas_redes?.length || 0)} trabajos</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Progreso:</span>
-                <p>{form.form_data.progreso || 0}%</p>
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-gray-500">
-              Creado: {formatDate(form.created_at)} | 
-              Actualizado: {formatDate(form.updated_at)}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

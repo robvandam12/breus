@@ -59,6 +59,9 @@ export const MaintenanceNetworksWizard = ({
     faenas_mantencion: existingForm?.form_data?.faenas_mantencion || [],
     faenas_redes: existingForm?.form_data?.faenas_redes || [],
     
+    // Sistemas y equipos (AGREGADO)
+    sistemas_equipos: existingForm?.form_data?.sistemas_equipos || [],
+    
     // Tipo de formulario
     tipo_formulario: existingForm?.form_type || 'mantencion',
     
