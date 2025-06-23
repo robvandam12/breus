@@ -1,59 +1,96 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useContextualOperations } from '@/hooks/useContextualOperations';
-import { toast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useModularSystem } from "./useModularSystem";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
-export interface MaintenanceNetworkForm {
+export interface MaintenanceForm {
   id: string;
   inmersion_id: string;
   module_name: string;
   form_type: 'mantencion' | 'faena_redes';
-  form_data: any;
-  status: 'draft' | 'completed' | 'archived';
+  form_data: {
+    // Datos generales
+    fecha?: string;
+    hora_inicio?: string;
+    hora_termino?: string;
+    lugar_trabajo?: string;
+    temperatura?: number;
+    profundidad_max?: number;
+    estado_puerto?: string;
+    
+    // Equipos y dotación
+    dotacion?: Array<{
+      nombre: string;
+      apellido?: string;
+      rol: string;
+      matricula?: string;
+      equipo?: string;
+    }>;
+    
+    equipos_superficie?: Array<{
+      equipo_sup: string;
+      matricula_eq?: string;
+      horometro_ini?: number;
+      horometro_fin?: number;
+    }>;
+    
+    // Datos específicos según tipo
+    [key: string]: any;
+  };
+  status: 'draft' | 'completed' | 'approved';
+  created_by?: string;
+  approved_by?: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
+  completed_at?: string;
+  approved_at?: string;
 }
 
 export const useMaintenanceNetworks = () => {
+  const { hasModuleAccess, modules } = useModularSystem();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const { isModuleActive } = useContextualOperations();
 
-  // Check if user can access this module
-  const canAccessModule = isModuleActive('maintenance_networks');
+  const canAccessModule = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
 
-  // Get all maintenance network forms for current user/company
-  const { data: maintenanceForms = [], isLoading } = useQuery({
-    queryKey: ['maintenance-networks', profile?.id],
+  // Obtener formularios de mantención
+  const { data: maintenanceForms = [], isLoading, refetch } = useQuery({
+    queryKey: ['maintenance-forms'],
     queryFn: async () => {
-      if (!profile?.id) throw new Error('No user profile');
-
       const { data, error } = await supabase
         .from('operational_forms')
-        .select('*')
+        .select(`
+          *,
+          inmersion:inmersion_id (
+            codigo,
+            fecha_inmersion,
+            supervisor,
+            buzo_principal
+          )
+        `)
         .eq('module_name', 'maintenance_networks')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as MaintenanceNetworkForm[];
+      return data as MaintenanceForm[];
     },
-    enabled: !!profile?.id && canAccessModule,
+    enabled: canAccessModule,
   });
 
-  // Create new maintenance form  
+  // Crear nuevo formulario de mantención
   const createMaintenanceForm = useMutation({
-    mutationFn: async (formData: Omit<MaintenanceNetworkForm, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    mutationFn: async (formData: Omit<MaintenanceForm, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('operational_forms')
         .insert({
-          ...formData,
+          inmersion_id: formData.inmersion_id,
+          module_name: 'maintenance_networks',
+          form_type: formData.form_type,
+          form_data: formData.form_data,
+          status: formData.status || 'draft',
           created_by: profile?.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -62,54 +99,66 @@ export const useMaintenanceNetworks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-networks'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-forms'] });
       toast({
-        title: "Formulario creado",
-        description: "El formulario de mantención de redes ha sido creado exitosamente",
+        title: "Formulario Creado",
+        description: "El formulario de mantención ha sido creado exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear el formulario",
+        description: "No se pudo crear el formulario de mantención.",
         variant: "destructive",
       });
     },
   });
 
-  // Update maintenance form
+  // Actualizar formulario de mantención
   const updateMaintenanceForm = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<MaintenanceNetworkForm> }) => {
-      const { data: result, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: Partial<MaintenanceForm> }) => {
+      const updateData: any = {
+        form_data: data.form_data,
+        status: data.status,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (data.status === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+
+      if (data.status === 'approved') {
+        updateData.approved_at = new Date().toISOString();
+        updateData.approved_by = profile?.id;
+      }
+
+      const { data: updatedData, error } = await supabase
         .from('operational_forms')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      return updatedData;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-networks'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-forms'] });
       toast({
-        title: "Formulario actualizado",
-        description: "Los cambios han sido guardados exitosamente",
+        title: "Formulario Actualizado",
+        description: "Los cambios han sido guardados exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el formulario",
+        description: "No se pudieron guardar los cambios.",
         variant: "destructive",
       });
     },
   });
 
-  // Delete maintenance form
+  // Eliminar formulario de mantención
   const deleteMaintenanceForm = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -120,80 +169,50 @@ export const useMaintenanceNetworks = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-networks'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-forms'] });
       toast({
-        title: "Formulario eliminado",
-        description: "El formulario ha sido eliminado exitosamente",
+        title: "Formulario Eliminado",
+        description: "El formulario ha sido eliminado exitosamente.",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el formulario",
+        description: "No se pudo eliminar el formulario.",
         variant: "destructive",
       });
     },
   });
 
-  // Get forms by inmersion
-  const getFormsByInmersion = async (inmersionId: string): Promise<MaintenanceNetworkForm[]> => {
-    const { data, error } = await supabase
-      .from('operational_forms')
-      .select('*')
-      .eq('module_name', 'maintenance_networks')
-      .eq('inmersion_id', inmersionId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data as MaintenanceNetworkForm[];
+  // Obtener formulario por ID
+  const getMaintenanceFormById = (id: string) => {
+    return maintenanceForms.find(form => form.id === id);
   };
 
-  // Complete form (mark as completed)
-  const completeForm = useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .update({
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-networks'] });
-      toast({
-        title: "Formulario completado",
-        description: "El formulario ha sido marcado como completado",
-      });
-    },
-  });
+  // Filtrar formularios por tipo
+  const getFormsByType = (type: 'mantencion' | 'faena_redes') => {
+    return maintenanceForms.filter(form => form.form_type === type);
+  };
 
   return {
     // Data
     maintenanceForms,
     isLoading,
-    
-    // Module access
     canAccessModule,
     
-    // Mutations
+    // Actions
     createMaintenanceForm: createMaintenanceForm.mutateAsync,
     updateMaintenanceForm: updateMaintenanceForm.mutateAsync,
     deleteMaintenanceForm: deleteMaintenanceForm.mutateAsync,
-    completeForm: completeForm.mutateAsync,
+    refetch,
     
-    // Utils
-    getFormsByInmersion,
+    // Helpers
+    getMaintenanceFormById,
+    getFormsByType,
     
     // Loading states
     isCreating: createMaintenanceForm.isPending,
     isUpdating: updateMaintenanceForm.isPending,
     isDeleting: deleteMaintenanceForm.isPending,
-    isCompleting: completeForm.isPending,
   };
 };
