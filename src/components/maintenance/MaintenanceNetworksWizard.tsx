@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -241,8 +240,8 @@ export const MaintenanceNetworksWizard = ({
 
         <TabsContent value="general" className="mt-6">
           <EncabezadoGeneral
-            formData={formData}
-            updateFormData={updateFormData}
+            data={formData}
+            onDataChange={updateFormData}
           />
         </TabsContent>
 

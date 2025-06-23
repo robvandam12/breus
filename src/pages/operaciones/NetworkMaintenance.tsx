@@ -16,7 +16,7 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export default function NetworkMaintenance() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena'>('mantencion');
+  const [tipoFormulario, setTipoFormulario] = useState<'mantencion' | 'faena_redes'>('mantencion');
   const [selectedOperacion, setSelectedOperacion] = useState<string>('');
   const [editingForm, setEditingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
   const [viewingForm, setViewingForm] = useState<{id: string, data: NetworkMaintenanceData} | null>(null);
@@ -24,7 +24,7 @@ export default function NetworkMaintenance() {
   
   const { createOperacionWithContext } = useContextualOperations();
 
-  const handleCreateNew = (tipo: 'mantencion' | 'faena') => {
+  const handleCreateNew = (tipo: 'mantencion' | 'faena_redes') => {
     setTipoFormulario(tipo);
     setEditingForm(null);
     setViewingForm(null);
@@ -33,7 +33,7 @@ export default function NetworkMaintenance() {
 
   const handleEdit = (formId: string, formData: NetworkMaintenanceData) => {
     setEditingForm({ id: formId, data: formData });
-    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena_redes') || 'mantencion');
     setViewingForm(null);
     setShowCreateForm(true);
   };
@@ -41,7 +41,7 @@ export default function NetworkMaintenance() {
   const handleView = (formId: string, formData: NetworkMaintenanceData) => {
     setViewingForm({ id: formId, data: formData });
     setEditingForm(null);
-    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena') || 'mantencion');
+    setTipoFormulario((formData.tipo_formulario as 'mantencion' | 'faena_redes') || 'mantencion');
     setShowCreateForm(true);
   };
 
@@ -108,7 +108,7 @@ export default function NetworkMaintenance() {
             <Plus className="w-4 h-4 mr-2" />
             Nueva Mantención
           </Button>
-          <Button variant="outline" onClick={() => handleCreateNew('faena')}>
+          <Button variant="outline" onClick={() => handleCreateNew('faena_redes')}>
             <Plus className="w-4 h-4 mr-2" />
             Nueva Faena
           </Button>
@@ -185,7 +185,7 @@ export default function NetworkMaintenance() {
                 className="w-full mt-4" 
                 variant="outline"
                 onClick={async () => {
-                  setTipoFormulario('faena');
+                  setTipoFormulario('faena_redes');
                   const operacionId = await createDirectOperation();
                   setSelectedOperacion(operacionId);
                   setShowCreateForm(true);

@@ -21,7 +21,7 @@ export const NetworkMaintenanceManager = () => {
   const [activeView, setActiveView] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedInmersionId, setSelectedInmersionId] = useState<string>('');
   const [editingFormId, setEditingFormId] = useState<string>('');
-  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena'>('mantencion');
+  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena_redes'>('mantencion');
 
   const { canAccessModule, maintenanceForms, isLoading } = useMaintenanceNetworks();
 
@@ -44,7 +44,7 @@ export const NetworkMaintenanceManager = () => {
     );
   }
 
-  const handleCreateForm = (type: 'mantencion' | 'faena') => {
+  const handleCreateForm = (type: 'mantencion' | 'faena_redes') => {
     setSelectedFormType(type);
     setActiveView('create');
   };
@@ -116,7 +116,7 @@ export const NetworkMaintenanceManager = () => {
           
           <Button 
             variant="outline"
-            onClick={() => handleCreateForm('faena')}
+            onClick={() => handleCreateForm('faena_redes')}
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
