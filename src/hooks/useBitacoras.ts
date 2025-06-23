@@ -5,13 +5,17 @@ import { useAuth } from './useAuth';
 import { toast } from './use-toast';
 
 export interface Bitacora {
-  id: string;
+  bitacora_id: string;
   fecha: string;
-  user_id: string;
+  buzo: string;
+  inmersion_id: string;
   firmado: boolean;
-  estado: string;
+  estado_aprobacion: string;
   created_at: string;
   updated_at: string;
+  codigo: string;
+  profundidad_maxima?: number;
+  trabajos_realizados: string;
 }
 
 export const useBitacoras = () => {
@@ -36,8 +40,13 @@ export const useBitacoras = () => {
       const { data, error } = await supabase
         .from('bitacora_buzo')
         .insert([{
-          ...bitacoraData,
-          user_id: profile?.usuario_id
+          buzo: profile?.nombre || '',
+          codigo: bitacoraData.codigo || `BIT-${Date.now()}`,
+          fecha: bitacoraData.fecha || new Date().toISOString().split('T')[0],
+          inmersion_id: bitacoraData.inmersion_id || '',
+          profundidad_maxima: bitacoraData.profundidad_maxima || 0,
+          trabajos_realizados: bitacoraData.trabajos_realizados || '',
+          estado_fisico_post: 'normal'
         }])
         .select()
         .single();

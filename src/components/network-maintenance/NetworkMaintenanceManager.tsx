@@ -53,7 +53,7 @@ export const NetworkMaintenanceManager = () => {
   // FASE 3: Módulo de Mantención - Sistema extensible
   const moduleTypes = [
     {
-      id: 'mantencion',
+      id: 'mantencion' as const,
       title: 'Mantención de Redes',
       description: 'Formulario completo de mantención preventiva y correctiva',
       icon: Settings,
@@ -67,7 +67,7 @@ export const NetworkMaintenanceManager = () => {
       ]
     },
     {
-      id: 'faena_redes',
+      id: 'faena_redes' as const,
       title: 'Faenas de Redes',
       description: 'Registro específico de trabajos en redes de cultivo',
       icon: Wrench,
@@ -81,7 +81,7 @@ export const NetworkMaintenanceManager = () => {
       ]
     },
     {
-      id: 'inspeccion',
+      id: 'inspeccion' as const,
       title: 'Inspección de Estructuras',
       description: 'Evaluación de estado de infraestructura marina',
       icon: Activity,
@@ -96,7 +96,7 @@ export const NetworkMaintenanceManager = () => {
       coming_soon: true
     },
     {
-      id: 'emergencia',
+      id: 'emergencia' as const,
       title: 'Respuesta a Emergencias',
       description: 'Protocolo de respuesta rápida para incidentes',
       icon: FileText,
@@ -166,8 +166,8 @@ export const NetworkMaintenanceManager = () => {
               </ul>
               <Button 
                 className="w-full" 
-                onClick={() => handleCreateNew(moduleType.id as 'mantencion' | 'faena_redes')}
-                disabled={moduleType.coming_soon}
+                onClick={() => handleCreateNew(moduleType.id)}
+                disabled={moduleType.coming_soon || (moduleType.id !== 'mantencion' && moduleType.id !== 'faena_redes')}
                 variant={moduleType.coming_soon ? "outline" : "default"}
               >
                 <Plus className="w-4 h-4 mr-2" />

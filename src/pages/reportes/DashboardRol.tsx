@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,7 @@ export default function DashboardRol() {
     );
 
     const userBitacoras = bitacoras.filter(b => 
-      b.user_id === profile?.usuario_id ||
+      b.buzo === profile?.nombre ||
       (role === 'admin_salmonera' || role === 'superuser')
     );
 

@@ -29,7 +29,7 @@ import Comparativas from "./pages/reportes/Comparativas";
 import EmpresasSalmoneras from "./pages/empresas/Salmoneras";
 import EmpresasSitios from "./pages/empresas/Sitios";
 import EmpresasContratistas from "./pages/empresas/Contratistas";
-import EquipoDeBuceo from "./pages/EquipoDeBuceo";
+import EquipoDeBuceo from "./pages/EquipoBuceo";
 import Integraciones from "./pages/integraciones/Integraciones";
 
 const queryClient = new QueryClient();
