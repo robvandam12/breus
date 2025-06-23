@@ -30,17 +30,48 @@ export const useNetworkMaintenance = () => {
     }
   };
 
+  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('multix')
+        .select('*')
+        .eq('operacion_id', operacionId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching network maintenance by operacion:', error);
+      return [];
+    }
+  };
+
+  const getAllNetworkMaintenance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('multix')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all network maintenance:', error);
+      return [];
+    }
+  };
+
   const createNetworkMaintenance = async (formData: NetworkMaintenanceFormData) => {
     try {
       setLoading(true);
       
       const { data, error } = await supabase
         .from('multix')
-        .insert([{
+        .insert({
           operacion_id: formData.operacion_id,
           codigo: formData.codigo,
           tipo_formulario: formData.tipo_formulario,
-          multix_data: formData.network_maintenance_data,
+          multix_data: formData.network_maintenance_data as any,
           user_id: (await supabase.auth.getUser()).data.user?.id,
           fecha: formData.network_maintenance_data.fecha,
           hora_inicio: formData.network_maintenance_data.hora_inicio,
@@ -57,7 +88,7 @@ export const useNetworkMaintenance = () => {
           progreso: formData.network_maintenance_data.progreso,
           estado: formData.network_maintenance_data.estado,
           firmado: formData.network_maintenance_data.firmado
-        }])
+        })
         .select()
         .single();
 
@@ -91,7 +122,7 @@ export const useNetworkMaintenance = () => {
       const { error } = await supabase
         .from('multix')
         .update({
-          multix_data: data,
+          multix_data: data as any,
           fecha: data.fecha,
           hora_inicio: data.hora_inicio,
           hora_termino: data.hora_termino,
@@ -188,6 +219,8 @@ export const useNetworkMaintenance = () => {
     updateNetworkMaintenance,
     completeNetworkMaintenance,
     deleteNetworkMaintenance,
+    getNetworkMaintenanceByOperacion,
+    getAllNetworkMaintenance,
     refreshForms: fetchNetworkMaintenanceForms,
   };
 };

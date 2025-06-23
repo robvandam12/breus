@@ -9,11 +9,11 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceForm {
   id: string;
-  form_data: NetworkMaintenanceData;
-  status: string;
+  multix_data: NetworkMaintenanceData;
+  estado: string;
   created_at: string;
   updated_at: string;
-  inmersion_id: string;
+  operacion_id?: string;
 }
 
 interface NetworkMaintenanceListProps {
@@ -29,7 +29,11 @@ export const NetworkMaintenanceList = ({
 }: NetworkMaintenanceListProps) => {
   const [forms, setForms] = useState<NetworkMaintenanceForm[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getNetworkMaintenanceByOperacion, getAllNetworkMaintenance } = useNetworkMaintenance();
+  const { 
+    networkMaintenanceForms,
+    getNetworkMaintenanceByOperacion, 
+    getAllNetworkMaintenance 
+  } = useNetworkMaintenance();
 
   useEffect(() => {
     loadForms();
@@ -43,18 +47,17 @@ export const NetworkMaintenanceList = ({
       if (operacionId) {
         result = await getNetworkMaintenanceByOperacion(operacionId);
       } else {
-        // Cargar todos los formularios del usuario
         result = await getAllNetworkMaintenance();
       }
       
       // Convertir los datos de Supabase a nuestro formato
       const formattedForms: NetworkMaintenanceForm[] = result.map(item => ({
         id: item.id,
-        form_data: item.form_data as NetworkMaintenanceData,
-        status: item.status,
+        multix_data: item.multix_data as NetworkMaintenanceData,
+        estado: item.estado,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        inmersion_id: item.inmersion_id
+        operacion_id: item.operacion_id
       }));
       
       setForms(formattedForms);
@@ -65,15 +68,15 @@ export const NetworkMaintenanceList = ({
     }
   };
 
-  const getStatusBadge = (status: string, firmado?: boolean) => {
+  const getStatusBadge = (estado: string, firmado?: boolean) => {
     if (firmado) {
       return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
     }
     
-    switch (status) {
-      case 'draft':
+    switch (estado) {
+      case 'borrador':
         return <Badge className="bg-gray-100 text-gray-800">Borrador</Badge>;
-      case 'completed':
+      case 'completado':
         return <Badge className="bg-blue-100 text-blue-800">Finalizado</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800">En Progreso</Badge>;
@@ -140,26 +143,26 @@ export const NetworkMaintenanceList = ({
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Network className="w-4 h-4" />
-                  {form.form_data.tipo_formulario === 'mantencion' ? 'Mantención' : 'Faena'} de Redes
-                  {getStatusBadge(form.status, form.form_data.firmado)}
+                  {form.multix_data.tipo_formulario === 'mantencion' ? 'Mantención' : 'Faena'} de Redes
+                  {getStatusBadge(form.estado, form.multix_data.firmado)}
                 </CardTitle>
                 <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  {form.form_data.lugar_trabajo && (
+                  {form.multix_data.lugar_trabajo && (
                     <div className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
-                      {form.form_data.lugar_trabajo}
+                      {form.multix_data.lugar_trabajo}
                     </div>
                   )}
-                  {form.form_data.fecha && (
+                  {form.multix_data.fecha && (
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {form.form_data.fecha}
+                      {form.multix_data.fecha}
                     </div>
                   )}
-                  {form.form_data.supervisor_responsable && (
+                  {form.multix_data.supervisor_responsable && (
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
-                      {form.form_data.supervisor_responsable}
+                      {form.multix_data.supervisor_responsable}
                     </div>
                   )}
                 </div>
@@ -168,16 +171,16 @@ export const NetworkMaintenanceList = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onView(form.id, form.form_data)}
+                  onClick={() => onView(form.id, form.multix_data)}
                 >
                   <Eye className="w-4 h-4 mr-1" />
                   Ver
                 </Button>
-                {!form.form_data.firmado && (
+                {!form.multix_data.firmado && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onEdit(form.id, form.form_data)}
+                    onClick={() => onEdit(form.id, form.multix_data)}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Editar
@@ -190,19 +193,19 @@ export const NetworkMaintenanceList = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Dotación:</span>
-                <p>{form.form_data.dotacion?.length || 0} personas</p>
+                <p>{form.multix_data.dotacion?.length || 0} personas</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Equipos:</span>
-                <p>{form.form_data.equipos_superficie?.length || 0} equipos</p>
+                <p>{form.multix_data.equipos_superficie?.length || 0} equipos</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Faenas:</span>
-                <p>{(form.form_data.faenas_mantencion?.length || 0) + (form.form_data.faenas_redes?.length || 0)} trabajos</p>
+                <p>{(form.multix_data.faenas_mantencion?.length || 0) + (form.multix_data.faenas_redes?.length || 0)} trabajos</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Progreso:</span>
-                <p>{form.form_data.progreso || 0}%</p>
+                <p>{form.multix_data.progreso || 0}%</p>
               </div>
             </div>
             <div className="mt-3 text-xs text-gray-500">
