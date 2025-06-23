@@ -7,7 +7,7 @@ export interface UserProfile {
   nombre: string;
   apellido: string;
   email: string;
-  rol: string;
+  role: string; // Cambiado de 'rol' a 'role'
   rut?: string;
   telefono?: string;
   matricula?: string;
@@ -32,7 +32,12 @@ export const useUserProfile = () => {
         .single();
 
       if (error) throw error;
-      return data as UserProfile;
+      
+      // Mapear 'rol' a 'role' para consistencia
+      return {
+        ...data,
+        role: data.rol
+      } as UserProfile;
     },
     enabled: !!user?.id,
   });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
   operacionId: string;
-  tipoFormulario: 'mantencion' | 'faena';
+  tipoFormulario: 'mantencion' | 'faena_redes';
   onComplete: () => void;
   onCancel: () => void;
   editingFormId?: string; // Para editar formularios existentes
@@ -75,7 +74,7 @@ export const NetworkMaintenanceWizard = ({
       { id: 6, title: "Resumen y Firmas", description: "Validación final" }
     ];
 
-    if (tipoFormulario === 'faena') {
+    if (tipoFormulario === 'faena_redes') {
       // Para faenas, el paso 4 sería diferente
       baseSteps[3] = { id: 4, title: "Matriz de Actividades", description: "Actividades por jaula" };
       baseSteps[4] = { id: 5, title: "Cambios de Pecera", description: "Registro de cambios" };
@@ -225,8 +224,8 @@ export const NetworkMaintenanceWizard = ({
       case 1:
         return (
           <EncabezadoGeneral 
-            formData={formData} 
-            updateFormData={updateFormData}
+            data={formData} 
+            onDataChange={updateFormData}
           />
         );
       case 2:

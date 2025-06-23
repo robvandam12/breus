@@ -166,7 +166,11 @@ export const NetworkMaintenanceManager = () => {
               </ul>
               <Button 
                 className="w-full" 
-                onClick={() => handleCreateNew(moduleType.id)}
+                onClick={() => {
+                  if (moduleType.id === 'mantencion' || moduleType.id === 'faena_redes') {
+                    handleCreateNew(moduleType.id);
+                  }
+                }}
                 disabled={moduleType.coming_soon || (moduleType.id !== 'mantencion' && moduleType.id !== 'faena_redes')}
                 variant={moduleType.coming_soon ? "outline" : "default"}
               >

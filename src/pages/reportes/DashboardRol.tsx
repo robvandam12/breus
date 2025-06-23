@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +16,7 @@ export default function DashboardRol() {
   const { inmersiones = [] } = useInmersiones();
   const { bitacoras = [] } = useBitacoras();
 
-  const role = profile?.rol || 'buzo';
+  const role = profile?.role || 'buzo';
 
   // Métricas contextuales por rol
   const roleMetrics = useMemo(() => {
