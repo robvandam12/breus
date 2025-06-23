@@ -1,52 +1,81 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import type { NetworkMaintenanceData, NetworkMaintenanceFormData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceFormData, NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export const useNetworkMaintenance = () => {
+  const [networkMaintenanceForms, setNetworkMaintenanceForms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [networkMaintenanceData, setNetworkMaintenanceData] = useState<NetworkMaintenanceData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+
+  const fetchNetworkMaintenanceForms = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('multix')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNetworkMaintenanceForms(data || []);
+    } catch (error) {
+      console.error('Error fetching network maintenance forms:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los formularios de mantención",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const createNetworkMaintenance = async (formData: NetworkMaintenanceFormData) => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
-        .from('operational_forms')
-        .insert({
-          inmersion_id: formData.operacion_id,
-          module_name: 'network_maintenance',
-          form_type: formData.tipo_formulario,
-          form_data: formData.network_maintenance_data as any,
-          created_by: user.id,
-          status: 'draft'
-        })
+        .from('multix')
+        .insert([{
+          operacion_id: formData.operacion_id,
+          codigo: formData.codigo,
+          tipo_formulario: formData.tipo_formulario,
+          multix_data: formData.network_maintenance_data,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          fecha: formData.network_maintenance_data.fecha,
+          hora_inicio: formData.network_maintenance_data.hora_inicio,
+          hora_termino: formData.network_maintenance_data.hora_termino,
+          lugar_trabajo: formData.network_maintenance_data.lugar_trabajo,
+          temperatura: formData.network_maintenance_data.temperatura,
+          profundidad_max: formData.network_maintenance_data.profundidad_max,
+          nave_maniobras: formData.network_maintenance_data.nave_maniobras,
+          team_s: formData.network_maintenance_data.team_s,
+          team_be: formData.network_maintenance_data.team_be,
+          team_bi: formData.network_maintenance_data.team_bi,
+          matricula_nave: formData.network_maintenance_data.matricula_nave,
+          estado_puerto: formData.network_maintenance_data.estado_puerto,
+          progreso: formData.network_maintenance_data.progreso,
+          estado: formData.network_maintenance_data.estado,
+          firmado: formData.network_maintenance_data.firmado
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
+      await fetchNetworkMaintenanceForms();
+      
       toast({
-        title: "Mantención de Redes creada",
-        description: `Formulario ${formData.tipo_formulario} creado exitosamente`,
+        title: "Formulario creado",
+        description: "El formulario de mantención ha sido creado exitosamente",
       });
 
       return data;
-    } catch (error: any) {
-      console.error('Error creating Network Maintenance:', error);
-      setError(error.message);
+    } catch (error) {
+      console.error('Error creating network maintenance form:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el formulario de mantención de redes",
+        description: "No se pudo crear el formulario",
         variant: "destructive",
       });
       throw error;
@@ -55,163 +84,110 @@ export const useNetworkMaintenance = () => {
     }
   };
 
-  const updateNetworkMaintenance = async (id: string, updates: Partial<NetworkMaintenanceData>) => {
-    setLoading(true);
-    setError(null);
-
+  const updateNetworkMaintenance = async (id: string, data: NetworkMaintenanceData) => {
     try {
-      const { data, error } = await supabase
-        .from('operational_forms')
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('multix')
         .update({
-          form_data: updates as any,
+          multix_data: data,
+          fecha: data.fecha,
+          hora_inicio: data.hora_inicio,
+          hora_termino: data.hora_termino,
+          lugar_trabajo: data.lugar_trabajo,
+          temperatura: data.temperatura,
+          profundidad_max: data.profundidad_max,
+          nave_maniobras: data.nave_maniobras,
+          team_s: data.team_s,
+          team_be: data.team_be,
+          team_bi: data.team_bi,
+          matricula_nave: data.matricula_nave,
+          estado_puerto: data.estado_puerto,
+          progreso: data.progreso,
+          estado: data.estado,
+          firmado: data.firmado,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) throw error;
 
-      setNetworkMaintenanceData(data.form_data as unknown as NetworkMaintenanceData);
+      await fetchNetworkMaintenanceForms();
       
-      return data;
-    } catch (error: any) {
-      console.error('Error updating Network Maintenance:', error);
-      setError(error.message);
+      toast({
+        title: "Formulario actualizado",
+        description: "El formulario ha sido actualizado exitosamente",
+      });
+    } catch (error) {
+      console.error('Error updating network maintenance form:', error);
       toast({
         title: "Error",
-        description: "No se pudieron guardar los cambios",
+        description: "No se pudo actualizar el formulario",
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('inmersion_id', operacionId)
-        .eq('module_name', 'network_maintenance')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching Network Maintenance:', error);
-      setError(error.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getAllNetworkMaintenance = async () => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('module_name', 'network_maintenance')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching all Network Maintenance:', error);
-      setError(error.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getNetworkMaintenanceById = async (id: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('id', id)
-        .eq('module_name', 'network_maintenance')
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching Network Maintenance by ID:', error);
-      setError(error.message);
-      return null;
     } finally {
       setLoading(false);
     }
   };
 
   const completeNetworkMaintenance = async (id: string) => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const { data, error } = await supabase
-        .from('operational_forms')
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('multix')
         .update({
-          status: 'completed',
-          completed_at: new Date().toISOString()
+          estado: 'completado',
+          firmado: true,
+          progreso: 100,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) throw error;
 
-      toast({
-        title: "Formulario completado",
-        description: "El formulario de mantención de redes ha sido completado exitosamente",
-      });
-
-      return data;
-    } catch (error: any) {
-      console.error('Error completing Network Maintenance:', error);
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: "No se pudo completar el formulario",
-        variant: "destructive",
-      });
+      await fetchNetworkMaintenanceForms();
+    } catch (error) {
+      console.error('Error completing network maintenance form:', error);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  const deleteNetworkMaintenance = async (id: string) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('multix')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchNetworkMaintenanceForms();
+    } catch (error) {
+      console.error('Error deleting network maintenance form:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNetworkMaintenanceForms();
+  }, []);
+
   return {
+    networkMaintenanceForms,
     loading,
-    error,
-    networkMaintenanceData,
-    setNetworkMaintenanceData,
     createNetworkMaintenance,
     updateNetworkMaintenance,
-    getNetworkMaintenanceByOperacion,
-    getAllNetworkMaintenance,
-    getNetworkMaintenanceById,
-    completeNetworkMaintenance
+    completeNetworkMaintenance,
+    deleteNetworkMaintenance,
+    refreshForms: fetchNetworkMaintenanceForms,
   };
 };
