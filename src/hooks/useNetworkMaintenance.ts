@@ -1,52 +1,100 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import type { NetworkMaintenanceData, NetworkMaintenanceFormData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+
+export interface NetworkMaintenanceRecord {
+  id: string;
+  operacion_id?: string;
+  inmersion_id: string;
+  codigo: string;
+  tipo_formulario: 'mantencion' | 'faena_redes';
+  network_maintenance_data: NetworkMaintenanceData;
+  status: 'draft' | 'completed' | 'archived';
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
 
 export const useNetworkMaintenance = () => {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [networkMaintenanceData, setNetworkMaintenanceData] = useState<NetworkMaintenanceData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
 
-  const createNetworkMaintenance = async (formData: NetworkMaintenanceFormData) => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
+  // Get all network maintenance records
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ['network-maintenance', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) throw new Error('No user profile');
 
-    setLoading(true);
-    setError(null);
-
-    try {
       const { data, error } = await supabase
         .from('operational_forms')
+        .select('*')
+        .eq('module_name', 'maintenance_networks')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      return data.map(record => ({
+        id: record.id,
+        operacion_id: record.operacion_id,
+        inmersion_id: record.inmersion_id,
+        codigo: record.codigo || `NM-${record.id.slice(0, 8)}`,
+        tipo_formulario: record.form_type as 'mantencion' | 'faena_redes',
+        network_maintenance_data: record.form_data as NetworkMaintenanceData,
+        status: record.status as 'draft' | 'completed' | 'archived',
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        created_by: record.created_by
+      })) as NetworkMaintenanceRecord[];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Create network maintenance record
+  const createNetworkMaintenance = async (data: {
+    operacion_id?: string;
+    codigo: string;
+    tipo_formulario: 'mantencion' | 'faena_redes';
+    network_maintenance_data: NetworkMaintenanceData;
+  }) => {
+    setLoading(true);
+    try {
+      const { data: result, error } = await supabase
+        .from('operational_forms')
         .insert({
-          inmersion_id: formData.operacion_id,
-          module_name: 'network_maintenance',
-          form_type: formData.tipo_formulario,
-          form_data: formData.network_maintenance_data as any,
-          created_by: user.id,
-          status: 'draft'
+          operacion_id: data.operacion_id,
+          inmersion_id: data.operacion_id, // For now, using operacion_id as inmersion_id
+          module_name: 'maintenance_networks',
+          form_type: data.tipo_formulario,
+          codigo: data.codigo,
+          form_data: data.network_maintenance_data,
+          status: 'draft',
+          created_by: profile?.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      queryClient.invalidateQueries({ queryKey: ['network-maintenance'] });
+      
       toast({
-        title: "Mantención de Redes creada",
-        description: `Formulario ${formData.tipo_formulario} creado exitosamente`,
+        title: "Formulario creado",
+        description: "El formulario de mantención de redes ha sido creado exitosamente",
       });
 
-      return data;
+      return result;
     } catch (error: any) {
-      console.error('Error creating Network Maintenance:', error);
-      setError(error.message);
+      console.error('Error creating network maintenance:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el formulario de mantención de redes",
+        description: error.message || "No se pudo crear el formulario",
         variant: "destructive",
       });
       throw error;
@@ -55,15 +103,14 @@ export const useNetworkMaintenance = () => {
     }
   };
 
-  const updateNetworkMaintenance = async (id: string, updates: Partial<NetworkMaintenanceData>) => {
+  // Update network maintenance record
+  const updateNetworkMaintenance = async (id: string, data: NetworkMaintenanceData) => {
     setLoading(true);
-    setError(null);
-
     try {
-      const { data, error } = await supabase
+      const { data: result, error } = await supabase
         .from('operational_forms')
         .update({
-          form_data: updates as any,
+          form_data: data,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -72,109 +119,26 @@ export const useNetworkMaintenance = () => {
 
       if (error) throw error;
 
-      setNetworkMaintenanceData(data.form_data as unknown as NetworkMaintenanceData);
+      queryClient.invalidateQueries({ queryKey: ['network-maintenance'] });
       
-      return data;
+      return result;
     } catch (error: any) {
-      console.error('Error updating Network Maintenance:', error);
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar los cambios",
-        variant: "destructive",
-      });
+      console.error('Error updating network maintenance:', error);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('inmersion_id', operacionId)
-        .eq('module_name', 'network_maintenance')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching Network Maintenance:', error);
-      setError(error.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getAllNetworkMaintenance = async () => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('module_name', 'network_maintenance')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching all Network Maintenance:', error);
-      setError(error.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getNetworkMaintenanceById = async (id: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('id', id)
-        .eq('module_name', 'network_maintenance')
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching Network Maintenance by ID:', error);
-      setError(error.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Complete network maintenance
   const completeNetworkMaintenance = async (id: string) => {
     setLoading(true);
-    setError(null);
-
     try {
-      const { data, error } = await supabase
+      const { data: result, error } = await supabase
         .from('operational_forms')
         .update({
           status: 'completed',
-          completed_at: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -182,36 +146,50 @@ export const useNetworkMaintenance = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Formulario completado",
-        description: "El formulario de mantención de redes ha sido completado exitosamente",
-      });
-
-      return data;
+      queryClient.invalidateQueries({ queryKey: ['network-maintenance'] });
+      
+      return result;
     } catch (error: any) {
-      console.error('Error completing Network Maintenance:', error);
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: "No se pudo completar el formulario",
-        variant: "destructive",
-      });
+      console.error('Error completing network maintenance:', error);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Get by operation
+  const getNetworkMaintenanceByOperacion = async (operacionId: string) => {
+    const { data, error } = await supabase
+      .from('operational_forms')
+      .select('*')
+      .eq('module_name', 'maintenance_networks')
+      .eq('operacion_id', operacionId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  };
+
+  // Get all for current user
+  const getAllNetworkMaintenance = async () => {
+    const { data, error } = await supabase
+      .from('operational_forms')
+      .select('*')
+      .eq('module_name', 'maintenance_networks')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  };
+
   return {
+    records,
+    isLoading,
     loading,
-    error,
-    networkMaintenanceData,
-    setNetworkMaintenanceData,
     createNetworkMaintenance,
     updateNetworkMaintenance,
+    completeNetworkMaintenance,
     getNetworkMaintenanceByOperacion,
     getAllNetworkMaintenance,
-    getNetworkMaintenanceById,
-    completeNetworkMaintenance
   };
 };

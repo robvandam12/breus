@@ -1,63 +1,59 @@
 
-import React from 'react';
-import { SidebarContent } from '@/components/navigation/SidebarContent';
+import { ReactNode } from 'react';
+import { ModularSidebar } from '@/components/navigation/ModularSidebar';
 import { LucideIcon } from 'lucide-react';
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   title?: string;
   subtitle?: string;
   icon?: LucideIcon;
-  headerChildren?: React.ReactNode;
-  className?: string;
-  contentClassName?: string;
+  actions?: ReactNode;
 }
 
 export const MainLayout = ({ 
   children, 
   title, 
   subtitle, 
-  icon: Icon, 
-  headerChildren,
-  className = "",
-  contentClassName = ""
+  icon: Icon,
+  actions 
 }: MainLayoutProps) => {
-  console.log('MainLayout: Rendering with props:', { title, subtitle, className, contentClassName });
-  
   return (
-    <div className={`min-h-screen flex bg-gray-50 ${className}`}>
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200 fixed left-0 top-0 h-full z-10">
-        <SidebarContent />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50/50 to-blue-50/30 flex w-full">
+      <ModularSidebar />
       
-      {/* Main Content */}
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        {(title || subtitle || headerChildren) && (
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <main className="flex-1 ml-16 lg:ml-64 transition-all duration-300">
+        {(title || subtitle || Icon || actions) && (
+          <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {Icon && <Icon className="w-6 h-6 text-blue-600" />}
+              <div className="flex items-center gap-4">
+                {Icon && (
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                )}
                 <div>
-                  {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
-                  {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+                  {title && (
+                    <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                  )}
+                  {subtitle && (
+                    <p className="text-gray-600 mt-1">{subtitle}</p>
+                  )}
                 </div>
               </div>
-              {headerChildren && (
+              {actions && (
                 <div className="flex items-center gap-3">
-                  {headerChildren}
+                  {actions}
                 </div>
               )}
             </div>
-          </div>
+          </header>
         )}
         
-        {/* Page Content */}
-        <div className={`p-6 ${contentClassName}`}>
+        <div className="p-6">
           {children}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,85 +1,64 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, Users, Clock, Award } from "lucide-react";
-import type { NetworkMaintenanceData, DotacionBuceo as DotacionBuceoType } from '@/types/network-maintenance';
-
-interface DotacionBuceoStepProps {
-  formData: NetworkMaintenanceData;
-  updateFormData: (data: Partial<NetworkMaintenanceData>) => void;
-  errors?: Record<string, string>;
-}
-
-const ROLES_DISPONIBLES = [
-  'supervisor',
-  'buzo', 
-  'asistente',
-  'operador_superficie'
-] as const;
-
-const EQUIPOS_DISPONIBLES = ['Liviano', 'Mediano'] as const;
+import { Trash2, Plus, Users, UserCheck, Clock, Waves } from "lucide-react";
+import type { NetworkMaintenanceFormProps, PersonalBuceo } from '@/types/network-maintenance';
 
 export const DotacionBuceo = ({ 
   formData, 
   updateFormData, 
   errors = {} 
-}: DotacionBuceoStepProps) => {
+}: NetworkMaintenanceFormProps) => {
   
-  const [editingMember, setEditingMember] = useState<DotacionBuceoType | null>(null);
+  const dotacion = formData.dotacion || [];
 
-  const addMember = () => {
-    const newMember: DotacionBuceoType = {
-      id: `member-${Date.now()}`,
-      rol: 'buzo',
+  const addPersonal = () => {
+    const newPersonal: PersonalBuceo = {
+      id: `personal-${Date.now()}`,
       nombre: '',
-      apellido: '',
-      matricula: '',
-      contratista: false,
-      equipo: 'Liviano'
+      rol: 'buzo_industrial',
+      certificaciones: [],
+      tiempo_inmersion: 0,
+      profundidad_max: 0,
+      observaciones: ''
     };
     
-    const updatedDotacion = [...formData.dotacion, newMember];
+    const updatedDotacion = [...dotacion, newPersonal];
     updateFormData({ dotacion: updatedDotacion });
-    setEditingMember(newMember);
   };
 
-  const updateMember = (id: string, updates: Partial<DotacionBuceoType>) => {
-    const updatedDotacion = formData.dotacion.map(member =>
-      member.id === id ? { ...member, ...updates } : member
+  const updatePersonal = (id: string, updates: Partial<PersonalBuceo>) => {
+    const updatedDotacion = dotacion.map((personal: PersonalBuceo) =>
+      personal.id === id ? { ...personal, ...updates } : personal
     );
     updateFormData({ dotacion: updatedDotacion });
   };
 
-  const removeMember = (id: string) => {
-    const updatedDotacion = formData.dotacion.filter(member => member.id !== id);
+  const removePersonal = (id: string) => {
+    const updatedDotacion = dotacion.filter((personal: PersonalBuceo) => personal.id !== id);
     updateFormData({ dotacion: updatedDotacion });
-    if (editingMember?.id === id) {
-      setEditingMember(null);
+  };
+
+  const getRolColor = (rol: string) => {
+    switch (rol) {
+      case 'supervisor': return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'buzo_especialista': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'buzo_industrial': return 'text-green-600 bg-green-50 border-green-200';
+      case 'buzo_aprendiz': return 'text-orange-600 bg-orange-50 border-orange-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
-  const getRoleColor = (rol: string) => {
-    if (rol === 'supervisor') return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (rol === 'operador_superficie') return 'bg-red-100 text-red-800 border-red-200';
-    return 'bg-green-100 text-green-800 border-green-200';
-  };
-
-  const isRoleUsed = (rol: string, currentId?: string) => {
-    return formData.dotacion.some(member => 
-      member.rol === rol && member.id !== currentId
-    );
-  };
-
-  const getRoleDisplayName = (rol: string) => {
+  const getRolLabel = (rol: string) => {
     switch (rol) {
       case 'supervisor': return 'Supervisor';
-      case 'buzo': return 'Buzo';
-      case 'asistente': return 'Asistente';
-      case 'operador_superficie': return 'Operador Superficie';
+      case 'buzo_especialista': return 'Buzo Especialista';
+      case 'buzo_industrial': return 'Buzo Industrial';
+      case 'buzo_aprendiz': return 'Buzo Aprendiz';
       default: return rol;
     }
   };
@@ -91,7 +70,7 @@ export const DotacionBuceo = ({
           Dotación de Buceo
         </h3>
         <p className="text-sm text-gray-600">
-          Gestión de personal y roles asignados para la mantención de redes
+          Registra el personal de buceo asignado a la operación
         </p>
       </div>
 
@@ -100,294 +79,172 @@ export const DotacionBuceo = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Resumen de Dotación ({formData.dotacion.length} personas)
+            Resumen de Personal ({dotacion.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'supervisor').length}
+              </div>
+              <div className="text-sm text-purple-600">Supervisores</div>
+            </div>
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
-                {formData.dotacion.filter(m => m.rol === 'supervisor').length}
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_especialista').length}
               </div>
-              <div className="text-sm text-blue-600">Supervisores</div>
-            </div>
-            <div className="text-center p-3 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
-                {formData.dotacion.filter(m => m.rol === 'operador_superficie').length}
-              </div>
-              <div className="text-sm text-red-600">Operadores Superficie</div>
+              <div className="text-sm text-blue-600">Especialistas</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {formData.dotacion.filter(m => m.rol === 'buzo').length}
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_industrial').length}
               </div>
-              <div className="text-sm text-green-600">Buzos</div>
+              <div className="text-sm text-green-600">Industriales</div>
             </div>
-            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">
-                {formData.dotacion.filter(m => m.rol === 'asistente').length}
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">
+                {dotacion.filter((p: PersonalBuceo) => p.rol === 'buzo_aprendiz').length}
               </div>
-              <div className="text-sm text-yellow-600">Asistentes</div>
+              <div className="text-sm text-orange-600">Aprendices</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de miembros */}
+      {/* Lista de personal */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Personal Asignado</CardTitle>
-            <Button onClick={addMember} size="sm">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserCheck className="h-4 w-4" />
+              Personal de Buceo
+            </CardTitle>
+            <Button onClick={addPersonal} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Agregar Persona
+              Agregar Personal
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {formData.dotacion.length === 0 ? (
+          {dotacion.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Users className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-              <p>No hay personal asignado</p>
-              <p className="text-sm">Agrega personas a la dotación para continuar</p>
+              <p>No hay personal registrado</p>
+              <p className="text-sm">Agrega el personal de buceo para continuar</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {formData.dotacion.map((member) => (
-                <div key={member.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(member.rol)}`}>
-                        {getRoleDisplayName(member.rol)}
-                      </span>
-                      {member.contratista && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                          Contratista
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingMember(member)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeMember(member.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+            <div className="space-y-4">
+              {dotacion.map((personal: PersonalBuceo) => (
+                <Card key={personal.id} className={`border ${getRolColor(personal.rol)}`}>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <Label htmlFor={`nombre-${personal.id}`}>Nombre Completo *</Label>
+                        <Input
+                          id={`nombre-${personal.id}`}
+                          value={personal.nombre}
+                          onChange={(e) => updatePersonal(personal.id, { nombre: e.target.value })}
+                          placeholder="Nombre y apellidos"
+                        />
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-xs text-gray-500">Nombre Completo</Label>
-                      <p className="font-medium">{member.nombre} {member.apellido}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Matrícula</Label>
-                      <p>{member.matricula || 'No especificada'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Equipo</Label>
-                      <p className="flex items-center gap-1">
-                        <Award className="h-3 w-3" />
-                        {member.equipo}
-                      </p>
-                    </div>
-                  </div>
-
-                  {(member.hora_inicio_buzo || member.hora_fin_buzo || member.profundidad) && (
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        {member.hora_inicio_buzo && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            <span>Inicio: {member.hora_inicio_buzo}</span>
-                          </div>
-                        )}
-                        {member.hora_fin_buzo && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            <span>Fin: {member.hora_fin_buzo}</span>
-                          </div>
-                        )}
-                        {member.profundidad && (
-                          <div>
-                            <span>Profundidad: {member.profundidad}m</span>
-                          </div>
-                        )}
+                      <div>
+                        <Label htmlFor={`rol-${personal.id}`}>Rol</Label>
+                        <Select
+                          value={personal.rol}
+                          onValueChange={(value) => updatePersonal(personal.id, { rol: value as any })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="supervisor">Supervisor</SelectItem>
+                            <SelectItem value="buzo_especialista">Buzo Especialista</SelectItem>
+                            <SelectItem value="buzo_industrial">Buzo Industrial</SelectItem>
+                            <SelectItem value="buzo_aprendiz">Buzo Aprendiz</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                  )}
-                </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <Label htmlFor={`tiempo-${personal.id}`}>Tiempo Inmersión (min)</Label>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <Input
+                            id={`tiempo-${personal.id}`}
+                            type="number"
+                            min="0"
+                            value={personal.tiempo_inmersion || 0}
+                            onChange={(e) => updatePersonal(personal.id, { tiempo_inmersion: parseInt(e.target.value) || 0 })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`profundidad-${personal.id}`}>Profundidad Máx (m)</Label>
+                        <div className="flex items-center gap-2">
+                          <Waves className="h-4 w-4 text-gray-400" />
+                          <Input
+                            id={`profundidad-${personal.id}`}
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={personal.profundidad_max || 0}
+                            onChange={(e) => updatePersonal(personal.id, { profundidad_max: parseFloat(e.target.value) || 0 })}
+                            placeholder="0.0"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className={`px-2 py-1 rounded-md text-sm font-medium ${getRolColor(personal.rol)}`}>
+                          {getRolLabel(personal.rol)}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePersonal(personal.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {personal.observaciones !== undefined && (
+                      <div className="mt-4">
+                        <Label htmlFor={`obs-${personal.id}`}>Observaciones</Label>
+                        <Input
+                          id={`obs-${personal.id}`}
+                          value={personal.observaciones}
+                          onChange={(e) => updatePersonal(personal.id, { observaciones: e.target.value })}
+                          placeholder="Observaciones adicionales..."
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Modal de edición */}
-      {editingMember && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                {editingMember.nombre ? `Editar: ${editingMember.nombre} ${editingMember.apellido}` : 'Nuevo Miembro'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nombre">Nombre *</Label>
-                  <Input
-                    id="nombre"
-                    value={editingMember.nombre}
-                    onChange={(e) => updateMember(editingMember.id, { nombre: e.target.value })}
-                    placeholder="Nombre"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="apellido">Apellido *</Label>
-                  <Input
-                    id="apellido"
-                    value={editingMember.apellido}
-                    onChange={(e) => updateMember(editingMember.id, { apellido: e.target.value })}
-                    placeholder="Apellido"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rol">Rol</Label>
-                  <Select
-                    value={editingMember.rol}
-                    onValueChange={(value) => updateMember(editingMember.id, { rol: value as any })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES_DISPONIBLES.map((rol) => (
-                        <SelectItem 
-                          key={rol} 
-                          value={rol}
-                          disabled={isRoleUsed(rol, editingMember.id)}
-                        >
-                          {getRoleDisplayName(rol)} {isRoleUsed(rol, editingMember.id) && '(Ya asignado)'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="matricula">Matrícula</Label>
-                  <Input
-                    id="matricula"
-                    value={editingMember.matricula}
-                    onChange={(e) => updateMember(editingMember.id, { matricula: e.target.value })}
-                    placeholder="Número de matrícula"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="equipo">Tipo de Equipo</Label>
-                  <Select
-                    value={editingMember.equipo}
-                    onValueChange={(value) => updateMember(editingMember.id, { equipo: value as any })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EQUIPOS_DISPONIBLES.map((equipo) => (
-                        <SelectItem key={equipo} value={equipo}>
-                          {equipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="contratista"
-                    checked={editingMember.contratista}
-                    onCheckedChange={(checked) => updateMember(editingMember.id, { contratista: checked })}
-                  />
-                  <Label htmlFor="contratista">Es Contratista</Label>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Horarios y Profundidad (Opcional)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="hora_inicio">Hora Inicio</Label>
-                    <Input
-                      id="hora_inicio"
-                      type="time"
-                      value={editingMember.hora_inicio_buzo || ''}
-                      onChange={(e) => updateMember(editingMember.id, { hora_inicio_buzo: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="hora_fin">Hora Fin</Label>
-                    <Input
-                      id="hora_fin"
-                      type="time"
-                      value={editingMember.hora_fin_buzo || ''}
-                      onChange={(e) => updateMember(editingMember.id, { hora_fin_buzo: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="profundidad">Profundidad (m)</Label>
-                    <Input
-                      id="profundidad"
-                      type="number"
-                      step="0.1"
-                      value={editingMember.profundidad || ''}
-                      onChange={(e) => updateMember(editingMember.id, { profundidad: parseFloat(e.target.value) || undefined })}
-                      placeholder="0.0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setEditingMember(null)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={() => setEditingMember(null)}
-                  disabled={!editingMember.nombre || !editingMember.apellido}
-                >
-                  Guardar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Información de ayuda */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Users className="h-4 w-4 text-blue-600 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-blue-900">Gestión de Dotación</p>
+            <p className="text-sm font-medium text-blue-900">Dotación de Buceo</p>
             <ul className="text-sm text-blue-700 mt-1 space-y-1">
-              <li>• Cada rol puede ser asignado a múltiples personas</li>
-              <li>• Los campos de nombre y apellido son obligatorios</li>
-              <li>• Los horarios y profundidad son opcionales</li>
-              <li>• Marca como contratista si corresponde</li>
+              <li>• Al menos un supervisor debe estar presente en cada operación</li>
+              <li>• Los tiempos de inmersión se registran para control de seguridad</li>
+              <li>• La profundidad máxima debe cumplir con las certificaciones del personal</li>
+              <li>• Cada rol tiene responsabilidades específicas en la operación</li>
             </ul>
           </div>
         </div>
