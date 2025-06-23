@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
@@ -145,7 +144,7 @@ export const OperacionesManager = () => {
 
   const handleViewDocuments = (operacion: any) => {
     // TODO: Implement document view functionality
-    console.log('View documents for operation:', operacion.id);
+    console.log('View documents for operation:', oper.id);
   };
   
   if (isLoading) {
@@ -171,16 +170,25 @@ export const OperacionesManager = () => {
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-10">
-          <TabsTrigger value="table" className="flex items-center gap-2 text-sm">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-2 h-12 rounded-2xl">
+          <TabsTrigger 
+            value="table" 
+            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+          >
             <List className="w-4 h-4" />
             <span className="hidden sm:inline">Tabla</span>
           </TabsTrigger>
-          <TabsTrigger value="cards" className="flex items-center gap-2 text-sm">
+          <TabsTrigger 
+            value="cards" 
+            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+          >
             <Grid3X3 className="w-4 h-4" />
             <span className="hidden sm:inline">Tarjetas</span>
           </TabsTrigger>
-          <TabsTrigger value="map" className="flex items-center gap-2 text-sm">
+          <TabsTrigger 
+            value="map" 
+            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+          >
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Mapa</span>
           </TabsTrigger>
