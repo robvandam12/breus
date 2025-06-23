@@ -149,7 +149,7 @@ export default function Inmersiones() {
               variant={action.variant}
               onClick={action.onClick}
               disabled={!action.enabled}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 ios-button"
             >
               <action.icon className="w-4 h-4" />
               <div className="text-left">
@@ -182,56 +182,53 @@ export default function Inmersiones() {
         )}
 
         {/* Lista de inmersiones */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Lista de Inmersiones</CardTitle>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                {inmersiones?.length || 0} inmersiones
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {inmersiones && inmersiones.length > 0 ? (
-              <div className="space-y-4">
-                {inmersiones.map((inmersion: any) => (
-                  <div key={inmersion.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{inmersion.fecha_inmersion}</h4>
-                        <p className="text-sm text-gray-600">Profundidad: {inmersion.profundidad_metros}m</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={inmersion.context_type === 'direct' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {inmersion.context_type === 'direct' ? 'Directa' : 'Planificada'}
+        <div className="bg-white rounded-2xl border border-gray-200/50 p-6 ios-card">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Lista de Inmersiones</h3>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              {inmersiones?.length || 0} inmersiones
+            </Badge>
+          </div>
+
+          {inmersiones && inmersiones.length > 0 ? (
+            <div className="space-y-4">
+              {inmersiones.map((inmersion: any) => (
+                <div key={inmersion.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{inmersion.fecha_inmersion}</h4>
+                      <p className="text-sm text-gray-600">Profundidad: {inmersion.profundidad_metros}m</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={inmersion.context_type === 'direct' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {inmersion.context_type === 'direct' ? 'Directa' : 'Planificada'}
+                      </Badge>
+                      {inmersion.requires_validation && (
+                        <Badge variant="outline" className="text-xs">
+                          {inmersion.validation_status}
                         </Badge>
-                        {inmersion.requires_validation && (
-                          <Badge variant="outline" className="text-xs">
-                            {inmersion.validation_status}
-                          </Badge>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Anchor className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No hay inmersiones</h3>
-                <p className="text-gray-600 mb-6">
-                  {allowsDirectOperations() 
-                    ? 'Crea tu primera inmersión para comenzar'
-                    : 'Las inmersiones deben estar asociadas a operaciones planificadas'
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Anchor className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay inmersiones</h3>
+              <p className="text-gray-600 mb-6">
+                {allowsDirectOperations() 
+                  ? 'Crea tu primera inmersión para comenzar'
+                  : 'Las inmersiones deben estar asociadas a operaciones planificadas'
+                }
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </MainLayout>
   );

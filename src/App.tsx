@@ -10,7 +10,6 @@ import { SimpleProtectedRoute } from "@/components/auth/SimpleProtectedRoute";
 // Import pages
 import Index from "./pages/Index";
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
 import Configuracion from "./pages/Configuracion";
 import AdminUsers from "./pages/admin/UserManagement";
 import AdminRoles from "./pages/admin/AdminRoles";
@@ -38,7 +37,6 @@ const queryClient = new QueryClient();
 const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
-    <Route path="/register" element={<Register />} />
     <Route
       path="/"
       element={
