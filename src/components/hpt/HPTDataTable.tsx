@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Plus, 
   Search, 
@@ -22,102 +21,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-// Mock data real para las HPT
+// Mock data para las HPT
 const mockHPTData = [
   {
     id: "hpt-001",
     numero: "HPT-2024-001",
-    operacion: "Mantención Preventiva Red Centro 15 - Sector Norte",
-    salmonera: "AquaChile S.A.",
+    operacion: "Mantención Red Centro 15",
+    salmonera: "AquaChile",
     sitio: "Centro 15",
     fecha_planificacion: "2024-01-15",
-    supervisor: "Juan Carlos Pérez Morales",
+    supervisor: "Juan Pérez",
     estado: "completado",
     buzos_asignados: 4,
-    profundidad_max: 25.5,
-    duracion_estimada: "4 horas",
-    equipos_requeridos: ["Compresor principal", "Equipo autonomo x4", "Herramientas corte"],
-    riesgos_identificados: 3,
-    created_at: "2024-01-10T10:00:00Z",
-    updated_at: "2024-01-15T16:30:00Z",
-    firmado_por: "Juan Carlos Pérez Morales",
-    fecha_firma: "2024-01-10T11:15:00Z"
+    created_at: "2024-01-10T10:00:00Z"
   },
   {
     id: "hpt-002",
     numero: "HPT-2024-002", 
-    operacion: "Inspección Estructural Centro 8 - Análisis Desgaste Redes",
-    salmonera: "Salmones Camanchaca S.A.",
+    operacion: "Inspección Estructural Centro 8",
+    salmonera: "Salmones Camanchaca",
     sitio: "Centro 8",
     fecha_planificacion: "2024-01-20",
-    supervisor: "María Elena González Ruiz",
+    supervisor: "María González",
     estado: "en_progreso",
     buzos_asignados: 2,
-    profundidad_max: 18.0,
-    duracion_estimada: "2.5 horas",
-    equipos_requeridos: ["Cámara subacuática", "Equipo autonomo x2", "Kit medición"],
-    riesgos_identificados: 2,
-    created_at: "2024-01-12T14:30:00Z",
-    updated_at: "2024-01-19T09:00:00Z",
-    firmado_por: "María Elena González Ruiz",
-    fecha_firma: "2024-01-12T15:45:00Z"
+    created_at: "2024-01-12T14:30:00Z"
   },
   {
     id: "hpt-003",
     numero: "HPT-2024-003",
-    operacion: "Limpieza y Mantención Redes Centro 22 - Sector Sur",
-    salmonera: "Multiexport Foods S.A.",
+    operacion: "Limpieza de Redes Centro 22",
+    salmonera: "Multiexport Foods",
     sitio: "Centro 22", 
     fecha_planificacion: "2024-01-25",
-    supervisor: "Carlos Alberto Rodríguez Silva",
+    supervisor: "Carlos Rodríguez",
     estado: "borrador",
     buzos_asignados: 3,
-    profundidad_max: 22.0,
-    duracion_estimada: "6 horas",
-    equipos_requeridos: ["Equipo autonomo x3", "Herramientas limpieza", "Bolsas residuos"],
-    riesgos_identificados: 4,
-    created_at: "2024-01-14T09:15:00Z",
-    updated_at: "2024-01-22T13:20:00Z",
-    firmado_por: null,
-    fecha_firma: null
-  },
-  {
-    id: "hpt-004",
-    numero: "HPT-2024-004",
-    operacion: "Reparación Red de Engorda Centro 5 - Emergencia",
-    salmonera: "Cermaq Chile S.A.",
-    sitio: "Centro 5",
-    fecha_planificacion: "2024-01-28",
-    supervisor: "Roberto Andrés Moreno Vega",
-    estado: "completado",
-    buzos_asignados: 6,
-    profundidad_max: 30.0,
-    duracion_estimada: "8 horas",
-    equipos_requeridos: ["Equipo superficie x2", "Equipo autonomo x4", "Kit reparación", "Grúa auxiliar"],
-    riesgos_identificados: 6,
-    created_at: "2024-01-26T08:00:00Z",
-    updated_at: "2024-01-28T18:45:00Z",
-    firmado_por: "Roberto Andrés Moreno Vega",
-    fecha_firma: "2024-01-26T09:30:00Z"
-  },
-  {
-    id: "hpt-005",
-    numero: "HPT-2024-005",
-    operacion: "Instalación Nueva Red Centro 12 - Fase 1",
-    salmonera: "Nova Austral S.A.",
-    sitio: "Centro 12",
-    fecha_planificacion: "2024-02-01",
-    supervisor: "Ana Patricia Henríquez Torres",
-    estado: "planificado",
-    buzos_asignados: 5,
-    profundidad_max: 35.0,
-    duracion_estimada: "12 horas",
-    equipos_requeridos: ["Equipo superficie x3", "Equipo autonomo x2", "Kit instalación", "Barcaza apoyo"],
-    riesgos_identificados: 5,
-    created_at: "2024-01-20T16:00:00Z",
-    updated_at: "2024-01-30T10:15:00Z",
-    firmado_por: "Ana Patricia Henríquez Torres",
-    fecha_firma: "2024-01-20T17:20:00Z"
+    created_at: "2024-01-14T09:15:00Z"
   }
 ];
 
@@ -127,8 +67,6 @@ const getStatusBadge = (status: string) => {
       return <Badge className="bg-green-100 text-green-800 border-green-200">Completado</Badge>;
     case 'en_progreso':
       return <Badge className="bg-blue-100 text-blue-800 border-blue-200">En Progreso</Badge>;
-    case 'planificado':
-      return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Planificado</Badge>;
     case 'borrador':
       return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Borrador</Badge>;
     default:
@@ -145,8 +83,7 @@ export const HPTDataTable = () => {
   const filteredData = mockHPTData.filter(hpt => {
     const matchesSearch = hpt.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          hpt.operacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hpt.salmonera.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hpt.supervisor.toLowerCase().includes(searchTerm.toLowerCase());
+                         hpt.salmonera.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || hpt.estado === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -245,7 +182,7 @@ export const HPTDataTable = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar por número, operación, salmonera o supervisor..."
+                  placeholder="Buscar por número, operación o salmonera..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -259,79 +196,61 @@ export const HPTDataTable = () => {
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="borrador">Borrador</SelectItem>
-                <SelectItem value="planificado">Planificado</SelectItem>
                 <SelectItem value="en_progreso">En Progreso</SelectItem>
                 <SelectItem value="completado">Completado</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Tabla usando el componente Table estándar */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número HPT</TableHead>
-                  <TableHead>Operación</TableHead>
-                  <TableHead>Salmonera</TableHead>
-                  <TableHead>Sitio</TableHead>
-                  <TableHead>Fecha Planificación</TableHead>
-                  <TableHead>Supervisor</TableHead>
-                  <TableHead>Buzos</TableHead>
-                  <TableHead>Profundidad Máx.</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          {/* Tabla */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Número</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Operación</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Salmonera</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Sitio</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Fecha Planificación</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Supervisor</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Buzos</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Estado</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
                 {filteredData.map((hpt) => (
-                  <TableRow key={hpt.id}>
-                    <TableCell>
+                  <tr key={hpt.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">
                       <div className="font-medium text-blue-600">{hpt.numero}</div>
-                      <div className="text-xs text-gray-500">
-                        {hpt.duracion_estimada}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-48 truncate font-medium">{hpt.operacion}</div>
-                      <div className="text-xs text-gray-500">
-                        {hpt.equipos_requeridos.length} equipos • {hpt.riesgos_identificados} riesgos
-                      </div>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="max-w-48 truncate">{hpt.operacion}</div>
+                    </td>
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-gray-400" />
                         {hpt.salmonera}
                       </div>
-                    </TableCell>
-                    <TableCell>{hpt.sitio}</TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">{hpt.sitio}</td>
+                    <td className="py-3 px-4">
                       {new Date(hpt.fecha_planificacion).toLocaleDateString('es-CL')}
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <div className="font-medium">{hpt.supervisor}</div>
-                          {hpt.fecha_firma && (
-                            <div className="text-xs text-gray-500">
-                              Firmado {new Date(hpt.fecha_firma).toLocaleDateString('es-CL')}
-                            </div>
-                          )}
-                        </div>
+                        {hpt.supervisor}
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">
                       <Badge variant="outline">{hpt.buzos_asignados}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm font-mono">{hpt.profundidad_max}m</span>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">
                       {getStatusBadge(hpt.estado)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -346,11 +265,11 @@ export const HPTDataTable = () => {
                           <Download className="w-4 h-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
 
           {filteredData.length === 0 && (
