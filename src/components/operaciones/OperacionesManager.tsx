@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Building, MapPin, Calendar, User, Eye, Edit, MoreVertical } from "lucide-react";
+import { Plus, Building, MapPin, Calendar, User, Eye, Edit, MoreVertical, Search } from "lucide-react";
 
 // Mock data para operaciones
 const mockOperaciones = [
