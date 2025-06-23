@@ -101,9 +101,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -156,9 +156,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "5"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -212,9 +212,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "8"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -275,9 +275,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "15"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -340,9 +340,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -485,7 +485,7 @@ export function ModularSidebar() {
 
   return (
     <Sidebar className="border-r border-border/40 font-sans bg-white" collapsible="icon" variant="sidebar">
-      <SidebarHeader className="border-b border-border/40 p-4 bg-white">
+      <SidebarHeader className="border-b border-border/40 p-3 bg-white">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center min-w-8">
             <BreusLogo size={20} />
@@ -499,19 +499,19 @@ export function ModularSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-2 bg-white">
+      <SidebarContent className="p-1 bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-1">
             {open ? 'Navegación Principal' : ''}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
+                        <SidebarMenuButton className="w-full py-2 px-2 h-auto min-h-[36px] my-0.5">
                           <item.icon className="w-4 h-4 min-w-4" />
                           {open && (
                             <>
@@ -523,10 +523,10 @@ export function ModularSidebar() {
                       </CollapsibleTrigger>
                       {open && (
                         <CollapsibleContent>
-                          <SidebarMenuSub className="ml-4 border-l border-border/20">
+                          <SidebarMenuSub className="ml-3 border-l border-border/20">
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild className="py-2 px-3 h-auto min-h-[36px] my-0.5">
+                                <SidebarMenuSubButton asChild className="py-1.5 px-2 h-auto min-h-[32px] my-0.5">
                                   <Link to={subItem.url} className="truncate">
                                     <span className="truncate">{subItem.title}</span>
                                   </Link>
@@ -538,7 +538,7 @@ export function ModularSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
+                    <SidebarMenuButton asChild className="w-full py-2 px-2 h-auto min-h-[36px] my-0.5">
                       <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <item.icon className="w-4 h-4 min-w-4" />
@@ -559,7 +559,7 @@ export function ModularSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-border/40 p-4 bg-white">
+      <SidebarFooter className="border-t border-border/40 p-3 bg-white">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
           <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center min-w-8">
             <span className="text-white font-medium text-sm">
