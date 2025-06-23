@@ -74,45 +74,6 @@
   .ios-sidebar {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
-    border: none;
-    box-shadow: 
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  .ios-nav-button {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transform-origin: center;
-    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-  }
-
-  .ios-nav-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 
-      0 4px 8px -2px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  .ios-nav-button:active {
-    transform: scale(0.98) translateY(0px);
-    transition-duration: 0.1s;
-  }
-
-  .ios-nav-button-active {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: rgb(29, 78, 216);
-    box-shadow: 
-      0 0 0 1px rgba(59, 130, 246, 0.1),
-      0 2px 4px -1px rgba(59, 130, 246, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .ios-button {
@@ -130,22 +91,10 @@
   .ios-card {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 
       0 4px 6px -1px rgba(0, 0, 0, 0.1),
       0 2px 4px -1px rgba(0, 0, 0, 0.06),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  .ios-header {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.9);
-    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
-    box-shadow: 
-      0 1px 3px 0 rgba(0, 0, 0, 0.1),
-      0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
 
   .ios-icon {
@@ -180,17 +129,6 @@
     box-shadow: 
       0 0 0 3px rgba(59, 130, 246, 0.1),
       0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  }
-
-  /* Fixed positioning for main content */
-  .main-content {
-    position: relative;
-    z-index: 10;
-  }
-
-  /* Smooth sidebar transitions */
-  .sidebar-transition {
-    transition: margin-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   }
 }
 
@@ -237,38 +175,5 @@
       opacity: 1;
       transform: scale(1);
     }
-  }
-
-  .animate-slide-in-left {
-    animation: slide-in-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  }
-
-  @keyframes slide-in-left {
-    from {
-      opacity: 0;
-      transform: translateX(-100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  /* Glass morphism effects */
-  .glass-effect {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .glass-card {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 
-      0 8px 32px 0 rgba(31, 38, 135, 0.37),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 }

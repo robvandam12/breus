@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,6 @@ import { FaenasMantencion } from "../network-maintenance/steps/FaenasMantencion"
 
 interface MaintenanceNetworksWizardProps {
   inmersionId: string;
-  tipoFormulario: string;
   onComplete?: () => void;
   onCancel?: () => void;
   existingForm?: any;
@@ -31,7 +31,6 @@ interface MaintenanceNetworksWizardProps {
 
 export const MaintenanceNetworksWizard = ({
   inmersionId,
-  tipoFormulario,
   onComplete,
   onCancel,
   existingForm
@@ -55,14 +54,13 @@ export const MaintenanceNetworksWizard = ({
     // Dotación y equipos
     dotacion: existingForm?.form_data?.dotacion || [],
     equipos_superficie: existingForm?.form_data?.equipos_superficie || [],
-    sistemas_equipos: existingForm?.form_data?.sistemas_equipos || [], // Agregar esta línea
     
     // Faenas específicas
     faenas_mantencion: existingForm?.form_data?.faenas_mantencion || [],
     faenas_redes: existingForm?.form_data?.faenas_redes || [],
     
-    // Tipo de formulario - corregir tipo
-    tipo_formulario: existingForm?.form_type === 'faena_redes' ? 'faena_redes' : 'mantencion',
+    // Tipo de formulario
+    tipo_formulario: existingForm?.form_type || 'mantencion',
     
     // Control requerido
     progreso: 0,

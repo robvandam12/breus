@@ -16,10 +16,10 @@ import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
   operacionId: string;
-  tipoFormulario: 'mantencion' | 'faena_redes'; // Corregir tipo aquí
+  tipoFormulario: 'mantencion' | 'faena';
   onComplete: () => void;
   onCancel: () => void;
-  editingFormId?: string;
+  editingFormId?: string; // Para editar formularios existentes
 }
 
 export const NetworkMaintenanceWizard = ({ 
@@ -47,7 +47,7 @@ export const NetworkMaintenanceWizard = ({
     equipos_superficie: [],
     faenas_mantencion: [],
     faenas_redes: [],
-    sistemas_equipos: [], // Agregar esta línea
+    sistemas_equipos: [],
     tipo_formulario: tipoFormulario,
     progreso: 0,
     firmado: false,
