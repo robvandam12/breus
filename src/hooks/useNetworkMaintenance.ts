@@ -53,9 +53,10 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     try {
       setLoading(true);
       let query = supabase
-        .from('network_maintenance')
+        .from('multix')
         .select('*')
         .eq('user_id', user.id)
+        .in('tipo_formulario', ['mantencion', 'faena_redes'])
         .order('created_at', { ascending: false });
 
       if (operacionId) {
@@ -91,18 +92,14 @@ export const useNetworkMaintenance = (operacionId?: string) => {
         hora_inicio: formData.hora_inicio,
         hora_termino: formData.hora_termino,
         lugar_trabajo: formData.lugar_trabajo,
-        nombre_nave: formData.nombre_nave,
+        nave_maniobras: formData.nombre_nave,
         matricula_nave: formData.matricula_nave,
-        nombre_centro: formData.nombre_centro,
-        codigo_centro: formData.codigo_centro,
-        fecha_operacion: formData.fecha_operacion,
-        condiciones_meteorologicas: formData.condiciones_meteorologicas,
         estado: 'borrador',
         firmado: false
       };
 
       const { data, error } = await supabase
-        .from('network_maintenance')
+        .from('multix')
         .insert([dataToInsert])
         .select()
         .single();
@@ -131,7 +128,7 @@ export const useNetworkMaintenance = (operacionId?: string) => {
   const updateNetworkMaintenance = async (id: string, data: NetworkMaintenanceData) => {
     try {
       const { error } = await supabase
-        .from('network_maintenance')
+        .from('multix')
         .update({ 
           multix_data: data as any,
           updated_at: new Date().toISOString()
@@ -160,7 +157,7 @@ export const useNetworkMaintenance = (operacionId?: string) => {
   const completeNetworkMaintenance = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('network_maintenance')
+        .from('multix')
         .update({ 
           estado: 'completado',
           firmado: true,
@@ -187,6 +184,32 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     }
   };
 
+  const deleteNetworkMaintenance = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('multix')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchNetworkMaintenance();
+      
+      toast({
+        title: "Formulario eliminado",
+        description: "El formulario ha sido eliminado exitosamente.",
+      });
+    } catch (error: any) {
+      console.error('Error deleting network maintenance:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el formulario",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const getNetworkMaintenanceByOperacion = (operacionId: string) => {
     return networkMaintenanceForms.filter(form => form.operacion_id === operacionId);
   };
@@ -205,6 +228,7 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     createNetworkMaintenance,
     updateNetworkMaintenance,
     completeNetworkMaintenance,
+    deleteNetworkMaintenance,
     getNetworkMaintenanceByOperacion,
     getAllNetworkMaintenance,
     refetch: fetchNetworkMaintenance

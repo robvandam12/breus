@@ -25,6 +25,7 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
     getNetworkMaintenanceByOperacion,
     updateNetworkMaintenance,
     completeNetworkMaintenance,
+    deleteNetworkMaintenance,
     loading 
   } = useNetworkMaintenance(operacionId);
 
@@ -59,6 +60,23 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
     setSelectedForm(form);
     setViewMode('view');
     setShowCreateForm(true);
+  };
+
+  const handleDelete = (form: any) => {
+    showConfirmation({
+      title: "Eliminar Formulario",
+      description: `¿Está seguro de que desea eliminar el formulario "${form.codigo}"? Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await deleteNetworkMaintenance(form.id);
+        } catch (error) {
+          console.error('Error deleting form:', error);
+        }
+      }
+    });
   };
 
   const handleComplete = (form: any) => {
@@ -171,12 +189,12 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
                       </div>
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4" />
-                        <span>{form.nombre_nave}</span>
+                        <span>{form.nave_maniobras || 'Sin especificar'}</span>
                       </div>
                     </div>
 
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">Centro:</span> {form.nombre_centro}
+                      <span className="font-medium">Progreso:</span> {form.multix_data?.progreso || 0}%
                     </p>
                   </div>
 
@@ -206,6 +224,14 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
                         >
                           Completar
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(form)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </>
                     )}
                   </div>
@@ -228,9 +254,10 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
           </DialogHeader>
           <NetworkMaintenanceWizard
             operacionId={operacionId}
+            tipoFormulario="mantencion"
             onComplete={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}
-            initialData={viewMode !== 'create' ? selectedForm : undefined}
+            editingFormId={viewMode !== 'create' ? selectedForm?.id : undefined}
             readOnly={viewMode === 'view'}
           />
         </DialogContent>

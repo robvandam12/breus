@@ -92,10 +92,6 @@ export default function NetworkMaintenance() {
     }
   };
 
-  const getTypeIcon = (tipo: string) => {
-    return tipo === 'mantencion' ? Wrench : Network;
-  };
-
   const getTypeLabel = (tipo: string) => {
     return tipo === 'mantencion' ? 'Mantención' : 'Faenas de Redes';
   };
@@ -239,20 +235,20 @@ export default function NetworkMaintenance() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
-                              <span>{form.network_maintenance_data?.fecha || 'Sin fecha'}</span>
+                              <span>{form.fecha || 'Sin fecha'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Users className="w-4 h-4" />
-                              <span>Dotación: {form.network_maintenance_data?.dotacion?.length || 0}</span>
+                              <span>Dotación: {form.multix_data?.dotacion?.length || 0}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4" />
-                              <span>Progreso: {form.network_maintenance_data?.progreso || 0}%</span>
+                              <span>Progreso: {form.multix_data?.progreso || 0}%</span>
                             </div>
                           </div>
 
                           <p className="text-sm text-gray-700">
-                            <span className="font-medium">Lugar:</span> {form.network_maintenance_data?.lugar_trabajo || 'No especificado'}
+                            <span className="font-medium">Lugar:</span> {form.lugar_trabajo || 'No especificado'}
                           </p>
                         </div>
 
@@ -310,7 +306,6 @@ export default function NetworkMaintenance() {
                 faenaForms.map((form) => (
                   <Card key={form.id} className="border-l-4 border-l-purple-500">
                     <CardContent className="p-6">
-                      {/* Similar structure to maintenance forms */}
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -323,20 +318,20 @@ export default function NetworkMaintenance() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
-                              <span>{form.network_maintenance_data?.fecha || 'Sin fecha'}</span>
+                              <span>{form.fecha || 'Sin fecha'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Users className="w-4 h-4" />
-                              <span>Dotación: {form.network_maintenance_data?.dotacion?.length || 0}</span>
+                              <span>Dotación: {form.multix_data?.dotacion?.length || 0}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4" />
-                              <span>Progreso: {form.network_maintenance_data?.progreso || 0}%</span>
+                              <span>Progreso: {form.multix_data?.progreso || 0}%</span>
                             </div>
                           </div>
 
                           <p className="text-sm text-gray-700">
-                            <span className="font-medium">Lugar:</span> {form.network_maintenance_data?.lugar_trabajo || 'No especificado'}
+                            <span className="font-medium">Lugar:</span> {form.lugar_trabajo || 'No especificado'}
                           </p>
                         </div>
 

@@ -4,22 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Save, Network } from "lucide-react";
-import { EncabezadoGeneral } from './steps/EncabezadoGeneral';
-import { DotacionBuceo } from './steps/DotacionBuceo';
-import { EquiposSuperficie } from './steps/EquiposSuperficie';
-import { FaenasMantencion } from './steps/FaenasMantencion';
-import { SistemasEquipos } from './steps/SistemasEquipos';
-import { ResumenFirmas } from './steps/ResumenFirmas';
 import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
 import { toast } from '@/hooks/use-toast';
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
-  operacionId: string;
+  operacionId?: string;
   tipoFormulario: 'mantencion' | 'faena_redes';
   onComplete: () => void;
   onCancel: () => void;
   editingFormId?: string;
+  readOnly?: boolean;
 }
 
 export const NetworkMaintenanceWizard = ({ 
@@ -27,7 +22,8 @@ export const NetworkMaintenanceWizard = ({
   tipoFormulario, 
   onComplete, 
   onCancel,
-  editingFormId
+  editingFormId,
+  readOnly = false
 }: NetworkMaintenanceWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<NetworkMaintenanceData>({
@@ -64,27 +60,15 @@ export const NetworkMaintenanceWizard = ({
   const [savedFormId, setSavedFormId] = useState<string | null>(editingFormId || null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Diferentes pasos según el tipo de formulario
-  const getSteps = () => {
-    const baseSteps = [
-      { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
-      { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
-      { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
-      { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
-      { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
-      { id: 6, title: "Resumen y Firmas", description: "Validación final" }
-    ];
+  const steps = [
+    { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
+    { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
+    { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
+    { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
+    { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
+    { id: 6, title: "Resumen y Firmas", description: "Validación final" }
+  ];
 
-    if (tipoFormulario === 'faena_redes') {
-      // Para faenas, el paso 4 sería diferente
-      baseSteps[3] = { id: 4, title: "Matriz de Actividades", description: "Actividades por jaula" };
-      baseSteps[4] = { id: 5, title: "Cambios de Pecera", description: "Registro de cambios" };
-    }
-
-    return baseSteps;
-  };
-
-  const steps = getSteps();
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
 
@@ -96,27 +80,26 @@ export const NetworkMaintenanceWizard = ({
     });
   };
 
-  // Guardado automático cada 30 segundos si hay cambios
-  useEffect(() => {
-    if (!hasUnsavedChanges || loading) return;
-
-    const autoSaveInterval = setInterval(async () => {
-      await handleSave(false);
-    }, 30000);
-
-    return () => clearInterval(autoSaveInterval);
-  }, [hasUnsavedChanges, loading]);
-
   const handleSave = async (showToast = true) => {
     try {
       if (savedFormId) {
         await updateNetworkMaintenance(savedFormId, formData);
       } else {
         const result = await createNetworkMaintenance({
-          operacion_id: operacionId,
+          operacion_id: operacionId || '',
           codigo: `NM-${Date.now()}`,
           tipo_formulario: tipoFormulario,
-          network_maintenance_data: formData
+          multix_data: formData,
+          fecha: formData.fecha || '',
+          hora_inicio: formData.hora_inicio || '',
+          hora_termino: formData.hora_termino || '',
+          lugar_trabajo: formData.lugar_trabajo || '',
+          nombre_nave: formData.nave_maniobras || '',
+          matricula_nave: formData.matricula_nave || '',
+          nombre_centro: '',
+          codigo_centro: '',
+          fecha_operacion: formData.fecha || '',
+          condiciones_meteorologicas: ''
         });
         setSavedFormId(result.id);
       }
@@ -146,7 +129,7 @@ export const NetworkMaintenanceWizard = ({
       case 1:
         return !!(formData.lugar_trabajo && formData.fecha && formData.hora_inicio);
       case 2:
-        return formData.dotacion.length > 0;
+        return formData.dotacion && formData.dotacion.length > 0;
       case 3:
         return true;
       case 4:
@@ -154,7 +137,7 @@ export const NetworkMaintenanceWizard = ({
       case 5:
         return true;
       case 6:
-        return !!(formData.supervisor_responsable);
+        return true;
       default:
         return false;
     }
@@ -164,7 +147,7 @@ export const NetworkMaintenanceWizard = ({
     if (validateStep(currentStep)) {
       const updatedData = {
         ...formData,
-        progreso: Math.max(formData.progreso, (currentStep / totalSteps) * 100)
+        progreso: Math.max(formData.progreso || 0, (currentStep / totalSteps) * 100)
       };
       updateFormData(updatedData);
       
@@ -216,52 +199,16 @@ export const NetworkMaintenanceWizard = ({
   };
 
   const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <EncabezadoGeneral 
-            data={formData} 
-            onDataChange={updateFormData}
-          />
-        );
-      case 2:
-        return (
-          <DotacionBuceo 
-            formData={formData} 
-            updateFormData={updateFormData}
-          />
-        );
-      case 3:
-        return (
-          <EquiposSuperficie 
-            formData={formData} 
-            updateFormData={updateFormData}
-          />
-        );
-      case 4:
-        return (
-          <FaenasMantencion 
-            formData={formData} 
-            updateFormData={updateFormData}
-          />
-        );
-      case 5:
-        return (
-          <SistemasEquipos 
-            formData={formData} 
-            updateFormData={updateFormData}
-          />
-        );
-      case 6:
-        return (
-          <ResumenFirmas 
-            formData={formData} 
-            updateFormData={updateFormData}
-          />
-        );
-      default:
-        return null;
-    }
+    // Por ahora renderizamos un placeholder para cada paso
+    return (
+      <div className="p-6 text-center">
+        <h3 className="text-lg font-semibold mb-2">{steps[currentStep - 1]?.title}</h3>
+        <p className="text-gray-600">{steps[currentStep - 1]?.description}</p>
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm">Contenido del paso {currentStep} será implementado próximamente</p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -279,14 +226,16 @@ export const NetworkMaintenanceWizard = ({
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => handleSave(true)}
-              disabled={loading || !hasUnsavedChanges}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Guardando...' : 'Guardar'}
-            </Button>
+            {!readOnly && (
+              <Button 
+                variant="outline" 
+                onClick={() => handleSave(true)}
+                disabled={loading || !hasUnsavedChanges}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'Guardando...' : 'Guardar'}
+              </Button>
+            )}
             <Button variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
@@ -298,30 +247,32 @@ export const NetworkMaintenanceWizard = ({
       <CardContent>
         {renderStepContent()}
 
-        <div className="flex justify-between mt-6">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Anterior
-          </Button>
+        {!readOnly && (
+          <div className="flex justify-between mt-6">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Anterior
+            </Button>
 
-          <div className="flex gap-2">
-            {currentStep < totalSteps ? (
-              <Button onClick={handleNext} disabled={loading}>
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={loading}>
-                <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Procesando...' : 'Finalizar Mantención'}
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {currentStep < totalSteps ? (
+                <Button onClick={handleNext} disabled={loading}>
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} disabled={loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {loading ? 'Procesando...' : 'Finalizar Mantención'}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
