@@ -100,21 +100,12 @@ export default function NetworkMaintenance() {
   const faenaForms = networkMaintenanceForms.filter(f => f.tipo_formulario === 'faena_redes');
 
   return (
-    <MainLayout>
+    <MainLayout
+      title="Mantención de Redes"
+      subtitle="Gestiona formularios de mantención y faenas de redes"
+      icon={Network}
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <Network className="w-8 h-8 text-blue-600" />
-              Mantención de Redes
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Gestiona formularios de mantención y faenas de redes
-            </p>
-          </div>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
