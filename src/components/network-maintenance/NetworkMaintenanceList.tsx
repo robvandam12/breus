@@ -1,220 +1,253 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Network, Edit, Eye, Calendar, User, MapPin, RefreshCw } from "lucide-react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, FileText, Calendar, MapPin, Eye, Edit, Trash2 } from 'lucide-react';
 import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
-
-interface NetworkMaintenanceForm {
-  id: string;
-  multix_data: NetworkMaintenanceData;
-  estado: string;
-  created_at: string;
-  updated_at: string;
-  operacion_id?: string;
-}
+import { NetworkMaintenanceWizard } from './NetworkMaintenanceWizard';
+import { UniversalConfirmation } from '@/components/ui/universal-confirmation';
+import { useUniversalConfirmation } from '@/hooks/useUniversalConfirmation';
+import { toast } from '@/hooks/use-toast';
 
 interface NetworkMaintenanceListProps {
   operacionId?: string;
-  onEdit: (formId: string, formData: NetworkMaintenanceData) => void;
-  onView: (formId: string, formData: NetworkMaintenanceData) => void;
 }
 
-export const NetworkMaintenanceList = ({ 
-  operacionId, 
-  onEdit, 
-  onView 
-}: NetworkMaintenanceListProps) => {
-  const [forms, setForms] = useState<NetworkMaintenanceForm[]>([]);
-  const [loading, setLoading] = useState(true);
+export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ operacionId }) => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedForm, setSelectedForm] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
+  
   const { 
-    networkMaintenanceForms,
-    getNetworkMaintenanceByOperacion, 
-    getAllNetworkMaintenance 
-  } = useNetworkMaintenance();
+    getAllNetworkMaintenance,
+    getNetworkMaintenanceByOperacion,
+    updateNetworkMaintenance,
+    completeNetworkMaintenance,
+    loading 
+  } = useNetworkMaintenance(operacionId);
 
-  useEffect(() => {
-    loadForms();
-  }, [operacionId]);
+  const {
+    isOpen,
+    isLoading,
+    options,
+    showConfirmation,
+    handleConfirm,
+    handleCancel,
+    setIsOpen
+  } = useUniversalConfirmation();
 
-  const loadForms = async () => {
-    try {
-      setLoading(true);
-      let result: any[] = [];
-      
-      if (operacionId) {
-        result = await getNetworkMaintenanceByOperacion(operacionId);
-      } else {
-        result = await getAllNetworkMaintenance();
+  // Obtener formularios según contexto
+  const forms = operacionId 
+    ? getNetworkMaintenanceByOperacion(operacionId)
+    : getAllNetworkMaintenance();
+
+  const handleCreateNew = () => {
+    setSelectedForm(null);
+    setViewMode('create');
+    setShowCreateForm(true);
+  };
+
+  const handleEdit = (form: any) => {
+    setSelectedForm(form);
+    setViewMode('edit');
+    setShowCreateForm(true);
+  };
+
+  const handleView = (form: any) => {
+    setSelectedForm(form);
+    setViewMode('view');
+    setShowCreateForm(true);
+  };
+
+  const handleComplete = (form: any) => {
+    showConfirmation({
+      title: "Completar Formulario",
+      description: `¿Está seguro de que desea marcar como completado el formulario "${form.codigo}"? Esta acción no se puede deshacer.`,
+      confirmText: "Completar",
+      cancelText: "Cancelar",
+      onConfirm: async () => {
+        try {
+          await completeNetworkMaintenance(form.id);
+        } catch (error) {
+          console.error('Error completing form:', error);
+        }
       }
-      
-      // Convertir los datos de Supabase a nuestro formato
-      const formattedForms: NetworkMaintenanceForm[] = result.map(item => ({
-        id: item.id,
-        multix_data: item.multix_data as NetworkMaintenanceData,
-        estado: item.estado,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        operacion_id: item.operacion_id
-      }));
-      
-      setForms(formattedForms);
-    } catch (error) {
-      console.error('Error loading forms:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStatusBadge = (estado: string, firmado?: boolean) => {
-    if (firmado) {
-      return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
-    }
-    
-    switch (estado) {
-      case 'borrador':
-        return <Badge className="bg-gray-100 text-gray-800">Borrador</Badge>;
-      case 'completado':
-        return <Badge className="bg-blue-100 text-blue-800">Finalizado</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800">En Progreso</Badge>;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
+  };
+
+  const getEstadoBadgeColor = (estado: string) => {
+    switch (estado) {
+      case 'borrador': return 'bg-gray-100 text-gray-800';
+      case 'en_revision': return 'bg-yellow-100 text-yellow-800';
+      case 'completado': return 'bg-green-100 text-green-800';
+      case 'rechazado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTipoFormularioLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'mantencion': return 'Mantención';
+      case 'faena_redes': return 'Faena de Redes';
+      default: return tipo;
+    }
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-500 mt-2">Cargando formularios...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (forms.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center text-gray-500">
-            <Network className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No hay formularios registrados</p>
-            <p className="text-sm">Los formularios creados aparecerán aquí</p>
-            <Button variant="outline" className="mt-4" onClick={loadForms}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">
-          {forms.length} formulario{forms.length !== 1 ? 's' : ''} encontrado{forms.length !== 1 ? 's' : ''}
-        </p>
-        <Button variant="ghost" size="sm" onClick={loadForms} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            Formularios de Mantención de Redes
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {operacionId 
+              ? 'Formularios asociados a esta operación'
+              : 'Todos los formularios de mantención de redes'
+            }
+          </p>
+        </div>
+        
+        <Button onClick={handleCreateNew} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Nuevo Formulario
         </Button>
       </div>
-      
-      {forms.map((form) => (
-        <Card key={form.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Network className="w-4 h-4" />
-                  {form.multix_data.tipo_formulario === 'mantencion' ? 'Mantención' : 'Faena'} de Redes
-                  {getStatusBadge(form.estado, form.multix_data.firmado)}
-                </CardTitle>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  {form.multix_data.lugar_trabajo && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {form.multix_data.lugar_trabajo}
-                    </div>
-                  )}
-                  {form.multix_data.fecha && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {form.multix_data.fecha}
-                    </div>
-                  )}
-                  {form.multix_data.supervisor_responsable && (
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {form.multix_data.supervisor_responsable}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onView(form.id, form.multix_data)}
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  Ver
-                </Button>
-                {!form.multix_data.firmado && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(form.id, form.multix_data)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-600">Dotación:</span>
-                <p>{form.multix_data.dotacion?.length || 0} personas</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Equipos:</span>
-                <p>{form.multix_data.equipos_superficie?.length || 0} equipos</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Faenas:</span>
-                <p>{(form.multix_data.faenas_mantencion?.length || 0) + (form.multix_data.faenas_redes?.length || 0)} trabajos</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Progreso:</span>
-                <p>{form.multix_data.progreso || 0}%</p>
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-gray-500">
-              Creado: {formatDate(form.created_at)} | 
-              Actualizado: {formatDate(form.updated_at)}
-            </div>
+
+      {/* Lista de formularios */}
+      {forms.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No hay formularios
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Comienza creando tu primer formulario de mantención de redes
+            </p>
+            <Button onClick={handleCreateNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Primer Formulario
+            </Button>
           </CardContent>
         </Card>
-      ))}
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {forms.map((form) => (
+            <Card key={form.id} className="border-l-4 border-l-blue-500">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="font-semibold text-lg">{form.codigo}</h4>
+                      <Badge className={getEstadoBadgeColor(form.estado)}>
+                        {form.estado}
+                      </Badge>
+                      <Badge variant="outline" className="text-blue-600 border-blue-200">
+                        {getTipoFormularioLabel(form.tipo_formulario)}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>{form.fecha}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{form.lugar_trabajo}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        <span>{form.nombre_nave}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Centro:</span> {form.nombre_centro}
+                    </p>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleView(form)}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {form.estado !== 'completado' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(form)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleComplete(form)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          Completar
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Modal para crear/editar formulario */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {viewMode === 'create' && 'Nuevo Formulario de Mantención'}
+              {viewMode === 'edit' && 'Editar Formulario'}
+              {viewMode === 'view' && 'Ver Formulario'}
+            </DialogTitle>
+          </DialogHeader>
+          <NetworkMaintenanceWizard
+            operacionId={operacionId}
+            onComplete={() => setShowCreateForm(false)}
+            onCancel={() => setShowCreateForm(false)}
+            initialData={viewMode !== 'create' ? selectedForm : undefined}
+            readOnly={viewMode === 'view'}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmación universal */}
+      <UniversalConfirmation
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        title={options.title}
+        description={options.description}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        loading={isLoading}
+      />
     </div>
   );
 };

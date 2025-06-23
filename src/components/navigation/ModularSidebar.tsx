@@ -484,7 +484,7 @@ export function ModularSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans bg-white" collapsible="icon">
+    <Sidebar className="border-r border-border/40 font-sans bg-white" collapsible="icon" variant="sidebar">
       <SidebarHeader className="border-b border-border/40 p-4 bg-white">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center min-w-8">
@@ -505,13 +505,13 @@ export function ModularSidebar() {
             {open ? 'Navegación Principal' : ''}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title} className="mb-1">
+                <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full py-2 px-3 min-h-10">
+                        <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
                           <item.icon className="w-4 h-4 min-w-4" />
                           {open && (
                             <>
@@ -523,10 +523,10 @@ export function ModularSidebar() {
                       </CollapsibleTrigger>
                       {open && (
                         <CollapsibleContent>
-                          <SidebarMenuSub>
+                          <SidebarMenuSub className="ml-4 border-l border-border/20">
                             {item.items.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title} className="mb-1">
-                                <SidebarMenuSubButton asChild className="py-2 px-3 min-h-9">
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton asChild className="py-2 px-3 h-auto min-h-[36px] my-0.5">
                                   <Link to={subItem.url} className="truncate">
                                     <span className="truncate">{subItem.title}</span>
                                   </Link>
@@ -538,14 +538,14 @@ export function ModularSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="py-2 px-3 min-h-10">
+                    <SidebarMenuButton asChild className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
                       <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <item.icon className="w-4 h-4 min-w-4" />
                           {open && <span className="truncate">{item.title}</span>}
                         </div>
                         {open && item.badge && (
-                          <Badge variant="secondary" className="h-5 text-xs min-w-5">
+                          <Badge variant="secondary" className="h-5 text-xs min-w-5 ml-2">
                             {item.badge}
                           </Badge>
                         )}
