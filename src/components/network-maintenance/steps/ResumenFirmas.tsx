@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle, AlertCircle, FileText, Users, Settings, Network } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileCheck, User, AlertTriangle, CheckCircle } from "lucide-react";
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface ResumenFirmasProps {
@@ -16,233 +14,178 @@ interface ResumenFirmasProps {
 }
 
 export const ResumenFirmas = ({ formData, updateFormData }: ResumenFirmasProps) => {
-  const totalDotacion = (formData.dotacion || []).length;
-  const totalEquipos = (formData.equipos_superficie || []).length;
-  const totalFaenas = (formData.faenas_mantencion || []).length + (formData.faenas_redes || []).length;
-  const totalSistemas = (formData.sistemas_equipos || []).length;
-
-  const completionPercentage = () => {
-    let completed = 0;
-    let total = 6; // Total de secciones
-
-    if (formData.fecha && formData.lugar_trabajo) completed++;
-    if (totalDotacion > 0) completed++;
-    if (totalEquipos >= 0) completed++; // Equipos pueden ser opcionales
-    if (totalFaenas > 0) completed++;
-    if (totalSistemas >= 0) completed++; // Sistemas pueden ser opcionales
-    if (formData.observaciones_finales || formData.contingencias) completed++;
-
-    return Math.round((completed / total) * 100);
+  const handleInputChange = (field: keyof NetworkMaintenanceData, value: any) => {
+    updateFormData({ [field]: value });
   };
+
+  const getResumenStats = () => {
+    return {
+      dotacion: formData.dotacion?.length || 0,
+      equipos: formData.equipos_superficie?.length || 0,
+      faenas: formData.faenas_mantencion?.length || 0,
+      sistemas: formData.sistemas_equipos?.length || 0,
+      completitud: Math.round(
+        ((formData.lugar_trabajo ? 25 : 0) +
+         (formData.dotacion?.length > 0 ? 25 : 0) +
+         (formData.faenas_mantencion?.length > 0 ? 25 : 0) +
+         (formData.supervisor_responsable ? 25 : 0)) / 4 * 4
+      )
+    };
+  };
+
+  const stats = getResumenStats();
+  const isComplete = stats.completitud === 100 && formData.supervisor_responsable;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <FileText className="w-5 h-5" />
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          <FileCheck className="w-5 h-5" />
           Resumen y Firmas
         </h3>
         <p className="text-sm text-gray-600">
-          Validación final del formulario de mantención de redes
+          Revisión final y validación del formulario de mantención de redes
         </p>
       </div>
 
-      {/* Progress Overview */}
+      {/* Resumen estadístico */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Estado del Formulario</CardTitle>
+          <CardTitle className="text-base">Resumen del Formulario</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium">Completitud</span>
-            <Badge variant={completionPercentage() === 100 ? "default" : "secondary"}>
-              {completionPercentage()}% Completado
-            </Badge>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats.dotacion}</div>
+              <div className="text-sm text-blue-600">Personal</div>
+            </div>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats.equipos}</div>
+              <div className="text-sm text-green-600">Equipos</div>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{stats.faenas}</div>
+              <div className="text-sm text-orange-600">Faenas</div>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{stats.sistemas}</div>
+              <div className="text-sm text-purple-600">Sistemas</div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${completionPercentage()}%` }}
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="font-medium">Completitud del Formulario:</span>
+            <div className="flex items-center gap-2">
+              <div className={`w-16 h-2 rounded-full bg-gray-200`}>
+                <div 
+                  className={`h-full rounded-full transition-all ${stats.completitud === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${stats.completitud}%` }}
+                />
+              </div>
+              <span className="font-bold">{stats.completitud}%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Observaciones finales */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Observaciones Finales</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="observaciones_finales">Observaciones Generales</Label>
+            <Textarea
+              id="observaciones_finales"
+              value={formData.observaciones_finales || ''}
+              onChange={(e) => handleInputChange('observaciones_finales', e.target.value)}
+              placeholder="Observaciones generales sobre la operación..."
+              rows={4}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="contingencias">Contingencias o Incidentes</Label>
+            <Textarea
+              id="contingencias"
+              value={formData.contingencias || ''}
+              onChange={(e) => handleInputChange('contingencias', e.target.value)}
+              placeholder="Registra cualquier contingencia, incidente o situación especial..."
+              rows={3}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Información General
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Lugar:</span>
-              <span className="font-medium">{formData.lugar_trabajo || 'No especificado'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Fecha:</span>
-              <span className="font-medium">{formData.fecha || 'No especificada'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Nave:</span>
-              <span className="font-medium">{formData.nave_maniobras || 'No especificada'}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Personal y Equipos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Dotación:</span>
-              <span className="font-medium">{totalDotacion} personas</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Equipos Superficie:</span>
-              <span className="font-medium">{totalEquipos} equipos</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Sistemas:</span>
-              <span className="font-medium">{totalSistemas} sistemas</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              Trabajos Realizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Faenas de Mantención:</span>
-              <span className="font-medium">{(formData.faenas_mantencion || []).length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Faenas de Redes:</span>
-              <span className="font-medium">{(formData.faenas_redes || []).length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total Faenas:</span>
-              <span className="font-medium">{totalFaenas}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Estado Operativo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Profundidad Máx:</span>
-              <span className="font-medium">{formData.profundidad_max || 0}m</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Temperatura:</span>
-              <span className="font-medium">{formData.temperatura || 0}°C</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Estado Puerto:</span>
-              <span className="font-medium">{formData.estado_puerto || 'No especificado'}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator />
-
-      {/* Final Observations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="observaciones_finales">Observaciones Finales</Label>
-          <Textarea
-            id="observaciones_finales"
-            value={formData.observaciones_finales || ''}
-            onChange={(e) => updateFormData({ observaciones_finales: e.target.value })}
-            placeholder="Observaciones generales del trabajo realizado..."
-            rows={4}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="contingencias">Contingencias y Novedades</Label>
-          <Textarea
-            id="contingencias"
-            value={formData.contingencias || ''}
-            onChange={(e) => updateFormData({ contingencias: e.target.value })}
-            placeholder="Registra cualquier contingencia o novedad..."
-            rows={4}
-          />
-        </div>
-      </div>
-
-      {/* Validation Status */}
+      {/* Supervisor y firma */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Estado de Validación</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Supervisor Responsable
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                {formData.fecha && formData.lugar_trabajo ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Información general completa</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {totalDotacion > 0 ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Dotación asignada</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {totalFaenas > 0 ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Faenas registradas</span>
-              </div>
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="supervisor_responsable">Nombre del Supervisor Responsable *</Label>
+            <Input
+              id="supervisor_responsable"
+              value={formData.supervisor_responsable || ''}
+              onChange={(e) => handleInputChange('supervisor_responsable', e.target.value)}
+              placeholder="Nombre completo del supervisor responsable"
+              className={!formData.supervisor_responsable ? 'border-red-300' : ''}
+            />
+            {!formData.supervisor_responsable && (
+              <p className="text-sm text-red-500 mt-1">Este campo es requerido para completar el formulario</p>
+            )}
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="supervisor_nombre">Supervisor Responsable</Label>
-                <Input
-                  id="supervisor_nombre"
-                  value={formData.supervisor_responsable || ''}
-                  onChange={(e) => updateFormData({ supervisor_responsable: e.target.value })}
-                  placeholder="Nombre del supervisor"
-                />
-              </div>
-              <div>
-                <Label htmlFor="firma_digital">Firma Digital</Label>
-                <Input
-                  id="firma_digital"
-                  value={formData.firma_digital || ''}
-                  onChange={(e) => updateFormData({ firma_digital: e.target.value })}
-                  placeholder="Código de firma digital"
-                />
-              </div>
+          <div>
+            <Label htmlFor="firma_digital">Firma Digital (Opcional)</Label>
+            <Input
+              id="firma_digital"
+              value={formData.firma_digital || ''}
+              onChange={(e) => handleInputChange('firma_digital', e.target.value)}
+              placeholder="Código de firma digital o identificador"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="confirmacion_supervisor"
+              checked={formData.firmado || false}
+              onCheckedChange={(checked) => handleInputChange('firmado', checked)}
+              disabled={!isComplete}
+            />
+            <Label htmlFor="confirmacion_supervisor" className="text-sm">
+              Confirmo que toda la información registrada es correcta y completa
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Estado del formulario */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className={`flex items-center gap-3 p-4 rounded-lg ${
+            isComplete ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'
+          }`}>
+            {isComplete ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+            )}
+            <div>
+              <p className={`font-medium ${isComplete ? 'text-green-900' : 'text-yellow-900'}`}>
+                {isComplete ? 'Formulario Listo para Completar' : 'Información Faltante'}
+              </p>
+              <p className={`text-sm ${isComplete ? 'text-green-700' : 'text-yellow-700'}`}>
+                {isComplete 
+                  ? 'Todos los campos requeridos están completos. Puedes finalizar el formulario.'
+                  : 'Completa los campos faltantes antes de finalizar el formulario.'
+                }
+              </p>
             </div>
           </div>
         </CardContent>

@@ -69,8 +69,29 @@
   }
 }
 
-/* iOS Style Components */
+/* Improved Sidebar Styles */
 @layer components {
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-200 ease-in-out;
+  }
+  
+  .sidebar-nav-item.active {
+    @apply bg-blue-600 text-white shadow-lg;
+  }
+  
+  .sidebar-nav-item:hover {
+    @apply scale-[1.02] transform;
+  }
+  
+  .sidebar-group-label {
+    @apply text-xs uppercase tracking-wider font-semibold text-slate-400 mb-3 px-3;
+  }
+  
+  .sidebar-user-info {
+    @apply bg-slate-800/50 rounded-lg p-3 border border-slate-700/50;
+  }
+
+  /* iOS Style Components */
   .ios-sidebar {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);

@@ -27,7 +27,7 @@ export const MainLayout = ({
   return (
     <div className={`min-h-screen flex bg-gray-50 ${className}`}>
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200 fixed left-0 top-0 h-full z-10">
+      <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 fixed left-0 top-0 h-full z-40">
         <SidebarContent />
       </div>
       
@@ -35,7 +35,7 @@ export const MainLayout = ({
       <div className="flex-1 ml-64">
         {/* Header */}
         {(title || subtitle || headerChildren) && (
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="bg-white px-6 py-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {Icon && <Icon className="w-6 h-6 text-blue-600" />}

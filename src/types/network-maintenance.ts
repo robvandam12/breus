@@ -24,10 +24,10 @@ export interface NetworkMaintenanceData {
   faenas_mantencion: FaenaMantencion[];
   faenas_redes: FaenaRedes[];
   
-  // Sistemas y equipos (Nuevo para Paso 5)
-  sistemas_equipos?: SistemaEquipo[];
+  // Sistemas y equipos (Paso 5)
+  sistemas_equipos: SistemaEquipo[];
   
-  // Resumen y firmas (Nuevo para Paso 6)
+  // Resumen y firmas (Paso 6)
   observaciones_finales?: string;
   contingencias?: string;
   supervisor_responsable?: string;
@@ -52,9 +52,6 @@ export interface DotacionBuceo {
   profundidad?: number;
   contratista?: boolean;
 }
-
-// Alias para compatibilidad con DotacionBuceo.tsx
-export type DotacionMiembro = DotacionBuceo;
 
 export interface EquipoSuperficie {
   id: string;
@@ -91,7 +88,6 @@ export interface FaenaRedes {
   observaciones: string;
 }
 
-// Nueva interfaz para Sistemas y Equipos (Paso 5)
 export interface SistemaEquipo {
   id: string;
   tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
@@ -103,7 +99,6 @@ export interface SistemaEquipo {
   verificado: boolean;
 }
 
-// Interfaz para el formulario de Mantención de Redes
 export interface NetworkMaintenanceFormData {
   operacion_id: string;
   codigo: string;

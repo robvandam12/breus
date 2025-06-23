@@ -8,22 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Settings, Wrench } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, SistemaEquipo } from '@/types/network-maintenance';
 
 interface SistemasEquiposProps {
   formData: NetworkMaintenanceData;
   updateFormData: (updates: Partial<NetworkMaintenanceData>) => void;
-}
-
-interface SistemaEquipo {
-  id: string;
-  tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
-  nombre_equipo: string;
-  estado_operativo: 'operativo' | 'mantenimiento' | 'fuera_servicio';
-  observaciones: string;
-  trabajo_realizado: string;
-  responsable: string;
-  verificado: boolean;
 }
 
 export const SistemasEquipos = ({ formData, updateFormData }: SistemasEquiposProps) => {

@@ -1,34 +1,25 @@
 
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useModularSystem } from '@/hooks/useModularSystem';
-import {
-  Calendar,
-  FileText,
-  Settings,
-  Activity,
-  BarChart3,
-  Shield,
-  Network,
-  Plus,
-  Anchor,
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Calendar, 
+  FileText, 
   Book,
-  Building,
-  Users,
+  Folder,
+  Anchor,
+  BarChart3,
+  Settings,
+  Shield,
   LogOut,
-  ChevronDown,
-  Wrench,
-  Globe,
-  Zap
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Users,
+  Building,
+  Network,
+  Menu
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { useModularSystem } from "@/hooks/useModularSystem";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
 import { toast } from "@/hooks/use-toast";
@@ -50,305 +41,178 @@ const BreusLogo = ({ size = 32 }: { size?: number }) => (
   </svg>
 );
 
+interface MenuItem {
+  title: string;
+  icon: React.ElementType;
+  url: string;
+  badge?: string;
+  module?: string;
+}
+
 export const ModularSidebar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
-  
-  // Obtener datos de módulos con manejo de errores mejorado
-  const moduleSystem = useModularSystem();
-  const { salmoneras = [] } = useSalmoneras();
-  const { contratistas = [] } = useContratistas();
-  
-  const [operacionesOpen, setOperacionesOpen] = useState(true);
-  const [documentosOpen, setDocumentosOpen] = useState(false);
-  const [reportesOpen, setReportesOpen] = useState(false);
-  const [empresasOpen, setEmpresasOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
+  const { hasModuleAccess, modules } = useModularSystem();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
 
-  const isActive = (path: string) => location.pathname === path;
+  const getUserRole = () => {
+    return profile?.role || 'buzo';
+  };
 
-  // Verificar roles con fallbacks seguros
-  const role = profile?.role || 'buzo';
-  const isSuperuser = role === 'superuser';
-  const isAdminSalmonera = role === 'admin_salmonera';
-  const isAdminServicio = role === 'admin_servicio';
-  const isSupervisor = role === 'supervisor';
-  const isBuzo = role === 'buzo';
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
 
-  // Para superusers: acceso completo a todo
-  // Para otros roles: verificar módulos específicos
-  const canPlanOperations = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.PLANNING_OPERATIONS || 'planning_operations') : false);
-  const canManageNetworks = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.MAINTENANCE_NETWORKS || 'maintenance_networks') : false);
-  const canAccessReports = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.ADVANCED_REPORTING || 'advanced_reporting') : false);
-  const canUseIntegrations = isSuperuser || (moduleSystem.hasModuleAccess ? moduleSystem.hasModuleAccess(moduleSystem.modules?.EXTERNAL_INTEGRATIONS || 'external_integrations') : false);
+  const getMenuItems = (): MenuItem[] => {
+    const role = getUserRole();
+    const baseItems: MenuItem[] = [
+      {
+        title: "Dashboard",
+        icon: BarChart3,
+        url: "/",
+      }
+    ];
 
-  const navigationItems = [
-    // Dashboard - Siempre visible
-    {
-      title: 'Dashboard',
-      icon: Activity,
-      path: '/',
-      show: true
-    },
-
-    // Operaciones
-    {
-      title: 'Operaciones',
-      icon: Calendar,
-      isCollapsible: true,
-      isOpen: operacionesOpen,
-      setOpen: setOperacionesOpen,
-      show: !isBuzo || (isBuzo && isAssigned),
-      children: [
+    // Si el usuario no está asignado a una empresa, solo mostrar perfil
+    if (role === 'buzo' && !isAssigned) {
+      return [
+        ...baseItems,
         {
-          title: 'Ver Operaciones',
-          path: '/operaciones',
-          icon: Calendar,
-          show: true
-        },
-        {
-          title: 'Planificar Operaciones',
-          path: '/operaciones/planificar',
-          icon: Plus,
-          show: canPlanOperations && !isBuzo
-        },
-        {
-          title: 'HPT',
-          path: '/operaciones/hpt',
-          icon: Shield,
-          show: !isBuzo || isSupervisor
-        },
-        {
-          title: 'Anexo Bravo',
-          path: '/operaciones/anexo-bravo',
-          icon: FileText,
-          show: !isBuzo || isSupervisor
-        },
-        {
-          title: 'Mantención de Redes',
-          path: '/operaciones/network-maintenance',
-          icon: Network,
-          show: canManageNetworks
+          title: "Mi Perfil",
+          icon: Users,
+          url: "/profile-setup",
         }
-      ]
-    },
+      ];
+    }
 
-    // Inmersiones - Siempre visible para usuarios asignados
-    {
-      title: 'Inmersiones',
-      icon: Anchor,
-      path: '/inmersiones',
-      show: !isBuzo || (isBuzo && isAssigned)
-    },
+    // Items principales para usuarios asignados
+    const mainItems: MenuItem[] = [
+      ...baseItems,
+      {
+        title: "Equipo de Buceo",
+        icon: Users,
+        url: "/equipo-de-buceo"
+      },
+      {
+        title: "Operaciones",
+        icon: Calendar,
+        url: "/operaciones",
+        badge: "12"
+      },
+      {
+        title: "Inmersiones",
+        icon: Anchor,
+        url: "/inmersiones",
+        badge: "7"
+      }
+    ];
+
+    // Formularios modulares
+    const formItems: MenuItem[] = [];
+    
+    if (hasModuleAccess(modules.HPT)) {
+      formItems.push({
+        title: "HPT",
+        icon: FileText,
+        url: "/formularios/hpt",
+        module: modules.HPT
+      });
+    }
+
+    if (hasModuleAccess(modules.ANEXO_BRAVO)) {
+      formItems.push({
+        title: "Anexo Bravo",
+        icon: FileText,
+        url: "/formularios/anexo-bravo",
+        module: modules.ANEXO_BRAVO
+      });
+    }
+
+    if (hasModuleAccess(modules.MAINTENANCE_NETWORKS)) {
+      formItems.push({
+        title: "Mantención de Redes",
+        icon: Network,
+        url: "/operaciones/network-maintenance",
+        module: modules.MAINTENANCE_NETWORKS
+      });
+    }
 
     // Bitácoras
-    {
-      title: 'Bitácoras',
-      icon: Book,
-      isCollapsible: true,
-      isOpen: documentosOpen,
-      setOpen: setDocumentosOpen,
-      show: !isBuzo || (isBuzo && isAssigned),
-      children: [
-        {
-          title: 'Bitácoras Supervisor',
-          path: '/bitacoras/supervisor',
-          icon: Shield,
-          show: isSupervisor || isAdminServicio || isSuperuser
-        },
-        {
-          title: 'Bitácoras Buzo',
-          path: '/bitacoras/buzo',
-          icon: Users,
-          show: true
-        }
-      ]
-    },
+    const bitacoraItems: MenuItem[] = [
+      {
+        title: "Bitácora Supervisor",
+        icon: Book,
+        url: "/bitacoras/supervisor"
+      },
+      {
+        title: "Bitácora Buzo",
+        icon: Book,
+        url: "/bitacoras/buzo"
+      }
+    ];
 
-    // Reportes
-    {
-      title: 'Reportes',
-      icon: BarChart3,
-      isCollapsible: true,
-      isOpen: reportesOpen,
-      setOpen: setReportesOpen,
-      show: true,
-      children: [
-        {
-          title: 'Reportes Básicos',
-          path: '/reportes',
-          icon: BarChart3,
-          show: true
-        },
-        {
-          title: 'Reportes Avanzados',
-          path: '/reportes/avanzados',
-          icon: Zap,
-          show: canAccessReports
-        }
-      ]
-    },
+    // Items adicionales según rol
+    const additionalItems: MenuItem[] = [
+      {
+        title: "Reportes",
+        icon: BarChart3,
+        url: "/reportes"
+      }
+    ];
 
-    // Empresas - Solo admins
-    {
-      title: 'Empresas',
-      icon: Building,
-      isCollapsible: true,
-      isOpen: empresasOpen,
-      setOpen: setEmpresasOpen,
-      show: isAdminSalmonera || isAdminServicio || isSuperuser,
-      children: [
+    // Items de empresa según rol
+    const companyItems: MenuItem[] = [];
+    
+    if (role === 'admin_salmonera') {
+      companyItems.push(
         {
-          title: 'Salmoneras',
-          path: '/empresas/salmoneras',
+          title: "Sitios",
           icon: Building,
-          show: isSuperuser
+          url: "/empresas/sitios"
         },
         {
-          title: 'Sitios',
-          path: '/empresas/sitios',
+          title: "Contratistas",
           icon: Building,
-          show: isAdminSalmonera || isSuperuser
-        },
-        {
-          title: 'Contratistas',
-          path: '/empresas/contratistas',
-          icon: Users,
-          show: isAdminSalmonera || isAdminServicio || isSuperuser
+          url: "/empresas/contratistas"
         }
-      ]
-    },
-
-    // Equipo de Buceo
-    {
-      title: 'Equipo de Buceo',
-      icon: Wrench,
-      path: '/equipo-de-buceo',
-      show: isAdminSalmonera || isAdminServicio || isSupervisor || isSuperuser
-    },
-
-    // Integraciones
-    {
-      title: 'Integraciones',
-      icon: Globe,
-      path: '/integraciones',
-      show: canUseIntegrations && (isSuperuser || isAdminSalmonera || isAdminServicio)
-    },
-
-    // Administración
-    {
-      title: 'Administración',
-      icon: Shield,
-      isCollapsible: true,
-      isOpen: adminOpen,
-      setOpen: setAdminOpen,
-      show: isSuperuser || isAdminSalmonera || isAdminServicio,
-      children: [
-        {
-          title: 'Gestión de Usuarios',
-          path: '/admin/users',
-          icon: Users,
-          show: isSuperuser || isAdminSalmonera || isAdminServicio
-        },
-        {
-          title: 'Roles y Permisos',
-          path: '/admin/roles',
-          icon: Shield,
-          show: isSuperuser
-        },
-        {
-          title: 'Gestión de Módulos',
-          path: '/admin/modules',
-          icon: Settings,
-          show: isSuperuser
-        },
-        {
-          title: 'Monitoreo del Sistema',
-          path: '/admin/system-monitoring',
-          icon: Activity,
-          show: isSuperuser
-        },
-        {
-          title: 'Configuración',
-          path: '/configuracion',
-          icon: Settings,
-          show: isAdminSalmonera || isAdminServicio || isSuperuser
-        }
-      ]
+      );
+    } else if (role === 'admin_servicio') {
+      companyItems.push({
+        title: "Mi Empresa",
+        icon: Building,
+        url: "/empresas/contratistas"
+      });
     }
-  ];
 
-  const renderNavItem = (item: any) => {
-    if (!item.show) return null;
-
-    if (item.isCollapsible) {
-      return (
-        <Collapsible
-          key={item.title}
-          open={item.isOpen}
-          onOpenChange={item.setOpen}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-between rounded-xl px-4 py-3 mb-2 transition-all duration-300 ease-out",
-                "bg-white/70 hover:bg-blue-50/80 hover:shadow-sm backdrop-blur-sm",
-                "text-gray-700 font-medium text-sm border border-gray-100/50",
-                "hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98]",
-                "ios-button group"
-              )}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                  <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-600" />
-                </div>
-                <span className="truncate transition-colors duration-200 group-hover:text-blue-700">
-                  {item.title}
-                </span>
-              </div>
-              <ChevronDown className={cn(
-                "w-4 h-4 flex-shrink-0 transition-all duration-300 ease-out",
-                "text-gray-400 group-hover:text-blue-500",
-                item.isOpen && "rotate-180"
-              )} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-1 pl-2">
-            {item.children?.map((child: any) => (
-              renderNavItem(child)
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+    // Items de admin para superuser
+    const adminItems: MenuItem[] = [];
+    if (role === 'superuser') {
+      adminItems.push(
+        {
+          title: "Salmoneras",
+          icon: Folder,
+          url: "/empresas/salmoneras"
+        },
+        {
+          title: "Usuarios",
+          icon: Shield,
+          url: "/admin/users"
+        }
       );
     }
 
-    return (
-      <Button
-        key={item.title}
-        variant="ghost"
-        className={cn(
-          "w-full justify-start rounded-xl px-4 py-3 mb-2 transition-all duration-300 ease-out",
-          "bg-white/70 hover:bg-blue-50/80 hover:shadow-sm backdrop-blur-sm",
-          "text-gray-700 font-medium text-sm border border-gray-100/50",
-          "hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98]",
-          "ios-button group",
-          isActive(item.path) && "bg-blue-100/80 text-blue-700 border-blue-300/50 shadow-sm scale-[1.02]"
-        )}
-        onClick={() => navigate(item.path)}
-      >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-            <item.icon className="w-4 h-4 transition-colors duration-200 group-hover:text-blue-600" />
-          </div>
-          <span className="truncate transition-colors duration-200 group-hover:text-blue-700">
-            {item.title}
-          </span>
-        </div>
-      </Button>
-    );
+    return [
+      ...mainItems,
+      ...formItems,
+      ...bitacoraItems,
+      ...additionalItems,
+      ...companyItems,
+      ...adminItems,
+      {
+        title: "Configuración",
+        icon: Settings,
+        url: "/configuracion"
+      }
+    ];
   };
 
   const handleLogout = async () => {
@@ -370,75 +234,104 @@ export const ModularSidebar = () => {
 
   const getUserDisplayName = () => {
     if (profile) {
-      return `${profile.nombre || ''} ${profile.apellido || ''}`.trim() || profile.email || 'Usuario';
+      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
     }
     return 'Usuario';
   };
 
   const getRoleDisplayName = (role?: string) => {
-    const roleLabels = {
-      superuser: 'Super Usuario',
-      admin_salmonera: 'Admin Salmonera',
-      admin_servicio: 'Admin Servicio',
-      supervisor: 'Supervisor',
-      buzo: 'Buzo'
-    };
-    return roleLabels[role as keyof typeof roleLabels] || 'Usuario';
+    switch (role) {
+      case 'superuser':
+        return 'Super Usuario';
+      case 'admin_salmonera':
+        return 'Admin Salmonera';
+      case 'admin_servicio':
+        return 'Admin Servicio';
+      case 'supervisor':
+        return 'Supervisor';
+      case 'buzo':
+        return 'Buzo';
+      default:
+        return 'Usuario';
+    }
   };
 
   const getCompanyName = () => {
     if (profile?.salmonera_id) {
-      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
-      return salmonera?.nombre || 'Empresa no encontrada';
-    }
-    if (profile?.servicio_id) {
-      const contratista = contratistas.find(c => c.id === profile.servicio_id);
-      return contratista?.nombre || 'Empresa no encontrada';
+      return salmoneras.find(salmonera => salmonera.id === profile?.salmonera_id)?.nombre;
+    } else if (profile?.servicio_id) {
+      return contratistas.find(contratista => contratista.id === profile?.servicio_id)?.nombre;
     }
     return null;
   };
 
+  const menuItems = getMenuItems();
+
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50/80 to-white/90 border-r border-gray-200/50 backdrop-blur-xl ios-sidebar min-w-[280px] max-w-[320px] w-[300px]">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-gray-200/50 bg-white/40 backdrop-blur-sm">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg ios-icon">
-          <BreusLogo size={28} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold text-gray-900 truncate">Breus</h2>
-          <p className="text-sm text-gray-600 truncate">Sistema Modular</p>
+      <div className="p-4 border-b border-slate-700/30">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center ios-icon">
+            <BreusLogo size={20} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-lg text-white">Breus</h2>
+            <p className="text-xs text-slate-300">Gestión de Buceo</p>
+          </div>
         </div>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-        {navigationItems.map(renderNavItem)}
-      </nav>
-
-      {/* User Footer */}
-      <div className="p-4 border-t border-gray-200/50 bg-white/40 backdrop-blur-sm">
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/80 border border-gray-200/50 shadow-sm ios-card backdrop-blur-sm">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg ios-avatar flex-shrink-0">
-            <span className="text-white font-semibold text-lg">
-              {getUserDisplayName().charAt(0).toUpperCase()}
-            </span>
+      <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+        <div className="sidebar-group-label">Navegación Principal</div>
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="flex-1">{item.title}</span>
+                {item.badge && (
+                  <Badge variant="secondary" className="h-5 text-xs bg-slate-600 text-slate-200">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+      
+      {/* User Info */}
+      <div className="p-4 border-t border-slate-700/30">
+        <div className="sidebar-user-info">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center ios-avatar">
+              <span className="text-white font-medium text-sm">
+                {getUserDisplayName().charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{getUserDisplayName()}</p>
+              <p className="text-xs text-slate-300 truncate">{getRoleDisplayName(getUserRole())}</p>
+              {getCompanyName() && (
+                <p className="text-xs text-blue-400 truncate font-medium">{getCompanyName()}</p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="h-8 w-8 p-0 text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{getUserDisplayName()}</p>
-            <p className="text-xs text-gray-500 truncate">{getRoleDisplayName(profile?.role)}</p>
-            {getCompanyName() && (
-              <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}  
-            className="h-10 w-10 p-0 rounded-xl hover:bg-gray-100 transition-all duration-200 ios-button flex-shrink-0"
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </div>

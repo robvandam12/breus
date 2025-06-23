@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -120,9 +121,6 @@ export const EncabezadoGeneral = ({
                   onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
                   className={errors.hora_inicio ? 'border-red-500' : ''}
                 />
-                {errors.hora_inicio && (
-                  <p className="text-sm text-red-500 mt-1">{errors.hora_inicio}</p>
-                )}
               </div>
 
               <div>

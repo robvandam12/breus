@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -113,58 +113,6 @@ export const useNetworkMaintenance = () => {
     }
   };
 
-  const getAllNetworkMaintenance = async () => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('module_name', 'network_maintenance')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching all Network Maintenance:', error);
-      setError(error.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getNetworkMaintenanceById = async (id: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('operational_forms')
-        .select('*')
-        .eq('id', id)
-        .eq('module_name', 'network_maintenance')
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching Network Maintenance by ID:', error);
-      setError(error.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const completeNetworkMaintenance = async (id: string) => {
     setLoading(true);
     setError(null);
@@ -210,8 +158,6 @@ export const useNetworkMaintenance = () => {
     createNetworkMaintenance,
     updateNetworkMaintenance,
     getNetworkMaintenanceByOperacion,
-    getAllNetworkMaintenance,
-    getNetworkMaintenanceById,
     completeNetworkMaintenance
   };
 };
