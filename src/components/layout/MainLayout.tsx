@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ModularSidebar } from "@/components/navigation/ModularSidebar";
 
 interface MainLayoutProps {
@@ -35,6 +35,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           {/* Header */}
           <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <SidebarTrigger className="md:hidden" />
               {Icon && <Icon className="w-8 h-8 text-blue-600" />}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{title}</h1>

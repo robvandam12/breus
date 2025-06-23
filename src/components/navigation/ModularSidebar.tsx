@@ -101,9 +101,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Equipo de Buceo",
+        title: "Personal de Buceo",
         icon: Users,
-        url: "/equipo-de-buceo"
+        url: "/personal-de-buceo"
       },
       {
         title: "Operaciones",
@@ -116,324 +116,96 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: FileText,
         items: [
           { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" }
         ]
       },
       {
         title: "Inmersiones",
         icon: Anchor,
-        url: "/inmersiones",
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion",
+        url: "/inmersiones"
       }
     ];
   }
 
-  // Supervisor
-  if (role === 'supervisor') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "5"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Servicio (Contratista)
-  if (role === 'admin_servicio') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "8"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Información", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Salmonera
-  if (role === 'admin_salmonera') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "15"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "25"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "18"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Personal Disponible", url: "/admin/salmonera" }
-        ]
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Superuser
-  if (role === 'superuser') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Empresas",
-        icon: Folder,
-        items: [
-          { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      },
-      {
-        title: "Admin",
-        icon: Shield,
-        items: [
-          { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
-          { title: "Módulos", url: "/admin/modules", roleRequired: "superuser" },
-          { title: "Monitoreo", url: "/admin/system-monitoring", roleRequired: "superuser" }
-        ]
-      },
-      {
-        title: "Integraciones",
-        icon: Settings,
-        url: "/integraciones"
-      }
-    ];
-  }
-
-  return [];
+  // Supervisor y roles superiores
+  return [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      badge: "3"
+    },
+    {
+      title: "Empresas",
+      icon: Building,
+      items: [
+        { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
+        { title: "Sitios", url: "/empresas/sitios" },
+        { title: "Contratistas", url: "/empresas/contratistas" }
+      ]
+    },
+    {
+      title: "Personal de Buceo",
+      icon: Users,
+      url: "/personal-de-buceo"
+    },
+    {
+      title: "Operaciones",
+      icon: Calendar,
+      items: [
+        { title: "Planificar", url: "/operaciones" },
+        { title: "HPT", url: "/operaciones/hpt" },
+        { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+        { title: "Mantención Redes", url: "/operaciones/network-maintenance" }
+      ]
+    },
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones"
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes"
+    },
+    {
+      title: "Configuración",
+      icon: Settings,
+      url: "/configuracion"
+    },
+    {
+      title: "Administración",
+      icon: Shield,
+      items: [
+        { title: "Usuarios", url: "/admin/users" },
+        { title: "Roles", url: "/admin/roles", roleRequired: "superuser" },
+        { title: "Módulos", url: "/admin/modules", roleRequired: "superuser" },
+        { title: "Monitoreo", url: "/admin/system-monitoring", roleRequired: "superuser" }
+      ],
+      roleRequired: "supervisor"
+    }
+  ];
 };
 
-export function ModularSidebar() {
-  const { profile, signOut } = useAuth();
-  const { salmoneras } = useSalmoneras();
-  const { contratistas } = useContratistas();
-  const { open, setOpen } = useSidebar();
+export const ModularSidebar = () => {
+  const { user, signOut } = useAuth();
+  const { isMobile } = useSidebar();
+  
+  const userRole = user?.user_metadata?.role;
+  const isAssigned = user?.user_metadata?.empresa_id;
+  
+  const menuItems = getMenuItemsForRole(userRole, isAssigned);
 
-  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
-
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roleRequired) return true;
-    return profile?.role === item.roleRequired;
-  }).map(item => ({
-    ...item,
-    items: item.items?.filter(subItem => {
-      if (!subItem.roleRequired) return true;
-      return profile?.role === subItem.roleRequired;
-    })
-  }));
-
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await signOut();
       toast({
@@ -441,152 +213,124 @@ export function ModularSidebar() {
         description: "Has cerrado sesión exitosamente.",
       });
     } catch (error) {
-      console.error('Error during logout:', error);
       toast({
         title: "Error",
-        description: "Error al cerrar sesión.",
+        description: "No se pudo cerrar la sesión.",
         variant: "destructive",
       });
     }
   };
 
-  const getUserDisplayName = () => {
-    if (profile) {
-      return `${profile.nombre} ${profile.apellido}`.trim() || profile.email;
-    }
-    return 'Usuario';
-  };
-
-  const getRoleDisplayName = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'Super Usuario';
-      case 'admin_salmonera':
-        return 'Admin Salmonera';
-      case 'admin_servicio':
-        return 'Admin Servicio';
-      case 'supervisor':
-        return 'Supervisor';
-      case 'buzo':
-        return 'Buzo';
-      default:
-        return 'Usuario';
-    }
-  };
-
-  const getCompanyName = () => {
-    if (profile?.salmonera_id) {
-      return salmoneras.find(salmonera => salmonera.id === profile?.salmonera_id)?.nombre;
-    } else if (profile?.servicio_id) {
-      return contratistas.find(contratista => contratista.id === profile?.servicio_id)?.nombre;
-    }
-    return null;
+  const hasPermission = (requiredRole?: string) => {
+    if (!requiredRole) return true;
+    if (requiredRole === 'superuser') return userRole === 'superuser';
+    if (requiredRole === 'supervisor') return ['supervisor', 'admin_salmonera', 'superuser'].includes(userRole);
+    return true;
   };
 
   return (
-    <Sidebar className="border-r border-border/40 font-sans bg-white" collapsible="icon" variant="sidebar">
-      <SidebarHeader className="border-b border-border/40 p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center min-w-8">
-            <BreusLogo size={20} />
-          </div>
-          {open && (
-            <div className="min-w-0">
-              <h2 className="font-semibold text-lg text-zinc-900 truncate">Breus</h2>
-              <p className="text-xs text-zinc-500 truncate">Gestión de Buceo</p>
+    <Sidebar variant="inset">
+      <SidebarHeader className="border-b px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <BreusLogo size={20} />
             </div>
-          )}
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-zinc-900">BREUS</span>
+              <span className="text-xs text-zinc-500">Sistema de Gestión</span>
+            </div>
+          </div>
+          {isMobile && <SidebarTrigger className="md:hidden" />}
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="p-2 bg-white">
+
+      <SidebarContent className="py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-medium text-zinc-500 mb-2">
-            {open ? 'Navegación Principal' : ''}
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
-                          <item.icon className="w-4 h-4 min-w-4" />
-                          {open && (
-                            <>
-                              <span className="flex-1 text-left truncate">{item.title}</span>
-                              <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-90 min-w-4" />
-                            </>
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      {open && (
+              {menuItems.map((item) => {
+                if (!hasPermission(item.roleRequired)) return null;
+
+                if (item.items) {
+                  return (
+                    <Collapsible key={item.title} asChild defaultOpen>
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip={item.title} className="py-2">
+                            <item.icon className="w-4 h-4" />
+                            <span>{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <SidebarMenuSub className="ml-4 border-l border-border/20">
-                            {item.items.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild className="py-2 px-3 h-auto min-h-[36px] my-0.5">
-                                  <Link to={subItem.url} className="truncate">
-                                    <span className="truncate">{subItem.title}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
+                          <SidebarMenuSub className="ml-4 space-y-1">
+                            {item.items.map((subItem) => {
+                              if (!hasPermission(subItem.roleRequired)) return null;
+                              return (
+                                <SidebarMenuSubItem key={subItem.title}>
+                                  <SidebarMenuSubButton asChild className="py-1">
+                                    <Link to={subItem.url} className="flex items-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                                      <span className="text-sm">{subItem.title}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
                           </SidebarMenuSub>
                         </CollapsibleContent>
-                      )}
+                      </SidebarMenuItem>
                     </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild className="w-full py-3 px-3 h-auto min-h-[44px] my-1">
-                      <Link to={item.url!} className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <item.icon className="w-4 h-4 min-w-4" />
-                          {open && <span className="truncate">{item.title}</span>}
-                        </div>
-                        {open && item.badge && (
-                          <Badge variant="secondary" className="h-5 text-xs min-w-5 ml-2">
+                  );
+                }
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title} className="py-2">
+                      <Link to={item.url!} className="flex items-center gap-3">
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="ml-auto text-xs px-1.5 py-0.5">
                             {item.badge}
                           </Badge>
                         )}
                       </Link>
                     </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t border-border/40 p-4 bg-white">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-100">
-          <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center min-w-8">
-            <span className="text-white font-medium text-sm">
-              {getUserDisplayName().charAt(0).toUpperCase()}
-            </span>
+
+      <SidebarFooter className="border-t p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center">
+            <Users className="w-4 h-4 text-zinc-600" />
           </div>
-          {open && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
-                <p className="text-xs text-zinc-500 truncate">{getRoleDisplayName(profile?.role)}</p>
-                {getCompanyName() && (
-                  <p className="text-xs text-blue-600 truncate font-medium">{getCompanyName()}</p>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="h-8 w-8 p-0 min-w-8"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-zinc-900 truncate">
+              {user?.user_metadata?.nombre_completo || user?.email}
+            </p>
+            <p className="text-xs text-zinc-500 capitalize">
+              {userRole?.replace('_', ' ') || 'Usuario'}
+            </p>
+          </div>
         </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSignOut}
+          className="w-full justify-start"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Cerrar Sesión
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
-}
+};
