@@ -19,7 +19,7 @@ const NotFound = lazy(() => import("../pages/NotFound"));
 const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
 const Sitios = lazy(() => import("../pages/empresas/Sitios"));
 const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
-const PersonalDeBuceo = lazy(() => import("../pages/PersonalDeBuceo"));
+const EquipoBuceo = lazy(() => import("../pages/EquipoBuceo"));
 const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
 const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
@@ -27,6 +27,8 @@ const NetworkMaintenance = lazy(() => import("../pages/operaciones/NetworkMainte
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
 const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
+const HPTFormularios = lazy(() => import("../pages/formularios/HPTFormularios"));
+const AnexoBravoFormularios = lazy(() => import("../pages/formularios/AnexoBravoFormularios"));
 const ProfileSetup = lazy(() => import("../pages/ProfileSetup"));
 const Reportes = lazy(() => import("../pages/Reportes"));
 const Configuracion = lazy(() => import("../pages/Configuracion"));
@@ -106,11 +108,11 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Personal Routes - Ruta actualizada */}
-      <Route path="/personal-de-buceo" element={
+      {/* Equipment Routes */}
+      <Route path="/equipo-de-buceo" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <PersonalDeBuceo />
+            <EquipoBuceo />
           </Suspense>
         </ProtectedRoute>
       } />
@@ -173,6 +175,22 @@ export const AppRoutes = () => (
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <BitacorasBuzo />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+
+      {/* Forms Routes */}
+      <Route path="/formularios/hpt" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <HPTFormularios />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/formularios/anexo-bravo" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <AnexoBravoFormularios />
           </Suspense>
         </ProtectedRoute>
       } />

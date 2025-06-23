@@ -25,9 +25,9 @@ const PersonalDeBuceo = () => {
     equipo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreatePersonal = async (data: any) => {
+  const handleCreateEquipo = async (data: any) => {
     try {
-      const newPersonal = await createEquipo(data.equipoData);
+      const newEquipo = await createEquipo(data.equipoData);
       
       if (data.members && data.members.length > 0) {
         toast({
@@ -38,7 +38,7 @@ const PersonalDeBuceo = () => {
       
       setIsCreateDialogOpen(false);
     } catch (error) {
-      console.error('Error creating personal:', error);
+      console.error('Error creating equipo:', error);
       toast({
         title: "Error",
         description: "No se pudo crear el personal.",
@@ -47,38 +47,38 @@ const PersonalDeBuceo = () => {
     }
   };
 
-  const handleEditPersonal = async (personal: any) => {
+  const handleEditEquipo = async (equipo: any) => {
     try {
       await updateEquipo({
-        id: personal.id,
+        id: equipo.id,
         data: {
-          nombre: personal.nombre,
-          descripcion: personal.descripcion
+          nombre: equipo.nombre,
+          descripcion: equipo.descripcion
         }
       });
     } catch (error) {
-      console.error('Error updating personal:', error);
+      console.error('Error updating equipo:', error);
     }
   };
 
-  const handleDeletePersonal = async (personalId: string) => {
+  const handleDeleteEquipo = async (equipoId: string) => {
     try {
-      await deleteEquipo(personalId);
+      await deleteEquipo(equipoId);
     } catch (error) {
-      console.error('Error deleting personal:', error);
+      console.error('Error deleting equipo:', error);
     }
   };
 
-  const handleAddMember = (personalId: string) => {
+  const handleAddMember = (equipoId: string) => {
     toast({
       title: "Agregar Miembro",
       description: "Funcionalidad de agregar miembro próximamente.",
     });
   };
 
-  const totalMiembros = equipos.reduce((total, personal) => total + (personal.miembros?.length || 0), 0);
-  const supervisores = equipos.reduce((total, personal) => total + (personal.miembros?.filter(m => m.rol_equipo === 'supervisor').length || 0), 0);
-  const buzos = equipos.reduce((total, personal) => total + (personal.miembros?.filter(m => m.rol_equipo && m.rol_equipo.includes('buzo')).length || 0), 0);
+  const totalMiembros = equipos.reduce((total, equipo) => total + (equipo.miembros?.length || 0), 0);
+  const supervisores = equipos.reduce((total, equipo) => total + (equipo.miembros?.filter(m => m.rol_equipo === 'supervisor').length || 0), 0);
+  const buzos = equipos.reduce((total, equipo) => total + (equipo.miembros?.filter(m => m.rol_equipo && m.rol_equipo.includes('buzo')).length || 0), 0);
 
   const headerActions = (
     <div className="flex items-center gap-3">
@@ -101,7 +101,7 @@ const PersonalDeBuceo = () => {
         size="xl"
       >
         <CreateEquipoFormWizard
-          onSubmit={handleCreatePersonal}
+          onSubmit={handleCreateEquipo}
           onCancel={() => setIsCreateDialogOpen(false)}
         />
       </WizardDialog>
@@ -112,7 +112,7 @@ const PersonalDeBuceo = () => {
     return (
       <MainLayout
         title="Personal de Buceo"
-        subtitle="Gestión de personal y grupos de buceo"
+        subtitle="Gestión de personal y equipos de buceo"
         icon={Users}
         headerChildren={headerActions}
       >
@@ -128,7 +128,7 @@ const PersonalDeBuceo = () => {
   return (
     <MainLayout
       title="Personal de Buceo"
-      subtitle="Gestión de personal y grupos de buceo"
+      subtitle="Gestión de personal y equipos de buceo"
       icon={Users}
       headerChildren={headerActions}
     >
@@ -138,7 +138,7 @@ const PersonalDeBuceo = () => {
           <div className="text-2xl font-bold text-blue-600">
             {equipos.length}
           </div>
-          <div className="text-sm text-zinc-500">Grupos Activos</div>
+          <div className="text-sm text-zinc-500">Equipos Activos</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-green-600">
@@ -169,7 +169,7 @@ const PersonalDeBuceo = () => {
             </h3>
             <p className="text-zinc-500 mb-4">
               {equipos.length === 0 
-                ? "Comience creando el primer grupo de personal de buceo"
+                ? "Comience creando el primer equipo de personal de buceo"
                 : "Intenta ajustar la búsqueda"}
             </p>
             {equipos.length === 0 && (
@@ -194,32 +194,32 @@ const PersonalDeBuceo = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEquipos.map((personal) => (
-                <TableRow key={personal.id}>
+              {filteredEquipos.map((equipo) => (
+                <TableRow key={equipo.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                         <Users className="w-4 h-4 text-blue-600" />
                       </div>
                       <div>
-                        <div className="font-medium">{personal.nombre}</div>
+                        <div className="font-medium">{equipo.nombre}</div>
                         <div className="text-xs text-zinc-500">
-                          Creado: {new Date(personal.created_at || '').toLocaleDateString('es-CL')}
+                          Creado: {new Date(equipo.created_at || '').toLocaleDateString('es-CL')}
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-zinc-600 max-w-xs truncate">
-                    {personal.descripcion || 'Sin descripción'}
+                    {equipo.descripcion || 'Sin descripción'}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">
-                        {personal.miembros?.length || 0} miembros
+                        {equipo.miembros?.length || 0} miembros
                       </Badge>
-                      {(personal.miembros?.length || 0) > 0 && (
+                      {(equipo.miembros?.length || 0) > 0 && (
                         <div className="flex -space-x-1">
-                          {personal.miembros?.slice(0, 3).map((miembro, index) => (
+                          {equipo.miembros?.slice(0, 3).map((miembro, index) => (
                             <div
                               key={miembro.id}
                               className="w-6 h-6 bg-zinc-300 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white"
@@ -228,9 +228,9 @@ const PersonalDeBuceo = () => {
                               {(miembro.nombre_completo || '').charAt(0).toUpperCase()}
                             </div>
                           ))}
-                          {(personal.miembros?.length || 0) > 3 && (
+                          {(equipo.miembros?.length || 0) > 3 && (
                             <div className="w-6 h-6 bg-zinc-500 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white">
-                              +{(personal.miembros?.length || 0) - 3}
+                              +{(equipo.miembros?.length || 0) - 3}
                             </div>
                           )}
                         </div>
@@ -238,20 +238,20 @@ const PersonalDeBuceo = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={personal.activo ? 'default' : 'secondary'}>
-                      {personal.activo ? 'Activo' : 'Inactivo'}
+                    <Badge variant={equipo.activo ? 'default' : 'secondary'}>
+                      {equipo.activo ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-zinc-600">
                     <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                      {personal.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Servicio'}
+                      {equipo.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Servicio'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <EquipoBuceoActions
-                      equipo={personal}
-                      onEdit={handleEditPersonal}
-                      onDelete={handleDeletePersonal}
+                      equipo={equipo}
+                      onEdit={handleEditEquipo}
+                      onDelete={handleDeleteEquipo}
                       onAddMember={handleAddMember}
                     />
                   </TableCell>

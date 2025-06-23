@@ -74,7 +74,7 @@ const AppRoutes = () => (
       }
     />
     
-    {/* Personal Management - Ruta actualizada */}
+    {/* Personal Management */}
     <Route
       path="/personal-de-buceo"
       element={
