@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -116,36 +117,35 @@ export const AppRoutes = () => (
       
       {/* Operations Routes */}
       <Route path="/operaciones" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="planning_operations">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Operaciones />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/planificar" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="planning_operations">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Operaciones />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/hpt" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="planning_operations">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <HPT />
           </Suspense>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/anexo-bravo" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="planning_operations">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <AnexoBravo />
           </Suspense>
         </ProtectedRoute>
       } />
-      {/* UPDATED: Mantención de Redes (ex-MultiX) */}
       <Route path="/operaciones/network-maintenance" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="maintenance_networks">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <NetworkMaintenance />
           </Suspense>
@@ -186,7 +186,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/reportes/avanzados" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="advanced_reporting">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Reportes />
           </Suspense>
@@ -195,7 +195,7 @@ export const AppRoutes = () => (
       
       {/* Integrations Route */}
       <Route path="/integraciones" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredModule="external_integrations">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Configuracion />
           </Suspense>

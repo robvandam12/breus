@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -34,7 +35,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
@@ -425,9 +426,20 @@ export function ModularSidebar() {
   const { contratistas } = useContratistas();
   const { open, setOpen } = useSidebar();
   const { hasModuleAccess, isSuperuser } = useModularSystem();
+  const location = useLocation();
 
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
   const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+
+  // Función para determinar si una sección debe estar expandida
+  const shouldSectionBeOpen = (item: any) => {
+    if (!item.items) return false;
+    
+    // Verificar si la ruta actual coincide con algún subitem
+    return item.items.some((subItem: any) => {
+      return location.pathname === subItem.url || location.pathname.startsWith(subItem.url);
+    });
+  };
 
   const filteredMenuItems = menuItems.filter(item => {
     // Filtrar por rol
@@ -526,7 +538,7 @@ export function ModularSidebar() {
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
+                    <Collapsible open={shouldSectionBeOpen(item)} className="group/collapsible">
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none">
                           <item.icon className="w-5 h-5 min-w-5" />
@@ -543,7 +555,12 @@ export function ModularSidebar() {
                           <SidebarMenuSub className="ml-4 mt-1 space-y-1">
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild className="py-2 px-3 h-auto min-h-[36px] rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                <SidebarMenuSubButton 
+                                  asChild 
+                                  className={`py-2 px-3 h-auto min-h-[36px] rounded-lg hover:bg-gray-50 transition-colors duration-200 ${
+                                    location.pathname === subItem.url ? 'bg-blue-50 text-blue-700' : ''
+                                  }`}
+                                >
                                   <Link to={subItem.url} className="truncate">
                                     <span className="truncate text-sm">{subItem.title}</span>
                                   </Link>
@@ -555,7 +572,12 @@ export function ModularSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none">
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none ${
+                        location.pathname === item.url ? 'bg-blue-50 text-blue-700' : ''
+                      }`}
+                    >
                       <Link to={item.url!} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <item.icon className="w-5 h-5 min-w-5" />
