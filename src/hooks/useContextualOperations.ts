@@ -26,6 +26,19 @@ interface ValidationResult {
   allowsDirectOperations: boolean;
 }
 
+// Export the ContextualValidationResult interface
+export interface ContextualValidationResult {
+  isValid: boolean;
+  contexto: OperationalContext | null;
+  requiere_documentos: boolean;
+  requiere_hpt: boolean;
+  requiere_anexo_bravo: boolean;
+  es_operativa_directa: boolean;
+  es_legacy: boolean;
+  warnings: string[];
+  errors: string[];
+}
+
 export const useContextualOperations = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
@@ -178,6 +191,92 @@ export const useContextualOperations = () => {
     };
   };
 
+  // Add getOperacionContext method
+  const getOperacionContext = async (operacionId: string): Promise<ContextualValidationResult> => {
+    try {
+      const { data: operacion } = await supabase
+        .from('operacion')
+        .select('*')
+        .eq('id', operacionId)
+        .single();
+
+      if (!operacion) {
+        return {
+          isValid: false,
+          contexto: null,
+          requiere_documentos: true,
+          requiere_hpt: true,
+          requiere_anexo_bravo: true,
+          es_operativa_directa: false,
+          es_legacy: true,
+          warnings: [],
+          errors: ['Operación no encontrada']
+        };
+      }
+
+      return {
+        isValid: true,
+        contexto: operationalContext,
+        requiere_documentos: operationalContext?.requires_documents || false,
+        requiere_hpt: operationalContext?.requires_documents || false,
+        requiere_anexo_bravo: operationalContext?.requires_documents || false,
+        es_operativa_directa: operationalContext?.allows_direct_operations || false,
+        es_legacy: false,
+        warnings: [],
+        errors: []
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        contexto: null,
+        requiere_documentos: true,
+        requiere_hpt: true,
+        requiere_anexo_bravo: true,
+        es_operativa_directa: false,
+        es_legacy: true,
+        warnings: [],
+        errors: ['Error al obtener contexto de la operación']
+      };
+    }
+  };
+
+  // Add createOperacionWithContext method
+  const createOperacionWithContext = async (operacionData: any, contextType?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('operacion')
+        .insert({
+          ...operacionData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create operational context if needed
+      if (contextType) {
+        await supabase
+          .from('operacion_context')
+          .insert({
+            operacion_id: data.id,
+            tipo_contexto: contextType,
+            empresa_origen_id: profile?.salmonera_id || profile?.servicio_id,
+            empresa_origen_tipo: profile?.salmonera_id ? 'salmonera' : 'contratista',
+            requiere_documentos: operationalContext?.requires_documents || false,
+            requiere_hpt: operationalContext?.requires_documents || false,
+            requiere_anexo_bravo: operationalContext?.requires_documents || false
+          });
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating operation with context:', error);
+      throw error;
+    }
+  };
+
   // Obtener módulos activos
   const getActiveModules = (): string[] => {
     return operationalContext?.active_modules || ['core_immersions'];
@@ -219,6 +318,8 @@ export const useContextualOperations = () => {
     isLoading,
     validateDirectImmersion,
     validateInmersionCreation,
+    getOperacionContext,
+    createOperacionWithContext,
     getActiveModules,
     isModuleActive,
     getContextConfiguration,

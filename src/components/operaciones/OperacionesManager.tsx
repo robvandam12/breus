@@ -35,6 +35,12 @@ export const OperacionesManager = () => {
     filteredOperaciones
   } = useOperacionesFilters(operaciones);
 
+  // Transform operaciones to match expected interface
+  const transformedOperaciones = filteredOperaciones.map(op => ({
+    ...op,
+    tipo_trabajo: op.tareas || 'Sin especificar' // Add missing tipo_trabajo property
+  }));
+
   const handleViewDetail = (operacion: any) => {
     setSelectedOperacion(operacion);
     setShowDetailModal(true);
@@ -136,6 +142,11 @@ export const OperacionesManager = () => {
     setShowDetailModal(false);
     setSelectedOperacion(null);
   };
+
+  const handleViewDocuments = (operacion: any) => {
+    // TODO: Implement document view functionality
+    console.log('View documents for operation:', operacion.id);
+  };
   
   if (isLoading) {
     return (
@@ -177,16 +188,17 @@ export const OperacionesManager = () => {
         
         <TabsContent value="table" className="mt-6">
           <OperacionesTable 
-            operaciones={filteredOperaciones}
-            onViewDetail={handleViewDetail}
+            operaciones={transformedOperaciones}
+            onView={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onViewDocuments={handleViewDocuments}
           />
         </TabsContent>
         
         <TabsContent value="cards" className="mt-6">
           <OperacionCardView 
-            operaciones={filteredOperaciones}
+            operaciones={transformedOperaciones}
             onSelect={handleSelect}
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
@@ -196,7 +208,7 @@ export const OperacionesManager = () => {
         
         <TabsContent value="map" className="mt-6">
           <OperacionesMapView 
-            operaciones={filteredOperaciones}
+            operaciones={transformedOperaciones}
             onSelect={handleSelect}
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}

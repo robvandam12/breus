@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useContextualOperations } from './useContextualOperations';
-import type { ContextualValidationResult } from './useContextualOperations';
+import { useContextualOperations, type ContextualValidationResult } from './useContextualOperations';
 
 export interface ValidationState {
   isValidating: boolean;
@@ -62,11 +61,12 @@ export const useContextualValidator = (operacionId?: string) => {
     }
   };
 
-  const validateForInmersion = async (opId: string) => {
+  const validateForInmersion = async (opId: string): Promise<ContextualValidationResult> => {
     setValidationState(prev => ({ ...prev, isValidating: true }));
     
     try {
-      const result = await validateInmersionCreation(opId);
+      // Use getOperacionContext instead of validateInmersionCreation for contextual validation
+      const result = await getOperacionContext(opId);
       setValidationState({
         isValidating: false,
         result,
