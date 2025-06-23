@@ -2,6 +2,9 @@
 import React from 'react';
 import { SidebarContent } from '@/components/navigation/SidebarContent';
 import { LucideIcon } from 'lucide-react';
+import { useSidebar } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -27,21 +30,25 @@ export const MainLayout = ({
   return (
     <div className={`min-h-screen flex bg-gray-50 ${className}`}>
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200 fixed left-0 top-0 h-full z-10">
+      <div className="w-80 bg-white fixed left-0 top-0 h-full z-20 border-r border-gray-100">
         <SidebarContent />
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-80">
         {/* Header */}
         {(title || subtitle || headerChildren) && (
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 px-8 py-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {Icon && <Icon className="w-6 h-6 text-blue-600" />}
+              <div className="flex items-center gap-4">
+                {Icon && (
+                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                )}
                 <div>
-                  {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
-                  {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+                  {title && <h1 className="text-2xl font-bold text-gray-900">{title}</h1>}
+                  {subtitle && <p className="text-sm text-gray-600 mt-1">{subtitle}</p>}
                 </div>
               </div>
               {headerChildren && (
@@ -54,7 +61,7 @@ export const MainLayout = ({
         )}
         
         {/* Page Content */}
-        <div className={`p-6 ${contentClassName}`}>
+        <div className={`p-8 ${contentClassName}`}>
           {children}
         </div>
       </div>
