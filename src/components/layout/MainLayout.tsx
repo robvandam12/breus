@@ -9,6 +9,9 @@ interface MainLayoutProps {
   icon?: React.ElementType;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  headerChildren?: React.ReactNode; // Alias para actions
+  className?: string;
+  contentClassName?: string;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ 
@@ -16,11 +19,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   subtitle, 
   icon: Icon, 
   children, 
-  actions 
+  actions,
+  headerChildren, // Nueva prop para compatibilidad
+  className = "",
+  contentClassName = ""
 }) => {
+  // Use headerChildren if provided, otherwise fall back to actions
+  const headerContent = headerChildren || actions;
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className={`min-h-screen flex w-full bg-gray-50 ${className}`}>
         <ModularSidebar />
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
@@ -34,15 +43,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 )}
               </div>
             </div>
-            {actions && (
+            {headerContent && (
               <div className="flex items-center gap-3">
-                {actions}
+                {headerContent}
               </div>
             )}
           </div>
           
           {/* Content */}
-          <div className="flex-1 overflow-auto p-6">
+          <div className={`flex-1 overflow-auto p-6 ${contentClassName}`}>
             {children}
           </div>
         </main>
