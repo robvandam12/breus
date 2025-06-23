@@ -18,7 +18,7 @@ interface NetworkMaintenanceWizardProps {
   tipoFormulario: 'mantencion' | 'faena_redes';
   onComplete: () => void;
   onCancel: () => void;
-  editingFormId?: string; // Para editar formularios existentes
+  editingFormId?: string;
 }
 
 export const NetworkMaintenanceWizard = ({ 
@@ -100,7 +100,7 @@ export const NetworkMaintenanceWizard = ({
     if (!hasUnsavedChanges || loading) return;
 
     const autoSaveInterval = setInterval(async () => {
-      await handleSave(false); // Guardado silencioso
+      await handleSave(false);
     }, 30000);
 
     return () => clearInterval(autoSaveInterval);
@@ -109,10 +109,8 @@ export const NetworkMaintenanceWizard = ({
   const handleSave = async (showToast = true) => {
     try {
       if (savedFormId) {
-        // Actualizar formulario existente
         await updateNetworkMaintenance(savedFormId, formData);
       } else {
-        // Crear nuevo formulario
         const result = await createNetworkMaintenance({
           operacion_id: operacionId,
           codigo: `NM-${Date.now()}`,
@@ -149,13 +147,13 @@ export const NetworkMaintenanceWizard = ({
       case 2:
         return formData.dotacion.length > 0;
       case 3:
-        return true; // Equipos son opcionales
+        return true;
       case 4:
-        return true; // Faenas son opcionales inicialmente
+        return true;
       case 5:
-        return true; // Sistemas son opcionales
+        return true;
       case 6:
-        return !!(formData.supervisor_responsable); // Requiere supervisor para firma
+        return !!(formData.supervisor_responsable);
       default:
         return false;
     }
@@ -163,7 +161,6 @@ export const NetworkMaintenanceWizard = ({
 
   const handleNext = async () => {
     if (validateStep(currentStep)) {
-      // Guardar progreso antes de avanzar
       const updatedData = {
         ...formData,
         progreso: Math.max(formData.progreso, (currentStep / totalSteps) * 100)
@@ -174,7 +171,6 @@ export const NetworkMaintenanceWizard = ({
         setCurrentStep(currentStep + 1);
       }
       
-      // Guardado automático al avanzar paso
       await handleSave(false);
     }
   };
@@ -188,7 +184,6 @@ export const NetworkMaintenanceWizard = ({
   const handleSubmit = async () => {
     if (validateStep(currentStep)) {
       try {
-        // Actualizar estado final
         const finalData = {
           ...formData,
           progreso: 100,
