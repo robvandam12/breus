@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -34,7 +35,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
@@ -118,7 +119,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
           { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
@@ -174,7 +175,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
           { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
@@ -231,7 +232,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
           { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
@@ -295,7 +296,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
           { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
@@ -360,7 +361,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt" },
           { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
@@ -425,9 +426,19 @@ export function ModularSidebar() {
   const { contratistas } = useContratistas();
   const { open, setOpen } = useSidebar();
   const { hasModuleAccess, isSuperuser } = useModularSystem();
+  const location = useLocation();
 
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
   const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+
+  // Verificar si un item o sus children están activos en la ruta actual
+  const isItemActive = (item: MenuItem): boolean => {
+    if (item.url && location.pathname === item.url) return true;
+    if (item.items) {
+      return item.items.some(subItem => location.pathname === subItem.url);
+    }
+    return false;
+  };
 
   const filteredMenuItems = menuItems.filter(item => {
     // Filtrar por rol
@@ -526,7 +537,7 @@ export function ModularSidebar() {
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
+                    <Collapsible defaultOpen={isItemActive(item)} className="group/collapsible">
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton className="w-full py-3 px-3 h-auto min-h-[44px] rounded-xl hover:bg-gray-100 transition-colors duration-200 border-none shadow-none">
                           <item.icon className="w-5 h-5 min-w-5" />
