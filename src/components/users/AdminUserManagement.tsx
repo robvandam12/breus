@@ -10,18 +10,24 @@ export const AdminUserManagement = () => {
   const { usuarios, isLoading, updateUsuario, inviteUsuario } = useUsuarios();
 
   // Transform usuarios to BaseUser format
-  const transformedUsers: BaseUser[] = usuarios.map(user => ({
-    id: user.usuario_id,
-    usuario_id: user.usuario_id,
-    email: user.email,
-    nombre: user.nombre,
-    apellido: user.apellido,
-    rol: user.rol,
-    estado: user.perfil_completado ? 'activo' : 'pendiente',
-    empresa_nombre: user.salmonera?.nombre || user.servicio?.nombre || 'Sin asignar',
-    empresa_tipo: user.salmonera_id ? 'salmonera' : 'contratista',
-    created_at: user.created_at,
-  }));
+  const transformedUsers: BaseUser[] = usuarios.map(user => {
+    // Handle salmonera and servicio data safely
+    const salmoneraData = Array.isArray(user.salmonera) ? user.salmonera[0] : user.salmonera;
+    const servicioData = Array.isArray(user.servicio) ? user.servicio[0] : user.servicio;
+    
+    return {
+      id: user.usuario_id,
+      usuario_id: user.usuario_id,
+      email: user.email,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      rol: user.rol,
+      estado: user.perfil_completado ? 'activo' : 'pendiente',
+      empresa_nombre: salmoneraData?.nombre || servicioData?.nombre || 'Sin asignar',
+      empresa_tipo: user.salmonera_id ? 'salmonera' : 'contratista',
+      created_at: user.created_at,
+    };
+  });
 
   const config: UserManagementConfig = {
     title: "Gestión de Usuarios",

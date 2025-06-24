@@ -59,7 +59,7 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
     await inviteUsuario({
       ...data,
       empresa_id: contratista.id,
-      tipo_empresa: 'contratista'
+      empresa_tipo: 'contratista'
     });
     setShowInviteForm(false);
   };

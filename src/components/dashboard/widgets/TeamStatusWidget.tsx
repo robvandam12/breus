@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, UserCheck, Clock, AlertTriangle } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
 
-export const TeamStatusWidget = () => {
+const TeamStatusWidget = () => {
   const { usuarios, isLoading } = useUsuarios();
 
   if (isLoading) {
@@ -100,3 +100,6 @@ export const TeamStatusWidget = () => {
     </Card>
   );
 };
+
+export { TeamStatusWidget };
+export default TeamStatusWidget;

@@ -23,11 +23,17 @@ export const useUsuarios = () => {
         throw error;
       }
       
-      return data.map(usuario => ({
-        ...usuario,
-        empresa_nombre: usuario.salmonera?.nombre || usuario.servicio?.nombre || 'Sin empresa',
-        empresa_tipo: usuario.salmonera ? 'salmonera' : usuario.servicio ? 'contratista' : 'sin_empresa'
-      }));
+      return data.map(usuario => {
+        // Handle salmonera data safely
+        const salmoneraData = Array.isArray(usuario.salmonera) ? usuario.salmonera[0] : usuario.salmonera;
+        const servicioData = Array.isArray(usuario.servicio) ? usuario.servicio[0] : usuario.servicio;
+        
+        return {
+          ...usuario,
+          empresa_nombre: salmoneraData?.nombre || servicioData?.nombre || 'Sin empresa',
+          empresa_tipo: salmoneraData ? 'salmonera' : servicioData ? 'contratista' : 'sin_empresa'
+        };
+      });
     },
   });
 
@@ -62,18 +68,21 @@ export const useUsuarios = () => {
 
   const inviteUsuario = useMutation({
     mutationFn: async (userData: { email: string; nombre: string; apellido: string; rol: string; empresa_id?: string; empresa_tipo?: string }) => {
-      // Simulate invitation - in real app this would send an email invitation
+      // Generate a token for the invitation
+      const token = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('usuario_invitaciones')
-        .insert([{
+        .insert({
           email: userData.email,
           nombre: userData.nombre,
           apellido: userData.apellido,
           rol: userData.rol,
           empresa_id: userData.empresa_id,
           tipo_empresa: userData.empresa_tipo,
-          estado: 'enviada'
-        }])
+          estado: 'enviada',
+          token: token
+        })
         .select()
         .single();
 
