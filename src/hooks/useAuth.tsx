@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -342,15 +343,4 @@ export const useAuthProvider = (): AuthContextType => {
     isRole,
     getDashboardPath,
   };
-};
-
-// Export the AuthProvider component
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const auth = useAuthProvider();
-
-  return (
-    <AuthContext.Provider value={auth}>
-      {children}
-    </AuthContext.Provider>
-  );
 };
