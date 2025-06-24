@@ -1,168 +1,172 @@
-
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from "@/components/ui/badge";
-import { Edit } from "lucide-react";
-import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
-import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
-import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
-import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
-import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
-import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useModularSystem } from "@/hooks/useModularSystem";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Plus } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
+import { useInmersiones } from "@/hooks/useInmersiones";
+
+interface Operacion {
+  id: string;
+  nombre: string;
+  codigo: string;
+  fecha_inicio: Date;
+  fecha_termino: Date;
+  descripcion: string;
+}
 
 interface OperacionDetailModalProps {
-  operacion: any;
+  operacion: Operacion;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
-  const [activeTab, setActiveTab] = useState("general");
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { updateOperacion } = useOperaciones();
-  const { 
-    canPlanOperations, 
-    canManageNetworks, 
-    hasModuleAccess,
-    isSuperuser 
-  } = useModularSystem();
+export const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
+  const [activeTab, setActiveTab] = useState('general');
+  const [showInmersionModal, setShowInmersionModal] = useState(false);
+  const { inmersiones, createInmersion } = useInmersiones();
+  
+  const operacionInmersiones = inmersiones.filter(inmersion => inmersion.operacion_id === operacion.id);
 
-  const handleEditOperacion = async (data: any) => {
+  const handleCreateInmersion = () => {
+    setShowInmersionModal(true);
+  };
+
+  const handleInmersionComplete = async (data: any) => {
     try {
-      await updateOperacion({ id: operacion.id, data });
-      setIsEditDialogOpen(false);
+      // Set the operation ID since it's known from context
+      const inmersionData = {
+        ...data,
+        operacion_id: operacion.id
+      };
+      await createInmersion(inmersionData);
+      setShowInmersionModal(false);
     } catch (error) {
-      console.error('Error updating operacion:', error);
+      console.error('Error creating immersion:', error);
     }
   };
 
-  const getStatusColor = (estado: string) => {
-    const colors = {
-      'activa': 'bg-green-100 text-green-700',
-      'pausada': 'bg-yellow-100 text-yellow-700',
-      'completada': 'bg-blue-100 text-blue-700',
-      'cancelada': 'bg-red-100 text-red-700'
-    };
-    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
-  };
-
-  // Definir pestañas disponibles según módulos activos
-  const availableTabs = [
-    { id: "general", title: "General", required: true },
-    ...(canPlanOperations || isSuperuser ? [{ id: "personal", title: "Personal de Buceo", required: false }] : []),
-    ...(canPlanOperations || isSuperuser ? [{ id: "documentos", title: "Documentos", required: false }] : []),
-    { id: "inmersiones", title: "Inmersiones", required: true },
-    ...(canManageNetworks || isSuperuser ? [{ id: "formularios", title: "Formularios Operativos", required: false }] : []),
-    { id: "timeline", title: "Timeline", required: true }
-  ];
-
-  // Ajustar activeTab si la pestaña actual no está disponible
-  React.useEffect(() => {
-    const isTabAvailable = availableTabs.some(tab => tab.id === activeTab);
-    if (!isTabAvailable) {
-      setActiveTab("general");
-    }
-  }, [availableTabs, activeTab]);
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "general":
-        return <OperacionInfo operacion={operacion} />;
-      case "personal":
-        return (
-          <OperacionTeamManagerEnhanced 
-            operacionId={operacion.id} 
-            salmoneraId={operacion.salmonera_id || undefined}
-            contratistaId={operacion.contratista_id || undefined}
-          />
-        );
-      case "documentos":
-        return <OperacionDocuments operacionId={operacion.id} operacion={operacion} />;
-      case "inmersiones":
-        return <OperacionInmersiones operacionId={operacion.id} />;
-      case "formularios":
-        return (
-          <div className="space-y-4">
-            <div className="text-center p-8 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-700">Formularios Operativos</h3>
-              <p className="text-gray-600 mt-2">
-                Accede a los formularios de mantención de redes y faenas operativas
-              </p>
-              <Button 
-                className="mt-4" 
-                onClick={() => window.open('/operaciones/network-maintenance', '_blank')}
-              >
-                Ir a Mantención de Redes
+  const renderGeneralTab = () => (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="nombre">Nombre</Label>
+        <Input id="nombre" value={operacion.nombre} disabled />
+      </div>
+      <div>
+        <Label htmlFor="codigo">Código</Label>
+        <Input id="codigo" value={operacion.codigo} disabled />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Fecha de Inicio</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !operacion.fecha_inicio && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {operacion.fecha_inicio ? format(operacion.fecha_inicio, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
               </Button>
-            </div>
-          </div>
-        );
-      case "timeline":
-        return <OperacionTimeline operacionId={operacion.id} />;
-      default:
-        return <div>Contenido no encontrado</div>;
-    }
-  };
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" >
+              <Calendar
+                mode="single"
+                selected={operacion.fecha_inicio}
+                onSelect={() => {}}
+                disabled
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div>
+          <Label>Fecha de Término</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !operacion.fecha_termino && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {operacion.fecha_termino ? format(operacion.fecha_termino, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" >
+              <Calendar
+                mode="single"
+                selected={operacion.fecha_termino}
+                onSelect={() => {}}
+                disabled
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="descripcion">Descripción</Label>
+        <Input id="descripcion" value={operacion.descripcion} disabled />
+      </div>
+    </div>
+  );
+
+  const renderInmersionesTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={handleCreateInmersion}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Inmersión
+        </Button>
+      </div>
+      {operacionInmersiones.length > 0 ? (
+        <ul>
+          {operacionInmersiones.map(inmersion => (
+            <li key={inmersion.inmersion_id}>{inmersion.codigo}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>No hay inmersiones asociadas a esta operación.</p>
+      )}
+    </div>
+  );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
-        {/* Header del Modal */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{operacion.nombre}</h2>
-            <p className="text-gray-600">Código: {operacion.codigo}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge className={getStatusColor(operacion.estado)}>
-              {operacion.estado}
-            </Badge>
-            {(canPlanOperations || isSuperuser) && (
-              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Editar Operación
-                </Button>
-                <DialogContent className="max-w-3xl">
-                  <EditOperacionForm
-                    operacion={operacion}
-                    onSubmit={handleEditOperacion}
-                    onCancel={() => setIsEditDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
-              {availableTabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.title}
-                </TabsTrigger>
-              ))}
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Detalle de Operación: {operacion.nombre}</DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="general" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
             </TabsList>
-
-            <TabsContent value={activeTab} className="space-y-6">
-              {renderTabContent()}
+            <TabsContent value="general">
+              {renderGeneralTab()}
+            </TabsContent>
+            <TabsContent value="inmersiones">
+              {renderInmersionesTab()}
             </TabsContent>
           </Tabs>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para nueva inmersión */}
+      <Dialog open={showInmersionModal} onOpenChange={setShowInmersionModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Inmersión para {operacion.nombre}</DialogTitle>
+          </DialogHeader>
+          <InmersionWizard
+            operationId={operacion.id}
+            onComplete={handleInmersionComplete}
+            onCancel={() => setShowInmersionModal(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
-
-export default OperacionDetailModal;
