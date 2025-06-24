@@ -162,12 +162,11 @@ export const InmersionesDataTable = () => {
                   Nueva Inmersión
                 </Button>
               )}
-              {hasModuleAccess(modules.PLANNING_OPERATIONS) && (
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Desde Operación
-                </Button>
-              )}
+              {/* Botón "Desde Operación" siempre disponible - CORREGIDO */}
+              <Button variant="outline" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Desde Operación
+              </Button>
             </div>
           </div>
           

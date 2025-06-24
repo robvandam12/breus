@@ -267,7 +267,12 @@ export const AnexoBravoDataTable = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
+                        {/* CORREGIDO: Agregado onClick al botón Ver */}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewAnexo(anexo)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button 
