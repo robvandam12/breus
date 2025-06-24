@@ -37,8 +37,8 @@ export const useUsuarios = () => {
         salmonera: Array.isArray(user.salmonera) 
           ? user.salmonera[0] 
           : user.salmonera || undefined,
-        contratista: Array.isArray(user.contratista) && user.contratista.length > 0
-          ? user.contratista[0]
+        contratista: Array.isArray(user.contratista) 
+          ? (user.contratista.length > 0 ? user.contratista[0] : undefined)
           : user.contratista || undefined
       })) || [];
 
