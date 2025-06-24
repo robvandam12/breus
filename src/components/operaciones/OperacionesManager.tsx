@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
 import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
 import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
-import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
+import { OperacionDetailModal } from "@/components/operaciones/OperacionDetailModal";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { List, MapPin, Grid3X3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
