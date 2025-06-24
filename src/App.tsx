@@ -1,253 +1,80 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { AuthProvider } from './hooks/useAuth';
+import { SidebarProvider } from './hooks/useSidebar';
+import { AppSidebar } from './components/AppSidebar';
+import { Toaster } from '@/components/ui/toaster';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-
-// Import pages
-import Index from "./pages/Index";
-import Login from "./pages/auth/Login";
-import Configuracion from "./pages/Configuracion";
-import AdminUsers from "./pages/admin/UserManagement";
-import AdminRoles from "./pages/admin/AdminRoles";
-import AdminModules from "./pages/admin/ModuleManagement";
-import SystemMonitoring from "./pages/admin/SystemMonitoring";
-import Operaciones from "./pages/operaciones/Operaciones";
-import HPT from "./pages/operaciones/HPT";
-import AnexoBravo from "./pages/operaciones/AnexoBravo";
-import NetworkMaintenance from "./pages/operaciones/NetworkMaintenance";
-import Inmersiones from "./pages/Inmersiones";
-import BitacorasSupervisor from "./pages/operaciones/BitacorasSupervisor";
-import BitacorasBuzo from "./pages/operaciones/BitacorasBuzo";
-import Reportes from "./pages/Reportes";
-import ReportesOperativos from "./pages/reportes/ReportesOperativos";
-import DashboardRol from "./pages/reportes/DashboardRol";
-import Comparativas from "./pages/reportes/Comparativas";
-import EmpresasSalmoneras from "./pages/empresas/Salmoneras";
-import EmpresasSitios from "./pages/empresas/Sitios";
-import EmpresasContratistas from "./pages/empresas/Contratistas";
-import PersonalDeBuceo from "./pages/PersonalDeBuceo";
-import Integraciones from "./pages/integraciones/Integraciones";
+import Dashboard from './pages/Dashboard';
+import ProfileSetup from './pages/ProfileSetup';
+import EquipoDeBuceo from './pages/EquipoDeBuceo';
+import Operaciones from './pages/Operaciones';
+import FormulariosHPT from './pages/FormulariosHPT';
+import FormulariosAnexoBravo from './pages/FormulariosAnexoBravo';
+import Inmersiones from './pages/Inmersiones';
+import BitacorasSupervisor from './pages/BitacorasSupervisor';
+import BitacorasBuzo from './pages/BitacorasBuzo';
+import Reportes from './pages/Reportes';
+import EmpresasSalmoneras from './pages/EmpresasSalmoneras';
+import EmpresasSitios from './pages/EmpresasSitios';
+import EmpresasContratistas from './pages/EmpresasContratistas';
+import Configuracion from './pages/Configuracion';
+import AdminAlertRules from './pages/AdminAlertRules';
+import AdminAlertsLog from './pages/AdminAlertsLog';
+import PersonalPoolAdmin from './pages/PersonalPoolAdmin';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoles from "@/pages/admin/AdminRoles";
+import AdminUsers from "@/pages/admin/AdminUsers";
 
 const queryClient = new QueryClient();
-
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/login" element={<Login />} />
-    
-    {/* Dashboard - Available to all authenticated users */}
-    <Route
-      path="/"
-      element={
-        <ProtectedRoute>
-          <Index />
-        </ProtectedRoute>
-      }
-    />
-    
-    {/* Empresa Management - Role-based access */}
-    <Route
-      path="/empresas/salmoneras"
-      element={
-        <ProtectedRoute requiredRole="superuser">
-          <EmpresasSalmoneras />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/empresas/sitios"
-      element={
-        <ProtectedRoute>
-          <EmpresasSitios />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/empresas/contratistas"
-      element={
-        <ProtectedRoute>
-          <EmpresasContratistas />
-        </ProtectedRoute>
-      }
-    />
-    
-    {/* Personal Management */}
-    <Route
-      path="/personal-de-buceo"
-      element={
-        <ProtectedRoute>
-          <PersonalDeBuceo />
-        </ProtectedRoute>
-      }
-    />
-    
-    {/* Operations - Module-dependent */}
-    <Route
-      path="/operaciones"
-      element={
-        <ProtectedRoute>
-          <Operaciones />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/hpt"
-      element={
-        <ProtectedRoute>
-          <HPT />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/anexo-bravo"
-      element={
-        <ProtectedRoute>
-          <AnexoBravo />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/operaciones/network-maintenance"
-      element={
-        <ProtectedRoute>
-          <NetworkMaintenance />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* Immersions - Core functionality */}
-    <Route
-      path="/inmersiones"
-      element={
-        <ProtectedRoute>
-          <Inmersiones />
-        </ProtectedRoute>
-      }
-    />
-    
-    {/* Bitacoras - Role-based */}
-    <Route
-      path="/bitacoras/supervisor"
-      element={
-        <ProtectedRoute>
-          <BitacorasSupervisor />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/bitacoras/buzo"
-      element={
-        <ProtectedRoute>
-          <BitacorasBuzo />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* Reports */}
-    <Route
-      path="/reportes"
-      element={
-        <ProtectedRoute>
-          <Reportes />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/operativos"
-      element={
-        <ProtectedRoute>
-          <ReportesOperativos />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/dashboard-rol"
-      element={
-        <ProtectedRoute>
-          <DashboardRol />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/reportes/comparativas"
-      element={
-        <ProtectedRoute>
-          <Comparativas />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* Configuration */}
-    <Route
-      path="/configuracion"
-      element={
-        <ProtectedRoute>
-          <Configuracion />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* Admin Routes - Superuser only */}
-    <Route
-      path="/admin/users"
-      element={
-        <ProtectedRoute requiredRole="superuser">
-          <AdminUsers />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/roles"
-      element={
-        <ProtectedRoute requiredRole="superuser">
-          <AdminRoles />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/modules"
-      element={
-        <ProtectedRoute requiredRole="superuser">
-          <AdminModules />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/system-monitoring"
-      element={
-        <ProtectedRoute requiredRole="superuser">
-          <SystemMonitoring />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* Integrations */}
-    <Route
-      path="/integraciones"
-      element={
-        <ProtectedRoute>
-          <Integraciones />
-        </ProtectedRoute>
-      }
-    />
-  </Routes>
-);
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <Router>
         <AuthProvider>
-          <BrowserRouter>
-            <AppRoutes />
+          <SidebarProvider>
             <Toaster />
-            <Sonner />
-          </BrowserRouter>
+            <div className="flex h-screen bg-gray-50">
+              <AppSidebar />
+              <main className="flex-1 overflow-auto">
+                <Routes>
+                  <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+                  <Route path="/equipo-de-buceo" element={<ProtectedRoute><EquipoDeBuceo /></ProtectedRoute>} />
+                  <Route path="/operaciones" element={<ProtectedRoute><Operaciones /></ProtectedRoute>} />
+                  <Route path="/formularios/hpt" element={<ProtectedRoute><FormulariosHPT /></ProtectedRoute>} />
+                  <Route path="/formularios/anexo-bravo" element={<ProtectedRoute><FormulariosAnexoBravo /></ProtectedRoute>} />
+                  <Route path="/inmersiones" element={<ProtectedRoute><Inmersiones /></ProtectedRoute>} />
+                  <Route path="/bitacoras/supervisor" element={<ProtectedRoute><BitacorasSupervisor /></ProtectedRoute>} />
+                  <Route path="/bitacoras/buzo" element={<ProtectedRoute><BitacorasBuzo /></ProtectedRoute>} />
+                  <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
+                  <Route path="/empresas/salmoneras" element={<ProtectedRoute><EmpresasSalmoneras /></ProtectedRoute>} />
+                  <Route path="/empresas/sitios" element={<ProtectedRoute><EmpresasSitios /></ProtectedRoute>} />
+                  <Route path="/empresas/contratistas" element={<ProtectedRoute><EmpresasContratistas /></ProtectedRoute>} />
+                  <Route path="/configuracion" element={<ProtectedRoute><Configuracion /></ProtectedRoute>} />
+                  <Route path="/admin/alert-rules" element={<ProtectedRoute><AdminAlertRules /></ProtectedRoute>} />
+                  <Route path="/admin/alerts-log" element={<ProtectedRoute><AdminAlertsLog /></ProtectedRoute>} />
+                  <Route path="/admin/salmonera" element={<ProtectedRoute><PersonalPoolAdmin /></ProtectedRoute>} />
+                  
+                  {/* Admin routes */}
+                  <Route path="/admin/roles" element={
+                    <ProtectedRoute>
+                      <AdminRoles />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/users" element={
+                    <ProtectedRoute>
+                      <AdminUsers />
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+              </main>
+            </div>
+          </SidebarProvider>
         </AuthProvider>
-      </TooltipProvider>
+      </Router>
     </QueryClientProvider>
   );
 }

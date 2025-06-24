@@ -7,123 +7,120 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Plus, Users, Settings } from "lucide-react";
+import { Shield, Plus, Users, Settings, Save } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
-
-const defaultRoles = [
-  { id: 'superuser', name: 'Superuser', description: 'Acceso total al sistema', predefined: true, userCount: 1 },
-  { id: 'admin_salmonera', name: 'Admin Salmonera', description: 'Administrador de empresa salmonera', predefined: true, userCount: 5 },
-  { id: 'admin_servicio', name: 'Admin Servicio', description: 'Administrador de empresa de servicios', predefined: true, userCount: 3 },
-  { id: 'supervisor', name: 'Supervisor', description: 'Supervisor de operaciones de buceo', predefined: true, userCount: 8 },
-  { id: 'buzo', name: 'Buzo', description: 'Buzo profesional', predefined: true, userCount: 24 }
-];
-
-const permissions = [
-  { id: 'dashboard_view', name: 'Ver Dashboard', module: 'Dashboard' },
-  { id: 'empresas_view', name: 'Ver Empresas', module: 'Empresas' },
-  { id: 'empresas_create', name: 'Crear Empresas', module: 'Empresas' },
-  { id: 'empresas_edit', name: 'Editar Empresas', module: 'Empresas' },
-  { id: 'empresas_delete', name: 'Eliminar Empresas', module: 'Empresas' },
-  { id: 'operaciones_view', name: 'Ver Operaciones', module: 'Operaciones' },
-  { id: 'operaciones_create', name: 'Crear Operaciones', module: 'Operaciones' },
-  { id: 'operaciones_edit', name: 'Editar Operaciones', module: 'Operaciones' },
-  { id: 'hpt_view', name: 'Ver HPT', module: 'Formularios' },
-  { id: 'hpt_create', name: 'Crear HPT', module: 'Formularios' },
-  { id: 'hpt_sign', name: 'Firmar HPT', module: 'Formularios' },
-  { id: 'anexo_view', name: 'Ver Anexo Bravo', module: 'Formularios' },
-  { id: 'anexo_create', name: 'Crear Anexo Bravo', module: 'Formularios' },
-  { id: 'anexo_sign', name: 'Firmar Anexo Bravo', module: 'Formularios' },
-  { id: 'inmersiones_view', name: 'Ver Inmersiones', module: 'Inmersiones' },
-  { id: 'inmersiones_create', name: 'Crear Inmersiones', module: 'Inmersiones' },
-  { id: 'bitacoras_view', name: 'Ver Bitácoras', module: 'Bitácoras' },
-  { id: 'bitacoras_create', name: 'Crear Bitácoras', module: 'Bitácoras' },
-  { id: 'bitacoras_sign', name: 'Firmar Bitácoras', module: 'Bitácoras' },
-  { id: 'reportes_view', name: 'Ver Reportes', module: 'Reportes' },
-  { id: 'reportes_export', name: 'Exportar Reportes', module: 'Reportes' },
-  { id: 'config_view', name: 'Ver Configuración', module: 'Configuración' },
-  { id: 'config_edit', name: 'Editar Configuración', module: 'Configuración' },
-  { id: 'admin_view', name: 'Ver Admin', module: 'Admin' },
-  { id: 'admin_roles', name: 'Gestionar Roles', module: 'Admin' }
-];
+import { useRolesAndPermissions } from "@/hooks/useRolesAndPermissions";
 
 const AdminRoles = () => {
-  const [roles, setRoles] = useState(defaultRoles);
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('superuser');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
-  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
 
-  const handleCreateRole = () => {
+  const {
+    roles,
+    permissions,
+    rolePermissions,
+    loading,
+    createCustomRole,
+    updateRolePermission,
+    savePermissionChanges
+  } = useRolesAndPermissions();
+
+  const handleCreateRole = async () => {
     if (!newRoleName.trim()) return;
-
-    const newRole = {
-      id: `custom_${Date.now()}`,
-      name: newRoleName,
-      description: newRoleDescription,
-      predefined: false,
-      userCount: 0
-    };
-
-    setRoles([...roles, newRole]);
-    setNewRoleName('');
-    setNewRoleDescription('');
-    setIsCreateDialogOpen(false);
+    
+    try {
+      await createCustomRole(newRoleName, newRoleDescription);
+      setNewRoleName('');
+      setNewRoleDescription('');
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating role:', error);
+    }
   };
 
-  const groupedPermissions = permissions.reduce((acc: Record<string, typeof permissions>, permission) => {
+  const groupedPermissions = permissions.reduce((acc, permission) => {
     if (!acc[permission.module]) {
       acc[permission.module] = [];
     }
     acc[permission.module].push(permission);
     return acc;
-  }, {});
+  }, {} as Record<string, typeof permissions>);
+
+  const selectedRoleObj = roles.find(role => role.id === selectedRole);
 
   const headerActions = (
-    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-purple-600 hover:bg-purple-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Rol
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Crear Nuevo Rol</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="roleName">Nombre del Rol</Label>
-            <Input
-              id="roleName"
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              placeholder="Ej: Auditor Salmonera"
-            />
+    <div className="flex gap-2">
+      <Button onClick={savePermissionChanges} className="bg-green-600 hover:bg-green-700">
+        <Save className="w-4 h-4 mr-2" />
+        Guardar Cambios
+      </Button>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="bg-purple-600 hover:bg-purple-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Rol
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Rol</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="roleName">Nombre del Rol</Label>
+              <Input
+                id="roleName"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                placeholder="Ej: Auditor Salmonera"
+              />
+            </div>
+            <div>
+              <Label htmlFor="roleDescription">Descripción</Label>
+              <Input
+                id="roleDescription"
+                value={newRoleDescription}
+                onChange={(e) => setNewRoleDescription(e.target.value)}
+                placeholder="Descripción del rol..."
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="roleDescription">Descripción</Label>
-            <Input
-              id="roleDescription"
-              value={newRoleDescription}
-              onChange={(e) => setNewRoleDescription(e.target.value)}
-              placeholder="Descripción del rol..."
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleCreateRole} className="flex-1">
-              Crear Rol
-            </Button>
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancelar
             </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <Button onClick={handleCreateRole} disabled={!newRoleName.trim()}>
+              Crear Rol
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
+
+  if (loading) {
+    return (
+      <MainLayout
+        title="Gestión de Roles y Permisos"
+        subtitle="Administrar roles del sistema y permisos granulares"
+        icon={Shield}
+        headerChildren={headerActions}
+      >
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="ml-2 text-sm text-gray-500">Cargando roles y permisos...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout
@@ -154,6 +151,7 @@ const AdminRoles = () => {
                     <TableHead>Descripción</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Usuarios</TableHead>
+                    <TableHead>Permisos</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -168,11 +166,17 @@ const AdminRoles = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{role.userCount} usuarios</TableCell>
+                      <TableCell>{role.permissions.length} permisos</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSelectedRole(role)}
+                          onClick={() => {
+                            setSelectedRole(role.id);
+                            // Cambiar a la pestaña de permisos
+                            const permissionsTab = document.querySelector('[value="permissions"]') as HTMLElement;
+                            if (permissionsTab) permissionsTab.click();
+                          }}
                         >
                           Configurar
                         </Button>
@@ -186,49 +190,96 @@ const AdminRoles = () => {
         </TabsContent>
 
         <TabsContent value="permissions">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Matriz de Permisos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
-                  <div key={module} className="space-y-3">
-                    <h3 className="font-semibold text-lg border-b pb-2">{module}</h3>
-                    <div className="grid gap-3">
-                      {modulePermissions.map((permission) => (
-                        <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{permission.name}</p>
-                            <p className="text-sm text-gray-500">{permission.id}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            {roles.map((role) => (
-                              <div key={role.id} className="flex flex-col items-center gap-1">
-                                <span className="text-xs font-medium">{role.name}</span>
-                                <Switch
-                                  checked={rolePermissions[`${role.id}_${permission.id}`] || false}
-                                  onCheckedChange={(checked) => {
-                                    setRolePermissions(prev => ({
-                                      ...prev,
-                                      [`${role.id}_${permission.id}`]: checked
-                                    }));
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+          <div className="space-y-6">
+            {/* Selector de rol */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Configurar Permisos
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="role-selector">Rol seleccionado:</Label>
+                    <select
+                      id="role-selector"
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md"
+                    >
+                      {roles.map(role => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
                       ))}
+                    </select>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedRoleObj && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900">{selectedRoleObj.name}</h4>
+                    <p className="text-sm text-blue-700">{selectedRoleObj.description}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-blue-600">
+                      <span>{selectedRoleObj.userCount} usuarios</span>
+                      <span>{selectedRoleObj.permissions.length} permisos activos</span>
+                      <Badge variant={selectedRoleObj.predefined ? "secondary" : "default"}>
+                        {selectedRoleObj.predefined ? "Predefinido" : "Personalizado"}
+                      </Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Matriz de permisos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Matriz de Permisos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
+                    <div key={module} className="space-y-3">
+                      <h3 className="font-semibold text-lg border-b pb-2 text-blue-900">{module}</h3>
+                      <div className="grid gap-3">
+                        {modulePermissions.map((permission) => (
+                          <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                            <div className="flex-1">
+                              <p className="font-medium">{permission.name}</p>
+                              <p className="text-sm text-gray-600">{permission.description}</p>
+                              <p className="text-xs text-gray-500">ID: {permission.id}</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <Switch
+                                checked={Boolean(rolePermissions[`${selectedRole}_${permission.id}`])}
+                                onCheckedChange={(checked) => updateRolePermission(selectedRole, permission.id, checked)}
+                                disabled={selectedRoleObj?.predefined && selectedRoleObj.id === 'superuser'}
+                              />
+                              {rolePermissions[`${selectedRole}_${permission.id}`] ? (
+                                <Badge className="bg-green-100 text-green-800">
+                                  Permitido
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-red-100 text-red-800">
+                                  Denegado
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </MainLayout>
