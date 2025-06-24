@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
@@ -12,8 +11,8 @@ export const AdminUserManagement = () => {
   // Transform usuarios to BaseUser format
   const transformedUsers: BaseUser[] = usuarios.map(user => {
     // Handle salmonera and servicio data safely
-    const salmoneraData = user.salmonera;
-    const servicioData = user.servicio;
+    const salmoneraData = Array.isArray(user.salmonera) ? user.salmonera[0] : user.salmonera;
+    const servicioData = Array.isArray(user.servicio) ? user.servicio[0] : user.servicio;
     
     return {
       id: user.usuario_id,

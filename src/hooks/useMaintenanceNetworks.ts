@@ -99,6 +99,33 @@ export const useMaintenanceNetworks = () => {
     },
   });
 
+  // Eliminar formulario
+  const deleteMaintenanceForm = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('multix')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['multix-forms'] });
+      toast({
+        title: "Formulario eliminado",
+        description: "El formulario ha sido eliminado exitosamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting maintenance form:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el formulario.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Propiedades adicionales para compatibilidad
   const canAccessModule = true; // Por ahora siempre permitir acceso
   const isUpdating = updateMaintenanceForm.isPending;
@@ -110,6 +137,7 @@ export const useMaintenanceNetworks = () => {
     createMaintenanceForm: createMaintenanceForm.mutateAsync,
     isCreating: createMaintenanceForm.isPending,
     updateMaintenanceForm: updateMaintenanceForm.mutateAsync,
+    deleteMaintenanceForm: deleteMaintenanceForm.mutateAsync,
     isUpdating,
     canAccessModule,
     getFormsByType,
