@@ -116,6 +116,15 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+      {/* Company Personnel Route - Updated URL */}
+      <Route path="/company-personnel" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <PersonalPoolAdmin />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      {/* Legacy route redirect */}
       <Route path="/personal-pool" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>

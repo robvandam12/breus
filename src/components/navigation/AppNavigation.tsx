@@ -62,7 +62,7 @@ export const useAppNavigation = () => {
     // Gestión de Personal - Diferenciado por rol
     if (profile?.role === 'superuser') {
       items.push({
-        title: "Gestión Global de Usuarios",
+        title: "Global User Management",
         icon: Shield,
         url: "/admin/users",
         roleRequired: ['superuser'],
@@ -71,9 +71,9 @@ export const useAppNavigation = () => {
 
     if (profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio') {
       items.push({
-        title: "Personal de la Empresa",
+        title: "Company Personnel",
         icon: Users,
-        url: "/personal-pool",
+        url: "/company-personnel",
         roleRequired: ['admin_salmonera', 'admin_servicio'],
       });
     }
@@ -81,7 +81,7 @@ export const useAppNavigation = () => {
     // Personal de Buceo (equipos operativos) - Disponible para roles operativos
     if (profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio' || profile?.role === 'supervisor') {
       items.push({
-        title: "Equipos de Buceo",
+        title: "Diving Teams",
         icon: Users,
         url: "/personal-de-buceo",
         roleRequired: ['admin_salmonera', 'admin_servicio', 'supervisor'],

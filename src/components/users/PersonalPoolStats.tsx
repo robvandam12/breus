@@ -25,7 +25,7 @@ export const PersonalPoolStats: React.FC<PersonalPoolStatsProps> = ({ usuarios, 
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-600">Total Personal</p>
+              <p className="text-sm font-medium text-zinc-600">Total Personnel</p>
               <p className="text-2xl font-bold">{totalUsuarios}</p>
             </div>
             <Users className="w-8 h-8 text-blue-500" />
@@ -37,7 +37,7 @@ export const PersonalPoolStats: React.FC<PersonalPoolStatsProps> = ({ usuarios, 
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-600">Activos</p>
+              <p className="text-sm font-medium text-zinc-600">Active</p>
               <p className="text-2xl font-bold text-green-600">{usuariosActivos}</p>
             </div>
             <UserCheck className="w-8 h-8 text-green-500" />
@@ -49,7 +49,7 @@ export const PersonalPoolStats: React.FC<PersonalPoolStatsProps> = ({ usuarios, 
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-600">Pendientes</p>
+              <p className="text-sm font-medium text-zinc-600">Pending</p>
               <p className="text-2xl font-bold text-yellow-600">{usuariosPendientes}</p>
             </div>
             <UserX className="w-8 h-8 text-yellow-500" />
@@ -66,7 +66,7 @@ export const PersonalPoolStats: React.FC<PersonalPoolStatsProps> = ({ usuarios, 
               </p>
               <p className="text-2xl font-bold text-purple-600">{admins}</p>
               <div className="text-xs text-zinc-500 mt-1">
-                {supervisores} Supervisores • {buzos} Buzos
+                {supervisores} Supervisors • {buzos} Divers
               </div>
             </div>
             <Crown className="w-8 h-8 text-purple-500" />

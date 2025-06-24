@@ -21,14 +21,14 @@ const PersonalPoolAdmin = () => {
   if (!profile?.salmonera_id && !profile?.servicio_id) {
     return (
       <MainLayout
-        title="Personal de la Empresa"
-        subtitle="Gestión del personal de su empresa"
+        title="Company Personnel"
+        subtitle="Manage your company's personnel"
         icon={Users}
       >
         <EmptyState
           icon={Users}
-          title="Acceso No Disponible"
-          description="No tienes una empresa asociada para gestionar personal."
+          title="Access Not Available"
+          description="You don't have an associated company to manage personnel."
         />
       </MainLayout>
     );
@@ -37,14 +37,14 @@ const PersonalPoolAdmin = () => {
   if (profile.role !== 'admin_salmonera' && profile.role !== 'admin_servicio' && profile.role !== 'superuser') {
     return (
       <MainLayout
-        title="Personal de la Empresa"
-        subtitle="Gestión del personal de su empresa"
+        title="Company Personnel"
+        subtitle="Manage your company's personnel"
         icon={Users}
       >
         <EmptyState
           icon={Users}
-          title="Acceso Denegado"
-          description="No tienes permisos para gestionar el personal de la empresa."
+          title="Access Denied"
+          description="You don't have permissions to manage company personnel."
         />
       </MainLayout>
     );
@@ -76,12 +76,12 @@ const PersonalPoolAdmin = () => {
     console.log('Delete user:', id);
   };
 
-  const empresaNombre = empresaType === 'salmonera' ? 'la salmonera' : 'la empresa de servicio';
+  const empresaNombre = empresaType === 'salmonera' ? 'salmon farm' : 'service company';
 
   return (
     <MainLayout
-      title="Personal de la Empresa"
-      subtitle={`Gestión del personal de ${empresaNombre}`}
+      title="Company Personnel"
+      subtitle={`Manage ${empresaNombre} personnel`}
       icon={Users}
     >
       <div className="space-y-6">
@@ -93,7 +93,7 @@ const PersonalPoolAdmin = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Personal de la Empresa ({usuarios.length})
+              Company Personnel ({usuarios.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
