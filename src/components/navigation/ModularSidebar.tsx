@@ -14,8 +14,7 @@ import {
   Users,
   Building,
   Menu,
-  X,
-  Wrench
+  X
 } from "lucide-react";
 import {
   Sidebar,
@@ -117,20 +116,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         moduleRequired: "planning_operations"
       },
       {
-        title: "Documentos Pre-Operativos",
+        title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
-        ]
-      },
-      {
-        title: "Módulos Operativos",
-        icon: Wrench,
-        items: [
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" },
-          { title: "Inspecciones", url: "/operaciones/inspecciones", moduleRequired: "inspections" },
-          { title: "Otros Servicios", url: "/operaciones/otros-servicios", moduleRequired: "other_services" }
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -181,20 +172,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         moduleRequired: "planning_operations"
       },
       {
-        title: "Documentos Pre-Operativos",
+        title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
-        ]
-      },
-      {
-        title: "Módulos Operativos",
-        icon: Wrench,
-        items: [
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" },
-          { title: "Inspecciones", url: "/operaciones/inspecciones", moduleRequired: "inspections" },
-          { title: "Otros Servicios", url: "/operaciones/otros-servicios", moduleRequired: "other_services" }
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -246,20 +229,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         moduleRequired: "planning_operations"
       },
       {
-        title: "Documentos Pre-Operativos",
+        title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
-        ]
-      },
-      {
-        title: "Módulos Operativos",
-        icon: Wrench,
-        items: [
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" },
-          { title: "Inspecciones", url: "/operaciones/inspecciones", moduleRequired: "inspections" },
-          { title: "Otros Servicios", url: "/operaciones/otros-servicios", moduleRequired: "other_services" }
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -318,20 +293,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         moduleRequired: "planning_operations"
       },
       {
-        title: "Documentos Pre-Operativos",
+        title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
-        ]
-      },
-      {
-        title: "Módulos Operativos",
-        icon: Wrench,
-        items: [
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" },
-          { title: "Inspecciones", url: "/operaciones/inspecciones", moduleRequired: "inspections" },
-          { title: "Otros Servicios", url: "/operaciones/otros-servicios", moduleRequired: "other_services" }
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
       {
@@ -391,20 +358,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "12"
       },
       {
-        title: "Documentos Pre-Operativos",
+        title: "Formularios",
         icon: FileText,
         items: [
-          { title: "HPT", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Módulos Operativos",
-        icon: Wrench,
-        items: [
-          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" },
-          { title: "Inspecciones", url: "/operaciones/inspecciones" },
-          { title: "Otros Servicios", url: "/operaciones/otros-servicios" }
+          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
