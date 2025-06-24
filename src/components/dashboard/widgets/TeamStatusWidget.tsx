@@ -36,7 +36,7 @@ const TeamStatusWidgetSkeleton = () => (
 export const TeamStatusWidget: React.FC<TeamStatusWidgetProps> = ({ 
   config = {} 
 }) => {
-  const { usuarios, loading } = useUsuarios();
+  const { usuarios, isLoading } = useUsuarios();
 
   const stats = useMemo(() => {
     if (!usuarios || usuarios.length === 0) {
@@ -59,7 +59,7 @@ export const TeamStatusWidget: React.FC<TeamStatusWidgetProps> = ({
     };
   }, [usuarios]);
 
-  if (loading) {
+  if (isLoading) {
     return <TeamStatusWidgetSkeleton />;
   }
 

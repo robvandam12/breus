@@ -7,7 +7,7 @@ import { PersonalPoolTable } from "@/components/users/PersonalPoolTable";
 import { useUsuarios } from "@/hooks/useUsuarios";
 
 const PersonalPoolAdmin = () => {
-  const { usuarios, loading } = useUsuarios();
+  const { usuarios, isLoading } = useUsuarios();
 
   return (
     <MainLayout
@@ -20,10 +20,10 @@ const PersonalPoolAdmin = () => {
           <CardTitle>Lista de Personal</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="text-center py-8">Cargando personal...</div>
           ) : (
-            <PersonalPoolTable usuarios={usuarios} isLoading={loading} />
+            <PersonalPoolTable usuarios={usuarios} isLoading={isLoading} />
           )}
         </CardContent>
       </Card>

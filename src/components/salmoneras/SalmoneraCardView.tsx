@@ -127,7 +127,7 @@ export const SalmoneraCardView = ({ salmoneras, onEdit, onDelete, onSelect }: Sa
         <DialogContent className="max-w-2xl">
           {editingSalmonera && (
             <EditSalmoneraForm
-              salmonera={editingSalmonera}
+              initialData={editingSalmonera}
               onSubmit={handleEdit}
               onCancel={() => setEditingSalmonera(null)}
             />

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,9 +62,12 @@ const Contratistas = () => {
     setIsDetailModalOpen(true);
   };
 
-  const handleDeleteClick = (contratista: any) => {
-    setSelectedContratista(contratista);
-    setIsDeleteDialogOpen(true);
+  const handleDeleteClick = async (id: string) => {
+    const contratista = contratistas.find(c => c.id === id);
+    if (contratista) {
+      setSelectedContratista(contratista);
+      setIsDeleteDialogOpen(true);
+    }
   };
 
   const handleConfirmDelete = async () => {

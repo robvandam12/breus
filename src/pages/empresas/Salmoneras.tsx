@@ -65,9 +65,12 @@ const Salmoneras = () => {
     setIsDetailModalOpen(true);
   };
 
-  const handleDeleteClick = (salmonera: any) => {
-    setSelectedSalmonera(salmonera);
-    setIsDeleteDialogOpen(true);
+  const handleDeleteClick = async (id: string) => {
+    const salmonera = salmoneras.find(s => s.id === id);
+    if (salmonera) {
+      setSelectedSalmonera(salmonera);
+      setIsDeleteDialogOpen(true);
+    }
   };
 
   const handleConfirmDelete = async () => {

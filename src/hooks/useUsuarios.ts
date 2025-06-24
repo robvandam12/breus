@@ -30,12 +30,12 @@ export const useUsuarios = () => {
         .select(`
           *,
           salmonera:salmoneras(nombre, rut),
-          contratista:contratistas(nombre, rut)
+          contratista:contratistas!left(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Usuario[];
+      return data as any[];
     },
   });
 

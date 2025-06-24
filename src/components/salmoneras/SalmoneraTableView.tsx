@@ -114,7 +114,7 @@ export const SalmoneraTableView = ({ salmoneras, onEdit, onDelete, onSelect }: S
         <DialogContent className="max-w-2xl">
           {editingSalmonera && (
             <EditSalmoneraForm
-              salmonera={editingSalmonera}
+              initialData={editingSalmonera}
               onSubmit={handleEdit}
               onCancel={() => setEditingSalmonera(null)}
             />
