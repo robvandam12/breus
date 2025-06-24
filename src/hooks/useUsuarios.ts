@@ -2,29 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-
-export interface Usuario {
-  usuario_id: string;
-  email: string;
-  nombre: string;
-  apellido: string;
-  rol: string;
-  estado_buzo?: string;
-  perfil_completado: boolean;
-  perfil_buzo?: any;
-  salmonera_id?: string;
-  servicio_id?: string;
-  created_at: string;
-  updated_at: string;
-  salmonera?: {
-    nombre: string;
-    rut: string;
-  };
-  contratista?: {
-    nombre: string;
-    rut: string;
-  }[];
-}
+import type { Usuario } from '@/types/usuario';
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
