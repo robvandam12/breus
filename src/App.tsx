@@ -3,7 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/useAuth';
-import { SidebarProvider } from './hooks/useSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './components/AppSidebar';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -141,7 +141,7 @@ function App() {
         <AuthProvider>
           <SidebarProvider>
             <Toaster />
-            <div className="flex h-screen bg-gray-50">
+            <div className="flex h-screen bg-gray-50 w-full">
               <AppSidebar />
               <main className="flex-1 overflow-auto">
                 <Routes>

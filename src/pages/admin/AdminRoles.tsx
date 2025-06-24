@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Plus, Users, Settings, Save } from "lucide-react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useRolesAndPermissions } from "@/hooks/useRolesAndPermissions";
 
 const AdminRoles = () => {
@@ -52,64 +52,19 @@ const AdminRoles = () => {
 
   const selectedRoleObj = roles.find(role => role.id === selectedRole);
 
-  const headerActions = (
-    <div className="flex gap-2">
-      <Button onClick={savePermissionChanges} className="bg-green-600 hover:bg-green-700">
-        <Save className="w-4 h-4 mr-2" />
-        Guardar Cambios
-      </Button>
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Rol
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Crear Nuevo Rol</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="roleName">Nombre del Rol</Label>
-              <Input
-                id="roleName"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                placeholder="Ej: Auditor Salmonera"
-              />
-            </div>
-            <div>
-              <Label htmlFor="roleDescription">Descripción</Label>
-              <Input
-                id="roleDescription"
-                value={newRoleDescription}
-                onChange={(e) => setNewRoleDescription(e.target.value)}
-                placeholder="Descripción del rol..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateRole} disabled={!newRoleName.trim()}>
-              Crear Rol
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-
   if (loading) {
     return (
-      <MainLayout
-        title="Gestión de Roles y Permisos"
-        subtitle="Administrar roles del sistema y permisos granulares"
-        icon={Shield}
-        headerChildren={headerActions}
-      >
+      <div className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Shield className="w-6 h-6" />
+              Gestión de Roles y Permisos
+            </h1>
+            <p className="text-gray-600">Administrar roles del sistema y permisos granulares</p>
+          </div>
+        </div>
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-center py-8">
@@ -118,17 +73,72 @@ const AdminRoles = () => {
             </div>
           </CardContent>
         </Card>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout
-      title="Gestión de Roles y Permisos"
-      subtitle="Administrar roles del sistema y permisos granulares"
-      icon={Shield}
-      headerChildren={headerActions}
-    >
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Shield className="w-6 h-6" />
+              Gestión de Roles y Permisos
+            </h1>
+            <p className="text-gray-600">Administrar roles del sistema y permisos granulares</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={savePermissionChanges} className="bg-green-600 hover:bg-green-700">
+            <Save className="w-4 h-4 mr-2" />
+            Guardar Cambios
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Rol
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Rol</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="roleName">Nombre del Rol</Label>
+                  <Input
+                    id="roleName"
+                    value={newRoleName}
+                    onChange={(e) => setNewRoleName(e.target.value)}
+                    placeholder="Ej: Auditor Salmonera"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="roleDescription">Descripción</Label>
+                  <Input
+                    id="roleDescription"
+                    value={newRoleDescription}
+                    onChange={(e) => setNewRoleDescription(e.target.value)}
+                    placeholder="Descripción del rol..."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateRole} disabled={!newRoleName.trim()}>
+                  Crear Rol
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
       <Tabs defaultValue="roles" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="roles">Gestión de Roles</TabsTrigger>
@@ -282,7 +292,7 @@ const AdminRoles = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </MainLayout>
+    </div>
   );
 };
 
