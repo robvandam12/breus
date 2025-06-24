@@ -1,148 +1,207 @@
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/button';
-import { Plus, Anchor, AlertCircle, Info } from 'lucide-react';
-import { useInmersionesContextual } from '@/hooks/useInmersionesContextual';
-import { useContextualOperations } from '@/hooks/useContextualOperations';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndependentImmersionManager } from '@/components/inmersiones/IndependentImmersionManager';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InmersionesDataTable } from '@/components/inmersiones/InmersionesDataTable';
 
-export default function Inmersiones() {
-  const [activeTab, setActiveTab] = useState('all');
-  const { 
-    inmersiones, 
-    isLoading, 
-    canCreateDirectImmersion,
-    operationalContext 
-  } = useInmersionesContextual();
+import React, { useState } from 'react';
+import { DashboardWithSidebar } from "@/components/dashboard/DashboardWithSidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
+import { useInmersiones } from "@/hooks/useInmersiones";
+import { toast } from "@/hooks/use-toast";
+
+const Inmersiones = () => {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedInmersion, setSelectedInmersion] = useState<any>(null);
   
-  const {
-    getWorkflowType,
-    requiresPlanning,
-    requiresDocuments,
-    allowsDirectOperations
-  } = useContextualOperations();
+  const { inmersiones, loading, createInmersion, updateInmersion, deleteInmersion } = useInmersiones();
 
-  const workflowType = getWorkflowType();
-
-  const getContextInfo = () => {
-    if (!operationalContext) return null;
-
-    const contextLabels = {
-      planned: 'Planificado',
-      direct: 'Operativo Directo',
-      mixed: 'Mixto'
-    };
-
-    const typeLabels = {
-      salmonera: 'Salmonera',
-      contratista: 'Contratista'
-    };
-
-    return {
-      contextType: contextLabels[operationalContext.context_type],
-      companyType: typeLabels[operationalContext.company_type],
-      requiresPlanning: operationalContext.requires_planning,
-      requiresDocuments: operationalContext.requires_documents,
-      allowsDirectOperations: operationalContext.allows_direct_operations
-    };
+  const handleCreateInmersion = async (data: any) => {
+    try {
+      await createInmersion(data);
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Inmersión creada",
+        description: "La inmersión ha sido creada exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error creating inmersion:', error);
+    }
   };
 
-  const contextInfo = getContextInfo();
+  const handleUpdateInmersion = async (data: any) => {
+    try {
+      await updateInmersion({ id: selectedInmersion.inmersion_id, data });
+      setIsEditDialogOpen(false);
+      setSelectedInmersion(null);
+      toast({
+        title: "Inmersión actualizada",
+        description: "Los cambios han sido guardados exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error updating inmersion:', error);
+    }
+  };
 
-  // Filtrar inmersiones por tipo
-  const plannedImmersions = inmersiones?.filter(i => i.operacion_id) || [];
-  const independentImmersions = inmersiones?.filter(i => !i.operacion_id || i.is_independent) || [];
+  const handleDeleteInmersion = async (inmersionId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta inmersión?')) {
+      try {
+        await deleteInmersion(inmersionId);
+        toast({
+          title: "Inmersión eliminada",
+          description: "La inmersión ha sido eliminada exitosamente.",
+        });
+      } catch (error) {
+        console.error('Error deleting inmersion:', error);
+      }
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <MainLayout title="Inmersiones" subtitle="Gestión de inmersiones" icon={Anchor}>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </MainLayout>
-    );
-  }
+  const getStatusColor = (estado: string) => {
+    const colors = {
+      'planificada': 'bg-yellow-100 text-yellow-700',
+      'en_progreso': 'bg-blue-100 text-blue-700',
+      'completada': 'bg-green-100 text-green-700',
+      'cancelada': 'bg-red-100 text-red-700'
+    };
+    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+  };
 
   return (
-    <MainLayout 
-      title="Inmersiones" 
-      subtitle="Gestión contextual de inmersiones" 
-      icon={Anchor}
-    >
+    <DashboardWithSidebar>
       <div className="space-y-6">
-        {/* Información de contexto operativo */}
-        {contextInfo && (
-          <Card className="border-l-4 border-l-blue-500 bg-blue-50/50">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="w-5 h-5 text-blue-600" />
-                  Contexto Operativo
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="bg-white">
-                    {contextInfo.companyType}
-                  </Badge>
-                  <Badge variant="secondary">
-                    {contextInfo.contextType}
-                  </Badge>
-                </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Inmersiones</h1>
+            <p className="text-gray-600">Gestión de inmersiones y operaciones de buceo</p>
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Inmersión
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Inmersiones</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Cargando inmersiones...</div>
+            ) : inmersiones.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No hay inmersiones registradas
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${contextInfo.requiresPlanning ? 'bg-yellow-500' : 'bg-gray-300'}`} />
-                  <span className={contextInfo.requiresPlanning ? 'text-yellow-800' : 'text-gray-600'}>
-                    {contextInfo.requiresPlanning ? 'Requiere planificación' : 'Planificación opcional'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${contextInfo.requiresDocuments ? 'bg-orange-500' : 'bg-gray-300'}`} />
-                  <span className={contextInfo.requiresDocuments ? 'text-orange-800' : 'text-gray-600'}>
-                    {contextInfo.requiresDocuments ? 'Requiere documentos' : 'Documentos opcionales'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${contextInfo.allowsDirectOperations ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className={contextInfo.allowsDirectOperations ? 'text-green-800' : 'text-red-800'}>
-                    {contextInfo.allowsDirectOperations ? 'Permite operación directa' : 'Solo operación planificada'}
-                  </span>
-                </div>
+            ) : (
+              <div className="space-y-4">
+                {inmersiones.map((inmersion) => (
+                  <div key={inmersion.inmersion_id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold">{inmersion.codigo}</h3>
+                        <Badge className={getStatusColor(inmersion.estado)}>
+                          {inmersion.estado}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        <strong>Objetivo:</strong> {inmersion.objetivo}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        <strong>Fecha:</strong> {inmersion.fecha_inmersion}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Buzo Principal:</strong> {inmersion.buzo_principal}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedInmersion(inmersion);
+                          setIsViewDialogOpen(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedInmersion(inmersion);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteInmersion(inmersion.inmersion_id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Alertas según contexto */}
-        {workflowType === 'planned' && !allowsDirectOperations() && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Tu contexto operativo requiere que las inmersiones estén asociadas a operaciones planificadas.
-              Contacta a tu salmonera para coordinar las operaciones.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Create Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Nueva Inmersión</DialogTitle>
+            </DialogHeader>
+            <InmersionWizard
+              onComplete={handleCreateInmersion}
+              onCancel={() => setIsCreateDialogOpen(false)}
+              showOperationSelector={true}
+            />
+          </DialogContent>
+        </Dialog>
 
-        {workflowType === 'direct' && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Puedes crear inmersiones directamente sin necesidad de planificación previa.
-              Asegúrate de coordinar con la salmonera correspondiente.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* View Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Ver Inmersión</DialogTitle>
+            </DialogHeader>
+            {selectedInmersion && (
+              <InmersionWizard
+                initialData={selectedInmersion}
+                onComplete={() => setIsViewDialogOpen(false)}
+                onCancel={() => setIsViewDialogOpen(false)}
+                readOnly={true}
+                showOperationSelector={false}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
-        {/* Usar el nuevo componente de tabla de inmersiones */}
-        <InmersionesDataTable />
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Editar Inmersión</DialogTitle>
+            </DialogHeader>
+            {selectedInmersion && (
+              <InmersionWizard
+                initialData={selectedInmersion}
+                onComplete={handleUpdateInmersion}
+                onCancel={() => setIsEditDialogOpen(false)}
+                showOperationSelector={false}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-    </MainLayout>
+    </DashboardWithSidebar>
   );
-}
+};
+
+export default Inmersiones;

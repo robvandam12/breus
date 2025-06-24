@@ -3,43 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export interface NetworkMaintenanceFormData {
   codigo: string;
-  fecha: string;
-  hora_inicio: string;
-  hora_termino: string;
-  lugar_trabajo: string;
-  tipo_formulario: 'mantencion' | 'faena_redes';
   operacion_id?: string;
-  
-  // Encabezado General
-  nombre_nave: string;
-  matricula_nave: string;
-  nombre_centro: string;
-  codigo_centro: string;
-  fecha_operacion: string;
-  condiciones_meteorologicas: string;
-  
-  // Datos específicos
-  multix_data: NetworkMaintenanceData;
-}
-
-export interface NetworkMaintenanceData {
-  [key: string]: any;
-  encabezado?: {
-    nombre_nave: string;
-    matricula_nave: string;
-    nombre_centro: string;
-    codigo_centro: string;
-    fecha_operacion: string;
-    condiciones_meteorologicas: string;
-  };
-  dotacion_buceo?: any[];
-  sistemas_equipos?: any[];
-  equipos_superficie?: any[];
-  faenas_mantencion?: any[];
-  firmas?: any[];
+  tipo_formulario: 'mantencion' | 'faena_redes';
+  network_maintenance_data: NetworkMaintenanceData;
 }
 
 export const useNetworkMaintenance = (operacionId?: string) => {
@@ -82,20 +52,30 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     if (!user) throw new Error('Usuario no autenticado');
 
     try {
+      const estado = formData.network_maintenance_data.firmado ? 'firmado' : 
+                   formData.network_maintenance_data.estado === 'completado' ? 'pendiente_firma' : 'borrador';
+
       const dataToInsert = {
         operacion_id: formData.operacion_id,
         codigo: formData.codigo,
         tipo_formulario: formData.tipo_formulario,
-        multix_data: formData.multix_data as any,
+        multix_data: formData.network_maintenance_data as any,
         user_id: user.id,
-        fecha: formData.fecha,
-        hora_inicio: formData.hora_inicio,
-        hora_termino: formData.hora_termino,
-        lugar_trabajo: formData.lugar_trabajo,
-        nave_maniobras: formData.nombre_nave,
-        matricula_nave: formData.matricula_nave,
-        estado: 'borrador',
-        firmado: false
+        fecha: formData.network_maintenance_data.fecha,
+        hora_inicio: formData.network_maintenance_data.hora_inicio,
+        hora_termino: formData.network_maintenance_data.hora_termino,
+        lugar_trabajo: formData.network_maintenance_data.lugar_trabajo,
+        nave_maniobras: formData.network_maintenance_data.nave_maniobras,
+        matricula_nave: formData.network_maintenance_data.matricula_nave,
+        team_s: formData.network_maintenance_data.team_s,
+        team_be: formData.network_maintenance_data.team_be,
+        team_bi: formData.network_maintenance_data.team_bi,
+        estado_puerto: formData.network_maintenance_data.estado_puerto,
+        temperatura: formData.network_maintenance_data.temperatura,
+        profundidad_max: formData.network_maintenance_data.profundidad_max,
+        estado: estado,
+        firmado: formData.network_maintenance_data.firmado,
+        progreso: formData.network_maintenance_data.progreso
       };
 
       const { data, error } = await supabase
@@ -127,10 +107,16 @@ export const useNetworkMaintenance = (operacionId?: string) => {
 
   const updateNetworkMaintenance = async (id: string, data: NetworkMaintenanceData) => {
     try {
+      const estado = data.firmado ? 'firmado' : 
+                   data.estado === 'completado' ? 'pendiente_firma' : 'borrador';
+
       const { error } = await supabase
         .from('multix')
         .update({ 
           multix_data: data as any,
+          estado: estado,
+          firmado: data.firmado,
+          progreso: data.progreso,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -139,9 +125,13 @@ export const useNetworkMaintenance = (operacionId?: string) => {
 
       await fetchNetworkMaintenance();
       
+      const message = data.firmado ? 
+        "El formulario ha sido firmado exitosamente." :
+        "Los cambios han sido guardados exitosamente.";
+      
       toast({
-        title: "Formulario actualizado",
-        description: "Los cambios han sido guardados exitosamente.",
+        title: data.firmado ? "Formulario firmado" : "Formulario actualizado",
+        description: message,
       });
     } catch (error: any) {
       console.error('Error updating network maintenance:', error);
@@ -154,30 +144,28 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     }
   };
 
-  const completeNetworkMaintenance = async (id: string) => {
+  const signNetworkMaintenance = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('multix')
-        .update({ 
-          estado: 'completado',
-          firmado: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      const form = networkMaintenanceForms.find(f => f.id === id);
+      if (!form) throw new Error('Formulario no encontrado');
 
-      if (error) throw error;
+      const updatedData = {
+        ...form.multix_data,
+        firmado: true,
+        estado: 'firmado'
+      };
 
-      await fetchNetworkMaintenance();
+      await updateNetworkMaintenance(id, updatedData);
       
       toast({
-        title: "Formulario completado",
-        description: "El formulario ha sido marcado como completado.",
+        title: "Formulario firmado",
+        description: "El formulario ha sido firmado digitalmente.",
       });
     } catch (error: any) {
-      console.error('Error completing network maintenance:', error);
+      console.error('Error signing network maintenance:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo completar el formulario",
+        description: error.message || "No se pudo firmar el formulario",
         variant: "destructive",
       });
       throw error;
@@ -227,7 +215,7 @@ export const useNetworkMaintenance = (operacionId?: string) => {
     loading,
     createNetworkMaintenance,
     updateNetworkMaintenance,
-    completeNetworkMaintenance,
+    signNetworkMaintenance,
     deleteNetworkMaintenance,
     getNetworkMaintenanceByOperacion,
     getAllNetworkMaintenance,

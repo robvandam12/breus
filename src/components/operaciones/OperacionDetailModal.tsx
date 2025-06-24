@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersio
 import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
 import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
+import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useModularSystem } from "@/hooks/useModularSystem";
 
@@ -25,6 +25,7 @@ interface OperacionDetailModalProps {
 const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailModalProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isInmersionDialogOpen, setIsInmersionDialogOpen] = useState(false);
   const { updateOperacion } = useOperaciones();
   const { 
     canPlanOperations, 
@@ -39,6 +40,15 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
       setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Error updating operacion:', error);
+    }
+  };
+
+  const handleCreateInmersion = async (data: any) => {
+    try {
+      // Create inmersion logic here
+      setIsInmersionDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating inmersion:', error);
     }
   };
 
@@ -85,7 +95,17 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
       case "documentos":
         return <OperacionDocuments operacionId={operacion.id} operacion={operacion} />;
       case "inmersiones":
-        return <OperacionInmersiones operacionId={operacion.id} />;
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Inmersiones de la Operación</h3>
+              <Button onClick={() => setIsInmersionDialogOpen(true)}>
+                Nueva Inmersión
+              </Button>
+            </div>
+            <OperacionInmersiones operacionId={operacion.id} />
+          </div>
+        );
       case "formularios":
         return (
           <div className="space-y-4">
@@ -160,6 +180,21 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Inmersion Creation Dialog */}
+        <Dialog open={isInmersionDialogOpen} onOpenChange={setIsInmersionDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Nueva Inmersión para {operacion.nombre}</DialogTitle>
+            </DialogHeader>
+            <InmersionWizard
+              operationId={operacion.id}
+              onComplete={handleCreateInmersion}
+              onCancel={() => setIsInmersionDialogOpen(false)}
+              showOperationSelector={false}
+            />
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

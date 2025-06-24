@@ -1,171 +1,131 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+export interface Usuario {
+  usuario_id: string;
+  email: string;
+  nombre: string;
+  apellido: string;
+  rol: string;
+  estado_buzo?: string;
+  perfil_completado?: boolean;
+  salmonera_id?: string;
+  servicio_id?: string;
+  created_at: string;
+  updated_at: string;
+  salmonera?: {
+    nombre: string;
+    rut: string;
+  };
+  contratista?: {
+    nombre: string;
+    rut: string;
+  };
+}
 
 export const useUsuarios = () => {
-  const queryClient = useQueryClient();
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: usuarios = [], isLoading, error } = useQuery({
-    queryKey: ['usuarios'],
-    queryFn: async () => {
+  const fetchUsuarios = async () => {
+    try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('usuario')
         .select(`
           *,
           salmonera:salmoneras!salmonera_id(nombre, rut),
-          servicio:contratistas!servicio_id(nombre, rut)
+          contratista:contratistas!servicio_id(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching usuarios:', error);
-        throw error;
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los usuarios",
+          variant: "destructive",
+        });
+        return;
       }
-      
-      return data.map(usuario => {
-        // Handle salmonera and servicio data safely
-        const salmoneraData = Array.isArray(usuario.salmonera) ? usuario.salmonera[0] : usuario.salmonera;
-        const servicioData = Array.isArray(usuario.servicio) ? usuario.servicio[0] : usuario.servicio;
-        
-        return {
-          ...usuario,
-          empresa_nombre: salmoneraData?.nombre || servicioData?.nombre || 'Sin empresa',
-          empresa_tipo: salmoneraData ? 'salmonera' : servicioData ? 'contratista' : 'sin_empresa'
-        };
-      });
-    },
-  });
 
-  const updateUsuario = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { data: updatedData, error } = await supabase
-        .from('usuario')
-        .update(data)
-        .eq('usuario_id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updatedData;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast({
-        title: "Usuario actualizado",
-        description: "El usuario ha sido actualizado exitosamente.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating usuario:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el usuario.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const inviteUsuario = useMutation({
-    mutationFn: async (userData: { email: string; nombre: string; apellido: string; rol: string; empresa_id?: string; empresa_tipo?: string }) => {
-      // Generate a token for the invitation
-      const token = crypto.randomUUID();
-      
-      const { data, error } = await supabase
-        .from('usuario_invitaciones')
-        .insert({
-          email: userData.email,
-          nombre: userData.nombre,
-          apellido: userData.apellido,
-          rol: userData.rol,
-          empresa_id: userData.empresa_id,
-          tipo_empresa: userData.empresa_tipo,
-          estado: 'enviada',
-          token: token
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast({
-        title: "Invitación enviada",
-        description: "Se ha enviado la invitación al usuario.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error inviting usuario:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo enviar la invitación.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getUserStats = async (userId: string) => {
-    try {
-      // Obtener estadísticas de HPTs
-      const { data: hptStats } = await supabase
-        .from('hpt')
-        .select('id')
-        .eq('user_id', userId);
-
-      // Obtener estadísticas de Anexos Bravo
-      const { data: anexoStats } = await supabase
-        .from('anexo_bravo')
-        .select('id')
-        .eq('user_id', userId);
-
-      // Obtener estadísticas de inmersiones
-      const { data: inmersionStats } = await supabase
-        .from('inmersion')
-        .select('inmersion_id')
-        .or(`buzo_principal_id.eq.${userId},supervisor_id.eq.${userId}`);
-
-      // Obtener estadísticas de bitácoras
-      const { data: bitacoraStats } = await supabase
-        .from('bitacora_supervisor')
-        .select('bitacora_id')
-        .eq('aprobada_por', userId);
-
-      // Obtener última actividad
-      const { data: lastActivity } = await supabase
-        .from('usuario_actividad')
-        .select('created_at')
-        .eq('usuario_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      return {
-        hpts_created: hptStats?.length || 0,
-        anexos_created: anexoStats?.length || 0,
-        inmersiones: inmersionStats?.length || 0,
-        bitacoras: bitacoraStats?.length || 0,
-        last_activity: lastActivity?.created_at || null
-      };
+      setUsuarios(data || []);
     } catch (error) {
-      console.error('Error getting user stats:', error);
-      return {
-        hpts_created: 0,
-        anexos_created: 0,
-        inmersiones: 0,
-        bitacoras: 0,
-        last_activity: null
-      };
+      console.error('Error in fetchUsuarios:', error);
+      toast({
+        title: "Error",
+        description: "Error inesperado al cargar usuarios",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
+  const updateUsuario = async (usuarioId: string, updates: Partial<Usuario>) => {
+    try {
+      const { error } = await supabase
+        .from('usuario')
+        .update(updates)
+        .eq('usuario_id', usuarioId);
+
+      if (error) throw error;
+
+      await fetchUsuarios();
+      
+      toast({
+        title: "Usuario actualizado",
+        description: "Los cambios han sido guardados exitosamente.",
+      });
+    } catch (error: any) {
+      console.error('Error updating usuario:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar el usuario",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteUsuario = async (usuarioId: string) => {
+    try {
+      const { error } = await supabase
+        .from('usuario')
+        .delete()
+        .eq('usuario_id', usuarioId);
+
+      if (error) throw error;
+
+      await fetchUsuarios();
+      
+      toast({
+        title: "Usuario eliminado",
+        description: "El usuario ha sido eliminado exitosamente.",
+      });
+    } catch (error: any) {
+      console.error('Error deleting usuario:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el usuario",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    fetchUsuarios();
+  }, []);
+
   return {
     usuarios,
-    isLoading,
-    error,
-    updateUsuario: updateUsuario.mutateAsync,
-    inviteUsuario: inviteUsuario.mutateAsync,
-    getUserStats,
+    loading,
+    fetchUsuarios,
+    updateUsuario,
+    deleteUsuario,
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +22,7 @@ interface InmersionWizardProps {
   onCancel: () => void;
   initialData?: any;
   readOnly?: boolean;
+  showOperationSelector?: boolean;
 }
 
 export const InmersionWizard = ({ 
@@ -30,7 +30,8 @@ export const InmersionWizard = ({
   onComplete, 
   onCancel, 
   initialData,
-  readOnly = false 
+  readOnly = false,
+  showOperationSelector = false
 }: InmersionWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -57,7 +58,7 @@ export const InmersionWizard = ({
 
   const { operaciones } = useOperaciones();
   const { profile, getFormDefaults } = useUserProfile();
-  const selectedOperation = operaciones.find(op => op.id === operationId);
+  const selectedOperation = operaciones.find(op => op.id === (operationId || formData.operacion_id));
 
   useEffect(() => {
     if (profile && !initialData) {
@@ -163,25 +164,27 @@ export const InmersionWizard = ({
                 />
               </div>
               
-              <div>
-                <Label htmlFor="operacion">Operación *</Label>
-                <Select 
-                  value={formData.operacion_id} 
-                  onValueChange={(value) => handleInputChange('operacion_id', value)}
-                  disabled={readOnly}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar operación" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {operaciones.map((op) => (
-                      <SelectItem key={op.id} value={op.id}>
-                        {op.codigo} - {op.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {showOperationSelector && (
+                <div>
+                  <Label htmlFor="operacion">Operación *</Label>
+                  <Select 
+                    value={formData.operacion_id} 
+                    onValueChange={(value) => handleInputChange('operacion_id', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar operación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {operaciones.map((op) => (
+                        <SelectItem key={op.id} value={op.id}>
+                          {op.codigo} - {op.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div>

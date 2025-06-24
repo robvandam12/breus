@@ -14,7 +14,8 @@ import {
   Users,
   Building,
   Menu,
-  X
+  X,
+  Wrench
 } from "lucide-react";
 import {
   Sidebar,
@@ -111,16 +112,17 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Operaciones",
         icon: Calendar,
-        url: "/operaciones",
-        badge: "12",
+        items: [
+          { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
+        ],
         moduleRequired: "planning_operations"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
@@ -167,16 +169,17 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Operaciones",
         icon: Calendar,
-        url: "/operaciones",
-        badge: "12",
+        items: [
+          { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
+        ],
         moduleRequired: "planning_operations"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
@@ -224,16 +227,17 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Operaciones",
         icon: Calendar,
-        url: "/operaciones",
-        badge: "12",
+        items: [
+          { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
+        ],
         moduleRequired: "planning_operations"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
@@ -288,16 +292,17 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Operaciones",
         icon: Calendar,
-        url: "/operaciones",
-        badge: "25",
+        items: [
+          { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+          { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
+        ],
         moduleRequired: "planning_operations"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
         ]
       },
@@ -354,15 +359,16 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       {
         title: "Operaciones",
         icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
+        items: [
+          { title: "Ver Operaciones", url: "/operaciones" },
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" }
+        ]
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "Hoja de Planificación de Trabajo", url: "/operaciones/hpt" },
-          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
           { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
