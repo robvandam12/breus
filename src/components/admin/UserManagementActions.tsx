@@ -27,8 +27,8 @@ export const UserManagementActions = ({ usuario }: UserManagementActionsProps) =
     email: usuario.email || '',
     rol: usuario.rol,
     estado_buzo: usuario.estado_buzo,
-    salmonera_id: usuario.salmonera_id || '',
-    servicio_id: usuario.servicio_id || ''
+    salmonera_id: usuario.salmonera_id || 'none',
+    servicio_id: usuario.servicio_id || 'none'
   });
 
   const { updateUsuario, deleteUsuario } = useUsuarios();
@@ -43,8 +43,8 @@ export const UserManagementActions = ({ usuario }: UserManagementActionsProps) =
         email: editForm.email || null,
         rol: editForm.rol as Usuario['rol'],
         estado_buzo: editForm.estado_buzo as Usuario['estado_buzo'],
-        salmonera_id: editForm.salmonera_id || null,
-        servicio_id: editForm.servicio_id || null
+        salmonera_id: editForm.salmonera_id === 'none' ? null : editForm.salmonera_id,
+        servicio_id: editForm.servicio_id === 'none' ? null : editForm.servicio_id
       });
       setEditDialogOpen(false);
     } catch (error) {
@@ -221,12 +221,12 @@ export const UserManagementActions = ({ usuario }: UserManagementActionsProps) =
               </div>
               <div>
                 <Label htmlFor="salmonera">Salmonera</Label>
-                <Select value={editForm.salmonera_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, salmonera_id: value, servicio_id: '' }))}>
+                <Select value={editForm.salmonera_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, salmonera_id: value, servicio_id: 'none' }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar salmonera" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {salmoneras.map(salmonera => (
                       <SelectItem key={salmonera.id} value={salmonera.id}>
                         {salmonera.nombre}
@@ -237,12 +237,12 @@ export const UserManagementActions = ({ usuario }: UserManagementActionsProps) =
               </div>
               <div>
                 <Label htmlFor="contratista">Contratista</Label>
-                <Select value={editForm.servicio_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, servicio_id: value, salmonera_id: '' }))}>
+                <Select value={editForm.servicio_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, servicio_id: value, salmonera_id: 'none' }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar contratista" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {contratistas.map(contratista => (
                       <SelectItem key={contratista.id} value={contratista.id}>
                         {contratista.nombre}

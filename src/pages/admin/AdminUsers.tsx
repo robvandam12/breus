@@ -13,7 +13,7 @@ import { useUsuarios } from "@/hooks/useUsuarios";
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   
   const { usuarios, loading, inviteUsuario } = useUsuarios();
@@ -24,7 +24,7 @@ const AdminUsers = () => {
       usuario.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       usuario.email?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = roleFilter === "" || usuario.rol === roleFilter;
+    const matchesRole = roleFilter === "all" || usuario.rol === roleFilter;
     
     return matchesSearch && matchesRole;
   });
@@ -149,7 +149,7 @@ const AdminUsers = () => {
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="w-full h-12 px-3 rounded-xl border border-zinc-200 bg-white/90"
               >
-                <option value="">Todos los roles</option>
+                <option value="all">Todos los roles</option>
                 <option value="superuser">Super Usuario</option>
                 <option value="admin_salmonera">Admin Salmonera</option>
                 <option value="admin_servicio">Admin Servicio</option>
