@@ -2,7 +2,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Settings } from "lucide-react";
-import { NetworkMaintenanceManager } from "@/components/network/NetworkMaintenanceManager";
+import { NetworkMaintenanceDataTable } from "@/components/network-maintenance/NetworkMaintenanceDataTable";
 
 export default function MantencionRedes() {
   return (
@@ -11,7 +11,7 @@ export default function MantencionRedes() {
       subtitle="Gestión de mantenimiento preventivo y correctivo de sistemas de redes"
       icon={Settings}
     >
-      <NetworkMaintenanceManager />
+      <NetworkMaintenanceDataTable />
     </MainLayout>
   );
 }

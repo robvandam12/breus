@@ -75,33 +75,10 @@ export const NetworkMaintenanceWizard = ({
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.lugar_trabajo && formData.fecha && formData.hora_inicio);
-      case 2:
-        return formData.dotacion.length > 0;
-      case 3:
-        return true; // Equipos de superficie son opcionales
-      case 4:
-        return formData.faenas_mantencion.length > 0;
-      default:
-        return true;
-    }
-  };
-
   const handleNext = () => {
-    if (readOnly || validateStep(currentStep)) {
-      const newProgress = Math.round((currentStep / steps.length) * 100);
-      updateFormData({ progreso: newProgress });
-      setCurrentStep(prev => Math.min(prev + 1, steps.length));
-    } else {
-      toast({
-        title: "Campos requeridos",
-        description: "Por favor complete todos los campos obligatorios",
-        variant: "destructive"
-      });
-    }
+    const newProgress = Math.round((currentStep / steps.length) * 100);
+    updateFormData({ progreso: newProgress });
+    setCurrentStep(prev => Math.min(prev + 1, steps.length));
   };
 
   const handlePrevious = () => {
