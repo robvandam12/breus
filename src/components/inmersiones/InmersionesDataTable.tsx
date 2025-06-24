@@ -27,8 +27,9 @@ export const InmersionesDataTable = () => {
   const { hasModuleAccess, modules } = useModularSystem();
 
   const filteredInmersiones = inmersiones.filter(inmersion => {
-    const matchesSearch = inmersion.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inmersion.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inmersion.observaciones?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || inmersion.estado === statusFilter;
     
@@ -235,7 +236,7 @@ export const InmersionesDataTable = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold">
-                        {inmersion.nombre || `Inmersión ${inmersion.inmersion_id?.slice(0, 8)}`}
+                        {inmersion.objetivo || inmersion.codigo || `Inmersión ${inmersion.inmersion_id?.slice(0, 8)}`}
                       </h3>
                       {getStatusBadge(inmersion.estado)}
                       
@@ -255,8 +256,8 @@ export const InmersionesDataTable = () => {
                     </div>
                     
                     <div className="text-sm text-gray-600 space-y-1">
-                      {inmersion.descripcion && (
-                        <p>{inmersion.descripcion}</p>
+                      {inmersion.observaciones && (
+                        <p>{inmersion.observaciones}</p>
                       )}
                       
                       {inmersion.operacion && (
@@ -266,7 +267,7 @@ export const InmersionesDataTable = () => {
                         </p>
                       )}
                       
-                      <p>Fecha: {inmersion.fecha_programada ? new Date(inmersion.fecha_programada).toLocaleDateString() : 'No programada'}</p>
+                      <p>Fecha: {inmersion.fecha_inmersion ? new Date(inmersion.fecha_inmersion).toLocaleDateString() : 'No programada'}</p>
                     </div>
                   </div>
                   
