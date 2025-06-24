@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -10,18 +11,34 @@ export const useUsuarios = () => {
   const fetchUsuarios = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Primero obtenemos todos los usuarios
+      const { data: usuariosData, error: usuariosError } = await supabase
         .from('usuario')
-        .select(`
-          *,
-          salmoneras!salmonera_id(nombre, rut),
-          contratistas!servicio_id(nombre, rut)
-        `);
+        .select('*');
 
-      if (error) throw error;
+      if (usuariosError) throw usuariosError;
 
-      // Transform the data to match our interface
-      const transformedData: Usuario[] = data?.map(user => ({
+      // Obtenemos todas las salmoneras
+      const { data: salmonerasData, error: salmonerasError } = await supabase
+        .from('salmoneras')
+        .select('id, nombre, rut');
+
+      if (salmonerasError) throw salmonerasError;
+
+      // Obtenemos todos los contratistas
+      const { data: contratistasData, error: contratistasError } = await supabase
+        .from('contratistas')
+        .select('id, nombre, rut');
+
+      if (contratistasError) throw contratistasError;
+
+      // Crear mapas para búsqueda rápida
+      const salmonerasMap = new Map(salmonerasData?.map(s => [s.id, s]) || []);
+      const contratistasMap = new Map(contratistasData?.map(c => [c.id, c]) || []);
+
+      // Transformar los datos combinando con las relaciones
+      const transformedData: Usuario[] = usuariosData?.map(user => ({
         usuario_id: user.usuario_id,
         nombre: user.nombre,
         apellido: user.apellido,
@@ -34,12 +51,8 @@ export const useUsuarios = () => {
         salmonera_id: user.salmonera_id,
         servicio_id: user.servicio_id,
         perfil_buzo: user.perfil_buzo,
-        salmonera: Array.isArray(user.salmoneras) 
-          ? (user.salmoneras.length > 0 ? user.salmoneras[0] : undefined)
-          : user.salmoneras || undefined,
-        contratista: Array.isArray(user.contratistas) 
-          ? (user.contratistas.length > 0 ? user.contratistas[0] : undefined)
-          : user.contratistas || undefined
+        salmonera: user.salmonera_id ? salmonerasMap.get(user.salmonera_id) || undefined : undefined,
+        contratista: user.servicio_id ? contratistasMap.get(user.servicio_id) || undefined : undefined
       })) || [];
 
       setUsuarios(transformedData);
