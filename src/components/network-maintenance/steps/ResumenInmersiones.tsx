@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Activity, Timer, Navigation } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, ResumenInmersiones } from '@/types/network-maintenance';
 
 interface ResumenInmersionesProps {
   formData: NetworkMaintenanceData;
@@ -14,6 +14,11 @@ interface ResumenInmersionesProps {
 
 export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false }: ResumenInmersionesProps) => {
   const resumen = formData.resumen_inmersiones || {
+    id: '',
+    nombre_piloto: '',
+    horas_piloto: 0,
+    tipo_nave: '',
+    obs_inmersiones: '',
     total_inmersiones: 0,
     horas_navegacion: 0,
     cabotaje_perdida: 0,
@@ -21,7 +26,7 @@ export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false 
     relevo: 0
   };
 
-  const updateResumen = (campo: keyof typeof resumen, valor: number) => {
+  const updateResumen = (campo: keyof ResumenInmersiones, valor: number | string) => {
     updateFormData({
       resumen_inmersiones: {
         ...resumen,
@@ -41,6 +46,36 @@ export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false 
           Totales y estadísticas de la jornada de trabajo
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Información del Piloto</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre_piloto">Nombre del Piloto</Label>
+              <Input
+                id="nombre_piloto"
+                value={resumen.nombre_piloto}
+                onChange={(e) => updateResumen('nombre_piloto', e.target.value)}
+                placeholder="Nombre completo"
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tipo_nave">Tipo de Nave</Label>
+              <Input
+                id="tipo_nave"
+                value={resumen.tipo_nave}
+                onChange={(e) => updateResumen('tipo_nave', e.target.value)}
+                placeholder="Tipo de embarcación"
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -74,6 +109,19 @@ export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false 
                 step="0.1"
                 value={resumen.horas_navegacion}
                 onChange={(e) => updateResumen('horas_navegacion', Number(e.target.value))}
+                placeholder="0.0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="horas_piloto">Horas de Piloto</Label>
+              <Input
+                id="horas_piloto"
+                type="number"
+                step="0.1"
+                value={resumen.horas_piloto}
+                onChange={(e) => updateResumen('horas_piloto', Number(e.target.value))}
                 placeholder="0.0"
                 disabled={readOnly}
               />
@@ -120,6 +168,17 @@ export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false 
                 disabled={readOnly}
               />
             </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="obs_inmersiones">Observaciones</Label>
+            <Input
+              id="obs_inmersiones"
+              value={resumen.obs_inmersiones}
+              onChange={(e) => updateResumen('obs_inmersiones', e.target.value)}
+              placeholder="Observaciones generales..."
+              disabled={readOnly}
+            />
           </div>
         </CardContent>
       </Card>

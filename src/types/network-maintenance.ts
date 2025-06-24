@@ -87,6 +87,11 @@ export interface ResumenInmersiones {
   horas_piloto: number;
   tipo_nave: string;
   obs_inmersiones: string;
+  total_inmersiones: number;
+  horas_navegacion: number;
+  cabotaje_perdida: number;
+  rev_documental: number;
+  relevo: number;
 }
 
 export interface Contingencias {
@@ -100,6 +105,15 @@ export interface Contingencias {
   otros_eventos?: string;
   observaciones_contingencias?: string;
   observaciones_generales?: string;
+}
+
+export interface Firmas {
+  supervisor_nombre: string;
+  supervisor_firma: string;
+  jefe_centro_nombre: string;
+  jefe_centro_firma: string;
+  fecha_firma: string;
+  codigo_verificacion: string;
 }
 
 export interface NetworkMaintenanceData {
@@ -137,6 +151,9 @@ export interface NetworkMaintenanceData {
   // Contingencias
   contingencias?: Contingencias;
 
+  // Firmas
+  firmas?: Firmas;
+
   // Campos adicionales para el resumen y firmas
   observaciones_finales?: string;
   supervisor_responsable?: string;
@@ -145,6 +162,6 @@ export interface NetworkMaintenanceData {
   // Control del formulario
   progreso: number;
   firmado: boolean;
-  estado: 'borrador' | 'en_revision' | 'completado' | 'firmado' | 'pendiente_firma';
+  estado: 'borrador' | 'en_revision' | 'completado' | 'firmado';
   tipo_formulario: 'mantencion' | 'faena_redes';
 }

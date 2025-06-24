@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Wrench } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, FaenaMantencion } from '@/types/network-maintenance';
 
 interface FaenasMantencionProps {
   formData: NetworkMaintenanceData;
@@ -20,11 +20,14 @@ export const FaenasMantencion = ({ formData, updateFormData, readOnly = false }:
   const faenas = formData.faenas_mantencion || [];
 
   const addFaena = () => {
-    const newFaena = {
+    const newFaena: FaenaMantencion = {
       id: Date.now().toString(),
+      tipo_mantencion: 'reparacion_red',
+      cantidad: 0,
+      unidad: 'm2',
+      descripcion_trabajo: '',
       tipo_seccion: 'red' as const,
       jaulas: '',
-      cantidad: 0,
       ubicacion: '',
       tipo_rotura: '2x1' as const,
       retensado: false,
@@ -39,7 +42,7 @@ export const FaenasMantencion = ({ formData, updateFormData, readOnly = false }:
     });
   };
 
-  const updateFaena = (id: string, field: string, value: any) => {
+  const updateFaena = (id: string, field: keyof FaenaMantencion, value: any) => {
     const updatedFaenas = faenas.map(faena =>
       faena.id === id ? { ...faena, [field]: value } : faena
     );
@@ -117,6 +120,25 @@ export const FaenasMantencion = ({ formData, updateFormData, readOnly = false }:
                       <div key={faena.id} className={`p-4 border rounded-lg ${getSectionColor(faena.tipo_seccion)}`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                           <div>
+                            <Label htmlFor={`tipo_mantencion_${faena.id}`}>Tipo de Mantención</Label>
+                            <Select
+                              value={faena.tipo_mantencion}
+                              onValueChange={(value) => updateFaena(faena.id, 'tipo_mantencion', value)}
+                              disabled={readOnly}
+                            >
+                              <SelectTrigger id={`tipo_mantencion_${faena.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="reparacion_red">Reparación de Red</SelectItem>
+                                <SelectItem value="cambio_malla">Cambio de Malla</SelectItem>
+                                <SelectItem value="instalacion">Instalación</SelectItem>
+                                <SelectItem value="mantenimiento_preventivo">Mantención Preventiva</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
                             <Label htmlFor={`tipo_seccion_${faena.id}`}>Tipo de Sección</Label>
                             <Select
                               value={faena.tipo_seccion}
@@ -156,9 +178,26 @@ export const FaenasMantencion = ({ formData, updateFormData, readOnly = false }:
                               disabled={readOnly}
                             />
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label htmlFor={`unidad_${faena.id}`}>Unidad</Label>
+                            <Select
+                              value={faena.unidad}
+                              onValueChange={(value) => updateFaena(faena.id, 'unidad', value)}
+                              disabled={readOnly}
+                            >
+                              <SelectTrigger id={`unidad_${faena.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="m2">m²</SelectItem>
+                                <SelectItem value="m">metros</SelectItem>
+                                <SelectItem value="unidades">unidades</SelectItem>
+                                <SelectItem value="kg">kilogramos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
                           <div>
                             <Label htmlFor={`ubicacion_${faena.id}`}>Ubicación</Label>
                             <Input
@@ -166,6 +205,20 @@ export const FaenasMantencion = ({ formData, updateFormData, readOnly = false }:
                               value={faena.ubicacion}
                               onChange={(e) => updateFaena(faena.id, 'ubicacion', e.target.value)}
                               placeholder="Descripción de ubicación"
+                              disabled={readOnly}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label htmlFor={`descripcion_trabajo_${faena.id}`}>Descripción del Trabajo</Label>
+                            <Textarea
+                              id={`descripcion_trabajo_${faena.id}`}
+                              value={faena.descripcion_trabajo}
+                              onChange={(e) => updateFaena(faena.id, 'descripcion_trabajo', e.target.value)}
+                              placeholder="Describe el trabajo realizado..."
+                              rows={3}
                               disabled={readOnly}
                             />
                           </div>

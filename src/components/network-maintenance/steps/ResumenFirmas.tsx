@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, AlertCircle, FileText, Users, Settings, Network } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, Contingencias } from '@/types/network-maintenance';
 
 interface ResumenFirmasProps {
   formData: NetworkMaintenanceData;
@@ -33,6 +33,18 @@ export const ResumenFirmas = ({ formData, updateFormData }: ResumenFirmasProps) 
     if (formData.observaciones_finales || formData.contingencias) completed++;
 
     return Math.round((completed / total) * 100);
+  };
+
+  const updateContingencias = (campo: keyof Contingencias, valor: string) => {
+    const contingenciasActuales = formData.contingencias || {};
+    const nuevasContingencias: Contingencias = {
+      ...contingenciasActuales,
+      [campo]: valor
+    };
+    
+    updateFormData({
+      contingencias: nuevasContingencias
+    });
   };
 
   return (
@@ -179,11 +191,11 @@ export const ResumenFirmas = ({ formData, updateFormData }: ResumenFirmasProps) 
         </div>
 
         <div>
-          <Label htmlFor="contingencias">Contingencias y Novedades</Label>
+          <Label htmlFor="contingencias_generales">Contingencias y Novedades</Label>
           <Textarea
-            id="contingencias"
-            value={formData.contingencias || ''}
-            onChange={(e) => updateFormData({ contingencias: e.target.value })}
+            id="contingencias_generales"
+            value={(formData.contingencias as Contingencias)?.observaciones_generales || ''}
+            onChange={(e) => updateContingencias('observaciones_generales', e.target.value)}
             placeholder="Registra cualquier contingencia o novedad..."
             rows={4}
           />

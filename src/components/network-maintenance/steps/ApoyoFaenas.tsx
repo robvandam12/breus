@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,10 +22,12 @@ export const ApoyoFaenas = ({ formData, updateFormData, readOnly = false }: Apoy
     const nuevoApoyo: ApoyoFaena = {
       id: Date.now().toString(),
       tipo_apoyo: 'baños',
+      cantidad_apoyo: 0,
+      unidad_apoyo: 'unidades',
+      descripcion_apoyo: '',
       seccion_apoyo: [],
       jaulas_apoyo: '',
       actividades_apoyo: [],
-      cantidad_apoyo: 0,
       obs_apoyo: ''
     };
 
@@ -160,6 +161,29 @@ export const ApoyoFaenas = ({ formData, updateFormData, readOnly = false }: Apoy
                     disabled={readOnly}
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor={`unidad_apoyo_${apoyo.id}`}>Unidad</Label>
+                  <Input
+                    id={`unidad_apoyo_${apoyo.id}`}
+                    value={apoyo.unidad_apoyo}
+                    onChange={(e) => actualizarApoyo(apoyo.id, 'unidad_apoyo', e.target.value)}
+                    placeholder="unidades, kg, etc."
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor={`descripcion_apoyo_${apoyo.id}`}>Descripción del Apoyo</Label>
+                <Textarea
+                  id={`descripcion_apoyo_${apoyo.id}`}
+                  value={apoyo.descripcion_apoyo}
+                  onChange={(e) => actualizarApoyo(apoyo.id, 'descripcion_apoyo', e.target.value)}
+                  placeholder="Describe el apoyo realizado..."
+                  rows={2}
+                  disabled={readOnly}
+                />
               </div>
 
               {/* Secciones */}
