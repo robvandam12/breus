@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndependentImmersionManager } from '@/components/inmersiones/IndependentImmersionManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InmersionesDataTable } from '@/components/inmersiones/InmersionesDataTable';
 
 export default function Inmersiones() {
   const [activeTab, setActiveTab] = useState('all');
@@ -140,110 +140,8 @@ export default function Inmersiones() {
           </Alert>
         )}
 
-        {/* Tabs para organizar inmersiones */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">
-              Todas las Inmersiones ({inmersiones?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="planned">
-              Planificadas ({plannedImmersions.length})
-            </TabsTrigger>
-            <TabsTrigger value="independent">
-              Independientes ({independentImmersions.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-200/50 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Todas las Inmersiones</h3>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                  {inmersiones?.length || 0} inmersiones
-                </Badge>
-              </div>
-
-              {inmersiones && inmersiones.length > 0 ? (
-                <div className="space-y-4">
-                  {inmersiones.map((inmersion: any) => (
-                    <div key={inmersion.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{inmersion.codigo}</h4>
-                          <p className="text-sm text-gray-600">Fecha: {inmersion.fecha_inmersion}</p>
-                          <p className="text-sm text-gray-600">Profundidad: {inmersion.profundidad_maxima || inmersion.profundidad_metros}m</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={inmersion.operacion_id ? 'secondary' : 'default'}
-                            className="text-xs"
-                          >
-                            {inmersion.operacion_id ? 'Planificada' : 'Independiente'}
-                          </Badge>
-                          {inmersion.estado && (
-                            <Badge variant="outline" className="text-xs">
-                              {inmersion.estado}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Anchor className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No hay inmersiones</h3>
-                  <p className="text-gray-600 mb-6">
-                    Comienza creando tu primera inmersión
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="planned" className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-200/50 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Inmersiones Planificadas</h3>
-                <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                  {plannedImmersions.length} inmersiones
-                </Badge>
-              </div>
-
-              {plannedImmersions.length > 0 ? (
-                <div className="space-y-4">
-                  {plannedImmersions.map((inmersion: any) => (
-                    <div key={inmersion.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{inmersion.codigo}</h4>
-                          <p className="text-sm text-gray-600">Operación: {inmersion.operacion_id}</p>
-                          <p className="text-sm text-gray-600">Fecha: {inmersion.fecha_inmersion}</p>
-                        </div>
-                        <Badge variant="secondary">
-                          Planificada
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Anchor className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No hay inmersiones planificadas</h3>
-                  <p className="text-gray-600">
-                    Las inmersiones planificadas se crean desde las operaciones
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="independent" className="space-y-6">
-            <IndependentImmersionManager />
-          </TabsContent>
-        </Tabs>
+        {/* Usar el nuevo componente de tabla de inmersiones */}
+        <InmersionesDataTable />
       </div>
     </MainLayout>
   );

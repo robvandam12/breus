@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from "@/components/ui/toast";
 
 const getStatusBadge = (status: string, firmado: boolean) => {
   if (firmado) {
@@ -43,6 +43,8 @@ export const AnexoBravoDataTable = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingAnexo, setEditingAnexo] = useState<string>('');
+  const [viewingAnexo, setViewingAnexo] = useState<any>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
 
   const { anexosBravo, isLoading } = useAnexoBravo();
   const { operaciones } = useOperaciones();
@@ -69,9 +71,37 @@ export const AnexoBravoDataTable = () => {
     setShowCreateDialog(true);
   };
 
+  const handleViewAnexo = (anexo: any) => {
+    setViewingAnexo(anexo);
+    setShowViewDialog(true);
+  };
+
+  const handleDownloadAnexo = (anexo: any) => {
+    // Simular descarga - en producción esto generaría un PDF
+    const dataStr = JSON.stringify(anexo, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `AnexoBravo_${anexo.codigo}_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast({
+      title: "Descarga iniciada",
+      description: `Se ha descargado el Anexo Bravo ${anexo.codigo}`,
+    });
+  };
+
   const handleCloseDialog = () => {
     setShowCreateDialog(false);
     setEditingAnexo('');
+  };
+
+  const handleCloseViewDialog = () => {
+    setShowViewDialog(false);
+    setViewingAnexo(null);
   };
 
   if (isLoading) {
@@ -245,7 +275,11 @@ export const AnexoBravoDataTable = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadAnexo(anexo)}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                       </div>
@@ -279,6 +313,46 @@ export const AnexoBravoDataTable = () => {
             onSubmit={() => handleCloseDialog()}
             onCancel={handleCloseDialog}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para ver Anexo Bravo */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle Anexo Bravo - {viewingAnexo?.codigo}</DialogTitle>
+          </DialogHeader>
+          {viewingAnexo && (
+            <div className="space-y-4 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Código</label>
+                  <p className="font-medium">{viewingAnexo.codigo}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Supervisor</label>
+                  <p>{viewingAnexo.supervisor}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Fecha</label>
+                  <p>{viewingAnexo.fecha ? new Date(viewingAnexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Estado</label>
+                  <div>{getStatusBadge(viewingAnexo.estado || 'borrador', viewingAnexo.firmado)}</div>
+                </div>
+              </div>
+              {viewingAnexo.lugar_faena && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Lugar de Faena</label>
+                  <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{viewingAnexo.lugar_faena}</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={handleCloseViewDialog}>Cerrar</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

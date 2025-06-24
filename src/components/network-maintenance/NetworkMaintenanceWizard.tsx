@@ -1,323 +1,338 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Save, Network } from "lucide-react";
-import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
-import { toast } from '@/hooks/use-toast';
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
-
-// Import the existing step components
-import { EncabezadoGeneral } from "./steps/EncabezadoGeneral";
-import { DotacionBuceo } from "./steps/DotacionBuceo";
-import { EquiposSuperficie } from "./steps/EquiposSuperficie";
-import { FaenasMantencion } from "./steps/FaenasMantencion";
-import { SistemasEquipos } from "./steps/SistemasEquipos";
-import { ResumenFirmas } from "./steps/ResumenFirmas";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Plus, X, Save, ArrowLeft } from "lucide-react";
+import { useMaintenanceNetworks } from '@/hooks/useMaintenanceNetworks';
 
 interface NetworkMaintenanceWizardProps {
-  operacionId?: string;
+  operacionId: string;
   tipoFormulario: 'mantencion' | 'faena_redes';
   onComplete: () => void;
   onCancel: () => void;
-  editingFormId?: string;
-  readOnly?: boolean;
+  editingFormId?: string | null;
 }
 
-export const NetworkMaintenanceWizard = ({ 
-  operacionId, 
-  tipoFormulario, 
-  onComplete, 
+export const NetworkMaintenanceWizard = ({
+  operacionId,
+  tipoFormulario,
+  onComplete,
   onCancel,
-  editingFormId,
-  readOnly = false
+  editingFormId
 }: NetworkMaintenanceWizardProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<NetworkMaintenanceData>({
+  const { createMaintenanceForm, isCreating } = useMaintenanceNetworks();
+  
+  const [formData, setFormData] = useState({
+    codigo: `MAN-${Date.now().toString().slice(-6)}`,
+    tipo_formulario: tipoFormulario,
+    fecha: new Date().toISOString().split('T')[0],
     lugar_trabajo: '',
-    fecha: '',
-    temperatura: 0,
-    hora_inicio: '',
-    hora_termino: '',
-    profundidad_max: 0,
     nave_maniobras: '',
+    matricula_nave: '',
+    estado_puerto: 'calmo',
     team_s: '',
     team_be: '',
     team_bi: '',
-    matricula_nave: '',
-    estado_puerto: '',
-    dotacion: [],
-    equipos_superficie: [],
-    faenas_mantencion: [],
-    faenas_redes: [],
-    sistemas_equipos: [],
-    tipo_formulario: tipoFormulario,
-    progreso: 0,
-    firmado: false,
-    estado: 'borrador'
+    hora_inicio: '',
+    hora_termino: '',
+    profundidad_max: 0,
+    temperatura: 0,
+    multix_data: {}
   });
 
-  const { 
-    loading, 
-    createNetworkMaintenance, 
-    updateNetworkMaintenance, 
-    completeNetworkMaintenance 
-  } = useNetworkMaintenance();
+  const [dotacion, setDotacion] = useState([{
+    nombre: '',
+    apellido: '',
+    matricula: '',
+    rol: 'buzo',
+    equipo: '',
+    contratista: false
+  }]);
 
-  const [savedFormId, setSavedFormId] = useState<string | null>(editingFormId || null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [equiposSuperficie, setEquiposSuperficie] = useState([{
+    equipo_sup: '',
+    matricula_eq: '',
+    horometro_ini: 0,
+    horometro_fin: 0
+  }]);
 
-  const steps = [
-    { id: 1, title: "Encabezado General", description: "Información básica de la operación" },
-    { id: 2, title: "Dotación de Buceo", description: "Personal y roles asignados" },
-    { id: 3, title: "Equipos de Superficie", description: "Compresores y equipos" },
-    { id: 4, title: "Faenas de Mantención", description: "Trabajos en redes y estructuras" },
-    { id: 5, title: "Sistemas y Equipos", description: "Equipos operacionales" },
-    { id: 6, title: "Resumen y Firmas", description: "Validación final" }
-  ];
-
-  const totalSteps = steps.length;
-  const progress = (currentStep / totalSteps) * 100;
-
-  const updateFormData = (newData: Partial<NetworkMaintenanceData>) => {
-    setFormData(prev => {
-      const updated = { ...prev, ...newData };
-      setHasUnsavedChanges(true);
-      return updated;
-    });
-  };
-
-  const handleSave = async (showToast = true) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
-      if (savedFormId) {
-        await updateNetworkMaintenance(savedFormId, formData);
-      } else {
-        const result = await createNetworkMaintenance({
-          operacion_id: operacionId || '',
-          codigo: `NM-${Date.now()}`,
-          tipo_formulario: tipoFormulario,
-          multix_data: formData,
-          fecha: formData.fecha || '',
-          hora_inicio: formData.hora_inicio || '',
-          hora_termino: formData.hora_termino || '',
-          lugar_trabajo: formData.lugar_trabajo || '',
-          nombre_nave: formData.nave_maniobras || '',
-          matricula_nave: formData.matricula_nave || '',
-          nombre_centro: '',
-          codigo_centro: '',
-          fecha_operacion: formData.fecha || '',
-          condiciones_meteorologicas: ''
-        });
-        setSavedFormId(result.id);
-      }
-      
-      setHasUnsavedChanges(false);
-      
-      if (showToast) {
-        toast({
-          title: "Guardado exitoso",
-          description: "El formulario ha sido guardado correctamente",
-        });
-      }
-    } catch (error) {
-      console.error('Error saving form:', error);
-      if (showToast) {
-        toast({
-          title: "Error al guardar",
-          description: "No se pudo guardar el formulario",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.lugar_trabajo && formData.fecha && formData.hora_inicio);
-      case 2:
-        return formData.dotacion && formData.dotacion.length > 0;
-      case 3:
-        return true;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      case 6:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const handleNext = async () => {
-    if (validateStep(currentStep)) {
-      const updatedData = {
+      await createMaintenanceForm({
         ...formData,
-        progreso: Math.max(formData.progreso || 0, (currentStep / totalSteps) * 100)
-      };
-      updateFormData(updatedData);
-      
-      if (currentStep < totalSteps) {
-        setCurrentStep(currentStep + 1);
-      }
-      
-      await handleSave(false);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (validateStep(currentStep)) {
-      try {
-        const finalData = {
-          ...formData,
-          progreso: 100,
-          estado: 'completado' as const,
-          firmado: true
-        };
-        
-        updateFormData(finalData);
-        
-        if (savedFormId) {
-          await completeNetworkMaintenance(savedFormId);
+        dotacion,
+        equipos_superficie: equiposSuperficie,
+        multix_data: {
+          dotacion,
+          equipos_superficie: equiposSuperficie,
+          tipo_formulario: tipoFormulario
         }
-        
-        toast({
-          title: "Formulario completado",
-          description: "El formulario de mantención de redes ha sido completado exitosamente",
-        });
-        
-        onComplete();
-      } catch (error) {
-        console.error('Error completing form:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo completar el formulario",
-          variant: "destructive",
-        });
-      }
+      });
+      onComplete();
+    } catch (error) {
+      console.error('Error creating form:', error);
     }
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <EncabezadoGeneral
-            data={formData}
-            onDataChange={updateFormData}
-          />
-        );
-      case 2:
-        return (
-          <DotacionBuceo
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        );
-      case 3:
-        return (
-          <EquiposSuperficie
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        );
-      case 4:
-        return (
-          <FaenasMantencion
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        );
-      case 5:
-        return (
-          <SistemasEquipos
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        );
-      case 6:
-        return (
-          <ResumenFirmas
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        );
-      default:
-        return <div>Paso no encontrado</div>;
-    }
+  const addDotacionMember = () => {
+    setDotacion([...dotacion, {
+      nombre: '',
+      apellido: '',
+      matricula: '',
+      rol: 'buzo',
+      equipo: '',
+      contratista: false
+    }]);
+  };
+
+  const removeDotacionMember = (index: number) => {
+    setDotacion(dotacion.filter((_, i) => i !== index));
+  };
+
+  const addEquipoSuperficie = () => {
+    setEquiposSuperficie([...equiposSuperficie, {
+      equipo_sup: '',
+      matricula_eq: '',
+      horometro_ini: 0,
+      horometro_fin: 0
+    }]);
+  };
+
+  const removeEquipoSuperficie = (index: number) => {
+    setEquiposSuperficie(equiposSuperficie.filter((_, i) => i !== index));
   };
 
   return (
-    <Card className="w-full max-w-5xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Network className="h-6 w-6" />
-              Mantención de Redes - {tipoFormulario === 'mantencion' ? 'Mantención' : 'Faena'}
-              {hasUnsavedChanges && <span className="text-amber-500 text-sm">(Sin guardar)</span>}
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {!readOnly && (
-              <Button 
-                variant="outline" 
-                onClick={() => handleSave(true)}
-                disabled={loading || !hasUnsavedChanges}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Guardando...' : 'Guardar'}
-              </Button>
-            )}
-            <Button variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">
+            {tipoFormulario === 'mantencion' ? 'Formulario de Mantención' : 'Formulario de Faena de Redes'}
+          </h2>
+          <p className="text-gray-600">Complete los datos del formulario operativo</p>
         </div>
-        <Progress value={progress} className="w-full mt-4" />
-      </CardHeader>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Cancelar
+          </Button>
+        </div>
+      </div>
 
-      <CardContent>
-        {renderStepContent()}
-
-        {!readOnly && (
-          <div className="flex justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
-
-            <div className="flex gap-2">
-              {currentStep < totalSteps ? (
-                <Button onClick={handleNext} disabled={loading}>
-                  Siguiente
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit} disabled={loading}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? 'Procesando...' : 'Finalizar Mantención'}
-                </Button>
-              )}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Datos Generales */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Datos Generales</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="codigo">Código</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="fecha">Fecha</Label>
+                <Input
+                  id="fecha"
+                  type="date"
+                  value={formData.fecha}
+                  onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="lugar_trabajo">Lugar de Trabajo</Label>
+                <Input
+                  id="lugar_trabajo"
+                  value={formData.lugar_trabajo}
+                  onChange={(e) => setFormData({...formData, lugar_trabajo: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="nave_maniobras">Nave/Maniobras</Label>
+                <Input
+                  id="nave_maniobras"
+                  value={formData.nave_maniobras}
+                  onChange={(e) => setFormData({...formData, nave_maniobras: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="matricula_nave">Matrícula Nave</Label>
+                <Input
+                  id="matricula_nave"
+                  value={formData.matricula_nave}
+                  onChange={(e) => setFormData({...formData, matricula_nave: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="estado_puerto">Estado Puerto</Label>
+                <Select value={formData.estado_puerto} onValueChange={(value) => setFormData({...formData, estado_puerto: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="calmo">Calmo</SelectItem>
+                    <SelectItem value="moderado">Moderado</SelectItem>
+                    <SelectItem value="agitado">Agitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+
+        {/* Dotación */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Dotación</CardTitle>
+              <Button type="button" onClick={addDotacionMember} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Persona
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {dotacion.map((member, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge variant="outline">Persona {index + 1}</Badge>
+                    {dotacion.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeDotacionMember(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Nombre</Label>
+                      <Input
+                        value={member.nombre}
+                        onChange={(e) => {
+                          const newDotacion = [...dotacion];
+                          newDotacion[index].nombre = e.target.value;
+                          setDotacion(newDotacion);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Apellido</Label>
+                      <Input
+                        value={member.apellido}
+                        onChange={(e) => {
+                          const newDotacion = [...dotacion];
+                          newDotacion[index].apellido = e.target.value;
+                          setDotacion(newDotacion);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Matrícula</Label>
+                      <Input
+                        value={member.matricula}
+                        onChange={(e) => {
+                          const newDotacion = [...dotacion];
+                          newDotacion[index].matricula = e.target.value;
+                          setDotacion(newDotacion);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Equipos de Superficie */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Equipos de Superficie</CardTitle>
+              <Button type="button" onClick={addEquipoSuperficie} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Equipo
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {equiposSuperficie.map((equipo, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge variant="outline">Equipo {index + 1}</Badge>
+                    {equiposSuperficie.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeEquipoSuperficie(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Equipo</Label>
+                      <Input
+                        value={equipo.equipo_sup}
+                        onChange={(e) => {
+                          const newEquipos = [...equiposSuperficie];
+                          newEquipos[index].equipo_sup = e.target.value;
+                          setEquiposSuperficie(newEquipos);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>Matrícula</Label>
+                      <Input
+                        value={equipo.matricula_eq}
+                        onChange={(e) => {
+                          const newEquipos = [...equiposSuperficie];
+                          newEquipos[index].matricula_eq = e.target.value;
+                          setEquiposSuperficie(newEquipos);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Botones de acción */}  
+        <div className="flex justify-end gap-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={isCreating}>
+            <Save className="w-4 h-4 mr-2" />
+            {isCreating ? 'Guardando...' : 'Guardar Formulario'}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };

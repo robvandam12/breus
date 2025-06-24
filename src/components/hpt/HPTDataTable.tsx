@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { toast } from 'react-toastify';
 
 const getStatusBadge = (status: string, firmado: boolean) => {
   if (firmado) {
@@ -43,6 +43,8 @@ export const HPTDataTable = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingHPT, setEditingHPT] = useState<string>('');
+  const [viewingHPT, setViewingHPT] = useState<any>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
 
   const { hpts, isLoading } = useHPT();
   const { operaciones } = useOperaciones();
@@ -69,9 +71,37 @@ export const HPTDataTable = () => {
     setShowCreateDialog(true);
   };
 
+  const handleViewHPT = (hpt: any) => {
+    setViewingHPT(hpt);
+    setShowViewDialog(true);
+  };
+
+  const handleDownloadHPT = (hpt: any) => {
+    // Simular descarga - en producción esto generaría un PDF
+    const dataStr = JSON.stringify(hpt, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `HPT_${hpt.codigo}_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast({
+      title: "Descarga iniciada",
+      description: `Se ha descargado el HPT ${hpt.codigo}`,
+    });
+  };
+
   const handleCloseDialog = () => {
     setShowCreateDialog(false);
     setEditingHPT('');
+  };
+
+  const handleCloseViewDialog = () => {
+    setShowViewDialog(false);
+    setViewingHPT(null);
   };
 
   if (isLoading) {
@@ -245,7 +275,11 @@ export const HPTDataTable = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadHPT(hpt)}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                       </div>
@@ -277,6 +311,46 @@ export const HPTDataTable = () => {
             onComplete={handleCloseDialog}
             onCancel={handleCloseDialog}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para ver HPT */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle HPT - {viewingHPT?.codigo}</DialogTitle>
+          </DialogHeader>
+          {viewingHPT && (
+            <div className="space-y-4 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Código</label>
+                  <p className="font-medium">{viewingHPT.codigo}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Supervisor</label>
+                  <p>{viewingHPT.supervisor}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Fecha</label>
+                  <p>{viewingHPT.fecha ? new Date(viewingHPT.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Estado</label>
+                  <div>{getStatusBadge(viewingHPT.estado || 'borrador', viewingHPT.firmado)}</div>
+                </div>
+              </div>
+              {viewingHPT.plan_trabajo && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Plan de Trabajo</label>
+                  <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{viewingHPT.plan_trabajo}</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={handleCloseViewDialog}>Cerrar</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

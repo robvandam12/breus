@@ -9,8 +9,6 @@ export default function AnexoBravo() {
       title="Anexo Bravo"
       subtitle="Gestión de formularios Anexo Bravo para operaciones de buceo"
       icon={FileText}
-      className="bg-white"
-      contentClassName="bg-white"
     >
       <AnexoBravoDataTable />
     </MainLayout>

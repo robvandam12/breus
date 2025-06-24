@@ -1,124 +1,124 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { UseMutateFunction } from '@tanstack/react-query';
-
-export interface Usuario {
-  usuario_id: string;
-  email: string;
-  nombre: string;
-  apellido: string;
-  rol: 'superuser' | 'admin_salmonera' | 'admin_servicio' | 'supervisor' | 'buzo';
-  salmonera_id?: string;
-  servicio_id?: string;
-  perfil_completado?: boolean;
-  perfil_buzo?: any;
-  estado_buzo?: 'activo' | 'inactivo' | 'suspendido' | null;
-  created_at: string;
-  updated_at: string;
-  salmonera?: {
-    nombre: string;
-    rut: string;
-  };
-  servicio?: {
-    nombre: string;
-    rut: string;
-  };
-}
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export const useUsuarios = () => {
   const queryClient = useQueryClient();
 
-  const { data: usuarios = [], isLoading } = useQuery({
+  const { data: usuarios = [], isLoading, error } = useQuery({
     queryKey: ['usuarios'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras(nombre, rut),
-          servicio:contratistas(nombre, rut)
+          salmonera:salmonera_id(nombre, rut),
+          servicio:servicio_id(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching usuarios:', error);
+        throw error;
+      }
       
-      // Transform the data to match our Usuario interface
-      return data.map(user => ({
-        ...user,
-        servicio: Array.isArray(user.servicio) && user.servicio.length > 0 
-          ? user.servicio[0] 
-          : user.servicio
-      })) as Usuario[];
+      return data.map(usuario => ({
+        ...usuario,
+        empresa_nombre: usuario.salmonera?.nombre || usuario.servicio?.nombre || 'Sin empresa',
+        empresa_tipo: usuario.salmonera ? 'salmonera' : usuario.servicio ? 'contratista' : 'sin_empresa'
+      }));
     },
   });
 
   const updateUsuario = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Usuario> & { id: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { data: updatedData, error } = await supabase
         .from('usuario')
-        .update(updates)
+        .update(data)
         .eq('usuario_id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return updatedData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast({
-        title: 'Usuario actualizado',
-        description: 'Los datos del usuario han sido actualizados exitosamente.',
+        title: "Usuario actualizado",
+        description: "El usuario ha sido actualizado exitosamente.",
       });
     },
     onError: (error) => {
+      console.error('Error updating usuario:', error);
       toast({
-        title: 'Error',
-        description: `Error al actualizar el usuario: ${error.message}`,
-        variant: 'destructive',
+        title: "Error",
+        description: "No se pudo actualizar el usuario.",
+        variant: "destructive",
       });
     },
   });
 
-  const inviteUsuario = useMutation({
-    mutationFn: async (invitationData: {
-      email: string;
-      nombre: string;
-      apellido: string;
-      rol: string;
-      empresa_id?: string;
-      tipo_empresa?: 'salmonera' | 'contratista';
-    }) => {
-      const token = crypto.randomUUID();
-      
-      const { data, error } = await supabase
-        .from('usuario_invitaciones')
-        .insert({
-          ...invitationData,
-          token,
-        })
-        .select()
+  const getUserStats = async (userId: string) => {
+    try {
+      // Obtener estadísticas de HPTs
+      const { data: hptStats } = await supabase
+        .from('hpt')
+        .select('id')
+        .eq('user_id', userId);
+
+      // Obtener estadísticas de Anexos Bravo
+      const { data: anexoStats } = await supabase
+        .from('anexo_bravo')
+        .select('id')
+        .eq('user_id', userId);
+
+      // Obtener estadísticas de inmersiones
+      const { data: inmersionStats } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .or(`buzo_principal_id.eq.${userId},supervisor_id.eq.${userId}`);
+
+      // Obtener estadísticas de bitácoras
+      const { data: bitacoraStats } = await supabase
+        .from('bitacora_supervisor')
+        .select('bitacora_id')
+        .eq('aprobada_por', userId);
+
+      // Obtener última actividad
+      const { data: lastActivity } = await supabase
+        .from('usuario_actividad')
+        .select('created_at')
+        .eq('usuario_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invitaciones'] });
-      toast({
-        title: 'Invitación enviada',
-        description: 'La invitación ha sido enviada exitosamente.',
-      });
-    },
-  });
+      return {
+        hpts_created: hptStats?.length || 0,
+        anexos_created: anexoStats?.length || 0,
+        inmersiones: inmersionStats?.length || 0,
+        bitacoras: bitacoraStats?.length || 0,
+        last_activity: lastActivity?.created_at || null
+      };
+    } catch (error) {
+      console.error('Error getting user stats:', error);
+      return {
+        hpts_created: 0,
+        anexos_created: 0,
+        inmersiones: 0,
+        bitacoras: 0,
+        last_activity: null
+      };
+    }
+  };
 
   return {
     usuarios,
     isLoading,
-    updateUsuario: updateUsuario.mutate,
-    inviteUsuario: inviteUsuario.mutate,
-    isUpdating: updateUsuario.isPending,
+    error,
+    updateUsuario: updateUsuario.mutateAsync,
+    getUserStats,
   };
 };
