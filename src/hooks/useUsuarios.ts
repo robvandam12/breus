@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -14,8 +15,8 @@ export const useUsuarios = () => {
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras(nombre, rut),
-          contratista:contratistas(nombre, rut)
+          salmoneras!salmonera_id(nombre, rut),
+          contratistas!servicio_id(nombre, rut)
         `);
 
       if (error) throw error;
@@ -34,12 +35,8 @@ export const useUsuarios = () => {
         salmonera_id: user.salmonera_id,
         servicio_id: user.servicio_id,
         perfil_buzo: user.perfil_buzo,
-        salmonera: Array.isArray(user.salmonera) 
-          ? user.salmonera[0] 
-          : user.salmonera || undefined,
-        contratista: Array.isArray(user.contratista) 
-          ? (user.contratista.length > 0 ? user.contratista[0] : undefined)
-          : user.contratista || undefined
+        salmonera: user.salmoneras || undefined,
+        contratista: user.contratistas || undefined
       })) || [];
 
       setUsuarios(transformedData);

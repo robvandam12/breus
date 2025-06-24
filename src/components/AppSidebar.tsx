@@ -219,7 +219,7 @@ export function AppSidebar() {
 
   // Función para filtrar items y subitems por módulos y roles
   const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
-    return items.map(item => {
+    const filteredItems = items.map(item => {
       // Crear una copia del item para no mutar el original
       const itemCopy = { ...item };
 
@@ -249,11 +249,8 @@ export function AppSidebar() {
       }
 
       // Si tiene subitems, verificar que tenga al menos uno válido
-      if (item.items) {
-        // Si no hay subitems válidos después del filtrado, no mostrar el item padre
-        if (item.items.length === 0) {
-          return false;
-        }
+      if (item.items && item.items.length === 0) {
+        return false;
       }
 
       // Filtrar item padre por módulo solo si él mismo requiere módulo
@@ -263,6 +260,8 @@ export function AppSidebar() {
 
       return true;
     });
+
+    return filteredItems;
   };
 
   const filteredMenuItems = filterMenuItems(menuItems);
