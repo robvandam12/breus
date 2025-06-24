@@ -17,28 +17,38 @@ interface SistemasEquiposProps {
 
 interface SistemaEquipo {
   id: string;
-  tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
-  nombre_equipo: string;
-  estado_operativo: 'operativo' | 'mantenimiento' | 'fuera_servicio';
-  observaciones: string;
-  trabajo_realizado: string;
-  responsable: string;
-  verificado: boolean;
+  jaulas_sist: string;
+  tipo_trabajo_sist: string[];
+  focos: number;
+  extractor: number;
+  aireacion: number;
+  oxigenacion: number;
+  otros_sist: string;
+  obs_sist: string;
 }
 
 export const SistemasEquipos = ({ formData, updateFormData }: SistemasEquiposProps) => {
   const sistemas = formData.sistemas_equipos || [];
 
+  const tiposTrabajo = [
+    'Instalación',
+    'Mantención', 
+    'Recuperación',
+    'Limpieza',
+    'Ajuste'
+  ];
+
   const agregarSistema = () => {
     const nuevoSistema: SistemaEquipo = {
       id: Date.now().toString(),
-      tipo_sistema: 'alimentacion',
-      nombre_equipo: '',
-      estado_operativo: 'operativo',
-      observaciones: '',
-      trabajo_realizado: '',
-      responsable: '',
-      verificado: false
+      jaulas_sist: '',
+      tipo_trabajo_sist: [],
+      focos: 0,
+      extractor: 0,
+      aireacion: 0,
+      oxigenacion: 0,
+      otros_sist: '',
+      obs_sist: ''
     };
 
     updateFormData({
@@ -58,16 +68,28 @@ export const SistemasEquipos = ({ formData, updateFormData }: SistemasEquiposPro
     updateFormData({ sistemas_equipos: sistemasActualizados });
   };
 
+  const toggleTipoTrabajo = (sistemaId: string, tipo: string) => {
+    const sistema = sistemas.find(s => s.id === sistemaId);
+    if (!sistema) return;
+
+    const tipos = sistema.tipo_trabajo_sist || [];
+    const nuevaLista = tipos.includes(tipo) 
+      ? tipos.filter(t => t !== tipo)
+      : [...tipos, tipo];
+    
+    actualizarSistema(sistemaId, 'tipo_trabajo_sist', nuevaLista);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            Sistemas y Equipos Operacionales
+            Sistemas y Equipos
           </h3>
           <p className="text-sm text-gray-600">
-            Registro de trabajos en sistemas y equipos de la instalación
+            Registro de trabajos en sistemas de las jaulas
           </p>
         </div>
         <Button onClick={agregarSistema} variant="outline">
@@ -94,95 +116,99 @@ export const SistemasEquipos = ({ formData, updateFormData }: SistemasEquiposPro
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`tipo_sistema_${sistema.id}`}>Tipo de Sistema</Label>
-                  <Select
-                    value={sistema.tipo_sistema}
-                    onValueChange={(value) => actualizarSistema(sistema.id, 'tipo_sistema', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="alimentacion">Sistema de Alimentación</SelectItem>
-                      <SelectItem value="oxigenacion">Sistema de Oxigenación</SelectItem>
-                      <SelectItem value="limpieza">Sistema de Limpieza</SelectItem>
-                      <SelectItem value="monitoreo">Sistema de Monitoreo</SelectItem>
-                      <SelectItem value="seguridad">Sistema de Seguridad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor={`jaulas_${sistema.id}`}>Nº Jaula(s)</Label>
+                <Input
+                  id={`jaulas_${sistema.id}`}
+                  value={sistema.jaulas_sist}
+                  onChange={(e) => actualizarSistema(sistema.id, 'jaulas_sist', e.target.value)}
+                  placeholder="Ej: 1, 2, 3-5"
+                />
+              </div>
 
+              <div>
+                <Label>Tipo de Trabajo</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  {tiposTrabajo.map(tipo => (
+                    <div key={tipo} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tipo_${sistema.id}_${tipo}`}
+                        checked={sistema.tipo_trabajo_sist?.includes(tipo) || false}
+                        onCheckedChange={() => toggleTipoTrabajo(sistema.id, tipo)}
+                      />
+                      <Label htmlFor={`tipo_${sistema.id}_${tipo}`} className="text-sm">
+                        {tipo}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor={`nombre_equipo_${sistema.id}`}>Nombre del Equipo</Label>
+                  <Label htmlFor={`focos_${sistema.id}`}>Focos fotoperíodo</Label>
                   <Input
-                    id={`nombre_equipo_${sistema.id}`}
-                    value={sistema.nombre_equipo}
-                    onChange={(e) => actualizarSistema(sistema.id, 'nombre_equipo', e.target.value)}
-                    placeholder="Ej: Compresor principal A1"
+                    id={`focos_${sistema.id}`}
+                    type="number"
+                    min="0"
+                    value={sistema.focos}
+                    onChange={(e) => actualizarSistema(sistema.id, 'focos', parseInt(e.target.value) || 0)}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor={`estado_${sistema.id}`}>Estado Operativo</Label>
-                  <Select
-                    value={sistema.estado_operativo}
-                    onValueChange={(value) => actualizarSistema(sistema.id, 'estado_operativo', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="operativo">Operativo</SelectItem>
-                      <SelectItem value="mantenimiento">En Mantenimiento</SelectItem>
-                      <SelectItem value="fuera_servicio">Fuera de Servicio</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor={`extractor_${sistema.id}`}>Extractor de mortalidad</Label>
+                  <Input
+                    id={`extractor_${sistema.id}`}
+                    type="number"
+                    min="0"
+                    value={sistema.extractor}
+                    onChange={(e) => actualizarSistema(sistema.id, 'extractor', parseInt(e.target.value) || 0)}
+                  />
                 </div>
 
                 <div>
-                  <Label htmlFor={`responsable_${sistema.id}`}>Responsable</Label>
+                  <Label htmlFor={`aireacion_${sistema.id}`}>Sistema de aireación</Label>
                   <Input
-                    id={`responsable_${sistema.id}`}
-                    value={sistema.responsable}
-                    onChange={(e) => actualizarSistema(sistema.id, 'responsable', e.target.value)}
-                    placeholder="Nombre del responsable"
+                    id={`aireacion_${sistema.id}`}
+                    type="number"
+                    min="0"
+                    value={sistema.aireacion}
+                    onChange={(e) => actualizarSistema(sistema.id, 'aireacion', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`oxigenacion_${sistema.id}`}>Sistema de oxigenación</Label>
+                  <Input
+                    id={`oxigenacion_${sistema.id}`}
+                    type="number"
+                    min="0"
+                    value={sistema.oxigenacion}
+                    onChange={(e) => actualizarSistema(sistema.id, 'oxigenacion', parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor={`trabajo_${sistema.id}`}>Trabajo Realizado</Label>
+                <Label htmlFor={`otros_${sistema.id}`}>Otros</Label>
+                <Input
+                  id={`otros_${sistema.id}`}
+                  value={sistema.otros_sist}
+                  onChange={(e) => actualizarSistema(sistema.id, 'otros_sist', e.target.value)}
+                  placeholder="Otros sistemas trabajados..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor={`obs_${sistema.id}`}>Observaciones</Label>
                 <Textarea
-                  id={`trabajo_${sistema.id}`}
-                  value={sistema.trabajo_realizado}
-                  onChange={(e) => actualizarSistema(sistema.id, 'trabajo_realizado', e.target.value)}
-                  placeholder="Describe el trabajo realizado en el sistema..."
+                  id={`obs_${sistema.id}`}
+                  value={sistema.obs_sist}
+                  onChange={(e) => actualizarSistema(sistema.id, 'obs_sist', e.target.value)}
+                  placeholder="Observaciones del trabajo realizado..."
                   rows={3}
                 />
-              </div>
-
-              <div>
-                <Label htmlFor={`observaciones_${sistema.id}`}>Observaciones</Label>
-                <Textarea
-                  id={`observaciones_${sistema.id}`}
-                  value={sistema.observaciones}
-                  onChange={(e) => actualizarSistema(sistema.id, 'observaciones', e.target.value)}
-                  placeholder="Observaciones adicionales..."
-                  rows={2}
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`verificado_${sistema.id}`}
-                  checked={sistema.verificado}
-                  onCheckedChange={(checked) => actualizarSistema(sistema.id, 'verificado', checked)}
-                />
-                <Label htmlFor={`verificado_${sistema.id}`}>
-                  Trabajo verificado y completado
-                </Label>
               </div>
             </CardContent>
           </Card>

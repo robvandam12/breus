@@ -1,47 +1,39 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Save, ArrowLeft, ArrowRight } from "lucide-react";
-import { useMaintenanceNetworks } from '@/hooks/useMaintenanceNetworks';
-import { EncabezadoGeneral } from './forms/EncabezadoGeneral';
-import { DotacionBuceo } from './forms/DotacionBuceo';
-import { EquiposSuperficie } from './forms/EquiposSuperficie';
-import { FaenasMantencion } from './forms/FaenasMantencion';
+import { ChevronLeft, ChevronRight, Save, Check } from "lucide-react";
+import { EncabezadoGeneral } from "./forms/EncabezadoGeneral";
+import { DotacionBuceo } from "./forms/DotacionBuceo";
+import { EquiposSuperficie } from "./forms/EquiposSuperficie";
+import { FaenasMantencion } from "./forms/FaenasMantencion";
+import { SistemasEquipos } from "./steps/SistemasEquipos";
+import { FirmasDigitales } from "./forms/FirmasDigitales";
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface NetworkMaintenanceWizardProps {
-  operacionId: string;
-  tipoFormulario: 'mantencion' | 'faena_redes';
-  onComplete: () => void;
-  onCancel: () => void;
-  editingFormId?: string | null;
-  readOnly?: boolean;
+  operationId?: string;
+  onComplete?: (data: NetworkMaintenanceData) => void;
+  onCancel?: () => void;
 }
 
-export const NetworkMaintenanceWizard = ({
-  operacionId,
-  tipoFormulario,
-  onComplete,
-  onCancel,
-  editingFormId,
-  readOnly = false
+export const NetworkMaintenanceWizard = ({ 
+  operationId, 
+  onComplete, 
+  onCancel 
 }: NetworkMaintenanceWizardProps) => {
-  const { createMaintenanceForm, isCreating } = useMaintenanceNetworks();
-  const [currentStep, setCurrentStep] = useState(1);
-  
-  const [formData, setFormData] = useState({
-    codigo: `${tipoFormulario === 'mantencion' ? 'MAN' : 'FAE'}-${Date.now().toString().slice(-6)}`,
-    tipo_formulario: tipoFormulario,
-    operacion_id: operacionId,
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<NetworkMaintenanceData>({
+    codigo: `NM-${Date.now()}`,
+    operacion_id: operationId || '',
+    tipo_formulario: 'mantencion_redes',
+    estado: 'borrador',
+    progreso: 0,
     
     // Encabezado General
     lugar_trabajo: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: '',
     temperatura: 0,
     hora_inicio: '',
     hora_termino: '',
@@ -51,294 +43,272 @@ export const NetworkMaintenanceWizard = ({
     team_be: '',
     team_bi: '',
     matricula_nave: '',
-    estado_puerto: 'calmo',
+    estado_puerto: '',
     
-    // Datos específicos por tipo
-    supervisor_faena: '',
-    obs_generales: '',
+    // Arrays for repeatable sections
+    dotacion_buceo: [],
+    equipos_superficie: [],
+    faenas_mantencion: [],
+    sistemas_equipos: [],
+    
+    // Firmas
+    firmas: {
+      supervisor_nombre: '',
+      supervisor_firma: '',
+      supervisor_firmado: false,
+      jefe_centro_nombre: '',
+      jefe_centro_firma: '',
+      jefe_centro_firmado: false
+    }
   });
 
-  const [dotacion, setDotacion] = useState([{
-    id: 'member-1',
-    rol: '',
-    nombre: '',
-    apellido: '',
-    matricula: '',
-    contratista: false,
-    equipo: '',
-    hora_inicio_buzo: '',
-    hora_fin_buzo: '',
-    profundidad: 0
-  }]);
-
-  const [equiposSuperficie, setEquiposSuperficie] = useState([{
-    id: 'equipo-1',
-    equipo_sup: '',
-    matricula_eq: '',
-    horometro_ini: 0,
-    horometro_fin: 0
-  }]);
-
-  const [faenasMantencion, setFaenasMantencion] = useState([{
-    id: 'faena-1',
-    jaulas: '',
-    cantidad: 0,
-    ubicacion: '',
-    tipo_rotura: '',
-    retensado: false,
-    descostura: false,
-    objetos: false,
-    otros: '',
-    obs_faena: ''
-  }]);
-
   const steps = [
-    { number: 1, title: "Información General" },
-    { number: 2, title: "Dotación de Buceo" },
-    { number: 3, title: "Equipos de Superficie" },
-    { number: 4, title: "Faenas de Mantención" },
-    { number: 5, title: "Sistemas y Equipos" },
-    { number: 6, title: "Resumen y Firmas" }
+    {
+      id: 'encabezado',
+      title: 'Encabezado General',
+      description: 'Información básica de la faena'
+    },
+    {
+      id: 'dotacion',
+      title: 'Dotación de Buceo', 
+      description: 'Personal y roles asignados'
+    },
+    {
+      id: 'equipos',
+      title: 'Equipos de Superficie',
+      description: 'Equipos utilizados en superficie'
+    },
+    {
+      id: 'faenas',
+      title: 'Faenas de Mantención',
+      description: 'Trabajos realizados en redes'
+    },
+    {
+      id: 'sistemas',
+      title: 'Sistemas y Equipos',
+      description: 'Trabajos en sistemas de jaulas'
+    },
+    {
+      id: 'firmas',
+      title: 'Firmas Digitales',
+      description: 'Autorización y validación'
+    }
   ];
 
-  const handleFormDataChange = (field: string, value: any) => {
-    if (readOnly) return;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const updateFormData = (updates: Partial<NetworkMaintenanceData>) => {
+    setFormData(prev => {
+      const newData = { ...prev, ...updates };
+      // Calculate progress based on completed sections
+      const totalSections = steps.length;
+      const completedSections = calculateCompletedSections(newData);
+      newData.progreso = Math.round((completedSections / totalSections) * 100);
+      return newData;
+    });
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (readOnly) return;
+  const calculateCompletedSections = (data: NetworkMaintenanceData): number => {
+    let completed = 0;
     
-    try {
-      await createMaintenanceForm({
-        ...formData,
-        multix_data: {
-          encabezado: formData,
-          dotacion,
-          equipos_superficie: equiposSuperficie,
-          faenas_mantencion: faenasMantencion,
-          tipo_formulario: tipoFormulario
-        }
-      });
-      onComplete();
-    } catch (error) {
-      console.error('Error creating form:', error);
+    // Encabezado
+    if (data.lugar_trabajo && data.fecha && data.hora_inicio) completed++;
+    
+    // Dotación
+    if (data.dotacion_buceo && data.dotacion_buceo.length > 0) completed++;
+    
+    // Equipos
+    if (data.equipos_superficie && data.equipos_superficie.length > 0) completed++;
+    
+    // Faenas  
+    if (data.faenas_mantencion && data.faenas_mantencion.length > 0) completed++;
+    
+    // Sistemas
+    if (data.sistemas_equipos && data.sistemas_equipos.length > 0) completed++;
+    
+    // Firmas
+    if (data.firmas?.supervisor_firmado && data.firmas?.jefe_centro_firmado) completed++;
+    
+    return completed;
+  };
+
+  const nextStep = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
     }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSave = () => {
+    const finalData = {
+      ...formData,
+      estado: formData.firmas?.supervisor_firmado && formData.firmas?.jefe_centro_firmado ? 'completado' : 'borrador'
+    };
+    
+    onComplete?.(finalData);
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 1:
+    switch (steps[currentStep].id) {
+      case 'encabezado':
         return (
-          <div className="space-y-6">
-            <EncabezadoGeneral 
-              data={formData}
-              onChange={handleFormDataChange}
-              readOnly={readOnly}
-            />
-            
-            {tipoFormulario === 'faena_redes' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Información Específica de Faena</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="supervisor_faena">Supervisor (nombre)</Label>
-                    <Input
-                      id="supervisor_faena"
-                      value={formData.supervisor_faena}
-                      onChange={(e) => handleFormDataChange('supervisor_faena', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="obs_generales">Observaciones generales</Label>
-                    <Textarea
-                      id="obs_generales"
-                      value={formData.obs_generales}
-                      onChange={(e) => handleFormDataChange('obs_generales', e.target.value)}
-                      disabled={readOnly}
-                      rows={4}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        );
-
-      case 2:
-        return (
-          <DotacionBuceo 
-            data={dotacion}
-            onChange={setDotacion}
-            readOnly={readOnly}
+          <EncabezadoGeneral
+            data={{
+              lugar_trabajo: formData.lugar_trabajo,
+              fecha: formData.fecha,
+              temperatura: formData.temperatura,
+              hora_inicio: formData.hora_inicio,
+              hora_termino: formData.hora_termino,
+              profundidad_max: formData.profundidad_max,
+              nave_maniobras: formData.nave_maniobras,
+              team_s: formData.team_s,
+              team_be: formData.team_be,
+              team_bi: formData.team_bi,
+              matricula_nave: formData.matricula_nave,
+              estado_puerto: formData.estado_puerto
+            }}
+            onChange={(field, value) => updateFormData({ [field]: value })}
           />
         );
-
-      case 3:
+      case 'dotacion':
         return (
-          <EquiposSuperficie 
-            data={equiposSuperficie}
-            onChange={setEquiposSuperficie}
-            readOnly={readOnly}
+          <DotacionBuceo
+            data={formData.dotacion_buceo || []}
+            onChange={(data) => updateFormData({ dotacion_buceo: data })}
           />
         );
-
-      case 4:
+      case 'equipos':
         return (
-          <FaenasMantencion 
-            data={faenasMantencion}
-            onChange={setFaenasMantencion}
-            readOnly={readOnly}
+          <EquiposSuperficie
+            data={formData.equipos_superficie || []}
+            onChange={(data) => updateFormData({ equipos_superficie: data })}
           />
         );
-
-      case 5:
+      case 'faenas':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sistemas y Equipos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p>Sección en desarrollo</p>
-                <p className="text-sm">Los campos de sistemas y equipos se implementarán en la siguiente iteración</p>
-              </div>
-            </CardContent>
-          </Card>
+          <FaenasMantencion
+            data={formData.faenas_mantencion || []}
+            onChange={(data) => updateFormData({ faenas_mantencion: data })}
+          />
         );
-
-      case 6:
+      case 'sistemas':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumen y Firmas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="supervisor_nombre">Supervisor de Buceo - nombre</Label>
-                    <Input
-                      id="supervisor_nombre"
-                      placeholder="Nombre del supervisor"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="jefe_centro_nombre">Jefe de Centro - nombre</Label>
-                    <Input
-                      id="jefe_centro_nombre"
-                      placeholder="Nombre del jefe de centro"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-                
-                <div className="text-center py-8 text-gray-500">
-                  <p>Sistema de firmas digitales</p>
-                  <p className="text-sm">La funcionalidad de firmas se implementará en la siguiente iteración</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SistemasEquipos
+            formData={formData}
+            updateFormData={updateFormData}
+          />
         );
-
+      case 'firmas':
+        return (
+          <FirmasDigitales
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        );
       default:
-        return <div>Paso no encontrado</div>;
+        return null;
     }
   };
 
+  const isLastStep = currentStep === steps.length - 1;
+  const isFormComplete = formData.firmas?.supervisor_firmado && formData.firmas?.jefe_centro_firmado;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">
-            {readOnly ? 'Ver ' : ''}
-            {tipoFormulario === 'mantencion' ? 'Boleta de Mantención de Redes' : 'Boleta de Faena de Redes'}
-          </h2>
-          <p className="text-gray-600">
-            {readOnly ? 'Visualizar datos del formulario operativo' : 'Complete los datos del formulario operativo'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {readOnly ? 'Cerrar' : 'Cancelar'}
-          </Button>
-        </div>
-      </div>
-
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Progress Steps */}
-      <div className="flex justify-between mb-8 overflow-x-auto">
-        {steps.map((step, index) => (
-          <div key={step.number} className="flex items-center min-w-0">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep >= step.number
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-600"
-            }`}>
-              {step.number}
-            </div>
-            <div className="ml-2 min-w-0">
-              <div className="text-sm font-medium truncate">{step.title}</div>
-            </div>
-            {index < steps.length - 1 && (
-              <div className="hidden md:block w-16 h-px bg-gray-300 mx-4 flex-shrink-0"></div>
-            )}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Mantención de Redes</h2>
+            <Badge variant="outline">
+              Progreso: {formData.progreso}%
+            </Badge>
           </div>
-        ))}
-      </div>
+          
+          <div className="flex items-center space-x-2 overflow-x-auto">
+            {steps.map((step, index) => (
+              <div
+                key={step.id}
+                className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}
+              >
+                <div className="flex flex-col items-center min-w-0">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      index === currentStep
+                        ? 'bg-blue-500 text-white'
+                        : index < currentStep
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {index < currentStep ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <div className="text-center mt-2">
+                    <div className="text-sm font-medium">{step.title}</div>
+                    <div className="text-xs text-gray-500">{step.description}</div>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-4 ${
+                      index < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Current Step Content */}
-      <div className="min-h-[400px]">
+      {/* Step Content */}
+      <div className="min-h-[600px]">
         {renderStep()}
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 1 || readOnly}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Anterior
-        </Button>
-
-        <div className="flex gap-2">
-          {currentStep < steps.length ? (
-            <Button onClick={handleNext} disabled={readOnly}>
-              Siguiente
-              <ArrowRight className="w-4 h-4 ml-2" />
+      {/* Navigation */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 0}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Anterior
             </Button>
-          ) : (
-            !readOnly && (
-              <Button onClick={handleSubmit} disabled={isCreating} className="bg-green-600 hover:bg-green-700">
-                <Save className="w-4 h-4 mr-2" />
-                {isCreating ? 'Guardando...' : 'Guardar Formulario'}
-              </Button>
-            )
-          )}
-        </div>
-      </div>
+
+            <div className="flex items-center space-x-2">
+              {onCancel && (
+                <Button type="button" variant="ghost" onClick={onCancel}>
+                  Cancelar
+                </Button>
+              )}
+              
+              {isLastStep ? (
+                <Button onClick={handleSave} disabled={!isFormComplete}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {isFormComplete ? 'Guardar Completado' : 'Guardar Borrador'}
+                </Button>
+              ) : (
+                <Button onClick={nextStep}>
+                  Siguiente
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
