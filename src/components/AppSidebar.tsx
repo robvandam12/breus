@@ -11,7 +11,8 @@ import {
   Shield,
   LogOut,
   Users,
-  Building
+  Building,
+  Wrench
 } from "lucide-react";
 import {
   Sidebar,
@@ -108,11 +109,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "12"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
@@ -162,11 +164,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "12"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
@@ -217,11 +220,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "12"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
@@ -279,11 +283,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "25"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
@@ -343,11 +348,12 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "12"
       },
       {
-        title: "Formularios",
-        icon: FileText,
+        title: "Módulos Operativos",
+        icon: Wrench,
         items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
+          { title: "HPT", url: "/operaciones/hpt" },
+          { title: "Anexo Bravo", url: "/operaciones/anexo-bravo" },
+          { title: "Mantención de Redes", url: "/operaciones/network-maintenance" }
         ]
       },
       {
