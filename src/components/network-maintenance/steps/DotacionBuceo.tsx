@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,12 +17,19 @@ interface DotacionBuceoStepProps {
 
 const ROLES_DISPONIBLES = [
   'supervisor',
-  'buzo', 
-  'asistente',
-  'operador_superficie'
+  'buzo_emergencia_1', 
+  'buzo_emergencia_2',
+  'buzo_1',
+  'buzo_2',
+  'buzo_3',
+  'buzo_4',
+  'buzo_5',
+  'buzo_6',
+  'buzo_7',
+  'buzo_8'
 ] as const;
 
-const EQUIPOS_DISPONIBLES = ['Liviano', 'Mediano'] as const;
+const EQUIPOS_DISPONIBLES = ['liviano', 'mediano'] as const;
 
 export const DotacionBuceo = ({ 
   formData, 
@@ -34,12 +42,12 @@ export const DotacionBuceo = ({
   const addMember = () => {
     const newMember: DotacionBuceoType = {
       id: `member-${Date.now()}`,
-      rol: 'buzo',
+      rol: 'buzo_1',
       nombre: '',
       apellido: '',
       matricula: '',
       contratista: false,
-      equipo: 'Liviano'
+      equipo: 'liviano'
     };
     
     const updatedDotacion = [...formData.dotacion, newMember];
@@ -64,7 +72,7 @@ export const DotacionBuceo = ({
 
   const getRoleColor = (rol: string) => {
     if (rol === 'supervisor') return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (rol === 'operador_superficie') return 'bg-red-100 text-red-800 border-red-200';
+    if (rol.includes('emergencia')) return 'bg-red-100 text-red-800 border-red-200';
     return 'bg-green-100 text-green-800 border-green-200';
   };
 
@@ -77,9 +85,16 @@ export const DotacionBuceo = ({
   const getRoleDisplayName = (rol: string) => {
     switch (rol) {
       case 'supervisor': return 'Supervisor';
-      case 'buzo': return 'Buzo';
-      case 'asistente': return 'Asistente';
-      case 'operador_superficie': return 'Operador Superficie';
+      case 'buzo_emergencia_1': return 'Buzo Emergencia 1';
+      case 'buzo_emergencia_2': return 'Buzo Emergencia 2';
+      case 'buzo_1': return 'Buzo 1';
+      case 'buzo_2': return 'Buzo 2';
+      case 'buzo_3': return 'Buzo 3';
+      case 'buzo_4': return 'Buzo 4';
+      case 'buzo_5': return 'Buzo 5';
+      case 'buzo_6': return 'Buzo 6';
+      case 'buzo_7': return 'Buzo 7';
+      case 'buzo_8': return 'Buzo 8';
       default: return rol;
     }
   };
@@ -113,21 +128,21 @@ export const DotacionBuceo = ({
             </div>
             <div className="text-center p-3 bg-red-50 rounded-lg">
               <div className="text-2xl font-bold text-red-600">
-                {formData.dotacion.filter(m => m.rol === 'operador_superficie').length}
+                {formData.dotacion.filter(m => m.rol.includes('emergencia')).length}
               </div>
-              <div className="text-sm text-red-600">Operadores Superficie</div>
+              <div className="text-sm text-red-600">Buzos Emergencia</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {formData.dotacion.filter(m => m.rol === 'buzo').length}
+                {formData.dotacion.filter(m => m.rol.startsWith('buzo_') && !m.rol.includes('emergencia')).length}
               </div>
               <div className="text-sm text-green-600">Buzos</div>
             </div>
             <div className="text-center p-3 bg-yellow-50 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">
-                {formData.dotacion.filter(m => m.rol === 'asistente').length}
+                {formData.dotacion.filter(m => m.contratista).length}
               </div>
-              <div className="text-sm text-yellow-600">Asistentes</div>
+              <div className="text-sm text-yellow-600">Contratistas</div>
             </div>
           </div>
         </CardContent>
@@ -310,7 +325,7 @@ export const DotacionBuceo = ({
                     <SelectContent>
                       {EQUIPOS_DISPONIBLES.map((equipo) => (
                         <SelectItem key={equipo} value={equipo}>
-                          {equipo}
+                          {equipo.charAt(0).toUpperCase() + equipo.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>

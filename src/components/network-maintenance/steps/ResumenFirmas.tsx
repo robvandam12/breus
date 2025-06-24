@@ -1,252 +1,305 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle, AlertCircle, FileText, Users, Settings, Network } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import { Button } from "@/components/ui/button";
+import { FileText, Users, AlertTriangle, CheckCircle2 } from "lucide-react";
+import type { NetworkMaintenanceData, ResumenInmersiones, Contingencias } from '@/types/network-maintenance';
 
 interface ResumenFirmasProps {
   formData: NetworkMaintenanceData;
   updateFormData: (updates: Partial<NetworkMaintenanceData>) => void;
+  onFirmar?: () => void;
+  readOnly?: boolean;
 }
 
-export const ResumenFirmas = ({ formData, updateFormData }: ResumenFirmasProps) => {
-  const totalDotacion = (formData.dotacion || []).length;
-  const totalEquipos = (formData.equipos_superficie || []).length;
-  const totalFaenas = (formData.faenas_mantencion || []).length + (formData.faenas_redes || []).length;
-  const totalSistemas = (formData.sistemas_equipos || []).length;
+export const ResumenFirmas = ({ 
+  formData, 
+  updateFormData, 
+  onFirmar,
+  readOnly = false 
+}: ResumenFirmasProps) => {
 
-  const completionPercentage = () => {
-    let completed = 0;
-    let total = 6; // Total de secciones
+  const updateResumenInmersiones = (campo: keyof ResumenInmersiones, valor: number) => {
+    const resumenActual = formData.resumen_inmersiones || {
+      total_inmersiones: 0,
+      horas_navegacion: 0,
+      cabotaje_perdida: 0,
+      rev_documental: 0,
+      relevo: 0
+    };
 
-    if (formData.fecha && formData.lugar_trabajo) completed++;
-    if (totalDotacion > 0) completed++;
-    if (totalEquipos >= 0) completed++; // Equipos pueden ser opcionales
-    if (totalFaenas > 0) completed++;
-    if (totalSistemas >= 0) completed++; // Sistemas pueden ser opcionales
-    if (formData.observaciones_finales || formData.contingencias) completed++;
+    updateFormData({
+      resumen_inmersiones: {
+        ...resumenActual,
+        [campo]: valor
+      }
+    });
+  };
 
-    return Math.round((completed / total) * 100);
+  const updateContingencias = (campo: keyof Contingencias, valor: number | string) => {
+    const contingenciasActuales = formData.contingencias || {
+      mortalidad: 0,
+      bloom_algas: 0,
+      observaciones_generales: ''
+    };
+
+    updateFormData({
+      contingencias: {
+        ...contingenciasActuales,
+        [campo]: valor
+      }
+    });
+  };
+
+  const resumen = formData.resumen_inmersiones || {
+    total_inmersiones: 0,
+    horas_navegacion: 0,
+    cabotaje_perdida: 0,
+    rev_documental: 0,
+    relevo: 0
+  };
+
+  const contingencias = formData.contingencias || {
+    mortalidad: 0,
+    bloom_algas: 0,
+    observaciones_generales: ''
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Resumen y Firmas
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Resumen de Inmersiones y Firmas
         </h3>
         <p className="text-sm text-gray-600">
-          Validación final del formulario de mantención de redes
+          Finalización del formulario con resumen de actividades y firmas digitales
         </p>
       </div>
 
-      {/* Progress Overview */}
+      {/* Resumen de Inmersiones */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Estado del Formulario</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Resumen de Inmersiones y Navegaciones
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium">Completitud</span>
-            <Badge variant={completionPercentage() === 100 ? "default" : "secondary"}>
-              {completionPercentage()}% Completado
-            </Badge>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="total_inmersiones">Nº total de inmersiones</Label>
+              <Input
+                id="total_inmersiones"
+                type="number"
+                value={resumen.total_inmersiones}
+                onChange={(e) => updateResumenInmersiones('total_inmersiones', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="horas_navegacion">Horas de navegación por relevo</Label>
+              <Input
+                id="horas_navegacion"
+                type="number"
+                step="0.1"
+                value={resumen.horas_navegacion}
+                onChange={(e) => updateResumenInmersiones('horas_navegacion', parseFloat(e.target.value) || 0)}
+                placeholder="0.0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="cabotaje_perdida">Cabotaje con pérdida de buceo</Label>
+              <Input
+                id="cabotaje_perdida"
+                type="number"
+                value={resumen.cabotaje_perdida}
+                onChange={(e) => updateResumenInmersiones('cabotaje_perdida', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="rev_documental">Revisión documental (horas)</Label>
+              <Input
+                id="rev_documental"
+                type="number"
+                step="0.1"
+                value={resumen.rev_documental}
+                onChange={(e) => updateResumenInmersiones('rev_documental', parseFloat(e.target.value) || 0)}
+                placeholder="0.0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="relevo">Relevo (horas)</Label>
+              <Input
+                id="relevo"
+                type="number"
+                step="0.1"
+                value={resumen.relevo}
+                onChange={(e) => updateResumenInmersiones('relevo', parseFloat(e.target.value) || 0)}
+                placeholder="0.0"
+                disabled={readOnly}
+              />
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${completionPercentage()}%` }}
+        </CardContent>
+      </Card>
+
+      {/* Contingencias */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Contingencias
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="mortalidad">Mortalidad</Label>
+              <Input
+                id="mortalidad"
+                type="number"
+                value={contingencias.mortalidad || ''}
+                onChange={(e) => updateContingencias('mortalidad', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                disabled={readOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="bloom_algas">Bloom de algas</Label>
+              <Input
+                id="bloom_algas"
+                type="number"
+                value={contingencias.bloom_algas || ''}
+                onChange={(e) => updateContingencias('bloom_algas', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="observaciones_generales">Observaciones generales</Label>
+            <Textarea
+              id="observaciones_generales"
+              value={contingencias.observaciones_generales || ''}
+              onChange={(e) => updateContingencias('observaciones_generales', e.target.value)}
+              placeholder="Observaciones generales de contingencias..."
+              rows={4}
+              disabled={readOnly}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Información General
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Lugar:</span>
-              <span className="font-medium">{formData.lugar_trabajo || 'No especificado'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Fecha:</span>
-              <span className="font-medium">{formData.fecha || 'No especificada'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Nave:</span>
-              <span className="font-medium">{formData.nave_maniobras || 'No especificada'}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Personal y Equipos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Dotación:</span>
-              <span className="font-medium">{totalDotacion} personas</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Equipos Superficie:</span>
-              <span className="font-medium">{totalEquipos} equipos</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Sistemas:</span>
-              <span className="font-medium">{totalSistemas} sistemas</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              Trabajos Realizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Faenas de Mantención:</span>
-              <span className="font-medium">{(formData.faenas_mantencion || []).length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Faenas de Redes:</span>
-              <span className="font-medium">{(formData.faenas_redes || []).length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total Faenas:</span>
-              <span className="font-medium">{totalFaenas}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Estado Operativo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Profundidad Máx:</span>
-              <span className="font-medium">{formData.profundidad_max || 0}m</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Temperatura:</span>
-              <span className="font-medium">{formData.temperatura || 0}°C</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Estado Puerto:</span>
-              <span className="font-medium">{formData.estado_puerto || 'No especificado'}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator />
-
-      {/* Final Observations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="observaciones_finales">Observaciones Finales</Label>
-          <Textarea
-            id="observaciones_finales"
-            value={formData.observaciones_finales || ''}
-            onChange={(e) => updateFormData({ observaciones_finales: e.target.value })}
-            placeholder="Observaciones generales del trabajo realizado..."
-            rows={4}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="contingencias">Contingencias y Novedades</Label>
-          <Textarea
-            id="contingencias"
-            value={formData.contingencias || ''}
-            onChange={(e) => updateFormData({ contingencias: e.target.value })}
-            placeholder="Registra cualquier contingencia o novedad..."
-            rows={4}
-          />
-        </div>
-      </div>
-
-      {/* Validation Status */}
+      {/* Observaciones Finales */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Estado de Validación</CardTitle>
+          <CardTitle>Observaciones Finales</CardTitle>
         </CardHeader>
         <CardContent>
+          <Textarea
+            value={formData.observaciones_finales || ''}
+            onChange={(e) => updateFormData({ observaciones_finales: e.target.value })}
+            placeholder="Observaciones finales del formulario..."
+            rows={4}
+            disabled={readOnly}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Firmas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Firmas Digitales
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                {formData.fecha && formData.lugar_trabajo ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Información general completa</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {totalDotacion > 0 ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Dotación asignada</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {totalFaenas > 0 ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-500" />
-                )}
-                <span className="text-sm">Faenas registradas</span>
-              </div>
+            <div>
+              <Label htmlFor="supervisor_responsable">Supervisor de Buceo</Label>
+              <Input
+                id="supervisor_responsable"
+                value={formData.supervisor_responsable || ''}
+                onChange={(e) => updateFormData({ supervisor_responsable: e.target.value })}
+                placeholder="Nombre del supervisor"
+                disabled={readOnly}
+              />
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="supervisor_nombre">Supervisor Responsable</Label>
-                <Input
-                  id="supervisor_nombre"
-                  value={formData.supervisor_responsable || ''}
-                  onChange={(e) => updateFormData({ supervisor_responsable: e.target.value })}
-                  placeholder="Nombre del supervisor"
-                />
+            <div>
+              <Label htmlFor="jefe_centro">Jefe de Centro</Label>
+              <Input
+                id="jefe_centro"
+                placeholder="Nombre del jefe de centro"
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+
+          {/* Estado de firma */}
+          <div className="mt-6 p-4 border rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {formData.firmado ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-900">Formulario Firmado</p>
+                      <p className="text-sm text-green-600">Este formulario ha sido firmado digitalmente</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <div>
+                      <p className="font-medium text-amber-900">Pendiente de Firma</p>
+                      <p className="text-sm text-amber-600">Este formulario requiere firma digital</p>
+                    </div>
+                  </>
+                )}
               </div>
-              <div>
-                <Label htmlFor="firma_digital">Firma Digital</Label>
-                <Input
-                  id="firma_digital"
-                  value={formData.firma_digital || ''}
-                  onChange={(e) => updateFormData({ firma_digital: e.target.value })}
-                  placeholder="Código de firma digital"
-                />
-              </div>
+
+              {!readOnly && !formData.firmado && onFirmar && (
+                <Button onClick={onFirmar} className="bg-blue-600 hover:bg-blue-700">
+                  <Users className="w-4 h-4 mr-2" />
+                  Firmar Formulario
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Información de ayuda */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <FileText className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">Finalización del Formulario</p>
+            <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <li>• Completa el resumen de inmersiones realizadas</li>
+              <li>• Registra cualquier contingencia ocurrida</li>
+              <li>• Agrega observaciones finales relevantes</li>
+              <li>• Procede con la firma digital para completar</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

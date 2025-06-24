@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ export const EquiposSuperficie = ({
   const addEquipo = () => {
     const newEquipo: EquipoSuperficie = {
       id: `equipo-${Date.now()}`,
-      equipo_sup: 'Compresor 1',
+      equipo_sup: 'compresor_1',
       matricula_eq: '',
       horometro_ini: 0,
       horometro_fin: 0
@@ -48,6 +49,14 @@ export const EquiposSuperficie = ({
     return Math.max(0, fin - inicio);
   };
 
+  const getEquipoDisplayName = (equipo: string) => {
+    switch (equipo) {
+      case 'compresor_1': return 'Compresor 1';
+      case 'compresor_2': return 'Compresor 2';
+      default: return equipo;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
@@ -71,13 +80,13 @@ export const EquiposSuperficie = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
-                {formData.equipos_superficie.filter(e => e.equipo_sup === 'Compresor 1').length}
+                {formData.equipos_superficie.filter(e => e.equipo_sup === 'compresor_1').length}
               </div>
               <div className="text-sm text-blue-600">Compresores 1</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {formData.equipos_superficie.filter(e => e.equipo_sup === 'Compresor 2').length}
+                {formData.equipos_superficie.filter(e => e.equipo_sup === 'compresor_2').length}
               </div>
               <div className="text-sm text-green-600">Compresores 2</div>
             </div>
@@ -127,8 +136,8 @@ export const EquiposSuperficie = ({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Compresor 1">Compresor 1</SelectItem>
-                            <SelectItem value="Compresor 2">Compresor 2</SelectItem>
+                            <SelectItem value="compresor_1">Compresor 1</SelectItem>
+                            <SelectItem value="compresor_2">Compresor 2</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
