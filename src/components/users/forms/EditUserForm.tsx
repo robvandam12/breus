@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BaseUser } from "../BaseUserManagement";
@@ -21,7 +20,7 @@ export const EditUserForm = ({ initialData, onSubmit, onCancel }: EditUserFormPr
     apellido: initialData.apellido || '',
     email: initialData.email || '',
     rol: initialData.rol || 'buzo',
-    estado: initialData.estado || 'activo'
+    estado_buzo: initialData.estado === 'activo' ? 'activo' : 'inactivo'
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -110,15 +109,16 @@ export const EditUserForm = ({ initialData, onSubmit, onCancel }: EditUserFormPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="estado">Estado</Label>
-              <Select value={formData.estado} onValueChange={(value) => setFormData({ ...formData, estado: value as any })}>
+              <Label htmlFor="estado_buzo">Estado</Label>
+              <Select value={formData.estado_buzo} onValueChange={(value) => setFormData({ ...formData, estado_buzo: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>
                   <SelectItem value="inactivo">Inactivo</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="suspendido">Suspendido</SelectItem>
+                  <SelectItem value="disponible">Disponible</SelectItem>
                 </SelectContent>
               </Select>
             </div>

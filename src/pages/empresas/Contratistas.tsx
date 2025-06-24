@@ -2,11 +2,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, UserCheck } from "lucide-react";
 import { ContratistaTableView } from "@/components/contratistas/ContratistaTableView";
 import { CreateContratistaForm } from "@/components/contratistas/CreateContratistaForm";
+import { EditContratistaForm } from "@/components/contratistas/EditContratistaForm";
+import { ContratistaDetailModal } from "@/components/contratistas/ContratistaDetailModal";
 import { useContratistas } from "@/hooks/useContratistas";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AnimatePresence } from "framer-motion";
@@ -16,6 +19,10 @@ import { MainLayout } from "@/components/layout/MainLayout";
 const Contratistas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedContratista, setSelectedContratista] = useState<any>(null);
   
   const { contratistas, isLoading, createContratista, updateContratista, deleteContratista } = useContratistas();
 
@@ -29,44 +36,47 @@ const Contratistas = () => {
     try {
       await createContratista(data);
       setIsCreateDialogOpen(false);
-      toast({
-        title: "Contratista creado",
-        description: "El contratista ha sido creado exitosamente.",
-      });
     } catch (error) {
       console.error('Error creating contratista:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el contratista.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleEditContratista = async (contratista: any) => {
-    // TODO: Implementar edit dialog
-    console.log('Edit contratista:', contratista);
+    setSelectedContratista(contratista);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateContratista = async (data: any) => {
+    if (!selectedContratista) return;
+    
+    try {
+      await updateContratista({ id: selectedContratista.id, data });
+      setIsEditDialogOpen(false);
+      setSelectedContratista(null);
+    } catch (error) {
+      console.error('Error updating contratista:', error);
+    }
   };
 
   const handleSelectContratista = (contratista: any) => {
-    // TODO: Implementar vista de detalles
-    console.log('Select contratista:', contratista);
+    setSelectedContratista(contratista);
+    setIsDetailModalOpen(true);
   };
 
-  const handleDeleteContratista = async (id: string) => {
+  const handleDeleteClick = (contratista: any) => {
+    setSelectedContratista(contratista);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedContratista) return;
+    
     try {
-      await deleteContratista(id);
-      toast({
-        title: "Contratista eliminado",
-        description: "El contratista ha sido eliminado exitosamente.",
-      });
+      await deleteContratista(selectedContratista.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedContratista(null);
     } catch (error) {
       console.error('Error deleting contratista:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el contratista.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -83,21 +93,13 @@ const Contratistas = () => {
       </div>
 
       <AnimatePresence>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <Button 
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="ios-button bg-blue-600 hover:bg-blue-700 transform transition-transform hover:scale-105"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Contratista
-          </Button>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <CreateContratistaForm
-              onSubmit={handleCreateContratista}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="ios-button bg-blue-600 hover:bg-blue-700 transform transition-transform hover:scale-105"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Contratista
+        </Button>
       </AnimatePresence>
     </div>
   );
@@ -176,10 +178,73 @@ const Contratistas = () => {
         <ContratistaTableView 
           contratistas={filteredContratistas} 
           onEdit={handleEditContratista}
-          onDelete={handleDeleteContratista}
+          onDelete={handleDeleteClick}
           onSelect={handleSelectContratista}
         />
       )}
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <CreateContratistaForm
+            onSubmit={handleCreateContratista}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Contratista</DialogTitle>
+          </DialogHeader>
+          {selectedContratista && (
+            <EditContratistaForm
+              initialData={selectedContratista}
+              onSubmit={handleUpdateContratista}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedContratista(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Modal */}
+      <ContratistaDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedContratista(null);
+        }}
+        contratista={selectedContratista}
+        onEdit={handleEditContratista}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar Contratista?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas eliminar el contratista{' '}
+              <span className="font-semibold">{selectedContratista?.nombre}</span>?
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

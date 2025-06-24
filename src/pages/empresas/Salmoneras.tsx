@@ -2,12 +2,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, Building } from "lucide-react";
 import { SalmoneraTableView } from "@/components/salmoneras/SalmoneraTableView";
 import { SalmoneraCardView } from "@/components/salmoneras/SalmoneraCardView";
 import { CreateSalmoneraForm } from "@/components/salmoneras/CreateSalmoneraForm";
+import { EditSalmoneraForm } from "@/components/salmoneras/EditSalmoneraForm";
+import { SalmoneraDetailModal } from "@/components/salmoneras/SalmoneraDetailModal";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AnimatePresence } from "framer-motion";
@@ -18,6 +21,10 @@ const Salmoneras = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedSalmonera, setSelectedSalmonera] = useState<any>(null);
   
   const { salmoneras, isLoading, createSalmonera, updateSalmonera, deleteSalmonera } = useSalmoneras();
 
@@ -31,56 +38,47 @@ const Salmoneras = () => {
     try {
       await createSalmonera(data);
       setIsCreateDialogOpen(false);
-      toast({
-        title: "Salmonera creada",
-        description: "La salmonera ha sido creada exitosamente.",
-      });
     } catch (error) {
       console.error('Error creating salmonera:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la salmonera.",
-        variant: "destructive",
-      });
     }
   };
 
-  const handleEditSalmonera = async (id: string, data: any) => {
+  const handleEditSalmonera = async (salmonera: any) => {
+    setSelectedSalmonera(salmonera);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateSalmonera = async (data: any) => {
+    if (!selectedSalmonera) return;
+    
     try {
-      await updateSalmonera({ id, data });
-      toast({
-        title: "Salmonera actualizada",
-        description: "La salmonera ha sido actualizada exitosamente.",
-      });
+      await updateSalmonera({ id: selectedSalmonera.id, data });
+      setIsEditDialogOpen(false);
+      setSelectedSalmonera(null);
     } catch (error) {
       console.error('Error updating salmonera:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la salmonera.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleSelectSalmonera = (salmonera: any) => {
-    // TODO: Implementar vista de detalles
-    console.log('Select salmonera:', salmonera);
+    setSelectedSalmonera(salmonera);
+    setIsDetailModalOpen(true);
   };
 
-  const handleDeleteSalmonera = async (id: string) => {
+  const handleDeleteClick = (salmonera: any) => {
+    setSelectedSalmonera(salmonera);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedSalmonera) return;
+    
     try {
-      await deleteSalmonera(id);
-      toast({
-        title: "Salmonera eliminada",
-        description: "La salmonera ha sido eliminada exitosamente.",
-      });
+      await deleteSalmonera(selectedSalmonera.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedSalmonera(null);
     } catch (error) {
       console.error('Error deleting salmonera:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la salmonera.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -97,21 +95,13 @@ const Salmoneras = () => {
       </div>
 
       <AnimatePresence>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <Button 
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="ios-button bg-blue-600 hover:bg-blue-700 transform transition-transform hover:scale-105"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Salmonera
-          </Button>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <CreateSalmoneraForm
-              onSubmit={handleCreateSalmonera}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="ios-button bg-blue-600 hover:bg-blue-700 transform transition-transform hover:scale-105"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Salmonera
+        </Button>
       </AnimatePresence>
     </div>
   );
@@ -190,17 +180,80 @@ const Salmoneras = () => {
         <SalmoneraTableView 
           salmoneras={filteredSalmoneras} 
           onEdit={handleEditSalmonera}
-          onDelete={handleDeleteSalmonera}
+          onDelete={handleDeleteClick}
           onSelect={handleSelectSalmonera}
         />
       ) : (
         <SalmoneraCardView 
           salmoneras={filteredSalmoneras}
           onEdit={handleEditSalmonera}
-          onDelete={handleDeleteSalmonera}
+          onDelete={handleDeleteClick}
           onSelect={handleSelectSalmonera}
         />
       )}
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <CreateSalmoneraForm
+            onSubmit={handleCreateSalmonera}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Salmonera</DialogTitle>
+          </DialogHeader>
+          {selectedSalmonera && (
+            <EditSalmoneraForm
+              initialData={selectedSalmonera}
+              onSubmit={handleUpdateSalmonera}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedSalmonera(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Modal */}
+      <SalmoneraDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedSalmonera(null);
+        }}
+        salmonera={selectedSalmonera}
+        onEdit={handleEditSalmonera}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar Salmonera?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas eliminar la salmonera{' '}
+              <span className="font-semibold">{selectedSalmonera?.nombre}</span>?
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
