@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Save, FileText } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, ArrowRight, Save, FileText, Info } from "lucide-react";
 import { EncabezadoGeneral } from "./steps/EncabezadoGeneral";
 import { DotacionBuceo } from "./steps/DotacionBuceo";
 import { EquiposSuperficie } from "./steps/EquiposSuperficie";
@@ -15,7 +16,7 @@ import { ResumenInmersiones } from "./steps/ResumenInmersiones";
 import { Contingencias } from "./steps/Contingencias";
 import { FirmasDigitales } from "./steps/FirmasDigitales";
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
-import { toast } from "@/hooks/use-toast";
+import { useModularSystem } from '@/hooks/useModularSystem';
 
 export interface NetworkMaintenanceWizardProps {
   initialData?: NetworkMaintenanceData;
@@ -35,6 +36,8 @@ export const NetworkMaintenanceWizard = ({
   readOnly = false
 }: NetworkMaintenanceWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const { hasModuleAccess, modules } = useModularSystem();
+  
   const [formData, setFormData] = useState<NetworkMaintenanceData>(
     initialData || {
       lugar_trabajo: '',
@@ -103,6 +106,9 @@ export const NetworkMaintenanceWizard = ({
   const CurrentStepComponent = steps[currentStep - 1]?.component;
   const progress = (currentStep / steps.length) * 100;
 
+  // Verificar acceso al módulo
+  const hasMaintenanceAccess = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -121,6 +127,16 @@ export const NetworkMaintenanceWizard = ({
           <span className="text-sm font-medium">{Math.round(progress)}%</span>
         </div>
       </div>
+
+      {/* Información sobre el módulo */}
+      {hasMaintenanceAccess && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Módulo de Mantención de Redes activo. Todas las funcionalidades están disponibles.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Step Navigator */}
       <div className="flex justify-center mb-8">

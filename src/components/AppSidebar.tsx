@@ -1,4 +1,3 @@
-
 import { 
   Calendar, 
   ChevronRight, 
@@ -11,7 +10,8 @@ import {
   Shield,
   LogOut,
   Users,
-  Building
+  Building,
+  Wrench
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,12 +36,14 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
+import { useModularSystem } from "@/hooks/useModularSystem";
 import { toast } from "@/hooks/use-toast";
 
 interface MenuSubItem {
   title: string;
   url: string;
   roleRequired?: string;
+  moduleRequired?: string;
 }
 
 interface MenuItem {
@@ -51,6 +53,7 @@ interface MenuItem {
   badge?: string;
   items?: MenuSubItem[];
   roleRequired?: string;
+  moduleRequired?: string;
 }
 
 const BreusLogo = ({ size = 32 }: { size?: number }) => (
@@ -87,288 +90,91 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
     ];
   }
 
-  // Buzo con empresa asignada
-  if (role === 'buzo' && isAssigned) {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion",
-      }
-    ];
+  // Navegación común para todos los usuarios asignados
+  const baseItems: MenuItem[] = [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      url: "/",
+      badge: role === 'superuser' ? "3" : role === 'admin_salmonera' ? "15" : "5"
+    },
+    {
+      title: "Personal de Buceo",
+      icon: Users,
+      url: "/personal-de-buceo"
+    }
+  ];
+
+  // Módulos opcionales que dependen de activación
+  const planningModule: MenuItem = {
+    title: "Operaciones",
+    icon: Calendar,
+    items: [
+      { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+      { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
+      { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
+    ],
+    moduleRequired: "planning_operations"
+  };
+
+  const maintenanceModule: MenuItem = {
+    title: "Módulos Operativos",
+    icon: Wrench,
+    items: [
+      { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
+    ]
+  };
+
+  // Core siempre disponible
+  const coreItems: MenuItem[] = [
+    {
+      title: "Inmersiones",
+      icon: Anchor,
+      url: "/inmersiones",
+      badge: role === 'admin_salmonera' ? "18" : "7"
+    },
+    {
+      title: "Bitácoras",
+      icon: Book,
+      items: [
+        { title: "Supervisor", url: "/bitacoras/supervisor" },
+        { title: "Buzo", url: "/bitacoras/buzo" }
+      ]
+    },
+    {
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes"
+    }
+  ];
+
+  // Agregar módulos opcionales
+  baseItems.push(planningModule, maintenanceModule);
+  baseItems.push(...coreItems);
+
+  // Elementos específicos por rol
+  if (role === 'admin_servicio' || role === 'admin_salmonera') {
+    const companyItems: MenuSubItem[] = [];
+    
+    if (role === 'admin_salmonera') {
+      companyItems.push(
+        { title: "Sitios", url: "/empresas/sitios" },
+        { title: "Contratistas", url: "/empresas/contratistas" },
+        { title: "Personal Disponible", url: "/admin/salmonera" }
+      );
+    } else {
+      companyItems.push({ title: "Información", url: "/empresas/contratistas" });
+    }
+
+    baseItems.push({
+      title: "Mi Empresa",
+      icon: Building,
+      items: companyItems
+    });
   }
 
-  // Supervisor
-  if (role === 'supervisor') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "5"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Servicio (Contratista)
-  if (role === 'admin_servicio') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "8"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Información", url: "/empresas/contratistas" }
-        ]
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Admin Salmonera
-  if (role === 'admin_salmonera') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "15"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "25"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "18"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
-      {
-        title: "Mi Empresa",
-        icon: Building,
-        items: [
-          { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Personal Disponible", url: "/admin/salmonera" }
-        ]
-      },
-      {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      }
-    ];
-  }
-
-  // Superuser
   if (role === 'superuser') {
-    return [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        url: "/",
-        badge: "3"
-      },
-      {
-        title: "Equipo de Buceo",
-        icon: Users,
-        url: "/equipo-de-buceo"
-      },
-      {
-        title: "Operaciones",
-        icon: Calendar,
-        url: "/operaciones",
-        badge: "12"
-      },
-      {
-        title: "Formularios",
-        icon: FileText,
-        items: [
-          { title: "HPT", url: "/formularios/hpt" },
-          { title: "Anexo Bravo", url: "/formularios/anexo-bravo" }
-        ]
-      },
-      {
-        title: "Inmersiones",
-        icon: Anchor,
-        url: "/inmersiones",
-        badge: "7"
-      },
-      {
-        title: "Bitácoras",
-        icon: Book,
-        items: [
-          { title: "Supervisor", url: "/bitacoras/supervisor" },
-          { title: "Buzo", url: "/bitacoras/buzo" }
-        ]
-      },
-      {
-        title: "Reportes",
-        icon: BarChart3,
-        url: "/reportes"
-      },
+    baseItems.push(
       {
         title: "Empresas",
         icon: Folder,
@@ -379,43 +185,79 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         ]
       },
       {
-        title: "Configuración",
-        icon: Settings,
-        url: "/configuracion"
-      },
-      {
         title: "Admin",
         icon: Shield,
         items: [
           { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
-          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" }
+          { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
+          { title: "Módulos", url: "/admin/modules", roleRequired: "superuser" },
+          { title: "Monitoreo", url: "/admin/system-monitoring", roleRequired: "superuser" }
         ]
       }
-    ];
+    );
   }
 
-  return [];
+  // Configuración siempre al final
+  baseItems.push({
+    title: "Configuración",
+    icon: Settings,
+    url: "/configuracion"
+  });
+
+  return baseItems;
 };
 
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
+  const { hasModuleAccess, isSuperuser, modules } = useModularSystem();
 
   // Fix the type error by explicitly converting to boolean
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
   const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roleRequired) return true;
-    return profile?.role === item.roleRequired;
-  }).map(item => ({
-    ...item,
-    items: item.items?.filter(subItem => {
-      if (!subItem.roleRequired) return true;
-      return profile?.role === subItem.roleRequired;
-    })
-  }));
+  // Función para filtrar items y subitems por módulos y roles
+  const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
+    return items.filter(item => {
+      // Filtrar por rol
+      if (item.roleRequired && !isSuperuser && profile?.role !== item.roleRequired) {
+        return false;
+      }
+
+      // Si tiene subitems, filtrarlos primero
+      if (item.items) {
+        const filteredSubItems = item.items.filter(subItem => {
+          // Filtrar subitem por rol
+          if (subItem.roleRequired && !isSuperuser && profile?.role !== subItem.roleRequired) {
+            return false;
+          }
+          // Filtrar subitem por módulo
+          if (subItem.moduleRequired && !isSuperuser && !hasModuleAccess(subItem.moduleRequired)) {
+            return false;
+          }
+          return true;
+        });
+
+        // Si no hay subitems válidos, no mostrar el item padre
+        if (filteredSubItems.length === 0) {
+          return false;
+        }
+
+        // Actualizar el item con los subitems filtrados
+        item.items = filteredSubItems;
+      }
+
+      // Filtrar item padre por módulo solo si no tiene subitems o si él mismo requiere módulo
+      if (item.moduleRequired && !isSuperuser && !hasModuleAccess(item.moduleRequired)) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  const filteredMenuItems = filterMenuItems(menuItems);
 
   const handleLogout = async () => {
     try {

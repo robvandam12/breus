@@ -1,6 +1,8 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ModuleProtectedRoute } from "@/components/auth/ModuleProtectedRoute";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DashboardWithSidebarSkeleton } from "@/components/dashboard/DashboardWithSidebarSkeleton";
 import { PageWithSidebarSkeleton } from "@/components/layout/PageWithSidebarSkeleton";
@@ -19,10 +21,11 @@ const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
 const Sitios = lazy(() => import("../pages/empresas/Sitios"));
 const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
 const PersonalDeBuceo = lazy(() => import("../pages/PersonalDeBuceo"));
+const PersonalPoolAdmin = lazy(() => import("../pages/PersonalPoolAdmin"));
 const Operaciones = lazy(() => import("../pages/operaciones/Operaciones"));
 const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
-const NetworkMaintenance = lazy(() => import("../pages/operaciones/NetworkMaintenance"));
+const MantencionRedes = lazy(() => import("../pages/operaciones/MantencionRedes"));
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
 const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
@@ -113,46 +116,78 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
-      
-      {/* Operations Routes */}
-      <Route path="/operaciones" element={
+      <Route path="/personal-pool" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <Operaciones />
+            <PersonalPoolAdmin />
           </Suspense>
+        </ProtectedRoute>
+      } />
+      
+      {/* Operations Routes - Protected by Planning Module */}
+      <Route path="/operaciones" element={
+        <ProtectedRoute>
+          <ModuleProtectedRoute 
+            requiredModule="planning_operations"
+            moduleName="Módulo de Planificación de Operaciones"
+            description="Este módulo permite la planificación y gestión de operaciones de buceo."
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <Operaciones />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/planificar" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <Operaciones />
-          </Suspense>
+          <ModuleProtectedRoute requiredModule="planning_operations">
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <Operaciones />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/hpt" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <HPT />
-          </Suspense>
+          <ModuleProtectedRoute 
+            requiredModule="planning_operations"
+            moduleName="HPT (Hoja de Planificación de Trabajo)"
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <HPT />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
       <Route path="/operaciones/anexo-bravo" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <AnexoBravo />
-          </Suspense>
+          <ModuleProtectedRoute 
+            requiredModule="planning_operations"
+            moduleName="Anexo Bravo"
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <AnexoBravo />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
-      {/* UPDATED: Mantención de Redes (ex-MultiX) */}
+      
+      {/* Maintenance Routes - Protected by Maintenance Module */}
       <Route path="/operaciones/network-maintenance" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <NetworkMaintenance />
-          </Suspense>
+          <ModuleProtectedRoute 
+            requiredModule="maintenance_networks"
+            moduleName="Módulo de Mantención de Redes"
+            description="Este módulo permite gestionar el mantenimiento de sistemas de redes."
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <MantencionRedes />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
 
-      {/* Immersions Route */}
+      {/* Immersions Route - Core functionality, always available */}
       <Route path="/inmersiones" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -161,7 +196,7 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
-      {/* Bitacoras Routes */}
+      {/* Bitacoras Routes - Core functionality */}
       <Route path="/bitacoras/supervisor" element={
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -187,18 +222,28 @@ export const AppRoutes = () => (
       } />
       <Route path="/reportes/avanzados" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <Reportes />
-          </Suspense>
+          <ModuleProtectedRoute 
+            requiredModule="advanced_reporting"
+            moduleName="Reportes Avanzados"
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <Reportes />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
       
       {/* Integrations Route */}
       <Route path="/integraciones" element={
         <ProtectedRoute>
-          <Suspense fallback={<PageWithSidebarSkeleton />}>
-            <Configuracion />
-          </Suspense>
+          <ModuleProtectedRoute 
+            requiredModule="external_integrations"
+            moduleName="Integraciones Externas"
+          >
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <Configuracion />
+            </Suspense>
+          </ModuleProtectedRoute>
         </ProtectedRoute>
       } />
       <Route path="/configuracion" element={
