@@ -219,11 +219,9 @@ export function AppSidebar() {
 
   // Función para filtrar items y subitems por módulos y roles
   const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
-    return items.filter(item => {
-      // Filtrar por rol
-      if (item.roleRequired && !isSuperuser && profile?.role !== item.roleRequired) {
-        return false;
-      }
+    return items.map(item => {
+      // Crear una copia del item para no mutar el original
+      const itemCopy = { ...item };
 
       // Si tiene subitems, filtrarlos primero
       if (item.items) {
@@ -239,16 +237,26 @@ export function AppSidebar() {
           return true;
         });
 
-        // Si no hay subitems válidos, no mostrar el item padre
-        if (filteredSubItems.length === 0) {
-          return false;
-        }
-
-        // Actualizar el item con los subitems filtrados
-        item.items = filteredSubItems;
+        // Actualizar la copia con los subitems filtrados
+        itemCopy.items = filteredSubItems;
       }
 
-      // Filtrar item padre por módulo solo si no tiene subitems o si él mismo requiere módulo
+      return itemCopy;
+    }).filter(item => {
+      // Filtrar por rol del item padre
+      if (item.roleRequired && !isSuperuser && profile?.role !== item.roleRequired) {
+        return false;
+      }
+
+      // Si tiene subitems, verificar que tenga al menos uno válido
+      if (item.items) {
+        // Si no hay subitems válidos después del filtrado, no mostrar el item padre
+        if (item.items.length === 0) {
+          return false;
+        }
+      }
+
+      // Filtrar item padre por módulo solo si él mismo requiere módulo
       if (item.moduleRequired && !isSuperuser && !hasModuleAccess(item.moduleRequired)) {
         return false;
       }
