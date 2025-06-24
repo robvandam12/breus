@@ -1,13 +1,13 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
 import { UserInviteForm } from "./forms/UserInviteForm";
+import { EditUserForm } from "./forms/EditUserForm";
 import { useUsuarios } from "@/hooks/useUsuarios";
 import { Shield } from "lucide-react";
 
 export const AdminUserManagement = () => {
-  const { usuarios, isLoading, updateUsuario, inviteUsuario } = useUsuarios();
+  const { usuarios, isLoading, updateUsuario, inviteUsuario, deleteUsuario } = useUsuarios();
 
   // Transform usuarios to BaseUser format
   const transformedUsers: BaseUser[] = usuarios.map(user => {
@@ -102,13 +102,19 @@ export const AdminUserManagement = () => {
     await inviteUsuario(userData);
   };
 
+  const handleDeleteUser = async (id: string) => {
+    await deleteUsuario(id);
+  };
+
   return (
     <BaseUserManagement
       users={transformedUsers}
       isLoading={isLoading}
       config={config}
       onUpdateUser={handleUpdateUser}
+      onDeleteUser={handleDeleteUser}
       onInviteUser={handleInviteUser}
+      EditUserForm={EditUserForm}
       InviteUserForm={UserInviteForm}
     />
   );

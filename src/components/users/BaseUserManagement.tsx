@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Plus, Edit, Trash2, Shield, Search } from "lucide-react";
+import { DeleteUserDialog } from "./DeleteUserDialog";
 
 export interface BaseUser {
   id: string;
@@ -65,6 +65,7 @@ export const BaseUserManagement = ({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<BaseUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<BaseUser | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -102,6 +103,13 @@ export const BaseUserManagement = ({
         {estado}
       </Badge>
     );
+  };
+
+  const handleDeleteUser = async (user: BaseUser) => {
+    if (onDeleteUser) {
+      await onDeleteUser(user.id || user.usuario_id!);
+      setDeletingUser(null);
+    }
   };
 
   if (isLoading) {
@@ -236,11 +244,11 @@ export const BaseUserManagement = ({
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            {config.showDeleteButton && onDeleteUser && (
+                            {config.showDeleteButton !== false && onDeleteUser && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => onDeleteUser(user.id || user.usuario_id!)}
+                                onClick={() => setDeletingUser(user)}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -293,9 +301,10 @@ export const BaseUserManagement = ({
         </Dialog>
       )}
 
+      {/* Dialog de Edición */}
       {EditUserForm && editingUser && (
         <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Editar Usuario</DialogTitle>
             </DialogHeader>
@@ -310,6 +319,14 @@ export const BaseUserManagement = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Dialog de Eliminación */}
+      <DeleteUserDialog
+        isOpen={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={() => handleDeleteUser(deletingUser!)}
+        user={deletingUser}
+      />
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Plus, 
   Search, 
-  FileText, 
+  Shield, 
   Eye, 
   Edit, 
   Download,
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
+import { HPTDetailViewModal } from "@/components/hpt/HPTDetailViewModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -25,7 +27,7 @@ import { toast } from "@/hooks/use-toast";
 
 const getStatusBadge = (status: string, firmado: boolean) => {
   if (firmado) {
-    return <Badge className="bg-green-100 text-green-800 border-green-200">Completado</Badge>;
+    return <Badge className="bg-green-100 text-green-800 border-green-200">Firmado</Badge>;
   }
   
   switch (status) {
@@ -55,7 +57,7 @@ export const HPTDataTable = () => {
                          hpt.supervisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          operacion?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'completado' && hpt.firmado) ||
+                         (statusFilter === 'firmado' && hpt.firmado) ||
                          (statusFilter === 'borrador' && !hpt.firmado && hpt.estado === 'borrador') ||
                          (statusFilter === 'en_progreso' && !hpt.firmado && hpt.estado === 'en_progreso');
     return matchesSearch && matchesStatus;
@@ -123,10 +125,10 @@ export const HPTDataTable = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total HPT</p>
+                <p className="text-sm text-gray-600">Total HPTs</p>
                 <p className="text-2xl font-bold">{hpts.length}</p>
               </div>
-              <FileText className="w-8 h-8 text-blue-500" />
+              <Shield className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -135,7 +137,7 @@ export const HPTDataTable = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Completados</p>
+                <p className="text-sm text-gray-600">Firmados</p>
                 <p className="text-2xl font-bold">
                   {hpts.filter(h => h.firmado).length}
                 </p>
@@ -179,12 +181,12 @@ export const HPTDataTable = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Hojas de Planificación de Trabajo
+              <Shield className="w-5 h-5" />
+              Hoja de Planificación de Trabajos (HPT)
             </CardTitle>
             <Button onClick={handleCreateHPT} className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              Nueva HPT
+              Nuevo HPT
             </Button>
           </div>
         </CardHeader>
@@ -209,19 +211,19 @@ export const HPTDataTable = () => {
                 <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="borrador">Borrador</SelectItem>
                 <SelectItem value="en_progreso">En Progreso</SelectItem>
-                <SelectItem value="completado">Completado</SelectItem>
+                <SelectItem value="firmado">Firmado</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Tabla usando componente estándar */}
+          {/* Tabla */}
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Operación</TableHead>
                 <TableHead>Supervisor</TableHead>
-                <TableHead>Fecha Planificación</TableHead>
+                <TableHead>Fecha</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Progreso</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -233,7 +235,7 @@ export const HPTDataTable = () => {
                 return (
                   <TableRow key={hpt.id}>
                     <TableCell>
-                      <div className="font-medium text-blue-600">{hpt.codigo || hpt.folio}</div>
+                      <div className="font-medium text-blue-600">{hpt.codigo}</div>
                     </TableCell>
                     <TableCell>
                       <div className="max-w-48 truncate">
@@ -265,7 +267,11 @@ export const HPTDataTable = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewHPT(hpt)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -292,8 +298,8 @@ export const HPTDataTable = () => {
 
           {filteredData.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No se encontraron HPT que coincidan con los filtros.</p>
+              <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No se encontraron HPTs que coincidan con los filtros.</p>
             </div>
           )}
         </CardContent>
@@ -304,55 +310,26 @@ export const HPTDataTable = () => {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingHPT ? 'Editar HPT' : 'Nueva Hoja de Planificación de Trabajo'}
+              {editingHPT ? 'Editar HPT' : 'Nuevo HPT'}
             </DialogTitle>
           </DialogHeader>
           <HPTWizardComplete 
-            onComplete={handleCloseDialog}
+            operacionId=""
+            hptId={editingHPT}
+            onSubmit={() => handleCloseDialog()}
             onCancel={handleCloseDialog}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para ver HPT */}
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalle HPT - {viewingHPT?.codigo}</DialogTitle>
-          </DialogHeader>
-          {viewingHPT && (
-            <div className="space-y-4 p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Código</label>
-                  <p className="font-medium">{viewingHPT.codigo}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Supervisor</label>
-                  <p>{viewingHPT.supervisor}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Fecha</label>
-                  <p>{viewingHPT.fecha ? new Date(viewingHPT.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Estado</label>
-                  <div>{getStatusBadge(viewingHPT.estado || 'borrador', viewingHPT.firmado)}</div>
-                </div>
-              </div>
-              {viewingHPT.plan_trabajo && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Plan de Trabajo</label>
-                  <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{viewingHPT.plan_trabajo}</p>
-                </div>
-              )}
-              <div className="flex justify-end">
-                <Button onClick={handleCloseViewDialog}>Cerrar</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal de vista de detalle */}
+      <HPTDetailViewModal
+        isOpen={showViewDialog}
+        onClose={handleCloseViewDialog}
+        hpt={viewingHPT}
+        onEdit={handleEditHPT}
+        onDownload={handleDownloadHPT}
+      />
     </div>
   );
 };

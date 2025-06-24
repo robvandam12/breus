@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
+import { AnexoBravoDetailViewModal } from "@/components/anexo-bravo/AnexoBravoDetailViewModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperaciones } from "@/hooks/useOperaciones";
