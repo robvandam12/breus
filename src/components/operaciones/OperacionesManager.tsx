@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
@@ -144,7 +145,7 @@ export const OperacionesManager = () => {
 
   const handleViewDocuments = (operacion: any) => {
     // TODO: Implement document view functionality
-    console.log('View documents for operation:', oper.id);
+    console.log('View documents for operation:', operacion.id);
   };
   
   if (isLoading) {
@@ -170,24 +171,24 @@ export const OperacionesManager = () => {
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-2 h-12 rounded-2xl">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-14 rounded-3xl border-0">
           <TabsTrigger 
             value="table" 
-            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
           >
             <List className="w-4 h-4" />
             <span className="hidden sm:inline">Tabla</span>
           </TabsTrigger>
           <TabsTrigger 
             value="cards" 
-            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
           >
             <Grid3X3 className="w-4 h-4" />
             <span className="hidden sm:inline">Tarjetas</span>
           </TabsTrigger>
           <TabsTrigger 
             value="map" 
-            className="flex items-center gap-2 text-sm rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-none transition-all"
+            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
           >
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Mapa</span>
