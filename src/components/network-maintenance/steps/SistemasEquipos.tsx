@@ -1,205 +1,272 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Settings, Wrench } from "lucide-react";
+import { Plus, Trash2, Cog } from "lucide-react";
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface SistemasEquiposProps {
   formData: NetworkMaintenanceData;
   updateFormData: (updates: Partial<NetworkMaintenanceData>) => void;
+  readOnly?: boolean;
 }
 
-interface SistemaEquipo {
-  id: string;
-  tipo_sistema: 'alimentacion' | 'oxigenacion' | 'limpieza' | 'monitoreo' | 'seguridad';
-  nombre_equipo: string;
-  estado_operativo: 'operativo' | 'mantenimiento' | 'fuera_servicio';
-  observaciones: string;
-  trabajo_realizado: string;
-  responsable: string;
-  verificado: boolean;
-}
-
-export const SistemasEquipos = ({ formData, updateFormData }: SistemasEquiposProps) => {
+export const SistemasEquipos = ({ formData, updateFormData, readOnly = false }: SistemasEquiposProps) => {
   const sistemas = formData.sistemas_equipos || [];
 
-  const agregarSistema = () => {
-    const nuevoSistema: SistemaEquipo = {
+  const addSistema = () => {
+    const newSistema = {
       id: Date.now().toString(),
-      tipo_sistema: 'alimentacion',
-      nombre_equipo: '',
-      estado_operativo: 'operativo',
-      observaciones: '',
-      trabajo_realizado: '',
-      responsable: '',
-      verificado: false
+      jaulas_sist: '',
+      tipo_trabajo_sist: [],
+      focos: 0,
+      extractor: 0,
+      aireacion: 0,
+      oxigenacion: 0,
+      otros_sist: '',
+      obs_sist: ''
     };
 
     updateFormData({
-      sistemas_equipos: [...sistemas, nuevoSistema]
+      sistemas_equipos: [...sistemas, newSistema]
     });
   };
 
-  const actualizarSistema = (id: string, campo: keyof SistemaEquipo, valor: any) => {
-    const sistemasActualizados = sistemas.map(sistema =>
-      sistema.id === id ? { ...sistema, [campo]: valor } : sistema
+  const updateSistema = (id: string, field: string, value: any) => {
+    const updatedSistemas = sistemas.map(sistema =>
+      sistema.id === id ? { ...sistema, [field]: value } : sistema
     );
-    updateFormData({ sistemas_equipos: sistemasActualizados });
+    
+    updateFormData({
+      sistemas_equipos: updatedSistemas
+    });
   };
 
-  const eliminarSistema = (id: string) => {
-    const sistemasActualizados = sistemas.filter(sistema => sistema.id !== id);
-    updateFormData({ sistemas_equipos: sistemasActualizados });
+  const removeSistema = (id: string) => {
+    const filteredSistemas = sistemas.filter(sistema => sistema.id !== id);
+    updateFormData({
+      sistemas_equipos: filteredSistemas
+    });
   };
+
+  const toggleTipoTrabajo = (sistemaId: string, trabajo: string) => {
+    const sistema = sistemas.find(s => s.id === sistemaId);
+    if (!sistema) return;
+
+    const trabajos = sistema.tipo_trabajo_sist || [];
+    const isSelected = trabajos.includes(trabajo);
+    
+    const newTrabajos = isSelected 
+      ? trabajos.filter(t => t !== trabajo)
+      : [...trabajos, trabajo];
+
+    updateSistema(sistemaId, 'tipo_trabajo_sist', newTrabajos);
+  };
+
+  const tiposTrabajoDisponibles = [
+    'Instalación',
+    'Mantención',
+    'Recuperación', 
+    'Limpieza',
+    'Ajuste'
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Sistemas y Equipos Operacionales
-          </h3>
-          <p className="text-sm text-gray-600">
-            Registro de trabajos en sistemas y equipos de la instalación
-          </p>
-        </div>
-        <Button onClick={agregarSistema} variant="outline">
-          <Plus className="w-4 h-4 mr-2" />
-          Agregar Sistema
-        </Button>
+      <div>
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Cog className="w-5 h-5" />
+          Sistemas y Equipos
+        </h3>
+        <p className="text-sm text-gray-600">
+          Registro de trabajos en sistemas operativos
+        </p>
       </div>
 
-      <div className="space-y-4">
-        {sistemas.map((sistema, index) => (
-          <Card key={sistema.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  Sistema {index + 1}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => eliminarSistema(sistema.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-base">Lista de Sistemas</CardTitle>
+          {!readOnly && (
+            <Button onClick={addSistema} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Sistema
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {sistemas.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">
+              No hay sistemas registrados
+            </p>
+          ) : (
+            sistemas.map((sistema) => (
+              <div key={sistema.id} className="p-4 border rounded-lg space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`jaulas_sist_${sistema.id}`}>Nº Jaula(s)</Label>
+                    <Input
+                      id={`jaulas_sist_${sistema.id}`}
+                      value={sistema.jaulas_sist}
+                      onChange={(e) => updateSistema(sistema.id, 'jaulas_sist', e.target.value)}
+                      placeholder="Ej: 1, 2-5, 10"
+                      disabled={readOnly}
+                    />
+                  </div>
+                </div>
+
+                {/* Tipos de trabajo */}
                 <div>
-                  <Label htmlFor={`tipo_sistema_${sistema.id}`}>Tipo de Sistema</Label>
-                  <Select
-                    value={sistema.tipo_sistema}
-                    onValueChange={(value) => actualizarSistema(sistema.id, 'tipo_sistema', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="alimentacion">Sistema de Alimentación</SelectItem>
-                      <SelectItem value="oxigenacion">Sistema de Oxigenación</SelectItem>
-                      <SelectItem value="limpieza">Sistema de Limpieza</SelectItem>
-                      <SelectItem value="monitoreo">Sistema de Monitoreo</SelectItem>
-                      <SelectItem value="seguridad">Sistema de Seguridad</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Tipo de Trabajo (marcar con "X")</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
+                    {tiposTrabajoDisponibles.map((trabajo) => (
+                      <div key={trabajo} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`trabajo_${sistema.id}_${trabajo}`}
+                          checked={(sistema.tipo_trabajo_sist || []).includes(trabajo)}
+                          onCheckedChange={() => toggleTipoTrabajo(sistema.id, trabajo)}
+                          disabled={readOnly}
+                        />
+                        <Label htmlFor={`trabajo_${sistema.id}_${trabajo}`} className="text-sm">
+                          {trabajo}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Equipos específicos */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor={`focos_${sistema.id}`}>Focos Fotoperíodo</Label>
+                    <Input
+                      id={`focos_${sistema.id}`}
+                      type="number"
+                      value={sistema.focos}
+                      onChange={(e) => updateSistema(sistema.id, 'focos', Number(e.target.value))}
+                      placeholder="0"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`extractor_${sistema.id}`}>Extractor Mortalidad</Label>
+                    <Input
+                      id={`extractor_${sistema.id}`}
+                      type="number"
+                      value={sistema.extractor}
+                      onChange={(e) => updateSistema(sistema.id, 'extractor', Number(e.target.value))}
+                      placeholder="0"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`aireacion_${sistema.id}`}>Sistema Aireación</Label>
+                    <Input
+                      id={`aireacion_${sistema.id}`}
+                      type="number"
+                      value={sistema.aireacion}
+                      onChange={(e) => updateSistema(sistema.id, 'aireacion', Number(e.target.value))}
+                      placeholder="0"
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`oxigenacion_${sistema.id}`}>Sistema Oxigenación</Label>
+                    <Input
+                      id={`oxigenacion_${sistema.id}`}
+                      type="number"
+                      value={sistema.oxigenacion}
+                      onChange={(e) => updateSistema(sistema.id, 'oxigenacion', Number(e.target.value))}
+                      placeholder="0"
+                      disabled={readOnly}
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor={`nombre_equipo_${sistema.id}`}>Nombre del Equipo</Label>
+                  <Label htmlFor={`otros_sist_${sistema.id}`}>Otros</Label>
                   <Input
-                    id={`nombre_equipo_${sistema.id}`}
-                    value={sistema.nombre_equipo}
-                    onChange={(e) => actualizarSistema(sistema.id, 'nombre_equipo', e.target.value)}
-                    placeholder="Ej: Compresor principal A1"
+                    id={`otros_sist_${sistema.id}`}
+                    value={sistema.otros_sist}
+                    onChange={(e) => updateSistema(sistema.id, 'otros_sist', e.target.value)}
+                    placeholder="Otros equipos o sistemas"
+                    disabled={readOnly}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor={`estado_${sistema.id}`}>Estado Operativo</Label>
-                  <Select
-                    value={sistema.estado_operativo}
-                    onValueChange={(value) => actualizarSistema(sistema.id, 'estado_operativo', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="operativo">Operativo</SelectItem>
-                      <SelectItem value="mantenimiento">En Mantenimiento</SelectItem>
-                      <SelectItem value="fuera_servicio">Fuera de Servicio</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor={`responsable_${sistema.id}`}>Responsable</Label>
-                  <Input
-                    id={`responsable_${sistema.id}`}
-                    value={sistema.responsable}
-                    onChange={(e) => actualizarSistema(sistema.id, 'responsable', e.target.value)}
-                    placeholder="Nombre del responsable"
+                  <Label htmlFor={`obs_sist_${sistema.id}`}>Observaciones</Label>
+                  <Textarea
+                    id={`obs_sist_${sistema.id}`}
+                    value={sistema.obs_sist}
+                    onChange={(e) => updateSistema(sistema.id, 'obs_sist', e.target.value)}
+                    placeholder="Observaciones del trabajo realizado..."
+                    rows={3}
+                    disabled={readOnly}
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor={`trabajo_${sistema.id}`}>Trabajo Realizado</Label>
-                <Textarea
-                  id={`trabajo_${sistema.id}`}
-                  value={sistema.trabajo_realizado}
-                  onChange={(e) => actualizarSistema(sistema.id, 'trabajo_realizado', e.target.value)}
-                  placeholder="Describe el trabajo realizado en el sistema..."
-                  rows={3}
-                />
+                {!readOnly && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeSistema(sistema.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar Sistema
+                    </Button>
+                  </div>
+                )}
               </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
-              <div>
-                <Label htmlFor={`observaciones_${sistema.id}`}>Observaciones</Label>
-                <Textarea
-                  id={`observaciones_${sistema.id}`}
-                  value={sistema.observaciones}
-                  onChange={(e) => actualizarSistema(sistema.id, 'observaciones', e.target.value)}
-                  placeholder="Observaciones adicionales..."
-                  rows={2}
-                />
+      {/* Resumen de sistemas */}
+      {sistemas.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Resumen de Sistemas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-xl font-bold text-blue-600">
+                  {sistemas.reduce((sum, s) => sum + s.focos, 0)}
+                </div>
+                <div className="text-xs text-blue-600">Focos Totales</div>
               </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`verificado_${sistema.id}`}
-                  checked={sistema.verificado}
-                  onCheckedChange={(checked) => actualizarSistema(sistema.id, 'verificado', checked)}
-                />
-                <Label htmlFor={`verificado_${sistema.id}`}>
-                  Trabajo verificado y completado
-                </Label>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-xl font-bold text-green-600">
+                  {sistemas.reduce((sum, s) => sum + s.extractor, 0)}
+                </div>
+                <div className="text-xs text-green-600">Extractores</div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {sistemas.length === 0 && (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-gray-500">
-                <Wrench className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No hay sistemas registrados</p>
-                <p className="text-sm">Agrega sistemas y equipos trabajados en esta operación</p>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-xl font-bold text-purple-600">
+                  {sistemas.reduce((sum, s) => sum + s.aireacion, 0)}
+                </div>
+                <div className="text-xs text-purple-600">Aireación</div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              <div className="text-center p-3 bg-orange-50 rounded-lg">
+                <div className="text-xl font-bold text-orange-600">
+                  {sistemas.reduce((sum, s) => sum + s.oxigenacion, 0)}
+                </div>
+                <div className="text-xs text-orange-600">Oxigenación</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

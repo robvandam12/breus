@@ -54,7 +54,7 @@ export const NetworkMaintenanceWizard = ({
       faenas_mantencion: [],
       progreso: 0,
       firmado: false,
-      estado: 'borrador',
+      estado: 'borrador' as const,
       tipo_formulario: tipoFormulario
     }
   );
@@ -114,7 +114,7 @@ export const NetworkMaintenanceWizard = ({
       return;
     }
     
-    const finalData = {
+    const finalData: NetworkMaintenanceData = {
       ...formData,
       progreso: 100,
       estado: formData.firmado ? 'firmado' : 'pendiente_firma'

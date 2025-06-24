@@ -1,105 +1,85 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, UserCheck, Clock, AlertTriangle } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
 
-const TeamStatusWidget = () => {
-  const { usuarios, isLoading } = useUsuarios();
+export const TeamStatusWidget: React.FC<TeamStatusWidgetProps> = ({ 
+  config = {} 
+}) => {
+  const { usuarios, loading } = useUsuarios();
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Estado del Equipo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const stats = useMemo(() => {
+    if (!usuarios || usuarios.length === 0) {
+      return {
+        totalBuzos: 0,
+        buzosActivos: 0,
+        buzosDisponibles: 0,
+        supervisores: 0
+      };
+    }
+
+    const buzos = usuarios.filter(usuario => usuario.rol === 'buzo');
+    const supervisores = usuarios.filter(usuario => usuario.rol === 'supervisor');
+    
+    return {
+      totalBuzos: buzos.length,
+      buzosActivos: buzos.filter(buzo => buzo.estado_buzo === 'activo').length,
+      buzosDisponibles: buzos.filter(buzo => buzo.estado_buzo === 'disponible').length,
+      supervisores: supervisores.length
+    };
+  }, [usuarios]);
+
+  if (loading) {
+    return <TeamStatusWidgetSkeleton />;
   }
 
-  const activeUsers = usuarios.filter(u => u.estado_buzo === 'activo');
-  const inactiveUsers = usuarios.filter(u => u.estado_buzo === 'inactivo');
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Estado del Equipo
-        </CardTitle>
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-medium">Estado del Equipo</CardTitle>
+        <Users className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-green-500" />
-            <div>
-              <p className="text-2xl font-bold text-green-600">{activeUsers.length}</p>
-              <p className="text-sm text-gray-600">Activos</p>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalBuzos}</div>
+              <div className="text-xs text-muted-foreground">Total Buzos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{stats.supervisores}</div>
+              <div className="text-xs text-muted-foreground">Supervisores</div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <div>
-              <p className="text-2xl font-bold text-gray-600">{inactiveUsers.length}</p>
-              <p className="text-sm text-gray-600">Inactivos</p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Buzos Activos</span>
+              <span className="text-sm font-medium">{stats.buzosActivos}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Buzos Disponibles</span>
+              <span className="text-sm font-medium">{stats.buzosDisponibles}</span>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <h4 className="font-medium">Equipo Activo</h4>
-          {activeUsers.slice(0, 5).map((usuario) => {
-            // Parse perfil_buzo safely
-            let perfilBuzo: any = {};
-            try {
-              perfilBuzo = typeof usuario.perfil_buzo === 'string' 
-                ? JSON.parse(usuario.perfil_buzo) 
-                : usuario.perfil_buzo || {};
-            } catch (e) {
-              perfilBuzo = {};
-            }
-
-            return (
-              <div key={usuario.usuario_id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={perfilBuzo.avatar_url || ''} />
-                  <AvatarFallback>
-                    {usuario.nombre.charAt(0)}{usuario.apellido.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{usuario.nombre} {usuario.apellido}</p>
-                  <p className="text-xs text-gray-500">{usuario.empresa_nombre}</p>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Personal Reciente</h4>
+            <div className="space-y-1">
+              {usuarios.slice(0, 3).map((usuario) => (
+                <div key={usuario.usuario_id} className="flex items-center justify-between text-xs">
+                  <span className="truncate">{usuario.nombre} {usuario.apellido}</span>
+                  <span className="text-muted-foreground">{usuario.rol}</span>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-200">
-                  {usuario.rol}
-                </Badge>
-              </div>
-            );
-          })}
-          
-          {activeUsers.length > 5 && (
-            <p className="text-sm text-gray-500 text-center">
-              +{activeUsers.length - 5} más
-            </p>
-          )}
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-export { TeamStatusWidget };
 export default TeamStatusWidget;

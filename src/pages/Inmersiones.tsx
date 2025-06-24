@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { DashboardWithSidebar } from "@/components/dashboard/DashboardWithSidebar";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, Anchor } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useInmersiones } from "@/hooks/useInmersiones";
@@ -70,137 +70,134 @@ const Inmersiones = () => {
   };
 
   return (
-    <DashboardWithSidebar>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Inmersiones</h1>
-            <p className="text-gray-600">Gestión de inmersiones y operaciones de buceo</p>
-          </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Inmersión
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Inmersiones</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Cargando inmersiones...</div>
-            ) : inmersiones.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No hay inmersiones registradas
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {inmersiones.map((inmersion) => (
-                  <div key={inmersion.inmersion_id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold">{inmersion.codigo}</h3>
-                        <Badge className={getStatusColor(inmersion.estado)}>
-                          {inmersion.estado}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <strong>Objetivo:</strong> {inmersion.objetivo}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <strong>Fecha:</strong> {inmersion.fecha_inmersion}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Buzo Principal:</strong> {inmersion.buzo_principal}
-                      </p>
+    <MainLayout
+      title="Inmersiones"
+      subtitle="Gestión de inmersiones y operaciones de buceo"
+      icon={Anchor}
+      actions={
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Inmersión
+        </Button>
+      }
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Inmersiones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">Cargando inmersiones...</div>
+          ) : inmersiones.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay inmersiones registradas
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {inmersiones.map((inmersion) => (
+                <div key={inmersion.inmersion_id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold">{inmersion.codigo}</h3>
+                      <Badge className={getStatusColor(inmersion.estado)}>
+                        {inmersion.estado}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedInmersion(inmersion);
-                          setIsViewDialogOpen(true);
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedInmersion(inmersion);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteInmersion(inmersion.inmersion_id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <p className="text-sm text-gray-600 mb-1">
+                      <strong>Objetivo:</strong> {inmersion.objetivo}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      <strong>Fecha:</strong> {inmersion.fecha_inmersion}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <strong>Buzo Principal:</strong> {inmersion.buzo_principal}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedInmersion(inmersion);
+                        setIsViewDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedInmersion(inmersion);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteInmersion(inmersion.inmersion_id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Create Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Nueva Inmersión</DialogTitle>
-            </DialogHeader>
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Nueva Inmersión</DialogTitle>
+          </DialogHeader>
+          <InmersionWizard
+            onComplete={handleCreateInmersion}
+            onCancel={() => setIsCreateDialogOpen(false)}
+            showOperationSelector={true}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Ver Inmersión</DialogTitle>
+          </DialogHeader>
+          {selectedInmersion && (
             <InmersionWizard
-              onComplete={handleCreateInmersion}
-              onCancel={() => setIsCreateDialogOpen(false)}
-              showOperationSelector={true}
+              initialData={selectedInmersion}
+              onComplete={() => setIsViewDialogOpen(false)}
+              onCancel={() => setIsViewDialogOpen(false)}
+              readOnly={true}
+              showOperationSelector={false}
             />
-          </DialogContent>
-        </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        {/* View Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Ver Inmersión</DialogTitle>
-            </DialogHeader>
-            {selectedInmersion && (
-              <InmersionWizard
-                initialData={selectedInmersion}
-                onComplete={() => setIsViewDialogOpen(false)}
-                onCancel={() => setIsViewDialogOpen(false)}
-                readOnly={true}
-                showOperationSelector={false}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Editar Inmersión</DialogTitle>
-            </DialogHeader>
-            {selectedInmersion && (
-              <InmersionWizard
-                initialData={selectedInmersion}
-                onComplete={handleUpdateInmersion}
-                onCancel={() => setIsEditDialogOpen(false)}
-                showOperationSelector={false}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    </DashboardWithSidebar>
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Editar Inmersión</DialogTitle>
+          </DialogHeader>
+          {selectedInmersion && (
+            <InmersionWizard
+              initialData={selectedInmersion}
+              onComplete={handleUpdateInmersion}
+              onCancel={() => setIsEditDialogOpen(false)}
+              showOperationSelector={false}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
   );
 };
 
