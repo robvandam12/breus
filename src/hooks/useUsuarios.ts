@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -35,8 +34,12 @@ export const useUsuarios = () => {
         salmonera_id: user.salmonera_id,
         servicio_id: user.servicio_id,
         perfil_buzo: user.perfil_buzo,
-        salmonera: user.salmoneras || undefined,
-        contratista: user.contratistas || undefined
+        salmonera: Array.isArray(user.salmoneras) && user.salmoneras.length > 0 
+          ? user.salmoneras[0] 
+          : user.salmoneras || undefined,
+        contratista: Array.isArray(user.contratistas) && user.contratistas.length > 0 
+          ? user.contratistas[0] 
+          : user.contratistas || undefined
       })) || [];
 
       setUsuarios(transformedData);
