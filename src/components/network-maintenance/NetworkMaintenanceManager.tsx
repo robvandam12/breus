@@ -1,107 +1,93 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Network, Settings, Wrench, Activity, Calendar, Users, FileText } from "lucide-react";
-import { useMaintenanceNetworks } from '@/hooks/useMaintenanceNetworks';
-import { NetworkMaintenanceWizard } from './NetworkMaintenanceWizard';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Eye, Edit, Trash2, FileText, Settings, Network, Activity } from "lucide-react";
+import { NetworkMaintenanceWizard } from "./NetworkMaintenanceWizard";
+import { useNetworkMaintenance } from "@/hooks/useNetworkMaintenance";
 
 export const NetworkMaintenanceManager = () => {
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedForm, setSelectedForm] = useState<any>(null);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
   const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena_redes'>('mantencion');
-  const [editingForm, setEditingForm] = useState<string | null>(null);
 
-  const {
-    maintenanceForms,
-    isLoading,
-    getFormsByType,
-  } = useMaintenanceNetworks();
+  const { 
+    networkMaintenanceForms, 
+    loading, 
+    createNetworkMaintenance,
+    updateNetworkMaintenance,
+    deleteNetworkMaintenance,
+    refetch 
+  } = useNetworkMaintenance();
 
-  const handleCreateNew = (type: 'mantencion' | 'faena_redes') => {
+  const handleCreateForm = (type: 'mantencion' | 'faena_redes') => {
     setSelectedFormType(type);
-    setEditingForm(null);
-    setShowCreateForm(true);
+    setDialogMode('create');
+    setSelectedForm(null);
+    setShowDialog(true);
   };
 
-  const handleEdit = (formId: string) => {
-    setEditingForm(formId);
-    setShowCreateForm(true);
+  const handleEditForm = (form: any) => {
+    setSelectedForm(form);
+    setSelectedFormType(form.tipo_formulario);
+    setDialogMode('edit');
+    setShowDialog(true);
   };
 
-  const handleCloseForm = () => {
-    setShowCreateForm(false);
-    setEditingForm(null);
+  const handleViewForm = (form: any) => {
+    setSelectedForm(form);
+    setSelectedFormType(form.tipo_formulario);
+    setDialogMode('view');
+    setShowDialog(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      'borrador': { label: 'Borrador', variant: 'outline' as const },
-      'completado': { label: 'Completado', variant: 'default' as const },
-      'firmado': { label: 'Firmado', variant: 'secondary' as const }
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.borrador;
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
-  };
-
-  const moduleTypes = [
-    {
-      id: 'mantencion' as const,
-      title: 'Mantención de Redes',
-      description: 'Formulario completo de mantención preventiva y correctiva',
-      icon: Settings,
-      color: 'blue',
-      features: [
-        'Encabezado general y dotación',
-        'Equipos de superficie',
-        'Faenas de mantención específicas',
-        'Sistemas y equipos operacionales',
-        'Resumen y firmas digitales'
-      ]
-    },
-    {
-      id: 'faena_redes' as const,
-      title: 'Faenas de Redes',
-      description: 'Registro específico de trabajos en redes de cultivo',
-      icon: Wrench,
-      color: 'green',
-      features: [
-        'Matriz de actividades por jaula',
-        'Cambios de pecera por buzo',
-        'Registro de materiales utilizados',
-        'Control de tiempos operativos',
-        'Validación de seguridad'
-      ]
+  const handleFormComplete = async (formData: any) => {
+    try {
+      if (dialogMode === 'create') {
+        await createNetworkMaintenance({
+          ...formData,
+          codigo: `MANT-${Date.now()}`,
+          tipo_formulario: selectedFormType,
+          multix_data: formData,
+          estado: 'borrador',
+          progreso: 0,
+          firmado: false,
+          user_id: 'current-user-id',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      } else if (dialogMode === 'edit' && selectedForm) {
+        await updateNetworkMaintenance(selectedForm.id, {
+          multix_data: formData,
+          updated_at: new Date().toISOString()
+        });
+      }
+      
+      setShowDialog(false);
+      await refetch();
+    } catch (error) {
+      console.error('Error saving form:', error);
     }
-  ];
+  };
 
-  if (showCreateForm) {
-    return (
-      <div className="space-y-6">
-        <NetworkMaintenanceWizard
-          operationId="temp-operation-id"
-          tipoFormulario={selectedFormType}
-          onComplete={handleCloseForm}
-          onCancel={handleCloseForm}
-          editingFormId={editingForm}
-        />
-      </div>
-    );
-  }
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setSelectedForm(null);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Estadísticas */}
+      {/* Header con estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Formularios</p>
-                <p className="text-2xl font-bold">{maintenanceForms.length}</p>
+                <p className="text-2xl font-bold">{networkMaintenanceForms.length}</p>
               </div>
               <FileText className="w-8 h-8 text-blue-500" />
             </div>
@@ -112,9 +98,9 @@ export const NetworkMaintenanceManager = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Mantención</p>
+                <p className="text-sm text-gray-600">Mantenimientos</p>
                 <p className="text-2xl font-bold">
-                  {getFormsByType('mantencion').length}
+                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'mantencion').length}
                 </p>
               </div>
               <Settings className="w-8 h-8 text-green-500" />
@@ -128,10 +114,10 @@ export const NetworkMaintenanceManager = () => {
               <div>
                 <p className="text-sm text-gray-600">Faenas</p>
                 <p className="text-2xl font-bold">
-                  {getFormsByType('faena_redes').length}
+                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'faena_redes').length}
                 </p>
               </div>
-              <Wrench className="w-8 h-8 text-teal-500" />
+              <Network className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -142,170 +128,84 @@ export const NetworkMaintenanceManager = () => {
               <div>
                 <p className="text-sm text-gray-600">Completados</p>
                 <p className="text-2xl font-bold">
-                  {maintenanceForms.filter(f => f.estado === 'completado' || f.firmado).length}
+                  {networkMaintenanceForms.filter(f => f.estado === 'completado').length}
                 </p>
               </div>
-              <Activity className="w-8 h-8 text-purple-500" />
+              <Activity className="w-8 h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tipos de Formularios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {moduleTypes.map((moduleType) => (
-          <Card key={moduleType.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                    moduleType.color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                    'bg-green-100 text-green-600'
-                  }`}>
-                    <moduleType.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{moduleType.title}</CardTitle>
-                  </div>
-                </div>
-              </div>
-              <CardDescription className="mt-2">
-                {moduleType.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 mb-4">
-                {moduleType.features.map((feature, index) => (
-                  <li key={index} className="text-sm text-gray-600 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                className="w-full" 
-                onClick={() => handleCreateNew(moduleType.id)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Crear {moduleType.title}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Lista de formularios existentes */}
+      {/* Controles principales */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Network className="w-5 h-5" />
-            Formularios de Mantención
-          </CardTitle>
-          <CardDescription>
-            Gestión de formularios de mantención de redes y estructuras
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Network className="w-5 h-5" />
+              Mantención de Redes
+            </CardTitle>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => handleCreateForm('mantencion')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Mantención
+              </Button>
+              
+              <Button variant="outline" onClick={() => handleCreateForm('faena_redes')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Faena
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="all">Todos ({maintenanceForms.length})</TabsTrigger>
-              <TabsTrigger value="mantencion">Mantención ({getFormsByType('mantencion').length})</TabsTrigger>
-              <TabsTrigger value="faena_redes">Faenas ({getFormsByType('faena_redes').length})</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all">
-              <div className="space-y-4">
-                {isLoading ? (
-                  <div className="text-center py-8">Cargando formularios...</div>
-                ) : maintenanceForms.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No hay formularios de mantención creados
+          {loading ? (
+            <div className="text-center py-8">Cargando formularios...</div>
+          ) : (
+            <div className="space-y-4">
+              {networkMaintenanceForms.map((form) => (
+                <div key={form.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold">{form.codigo}</h3>
+                      <Badge variant="outline">{form.tipo_formulario}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600">{form.lugar_trabajo}</p>
                   </div>
-                ) : (
-                  maintenanceForms.map((form) => (
-                    <div key={form.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                          {form.tipo_formulario === 'mantencion' ? 
-                            <Settings className="w-5 h-5 text-blue-600" /> :
-                            <Wrench className="w-5 h-5 text-green-600" />
-                          }
-                        </div>
-                        <div>
-                          <h4 className="font-medium">
-                            {form.codigo} - {form.tipo_formulario === 'mantencion' ? 'Mantención de Redes' : 'Faena de Redes'}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {form.lugar_trabajo} - {form.fecha && format(new Date(form.fecha), 'PPP', { locale: es })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(form.estado)}
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(form.id)}>
-                          Ver/Editar
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="mantencion">
-              <div className="space-y-4">
-                {getFormsByType('mantencion').map((form) => (
-                  <div key={form.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <Settings className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{form.codigo} - Mantención de Redes</h4>
-                        <p className="text-sm text-gray-600">
-                          {form.lugar_trabajo} - {form.fecha && format(new Date(form.fecha), 'PPP', { locale: es })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(form.estado)}
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(form.id)}>
-                        Ver/Editar
-                      </Button>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleViewForm(form)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEditForm(form)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="faena_redes">
-              <div className="space-y-4">
-                {getFormsByType('faena_redes').map((form) => (
-                  <div key={form.id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                        <Wrench className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{form.codigo} - Faena de Redes</h4>
-                        <p className="text-sm text-gray-600">
-                          {form.lugar_trabajo} - {form.fecha && format(new Date(form.fecha), 'PPP', { locale: es })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(form.estado)}
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(form.id)}>
-                        Ver/Editar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'create' && 'Crear Formulario'}
+              {dialogMode === 'edit' && 'Editar Formulario'}
+              {dialogMode === 'view' && 'Ver Formulario'}
+            </DialogTitle>
+          </DialogHeader>
+          <NetworkMaintenanceWizard
+            operationId={selectedForm?.operacion_id || 'temp-operation-id'}
+            tipoFormulario={selectedFormType}
+            onComplete={handleFormComplete}
+            onCancel={handleCloseDialog}
+            readOnly={dialogMode === 'view'}
+            initialData={selectedForm?.multix_data}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

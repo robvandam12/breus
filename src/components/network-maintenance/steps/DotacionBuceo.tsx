@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Users, Clock } from "lucide-react";
-import type { NetworkMaintenanceData, DotacionBuceo as DotacionBuceoType } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, Dotacion } from '@/types/network-maintenance';
 
 interface DotacionBuceoProps {
   formData: NetworkMaintenanceData;
@@ -19,11 +19,13 @@ export const DotacionBuceo = ({ formData, updateFormData, readOnly = false }: Do
   const dotacion = formData.dotacion || [];
 
   const agregarMiembro = () => {
-    const nuevoMiembro: DotacionBuceoType = {
+    const nuevoMiembro: Dotacion = {
       id: Date.now().toString(),
-      rol: 'buzo_1',
+      rol: 'buzo',
       nombre: '',
       apellido: '',
+      rut: '',
+      horas_trabajadas: 0,
       matricula: '',
       contratista: false,
       equipo: 'liviano',
@@ -37,7 +39,7 @@ export const DotacionBuceo = ({ formData, updateFormData, readOnly = false }: Do
     });
   };
 
-  const actualizarMiembro = (id: string, campo: keyof DotacionBuceoType, valor: any) => {
+  const actualizarMiembro = (id: string, campo: keyof Dotacion, valor: any) => {
     const dotacionActualizada = dotacion.map(miembro =>
       miembro.id === id ? { ...miembro, [campo]: valor } : miembro
     );

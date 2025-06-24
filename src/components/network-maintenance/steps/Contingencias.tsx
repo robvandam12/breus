@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, FileText } from "lucide-react";
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData, Contingencias as ContingenciasType } from '@/types/network-maintenance';
 
 interface ContingenciasProps {
   formData: NetworkMaintenanceData;
@@ -14,14 +14,16 @@ interface ContingenciasProps {
 }
 
 export const Contingencias = ({ formData, updateFormData, readOnly = false }: ContingenciasProps) => {
-  const contingencias = formData.contingencias || {};
+  const contingencias = (formData.contingencias as ContingenciasType) || {};
 
   const updateContingencia = (campo: string, valor: string) => {
+    const updatedContingencias: ContingenciasType = {
+      ...contingencias,
+      [campo]: valor
+    };
+    
     updateFormData({
-      contingencias: {
-        ...contingencias,
-        [campo]: valor
-      }
+      contingencias: updatedContingencias
     });
   };
 
@@ -56,7 +58,7 @@ export const Contingencias = ({ formData, updateFormData, readOnly = false }: Co
               <Label htmlFor={tipo.key}>{tipo.label}</Label>
               <Textarea
                 id={tipo.key}
-                value={contingencias[tipo.key] || ''}
+                value={contingencias[tipo.key as keyof ContingenciasType] || ''}
                 onChange={(e) => updateContingencia(tipo.key, e.target.value)}
                 placeholder={tipo.placeholder}
                 rows={3}

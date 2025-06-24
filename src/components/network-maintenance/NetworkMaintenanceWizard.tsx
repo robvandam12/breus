@@ -17,7 +17,7 @@ import { FirmasDigitales } from "./steps/FirmasDigitales";
 import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 import { toast } from "@/hooks/use-toast";
 
-interface NetworkMaintenanceWizardProps {
+export interface NetworkMaintenanceWizardProps {
   initialData?: NetworkMaintenanceData;
   onComplete: (data: NetworkMaintenanceData) => void;
   onCancel: () => void;
@@ -117,7 +117,7 @@ export const NetworkMaintenanceWizard = ({
     const finalData: NetworkMaintenanceData = {
       ...formData,
       progreso: 100,
-      estado: formData.firmado ? 'firmado' : 'pendiente_firma'
+      estado: formData.firmado ? 'firmado' : 'completado'
     };
     
     onComplete(finalData);
@@ -187,7 +187,6 @@ export const NetworkMaintenanceWizard = ({
                 formData={formData}
                 updateFormData={updateFormData}
                 readOnly={readOnly}
-                tipoFormulario={tipoFormulario}
               />
             )}
           </motion.div>

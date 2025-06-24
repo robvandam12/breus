@@ -1,295 +1,181 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, FileText, Calendar, MapPin, Eye, Edit, Trash2 } from 'lucide-react';
-import { useNetworkMaintenance } from '@/hooks/useNetworkMaintenance';
-import { NetworkMaintenanceWizard } from './NetworkMaintenanceWizard';
-import { UniversalConfirmation } from '@/components/ui/universal-confirmation';
-import { useUniversalConfirmation } from '@/hooks/useUniversalConfirmation';
-import { toast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Eye, Edit, Trash2, Plus } from "lucide-react";
+import { NetworkMaintenanceWizard } from "./NetworkMaintenanceWizard";
+import { useNetworkMaintenance } from "@/hooks/useNetworkMaintenance";
 
-interface NetworkMaintenanceListProps {
-  operacionId?: string;
-  onEdit?: (formId: string, formData: any) => void;
-  onView?: (formId: string, formData: any) => void;
-}
-
-export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({ 
-  operacionId,
-  onEdit: onEditProp,
-  onView: onViewProp
-}) => {
-  const [showCreateForm, setShowCreateForm] = useState(false);
+export const NetworkMaintenanceList = () => {
+  const [showDialog, setShowDialog] = useState(false);
   const [selectedForm, setSelectedForm] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
-  
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena_redes'>('mantencion');
+
   const { 
-    getAllNetworkMaintenance,
-    getNetworkMaintenanceByOperacion,
+    networkMaintenanceForms, 
+    loading, 
+    createNetworkMaintenance,
     updateNetworkMaintenance,
-    completeNetworkMaintenance,
     deleteNetworkMaintenance,
-    loading 
-  } = useNetworkMaintenance(operacionId);
+    refetch 
+  } = useNetworkMaintenance();
 
-  const {
-    isOpen,
-    isLoading,
-    options,
-    showConfirmation,
-    handleConfirm,
-    handleCancel,
-    setIsOpen
-  } = useUniversalConfirmation();
-
-  // Obtener formularios según contexto
-  const forms = operacionId 
-    ? getNetworkMaintenanceByOperacion(operacionId)
-    : getAllNetworkMaintenance();
-
-  const handleCreateNew = () => {
+  const handleCreateForm = (type: 'mantencion' | 'faena_redes') => {
+    setSelectedFormType(type);
+    setDialogMode('create');
     setSelectedForm(null);
-    setViewMode('create');
-    setShowCreateForm(true);
+    setShowDialog(true);
   };
 
-  const handleEdit = (form: any) => {
-    if (onEditProp) {
-      onEditProp(form.id, form);
-    } else {
-      setSelectedForm(form);
-      setViewMode('edit');
-      setShowCreateForm(true);
-    }
+  const handleEditForm = (form: any) => {
+    setSelectedForm(form);
+    setSelectedFormType(form.tipo_formulario);
+    setDialogMode('edit');
+    setShowDialog(true);
   };
 
-  const handleView = (form: any) => {
-    if (onViewProp) {
-      onViewProp(form.id, form);
-    } else {
-      setSelectedForm(form);
-      setViewMode('view');
-      setShowCreateForm(true);
-    }
+  const handleViewForm = (form: any) => {
+    setSelectedForm(form);
+    setSelectedFormType(form.tipo_formulario);
+    setDialogMode('view');
+    setShowDialog(true);
   };
 
-  const handleDelete = (form: any) => {
-    showConfirmation({
-      title: "Eliminar Formulario",
-      description: `¿Está seguro de que desea eliminar el formulario "${form.codigo}"? Esta acción no se puede deshacer.`,
-      confirmText: "Eliminar",
-      cancelText: "Cancelar",
-      variant: "destructive",
-      onConfirm: async () => {
-        try {
-          await deleteNetworkMaintenance(form.id);
-        } catch (error) {
-          console.error('Error deleting form:', error);
-        }
+  const handleDeleteForm = async (formId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este formulario?')) {
+      try {
+        await deleteNetworkMaintenance(formId);
+        await refetch();
+      } catch (error) {
+        console.error('Error deleting form:', error);
       }
-    });
+    }
   };
 
-  const handleComplete = (form: any) => {
-    showConfirmation({
-      title: "Completar Formulario",
-      description: `¿Está seguro de que desea marcar como completado el formulario "${form.codigo}"? Esta acción no se puede deshacer.`,
-      confirmText: "Completar",
-      cancelText: "Cancelar",
-      onConfirm: async () => {
-        try {
-          await completeNetworkMaintenance(form.id);
-        } catch (error) {
-          console.error('Error completing form:', error);
-        }
+  const handleFormComplete = async (formData: any) => {
+    try {
+      if (dialogMode === 'create') {
+        await createNetworkMaintenance({
+          ...formData,
+          codigo: `MANT-${Date.now()}`,
+          tipo_formulario: selectedFormType,
+          multix_data: formData,
+          estado: 'borrador',
+          progreso: 0,
+          firmado: false,
+          user_id: 'current-user-id',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      } else if (dialogMode === 'edit' && selectedForm) {
+        await updateNetworkMaintenance(selectedForm.id, {
+          multix_data: formData,
+          updated_at: new Date().toISOString()
+        });
       }
-    });
-  };
-
-  const getEstadoBadgeColor = (estado: string) => {
-    switch (estado) {
-      case 'borrador': return 'bg-gray-100 text-gray-800';
-      case 'en_revision': return 'bg-yellow-100 text-yellow-800';
-      case 'completado': return 'bg-green-100 text-green-800';
-      case 'rechazado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      
+      setShowDialog(false);
+      await refetch();
+    } catch (error) {
+      console.error('Error saving form:', error);
     }
   };
 
-  const getTipoFormularioLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'mantencion': return 'Mantención';
-      case 'faena_redes': return 'Faena de Redes';
-      default: return tipo;
-    }
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setSelectedForm(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completado':
+        return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
+      case 'en_progreso':
+        return <Badge className="bg-blue-100 text-blue-800">En Progreso</Badge>;
+      case 'borrador':
+        return <Badge className="bg-gray-100 text-gray-800">Borrador</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            Formularios de Mantención de Redes
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            {operacionId 
-              ? 'Formularios asociados a esta operación'
-              : 'Todos los formularios de mantención de redes'
-            }
-          </p>
-        </div>
-        
-        <Button onClick={handleCreateNew} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Nuevo Formulario
-        </Button>
-      </div>
-
-      {/* Lista de formularios */}
-      {forms.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No hay formularios
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Comienza creando tu primer formulario de mantención de redes
-            </p>
-            <Button onClick={handleCreateNew}>
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Primer Formulario
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {forms.map((form) => (
-            <Card key={form.id} className="border-l-4 border-l-blue-500">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Formularios de Mantención</CardTitle>
+            <div className="flex gap-2">
+              <Button onClick={() => handleCreateForm('mantencion')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Mantención
+              </Button>
+              <Button variant="outline" onClick={() => handleCreateForm('faena_redes')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Faena
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">Cargando formularios...</div>
+          ) : networkMaintenanceForms.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay formularios registrados
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {networkMaintenanceForms.map((form) => (
+                <div key={form.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-semibold text-lg">{form.codigo}</h4>
-                      <Badge className={getEstadoBadgeColor(form.estado)}>
-                        {form.estado}
-                      </Badge>
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
-                        {getTipoFormularioLabel(form.tipo_formulario)}
-                      </Badge>
+                      <h3 className="font-semibold">{form.codigo}</h3>
+                      {getStatusBadge(form.estado)}
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{form.fecha}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{form.lugar_trabajo}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        <span>{form.nave_maniobras || 'Sin especificar'}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Progreso:</span> {form.multix_data?.progreso || 0}%
-                    </p>
+                    <p className="text-sm text-gray-600">{form.lugar_trabajo}</p>
+                    <p className="text-sm text-gray-500">{form.fecha}</p>
                   </div>
-
-                  {/* Acciones */}
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleView(form)}
-                    >
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleViewForm(form)}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    {form.estado !== 'completado' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(form)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleComplete(form)}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          Completar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(form)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => handleEditForm(form)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteForm(form.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Modal para crear/editar formulario - solo se muestra si no hay callbacks externos */}
-      {!onEditProp && !onViewProp && (
-        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {viewMode === 'create' && 'Nuevo Formulario de Mantención'}
-                {viewMode === 'edit' && 'Editar Formulario'}
-                {viewMode === 'view' && 'Ver Formulario'}
-              </DialogTitle>
-            </DialogHeader>
-            <NetworkMaintenanceWizard
-              operationId={operacionId}
-              tipoFormulario="mantencion"
-              onComplete={() => setShowCreateForm(false)}
-              onCancel={() => setShowCreateForm(false)}
-              editingFormId={viewMode !== 'create' ? selectedForm?.id : undefined}
-              readOnly={viewMode === 'view'}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Modal de confirmación universal */}
-      <UniversalConfirmation
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        title={options.title}
-        description={options.description}
-        confirmText={options.confirmText}
-        cancelText={options.cancelText}
-        variant={options.variant}
-        onConfirm={handleConfirm}
-        loading={isLoading}
-      />
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'create' && 'Crear Formulario'}
+              {dialogMode === 'edit' && 'Editar Formulario'}
+              {dialogMode === 'view' && 'Ver Formulario'}
+            </DialogTitle>
+          </DialogHeader>
+          <NetworkMaintenanceWizard
+            operationId={selectedForm?.operacion_id || 'temp-operation-id'}
+            tipoFormulario={selectedFormType}
+            onComplete={handleFormComplete}
+            onCancel={handleCloseDialog}
+            readOnly={dialogMode === 'view'}
+            initialData={selectedForm?.multix_data}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

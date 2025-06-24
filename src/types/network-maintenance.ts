@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 
 export interface Dotacion {
@@ -5,9 +6,17 @@ export interface Dotacion {
   nombre: string;
   apellido: string;
   rut: string;
-  rol: 'buzo' | 'supervisor' | 'jefe_faena' | 'paramedico';
+  rol: 'buzo' | 'supervisor' | 'jefe_faena' | 'paramedico' | 'buzo_1' | 'buzo_2' | 'buzo_3' | 'buzo_4' | 'buzo_5' | 'buzo_6' | 'buzo_7' | 'buzo_8' | 'buzo_emergencia_1' | 'buzo_emergencia_2';
   horas_trabajadas: number;
+  matricula: string;
+  contratista: boolean;
+  equipo: 'liviano' | 'mediano';
+  hora_inicio_buzo: string;
+  hora_fin_buzo: string;
+  profundidad: number;
 }
+
+export type DotacionBuceo = Dotacion;
 
 export interface EquipoSuperficie {
   id: string;
@@ -23,6 +32,15 @@ export interface FaenaMantencion {
   cantidad: number;
   unidad: string;
   descripcion_trabajo: string;
+  tipo_seccion: 'red' | 'lobera' | 'peceras';
+  jaulas: string;
+  ubicacion: string;
+  tipo_rotura: '2x1' | '2x2' | 'mayor_2x2';
+  retensado: boolean;
+  descostura: boolean;
+  objetos: boolean;
+  otros: string;
+  obs_faena: string;
 }
 
 export interface FaenaRed {
@@ -57,6 +75,10 @@ export interface ApoyoFaena {
   cantidad_apoyo: number;
   unidad_apoyo: string;
   descripcion_apoyo: string;
+  seccion_apoyo: string[];
+  jaulas_apoyo: string;
+  actividades_apoyo: string[];
+  obs_apoyo: string;
 }
 
 export interface ResumenInmersiones {
@@ -65,6 +87,19 @@ export interface ResumenInmersiones {
   horas_piloto: number;
   tipo_nave: string;
   obs_inmersiones: string;
+}
+
+export interface Contingencias {
+  mortalidad?: string;
+  bloom_algas?: string;
+  escape_peces?: string;
+  dana_red?: string;
+  falla_equipos?: string;
+  condiciones_mar?: string;
+  accidentes?: string;
+  otros_eventos?: string;
+  observaciones_contingencias?: string;
+  observaciones_generales?: string;
 }
 
 export interface NetworkMaintenanceData {
@@ -100,7 +135,7 @@ export interface NetworkMaintenanceData {
   resumen_inmersiones?: ResumenInmersiones;
 
   // Contingencias
-  contingencias?: string | Contingencias;
+  contingencias?: Contingencias;
 
   // Campos adicionales para el resumen y firmas
   observaciones_finales?: string;
@@ -110,14 +145,6 @@ export interface NetworkMaintenanceData {
   // Control del formulario
   progreso: number;
   firmado: boolean;
-  estado: 'borrador' | 'en_revision' | 'completado' | 'firmado';
+  estado: 'borrador' | 'en_revision' | 'completado' | 'firmado' | 'pendiente_firma';
   tipo_formulario: 'mantencion' | 'faena_redes';
-}
-
-export interface Contingencias {
-  mortalidad?: number;
-  bloom_algas?: number;
-  escape_peces?: number;
-  dana_red?: number;
-  observaciones_contingencias?: string;
 }
