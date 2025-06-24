@@ -29,13 +29,17 @@ export const useUsuarios = () => {
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras(nombre, rut),
-          contratista:contratistas!left(nombre, rut)
+          salmonera:salmoneras(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as any[];
+      
+      // Transform data to match Usuario interface
+      return (data || []).map(user => ({
+        ...user,
+        contratista: user.servicio_id ? { nombre: 'Contratista', rut: '' } : null
+      })) as Usuario[];
     },
   });
 
