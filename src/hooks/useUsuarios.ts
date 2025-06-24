@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -22,13 +21,25 @@ export const useUsuarios = () => {
       if (error) throw error;
 
       // Transform the data to match our interface
-      const transformedData = data?.map(user => ({
-        ...user,
-        contratista: Array.isArray(user.contratista) 
-          ? user.contratista 
-          : user.contratista 
-            ? [user.contratista] 
-            : []
+      const transformedData: Usuario[] = data?.map(user => ({
+        usuario_id: user.usuario_id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email || undefined,
+        rol: user.rol as Usuario['rol'],
+        estado_buzo: user.estado_buzo as Usuario['estado_buzo'] || 'inactivo',
+        perfil_completado: user.perfil_completado || false,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        salmonera_id: user.salmonera_id,
+        servicio_id: user.servicio_id,
+        perfil_buzo: user.perfil_buzo,
+        salmonera: Array.isArray(user.salmonera) 
+          ? user.salmonera[0] 
+          : user.salmonera || undefined,
+        contratista: Array.isArray(user.contratista) && user.contratista.length > 0
+          ? user.contratista[0]
+          : user.contratista || undefined
       })) || [];
 
       setUsuarios(transformedData);
