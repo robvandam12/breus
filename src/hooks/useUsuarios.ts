@@ -13,8 +13,8 @@ export const useUsuarios = () => {
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras!usuario_salmonera_id_fkey(nombre, rut),
-          servicio:contratistas!usuario_servicio_id_fkey(nombre, rut)
+          salmonera:salmoneras!salmonera_id(nombre, rut),
+          servicio:contratistas!servicio_id(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
@@ -24,7 +24,7 @@ export const useUsuarios = () => {
       }
       
       return data.map(usuario => {
-        // Handle salmonera data safely
+        // Handle salmonera and servicio data safely
         const salmoneraData = Array.isArray(usuario.salmonera) ? usuario.salmonera[0] : usuario.salmonera;
         const servicioData = Array.isArray(usuario.servicio) ? usuario.servicio[0] : usuario.servicio;
         

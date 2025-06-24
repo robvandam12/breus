@@ -6,8 +6,8 @@ interface ConfirmationOptions {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: "default" | "destructive" | "warning" | "info";
-  onConfirm: () => void | Promise<void>;
+  variant?: 'default' | 'destructive';
+  onConfirm: () => Promise<void> | void;
 }
 
 export const useUniversalConfirmation = () => {
@@ -16,11 +16,19 @@ export const useUniversalConfirmation = () => {
   const [options, setOptions] = useState<ConfirmationOptions>({
     title: '',
     description: '',
+    confirmText: 'Confirmar',
+    cancelText: 'Cancelar',
+    variant: 'default',
     onConfirm: () => {}
   });
 
-  const showConfirmation = (confirmationOptions: ConfirmationOptions) => {
-    setOptions(confirmationOptions);
+  const showConfirmation = (newOptions: ConfirmationOptions) => {
+    setOptions({
+      confirmText: 'Confirmar',
+      cancelText: 'Cancelar',
+      variant: 'default',
+      ...newOptions
+    });
     setIsOpen(true);
   };
 
@@ -28,26 +36,25 @@ export const useUniversalConfirmation = () => {
     setIsLoading(true);
     try {
       await options.onConfirm();
+      setIsOpen(false);
     } catch (error) {
-      console.error('Error in confirmation action:', error);
+      console.error('Error in confirmation:', error);
     } finally {
       setIsLoading(false);
-      setIsOpen(false);
     }
   };
 
   const handleCancel = () => {
     setIsOpen(false);
-    setIsLoading(false);
   };
 
   return {
     isOpen,
+    setIsOpen,
     isLoading,
     options,
     showConfirmation,
     handleConfirm,
-    handleCancel,
-    setIsOpen
+    handleCancel
   };
 };
