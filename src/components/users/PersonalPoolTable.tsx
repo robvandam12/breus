@@ -6,25 +6,35 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye, Edit, UserPlus, Search, Filter } from "lucide-react";
-import { Usuario } from "@/types/usuario";
-import { useUsuarios } from "@/hooks/useUsuarios";
-import { toast } from "@/hooks/use-toast";
+import { Eye, Edit, UserPlus, Search } from "lucide-react";
+import { UserByCompany } from "@/hooks/useUsersByCompany";
+import { UserSearchSelectEnhanced } from "@/components/usuarios/UserSearchSelectEnhanced";
 
 interface PersonalPoolTableProps {
-  usuarios: Usuario[];
+  usuarios: UserByCompany[];
   isLoading: boolean;
+  onCreateUser: (userData: any) => Promise<void>;
+  onUpdateUser: (id: string, userData: any) => Promise<void>;
+  onDeleteUser: (id: string) => Promise<void>;
+  empresaType: 'salmonera' | 'contratista';
+  empresaId: string;
 }
 
-export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, isLoading }) => {
+export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ 
+  usuarios, 
+  isLoading, 
+  onCreateUser,
+  onUpdateUser,
+  onDeleteUser,
+  empresaType,
+  empresaId
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+  const [editingUser, setEditingUser] = useState<UserByCompany | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-
-  const { updateUsuario, inviteUsuario, deleteUsuario } = useUsuarios();
 
   const filteredUsuarios = usuarios.filter(usuario => {
     const matchesSearch = usuario.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -32,19 +42,16 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
                          usuario.email?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === 'all' || usuario.rol === roleFilter;
-    const matchesStatus = statusFilter === 'all' || usuario.estado_buzo === statusFilter;
     
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
-  const getStatusBadge = (estado: string) => {
-    const colors = {
-      'activo': 'bg-green-100 text-green-700',
-      'disponible': 'bg-blue-100 text-blue-700',
-      'inactivo': 'bg-gray-100 text-gray-700',
-      'suspendido': 'bg-red-100 text-red-700'
-    };
-    return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+  const getStatusBadge = (usuario: UserByCompany) => {
+    const isCompleted = usuario.perfil_completado;
+    if (isCompleted) {
+      return <Badge className="bg-green-100 text-green-700">Activo</Badge>;
+    }
+    return <Badge className="bg-yellow-100 text-yellow-700">Pendiente</Badge>;
   };
 
   const getRoleBadge = (rol: string) => {
@@ -57,64 +64,25 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
     return colors[rol as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  const handleEditUser = (usuario: Usuario) => {
+  const handleEditUser = (usuario: UserByCompany) => {
     setEditingUser(usuario);
     setShowEditDialog(true);
   };
 
-  const handleUpdateUser = async (userData: any) => {
-    if (!editingUser) return;
-    
-    try {
-      await updateUsuario(editingUser.usuario_id, userData);
-      setShowEditDialog(false);
-      setEditingUser(null);
-      toast({
-        title: "Usuario actualizado",
-        description: "Los datos del usuario han sido actualizados exitosamente.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el usuario.",
-        variant: "destructive",
-      });
-    }
+  const handleUserSelect = async (user: any) => {
+    await onCreateUser({
+      usuario_id: user.usuario_id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      rol: user.rol,
+    });
+    setShowInviteDialog(false);
   };
 
-  const handleInviteUser = async (userData: any) => {
-    try {
-      await inviteUsuario(userData);
-      setShowInviteDialog(false);
-      toast({
-        title: "Invitación enviada",
-        description: "La invitación ha sido enviada exitosamente.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo enviar la invitación.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('¿Está seguro de que desea eliminar este usuario?')) return;
-    
-    try {
-      await deleteUsuario(userId);
-      toast({
-        title: "Usuario eliminado",
-        description: "El usuario ha sido eliminado exitosamente.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el usuario.",
-        variant: "destructive",
-      });
-    }
+  const handleUserInvite = async (userData: any) => {
+    await onCreateUser(userData);
+    setShowInviteDialog(false);
   };
 
   if (isLoading) {
@@ -127,6 +95,10 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
       </div>
     );
   }
+
+  const allowedRoles = empresaType === 'salmonera' 
+    ? ['admin_salmonera', 'supervisor', 'buzo']
+    : ['admin_servicio', 'supervisor', 'buzo'];
 
   return (
     <div className="space-y-4">
@@ -150,29 +122,17 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los roles</SelectItem>
-            <SelectItem value="buzo">Buzo</SelectItem>
-            <SelectItem value="supervisor">Supervisor</SelectItem>
-            <SelectItem value="admin_servicio">Admin Servicio</SelectItem>
-            <SelectItem value="admin_salmonera">Admin Salmonera</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="activo">Activo</SelectItem>
-            <SelectItem value="disponible">Disponible</SelectItem>
-            <SelectItem value="inactivo">Inactivo</SelectItem>
-            <SelectItem value="suspendido">Suspendido</SelectItem>
+            {allowedRoles.map(role => (
+              <SelectItem key={role} value={role}>
+                {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Button onClick={() => setShowInviteDialog(true)} className="flex items-center gap-2">
           <UserPlus className="w-4 h-4" />
-          Invitar Usuario
+          Agregar Personal
         </Button>
       </div>
 
@@ -184,7 +144,6 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
             <TableHead>Email</TableHead>
             <TableHead>Rol</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead>Empresa</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -200,24 +159,11 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
               <TableCell>{usuario.email || 'No especificado'}</TableCell>
               <TableCell>
                 <Badge className={getRoleBadge(usuario.rol)}>
-                  {usuario.rol.replace('_', ' ')}
+                  {usuario.rol.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge className={getStatusBadge(usuario.estado_buzo || 'inactivo')}>
-                  {usuario.estado_buzo || 'inactivo'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  {usuario.salmonera ? (
-                    <span className="text-blue-600">{usuario.salmonera.nombre}</span>
-                  ) : usuario.contratista ? (
-                    <span className="text-orange-600">{usuario.contratista.nombre}</span>
-                  ) : (
-                    <span className="text-gray-500">Sin empresa</span>
-                  )}
-                </div>
+                {getStatusBadge(usuario)}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
@@ -252,28 +198,33 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar Usuario</DialogTitle>
+            <DialogTitle>Ver Usuario</DialogTitle>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Nombre</label>
-                <Input defaultValue={editingUser.nombre} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Apellido</label>
-                <Input defaultValue={editingUser.apellido} />
+                <label className="text-sm font-medium">Nombre Completo</label>
+                <p className="text-sm text-gray-600">{editingUser.nombre} {editingUser.apellido}</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Email</label>
-                <Input defaultValue={editingUser.email || ''} />
+                <p className="text-sm text-gray-600">{editingUser.email || 'No especificado'}</p>
               </div>
-              <div className="flex justify-end gap-2">
+              <div>
+                <label className="text-sm font-medium">Rol</label>
+                <p className="text-sm text-gray-600">
+                  {editingUser.rol.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Estado</label>
+                <p className="text-sm text-gray-600">
+                  {editingUser.perfil_completado ? 'Perfil Completado' : 'Perfil Pendiente'}
+                </p>
+              </div>
+              <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => handleUpdateUser({})}>
-                  Guardar
+                  Cerrar
                 </Button>
               </div>
             </div>
@@ -281,39 +232,20 @@ export const PersonalPoolTable: React.FC<PersonalPoolTableProps> = ({ usuarios, 
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para invitar usuario */}
+      {/* Dialog para agregar usuario */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Invitar Usuario</DialogTitle>
+            <DialogTitle>Agregar Personal a la Empresa</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Email</label>
-              <Input placeholder="email@ejemplo.com" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Rol</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="buzo">Buzo</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="admin_servicio">Admin Servicio</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={() => handleInviteUser({})}>
-                Enviar Invitación
-              </Button>
-            </div>
-          </div>
+          <UserSearchSelectEnhanced
+            onUserSelect={handleUserSelect}
+            onUserInvite={handleUserInvite}
+            companyType={empresaType}
+            companyId={empresaId}
+            allowedRoles={allowedRoles}
+            placeholder="Buscar usuario existente o invitar nuevo..."
+          />
         </DialogContent>
       </Dialog>
     </div>
