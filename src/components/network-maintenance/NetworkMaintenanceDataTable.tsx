@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -387,7 +386,7 @@ export const NetworkMaintenanceDataTable = () => {
             </DialogTitle>
           </DialogHeader>
           <NetworkMaintenanceWizard
-            operacionId="temp-operation-id"
+            operationId={operacionId}
             tipoFormulario="mantencion"
             onComplete={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}

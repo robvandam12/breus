@@ -1,72 +1,12 @@
+import { Json } from "@/integrations/supabase/types";
 
-export interface NetworkMaintenanceData {
-  // Encabezado General
-  lugar_trabajo: string;
-  fecha: string;
-  temperatura: number;
-  hora_inicio: string;
-  hora_termino: string;
-  profundidad_max: number;
-  nave_maniobras: string;
-  team_s: string;
-  team_be: string;
-  team_bi: string;
-  matricula_nave: string;
-  estado_puerto: string;
-  
-  // Campos específicos para Faena de Redes
-  supervisor_faena?: string;
-  obs_generales?: string;
-  
-  // Dotación y equipos
-  dotacion: DotacionBuceo[];
-  equipos_superficie: EquipoSuperficie[];
-  
-  // Faenas específicas
-  faenas_mantencion: FaenaMantencion[];
-  
-  // Sistemas y equipos (Sección 1.5)
-  sistemas_equipos?: SistemaEquipo[];
-  
-  // Apoyo a faenas (Sección 1.6)
-  apoyo_faenas?: ApoyoFaena[];
-  
-  // Resumen inmersiones (Sección 1.7)
-  resumen_inmersiones?: ResumenInmersiones;
-  
-  // Contingencias (Sección 1.8)
-  contingencias?: Contingencias;
-  
-  // Iconografía para Faena de Redes (Sección 2.2)
-  iconografia?: IconografiaRedes;
-  
-  // Matriz Red/Lobera/Peceras (Sección 2.3)
-  matriz_redes?: MatrizRedes[];
-  
-  // Tareas por buzo (Sección 2.4)
-  tareas_buzos?: TareaBuzo[];
-  
-  // Firmas digitales (Sección 1.9)
-  firmas?: FirmasDigitales;
-  
-  // Control de formulario
-  progreso: number;
-  firmado: boolean;
-  estado: 'borrador' | 'completado' | 'pendiente_firma' | 'firmado';
-  tipo_formulario: 'mantencion' | 'faena_redes';
-}
-
-export interface DotacionBuceo {
+export interface Dotacion {
   id: string;
-  rol: 'supervisor' | 'buzo_emergencia_1' | 'buzo_emergencia_2' | 'buzo_1' | 'buzo_2' | 'buzo_3' | 'buzo_4' | 'buzo_5' | 'buzo_6' | 'buzo_7' | 'buzo_8';
   nombre: string;
   apellido: string;
-  matricula: string;
-  contratista: boolean;
-  equipo: 'liviano' | 'mediano';
-  hora_inicio_buzo?: string;
-  hora_fin_buzo?: string;
-  profundidad?: number;
+  rut: string;
+  rol: 'buzo' | 'supervisor' | 'jefe_faena' | 'paramedico';
+  horas_trabajadas: number;
 }
 
 export interface EquipoSuperficie {
@@ -79,22 +19,30 @@ export interface EquipoSuperficie {
 
 export interface FaenaMantencion {
   id: string;
-  tipo_seccion: 'red' | 'lobera' | 'peceras';
-  jaulas: string;
+  tipo_mantencion: string;
   cantidad: number;
-  ubicacion: string;
-  tipo_rotura: '2x1' | '2x2' | 'mayor_2x2';
-  retensado: boolean;
-  descostura: boolean;
-  objetos: boolean;
-  otros: string;
-  obs_faena: string;
+  unidad: string;
+  descripcion_trabajo: string;
+}
+
+export interface FaenaRed {
+  id: string;
+  jaula_red: string;
+  tipo_red: string;
+  tipo_actividad: string[];
+  descripcion_actividad: string;
+  materiales_utilizados: string;
+  cantidad_materiales: number;
+  unidad_materiales: string;
+  tiempo_inicio: string;
+  tiempo_termino: string;
+  observaciones_red: string;
 }
 
 export interface SistemaEquipo {
   id: string;
   jaulas_sist: string;
-  tipo_trabajo_sist: string[]; // Multiple selection
+  tipo_trabajo_sist: string[];
   focos: number;
   extractor: number;
   aireacion: number;
@@ -105,83 +53,71 @@ export interface SistemaEquipo {
 
 export interface ApoyoFaena {
   id: string;
-  tipo_apoyo: 'baños' | 'cosecha';
-  seccion_apoyo: string[]; // Multiple: 'red', 'lobera', 'peceras'
-  jaulas_apoyo: string;
-  actividades_apoyo: string[]; // Multiple activities
+  tipo_apoyo: string;
   cantidad_apoyo: number;
-  obs_apoyo: string;
+  unidad_apoyo: string;
+  descripcion_apoyo: string;
 }
 
 export interface ResumenInmersiones {
-  total_inmersiones: number;
-  horas_navegacion: number;
-  cabotaje_perdida: number;
-  rev_documental: number;
-  relevo: number;
+  id: string;
+  nombre_piloto: string;
+  horas_piloto: number;
+  tipo_nave: string;
+  obs_inmersiones: string;
+}
+
+export interface NetworkMaintenanceData {
+  // Encabezado general
+  lugar_trabajo: string;
+  fecha: string;
+  temperatura: number;
+  hora_inicio: string;
+  hora_termino: string;
+  profundidad_max: number;
+  nave_maniobras: string;
+  team_s: string;
+  team_be: string;
+  team_bi: string;
+  matricula_nave: string;
+  estado_puerto: string;
+
+  // Dotación y equipos
+  dotacion: Dotacion[];
+  equipos_superficie: EquipoSuperficie[];
+
+  // Faenas
+  faenas_mantencion: FaenaMantencion[];
+  faenas_redes?: FaenaRed[];
+
+  // Sistemas y equipos
+  sistemas_equipos?: SistemaEquipo[];
+
+  // Apoyo a faenas
+  apoyo_faenas?: ApoyoFaena[];
+
+  // Resumen
+  resumen_inmersiones?: ResumenInmersiones;
+
+  // Contingencias
+  contingencias?: string | Contingencias;
+
+  // Campos adicionales para el resumen y firmas
+  observaciones_finales?: string;
+  supervisor_responsable?: string;
+  firma_digital?: string;
+
+  // Control del formulario
+  progreso: number;
+  firmado: boolean;
+  estado: 'borrador' | 'en_revision' | 'completado' | 'firmado';
+  tipo_formulario: 'mantencion' | 'faena_redes';
 }
 
 export interface Contingencias {
-  mortalidad?: string;
-  bloom_algas?: string;
-  observaciones_generales?: string;
-  [key: string]: string | undefined;
+  mortalidad?: number;
+  bloom_algas?: number;
+  escape_peces?: number;
+  dana_red?: number;
+  observaciones_contingencias?: string;
 }
-
-export interface IconografiaRedes {
-  icono_c1500: boolean;
-  icono_c250_lob: boolean;
-  icono_c250_pec: boolean;
-  tensores_30: boolean;
-  tensores_15: boolean;
-  sembrado: boolean;
-  cono: boolean;
-  pajarera: boolean;
-  lobera_inst: boolean;
-  pecera_inst: boolean;
-  talonera: boolean;
-  pertigas: boolean;
-  tensores_pec: boolean;
-  surgencia: boolean;
-}
-
-export interface MatrizRedes {
-  id: string;
-  actividad: 'TC' | 'CED' | 'CES' | 'MA';
-  jaula_origen: string;
-  jaula_destino: string;
-  contrapesos_250: number;
-  contrapesos_1500: number;
-}
-
-export interface TareaBuzo {
-  id: string;
-  buzo_num: number;
-  jaulas_buzo: string;
-  actividades_buzo: ActividadBuzo[];
-}
-
-export interface ActividadBuzo {
-  actividad: string;
-  cantidad: number;
-}
-
-export interface FirmasDigitales {
-  supervisor_nombre: string;
-  supervisor_firma?: string;
-  jefe_centro_nombre: string;
-  jefe_centro_firma?: string;
-  fecha_firma?: string;
-  codigo_verificacion?: string;
-}
-
-// Interfaz para el formulario completo
-export interface NetworkMaintenanceFormData {
-  operacion_id?: string;
-  codigo: string;
-  tipo_formulario: 'mantencion' | 'faena_redes';
-  network_maintenance_data: NetworkMaintenanceData;
-}
-
-// Alias para compatibilidad
-export type DotacionMiembro = DotacionBuceo;

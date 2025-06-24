@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -268,7 +267,7 @@ export const NetworkMaintenanceList: React.FC<NetworkMaintenanceListProps> = ({
               </DialogTitle>
             </DialogHeader>
             <NetworkMaintenanceWizard
-              operacionId={operacionId}
+              operationId={operacionId}
               tipoFormulario="mantencion"
               onComplete={() => setShowCreateForm(false)}
               onCancel={() => setShowCreateForm(false)}

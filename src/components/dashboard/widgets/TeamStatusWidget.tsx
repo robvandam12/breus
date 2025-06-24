@@ -1,9 +1,37 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, UserCheck, Clock, AlertTriangle } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
+
+interface TeamStatusWidgetProps {
+  config?: Record<string, any>;
+}
+
+const TeamStatusWidgetSkeleton = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-base font-medium">Estado del Equipo</CardTitle>
+      <Users className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600 animate-pulse bg-gray-200 h-8 rounded"></div>
+            <div className="text-xs text-muted-foreground">Total Buzos</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600 animate-pulse bg-gray-200 h-8 rounded"></div>
+            <div className="text-xs text-muted-foreground">Supervisores</div>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export const TeamStatusWidget: React.FC<TeamStatusWidgetProps> = ({ 
   config = {} 

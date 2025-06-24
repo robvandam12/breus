@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,7 @@ const Inmersiones = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedInmersion, setSelectedInmersion] = useState<any>(null);
   
-  const { inmersiones, loading, createInmersion, updateInmersion, deleteInmersion } = useInmersiones();
+  const { inmersiones, isLoading, createInmersion, updateInmersion, deleteInmersion } = useInmersiones();
 
   const handleCreateInmersion = async (data: any) => {
     try {
@@ -86,7 +85,7 @@ const Inmersiones = () => {
           <CardTitle>Lista de Inmersiones</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="text-center py-8">Cargando inmersiones...</div>
           ) : inmersiones.length === 0 ? (
             <div className="text-center py-8 text-gray-500">

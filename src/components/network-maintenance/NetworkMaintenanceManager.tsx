@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,7 +82,7 @@ export const NetworkMaintenanceManager = () => {
     return (
       <div className="space-y-6">
         <NetworkMaintenanceWizard
-          operacionId="temp-operation-id"
+          operationId="temp-operation-id"
           tipoFormulario={selectedFormType}
           onComplete={handleCloseForm}
           onCancel={handleCloseForm}

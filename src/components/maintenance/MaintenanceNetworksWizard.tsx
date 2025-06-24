@@ -240,8 +240,8 @@ export const MaintenanceNetworksWizard = ({
 
         <TabsContent value="general" className="mt-6">
           <EncabezadoGeneral
-            data={formData}
-            onDataChange={updateFormData}
+            formData={formData}
+            updateFormData={updateFormData}
           />
         </TabsContent>
 

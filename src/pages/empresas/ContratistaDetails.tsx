@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -21,7 +20,7 @@ interface ContratistaDetailsProps {
 
 export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsProps) => {
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const { usuarios, inviteUsuario } = useUsuarios();
+  const { usuarios, isLoading, inviteUsuario } = useUsuarios();
   
   // Filter users belonging to this contractor and convert to User interface
   const contratistaUsers: User[] = usuarios

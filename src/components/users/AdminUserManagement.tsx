@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
@@ -10,9 +11,11 @@ export const AdminUserManagement = () => {
 
   // Transform usuarios to BaseUser format
   const transformedUsers: BaseUser[] = usuarios.map(user => {
-    // Handle salmonera and servicio data safely
-    const salmoneraData = Array.isArray(user.salmonera) ? user.salmonera[0] : user.salmonera;
-    const servicioData = Array.isArray(user.servicio) ? user.servicio[0] : user.servicio;
+    // Handle salmonera and contratista data safely
+    const salmoneraData = user.salmonera;
+    const contratistaData = Array.isArray(user.contratista) && user.contratista.length > 0 
+      ? user.contratista[0] 
+      : null;
     
     return {
       id: user.usuario_id,
@@ -22,7 +25,7 @@ export const AdminUserManagement = () => {
       apellido: user.apellido,
       rol: user.rol,
       estado: user.perfil_completado ? 'activo' : 'pendiente',
-      empresa_nombre: salmoneraData?.nombre || servicioData?.nombre || 'Sin asignar',
+      empresa_nombre: salmoneraData?.nombre || contratistaData?.nombre || 'Sin asignar',
       empresa_tipo: user.salmonera_id ? 'salmonera' : 'contratista',
       created_at: user.created_at,
     };
@@ -92,11 +95,11 @@ export const AdminUserManagement = () => {
   };
 
   const handleUpdateUser = async (id: string, userData: any) => {
-    updateUsuario({ id, ...userData });
+    await updateUsuario(id, userData);
   };
 
   const handleInviteUser = async (userData: any) => {
-    inviteUsuario(userData);
+    await inviteUsuario(userData);
   };
 
   return (

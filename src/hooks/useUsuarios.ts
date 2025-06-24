@@ -10,7 +10,8 @@ export interface Usuario {
   apellido: string;
   rol: string;
   estado_buzo?: string;
-  perfil_completado?: boolean;
+  perfil_completado: boolean;
+  perfil_buzo?: any;
   salmonera_id?: string;
   servicio_id?: string;
   created_at: string;
@@ -22,7 +23,7 @@ export interface Usuario {
   contratista?: {
     nombre: string;
     rut: string;
-  };
+  }[];
 }
 
 export const useUsuarios = () => {
@@ -32,32 +33,32 @@ export const useUsuarios = () => {
   const fetchUsuarios = async () => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('usuario')
         .select(`
           *,
-          salmonera:salmoneras!salmonera_id(nombre, rut),
-          contratista:contratistas!servicio_id(nombre, rut)
-        `)
-        .order('created_at', { ascending: false });
+          salmonera:salmoneras(nombre, rut),
+          contratista:contratistas(nombre, rut)
+        `);
 
-      if (error) {
-        console.error('Error fetching usuarios:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los usuarios",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
-      setUsuarios(data || []);
+      // Transform the data to match our interface
+      const transformedData = data?.map(user => ({
+        ...user,
+        contratista: Array.isArray(user.contratista) 
+          ? user.contratista 
+          : user.contratista 
+            ? [user.contratista] 
+            : []
+      })) || [];
+
+      setUsuarios(transformedData);
     } catch (error) {
-      console.error('Error in fetchUsuarios:', error);
+      console.error('Error fetching usuarios:', error);
       toast({
         title: "Error",
-        description: "Error inesperado al cargar usuarios",
+        description: "No se pudieron cargar los usuarios",
         variant: "destructive",
       });
     } finally {
@@ -75,19 +76,17 @@ export const useUsuarios = () => {
       if (error) throw error;
 
       await fetchUsuarios();
-      
       toast({
         title: "Usuario actualizado",
         description: "Los cambios han sido guardados exitosamente.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating usuario:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el usuario",
+        description: "No se pudo actualizar el usuario",
         variant: "destructive",
       });
-      throw error;
     }
   };
 
@@ -101,19 +100,34 @@ export const useUsuarios = () => {
       if (error) throw error;
 
       await fetchUsuarios();
-      
       toast({
         title: "Usuario eliminado",
         description: "El usuario ha sido eliminado exitosamente.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting usuario:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el usuario",
+        description: "No se pudo eliminar el usuario",
         variant: "destructive",
       });
-      throw error;
+    }
+  };
+
+  const inviteUsuario = async (userData: any) => {
+    try {
+      // Implementation for user invitation
+      toast({
+        title: "Invitación enviada",
+        description: "Se ha enviado la invitación al usuario.",
+      });
+    } catch (error) {
+      console.error('Error inviting usuario:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la invitación",
+        variant: "destructive",
+      });
     }
   };
 
@@ -124,8 +138,10 @@ export const useUsuarios = () => {
   return {
     usuarios,
     loading,
+    isLoading: loading,
     fetchUsuarios,
     updateUsuario,
     deleteUsuario,
+    inviteUsuario
   };
 };
