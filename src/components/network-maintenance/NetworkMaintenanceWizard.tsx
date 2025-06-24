@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ interface NetworkMaintenanceWizardProps {
   onComplete: () => void;
   onCancel: () => void;
   editingFormId?: string | null;
+  readOnly?: boolean;
 }
 
 export const NetworkMaintenanceWizard = ({
@@ -23,7 +23,8 @@ export const NetworkMaintenanceWizard = ({
   tipoFormulario,
   onComplete,
   onCancel,
-  editingFormId
+  editingFormId,
+  readOnly = false
 }: NetworkMaintenanceWizardProps) => {
   const { createMaintenanceForm, isCreating } = useMaintenanceNetworks();
   
@@ -64,6 +65,8 @@ export const NetworkMaintenanceWizard = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (readOnly) return;
+    
     try {
       await createMaintenanceForm({
         ...formData,
@@ -82,6 +85,7 @@ export const NetworkMaintenanceWizard = ({
   };
 
   const addDotacionMember = () => {
+    if (readOnly) return;
     setDotacion([...dotacion, {
       nombre: '',
       apellido: '',
@@ -93,10 +97,12 @@ export const NetworkMaintenanceWizard = ({
   };
 
   const removeDotacionMember = (index: number) => {
+    if (readOnly) return;
     setDotacion(dotacion.filter((_, i) => i !== index));
   };
 
   const addEquipoSuperficie = () => {
+    if (readOnly) return;
     setEquiposSuperficie([...equiposSuperficie, {
       equipo_sup: '',
       matricula_eq: '',
@@ -106,6 +112,7 @@ export const NetworkMaintenanceWizard = ({
   };
 
   const removeEquipoSuperficie = (index: number) => {
+    if (readOnly) return;
     setEquiposSuperficie(equiposSuperficie.filter((_, i) => i !== index));
   };
 
@@ -114,14 +121,17 @@ export const NetworkMaintenanceWizard = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">
+            {readOnly ? 'Ver ' : ''}
             {tipoFormulario === 'mantencion' ? 'Formulario de Mantención' : 'Formulario de Faena de Redes'}
           </h2>
-          <p className="text-gray-600">Complete los datos del formulario operativo</p>
+          <p className="text-gray-600">
+            {readOnly ? 'Visualizar datos del formulario operativo' : 'Complete los datos del formulario operativo'}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Cancelar
+            {readOnly ? 'Cerrar' : 'Cancelar'}
           </Button>
         </div>
       </div>
@@ -139,8 +149,9 @@ export const NetworkMaintenanceWizard = ({
                 <Input
                   id="codigo"
                   value={formData.codigo}
-                  onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+                  onChange={(e) => !readOnly && setFormData({...formData, codigo: e.target.value})}
                   required
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -149,8 +160,9 @@ export const NetworkMaintenanceWizard = ({
                   id="fecha"
                   type="date"
                   value={formData.fecha}
-                  onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+                  onChange={(e) => !readOnly && setFormData({...formData, fecha: e.target.value})}
                   required
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -158,8 +170,9 @@ export const NetworkMaintenanceWizard = ({
                 <Input
                   id="lugar_trabajo"
                   value={formData.lugar_trabajo}
-                  onChange={(e) => setFormData({...formData, lugar_trabajo: e.target.value})}
+                  onChange={(e) => !readOnly && setFormData({...formData, lugar_trabajo: e.target.value})}
                   required
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -167,7 +180,8 @@ export const NetworkMaintenanceWizard = ({
                 <Input
                   id="nave_maniobras"
                   value={formData.nave_maniobras}
-                  onChange={(e) => setFormData({...formData, nave_maniobras: e.target.value})}
+                  onChange={(e) => !readOnly && setFormData({...formData, nave_maniobras: e.target.value})}
+                  disabled={readOnly}
                 />
               </div>
               <div>
@@ -175,12 +189,13 @@ export const NetworkMaintenanceWizard = ({
                 <Input
                   id="matricula_nave"
                   value={formData.matricula_nave}
-                  onChange={(e) => setFormData({...formData, matricula_nave: e.target.value})}
+                  onChange={(e) => !readOnly && setFormData({...formData, matricula_nave: e.target.value})}
+                  disabled={readOnly}
                 />
               </div>
               <div>
                 <Label htmlFor="estado_puerto">Estado Puerto</Label>
-                <Select value={formData.estado_puerto} onValueChange={(value) => setFormData({...formData, estado_puerto: value})}>
+                <Select value={formData.estado_puerto} onValueChange={(value) => !readOnly && setFormData({...formData, estado_puerto: value})} disabled={readOnly}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -200,10 +215,12 @@ export const NetworkMaintenanceWizard = ({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Dotación</CardTitle>
-              <Button type="button" onClick={addDotacionMember} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Persona
-              </Button>
+              {!readOnly && (
+                <Button type="button" onClick={addDotacionMember} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Persona
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -212,7 +229,7 @@ export const NetworkMaintenanceWizard = ({
                 <div key={index} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-4">
                     <Badge variant="outline">Persona {index + 1}</Badge>
-                    {dotacion.length > 1 && (
+                    {dotacion.length > 1 && !readOnly && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -229,10 +246,12 @@ export const NetworkMaintenanceWizard = ({
                       <Input
                         value={member.nombre}
                         onChange={(e) => {
+                          if (readOnly) return;
                           const newDotacion = [...dotacion];
                           newDotacion[index].nombre = e.target.value;
                           setDotacion(newDotacion);
                         }}
+                        disabled={readOnly}
                       />
                     </div>
                     <div>
@@ -240,10 +259,12 @@ export const NetworkMaintenanceWizard = ({
                       <Input
                         value={member.apellido}
                         onChange={(e) => {
+                          if (readOnly) return;
                           const newDotacion = [...dotacion];
                           newDotacion[index].apellido = e.target.value;
                           setDotacion(newDotacion);
                         }}
+                        disabled={readOnly}
                       />
                     </div>
                     <div>
@@ -251,10 +272,12 @@ export const NetworkMaintenanceWizard = ({
                       <Input
                         value={member.matricula}
                         onChange={(e) => {
+                          if (readOnly) return;
                           const newDotacion = [...dotacion];
                           newDotacion[index].matricula = e.target.value;
                           setDotacion(newDotacion);
                         }}
+                        disabled={readOnly}
                       />
                     </div>
                   </div>
@@ -269,10 +292,12 @@ export const NetworkMaintenanceWizard = ({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Equipos de Superficie</CardTitle>
-              <Button type="button" onClick={addEquipoSuperficie} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Equipo
-              </Button>
+              {!readOnly && (
+                <Button type="button" onClick={addEquipoSuperficie} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Equipo
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -281,7 +306,7 @@ export const NetworkMaintenanceWizard = ({
                 <div key={index} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-4">
                     <Badge variant="outline">Equipo {index + 1}</Badge>
-                    {equiposSuperficie.length > 1 && (
+                    {equiposSuperficie.length > 1 && !readOnly && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -298,10 +323,12 @@ export const NetworkMaintenanceWizard = ({
                       <Input
                         value={equipo.equipo_sup}
                         onChange={(e) => {
+                          if (readOnly) return;
                           const newEquipos = [...equiposSuperficie];
                           newEquipos[index].equipo_sup = e.target.value;
                           setEquiposSuperficie(newEquipos);
                         }}
+                        disabled={readOnly}
                       />
                     </div>
                     <div>
@@ -309,10 +336,12 @@ export const NetworkMaintenanceWizard = ({
                       <Input
                         value={equipo.matricula_eq}
                         onChange={(e) => {
+                          if (readOnly) return;
                           const newEquipos = [...equiposSuperficie];
                           newEquipos[index].matricula_eq = e.target.value;
                           setEquiposSuperficie(newEquipos);
                         }}
+                        disabled={readOnly}
                       />
                     </div>
                   </div>
@@ -323,15 +352,17 @@ export const NetworkMaintenanceWizard = ({
         </Card>
 
         {/* Botones de acción */}  
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isCreating}>
-            <Save className="w-4 h-4 mr-2" />
-            {isCreating ? 'Guardando...' : 'Guardar Formulario'}
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex justify-end gap-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isCreating}>
+              <Save className="w-4 h-4 mr-2" />
+              {isCreating ? 'Guardando...' : 'Guardar Formulario'}
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   );
