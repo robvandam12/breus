@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Activity, Timer, Navigation } from "lucide-react";
-import type { NetworkMaintenanceData, ResumenInmersiones } from '@/types/network-maintenance';
+import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 interface ResumenInmersionesProps {
   formData: NetworkMaintenanceData;
@@ -26,7 +25,7 @@ export const ResumenInmersiones = ({ formData, updateFormData, readOnly = false 
     relevo: 0
   };
 
-  const updateResumen = (campo: keyof ResumenInmersiones, valor: number | string) => {
+  const updateResumen = (campo: keyof typeof resumen, valor: number | string) => {
     updateFormData({
       resumen_inmersiones: {
         ...resumen,

@@ -7,7 +7,7 @@ import { Eye, Edit, Trash2, Plus, Settings, Network, Activity } from "lucide-rea
 import { NetworkMaintenanceWizard } from "./NetworkMaintenanceWizard";
 import { useNetworkMaintenance } from "@/hooks/useNetworkMaintenance";
 
-export const NetworkMaintenanceList = () => {
+export const NetworkMaintenanceDataTable = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedForm, setSelectedForm] = useState<any>(null);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -103,6 +103,63 @@ export const NetworkMaintenanceList = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header con estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Formularios</p>
+                <p className="text-2xl font-bold">{networkMaintenanceForms.length}</p>
+              </div>
+              <Activity className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Mantenimientos</p>
+                <p className="text-2xl font-bold">
+                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'mantencion').length}
+                </p>
+              </div>
+              <Settings className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Faenas</p>
+                <p className="text-2xl font-bold">
+                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'faena_redes').length}
+                </p>
+              </div>
+              <Network className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Completados</p>
+                <p className="text-2xl font-bold">
+                  {networkMaintenanceForms.filter(f => f.estado === 'completado').length}
+                </p>
+              </div>
+              <Activity className="w-8 h-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

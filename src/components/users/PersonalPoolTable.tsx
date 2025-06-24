@@ -11,15 +11,15 @@ import type { Usuario } from '@/types/usuario';
 
 interface PersonalPoolTableProps {
   usuarios: Usuario[];
-  isLoading: boolean;
-  onEditUser: (usuario: Usuario) => void;
-  onViewUser: (usuario: Usuario) => void;
-  onDeleteUser: (usuarioId: string) => void;
+  isLoading?: boolean;
+  onEditUser?: (usuario: Usuario) => void;
+  onViewUser?: (usuario: Usuario) => void;
+  onDeleteUser?: (usuarioId: string) => void;
 }
 
 export const PersonalPoolTable = ({ 
   usuarios, 
-  isLoading, 
+  isLoading = false, 
   onEditUser, 
   onViewUser, 
   onDeleteUser 
@@ -130,22 +130,30 @@ export const PersonalPoolTable = ({
                   )}
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => onViewUser(usuario)}>
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onEditUser(usuario)}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onDeleteUser(usuario.usuario_id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {(onViewUser || onEditUser || onDeleteUser) && (
+                  <div className="flex items-center gap-2">
+                    {onViewUser && (
+                      <Button variant="ghost" size="sm" onClick={() => onViewUser(usuario)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {onEditUser && (
+                      <Button variant="ghost" size="sm" onClick={() => onEditUser(usuario)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {onDeleteUser && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => onDeleteUser(usuario.usuario_id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

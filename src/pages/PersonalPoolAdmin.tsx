@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { PersonalPoolTable } from "@/components/users/PersonalPoolTable";
 import { useUsuarios } from "@/hooks/useUsuarios";
 
 const PersonalPoolAdmin = () => {
-  const { usuarios, isLoading } = useUsuarios();
+  const { usuarios, loading } = useUsuarios();
 
   return (
     <MainLayout
@@ -19,10 +20,10 @@ const PersonalPoolAdmin = () => {
           <CardTitle>Lista de Personal</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {loading ? (
             <div className="text-center py-8">Cargando personal...</div>
           ) : (
-            <PersonalPoolTable users={usuarios} />
+            <PersonalPoolTable usuarios={usuarios} isLoading={loading} />
           )}
         </CardContent>
       </Card>
