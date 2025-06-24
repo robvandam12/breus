@@ -34,11 +34,11 @@ export const useUsuarios = () => {
         salmonera_id: user.salmonera_id,
         servicio_id: user.servicio_id,
         perfil_buzo: user.perfil_buzo,
-        salmonera: Array.isArray(user.salmoneras) && user.salmoneras.length > 0 
-          ? user.salmoneras[0] 
+        salmonera: Array.isArray(user.salmoneras) 
+          ? (user.salmoneras.length > 0 ? user.salmoneras[0] : undefined)
           : user.salmoneras || undefined,
-        contratista: Array.isArray(user.contratistas) && user.contratistas.length > 0 
-          ? user.contratistas[0] 
+        contratista: Array.isArray(user.contratistas) 
+          ? (user.contratistas.length > 0 ? user.contratistas[0] : undefined)
           : user.contratistas || undefined
       })) || [];
 
