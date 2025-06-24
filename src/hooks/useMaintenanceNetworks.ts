@@ -99,6 +99,10 @@ export const useMaintenanceNetworks = () => {
     },
   });
 
+  // Propiedades adicionales para compatibilidad
+  const canAccessModule = true; // Por ahora siempre permitir acceso
+  const isUpdating = updateMaintenanceForm.isPending;
+
   return {
     maintenanceForms,
     isLoading,
@@ -106,6 +110,8 @@ export const useMaintenanceNetworks = () => {
     createMaintenanceForm: createMaintenanceForm.mutateAsync,
     isCreating: createMaintenanceForm.isPending,
     updateMaintenanceForm: updateMaintenanceForm.mutateAsync,
+    isUpdating,
+    canAccessModule,
     getFormsByType,
   };
 };

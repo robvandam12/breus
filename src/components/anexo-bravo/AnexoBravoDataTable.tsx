@@ -21,7 +21,7 @@ import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/hooks/use-toast";
 
 const getStatusBadge = (status: string, firmado: boolean) => {
   if (firmado) {

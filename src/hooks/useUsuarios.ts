@@ -13,8 +13,8 @@ export const useUsuarios = () => {
         .from('usuario')
         .select(`
           *,
-          salmonera:salmonera_id(nombre, rut),
-          servicio:servicio_id(nombre, rut)
+          salmonera:salmoneras!usuario_salmonera_id_fkey(nombre, rut),
+          servicio:contratistas!usuario_servicio_id_fkey(nombre, rut)
         `)
         .order('created_at', { ascending: false });
 
@@ -55,6 +55,43 @@ export const useUsuarios = () => {
       toast({
         title: "Error",
         description: "No se pudo actualizar el usuario.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const inviteUsuario = useMutation({
+    mutationFn: async (userData: { email: string; nombre: string; apellido: string; rol: string; empresa_id?: string; empresa_tipo?: string }) => {
+      // Simulate invitation - in real app this would send an email invitation
+      const { data, error } = await supabase
+        .from('usuario_invitaciones')
+        .insert([{
+          email: userData.email,
+          nombre: userData.nombre,
+          apellido: userData.apellido,
+          rol: userData.rol,
+          empresa_id: userData.empresa_id,
+          tipo_empresa: userData.empresa_tipo,
+          estado: 'enviada'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      toast({
+        title: "Invitación enviada",
+        description: "Se ha enviado la invitación al usuario.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error inviting usuario:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la invitación.",
         variant: "destructive",
       });
     },
@@ -119,6 +156,7 @@ export const useUsuarios = () => {
     isLoading,
     error,
     updateUsuario: updateUsuario.mutateAsync,
+    inviteUsuario: inviteUsuario.mutateAsync,
     getUserStats,
   };
 };

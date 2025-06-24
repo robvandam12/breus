@@ -21,7 +21,7 @@ import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { toast } from 'react-toastify';
+import { toast } from "@/hooks/use-toast";
 
 const getStatusBadge = (status: string, firmado: boolean) => {
   if (firmado) {
