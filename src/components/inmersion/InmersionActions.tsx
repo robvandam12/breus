@@ -53,7 +53,7 @@ export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsPro
 
   const handleCreateBitacoraSupervisor = async (data: any) => {
     try {
-      await createBitacoraSupervisor.mutateAsync(data);
+      await createBitacoraSupervisor(data);
       toast({
         title: "Bitácora creada",
         description: "La bitácora de supervisor ha sido creada exitosamente.",
