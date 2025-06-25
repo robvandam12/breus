@@ -17,7 +17,6 @@ export default function Index() {
 
   // Show loading while auth is initializing
   if (loading) {
-    console.log('Index - Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -45,7 +44,6 @@ export default function Index() {
   }, [profile, showOnboarding]);
 
   if (showOnboarding && profile?.role === 'buzo') {
-    console.log('Index - Showing onboarding');
     return <BuzoOnboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
@@ -63,16 +61,12 @@ export default function Index() {
       case 'superuser':
       case 'admin_salmonera':
       case 'admin_servicio':
-        console.log('Index - Using CustomizableDashboard for', profile.role);
         return <CustomizableDashboard />;
       case 'supervisor':
-        console.log('Index - Using SupervisorView');
         return <SupervisorView />;
       case 'buzo':
-        console.log('Index - Using BuzoDashboard');
         return <BuzoDashboard />;
       default:
-        console.log('Index - Using BuzoRestrictedView for unknown role');
         return <BuzoRestrictedView />;
     }
   };
@@ -114,12 +108,6 @@ export default function Index() {
         return "Panel de control personal";
     }
   };
-
-  console.log('Index - About to render MainLayout with:', {
-    title: getDashboardTitle(),
-    subtitle: getDashboardSubtitle(),
-    role: profile?.role
-  });
 
   return (
     <MainLayout
