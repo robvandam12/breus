@@ -85,7 +85,7 @@ export default function Usuarios() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users">
+          <TabsContent value="users" className="space-y-6">
             <UserStatsCards 
               totalUsers={totalUsers}
               activeUsers={activeUsers}
