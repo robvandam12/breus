@@ -24,6 +24,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   className = "",
   contentClassName = ""
 }) => {
+  console.log('MainLayout rendering with title:', title);
+  
   // Use headerChildren if provided, otherwise fall back to actions
   const headerContent = headerChildren || actions;
 
@@ -53,6 +55,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           
           {/* Content */}
           <div className={`flex-1 overflow-auto p-6 ${contentClassName}`}>
+            <div style={{ backgroundColor: 'lightgreen', padding: '10px', marginBottom: '10px' }}>
+              <p style={{ color: 'black', margin: 0 }}>MainLayout Content Area - Si ves esto verde, el layout funciona</p>
+            </div>
             {children}
           </div>
         </main>
