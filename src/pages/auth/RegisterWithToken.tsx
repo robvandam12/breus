@@ -138,13 +138,19 @@ export default function RegisterWithToken() {
         if (profileError) throw profileError;
 
         // Marcar invitación como aceptada
-        await supabase
+        const { error: invitationError } = await supabase
           .from('usuario_invitaciones')
           .update({ 
             estado: 'aceptada',
-            fecha_invitacion: new Date().toISOString()
+            fecha_invitacion: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           })
           .eq('token', token);
+
+        if (invitationError) {
+          console.error('Error updating invitation status:', invitationError);
+          // No fallar por esto, el usuario ya se creó
+        }
 
         toast({
           title: "¡Bienvenido a Breus!",

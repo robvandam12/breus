@@ -1,13 +1,17 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
 import { UserInviteForm } from "./forms/UserInviteForm";
 import { EditUserForm } from "./forms/EditUserForm";
+import { InvitationManagement } from "@/components/invitations/InvitationManagement";
 import { useUsuarios } from "@/hooks/useUsuarios";
-import { Shield } from "lucide-react";
+import { Shield, Mail } from "lucide-react";
 
 export const AdminUserManagement = () => {
   const { usuarios, isLoading, updateUsuario, inviteUsuario, deleteUsuario } = useUsuarios();
+  const [activeTab, setActiveTab] = useState("users");
 
   // Transform usuarios to BaseUser format
   const transformedUsers: BaseUser[] = usuarios.map(user => {
@@ -107,15 +111,34 @@ export const AdminUserManagement = () => {
   };
 
   return (
-    <BaseUserManagement
-      users={transformedUsers}
-      isLoading={isLoading}
-      config={config}
-      onUpdateUser={handleUpdateUser}
-      onDeleteUser={handleDeleteUser}
-      onInviteUser={handleInviteUser}
-      EditUserForm={EditUserForm}
-      InviteUserForm={UserInviteForm}
-    />
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="users" className="flex items-center gap-2">
+          <Shield className="w-4 h-4" />
+          Usuarios Registrados
+        </TabsTrigger>
+        <TabsTrigger value="invitations" className="flex items-center gap-2">
+          <Mail className="w-4 h-4" />
+          Invitaciones
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="users">
+        <BaseUserManagement
+          users={transformedUsers}
+          isLoading={isLoading}
+          config={config}
+          onUpdateUser={handleUpdateUser}
+          onDeleteUser={handleDeleteUser}
+          onInviteUser={handleInviteUser}
+          EditUserForm={EditUserForm}
+          InviteUserForm={UserInviteForm}
+        />
+      </TabsContent>
+
+      <TabsContent value="invitations">
+        <InvitationManagement />
+      </TabsContent>
+    </Tabs>
   );
 };
