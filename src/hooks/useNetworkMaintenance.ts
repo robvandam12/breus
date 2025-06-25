@@ -112,9 +112,14 @@ export const useNetworkMaintenance = () => {
 
       if (fetchError) throw fetchError;
 
+      // Asegurar que multix_data sea un objeto válido antes del spread
+      const existingMultixData = currentForm.multix_data && typeof currentForm.multix_data === 'object' 
+        ? currentForm.multix_data 
+        : {};
+
       // Actualizar solo las firmas manteniendo el resto de datos
       const updatedMultixData = {
-        ...currentForm.multix_data,
+        ...existingMultixData,
         firmas: signatures
       };
 
