@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useHPTWizard } from '@/hooks/useHPTWizard';
+import { ModularFormValidator } from '@/components/validation/ModularFormValidator';
 import { HPTOperationSelector } from './HPTOperationSelector';
 import { HPTWizardStep1 } from './HPTWizardStep1';
 import { HPTWizardStep2 } from './HPTWizardStep2';
@@ -33,6 +33,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   const { equipos } = useEquiposBuceoEnhanced();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
+  const [validationPassed, setValidationPassed] = useState(false);
 
   const {
     currentStep,
@@ -112,6 +113,11 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     setShowOperacionSelector(false);
   };
 
+  const handleValidationComplete = (canProceed: boolean, context: any) => {
+    console.log('HPT Validation complete:', { canProceed, context });
+    setValidationPassed(canProceed);
+  };
+
   const handleSubmit = async () => {
     try {
       const finalHptId = await submitHPT();
@@ -163,10 +169,16 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   if (showOperacionSelector) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <HPTOperationSelector 
-          onOperacionSelected={handleOperacionSelected}
-          selectedOperacionId={currentOperacionId}
-        />
+        <ModularFormValidator
+          formType="hpt"
+          showActions={false}
+          onValidationComplete={handleValidationComplete}
+        >
+          <HPTOperationSelector 
+            onOperacionSelected={handleOperacionSelected}
+            selectedOperacionId={currentOperacionId}
+          />
+        </ModularFormValidator>
         
         {onCancel && (
           <div className="flex justify-end">
@@ -181,6 +193,14 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Validación contextual */}
+      <ModularFormValidator
+        operacionId={currentOperacionId}
+        formType="hpt"
+        showActions={false}
+        onValidationComplete={handleValidationComplete}
+      />
+
       {/* Header con progreso */}
       <Card>
         <CardHeader>
@@ -291,7 +311,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isFormComplete || isLoading}
+                  disabled={!isFormComplete || isLoading || !validationPassed}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {isLoading ? 'Enviando...' : 'Completar HPT'}
