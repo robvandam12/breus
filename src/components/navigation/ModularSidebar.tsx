@@ -264,7 +264,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: Building,
         items: [
           { title: "Información", url: "/empresas/contratistas" },
-          { title: "Gestión de Personal", url: "/admin/users" }
+          { title: "Gestión de Personal", url: "/empresas/usuarios" }
         ]
       },
       {
@@ -331,7 +331,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Gestión de Personal", url: "/admin/users" }
+          { title: "Gestión de Personal", url: "/empresas/usuarios" }
         ]
       },
       {

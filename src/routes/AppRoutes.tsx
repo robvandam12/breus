@@ -108,6 +108,16 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
+      {/* User Management Routes */}
+      {/* Empresas usuarios route - for admin_salmonera and admin_servicio */}
+      <Route path="/empresas/usuarios" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <UserManagement />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
       {/* Personal Routes */}
       <Route path="/personal-de-buceo" element={
         <ProtectedRoute>
@@ -271,8 +281,9 @@ export const AppRoutes = () => (
           </Suspense>
         </ProtectedRoute>
       } />
+      {/* Admin users route - ONLY for superuser */}
       <Route path="/admin/users" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole="superuser">
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <UserManagement />
           </Suspense>
