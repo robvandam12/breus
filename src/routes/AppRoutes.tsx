@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -43,6 +42,7 @@ const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
 const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
 const SuperuserModules = lazy(() => import("../pages/admin/SuperuserModules"));
 const SystemMonitoring = lazy(() => import("../pages/admin/SystemMonitoring"));
+const Usuarios = lazy(() => import("../pages/empresas/Usuarios"));
 
 const FullPageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -104,6 +104,15 @@ export const AppRoutes = () => (
         <ProtectedRoute>
           <Suspense fallback={<PageWithSidebarSkeleton />}>
             <Contratistas />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
+      {/* Nueva ruta para usuarios de empresa */}
+      <Route path="/empresas/usuarios" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <Usuarios />
           </Suspense>
         </ProtectedRoute>
       } />

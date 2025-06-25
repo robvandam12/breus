@@ -330,6 +330,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" },
+          { title: "Usuarios", url: "/empresas/usuarios" },
           { title: "Personal Disponible", url: "/company-personnel" }
         ]
       },
