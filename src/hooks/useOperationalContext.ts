@@ -122,7 +122,12 @@ export const useOperationalContext = () => {
     }
     
     // Con planning, usar la configuración del contexto o 'mixed' por defecto
-    return operationalContext.context_type || 'mixed';
+    // Asegurar que el valor es uno de los tipos permitidos
+    const contextType = operationalContext.context_type;
+    if (contextType === 'planned' || contextType === 'direct' || contextType === 'mixed') {
+      return contextType;
+    }
+    return 'mixed'; // Fallback seguro
   };
 
   // Validaciones contextuales mejoradas
