@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -98,6 +99,66 @@ export const useNetworkMaintenance = () => {
     }
   }, []);
 
+  const updateSignatures = useCallback(async (id: string, signatures: any) => {
+    try {
+      setLoading(true);
+      
+      // Obtener el formulario actual
+      const { data: currentForm, error: fetchError } = await supabase
+        .from('multix')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Actualizar solo las firmas manteniendo el resto de datos
+      const updatedMultixData = {
+        ...currentForm.multix_data,
+        firmas: signatures
+      };
+
+      const isFullySigned = !!(signatures.supervisor_firma && signatures.jefe_centro_firma);
+
+      const { data, error } = await supabase
+        .from('multix')
+        .update({
+          multix_data: updatedMultixData,
+          firmado: isFullySigned,
+          estado: isFullySigned ? 'firmado' : currentForm.estado,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setNetworkMaintenanceForms(prev => 
+        prev.map(form => form.id === id ? data : form)
+      );
+
+      toast({
+        title: "Firmas actualizadas",
+        description: isFullySigned 
+          ? "El formulario ha sido firmado completamente." 
+          : "Las firmas han sido guardadas.",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error updating signatures:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar las firmas",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const deleteNetworkMaintenance = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -133,7 +194,7 @@ export const useNetworkMaintenance = () => {
       const { data, error } = await supabase
         .from('multix')
         .select('*')
-        .in('tipo_formulario', ['mantencion_redes', 'faena_redes'])
+        .in('tipo_formulario', ['mantencion_redes', 'faena_redes', 'instalacion_cambio_redes'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -165,6 +226,7 @@ export const useNetworkMaintenance = () => {
     loading,
     createNetworkMaintenance,
     updateNetworkMaintenance,
+    updateSignatures,
     deleteNetworkMaintenance,
     fetchNetworkMaintenanceForms,
     refetch,
