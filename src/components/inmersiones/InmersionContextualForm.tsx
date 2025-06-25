@@ -12,12 +12,20 @@ import { Switch } from "@/components/ui/switch";
 import { useIndependentOperations } from "@/hooks/useIndependentOperations";
 import { useAuth } from "@/hooks/useAuth";
 import { AlertCircle, CheckCircle, Info, Waves } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InmersionContextualFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   operacionId?: string;
   editingInmersion?: any;
+}
+
+interface CompanyOption {
+  id: string;
+  nombre: string;
+  tipo: 'salmonera' | 'contratista';
+  modulos: string[];
 }
 
 export const InmersionContextualForm = ({ 
@@ -41,10 +49,14 @@ export const InmersionContextualForm = ({
     corriente: editingInmersion?.corriente || '',
     observaciones: editingInmersion?.observaciones || '',
     context_type: (editingInmersion?.context_type || 'direct') as 'planned' | 'direct',
-    operacion_id: operacionId || editingInmersion?.operacion_id || null
+    operacion_id: operacionId || editingInmersion?.operacion_id || null,
+    planned_bottom_time: editingInmersion?.planned_bottom_time || 0
   });
 
   const [isDirectMode, setIsDirectMode] = useState(formData.context_type === 'direct');
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   const { profile } = useAuth();
   const { 
@@ -54,11 +66,55 @@ export const InmersionContextualForm = ({
     canAccessFeature 
   } = useIndependentOperations();
 
-  // Validación mejorada
+  // Cargar empresas disponibles para superuser
+  useEffect(() => {
+    if (profile?.role === 'superuser') {
+      loadAvailableCompanies();
+    }
+  }, [profile]);
+
+  const loadAvailableCompanies = async () => {
+    setLoadingCompanies(true);
+    try {
+      // Cargar salmoneras
+      const { data: salmoneras } = await supabase
+        .from('salmoneras')
+        .select('id, nombre')
+        .eq('estado', 'activa');
+
+      // Cargar contratistas
+      const { data: contratistas } = await supabase
+        .from('contratistas')
+        .select('id, nombre')
+        .eq('estado', 'activo');
+
+      const companyList: CompanyOption[] = [
+        ...(salmoneras?.map(s => ({
+          id: s.id,
+          nombre: s.nombre,
+          tipo: 'salmonera' as const,
+          modulos: ['planning_operations', 'core_immersions'] // Por defecto para salmoneras
+        })) || []),
+        ...(contratistas?.map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          tipo: 'contratista' as const,
+          modulos: ['core_immersions'] // Solo core para contratistas
+        })) || [])
+      ];
+
+      setCompanies(companyList);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  // Validación mejorada que no incluye campos inexistentes
   const validateForm = () => {
     console.log('Validating form data:', formData);
     
-    // Verificar campos básicos requeridos
     const requiredFields = [
       { field: 'codigo', value: formData.codigo, label: 'Código' },
       { field: 'fecha_inmersion', value: formData.fecha_inmersion, label: 'Fecha' },
@@ -84,6 +140,11 @@ export const InmersionContextualForm = ({
 
     const invalidNumericFields = numericFields.filter(field => field.value <= 0);
 
+    // Validación especial para superuser
+    if (profile?.role === 'superuser' && !selectedCompany) {
+      emptyFields.push({ field: 'company', value: '', label: 'Empresa destino' });
+    }
+
     const allErrors = [...emptyFields, ...invalidNumericFields];
     
     console.log('Validation errors:', allErrors);
@@ -105,14 +166,49 @@ export const InmersionContextualForm = ({
     }
     
     try {
-      const inmersionData = {
-        ...formData,
+      // Preparar datos limpios solo con campos que existen en la tabla
+      const cleanFormData = {
+        codigo: formData.codigo,
+        fecha_inmersion: formData.fecha_inmersion,
+        hora_inicio: formData.hora_inicio,
+        hora_fin: formData.hora_fin || null,
+        buzo_principal: formData.buzo_principal,
+        buzo_asistente: formData.buzo_asistente || null,
+        supervisor: formData.supervisor,
+        objetivo: formData.objetivo,
+        profundidad_max: formData.profundidad_max,
+        temperatura_agua: formData.temperatura_agua,
+        visibilidad: formData.visibilidad,
+        corriente: formData.corriente,
+        observaciones: formData.observaciones || '',
+        estado: 'planificada',
+        planned_bottom_time: formData.planned_bottom_time || null,
         context_type: isDirectMode ? 'direct' as const : 'planned' as const,
-        estado: 'planificada'
+        operacion_id: formData.operacion_id || null,
+        is_independent: !formData.operacion_id,
+        // Campos para superuser
+        company_id: selectedCompany?.id || null,
+        company_type: selectedCompany?.tipo || null
       };
 
-      console.log('Submitting inmersion data:', inmersionData);
-      await createIndependentInmersion(inmersionData);
+      console.log('Submitting clean inmersion data:', cleanFormData);
+      
+      // Usar el método apropiado según el contexto
+      if (cleanFormData.is_independent) {
+        await createIndependentInmersion(cleanFormData);
+      } else {
+        // Para inmersiones con operación, usar el hook de inmersiones normal
+        const { createInmersion } = await import('@/hooks/useInmersiones');
+        // Crear a través de Supabase directamente ya que los hooks pueden tener validaciones adicionales
+        const { data, error } = await supabase
+          .from('inmersion')
+          .insert([cleanFormData])
+          .select()
+          .single();
+
+        if (error) throw error;
+      }
+      
       onSuccess();
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -138,6 +234,7 @@ export const InmersionContextualForm = ({
   const canCreateDirect = canAccessFeature('create_direct_inmersions');
   const canCreatePlanned = canAccessFeature('create_operations');
   const showModeSwitch = operationalContext?.context_type === 'mixed';
+  const isSuperuser = profile?.role === 'superuser';
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -149,11 +246,11 @@ export const InmersionContextualForm = ({
               {editingInmersion ? 'Editar Inmersión' : 'Nueva Inmersión'}
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">
-              Contexto: {getContextBadge()} • Empresa: {profile?.salmonera_id ? 'Salmonera' : 'Contratista'}
+              Contexto: {getContextBadge()} • Empresa: {isSuperuser ? 'Superuser' : (profile?.salmonera_id ? 'Salmonera' : 'Contratista')}
             </p>
           </div>
           
-          {showModeSwitch && (
+          {showModeSwitch && !isSuperuser && (
             <div className="flex items-center gap-2">
               <Label htmlFor="mode-switch" className="text-sm">
                 {isDirectMode ? 'Directo' : 'Planificado'}
@@ -190,6 +287,38 @@ export const InmersionContextualForm = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Selector de empresa para superuser */}
+          {isSuperuser && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <Label className="text-sm font-medium text-yellow-800">Empresa Destino *</Label>
+              <Select onValueChange={(value) => {
+                const company = companies.find(c => c.id === value);
+                setSelectedCompany(company || null);
+              }}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Selecciona la empresa para la cual crear la inmersión" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={company.tipo === 'salmonera' ? 'default' : 'secondary'}>
+                          {company.tipo}
+                        </Badge>
+                        {company.nombre}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCompany && (
+                <p className="text-xs text-yellow-700 mt-1">
+                  Módulos disponibles: {selectedCompany.modulos.join(', ')}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -216,7 +345,7 @@ export const InmersionContextualForm = ({
           </div>
 
           {/* Time Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="hora_inicio">Hora de Inicio *</Label>
               <Input
@@ -235,6 +364,17 @@ export const InmersionContextualForm = ({
                 type="time"
                 value={formData.hora_fin}
                 onChange={(e) => setFormData(prev => ({...prev, hora_fin: e.target.value}))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="planned_bottom_time">Tiempo Fondo Planificado (min)</Label>
+              <Input
+                id="planned_bottom_time"
+                type="number"
+                min="0"
+                value={formData.planned_bottom_time}
+                onChange={(e) => setFormData(prev => ({...prev, planned_bottom_time: parseInt(e.target.value) || 0}))}
               />
             </div>
           </div>

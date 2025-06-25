@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -58,8 +59,7 @@ const useInmersionesCRUD = (operacionId?: string) => {
   });
 
   const createInmersionMutation = useMutation({
-    mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) =>
-      {
+    mutationFn: async (inmersionData: Omit<Inmersion, 'inmersion_id' | 'created_at' | 'updated_at' | 'operacion_nombre'>) => {
       if (!isOnline) {
         const tempId = `offline_${Date.now()}`;
         const payload = { ...inmersionData, hpt_validado: false, anexo_bravo_validado: false };
@@ -70,18 +70,81 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
-      // Usar validación contextual mejorada
-      return await createImmersionWithValidation(inmersionData);
+      // Limpiar datos para enviar solo campos que existen en la tabla
+      const cleanData = {
+        codigo: inmersionData.codigo,
+        operacion_id: inmersionData.operacion_id || null,
+        fecha_inmersion: inmersionData.fecha_inmersion,
+        hora_inicio: inmersionData.hora_inicio,
+        hora_fin: inmersionData.hora_fin || null,
+        objetivo: inmersionData.objetivo,
+        profundidad_max: inmersionData.profundidad_max,
+        temperatura_agua: inmersionData.temperatura_agua,
+        visibilidad: inmersionData.visibilidad,
+        corriente: inmersionData.corriente,
+        supervisor: inmersionData.supervisor,
+        buzo_principal: inmersionData.buzo_principal,
+        buzo_asistente: inmersionData.buzo_asistente || null,
+        observaciones: inmersionData.observaciones || '',
+        estado: inmersionData.estado || 'planificada',
+        planned_bottom_time: inmersionData.planned_bottom_time || null,
+        context_type: inmersionData.context_type || 'direct',
+        is_independent: inmersionData.is_independent || false,
+        company_id: inmersionData.company_id || null,
+        company_type: inmersionData.company_type || null,
+        hpt_validado: inmersionData.hpt_validado || false,
+        anexo_bravo_validado: inmersionData.anexo_bravo_validado || false
+      };
+
+      console.log('Creating inmersion with clean data:', cleanData);
+
+      // Para inmersiones independientes, crear directamente
+      if (cleanData.is_independent || !cleanData.operacion_id) {
+        const { data, error } = await supabase
+          .from('inmersion')
+          .insert([{
+            ...cleanData,
+            is_independent: true,
+            hpt_validado: true, // Independientes no requieren HPT
+            anexo_bravo_validado: true, // Independientes no requieren Anexo Bravo
+            contexto_operativo: 'independiente'
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error:', error);
+          throw error;
+        }
+        
+        toast({
+          title: "Inmersión creada",
+          description: "La inmersión independiente ha sido creada exitosamente.",
+        });
+        
+        return data;
+      }
+
+      // Para inmersiones con operación, usar validación contextual
+      return await createImmersionWithValidation(cleanData);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
-      // El toast ya se maneja en createImmersionWithValidation
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating inmersion:', error);
+      
+      let errorMessage = "No se pudo crear la inmersión.";
+      
+      if (error.code === 'PGRST204') {
+        errorMessage = "Error de configuración de la base de datos. Por favor contacta al administrador.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear la inmersión.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
