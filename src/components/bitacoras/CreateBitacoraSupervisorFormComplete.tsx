@@ -12,6 +12,8 @@ import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 import { useAuth } from '@/hooks/useAuth';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersiones } from '@/hooks/useInmersiones';
+import { useCompanyContext } from '@/hooks/useCompanyContext';
+import { UniversalCompanySelector } from '@/components/common/UniversalCompanySelector';
 import type { Inmersion } from '@/types/inmersion';
 
 interface CreateBitacoraSupervisorFormCompleteProps {
@@ -27,6 +29,7 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
 }) => {
   const { profile } = useAuth();
   const { operaciones } = useOperaciones();
+  const { context, requiresCompanySelection, canCreateRecords } = useCompanyContext();
   
   const [formData, setFormData] = useState({
     desarrollo_inmersion: '',
@@ -40,7 +43,12 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!inmersion || !formData.desarrollo_inmersion || !formData.evaluacion_general) {
+      return;
+    }
+
+    if (!canCreateRecords()) {
       return;
     }
 
@@ -55,10 +63,23 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
       firmado: false,
       estado_aprobacion: 'pendiente',
       lugar_trabajo: operacionData?.sitios?.nombre || 'N/A',
+      // Incluir contexto empresarial
+      company_id: context.selectedCompany?.id || context.companyId,
+      company_type: context.selectedCompany?.tipo || context.companyType,
     };
 
     onSubmit(submitData);
   };
+
+  if (context.isLoading) {
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardContent className="p-6 text-center">
+          <p>Cargando contexto empresarial...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -70,6 +91,14 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Selector de empresa universal */}
+          <div className="mb-6">
+            <UniversalCompanySelector 
+              title="Empresa para esta Bitácora"
+              description="Especifica la empresa para la cual se creará esta bitácora"
+            />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {inmersion && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
@@ -131,7 +160,7 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
               <Button 
                 type="submit" 
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={!formData.desarrollo_inmersion || !formData.evaluacion_general}
+                disabled={!formData.desarrollo_inmersion || !formData.evaluacion_general || !canCreateRecords()}
               >
                 <Save className="w-4 h-4 mr-2" />
                 Crear Bitácora

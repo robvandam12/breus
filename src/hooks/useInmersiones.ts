@@ -14,7 +14,7 @@ import { usePreDiveValidation } from './usePreDiveValidation';
 export { validateOperationDocuments };
 export type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData };
 
-// CRUD operations with contextual validation
+// CRUD operations with contextual validation and company context
 const useInmersionesCRUD = (operacionId?: string) => {
   const queryClient = useQueryClient();
   const { isOnline, addPendingAction } = useOfflineSync();
@@ -24,6 +24,17 @@ const useInmersionesCRUD = (operacionId?: string) => {
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['inmersiones', operacionId],
     queryFn: async () => {
+      // Obtener contexto del usuario para filtrar por empresa si no es superuser
+      const { data: userContext, error: contextError } = await supabase
+        .rpc('get_user_company_context');
+
+      if (contextError) {
+        console.error('Error getting user context:', contextError);
+      }
+
+      const contextData = userContext?.[0];
+      const isSuperuser = contextData?.is_superuser;
+
       let query = supabase
         .from('inmersion')
         .select(`
@@ -42,8 +53,14 @@ const useInmersionesCRUD = (operacionId?: string) => {
         `)
         .order('created_at', { ascending: false });
 
+      // Filtrar por operación específica si se proporciona
       if (operacionId) {
         query = query.eq('operacion_id', operacionId);
+      }
+
+      // Si no es superuser, filtrar por empresa del usuario
+      if (!isSuperuser && contextData?.company_id) {
+        query = query.eq('company_id', contextData.company_id);
       }
 
       const { data, error } = await query;
@@ -70,6 +87,11 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
+      // Validar que tenga contexto empresarial
+      if (!inmersionData.company_id || !inmersionData.company_type) {
+        throw new Error('Contexto empresarial requerido para crear inmersión');
+      }
+
       // Limpiar datos para enviar solo campos que existen en la tabla
       const cleanData = {
         codigo: inmersionData.codigo,
@@ -90,8 +112,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
         planned_bottom_time: inmersionData.planned_bottom_time || null,
         context_type: inmersionData.context_type || 'direct',
         is_independent: inmersionData.is_independent || false,
-        company_id: inmersionData.company_id || null,
-        company_type: inmersionData.company_type || null,
+        company_id: inmersionData.company_id,
+        company_type: inmersionData.company_type,
         hpt_validado: inmersionData.hpt_validado || false,
         anexo_bravo_validado: inmersionData.anexo_bravo_validado || false
       };

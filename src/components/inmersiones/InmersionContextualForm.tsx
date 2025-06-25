@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { useIndependentOperations } from "@/hooks/useIndependentOperations";
 import { useAuth } from "@/hooks/useAuth";
+import { useCompanyContext } from "@/hooks/useCompanyContext";
+import { UniversalCompanySelector } from "@/components/common/UniversalCompanySelector";
 import { AlertCircle, CheckCircle, Info, Waves } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -21,19 +23,15 @@ interface InmersionContextualFormProps {
   editingInmersion?: any;
 }
 
-interface CompanyOption {
-  id: string;
-  nombre: string;
-  tipo: 'salmonera' | 'contratista';
-  modulos: string[];
-}
-
 export const InmersionContextualForm = ({ 
   onSuccess, 
   onCancel, 
   operacionId,
   editingInmersion 
 }: InmersionContextualFormProps) => {
+  const { profile } = useAuth();
+  const { context, requiresCompanySelection, canCreateRecords } = useCompanyContext();
+  
   const [formData, setFormData] = useState({
     codigo: editingInmersion?.codigo || '',
     fecha_inmersion: editingInmersion?.fecha_inmersion || new Date().toISOString().split('T')[0],
@@ -54,12 +52,8 @@ export const InmersionContextualForm = ({
   });
 
   const [isDirectMode, setIsDirectMode] = useState(formData.context_type === 'direct');
-  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
-  const [companies, setCompanies] = useState<CompanyOption[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { profile } = useAuth();
   const { 
     loading, 
     operationalContext, 
@@ -67,52 +61,7 @@ export const InmersionContextualForm = ({
     canAccessFeature 
   } = useIndependentOperations();
 
-  // Cargar empresas disponibles para superuser
-  useEffect(() => {
-    if (profile?.role === 'superuser') {
-      loadAvailableCompanies();
-    }
-  }, [profile]);
-
-  const loadAvailableCompanies = async () => {
-    setLoadingCompanies(true);
-    try {
-      // Cargar salmoneras
-      const { data: salmoneras } = await supabase
-        .from('salmoneras')
-        .select('id, nombre')
-        .eq('estado', 'activa');
-
-      // Cargar contratistas
-      const { data: contratistas } = await supabase
-        .from('contratistas')
-        .select('id, nombre')
-        .eq('estado', 'activo');
-
-      const companyList: CompanyOption[] = [
-        ...(salmoneras?.map(s => ({
-          id: s.id,
-          nombre: s.nombre,
-          tipo: 'salmonera' as const,
-          modulos: ['planning_operations', 'core_immersions']
-        })) || []),
-        ...(contratistas?.map(c => ({
-          id: c.id,
-          nombre: c.nombre,
-          tipo: 'contratista' as const,
-          modulos: ['core_immersions']
-        })) || [])
-      ];
-
-      setCompanies(companyList);
-    } catch (error) {
-      console.error('Error loading companies:', error);
-    } finally {
-      setLoadingCompanies(false);
-    }
-  };
-
-  // Validación mejorada que no incluye campos inexistentes
+  // Validación mejorada que incluye validación de empresa
   const validateForm = () => {
     console.log('Validating form data:', formData);
     
@@ -141,8 +90,8 @@ export const InmersionContextualForm = ({
 
     const invalidNumericFields = numericFields.filter(field => field.value <= 0);
 
-    // Validación especial para superuser
-    if (profile?.role === 'superuser' && !selectedCompany) {
+    // Validación especial para superuser - debe tener empresa seleccionada
+    if (requiresCompanySelection()) {
       emptyFields.push({ field: 'company', value: '', label: 'Empresa destino' });
     }
 
@@ -166,6 +115,15 @@ export const InmersionContextualForm = ({
       toast({
         title: "Campos requeridos",
         description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!canCreateRecords()) {
+      toast({
+        title: "Empresa requerida",
+        description: "Debes seleccionar una empresa antes de crear la inmersión",
         variant: "destructive",
       });
       return;
@@ -194,9 +152,9 @@ export const InmersionContextualForm = ({
         context_type: isDirectMode ? 'direct' as const : 'planned' as const,
         operacion_id: formData.operacion_id || null,
         is_independent: !formData.operacion_id,
-        // Campos para superuser
-        company_id: selectedCompany?.id || null,
-        company_type: selectedCompany?.tipo || null
+        // Usar empresa seleccionada o empresa del usuario
+        company_id: context.selectedCompany?.id || context.companyId,
+        company_type: context.selectedCompany?.tipo || context.companyType
       };
 
       console.log('Submitting clean inmersion data:', cleanFormData);
@@ -262,7 +220,16 @@ export const InmersionContextualForm = ({
   const canCreateDirect = canAccessFeature('create_direct_inmersions');
   const canCreatePlanned = canAccessFeature('create_operations');
   const showModeSwitch = operationalContext?.context_type === 'mixed';
-  const isSuperuser = profile?.role === 'superuser';
+
+  if (context.isLoading) {
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardContent className="p-6 text-center">
+          <p>Cargando contexto empresarial...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -274,11 +241,11 @@ export const InmersionContextualForm = ({
               {editingInmersion ? 'Editar Inmersión' : 'Nueva Inmersión'}
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">
-              Contexto: {getContextBadge()} • Empresa: {isSuperuser ? 'Superuser' : (profile?.salmonera_id ? 'Salmonera' : 'Contratista')}
+              Contexto: {getContextBadge()}
             </p>
           </div>
           
-          {showModeSwitch && !isSuperuser && (
+          {showModeSwitch && !context.isSuperuser && (
             <div className="flex items-center gap-2">
               <Label htmlFor="mode-switch" className="text-sm">
                 {isDirectMode ? 'Directo' : 'Planificado'}
@@ -300,6 +267,14 @@ export const InmersionContextualForm = ({
       </CardHeader>
 
       <CardContent>
+        {/* Selector de empresa universal */}
+        <div className="mb-6">
+          <UniversalCompanySelector 
+            title="Empresa para esta Inmersión"
+            description="Especifica la empresa para la cual se realizará esta inmersión"
+          />
+        </div>
+
         {!validation.isValid && (
           <Alert className="mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
@@ -315,38 +290,6 @@ export const InmersionContextualForm = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Selector de empresa para superuser */}
-          {isSuperuser && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <Label className="text-sm font-medium text-yellow-800">Empresa Destino *</Label>
-              <Select onValueChange={(value) => {
-                const company = companies.find(c => c.id === value);
-                setSelectedCompany(company || null);
-              }}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Selecciona la empresa para la cual crear la inmersión" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={company.tipo === 'salmonera' ? 'default' : 'secondary'}>
-                          {company.tipo}
-                        </Badge>
-                        {company.nombre}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedCompany && (
-                <p className="text-xs text-yellow-700 mt-1">
-                  Módulos disponibles: {selectedCompany.modulos.join(', ')}
-                </p>
-              )}
-            </div>
-          )}
-
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -573,8 +516,8 @@ export const InmersionContextualForm = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !validation.isValid || isSubmitting}
-              className={validation.isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
+              disabled={loading || !validation.isValid || isSubmitting || !canCreateRecords()}
+              className={validation.isValid && canCreateRecords() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
             >
               {isSubmitting ? 'Creando...' : (editingInmersion ? 'Actualizar' : 'Crear Inmersión')}
             </Button>

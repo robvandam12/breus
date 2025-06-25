@@ -25,6 +25,8 @@ export type Database = {
           buzo_o_empresa_nombre: string | null
           checklist_completo: boolean
           codigo: string
+          company_id: string | null
+          company_type: string | null
           created_at: string
           empresa_nombre: string | null
           estado: string
@@ -67,6 +69,8 @@ export type Database = {
           buzo_o_empresa_nombre?: string | null
           checklist_completo?: boolean
           codigo: string
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           empresa_nombre?: string | null
           estado?: string
@@ -109,6 +113,8 @@ export type Database = {
           buzo_o_empresa_nombre?: string | null
           checklist_completo?: boolean
           codigo?: string
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           empresa_nombre?: string | null
           estado?: string
@@ -268,6 +274,8 @@ export type Database = {
           codigo: string
           codigo_verificacion: string | null
           comentarios_aprobacion: string | null
+          company_id: string | null
+          company_type: string | null
           condamb_corriente_fondo_nudos: number | null
           condamb_estado_mar: string | null
           condamb_estado_puerto: string | null
@@ -326,6 +334,8 @@ export type Database = {
           codigo: string
           codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          company_id?: string | null
+          company_type?: string | null
           condamb_corriente_fondo_nudos?: number | null
           condamb_estado_mar?: string | null
           condamb_estado_puerto?: string | null
@@ -384,6 +394,8 @@ export type Database = {
           codigo?: string
           codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
+          company_id?: string | null
+          company_type?: string | null
           condamb_corriente_fondo_nudos?: number | null
           condamb_estado_mar?: string | null
           condamb_estado_puerto?: string | null
@@ -458,6 +470,8 @@ export type Database = {
           codigo_verificacion: string | null
           comentarios_aprobacion: string | null
           comentarios_validacion: string | null
+          company_id: string | null
+          company_type: string | null
           created_at: string
           desarrollo_inmersion: string
           descripcion_trabajo: string | null
@@ -496,6 +510,8 @@ export type Database = {
           codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
           comentarios_validacion?: string | null
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           desarrollo_inmersion: string
           descripcion_trabajo?: string | null
@@ -534,6 +550,8 @@ export type Database = {
           codigo_verificacion?: string | null
           comentarios_aprobacion?: string | null
           comentarios_validacion?: string | null
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           desarrollo_inmersion?: string
           descripcion_trabajo?: string | null
@@ -872,6 +890,8 @@ export type Database = {
       equipos_buceo: {
         Row: {
           activo: boolean
+          company_id: string | null
+          company_type: string | null
           created_at: string
           descripcion: string | null
           empresa_id: string
@@ -883,6 +903,8 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           descripcion?: string | null
           empresa_id: string
@@ -894,6 +916,8 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          company_id?: string | null
+          company_type?: string | null
           created_at?: string
           descripcion?: string | null
           empresa_id?: string
@@ -912,6 +936,8 @@ export type Database = {
           camara_hiperbarica: string | null
           centro_trabajo_nombre: string | null
           codigo: string
+          company_id: string | null
+          company_type: string | null
           contactos_emergencia: Json | null
           corrientes: string | null
           created_at: string
@@ -973,6 +999,8 @@ export type Database = {
           camara_hiperbarica?: string | null
           centro_trabajo_nombre?: string | null
           codigo: string
+          company_id?: string | null
+          company_type?: string | null
           contactos_emergencia?: Json | null
           corrientes?: string | null
           created_at?: string
@@ -1034,6 +1062,8 @@ export type Database = {
           camara_hiperbarica?: string | null
           centro_trabajo_nombre?: string | null
           codigo?: string
+          company_id?: string | null
+          company_type?: string | null
           contactos_emergencia?: Json | null
           corrientes?: string | null
           created_at?: string
@@ -1694,6 +1724,8 @@ export type Database = {
       operacion: {
         Row: {
           codigo: string
+          company_id: string | null
+          company_type: string | null
           contratista_id: string | null
           created_at: string
           equipo_buceo_id: string | null
@@ -1712,6 +1744,8 @@ export type Database = {
         }
         Insert: {
           codigo: string
+          company_id?: string | null
+          company_type?: string | null
           contratista_id?: string | null
           created_at?: string
           equipo_buceo_id?: string | null
@@ -1730,6 +1764,8 @@ export type Database = {
         }
         Update: {
           codigo?: string
+          company_id?: string | null
+          company_type?: string | null
           contratista_id?: string | null
           created_at?: string
           equipo_buceo_id?: string | null
@@ -2529,6 +2565,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_company: {
+        Args: { target_company_id: string; target_company_type: string }
+        Returns: boolean
+      }
       create_user_profile: {
         Args: {
           user_id: string
@@ -2592,6 +2632,14 @@ export type Database = {
       get_security_alert_stats: {
         Args: { p_start_date: string; p_end_date: string }
         Returns: Json
+      }
+      get_user_company_context: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          company_id: string
+          company_type: string
+          is_superuser: boolean
+        }[]
       }
       get_user_role: {
         Args: Record<PropertyKey, never>
