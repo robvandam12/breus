@@ -15,8 +15,8 @@ const PersonalPoolAdmin = () => {
   const { profile } = useAuth();
   console.log('🔍 PersonalPoolAdmin - Profile state:', { 
     profile: profile ? {
-      id: profile.usuario_id,
-      role: profile.rol,
+      id: profile.id,
+      role: profile.role,
       salmonera_id: profile.salmonera_id,
       servicio_id: profile.servicio_id,
       nombre: profile.nombre,
@@ -57,11 +57,11 @@ const PersonalPoolAdmin = () => {
     );
   }
 
-  if (!profile.salmonera_id && !profile.servicio_id && profile.rol !== 'superuser') {
+  if (!profile.salmonera_id && !profile.servicio_id && profile.role !== 'superuser') {
     console.warn('⚠️ Access denied - no associated company:', {
       salmonera_id: profile.salmonera_id,
       servicio_id: profile.servicio_id,
-      role: profile.rol
+      role: profile.role
     });
     return (
       <MainLayout
@@ -78,9 +78,9 @@ const PersonalPoolAdmin = () => {
     );
   }
 
-  if (profile.rol !== 'admin_salmonera' && profile.rol !== 'admin_servicio' && profile.rol !== 'superuser') {
+  if (profile.role !== 'admin_salmonera' && profile.role !== 'admin_servicio' && profile.role !== 'superuser') {
     console.warn('⚠️ Access denied - insufficient permissions:', {
-      role: profile.rol,
+      role: profile.role,
       requiredRoles: ['admin_salmonera', 'admin_servicio', 'superuser']
     });
     return (
