@@ -2438,6 +2438,7 @@ export type Database = {
           rol: string
           tipo_empresa: string | null
           token: string
+          updated_at: string
         }
         Insert: {
           apellido: string
@@ -2453,6 +2454,7 @@ export type Database = {
           rol: string
           tipo_empresa?: string | null
           token: string
+          updated_at?: string
         }
         Update: {
           apellido?: string
@@ -2468,6 +2470,7 @@ export type Database = {
           rol?: string
           tipo_empresa?: string | null
           token?: string
+          updated_at?: string
         }
         Relationships: [
           {
