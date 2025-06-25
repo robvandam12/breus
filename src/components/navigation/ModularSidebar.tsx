@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,7 +45,7 @@ export const ModularSidebar = () => {
   const { profile } = useAuth();
   const location = useLocation();
   const { canCreateOperations, canCreateMaintenanceForms, getWorkflowType } = useOperationalContext();
-  const { hasModuleAccess, modules, canAccessAdvancedReports, canUseIntegractions } = useModularSystem();
+  const { hasModuleAccess, modules, canAccessAdvancedReports, canUseIntegrations } = useModularSystem();
 
   const getNavigationItems = (): NavigationItem[] => {
     const items: NavigationItem[] = [
@@ -115,7 +114,7 @@ export const ModularSidebar = () => {
     }
 
     // Integraciones
-    if (canUseIntegractions) {
+    if (canUseIntegrations) {
       items.push({
         title: "Integraciones",
         icon: Zap,
