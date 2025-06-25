@@ -1,9 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useInmersionesContextual } from '@/hooks/useInmersionesContextual';
-import { useModularSystem } from '@/hooks/useModularSystem';
 import { useInmersiones } from '@/hooks/useInmersiones';
-import { useOperaciones } from '@/hooks/useOperaciones';
+import { useCompanyContext } from '@/hooks/useCompanyContext';
 import { toast } from '@/hooks/use-toast';
 
 export const useInmersionesTable = () => {
@@ -12,83 +11,107 @@ export const useInmersionesTable = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showNewInmersionDialog, setShowNewInmersionDialog] = useState(false);
   const [showPlannedInmersionDialog, setShowPlannedInmersionDialog] = useState(false);
-  
+
+  // Use contextual hooks
   const { 
     inmersiones, 
-    isLoading, 
-    estadisticas, 
+    isLoading: isLoadingContextual,
+    canCreateDirectImmersion,
+    canCreatePlannedOperations,
     capacidades,
-    operationalContext 
+    hasPlanning
   } = useInmersionesContextual();
-  
-  const { hasModuleAccess, modules } = useModularSystem();
+
   const { createInmersion } = useInmersiones();
-  const { operaciones } = useOperaciones();
+  const { context } = useCompanyContext();
 
-  // Filtrar inmersiones
-  const filteredInmersiones = inmersiones.filter(inmersion => {
-    const matchesSearch = inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inmersion.observaciones?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || inmersion.estado === statusFilter;
-    
-    const matchesType = typeFilter === 'all' || 
-                       (typeFilter === 'planned' && inmersion.operacion_id && !inmersion.is_independent) ||
-                       (typeFilter === 'independent' && (!inmersion.operacion_id || inmersion.is_independent));
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Filter inmersions based on search and filters
+  const filteredInmersiones = useMemo(() => {
+    if (!inmersiones) return [];
 
-  // Obtener información contextual
-  const getContextInfo = () => {
-    const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
-    const canCreateDirect = capacidades.puedeCrearInmersionesDirectas;
+    return inmersiones.filter(inmersion => {
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inmersion.buzo_principal?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (hasPlanning && canCreateDirect) {
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || inmersion.estado === statusFilter;
+
+      // Type filter
+      const matchesType = typeFilter === 'all' || 
+        (typeFilter === 'planned' && inmersion.operacion_id) ||
+        (typeFilter === 'independent' && (!inmersion.operacion_id || inmersion.is_independent));
+
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [inmersiones, searchTerm, statusFilter, typeFilter]);
+
+  // Calculate statistics
+  const estadisticas = useMemo(() => {
+    if (!inmersiones) {
       return {
-        type: 'mixed',
-        message: 'Puedes crear inmersiones planificadas (con operación) o independientes',
-        variant: 'default' as const
-      };
-    } else if (hasPlanning && !canCreateDirect) {
-      return {
-        type: 'planned-only',
-        message: 'Solo puedes crear inmersiones asociadas a operaciones planificadas',
-        variant: 'default' as const
-      };
-    } else if (!hasPlanning && canCreateDirect) {
-      return {
-        type: 'direct-only',
-        message: 'Inmersiones directas disponibles. El módulo de planificación no está activo',
-        variant: 'default' as const
-      };
-    } else {
-      return {
-        type: 'restricted',
-        message: 'Funcionalidad de inmersiones limitada. Contacta a tu administrador',
-        variant: 'destructive' as const
+        total: 0,
+        planificadas: 0,
+        en_proceso: 0,
+        completadas: 0,
+        independientes: 0
       };
     }
-  };
 
-  // Handlers para creación de inmersiones
+    return {
+      total: inmersiones.length,
+      planificadas: inmersiones.filter(i => i.estado === 'planificada').length,
+      en_proceso: inmersiones.filter(i => i.estado === 'en_progreso' || i.estado === 'en_proceso').length,
+      completadas: inmersiones.filter(i => i.estado === 'completada').length,
+      independientes: inmersiones.filter(i => !i.operacion_id || i.is_independent).length
+    };
+  }, [inmersiones]);
+
+  // Context info
+  const contextInfo = useMemo(() => {
+    if (!context.selectedCompany) {
+      return {
+        empresa: context.isSuperuser ? 'Ninguna empresa seleccionada' : 'Sin empresa asignada',
+        tipo: null,
+        modulos: []
+      };
+    }
+
+    return {
+      empresa: context.selectedCompany.nombre,
+      tipo: context.selectedCompany.tipo,
+      modulos: context.selectedCompany.modulos
+    };
+  }, [context]);
+
   const handleCreateDirectInmersion = async (data: any) => {
     try {
-      const inmersionData = {
+      if (!context.selectedCompany) {
+        toast({
+          title: "Error",
+          description: "Debe seleccionar una empresa antes de crear una inmersión",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await createInmersion({
         ...data,
         is_independent: true,
-        operacion_id: null,
-      };
+        contexto_operativo: 'independiente',
+        company_id: context.selectedCompany.id,
+        company_type: context.selectedCompany.tipo
+      });
       
-      await createInmersion(inmersionData);
+      setShowNewInmersionDialog(false);
       toast({
         title: "Inmersión creada",
         description: "La inmersión independiente ha sido creada exitosamente.",
       });
-      setShowNewInmersionDialog(false);
     } catch (error) {
-      console.error('Error creating direct inmersion:', error);
+      console.error('Error creating direct immersion:', error);
       toast({
         title: "Error",
         description: "No se pudo crear la inmersión independiente.",
@@ -99,29 +122,37 @@ export const useInmersionesTable = () => {
 
   const handleCreatePlannedInmersion = async (data: any) => {
     try {
-      const inmersionData = {
+      if (!context.selectedCompany) {
+        toast({
+          title: "Error",
+          description: "Debe seleccionar una empresa antes de crear una inmersión",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await createInmersion({
         ...data,
-        is_independent: false,
-      };
+        company_id: context.selectedCompany.id,
+        company_type: context.selectedCompany.tipo
+      });
       
-      await createInmersion(inmersionData);
+      setShowPlannedInmersionDialog(false);
       toast({
         title: "Inmersión creada",
-        description: "La inmersión planificada ha sido creada exitosamente.",
+        description: "La inmersión ha sido creada exitosamente.",
       });
-      setShowPlannedInmersionDialog(false);
     } catch (error) {
-      console.error('Error creating planned inmersion:', error);
+      console.error('Error creating planned immersion:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la inmersión planificada.",
+        description: "No se pudo crear la inmersión.",
         variant: "destructive",
       });
     }
   };
 
   return {
-    // State
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -132,20 +163,12 @@ export const useInmersionesTable = () => {
     setShowNewInmersionDialog,
     showPlannedInmersionDialog,
     setShowPlannedInmersionDialog,
-    
-    // Data
-    inmersiones,
     filteredInmersiones,
-    isLoading,
+    isLoading: isLoadingContextual,
     estadisticas,
     capacidades,
-    operationalContext,
-    
-    // Computed
-    contextInfo: getContextInfo(),
-    hasPlanning: hasModuleAccess(modules.PLANNING_OPERATIONS),
-    
-    // Handlers
+    contextInfo,
+    hasPlanning,
     handleCreateDirectInmersion,
     handleCreatePlannedInmersion,
   };
