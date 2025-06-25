@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useModuleAccess } from './useModuleAccess';
 import { useContextualValidation } from './useContextualValidation';
+import { useEnhancedValidation } from './useEnhancedValidation';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -28,26 +28,30 @@ export const usePreDiveValidation = () => {
   const [validations, setValidations] = useState<OperationValidation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { canPlanOperations, isModuleActive, modules } = useModuleAccess();
-  const { validateInmersionCreation } = useContextualValidation();
+  const { validateOperationByType } = useContextualValidation();
+  const { validateWithErrorHandling } = useEnhancedValidation();
 
   const validateOperation = async (operationId: string): Promise<ValidationResult> => {
     try {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // Contexto modular
+      // Usar validación contextual para obtener el contexto modular
+      const contextualResult = validateOperationByType('create_planned_immersion', { 
+        operacion_id: operationId 
+      });
+
       const context = {
-        moduleActive: canPlanOperations,
-        requiresDocuments: canPlanOperations,
-        allowDirectCreation: true, // CORE: Siempre permitir creación directa
+        moduleActive: contextualResult.context.moduleAccess.planning,
+        requiresDocuments: contextualResult.context.requiresDocuments,
+        allowDirectCreation: contextualResult.context.allowDirectCreation,
       };
 
       let hptStatus: ValidationResult['hptStatus'] = 'not_required';
       let anexoBravoStatus: ValidationResult['anexoBravoStatus'] = 'not_required';
 
       // Solo validar documentos si el módulo de planificación está activo
-      if (canPlanOperations) {
+      if (context.moduleActive && context.requiresDocuments) {
         // Verificar HPT
         const { data: hptData } = await supabase
           .from('hpt')
@@ -87,13 +91,13 @@ export const usePreDiveValidation = () => {
         }
       } else {
         // Módulo no activo - documentos no requeridos (funcionalidad core)
-        warnings.push('Módulo de planificación no activo - Documentos no requeridos');
+        warnings.push('Modo core activo - Documentos no requeridos');
       }
 
       // Validación final contextual
-      const isValid = canPlanOperations 
+      const isValid = context.requiresDocuments 
         ? (hptStatus === 'signed' && anexoBravoStatus === 'signed')
-        : true; // CORE: Sin módulo de planificación, siempre válido
+        : true; // CORE: Sin requisitos de documentos, siempre válido
 
       return {
         isValid,
@@ -108,13 +112,13 @@ export const usePreDiveValidation = () => {
       console.error('Error validating operation:', error);
       return {
         isValid: true, // CORE: En caso de error, permitir (funcionalidad core)
-        hptStatus: canPlanOperations ? 'missing' : 'not_required',
-        anexoBravoStatus: canPlanOperations ? 'missing' : 'not_required',
-        errors: canPlanOperations ? ['Error al validar la operación'] : [],
-        warnings: canPlanOperations ? [] : ['Modo core - validación no requerida'],
+        hptStatus: 'not_required',
+        anexoBravoStatus: 'not_required',
+        errors: ['Error al validar la operación'],
+        warnings: ['Modo fallback activo - validación simplificada'],
         context: {
-          moduleActive: canPlanOperations,
-          requiresDocuments: canPlanOperations,
+          moduleActive: false,
+          requiresDocuments: false,
           allowDirectCreation: true, // CORE: Siempre permitir
         }
       };
@@ -124,11 +128,22 @@ export const usePreDiveValidation = () => {
   const createImmersionWithValidation = async (immersionData: any) => {
     console.log('Creating immersion with contextual validation:', immersionData);
     
-    // CORE: Para inmersiones independientes, no validar operación
+    // CORE: Para inmersiones independientes, usar validación simplificada
     if (immersionData.is_independent || !immersionData.operacion_id) {
       console.log('Creating independent immersion (core functionality)');
       
-      // Crear inmersión independiente sin validaciones complejas
+      // Usar validateWithErrorHandling para manejo automático de errores
+      const { success } = await validateWithErrorHandling(
+        'create_immersion',
+        immersionData,
+        { showToast: false } // Manejar toast manualmente
+      );
+      
+      if (!success) {
+        throw new Error('No se puede crear la inmersión independiente');
+      }
+
+      // Crear inmersión independiente
       const { data, error } = await supabase
         .from('inmersion')
         .insert([{
@@ -151,16 +166,20 @@ export const usePreDiveValidation = () => {
       return data;
     }
 
-    // PLANNING: Para inmersiones con operación, usar validación contextual
-    const validation = await validateInmersionCreation(immersionData);
+    // PLANNING: Para inmersiones con operación, usar validación contextual completa
+    const { success, result } = await validateWithErrorHandling(
+      'create_planned_immersion',
+      immersionData,
+      { showToast: false } // Manejar toast manualmente
+    );
     
-    if (!validation.canProceed) {
-      const errorMessage = validation.errors.join(', ');
-      throw new Error(`No se puede crear la inmersión: ${errorMessage}`);
+    if (!success || !result?.canProceed) {
+      const errorMessage = result?.errors?.join(', ') || 'No se puede crear la inmersión';
+      throw new Error(errorMessage);
     }
 
-    if (validation.warnings.length > 0) {
-      const warningMessage = validation.warnings.join(', ');
+    if (result.warnings.length > 0) {
+      const warningMessage = result.warnings.join(', ');
       console.warn('Advertencias de validación:', warningMessage);
       
       toast({
@@ -170,11 +189,11 @@ export const usePreDiveValidation = () => {
     }
 
     // Determinar estados de validación según contexto
-    const hptValidado = validation.context.requiresDocuments 
+    const hptValidado = result.context.requiresDocuments 
       ? (immersionData.operacion_id ? await checkDocumentSigned('hpt', immersionData.operacion_id) : false)
       : true; // CORE: Si no requiere documentos, marcar como validado
 
-    const anexoBravoValidado = validation.context.requiresDocuments
+    const anexoBravoValidado = result.context.requiresDocuments
       ? (immersionData.operacion_id ? await checkDocumentSigned('anexo_bravo', immersionData.operacion_id) : false)
       : true; // CORE: Si no requiere documentos, marcar como validado
 
@@ -193,7 +212,7 @@ export const usePreDiveValidation = () => {
     
     toast({
       title: "Inmersión creada",
-      description: canPlanOperations 
+      description: result.context.moduleAccess?.planning 
         ? "La inmersión ha sido creada con validaciones completas."
         : "La inmersión ha sido creada en modo core.",
     });
@@ -223,7 +242,8 @@ export const usePreDiveValidation = () => {
     isLoading,
     validateOperation,
     createImmersionWithValidation,
-    canPlanOperations,
-    contextualMode: !canPlanOperations,
+    // Helpers de compatibilidad
+    canPlanOperations: false, // Deprecated: usar contextual hooks
+    contextualMode: true, // Siempre usar modo contextual
   };
 };
