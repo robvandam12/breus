@@ -10,25 +10,59 @@ import { useUsersByCompany } from "@/hooks/useUsersByCompany";
 import { EmptyState } from "@/components/layout/EmptyState";
 
 const PersonalPoolAdmin = () => {
+  console.log('🎯 PersonalPoolAdmin component starting to render');
+  
   const { profile } = useAuth();
-  const { usuarios, isLoading, createUser, inviteUser, error } = useUsersByCompany();
-
-  console.log('🔍 PersonalPoolAdmin - Profile:', profile);
-  console.log('📊 PersonalPoolAdmin - Data:', { 
-    usuariosCount: usuarios.length, 
-    isLoading, 
-    error: error?.message 
+  console.log('🔍 PersonalPoolAdmin - Profile state:', { 
+    profile: profile ? {
+      id: profile.usuario_id,
+      role: profile.rol,
+      salmonera_id: profile.salmonera_id,
+      servicio_id: profile.servicio_id,
+      nombre: profile.nombre,
+      apellido: profile.apellido
+    } : null
   });
 
   // Determinar tipo y ID de empresa basado en el perfil del usuario
   const empresaType = profile?.salmonera_id ? 'salmonera' : 'contratista';
   const empresaId = profile?.salmonera_id || profile?.servicio_id || '';
 
-  console.log('🏢 Company info:', { empresaType, empresaId });
+  console.log('🏢 Company info determined:', { empresaType, empresaId });
+
+  const { usuarios, isLoading, createUser, inviteUser, error } = useUsersByCompany();
+
+  console.log('📊 PersonalPoolAdmin - Hook results:', { 
+    usuariosCount: usuarios?.length || 0, 
+    isLoading, 
+    error: error?.message,
+    hasProfile: !!profile
+  });
 
   // Verificar permisos de acceso
-  if (!profile?.salmonera_id && !profile?.servicio_id && profile?.role !== 'superuser') {
-    console.warn('⚠️ Access denied - no associated company');
+  if (!profile) {
+    console.log('⏳ Profile not loaded yet, showing loading...');
+    return (
+      <MainLayout
+        title="Company Personnel"
+        subtitle="Loading..."
+        icon={Users}
+      >
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">Loading profile...</div>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
+
+  if (!profile.salmonera_id && !profile.servicio_id && profile.rol !== 'superuser') {
+    console.warn('⚠️ Access denied - no associated company:', {
+      salmonera_id: profile.salmonera_id,
+      servicio_id: profile.servicio_id,
+      role: profile.rol
+    });
     return (
       <MainLayout
         title="Company Personnel"
@@ -44,8 +78,11 @@ const PersonalPoolAdmin = () => {
     );
   }
 
-  if (profile.role !== 'admin_salmonera' && profile.role !== 'admin_servicio' && profile.role !== 'superuser') {
-    console.warn('⚠️ Access denied - insufficient permissions');
+  if (profile.rol !== 'admin_salmonera' && profile.rol !== 'admin_servicio' && profile.rol !== 'superuser') {
+    console.warn('⚠️ Access denied - insufficient permissions:', {
+      role: profile.rol,
+      requiredRoles: ['admin_salmonera', 'admin_servicio', 'superuser']
+    });
     return (
       <MainLayout
         title="Company Personnel"
@@ -84,6 +121,8 @@ const PersonalPoolAdmin = () => {
       </MainLayout>
     );
   }
+
+  console.log('✅ PersonalPoolAdmin - All checks passed, rendering main content');
 
   const handleCreateUser = async (userData: any) => {
     console.log('👤 Creating user with data:', userData);
@@ -124,14 +163,14 @@ const PersonalPoolAdmin = () => {
     >
       <div className="space-y-6">
         {/* Estadísticas */}
-        <PersonalPoolStats usuarios={usuarios} empresaType={empresaType} />
+        <PersonalPoolStats usuarios={usuarios || []} empresaType={empresaType} />
 
         {/* Tabla principal */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Company Personnel ({usuarios.length})
+              Company Personnel ({usuarios?.length || 0})
               {isLoading && (
                 <span className="text-sm text-gray-500 ml-2">Loading...</span>
               )}
@@ -139,7 +178,7 @@ const PersonalPoolAdmin = () => {
           </CardHeader>
           <CardContent>
             <PersonalPoolTable
-              usuarios={usuarios}
+              usuarios={usuarios || []}
               isLoading={isLoading}
               onCreateUser={handleCreateUser}
               onUpdateUser={handleUpdateUser}
