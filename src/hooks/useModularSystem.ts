@@ -4,7 +4,10 @@ export const useModularSystem = () => {
     PLANNING_OPERATIONS: 'planning_operations',
     MAINTENANCE_NETWORKS: 'maintenance_networks',
     DOCUMENT_MANAGEMENT: 'document_management',
-    TEAM_MANAGEMENT: 'team_management'
+    TEAM_MANAGEMENT: 'team_management',
+    ADVANCED_REPORTING: 'advanced_reporting',
+    EXTERNAL_INTEGRATIONS: 'external_integrations',
+    CORE_IMMERSIONS: 'core_immersions'
   };
 
   // Mock system modules data with dependencies
@@ -48,6 +51,36 @@ export const useModularSystem = () => {
       is_core: true,
       is_active: true,
       dependencies: []
+    },
+    {
+      id: 'advanced_reporting',
+      name: 'advanced_reporting',
+      display_name: 'Reportes Avanzados',
+      description: 'Reportes y análisis avanzados',
+      category: 'reporting',
+      is_core: false,
+      is_active: true,
+      dependencies: ['document_management']
+    },
+    {
+      id: 'external_integrations',
+      name: 'external_integrations',
+      display_name: 'Integraciones Externas',
+      description: 'Integraciones con sistemas externos',
+      category: 'integration',
+      is_core: false,
+      is_active: true,
+      dependencies: []
+    },
+    {
+      id: 'core_immersions',
+      name: 'core_immersions',
+      display_name: 'Inmersiones Core',
+      description: 'Funcionalidad básica de inmersiones',
+      category: 'core',
+      is_core: true,
+      is_active: true,
+      dependencies: []
     }
   ];
 
@@ -74,8 +107,8 @@ export const useModularSystem = () => {
   // Helper functions for specific modules
   const canPlanOperations = () => hasModuleAccess('planning_operations');
   const canManageNetworks = () => hasModuleAccess('maintenance_networks');
-  const canAccessAdvancedReports = () => hasModuleAccess('document_management');
-  const canUseIntegrations = () => hasModuleAccess('team_management');
+  const canAccessAdvancedReports = () => hasModuleAccess('advanced_reporting');
+  const canUseIntegrations = () => hasModuleAccess('external_integrations');
 
   return {
     modules,

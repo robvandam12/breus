@@ -1,45 +1,53 @@
 
-import { ReactNode } from "react";
-import { LucideIcon } from "lucide-react";
+import React from 'react';
+import { cn } from "@/lib/utils";
 
-interface MainLayoutProps {
-  title: string;
+export interface MainLayoutProps {
+  children: React.ReactNode;
+  title?: string;
   subtitle?: string;
-  icon?: LucideIcon;
-  headerChildren?: ReactNode;
-  children: ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  headerChildren?: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
 }
 
-export const MainLayout = ({ 
-  title, 
-  subtitle, 
-  icon: Icon, 
-  headerChildren, 
-  children 
-}: MainLayoutProps) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({
+  children,
+  title,
+  subtitle,
+  icon: Icon,
+  headerChildren,
+  className,
+  contentClassName
+}) => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {Icon && <Icon className="w-8 h-8 text-primary" />}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-                {subtitle && (
-                  <p className="text-gray-600 mt-1">{subtitle}</p>
-                )}
-              </div>
+    <div className={cn("min-h-screen bg-gray-50", className)}>
+      {(title || headerChildren) && (
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-6">
+              {title && (
+                <div className="flex items-center">
+                  {Icon && <Icon className="w-8 h-8 text-blue-600 mr-3" />}
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                    {subtitle && (
+                      <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {headerChildren && (
+                <div className="mt-4">{headerChildren}</div>
+              )}
             </div>
-            {headerChildren && (
-              <div className="flex items-center gap-3">
-                {headerChildren}
-              </div>
-            )}
           </div>
         </div>
+      )}
+      <main className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8", contentClassName)}>
         {children}
-      </div>
+      </main>
     </div>
   );
 };

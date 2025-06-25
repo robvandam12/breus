@@ -13,5 +13,11 @@ export const toast = ({ title, description, variant = "default" }: Toast) => {
 };
 
 export const useToast = () => {
-  return { toast };
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  return { 
+    toast,
+    toasts,
+    setToasts
+  };
 };

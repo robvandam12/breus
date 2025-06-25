@@ -1,37 +1,41 @@
 
+export interface EquipoBuceo {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  estado: string;
+  empresa_id: string;
+  tipo_empresa: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  miembros?: EquipoBuceoMiembro[];
+}
+
 export interface EquipoBuceoMiembro {
   id: string;
   equipo_id: string;
   usuario_id?: string;
-  nombre_completo: string;
+  rol_equipo: string;
+  disponible: boolean;
+  created_at: string;
+  rol?: string;
+  nombre_completo?: string;
+  matricula?: string;
+  invitado?: boolean;
+  estado_invitacion?: string;
   email?: string;
   telefono?: string;
-  rol: string;
-  matricula?: string;
-  invitado: boolean;
-  estado_invitacion?: string;
   usuario?: {
-    id: string;
     nombre: string;
     apellido: string;
     email: string;
   };
 }
 
-export interface EquipoBuceo {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  empresa_id: string;
-  tipo_empresa: string;
-  estado: string;
-  activo?: boolean;
-  miembros?: EquipoBuceoMiembro[];
-}
-
 export interface EquipoBuceoFormData {
   nombre: string;
-  descripcion?: string;
+  descripcion: string;
   empresa_id: string;
   tipo_empresa: string;
 }
@@ -54,20 +58,20 @@ export const useEquiposBuceo = () => {
     console.log('Deleting equipo:', id);
   };
 
-  const addMiembro = async (data: any) => {
-    console.log('Adding member:', data);
+  const addMiembro = async (equipoId: string, miembroData: Partial<EquipoBuceoMiembro>) => {
+    console.log('Adding member to equipo:', equipoId, miembroData);
   };
 
   const removeMiembro = async (equipoId: string, miembroId: string) => {
-    console.log('Removing member:', equipoId, miembroId);
+    console.log('Removing member from equipo:', equipoId, miembroId);
   };
 
   const updateMiembroRole = async (equipoId: string, miembroId: string, newRole: string) => {
     console.log('Updating member role:', equipoId, miembroId, newRole);
   };
 
-  const inviteMember = async (data: any) => {
-    console.log('Inviting member:', data);
+  const inviteMember = async (equipoId: string, email: string, rol: string) => {
+    console.log('Inviting member to equipo:', equipoId, email, rol);
   };
 
   return {

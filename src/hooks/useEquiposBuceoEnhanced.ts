@@ -1,9 +1,9 @@
 
-import { useEquiposBuceo, EquipoBuceoFormData } from './useEquiposBuceo';
+import { useEquiposBuceo } from './useEquiposBuceo';
 import { useOperationalFlow } from '@/contexts/OperationalFlowContext';
 import { useAuth } from '@/hooks/useAuth';
 
-export { EquipoBuceoFormData };
+export type { EquipoBuceoFormData } from './useEquiposBuceo';
 
 export const useEquiposBuceoEnhanced = () => {
   const equiposBasicos = useEquiposBuceo();

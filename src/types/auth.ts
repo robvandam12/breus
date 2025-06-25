@@ -22,6 +22,7 @@ export interface BitacoraBuzoData {
   // Datos del buzo
   buzo?: string;
   buzo_rut?: string;
+  buzo_nombre?: string; // Added missing property
   
   // Datos del supervisor
   supervisor_nombre?: string;
@@ -93,4 +94,25 @@ export interface BitacoraBuzoData {
   comentarios_aprobacion?: string;
   fecha_aprobacion?: string;
   aprobada_por?: string;
+}
+
+export interface SalmoneraFormData {
+  nombre: string;
+  rut: string;
+  direccion: string;
+  telefono?: string;
+  email?: string;
+  estado?: string;
+}
+
+export interface ContratistaFormData {
+  nombre: string;
+  rut: string;
+  direccion: string;
+  telefono?: string;
+  email?: string;
+  contacto_principal?: string;
+  certificaciones?: string[];
+  especialidades?: string[];
+  estado?: string; // Added missing property
 }

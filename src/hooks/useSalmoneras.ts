@@ -13,6 +13,15 @@ export interface Salmonera {
   updated_at: string;
 }
 
+export interface SalmoneraFormData {
+  nombre: string;
+  rut: string;
+  direccion: string;
+  telefono?: string;
+  email?: string;
+  estado?: string;
+}
+
 export const useSalmoneras = () => {
   // Mock data - replace with actual Supabase query
   const salmoneras: Salmonera[] = [];
