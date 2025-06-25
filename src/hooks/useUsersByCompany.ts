@@ -40,19 +40,32 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         throw new Error('Usuario sin empresa asociada');
       }
 
-      // Query principal con joins mejorado
-      let query = supabase
-        .from('usuario')
-        .select(`
-          *,
-          salmoneras!inner(nombre, rut)
-        `);
+      // Determinar el tipo de empresa del usuario actual
+      const userCompanyType = profile?.salmonera_id ? 'salmonera' : 'contratista';
+      const userCompanyId = profile?.salmonera_id || profile?.servicio_id;
 
-      // Si no se especifica empresa, usar la empresa del usuario actual
-      const targetEmpresaId = empresaId || profile?.salmonera_id || profile?.servicio_id;
-      const targetEmpresaTipo = empresaTipo || (profile?.salmonera_id ? 'salmonera' : 'contratista');
+      console.log('🎯 User company info:', { userCompanyType, userCompanyId });
 
-      console.log('🎯 Target empresa:', { targetEmpresaId, targetEmpresaTipo });
+      let query;
+
+      // Query principal con left joins para manejar ambos tipos de empresa
+      if (userCompanyType === 'salmonera' || profile?.role === 'superuser') {
+        // Para admin_salmonera y superuser: obtener usuarios con salmoneras
+        query = supabase
+          .from('usuario')
+          .select(`
+            *,
+            salmoneras!left(nombre, rut)
+          `);
+      } else {
+        // Para admin_servicio: obtener usuarios con contratistas
+        query = supabase
+          .from('usuario')
+          .select(`
+            *,
+            contratistas!left(nombre, rut)
+          `);
+      }
 
       // Aplicar filtros según el tipo de empresa y permisos
       if (profile?.role === 'superuser') {
@@ -90,16 +103,21 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         let empresaNombre = 'Sin asignar';
         let empresaTipoActual: 'salmonera' | 'contratista' = 'salmonera';
 
-        // Mejorar el manejo de datos de empresa
-        if (user.salmoneras && Array.isArray(user.salmoneras) && user.salmoneras.length > 0) {
-          empresaNombre = user.salmoneras[0].nombre;
+        // Mejorar el manejo de datos de empresa según el tipo de query
+        if (user.salmonera_id) {
           empresaTipoActual = 'salmonera';
-        } else if (user.salmonera_id) {
-          empresaNombre = 'Salmonera';
-          empresaTipoActual = 'salmonera';
+          if (user.salmoneras && user.salmoneras.nombre) {
+            empresaNombre = user.salmoneras.nombre;
+          } else {
+            empresaNombre = 'Salmonera';
+          }
         } else if (user.servicio_id) {
-          empresaNombre = 'Empresa de servicio';
           empresaTipoActual = 'contratista';
+          if (user.contratistas && user.contratistas.nombre) {
+            empresaNombre = user.contratistas.nombre;
+          } else {
+            empresaNombre = 'Empresa de servicio';
+          }
         }
 
         return {
