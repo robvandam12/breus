@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Users, Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useOperaciones } from '@/hooks/useOperaciones';
+import { useOperacionesQuery } from '@/hooks/useOperacionesQuery';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useSalmoneras } from '@/hooks/useSalmoneras';
 import { useSitios } from '@/hooks/useSitios';
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 export default function BuzoOperaciones() {
   const { profile } = useAuth();
-  const { operaciones } = useOperaciones();
+  const { data: operaciones = [] } = useOperacionesQuery();
   const { inmersiones } = useInmersiones();
   const { salmoneras } = useSalmoneras();
   const { sitios } = useSitios();

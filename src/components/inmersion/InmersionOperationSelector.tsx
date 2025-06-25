@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Anchor, Calendar, MapPin, Building, Users, AlertTriangle, CheckCircle } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperacionesQuery } from "@/hooks/useOperacionesQuery";
 import { useHPT } from "@/hooks/useHPT";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 
@@ -15,7 +15,7 @@ interface InmersionOperationSelectorProps {
 }
 
 export const InmersionOperationSelector = ({ onOperacionSelected, selectedOperacionId }: InmersionOperationSelectorProps) => {
-  const { operaciones, isLoading: operacionesLoading } = useOperaciones();
+  const { data: operaciones = [], isLoading: operacionesLoading } = useOperacionesQuery();
   const { hpts } = useHPT();
   const { anexosBravo } = useAnexoBravo();
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);

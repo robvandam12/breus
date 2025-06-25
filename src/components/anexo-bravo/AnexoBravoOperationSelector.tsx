@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Calendar, MapPin, Building, Users, AlertTriangle } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperacionesQuery } from "@/hooks/useOperacionesQuery";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
 
 interface AnexoBravoOperationSelectorProps {
@@ -14,7 +14,7 @@ interface AnexoBravoOperationSelectorProps {
 }
 
 export const AnexoBravoOperationSelector = ({ onOperacionSelected, selectedOperacionId }: AnexoBravoOperationSelectorProps) => {
-  const { operaciones, isLoading: operacionesLoading } = useOperaciones();
+  const { data: operaciones = [], isLoading: operacionesLoading } = useOperacionesQuery();
   const { anexosBravo, isLoading: anexosLoading } = useAnexoBravo();
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
 

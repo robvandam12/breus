@@ -1,24 +1,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOperacionesQuery } from "./useOperacionesQuery";
 
 export const useOperacionValidation = () => {
-  const { data: operacionesConDocumentos = [], isLoading } = useQuery({
-    queryKey: ['operaciones-con-documentos'],
-    queryFn: async () => {
-      console.log('Fetching operaciones con documentos...');
-      
-      const { data: operaciones, error: opError } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          salmoneras:salmonera_id (nombre, rut),
-          sitios:sitio_id (nombre, ubicacion),
-          contratistas:contratista_id (nombre, rut)
-        `)
-        .order('created_at', { ascending: false });
+  const { data: operaciones = [] } = useOperacionesQuery();
 
-      if (opError) throw opError;
+  const { data: operacionesConDocumentos = [], isLoading } = useQuery({
+    queryKey: ['operaciones-con-documentos', operaciones.length],
+    queryFn: async () => {
+      if (operaciones.length === 0) return [];
+
+      console.log('Fetching document status for operations...');
 
       // Para cada operación, verificar si tiene HPT y Anexo Bravo
       const operacionesConEstado = await Promise.all(
@@ -51,6 +44,7 @@ export const useOperacionValidation = () => {
 
       return operacionesConEstado;
     },
+    enabled: operaciones.length > 0,
   });
 
   const getOperacionesDisponiblesParaHPT = () => {

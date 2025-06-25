@@ -38,7 +38,7 @@ export const OperacionesManager = () => {
   // Transform operaciones to match expected interface
   const transformedOperaciones = filteredOperaciones.map(op => ({
     ...op,
-    tipo_trabajo: op.tareas || 'Sin especificar' // Add missing tipo_trabajo property
+    tipo_trabajo: op.tareas || 'Sin especificar'
   }));
 
   const handleViewDetail = (operacion: any) => {
@@ -48,7 +48,6 @@ export const OperacionesManager = () => {
 
   const handleEdit = async (operacion: any) => {
     try {
-      // Limpiar datos para enviar solo los campos válidos de la tabla operacion
       const cleanData = {
         codigo: operacion.codigo,
         nombre: operacion.nombre,
@@ -65,18 +64,13 @@ export const OperacionesManager = () => {
         supervisor_asignado_id: operacion.supervisor_asignado_id
       };
 
-      // Remover campos undefined o null
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key as keyof typeof cleanData] === undefined) {
           delete cleanData[key as keyof typeof cleanData];
         }
       });
 
-      console.log('Sending cleaned data to update:', cleanData);
-      
       await updateOperacion({ id: operacion.id, data: cleanData });
-      
-      // Refrescar los datos después de actualizar
       await refetch();
       
       toast({
@@ -95,8 +89,6 @@ export const OperacionesManager = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      console.log('Attempting to delete operation:', id);
-      
       const { canDelete, reason } = await checkCanDelete(id);
       
       if (!canDelete) {
@@ -109,16 +101,8 @@ export const OperacionesManager = () => {
       }
       
       await deleteOperacion(id);
-      
-      // Refrescar los datos después de eliminar
       await refetch();
       
-      toast({
-        title: "Operación eliminada",
-        description: "La operación ha sido eliminada exitosamente.",
-      });
-      
-      // Si el modal está abierto y es la operación eliminada, cerrarlo
       if (selectedOperacion?.id === id) {
         setShowDetailModal(false);
         setSelectedOperacion(null);
@@ -144,7 +128,6 @@ export const OperacionesManager = () => {
   };
 
   const handleViewDocuments = (operacion: any) => {
-    // TODO: Implement document view functionality
     console.log('View documents for operation:', operacion.id);
   };
   
