@@ -48,9 +48,9 @@ export const UniversalCompanySelector = ({
     }
 
     return (
-      <Card className={`border-blue-200 bg-blue-50 ${className}`}>
+      <Card className={`border-gray-200 bg-white ${className}`}>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-blue-800 text-sm">
+          <CardTitle className="flex items-center gap-2 text-gray-800 text-sm">
             {context.selectedCompany.tipo === 'salmonera' ? (
               <Building2 className="w-4 h-4" />
             ) : (
@@ -68,13 +68,13 @@ export const UniversalCompanySelector = ({
           </div>
           {context.selectedCompany.modulos.length > 0 && (
             <div className="mt-2">
-              <Label className="text-xs text-blue-700">Módulos activos:</Label>
+              <Label className="text-xs text-gray-600">Módulos activos:</Label>
               <div className="flex flex-wrap gap-1 mt-1">
                 {context.selectedCompany.modulos.map((modulo) => (
                   <Badge 
                     key={modulo} 
                     variant="outline" 
-                    className="text-xs bg-blue-100 text-blue-700 border-blue-200"
+                    className="text-xs bg-gray-50 text-gray-600 border-gray-200"
                   >
                     {getModuleDisplayName(modulo)}
                   </Badge>
@@ -89,26 +89,26 @@ export const UniversalCompanySelector = ({
 
   // Selector para superuser
   return (
-    <Card className={`border-yellow-200 bg-yellow-50 ${className}`}>
+    <Card className={`border-gray-200 bg-white ${className}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-yellow-800">
+        <CardTitle className="flex items-center gap-2 text-gray-800">
           <Crown className="w-5 h-5" />
           {title}
         </CardTitle>
         {description && (
-          <p className="text-sm text-yellow-700">{description}</p>
+          <p className="text-sm text-gray-600">{description}</p>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label className="text-sm font-medium text-yellow-800">
+          <Label className="text-sm font-medium text-gray-800">
             Empresa Destino {required && '*'}
           </Label>
           <Select 
             onValueChange={handleCompanyChange}
             value={context.selectedCompany?.id || ""}
           >
-            <SelectTrigger className="mt-2">
+            <SelectTrigger className="mt-2 border-gray-300">
               <SelectValue placeholder="Selecciona la empresa destino" />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +139,7 @@ export const UniversalCompanySelector = ({
         </div>
 
         {context.selectedCompany && (
-          <div className="p-3 bg-white rounded-lg border border-yellow-200">
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               {context.selectedCompany.tipo === 'salmonera' ? (
                 <Building2 className="w-4 h-4 text-blue-500" />
@@ -162,7 +162,7 @@ export const UniversalCompanySelector = ({
                     <Badge 
                       key={modulo} 
                       variant="outline" 
-                      className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                      className="text-xs bg-gray-50 text-gray-600 border-gray-200"
                     >
                       {getModuleDisplayName(modulo)}
                     </Badge>
@@ -174,9 +174,9 @@ export const UniversalCompanySelector = ({
         )}
 
         {required && !context.selectedCompany && (
-          <Alert className="border-yellow-300 bg-yellow-100">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
+          <Alert className="border-gray-300 bg-gray-50">
+            <AlertCircle className="h-4 w-4 text-gray-600" />
+            <AlertDescription className="text-gray-700">
               Debes seleccionar una empresa antes de continuar.
             </AlertDescription>
           </Alert>
