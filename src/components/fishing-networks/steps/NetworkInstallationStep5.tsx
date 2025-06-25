@@ -3,8 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import type { NetworkInstallationData } from '@/types/fishing-networks';
 
 interface NetworkInstallationStep5Props {
@@ -28,135 +27,103 @@ export const NetworkInstallationStep5 = ({
     { key: 'reinstalar_micropesos', label: 'Reinstalar micropesos' },
   ];
 
-  const addBuzo = () => {
-    const buzosExistentes = Object.keys(formData.cambio_pecera_buzos);
-    const nuevoBuzoNumber = buzosExistentes.length + 1;
-    const nuevoBuzoKey = `buzo_${nuevoBuzoNumber}`;
-    
+  const handleJaulaChange = (buzoNumero: string, jaula: string) => {
     updateFormData({
       cambio_pecera_buzos: {
         ...formData.cambio_pecera_buzos,
-        [nuevoBuzoKey]: {
-          jaula_numero: '',
+        [buzoNumero]: {
+          ...formData.cambio_pecera_buzos[buzoNumero],
+          jaula_numero: jaula,
+        }
+      }
+    });
+  };
+
+  const handleActividadChange = (buzoNumero: string, actividad: string, cantidad: number) => {
+    updateFormData({
+      cambio_pecera_buzos: {
+        ...formData.cambio_pecera_buzos,
+        [buzoNumero]: {
+          ...formData.cambio_pecera_buzos[buzoNumero],
+          jaula_numero: formData.cambio_pecera_buzos[buzoNumero]?.jaula_numero || '',
           actividades: {
-            soltar_tensores: 0,
-            descosturar_extractor: 0,
-            liberar_micropesos: 0,
-            reconectar_tensores: 0,
-            reinstalar_tensores: 0,
-            costurar_extractor: 0,
-            reinstalar_micropesos: 0,
+            ...formData.cambio_pecera_buzos[buzoNumero]?.actividades,
+            [actividad]: cantidad,
           }
         }
       }
     });
   };
 
-  const removeBuzo = (buzoKey: string) => {
-    const newBuzos = { ...formData.cambio_pecera_buzos };
-    delete newBuzos[buzoKey];
-    updateFormData({
-      cambio_pecera_buzos: newBuzos
-    });
-  };
-
-  const updateBuzoJaula = (buzoKey: string, jaula: string) => {
-    updateFormData({
-      cambio_pecera_buzos: {
-        ...formData.cambio_pecera_buzos,
-        [buzoKey]: {
-          ...formData.cambio_pecera_buzos[buzoKey],
-          jaula_numero: jaula
-        }
+  const getBuzoData = (buzoNumero: string) => {
+    return formData.cambio_pecera_buzos[buzoNumero] || {
+      jaula_numero: '',
+      actividades: {
+        soltar_tensores: 0,
+        descosturar_extractor: 0,
+        liberar_micropesos: 0,
+        reconectar_tensores: 0,
+        reinstalar_tensores: 0,
+        costurar_extractor: 0,
+        reinstalar_micropesos: 0,
       }
-    });
+    };
   };
-
-  const updateBuzoActividad = (buzoKey: string, actividad: string, cantidad: number) => {
-    updateFormData({
-      cambio_pecera_buzos: {
-        ...formData.cambio_pecera_buzos,
-        [buzoKey]: {
-          ...formData.cambio_pecera_buzos[buzoKey],
-          actividades: {
-            ...formData.cambio_pecera_buzos[buzoKey].actividades,
-            [actividad]: cantidad
-          }
-        }
-      }
-    });
-  };
-
-  const buzos = Object.entries(formData.cambio_pecera_buzos);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Cambio de Pecera - Tareas por Buzo
-            </CardTitle>
-            {!readOnly && (
-              <Button onClick={addBuzo} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Buzo
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {buzos.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No hay buzos agregados. Haga clic en "Agregar Buzo" para comenzar.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {buzos.map(([buzoKey, buzoData], index) => (
-                <Card key={buzoKey} className="border-l-4 border-l-blue-500">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          Cambio de Pecera - Tareas por Buzo
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <p className="text-sm text-gray-600">
+            Registre las actividades realizadas por cada buzo en el cambio de pecera, 
+            indicando la jaula y la cantidad de cada actividad.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((buzoNum) => {
+              const buzoNumero = `buzo_${buzoNum}`;
+              const buzoData = getBuzoData(buzoNumero);
+
+              return (
+                <Card key={buzoNum} className="border-gray-200">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Buzo #{index + 1}</h4>
-                      {!readOnly && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeBuzo(buzoKey)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+                    <CardTitle className="text-lg">Buzo N° {buzoNum}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Jaula (o) N°</Label>
+                      <Label htmlFor={`jaula_${buzoNum}`} className="text-sm font-medium">
+                        Jaula N°
+                      </Label>
                       <Input
-                        value={buzoData.jaula_numero}
-                        onChange={(e) => updateBuzoJaula(buzoKey, e.target.value)}
+                        id={`jaula_${buzoNum}`}
                         placeholder="Número de jaula"
+                        value={buzoData.jaula_numero}
+                        onChange={(e) => handleJaulaChange(buzoNumero, e.target.value)}
                         disabled={readOnly}
                       />
                     </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium mb-3 block">
-                        Actividades y Cantidades
-                      </Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Actividades (cantidad)</Label>
+                      <div className="grid grid-cols-1 gap-3">
                         {actividades.map((actividad) => (
-                          <div key={actividad.key} className="flex items-center space-x-3">
-                            <Label className="flex-1 text-sm">
+                          <div key={actividad.key} className="flex items-center justify-between">
+                            <Label htmlFor={`${buzoNumero}_${actividad.key}`} className="text-sm">
                               {actividad.label}
                             </Label>
                             <Input
+                              id={`${buzoNumero}_${actividad.key}`}
                               type="number"
                               min="0"
-                              value={buzoData.actividades[actividad.key as keyof typeof buzoData.actividades]}
-                              onChange={(e) => updateBuzoActividad(buzoKey, actividad.key, Number(e.target.value))}
                               className="w-20"
+                              value={buzoData.actividades[actividad.key as keyof typeof buzoData.actividades] || 0}
+                              onChange={(e) => handleActividadChange(buzoNumero, actividad.key, parseInt(e.target.value) || 0)}
                               disabled={readOnly}
                             />
                           </div>
@@ -165,19 +132,24 @@ export const NetworkInstallationStep5 = ({
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </div>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <p className="text-sm text-blue-700">
-          <strong>Instrucciones:</strong> Agregue los buzos que participaron en el cambio de pecera. 
-          Para cada buzo, especifique la jaula donde trabajó y las cantidades de cada actividad realizada.
-        </p>
-      </div>
-    </div>
+          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Users className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Información de Registro</p>
+                <p className="text-sm text-yellow-700">
+                  Complete solo los buzos que participaron en actividades de cambio de pecera. 
+                  Los campos sin completar se considerarán como no realizados.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
-

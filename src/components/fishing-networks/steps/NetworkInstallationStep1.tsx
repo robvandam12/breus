@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Settings, Network } from "lucide-react";
+import { Network } from "lucide-react";
 import type { NetworkInstallationData } from '@/types/fishing-networks';
 
 interface NetworkInstallationStep1Props {
@@ -17,107 +17,118 @@ export const NetworkInstallationStep1 = ({
   updateFormData, 
   readOnly = false 
 }: NetworkInstallationStep1Props) => {
-  const handleSelectionChange = (field: keyof typeof formData.seleccion_inicial, value: boolean) => {
+  const handleRedChange = (type: 'red_lober' | 'red_pecera', checked: boolean) => {
     updateFormData({
       seleccion_inicial: {
         ...formData.seleccion_inicial,
-        [field]: value
+        [type]: checked
+      }
+    });
+  };
+
+  const handleFaenaChange = (type: 'faena_instalacion' | 'faena_cambio' | 'faena_retiro', checked: boolean) => {
+    updateFormData({
+      seleccion_inicial: {
+        ...formData.seleccion_inicial,
+        [type]: checked
       }
     });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Selección de Red */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Network className="w-4 h-4" />
-            Tipo de Red
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="red_lober"
-                checked={formData.seleccion_inicial.red_lober}
-                onCheckedChange={(checked) => handleSelectionChange('red_lober', checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor="red_lober" className="text-sm font-medium">
-                Lober
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="red_pecera"
-                checked={formData.seleccion_inicial.red_pecera}
-                onCheckedChange={(checked) => handleSelectionChange('red_pecera', checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor="red_pecera" className="text-sm font-medium">
-                Pecera
-              </Label>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tipo de Faena */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className="w-4 h-4" />
-            Tipo de Faena
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="faena_instalacion"
-                checked={formData.seleccion_inicial.faena_instalacion}
-                onCheckedChange={(checked) => handleSelectionChange('faena_instalacion', checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor="faena_instalacion" className="text-sm font-medium">
-                Instalación
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="faena_cambio"
-                checked={formData.seleccion_inicial.faena_cambio}
-                onCheckedChange={(checked) => handleSelectionChange('faena_cambio', checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor="faena_cambio" className="text-sm font-medium">
-                Cambio
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="faena_retiro"
-                checked={formData.seleccion_inicial.faena_retiro}
-                onCheckedChange={(checked) => handleSelectionChange('faena_retiro', checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor="faena_retiro" className="text-sm font-medium">
-                Retiro
-              </Label>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Network className="w-5 h-5" />
+          Selección Inicial
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tipo de Red */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Tipo de Red</h3>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="red_lober"
+                  checked={formData.seleccion_inicial.red_lober}
+                  onCheckedChange={(checked) => handleRedChange('red_lober', checked as boolean)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="red_lober" className="text-sm font-medium">
+                  Lober
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="red_pecera"
+                  checked={formData.seleccion_inicial.red_pecera}
+                  onCheckedChange={(checked) => handleRedChange('red_pecera', checked as boolean)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="red_pecera" className="text-sm font-medium">
+                  Pecera
+                </Label>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <p className="text-sm text-blue-700">
-          <strong>Instrucciones:</strong> Seleccione el tipo de red y la faena que se realizará. 
-          Debe seleccionar al menos una opción de cada categoría para continuar.
-        </p>
-      </div>
-    </div>
+          {/* Tipo de Faena */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Tipo de Faena</h3>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="faena_instalacion"
+                  checked={formData.seleccion_inicial.faena_instalacion}
+                  onCheckedChange={(checked) => handleFaenaChange('faena_instalacion', checked as boolean)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="faena_instalacion" className="text-sm font-medium">
+                  Instalación
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="faena_cambio"
+                  checked={formData.seleccion_inicial.faena_cambio}
+                  onCheckedChange={(checked) => handleFaenaChange('faena_cambio', checked as boolean)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="faena_cambio" className="text-sm font-medium">
+                  Cambio
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="faena_retiro"
+                  checked={formData.seleccion_inicial.faena_retiro}
+                  onCheckedChange={(checked) => handleFaenaChange('faena_retiro', checked as boolean)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="faena_retiro" className="text-sm font-medium">
+                  Retiro
+                </Label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Validación visual */}
+        <div className="space-y-2">
+          {(!formData.seleccion_inicial.red_lober && !formData.seleccion_inicial.red_pecera) && (
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              ⚠️ Debe seleccionar al menos un tipo de red
+            </div>
+          )}
+          {(!formData.seleccion_inicial.faena_instalacion && !formData.seleccion_inicial.faena_cambio && !formData.seleccion_inicial.faena_retiro) && (
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              ⚠️ Debe seleccionar al menos un tipo de faena
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
-

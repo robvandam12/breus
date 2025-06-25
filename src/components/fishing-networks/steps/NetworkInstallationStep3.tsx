@@ -3,8 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Network } from "lucide-react";
+import { Anchor } from "lucide-react";
 import type { NetworkInstallationData } from '@/types/fishing-networks';
 
 interface NetworkInstallationStep3Props {
@@ -44,61 +43,71 @@ export const NetworkInstallationStep3 = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Network className="w-5 h-5" />
+          <Anchor className="w-5 h-5" />
           Instalación de Loberos / Peceras
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <p className="text-sm text-gray-600">
             Ingrese los números de jaula para cada combinación de sección y franja. 
-            Puede usar formatos como "1, 2, 3" o "1-5" según corresponda.
+            Puede usar múltiples jaulas separadas por comas (ej: "1, 3, 5").
           </p>
 
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-64">Sección</TableHead>
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-300 p-3 text-left font-medium">
+                    Sección
+                  </th>
                   {franjas.map((franja) => (
-                    <TableHead key={franja} className="text-center min-w-32">
+                    <th key={franja} className="border border-gray-300 p-3 text-center font-medium min-w-[120px]">
                       {franja}
-                    </TableHead>
+                    </th>
                   ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                </tr>
+              </thead>
+              <tbody>
                 {secciones.map((seccion) => (
-                  <TableRow key={seccion.key}>
-                    <TableCell className="font-medium">
+                  <tr key={seccion.key} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 p-3 font-medium bg-gray-25">
                       {seccion.label}
-                    </TableCell>
+                    </td>
                     {franjas.map((franja) => (
-                      <TableCell key={franja}>
+                      <td key={franja} className="border border-gray-300 p-2">
                         <Input
-                          placeholder="Jaula N° ..."
+                          placeholder="Jaula N°..."
                           value={formData.instalacion_redes[seccion.key as keyof typeof formData.instalacion_redes]?.[franja] || ''}
                           onChange={(e) => handleInputChange(seccion.key, franja, e.target.value)}
                           disabled={readOnly}
-                          className="text-center"
+                          className="text-center text-sm"
                         />
-                      </TableCell>
+                      </td>
                     ))}
-                  </TableRow>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-blue-700">
-              <strong>Ejemplo:</strong> Para la jaula número 1, escriba "1". Para múltiples jaulas, 
-              use "1, 2, 3" o "1-3". Deje en blanco las celdas que no apliquen.
-            </p>
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Anchor className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">Referencia de Franjas</p>
+                <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                  <li><strong>TC</strong> = Tapa Cabecera</li>
+                  <li><strong>FCD</strong> = Franja Central Doble</li>
+                  <li><strong>FCS</strong> = Franja Central Simple</li>
+                  <li><strong>MA</strong> = Franja Mangampo</li>
+                  <li><strong>Pecera</strong> = Red Pecera</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 };
-

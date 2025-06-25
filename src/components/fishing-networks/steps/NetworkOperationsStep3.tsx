@@ -18,7 +18,7 @@ export const NetworkOperationsStep3 = ({
   updateFormData, 
   readOnly = false 
 }: NetworkOperationsStep3Props) => {
-  const handleEquipoChange = (field: keyof typeof formData.equipo_inmersion, value: string | number) => {
+  const handleInputChange = (field: keyof typeof formData.equipo_inmersion, value: string | number) => {
     updateFormData({
       equipo_inmersion: {
         ...formData.equipo_inmersion,
@@ -35,96 +35,107 @@ export const NetworkOperationsStep3 = ({
           Equipo de Inmersión
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Tipo de Equipo */}
-        <div className="space-y-3">
-          <Label className="text-base font-medium">Tipo de Equipo</Label>
-          <RadioGroup
-            value={formData.equipo_inmersion.equipo}
-            onValueChange={(value) => handleEquipoChange('equipo', value as 'liviano' | 'mediano')}
-            disabled={readOnly}
-            className="flex flex-row space-x-6"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="liviano" id="liviano" />
-              <Label htmlFor="liviano">Liviano</Label>
+      <CardContent>
+        <div className="space-y-6">
+          <div>
+            <Label className="text-base font-medium mb-3 block">Tipo de Equipo</Label>
+            <RadioGroup
+              value={formData.equipo_inmersion.equipo}
+              onValueChange={(value) => handleInputChange('equipo', value as 'liviano' | 'mediano')}
+              disabled={readOnly}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="liviano" id="liviano" />
+                <Label htmlFor="liviano">Liviano</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="mediano" id="mediano" />
+                <Label htmlFor="mediano">Mediano</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="hora_inicio">Hora inicio</Label>
+                <Input
+                  id="hora_inicio"
+                  type="time"
+                  value={formData.equipo_inmersion.hora_inicio}
+                  onChange={(e) => handleInputChange('hora_inicio', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="hora_termino">Hora término</Label>
+                <Input
+                  id="hora_termino"
+                  type="time"
+                  value={formData.equipo_inmersion.hora_termino}
+                  onChange={(e) => handleInputChange('hora_termino', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="profundidad">Profundidad (m)</Label>
+                <Input
+                  id="profundidad"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={formData.equipo_inmersion.profundidad}
+                  onChange={(e) => handleInputChange('profundidad', parseFloat(e.target.value) || 0)}
+                  disabled={readOnly}
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="mediano" id="mediano" />
-              <Label htmlFor="mediano">Mediano</Label>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="horometro_inicio">Horómetro inicio</Label>
+                <Input
+                  id="horometro_inicio"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={formData.equipo_inmersion.horometro_inicio}
+                  onChange={(e) => handleInputChange('horometro_inicio', parseFloat(e.target.value) || 0)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="horometro_termino">Horómetro término</Label>
+                <Input
+                  id="horometro_termino"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={formData.equipo_inmersion.horometro_termino}
+                  onChange={(e) => handleInputChange('horometro_termino', parseFloat(e.target.value) || 0)}
+                  disabled={readOnly}
+                />
+              </div>
             </div>
-          </RadioGroup>
-        </div>
+          </div>
 
-        {/* Horarios */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="hora_inicio">Hora inicio</Label>
-            <Input
-              id="hora_inicio"
-              type="time"
-              value={formData.equipo_inmersion.hora_inicio}
-              onChange={(e) => handleEquipoChange('hora_inicio', e.target.value)}
-              disabled={readOnly}
-            />
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">Información del Equipo</p>
+                <p className="text-sm text-blue-700">
+                  Registre los datos del equipo de inmersión utilizado durante la faena, 
+                  incluyendo horarios, profundidad y lecturas del horómetro.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="hora_termino">Hora término</Label>
-            <Input
-              id="hora_termino"
-              type="time"
-              value={formData.equipo_inmersion.hora_termino}
-              onChange={(e) => handleEquipoChange('hora_termino', e.target.value)}
-              disabled={readOnly}
-            />
-          </div>
-        </div>
-
-        {/* Mediciones */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="profundidad">Profundidad (m)</Label>
-            <Input
-              id="profundidad"
-              type="number"
-              value={formData.equipo_inmersion.profundidad}
-              onChange={(e) => handleEquipoChange('profundidad', Number(e.target.value))}
-              min="0"
-              disabled={readOnly}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="horometro_inicio">Horómetro inicio</Label>
-            <Input
-              id="horometro_inicio"
-              type="number"
-              value={formData.equipo_inmersion.horometro_inicio}
-              onChange={(e) => handleEquipoChange('horometro_inicio', Number(e.target.value))}
-              min="0"
-              disabled={readOnly}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="horometro_termino">Horómetro término</Label>
-            <Input
-              id="horometro_termino"
-              type="number"
-              value={formData.equipo_inmersion.horometro_termino}
-              onChange={(e) => handleEquipoChange('horometro_termino', Number(e.target.value))}
-              min="0"
-              disabled={readOnly}
-            />
-          </div>
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-blue-700">
-            <strong>Información:</strong> Registre los datos del equipo de inmersión utilizado durante la faena. 
-            Los horómetros deben registrar las horas de funcionamiento del equipo.
-          </p>
         </div>
       </CardContent>
     </Card>
   );
 };
-
