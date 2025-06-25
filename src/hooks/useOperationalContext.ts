@@ -20,6 +20,16 @@ export const useOperationalContext = () => {
   const { profile } = useAuth();
   const { hasModuleAccess, modules } = useModularSystem();
 
+  // Obtener el tipo de contexto por defecto según la empresa
+  const getDefaultContextType = (companyType: 'salmonera' | 'contratista'): 'planned' | 'direct' | 'mixed' => {
+    const hasPlanningModule = hasModuleAccess(modules.PLANNING_OPERATIONS);
+    
+    if (hasPlanningModule) {
+      return 'mixed'; // Con planning, permitir ambos modos
+    }
+    return 'direct'; // Sin planning, solo modo directo
+  };
+
   const { data: operationalContext, isLoading } = useQuery({
     queryKey: ['operational-context', profile?.salmonera_id || profile?.servicio_id],
     queryFn: async () => {
@@ -64,16 +74,6 @@ export const useOperationalContext = () => {
     },
     enabled: !!(profile?.salmonera_id || profile?.servicio_id),
   });
-
-  // Obtener el tipo de contexto por defecto según la empresa
-  const getDefaultContextType = (companyType: 'salmonera' | 'contratista'): 'planned' | 'direct' | 'mixed' => {
-    const hasPlanningModule = hasModuleAccess(modules.PLANNING_OPERATIONS);
-    
-    if (hasPlanningModule) {
-      return 'mixed'; // Con planning, permitir ambos modos
-    }
-    return 'direct'; // Sin planning, solo modo directo
-  };
 
   // FUNCIONALIDADES CORE - Siempre disponibles
   const canCreateDirectImmersions = (): boolean => {
