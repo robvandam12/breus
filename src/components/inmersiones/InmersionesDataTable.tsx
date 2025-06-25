@@ -57,7 +57,7 @@ export const InmersionesDataTable = () => {
 
   const getContextInfo = () => {
     const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
-    const canCreateDirect = capacidades.puedeCrearInmersiones;
+    const canCreateDirect = capacidades.puedeCrearInmersionesDirectas;
 
     if (hasPlanning && canCreateDirect) {
       return {
@@ -74,7 +74,7 @@ export const InmersionesDataTable = () => {
     } else if (!hasPlanning && canCreateDirect) {
       return {
         type: 'direct-only',
-        message: 'Creación directa de inmersiones habilitada. El módulo de planificación no está activo',
+        message: 'Inmersiones directas disponibles. El módulo de planificación no está activo',
         variant: 'default' as const
       };
     } else {
@@ -156,17 +156,20 @@ export const InmersionesDataTable = () => {
               Inmersiones ({filteredInmersiones.length})
             </CardTitle>
             <div className="flex gap-2">
-              {capacidades.puedeCrearInmersiones && (
+              {/* CORE: Siempre mostrar botón de nueva inmersión directa */}
+              {capacidades.puedeCrearInmersionesDirectas && (
                 <Button className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   Nueva Inmersión
                 </Button>
               )}
-              {/* Botón "Desde Operación" siempre disponible - CORREGIDO */}
-              <Button variant="outline" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Desde Operación
-              </Button>
+              {/* PLANNING: Solo mostrar si módulo está activo */}
+              {capacidades.puedeCrearOperaciones && (
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Desde Operación
+                </Button>
+              )}
             </div>
           </div>
           

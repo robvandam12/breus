@@ -37,15 +37,21 @@ export const useOperationalContext = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      // Si no existe contexto, crear uno por defecto
+      // Si no existe contexto, crear uno por defecto adaptivo
       if (!data) {
+        const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
+        
         const defaultContext = {
           company_id: companyId,
           company_type: companyType,
-          context_type: companyType === 'salmonera' ? 'planned' : 'direct',
-          requires_planning: companyType === 'salmonera',
-          requires_documents: companyType === 'salmonera',
-          allows_direct_operations: companyType === 'contratista',
+          // Contexto adaptivo según módulos disponibles
+          context_type: hasPlanning ? 'mixed' : 'direct',
+          // Permitir operaciones directas por defecto (funcionalidad core)
+          allows_direct_operations: true,
+          // Planning solo si módulo está activo
+          requires_planning: hasPlanning && companyType === 'salmonera',
+          // Documentos solo si tiene planning y es salmonera
+          requires_documents: hasPlanning && companyType === 'salmonera',
           active_modules: ['core_immersions'],
           configuration: {},
         };
@@ -65,64 +71,67 @@ export const useOperationalContext = () => {
     enabled: !!(profile?.salmonera_id || profile?.servicio_id),
   });
 
-  // Validaciones contextuales
+  // CORE: Inmersiones directas siempre permitidas (funcionalidad base)
   const canCreateDirectImmersions = () => {
-    if (!operationalContext) return false;
-    return operationalContext.allows_direct_operations || 
-           hasModuleAccess(modules.PLANNING_OPERATIONS);
+    // La funcionalidad core de inmersiones no depende de planning
+    return true;
   };
 
+  // PLANNING: Documentos solo requeridos si módulo está activo
   const requiresDocuments = () => {
     if (!operationalContext) return false;
     return operationalContext.requires_documents && 
            hasModuleAccess(modules.PLANNING_OPERATIONS);
   };
 
+  // PLANNING: Planificación solo requerida si módulo está activo
   const requiresPlanning = () => {
     if (!operationalContext) return false;
     return operationalContext.requires_planning && 
            hasModuleAccess(modules.PLANNING_OPERATIONS);
   };
 
+  // Tipo de workflow adaptivo según módulos activos
   const getWorkflowType = (): 'planned' | 'direct' | 'mixed' => {
+    const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
+    
+    if (!hasPlanning) return 'direct'; // Sin planning, solo directo (core)
     if (!operationalContext) return 'direct';
     
-    const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
-    const allowsDirect = operationalContext.allows_direct_operations;
-    
-    if (hasPlanning && allowsDirect) return 'mixed';
-    if (hasPlanning && !allowsDirect) return 'planned';
-    return 'direct';
+    // Con planning, revisar configuración
+    if (operationalContext.allows_direct_operations) return 'mixed';
+    return 'planned';
   };
 
+  // Validaciones contextuales sin dependencias circulares
   const validateOperationDependencies = (operationType: string) => {
-    const workflow = getWorkflowType();
+    const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
     
     switch (operationType) {
       case 'create_immersion':
+        // CORE: Inmersiones siempre permitidas
         return {
-          canProceed: canCreateDirectImmersions(),
-          missingRequirements: !canCreateDirectImmersions() 
-            ? ['Módulo de planificación o contexto operativo directo'] 
-            : [],
-          warnings: workflow === 'mixed' 
-            ? ['Puedes crear inmersiones directas o planificadas'] 
-            : []
+          canProceed: true,
+          missingRequirements: [],
+          warnings: []
         };
       
       case 'create_operation':
+        // PLANNING: Solo con módulo activo
         return {
-          canProceed: hasModuleAccess(modules.PLANNING_OPERATIONS),
-          missingRequirements: !hasModuleAccess(modules.PLANNING_OPERATIONS)
-            ? ['Módulo de planificación de operaciones']
+          canProceed: hasPlanning,
+          missingRequirements: !hasPlanning 
+            ? ['Módulo de planificación de operaciones'] 
             : [],
           warnings: []
         };
       
       case 'create_maintenance_form':
+        // MAINTENANCE: Solo con módulo activo
+        const hasMaintenance = hasModuleAccess(modules.MAINTENANCE_NETWORKS);
         return {
-          canProceed: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
-          missingRequirements: !hasModuleAccess(modules.MAINTENANCE_NETWORKS)
+          canProceed: hasMaintenance,
+          missingRequirements: !hasMaintenance
             ? ['Módulo de mantención de redes']
             : [],
           warnings: []
@@ -133,10 +142,24 @@ export const useOperationalContext = () => {
     }
   };
 
+  // Verificar si se puede crear una inmersión planificada (requiere planning)
+  const canCreatePlannedImmersion = () => {
+    return hasModuleAccess(modules.PLANNING_OPERATIONS);
+  };
+
+  // Verificar si se puede acceder a documentos (requiere planning)
+  const canAccessDocuments = () => {
+    return hasModuleAccess(modules.PLANNING_OPERATIONS);
+  };
+
   return {
     operationalContext,
     isLoading,
+    // CORE: Funcionalidad siempre disponible
     canCreateDirectImmersions,
+    // PLANNING: Funcionalidad condicional
+    canCreatePlannedImmersion,
+    canAccessDocuments,
     requiresDocuments,
     requiresPlanning,
     getWorkflowType,

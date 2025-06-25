@@ -63,12 +63,23 @@ export const useInmersionesContextual = () => {
     enProceso: inmersiones?.filter(i => i.estado === 'en_proceso').length || 0,
   };
 
-  // Verificar capacidades según módulos activos
+  // Capacidades contextuales por módulos
   const capacidades = {
-    puedeCrearInmersiones: canCreateDirectImmersions(),
+    // CORE: Siempre disponible
+    puedeCrearInmersionesDirectas: canCreateDirectImmersions(),
+    puedeCrearBitacoras: true, // Core siempre disponible
+    
+    // PLANNING: Condicional
     puedeCrearOperaciones: hasModuleAccess(modules.PLANNING_OPERATIONS),
+    
+    // MAINTENANCE: Condicional
     puedeCrearFormulariosMantencion: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
+    
+    // REPORTING: Condicional
     puedeAccederReportesAvanzados: hasModuleAccess(modules.ADVANCED_REPORTING),
+    
+    // INTEGRATIONS: Condicional
+    puedeUsarIntegraciones: hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
   };
 
   return {
@@ -77,6 +88,7 @@ export const useInmersionesContextual = () => {
     estadisticas,
     capacidades,
     operationalContext,
-    canCreateDirectImmersion: canCreateDirectImmersions,
+    // Mantener compatibilidad hacia atrás
+    canCreateDirectImmersion: canCreateDirectImmersions(),
   };
 };
