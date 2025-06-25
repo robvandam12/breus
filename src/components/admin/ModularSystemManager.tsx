@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,14 +68,19 @@ export const ModularSystemManager = () => {
     if (!selectedCompany) return;
 
     try {
-      await toggleModule(moduleName);
+      await toggleModule({
+        companyId: selectedCompany,
+        companyType: selectedCompanyType,
+        moduleName,
+        isActive: !isActive
+      });
     } catch (error) {
       console.error('Error toggling module:', error);
     }
   };
 
   const isModuleActiveForCompany = (moduleName: string) => {
-    return activeModules.some(module => module.name === moduleName);
+    return activeModules.some(module => module.module_name === moduleName);
   };
 
   const companies = selectedCompanyType === 'salmonera' ? salmoneras : contratistas;
@@ -197,7 +201,7 @@ export const ModularSystemManager = () => {
                         <p className="text-sm text-gray-600 mt-1">
                           {module.description}
                         </p>
-                        {module.dependencies && module.dependencies.length > 0 && (
+                        {module.dependencies.length > 0 && (
                           <p className="text-xs text-gray-500 mt-2">
                             Dependencias: {module.dependencies.join(', ')}
                           </p>

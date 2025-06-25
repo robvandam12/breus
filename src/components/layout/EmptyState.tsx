@@ -1,35 +1,47 @@
 
-import { LucideIcon } from "lucide-react";
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  icon: React.ElementType;
   title: string;
   description: string;
   actionText?: string;
   onAction?: () => void;
-  actionIcon?: LucideIcon;
+  actionIcon?: React.ElementType;
+  className?: string;
 }
 
-export const EmptyState = ({ 
-  icon: Icon, 
-  title, 
-  description, 
-  actionText, 
-  onAction, 
-  actionIcon: ActionIcon 
-}: EmptyStateProps) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({
+  icon: Icon,
+  title,
+  description,
+  actionText,
+  onAction,
+  actionIcon: ActionIcon,
+  className = ""
+}) => {
   return (
-    <div className="text-center py-12">
-      <Icon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-6 max-w-md mx-auto">{description}</p>
-      {actionText && onAction && (
-        <Button onClick={onAction} className="inline-flex items-center">
-          {ActionIcon && <ActionIcon className="w-4 h-4 mr-2" />}
-          {actionText}
-        </Button>
-      )}
-    </div>
+    <Card className={`text-center py-12 ${className}`}>
+      <CardContent>
+        <Icon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">
+          {title}
+        </h3>
+        <p className="text-muted-foreground mb-4">
+          {description}
+        </p>
+        {actionText && onAction && (
+          <Button 
+            onClick={onAction}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {ActionIcon && <ActionIcon className="w-4 h-4 mr-2" />}
+            {actionText}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };

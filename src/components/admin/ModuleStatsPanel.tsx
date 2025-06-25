@@ -45,24 +45,15 @@ export const ModuleStatsPanel = () => {
   const processedStats = React.useMemo(() => {
     if (!usageStats) return null;
 
-    const totalUsage = usageStats.reduce((acc, stat) => {
-      const usageCount = typeof stat.usage_count === 'number' ? stat.usage_count : 0;
-      return acc + usageCount;
-    }, 0);
-    
+    const totalUsage = usageStats.reduce((acc, stat) => acc + stat.usage_count, 0);
     const avgDailyUsage = usageStats.length > 0 ? totalUsage / usageStats.length : 0;
     
     const usageByModule = usageStats.reduce((acc, stat) => {
-      const moduleName = stat.module_name || 'unknown';
-      const usageCount = typeof stat.usage_count === 'number' ? stat.usage_count : 0;
-      acc[moduleName] = (acc[moduleName] || 0) + usageCount;
+      acc[stat.module_name] = (acc[stat.module_name] || 0) + stat.usage_count;
       return acc;
     }, {} as Record<string, number>);
 
-    const activeUsers = usageStats.reduce((acc, stat) => {
-      const activeUserCount = typeof stat.active_users === 'number' ? stat.active_users : 0;
-      return acc + activeUserCount;
-    }, 0);
+    const activeUsers = usageStats.reduce((acc, stat) => acc + stat.active_users, 0);
 
     return {
       totalUsage,
@@ -187,10 +178,11 @@ export const ModuleStatsPanel = () => {
                         {log.action === 'activated' ? 'Activado' :
                          log.action === 'deactivated' ? 'Desactivado' : 'Configurado'}
                       </Badge>
-                      <span className="font-medium">{log.module_name || 'Módulo desconocido'}</span>
+                      <span className="font-medium">{log.module_name}</span>
                     </div>
                     <p className="text-sm text-gray-600">
                       {log.company_type === 'salmonera' ? 'Salmonera' : 'Contratista'}: 
+                      {/* Aquí deberías obtener el nombre de la empresa */}
                       {log.company_id}
                     </p>
                     {log.reason && (

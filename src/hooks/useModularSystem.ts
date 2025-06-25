@@ -1,127 +1,201 @@
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+
+export interface SystemModule {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  category: 'planning' | 'operational' | 'reporting' | 'integration';
+  dependencies: string[];
+  version: string;
+  is_core: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyModule {
+  id: string;
+  company_id: string;
+  company_type: 'salmonera' | 'contratista';
+  module_name: string;
+  is_active: boolean;
+  activated_by?: string;
+  activated_at?: string;
+  deactivated_at?: string;
+  configuration: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActiveModule {
+  module_name: string;
+  display_name: string;
+  description: string;
+  category: string;
+  configuration: any;
+}
+
 export const useModularSystem = () => {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Los superusers tienen acceso completo automáticamente
+  const isSuperuser = profile?.role === 'superuser';
+
+  // Obtener todos los módulos del sistema
+  const { data: systemModules = [], isLoading: loadingSystemModules } = useQuery({
+    queryKey: ['system-modules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('system_modules')
+        .select('*')
+        .order('category, display_name');
+
+      if (error) throw error;
+      return data as SystemModule[];
+    },
+  });
+
+  // Obtener módulos activos para la empresa del usuario
+  const { data: activeModules = [], isLoading: loadingActiveModules } = useQuery({
+    queryKey: ['active-modules', profile?.salmonera_id || profile?.servicio_id],
+    queryFn: async () => {
+      // Si es superuser, devolver todos los módulos como activos
+      if (isSuperuser) {
+        return systemModules.map(module => ({
+          module_name: module.name,
+          display_name: module.display_name,
+          description: module.description,
+          category: module.category,
+          configuration: {}
+        })) as ActiveModule[];
+      }
+
+      if (!profile?.salmonera_id && !profile?.servicio_id) return [];
+      
+      const companyId = profile.salmonera_id || profile.servicio_id;
+      const companyType = profile.salmonera_id ? 'salmonera' : 'contratista';
+      
+      const { data, error } = await supabase
+        .rpc('get_company_active_modules', {
+          p_company_id: companyId,
+          p_company_type: companyType
+        });
+
+      if (error) throw error;
+      return data as ActiveModule[];
+    },
+    enabled: !!(profile?.salmonera_id || profile?.servicio_id || isSuperuser),
+  });
+
+  // Verificar si un módulo específico está activo
+  const hasModuleAccess = (moduleName: string): boolean => {
+    // Superusers tienen acceso a todo
+    if (isSuperuser) return true;
+    
+    return activeModules.some(module => module.module_name === moduleName);
+  };
+
+  // Verificar múltiples módulos
+  const hasAnyModule = (moduleNames: string[]): boolean => {
+    if (isSuperuser) return true;
+    return moduleNames.some(name => hasModuleAccess(name));
+  };
+
+  // Obtener configuración específica de un módulo
+  const getModuleConfig = (moduleName: string): any => {
+    if (isSuperuser) return {}; // Configuración por defecto para superusers
+    
+    const module = activeModules.find(m => m.module_name === moduleName);
+    return module?.configuration || {};
+  };
+
+  // Mutation para activar/desactivar módulos (solo admins y superuser)
+  const toggleModule = useMutation({
+    mutationFn: async ({ 
+      companyId, 
+      companyType, 
+      moduleName, 
+      isActive 
+    }: { 
+      companyId: string; 
+      companyType: 'salmonera' | 'contratista'; 
+      moduleName: string; 
+      isActive: boolean;
+    }) => {
+      const { data, error } = await supabase
+        .from('company_modules')
+        .upsert({
+          company_id: companyId,
+          company_type: companyType,
+          module_name: moduleName,
+          is_active: isActive,
+          activated_by: isActive ? profile?.id : null,
+          configuration: {},
+        }, {
+          onConflict: 'company_id,company_type,module_name'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['active-modules'] });
+      toast({
+        title: variables.isActive ? "Módulo Activado" : "Módulo Desactivado",
+        description: `El módulo ha sido ${variables.isActive ? 'activado' : 'desactivado'} exitosamente.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el estado del módulo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helpers específicos para módulos conocidos
   const modules = {
+    // Core (siempre activo)
+    CORE_IMMERSIONS: 'core_immersions',
+    
+    // Módulos opcionales
     PLANNING_OPERATIONS: 'planning_operations',
-    MAINTENANCE_NETWORKS: 'maintenance_networks',
-    DOCUMENT_MANAGEMENT: 'document_management',
-    TEAM_MANAGEMENT: 'team_management',
+    MAINTENANCE_NETWORKS: 'maintenance_networks', // Renombrado de MultiX
     ADVANCED_REPORTING: 'advanced_reporting',
     EXTERNAL_INTEGRATIONS: 'external_integrations',
-    CORE_IMMERSIONS: 'core_immersions'
   };
-
-  // Mock system modules data with dependencies
-  const systemModules = [
-    {
-      id: 'planning_operations',
-      name: 'planning_operations',
-      display_name: 'Planificación de Operaciones',
-      description: 'Gestión completa de operaciones de buceo',
-      category: 'operations',
-      is_core: false,
-      is_active: true,
-      dependencies: ['document_management']
-    },
-    {
-      id: 'maintenance_networks',
-      name: 'maintenance_networks', 
-      display_name: 'Mantención de Redes',
-      description: 'Gestión de mantención de redes y faenas',
-      category: 'maintenance',
-      is_core: false,
-      is_active: true,
-      dependencies: []
-    },
-    {
-      id: 'document_management',
-      name: 'document_management',
-      display_name: 'Gestión Documental',
-      description: 'Gestión de documentos y formularios',
-      category: 'documents',
-      is_core: true,
-      is_active: true,
-      dependencies: []
-    },
-    {
-      id: 'team_management',
-      name: 'team_management',
-      display_name: 'Gestión de Equipos',
-      description: 'Gestión de equipos de buceo',
-      category: 'teams',
-      is_core: true,
-      is_active: true,
-      dependencies: []
-    },
-    {
-      id: 'advanced_reporting',
-      name: 'advanced_reporting',
-      display_name: 'Reportes Avanzados',
-      description: 'Reportes y análisis avanzados',
-      category: 'reporting',
-      is_core: false,
-      is_active: true,
-      dependencies: ['document_management']
-    },
-    {
-      id: 'external_integrations',
-      name: 'external_integrations',
-      display_name: 'Integraciones Externas',
-      description: 'Integraciones con sistemas externos',
-      category: 'integration',
-      is_core: false,
-      is_active: true,
-      dependencies: []
-    },
-    {
-      id: 'core_immersions',
-      name: 'core_immersions',
-      display_name: 'Inmersiones Core',
-      description: 'Funcionalidad básica de inmersiones',
-      category: 'core',
-      is_core: true,
-      is_active: true,
-      dependencies: []
-    }
-  ];
-
-  const activeModules = systemModules.filter(module => module.is_active);
-
-  const hasModuleAccess = (moduleId: string) => {
-    // Mock implementation - replace with actual logic
-    return true;
-  };
-
-  const isSuperuser = () => {
-    // Mock implementation - replace with actual logic based on user role
-    return false;
-  };
-
-  const toggleModule = async (moduleId: string) => {
-    console.log('Toggling module:', moduleId);
-    // Mock implementation
-  };
-
-  const isLoading = false;
-  const isToggling = false;
-
-  // Helper functions for specific modules
-  const canPlanOperations = () => hasModuleAccess('planning_operations');
-  const canManageNetworks = () => hasModuleAccess('maintenance_networks');
-  const canAccessAdvancedReports = () => hasModuleAccess('advanced_reporting');
-  const canUseIntegrations = () => hasModuleAccess('external_integrations');
 
   return {
-    modules,
+    // Data
     systemModules,
     activeModules,
+    isLoading: loadingSystemModules || loadingActiveModules,
+    
+    // Verificaciones
     hasModuleAccess,
-    isSuperuser: isSuperuser(),
-    toggleModule,
-    isLoading,
-    isToggling,
-    canPlanOperations,
-    canManageNetworks,
-    canAccessAdvancedReports,
-    canUseIntegrations
+    hasAnyModule,
+    getModuleConfig,
+    
+    // Acciones
+    toggleModule: toggleModule.mutateAsync,
+    isToggling: toggleModule.isPending,
+    
+    // Helpers específicos (siempre true para superusers)
+    canPlanOperations: isSuperuser || hasModuleAccess(modules.PLANNING_OPERATIONS),
+    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS), // Renombrado
+    canAccessAdvancedReports: isSuperuser || hasModuleAccess(modules.ADVANCED_REPORTING),
+    canUseIntegrations: isSuperuser || hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
+    
+    // Constantes
+    modules,
+    isSuperuser,
   };
 };

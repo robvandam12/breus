@@ -1,11 +1,15 @@
 
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
 export interface EquipoBuceo {
   id: string;
   nombre: string;
   descripcion?: string;
-  estado: string;
   empresa_id: string;
-  tipo_empresa: string;
+  tipo_empresa: 'salmonera' | 'contratista';
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -15,76 +19,95 @@ export interface EquipoBuceo {
 export interface EquipoBuceoMiembro {
   id: string;
   equipo_id: string;
-  usuario_id?: string;
-  rol_equipo: string;
+  usuario_id: string;
+  rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
   disponible: boolean;
-  created_at: string;
-  rol?: string;
-  nombre_completo?: string;
-  matricula?: string;
-  invitado?: boolean;
-  estado_invitacion?: string;
-  email?: string;
-  telefono?: string;
   usuario?: {
     nombre: string;
     apellido: string;
     email: string;
+    rol: string;
   };
-}
-
-export interface EquipoBuceoFormData {
-  nombre: string;
-  descripcion: string;
-  empresa_id: string;
-  tipo_empresa: string;
 }
 
 export const useEquiposBuceo = () => {
-  // Mock data - replace with actual Supabase query
-  const equipos: EquipoBuceo[] = [];
-  const isLoading = false;
-  const error = null;
+  const queryClient = useQueryClient();
 
-  const createEquipo = async (data: EquipoBuceoFormData) => {
-    console.log('Creating equipo:', data);
-  };
+  const { data: equipos = [], isLoading } = useQuery({
+    queryKey: ['equipos-buceo'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipos_buceo')
+        .select(`
+          *,
+          miembros:equipo_buceo_miembros(
+            *,
+            usuario:usuario(nombre, apellido, email, rol)
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-  const updateEquipo = async (id: string, data: Partial<EquipoBuceoFormData>) => {
-    console.log('Updating equipo:', id, data);
-  };
+      if (error) throw error;
+      return data as EquipoBuceo[];
+    },
+  });
 
-  const deleteEquipo = async (id: string) => {
-    console.log('Deleting equipo:', id);
-  };
+  const createEquipo = useMutation({
+    mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('equipos_buceo')
+        .insert(equipoData)
+        .select()
+        .single();
 
-  const addMiembro = async (miembroData: Partial<EquipoBuceoMiembro>) => {
-    console.log('Adding member to equipo:', miembroData);
-  };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: 'Equipo creado',
+        description: 'El equipo de buceo ha sido creado exitosamente.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Error al crear el equipo: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
 
-  const removeMiembro = async (data: { miembro_id: string; equipo_id: string }) => {
-    console.log('Removing member from equipo:', data);
-  };
+  const addMiembro = useMutation({
+    mutationFn: async ({ equipo_id, usuario_id, rol_equipo }: {
+      equipo_id: string;
+      usuario_id: string;
+      rol_equipo: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('equipo_buceo_miembros')
+        .insert({ equipo_id, usuario_id, rol_equipo })
+        .select()
+        .single();
 
-  const updateMiembroRole = async (data: { miembro_id: string; nuevo_rol: string; equipo_id: string }) => {
-    console.log('Updating member role:', data);
-  };
-
-  const inviteMember = async (data: { equipo_id: string; email: string; nombre_completo: string; rol_equipo: string }) => {
-    console.log('Inviting member to equipo:', data);
-  };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      toast({
+        title: 'Miembro agregado',
+        description: 'El miembro ha sido agregado al equipo exitosamente.',
+      });
+    },
+  });
 
   return {
     equipos,
     isLoading,
-    error,
-    createEquipo,
-    updateEquipo,
-    deleteEquipo,
-    addMiembro,
-    removeMiembro,
-    updateMiembroRole,
-    inviteMember,
-    isCreating: false
+    createEquipo: createEquipo.mutate,
+    addMiembro: addMiembro.mutate,
+    isCreating: createEquipo.isPending,
   };
 };

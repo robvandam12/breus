@@ -1,53 +1,62 @@
 
 import React from 'react';
-import { cn } from "@/lib/utils";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ModularSidebar } from "@/components/navigation/ModularSidebar";
 
-export interface MainLayoutProps {
-  children: React.ReactNode;
-  title?: string;
+interface MainLayoutProps {
+  title: string;
   subtitle?: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  headerChildren?: React.ReactNode;
+  icon?: React.ElementType;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+  headerChildren?: React.ReactNode; // Alias para actions
   className?: string;
   contentClassName?: string;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({
-  children,
-  title,
-  subtitle,
-  icon: Icon,
-  headerChildren,
-  className,
-  contentClassName
+export const MainLayout: React.FC<MainLayoutProps> = ({ 
+  title, 
+  subtitle, 
+  icon: Icon, 
+  children, 
+  actions,
+  headerChildren, // Nueva prop para compatibilidad
+  className = "",
+  contentClassName = ""
 }) => {
+  // Use headerChildren if provided, otherwise fall back to actions
+  const headerContent = headerChildren || actions;
+
   return (
-    <div className={cn("min-h-screen bg-gray-50", className)}>
-      {(title || headerChildren) && (
-        <div className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-6">
-              {title && (
-                <div className="flex items-center">
-                  {Icon && <Icon className="w-8 h-8 text-blue-600 mr-3" />}
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-                    {subtitle && (
-                      <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {headerChildren && (
-                <div className="mt-4">{headerChildren}</div>
-              )}
+    <SidebarProvider>
+      <div className={`min-h-screen flex w-full bg-gray-50 ${className}`}>
+        <ModularSidebar />
+        <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="mr-2" />
+              {Icon && <Icon className="w-8 h-8 text-blue-600" />}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                {subtitle && (
+                  <p className="text-gray-600 text-sm mt-1">{subtitle}</p>
+                )}
+              </div>
             </div>
+            {headerContent && (
+              <div className="flex items-center gap-3">
+                {headerContent}
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      <main className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8", contentClassName)}>
-        {children}
-      </main>
-    </div>
+          
+          {/* Content */}
+          <div className={`flex-1 overflow-auto p-6 ${contentClassName}`}>
+            {children}
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 };

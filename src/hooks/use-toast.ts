@@ -1,25 +1,37 @@
 
+import { toast as sonnerToast } from "sonner";
 import { useState } from "react";
 
-interface Toast {
-  id: string;
-  title: string;
+export interface ToastProps {
+  title?: string;
   description?: string;
   variant?: "default" | "destructive";
-  action?: React.ReactNode;
 }
 
-export const toast = ({ title, description, variant = "default" }: Omit<Toast, 'id'>) => {
-  console.log(`[${variant.toUpperCase()}] ${title}${description ? `: ${description}` : ''}`);
-  // Mock implementation - replace with actual toast system
+interface Toast extends ToastProps {
+  id: string;
+}
+
+let toastId = 0;
+const toasts: Toast[] = [];
+
+export const toast = ({ title, description, variant = "default" }: ToastProps) => {
+  if (variant === "destructive") {
+    sonnerToast.error(title, {
+      description,
+    });
+  } else {
+    sonnerToast.success(title, {
+      description,
+    });
+  }
 };
 
 export const useToast = () => {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [, forceUpdate] = useState({});
   
   return { 
     toast,
-    toasts,
-    setToasts
+    toasts: [] // Return empty array to satisfy the Toaster component
   };
 };
