@@ -7,7 +7,7 @@ export const useBitacoraBuzoForm = () => {
     folio: '',
     codigo: '',
     fecha: '',
-    buzo: '', // Changed from buzo_nombre to buzo
+    buzo: '', // Usar 'buzo' en lugar de 'buzo_nombre'
     buzo_rut: '',
     supervisor_nombre: '',
     supervisor_rut: '',

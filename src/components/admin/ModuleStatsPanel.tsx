@@ -45,17 +45,24 @@ export const ModuleStatsPanel = () => {
   const processedStats = React.useMemo(() => {
     if (!usageStats) return null;
 
-    const totalUsage = usageStats.reduce((acc, stat) => acc + (Number(stat.usage_count) || 0), 0);
+    const totalUsage = usageStats.reduce((acc, stat) => {
+      const usageCount = typeof stat.usage_count === 'number' ? stat.usage_count : 0;
+      return acc + usageCount;
+    }, 0);
+    
     const avgDailyUsage = usageStats.length > 0 ? totalUsage / usageStats.length : 0;
     
     const usageByModule = usageStats.reduce((acc, stat) => {
       const moduleName = stat.module_name || 'unknown';
-      const usageCount = Number(stat.usage_count) || 0;
+      const usageCount = typeof stat.usage_count === 'number' ? stat.usage_count : 0;
       acc[moduleName] = (acc[moduleName] || 0) + usageCount;
       return acc;
     }, {} as Record<string, number>);
 
-    const activeUsers = usageStats.reduce((acc, stat) => acc + (Number(stat.active_users) || 0), 0);
+    const activeUsers = usageStats.reduce((acc, stat) => {
+      const activeUserCount = typeof stat.active_users === 'number' ? stat.active_users : 0;
+      return acc + activeUserCount;
+    }, 0);
 
     return {
       totalUsage,
@@ -139,11 +146,11 @@ export const ModuleStatsPanel = () => {
                 .map(([moduleName, usage]) => (
                   <div key={moduleName} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium">{String(moduleName)}</h4>
+                      <h4 className="font-medium">{moduleName}</h4>
                       <p className="text-sm text-gray-600">Operaciones realizadas</p>
                     </div>
                     <Badge variant="outline" className="text-lg px-3 py-1">
-                      {String(usage)}
+                      {usage}
                     </Badge>
                   </div>
                 ))}

@@ -23,6 +23,7 @@ export interface ContratistaFormData {
   contacto_principal?: string;
   certificaciones?: string[];
   especialidades?: string[];
+  estado?: string;
 }
 
 export const useContratistas = () => {

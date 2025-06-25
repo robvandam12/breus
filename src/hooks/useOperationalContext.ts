@@ -3,6 +3,8 @@ export interface ValidationResult {
   isValid: boolean;
   message?: string;
   warnings?: string[];
+  canProceed: boolean;
+  missingRequirements: string[];
 }
 
 export const useOperationalContext = () => {
@@ -16,7 +18,10 @@ export const useOperationalContext = () => {
     console.log('Validating operation dependencies for:', operationType);
     return {
       isValid: true,
-      message: 'Validation passed'
+      message: 'Validation passed',
+      canProceed: true,
+      missingRequirements: [],
+      warnings: []
     };
   };
 

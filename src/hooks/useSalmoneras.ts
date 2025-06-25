@@ -19,7 +19,7 @@ export interface SalmoneraFormData {
   direccion: string;
   telefono?: string;
   email?: string;
-  estado?: string;
+  estado?: "activa" | "inactiva" | "suspendida";
 }
 
 export const useSalmoneras = () => {

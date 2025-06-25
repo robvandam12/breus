@@ -12,6 +12,9 @@ interface OperationalFlowContextType {
   canPlanOperations: boolean;
   canExecuteDirectly: boolean;
   requiresValidation: boolean;
+  validateOperationFlow: (operationType: string) => any;
+  canCreateDirectImmersion: () => boolean;
+  getRequiredDocuments: (operationType: string) => string[];
 }
 
 const OperationalFlowContext = createContext<OperationalFlowContextType | undefined>(undefined);
@@ -36,7 +39,7 @@ export const OperationalFlowProvider: React.FC<OperationalFlowProviderProps> = (
   useEffect(() => {
     if (!profile) return;
 
-    const userRole = profile.role; // Changed from 'rol' to 'role'
+    const userRole = profile.role;
     
     if (profile.salmonera_id) {
       // Usuario de salmonera - puede planificar y ejecutar
@@ -57,13 +60,40 @@ export const OperationalFlowProvider: React.FC<OperationalFlowProviderProps> = (
   const canExecuteDirectly = operationalMode !== 'maintenance_only';
   const requiresValidation = operationalMode === 'full_planning';
 
+  const validateOperationFlow = (operationType: string) => {
+    return {
+      canProceed: true,
+      missingRequirements: [],
+      warnings: [],
+      nextSteps: []
+    };
+  };
+
+  const canCreateDirectImmersion = () => {
+    return operationalMode === 'direct_immersion' || operationalMode === 'full_planning';
+  };
+
+  const getRequiredDocuments = (operationType: string): string[] => {
+    switch (operationType) {
+      case 'planned_operation':
+        return ['HPT', 'Anexo Bravo', 'Bitácora'];
+      case 'direct_immersion':
+        return ['Bitácora'];
+      default:
+        return [];
+    }
+  };
+
   const value: OperationalFlowContextType = {
     operationalMode,
     companyType,
     setOperationalMode,
     canPlanOperations,
     canExecuteDirectly,
-    requiresValidation
+    requiresValidation,
+    validateOperationFlow,
+    canCreateDirectImmersion,
+    getRequiredDocuments
   };
 
   return (

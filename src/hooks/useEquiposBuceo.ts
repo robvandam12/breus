@@ -58,20 +58,20 @@ export const useEquiposBuceo = () => {
     console.log('Deleting equipo:', id);
   };
 
-  const addMiembro = async (equipoId: string, miembroData: Partial<EquipoBuceoMiembro>) => {
-    console.log('Adding member to equipo:', equipoId, miembroData);
+  const addMiembro = async (miembroData: Partial<EquipoBuceoMiembro>) => {
+    console.log('Adding member to equipo:', miembroData);
   };
 
-  const removeMiembro = async (equipoId: string, miembroId: string) => {
-    console.log('Removing member from equipo:', equipoId, miembroId);
+  const removeMiembro = async (data: { miembro_id: string; equipo_id: string }) => {
+    console.log('Removing member from equipo:', data);
   };
 
-  const updateMiembroRole = async (equipoId: string, miembroId: string, newRole: string) => {
-    console.log('Updating member role:', equipoId, miembroId, newRole);
+  const updateMiembroRole = async (data: { miembro_id: string; nuevo_rol: string; equipo_id: string }) => {
+    console.log('Updating member role:', data);
   };
 
-  const inviteMember = async (equipoId: string, email: string, rol: string) => {
-    console.log('Inviting member to equipo:', equipoId, email, rol);
+  const inviteMember = async (data: { equipo_id: string; email: string; nombre_completo: string; rol_equipo: string }) => {
+    console.log('Inviting member to equipo:', data);
   };
 
   return {
