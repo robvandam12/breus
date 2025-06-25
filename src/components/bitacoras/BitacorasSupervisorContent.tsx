@@ -91,10 +91,12 @@ export const BitacorasSupervisorContent = ({
         observaciones_generales_texto: data.observaciones_generales_texto,
         validacion_contratista: data.validacion_contratista,
         comentarios_validacion: data.comentarios_validacion,
-        diving_records: data.diving_records || []
+        diving_records: data.diving_records || [],
+        company_id: data.company_id,
+        company_type: data.company_type,
       };
       
-      await createBitacoraSupervisor.mutateAsync(completeData);
+      await createBitacoraSupervisor(completeData);
       setIsCreateDialogOpen(false);
       setSelectedInmersionId('');
     } catch (error) {
@@ -103,7 +105,7 @@ export const BitacorasSupervisorContent = ({
   };
 
   const handleSignSupervisor = async (id: string, signatureData: string) => {
-    await updateBitacoraSupervisorSignature.mutateAsync({ bitacoraId: id, signatureData });
+    await updateBitacoraSupervisorSignature({ bitacoraId: id, signatureData });
   };
   
   const handleViewDetails = (bitacoraId: string) => {

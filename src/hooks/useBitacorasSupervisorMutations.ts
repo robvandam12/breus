@@ -25,6 +25,13 @@ export interface BitacoraSupervisorFormData {
   hora_inicio_faena?: string;
   hora_termino_faena?: string;
   visibilidad_fondo?: number;
+  // Campos agregados para resolver errores TypeScript
+  supervisor_nombre_matricula?: string;
+  inmersiones_buzos?: any[];
+  equipos_utilizados?: any[];
+  diving_records?: any[];
+  observaciones_generales_texto?: string;
+  validacion_contratista?: boolean;
   // Agregar campos de contexto empresarial
   company_id?: string;
   company_type?: 'salmonera' | 'contratista';
@@ -55,6 +62,21 @@ export const useBitacorasSupervisorMutations = () => {
           firmado: data.firmado || false,
           company_id: data.company_id,
           company_type: data.company_type,
+          // Campos adicionales
+          supervisor_nombre_matricula: data.supervisor_nombre_matricula,
+          fecha_inicio_faena: data.fecha_inicio_faena,
+          hora_inicio_faena: data.hora_inicio_faena,
+          hora_termino_faena: data.hora_termino_faena,
+          estado_mar: data.estado_mar,
+          visibilidad_fondo: data.visibilidad_fondo,
+          trabajo_a_realizar: data.trabajo_a_realizar,
+          descripcion_trabajo: data.descripcion_trabajo,
+          embarcacion_apoyo: data.embarcacion_apoyo,
+          observaciones_generales_texto: data.observaciones_generales_texto,
+          validacion_contratista: data.validacion_contratista,
+          inmersiones_buzos: data.inmersiones_buzos || [],
+          equipos_utilizados: data.equipos_utilizados || [],
+          diving_records: data.diving_records || [],
         }])
         .select()
         .single();
@@ -108,6 +130,38 @@ export const useBitacorasSupervisorMutations = () => {
     },
   });
 
+  const updateBitacoraSupervisorSignature = useMutation({
+    mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
+      const { data: result, error } = await supabase
+        .from('bitacora_supervisor')
+        .update({ 
+          supervisor_firma: signatureData,
+          firmado: true 
+        })
+        .eq('bitacora_id', bitacoraId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+      toast({
+        title: "Bitácora firmada",
+        description: "La bitácora de supervisor ha sido firmada exitosamente.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error signing bitacora supervisor:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo firmar la bitácora de supervisor.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteBitacoraSupervisor = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -137,6 +191,7 @@ export const useBitacorasSupervisorMutations = () => {
   return {
     createBitacoraSupervisor: createBitacoraSupervisor.mutateAsync,
     updateBitacoraSupervisor: updateBitacoraSupervisor.mutateAsync,
+    updateBitacoraSupervisorSignature: updateBitacoraSupervisorSignature.mutateAsync,
     deleteBitacoraSupervisor: deleteBitacoraSupervisor.mutateAsync,
     isCreating: createBitacoraSupervisor.isPending,
     isUpdating: updateBitacoraSupervisor.isPending,
