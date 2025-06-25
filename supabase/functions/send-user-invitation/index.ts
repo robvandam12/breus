@@ -26,6 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, rol, invitedBy, token }: UserInvitationRequest = await req.json();
 
+    console.log('Sending invitation to:', email, 'Role:', rol, 'Invited by:', invitedBy);
+
     const invitationUrl = `${req.headers.get('origin')}/auth/register?token=${token}`;
 
     const getRoleDisplayName = (role: string) => {
@@ -44,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     const emailResponse = await resend.emails.send({
-      from: "Breus Platform <invitaciones@breus.cl>",
+      from: "Breus Platform <onboarding@resend.dev>",
       to: [email],
       subject: `Invitación para unirte a Breus como ${getRoleDisplayName(rol)}`,
       html: `
