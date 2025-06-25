@@ -63,7 +63,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
 
   const updateActividad = (section: 'sistemas_equipos' | 'apoyo_faenas', field: string, subField: 'checked' | 'cantidad' | 'descripcion', value: any) => {
     if (section === 'sistemas_equipos') {
-      const currentField = ficha.sistemas_equipos[field as keyof typeof ficha.sistemas_equipos];
+      const currentField = ficha.sistemas_equipos?.[field as keyof typeof ficha.sistemas_equipos];
       if (typeof currentField === 'object' && currentField !== null && 'checked' in currentField) {
         updateSistemasEquipos(field, {
           ...currentField,
@@ -82,7 +82,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
       const currentActivity = currentActivities[field as keyof typeof currentActivities];
       if (typeof currentActivity === 'object' && currentActivity !== null && 'checked' in currentActivity) {
         updateApoyoFaenas('actividades', {
-          ...currentActividades,
+          ...currentActivities,
           [field]: {
             ...currentActivity,
             [subField]: value
@@ -239,7 +239,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
               { key: 'sistema_aireacion', label: 'Sistema de aireación' },
               { key: 'sistema_oxigenacion', label: 'Sistema de oxigenación' }
             ].map((item) => {
-              const fieldData = ficha.sistemas_equipos[item.key as keyof typeof ficha.sistemas_equipos];
+              const fieldData = ficha.sistemas_equipos?.[item.key as keyof typeof ficha.sistemas_equipos];
               if (typeof fieldData === 'object' && fieldData !== null && 'checked' in fieldData) {
                 return (
                   <div key={item.key} className="flex items-center space-x-3">
@@ -271,23 +271,23 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
               <div className="flex items-center space-x-3">
                 <Checkbox
                   id={`otros_${ficha.buzo_numero}`}
-                  checked={ficha.sistemas_equipos.otros.checked}
+                  checked={ficha.sistemas_equipos?.otros?.checked || false}
                   onCheckedChange={(checked) => updateActividad('sistemas_equipos', 'otros', 'checked', checked)}
                   disabled={readOnly}
                 />
                 <Label htmlFor={`otros_${ficha.buzo_numero}`} className="flex-1">Otros</Label>
                 <Input
                   type="number"
-                  value={ficha.sistemas_equipos.otros.cantidad}
+                  value={ficha.sistemas_equipos?.otros?.cantidad || 0}
                   onChange={(e) => updateActividad('sistemas_equipos', 'otros', 'cantidad', Number(e.target.value))}
                   className="w-20"
                   min="0"
-                  disabled={readOnly || !ficha.sistemas_equipos.otros.checked}
+                  disabled={readOnly || !ficha.sistemas_equipos?.otros?.checked}
                 />
               </div>
-              {ficha.sistemas_equipos.otros.checked && (
+              {ficha.sistemas_equipos?.otros?.checked && (
                 <Input
-                  value={ficha.sistemas_equipos.otros.descripcion}
+                  value={ficha.sistemas_equipos?.otros?.descripcion || ''}
                   onChange={(e) => updateActividad('sistemas_equipos', 'otros', 'descripcion', e.target.value)}
                   placeholder="Descripción de otros equipos"
                   disabled={readOnly}
@@ -299,7 +299,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
           <div className="space-y-2">
             <Label>Observaciones</Label>
             <Textarea
-              value={ficha.sistemas_equipos.observaciones}
+              value={ficha.sistemas_equipos?.observaciones || ''}
               onChange={(e) => updateSistemasEquipos('observaciones', e.target.value)}
               placeholder="Observaciones de sistemas y equipos"
               disabled={readOnly}
