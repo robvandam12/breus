@@ -108,6 +108,15 @@ export const AppRoutes = () => (
         </ProtectedRoute>
       } />
       
+      {/* Nueva ruta para gestión de usuarios de empresa */}
+      <Route path="/empresas/usuarios" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageWithSidebarSkeleton />}>
+            <UserManagement />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      
       {/* Personal Routes */}
       <Route path="/personal-de-buceo" element={
         <ProtectedRoute>
