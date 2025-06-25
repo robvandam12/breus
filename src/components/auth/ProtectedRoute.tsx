@@ -2,7 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useModularSystem } from '@/hooks/useModularSystem';
 import { Navigate, useLocation } from 'react-router-dom';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -17,11 +17,18 @@ export const ProtectedRoute = ({
   requiredPermission,
   requiredModule 
 }: ProtectedRouteProps) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, session } = useAuth();
   const { hasModuleAccess, isSuperuser } = useModularSystem();
   const location = useLocation();
 
-  console.log('ProtectedRoute - loading:', loading, 'user:', !!user, 'profile:', !!profile);
+  console.log('ProtectedRoute - loading:', loading, 'user:', !!user, 'profile:', !!profile, 'session:', !!session);
+
+  // Efecto para detectar desconexión del usuario
+  useEffect(() => {
+    if (!loading && !user && !session) {
+      console.log('🚨 Usuario desconectado detectado, redirigiendo a login');
+    }
+  }, [loading, user, session]);
 
   // Show loading while checking authentication
   if (loading) {
@@ -35,9 +42,9 @@ export const ProtectedRoute = ({
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    console.log('ProtectedRoute - No user, redirecting to login');
+  // CRÍTICO: Redirect to login if not authenticated (usuario desconectado)
+  if (!user || !session) {
+    console.log('ProtectedRoute - Usuario no autenticado, redirigiendo a login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

@@ -8,12 +8,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
+import { Navigate } from "react-router-dom";
 
 export default function Index() {
-  const { profile, user, loading } = useAuth();
+  const { profile, user, session, loading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  console.log('Index - loading:', loading, 'user:', !!user, 'profile:', profile?.role);
+  console.log('Index - loading:', loading, 'user:', !!user, 'profile:', profile?.role, 'session:', !!session);
 
   // Show loading while auth is initializing
   if (loading) {
@@ -27,10 +28,10 @@ export default function Index() {
     );
   }
 
-  // This should not happen as ProtectedRoute handles auth
-  if (!user) {
-    console.log('Index - No user found, this should not happen with ProtectedRoute');
-    return null;
+  // CRÍTICO: Verificar si el usuario está realmente autenticado
+  if (!user || !session) {
+    console.log('Index - Usuario no autenticado o sesión expirada, redirigiendo a login');
+    return <Navigate to="/login" replace />;
   }
 
   // Check for onboarding only after profile is available

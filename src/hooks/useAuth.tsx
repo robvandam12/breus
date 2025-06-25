@@ -137,12 +137,17 @@ export const useAuthProvider = (): AuthContextType => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
-      console.log('Auth state change:', event, !!session);
+      console.log('🔄 Auth state change:', event, !!session);
       
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log('🚪 Usuario desconectado - limpiando estado');
+        setProfile(null);
+        setUser(null);
+        setSession(null);
+      } else if (session?.user) {
         // Defer profile fetching to avoid blocking
         setTimeout(async () => {
           if (mounted) {
@@ -152,8 +157,6 @@ export const useAuthProvider = (): AuthContextType => {
             }
           }
         }, 0);
-      } else {
-        setProfile(null);
       }
       
       if (event === 'SIGNED_IN') {
@@ -248,9 +251,11 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Cerrando sesión...');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      // Limpiar estado inmediatamente
       setUser(null);
       setProfile(null);
       setSession(null);
