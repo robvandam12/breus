@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +21,12 @@ export interface UserByCompany {
 export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' | 'contratista') => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+
+  console.log('🔧 useUsersByCompany hook called with:', { 
+    empresaId, 
+    empresaTipo, 
+    profileExists: !!profile 
+  });
 
   const { data: usuarios = [], isLoading, error } = useQuery({
     queryKey: ['users-by-company', empresaId, empresaTipo, profile?.role],
@@ -50,6 +55,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
 
       // Query principal con left joins para manejar ambos tipos de empresa
       if (userCompanyType === 'salmonera' || profile?.role === 'superuser') {
+        console.log('🏢 Querying for salmonera users');
         // Para admin_salmonera y superuser: obtener usuarios con salmoneras
         query = supabase
           .from('usuario')
@@ -58,6 +64,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
             salmoneras!left(nombre, rut)
           `);
       } else {
+        console.log('🛠️ Querying for contratista users');
         // Para admin_servicio: obtener usuarios con contratistas
         query = supabase
           .from('usuario')
@@ -84,6 +91,7 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
 
       query = query.order('created_at', { ascending: false });
 
+      console.log('📡 Executing query...');
       const { data, error } = await query;
 
       if (error) {
@@ -238,6 +246,12 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
         variant: 'destructive',
       });
     },
+  });
+
+  console.log('📊 useUsersByCompany returning:', { 
+    usuariosCount: usuarios?.length || 0, 
+    isLoading, 
+    hasError: !!error 
   });
 
   return {
