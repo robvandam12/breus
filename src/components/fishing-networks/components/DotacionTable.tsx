@@ -31,10 +31,22 @@ export const DotacionTable = ({ formData, updateFormData, readOnly = false }: Do
     { key: 'compresor_2', label: 'Compresor 2' },
   ];
 
+  // Crear dotación por defecto si no existe
+  const defaultDotacion = roles.reduce((acc, role) => {
+    acc[role.key as keyof typeof acc] = {
+      rol: role.label,
+      nombre: '',
+      apellido: '',
+      matricula: ''
+    };
+    return acc;
+  }, {} as Record<string, DotacionMember>);
+
+  const currentDotacion = formData.dotacion || defaultDotacion;
+
   const handleMemberChange = (roleKey: string, field: keyof DotacionMember, value: string) => {
-    const currentDotacion = formData.dotacion || {};
     const currentMember = currentDotacion[roleKey as keyof typeof currentDotacion] || {
-      rol: '',
+      rol: roles.find(r => r.key === roleKey)?.label || '',
       nombre: '',
       apellido: '',
       matricula: ''
@@ -59,9 +71,7 @@ export const DotacionTable = ({ formData, updateFormData, readOnly = false }: Do
       matricula: ''
     };
 
-    if (!formData.dotacion) return defaultMember;
-    
-    return formData.dotacion[roleKey as keyof typeof formData.dotacion] || defaultMember;
+    return currentDotacion[roleKey as keyof typeof currentDotacion] || defaultMember;
   };
 
   return (

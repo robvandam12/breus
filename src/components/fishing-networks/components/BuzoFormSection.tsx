@@ -48,18 +48,25 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
 
   const updateActividad = (section: 'sistemas_equipos' | 'apoyo_faenas', field: string, subField: 'checked' | 'cantidad' | 'descripcion', value: any) => {
     if (section === 'sistemas_equipos') {
-      updateSistemasEquipos(field, {
-        ...ficha.sistemas_equipos[field as keyof typeof ficha.sistemas_equipos],
-        [subField]: value
-      });
-    } else {
-      updateApoyoFaenas('actividades', {
-        ...ficha.apoyo_faenas.actividades,
-        [field]: {
-          ...ficha.apoyo_faenas.actividades[field as keyof typeof ficha.apoyo_faenas.actividades],
+      const currentField = ficha.sistemas_equipos[field as keyof typeof ficha.sistemas_equipos];
+      if (typeof currentField === 'object' && currentField !== null && 'checked' in currentField) {
+        updateSistemasEquipos(field, {
+          ...currentField,
           [subField]: value
-        }
-      });
+        });
+      }
+    } else {
+      const currentActivities = ficha.apoyo_faenas.actividades || {};
+      const currentActivity = currentActivities[field as keyof typeof currentActivities];
+      if (typeof currentActivity === 'object' && currentActivity !== null && 'checked' in currentActivity) {
+        updateApoyoFaenas('actividades', {
+          ...currentActivities,
+          [field]: {
+            ...currentActivity,
+            [subField]: value
+          }
+        });
+      }
     }
   };
 
@@ -211,27 +218,30 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
               { key: 'sistema_oxigenacion', label: 'Sistema de oxigenación' }
             ].map((item) => {
               const fieldData = ficha.sistemas_equipos[item.key as keyof typeof ficha.sistemas_equipos];
-              return (
-                <div key={item.key} className="flex items-center space-x-3">
-                  <Checkbox
-                    id={`${item.key}_${ficha.buzo_numero}`}
-                    checked={fieldData.checked}
-                    onCheckedChange={(checked) => updateActividad('sistemas_equipos', item.key, 'checked', checked)}
-                    disabled={readOnly}
-                  />
-                  <Label htmlFor={`${item.key}_${ficha.buzo_numero}`} className="flex-1">
-                    {item.label}
-                  </Label>
-                  <Input
-                    type="number"
-                    value={fieldData.cantidad}
-                    onChange={(e) => updateActividad('sistemas_equipos', item.key, 'cantidad', Number(e.target.value))}
-                    className="w-20"
-                    min="0"
-                    disabled={readOnly || !fieldData.checked}
-                  />
-                </div>
-              );
+              if (typeof fieldData === 'object' && fieldData !== null && 'checked' in fieldData) {
+                return (
+                  <div key={item.key} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`${item.key}_${ficha.buzo_numero}`}
+                      checked={fieldData.checked}
+                      onCheckedChange={(checked) => updateActividad('sistemas_equipos', item.key, 'checked', checked)}
+                      disabled={readOnly}
+                    />
+                    <Label htmlFor={`${item.key}_${ficha.buzo_numero}`} className="flex-1">
+                      {item.label}
+                    </Label>
+                    <Input
+                      type="number"
+                      value={fieldData.cantidad}
+                      onChange={(e) => updateActividad('sistemas_equipos', item.key, 'cantidad', Number(e.target.value))}
+                      className="w-20"
+                      min="0"
+                      disabled={readOnly || !fieldData.checked}
+                    />
+                  </div>
+                );
+              }
+              return null;
             })}
             
             {/* Otros con descripción */}
@@ -337,27 +347,30 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
                 { key: 'recuperacion_fondones', label: 'Recuperación de fondones' }
               ].map((actividad) => {
                 const actData = ficha.apoyo_faenas.actividades[actividad.key as keyof typeof ficha.apoyo_faenas.actividades];
-                return (
-                  <div key={actividad.key} className="flex items-center space-x-3">
-                    <Checkbox
-                      id={`${actividad.key}_${ficha.buzo_numero}`}
-                      checked={actData.checked}
-                      onCheckedChange={(checked) => updateActividad('apoyo_faenas', actividad.key, 'checked', checked)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor={`${actividad.key}_${ficha.buzo_numero}`} className="flex-1">
-                      {actividad.label}
-                    </Label>
-                    <Input
-                      type="number"
-                      value={actData.cantidad}
-                      onChange={(e) => updateActividad('apoyo_faenas', actividad.key, 'cantidad', Number(e.target.value))}
-                      className="w-20"
-                      min="0"
-                      disabled={readOnly || !actData.checked}
-                    />
-                  </div>
-                );
+                if (typeof actData === 'object' && actData !== null && 'checked' in actData) {
+                  return (
+                    <div key={actividad.key} className="flex items-center space-x-3">
+                      <Checkbox
+                        id={`${actividad.key}_${ficha.buzo_numero}`}
+                        checked={actData.checked}
+                        onCheckedChange={(checked) => updateActividad('apoyo_faenas', actividad.key, 'checked', checked)}
+                        disabled={readOnly}
+                      />
+                      <Label htmlFor={`${actividad.key}_${ficha.buzo_numero}`} className="flex-1">
+                        {actividad.label}
+                      </Label>
+                      <Input
+                        type="number"
+                        value={actData.cantidad}
+                        onChange={(e) => updateActividad('apoyo_faenas', actividad.key, 'cantidad', Number(e.target.value))}
+                        className="w-20"
+                        min="0"
+                        disabled={readOnly || !actData.checked}
+                      />
+                    </div>
+                  );
+                }
+                return null;
               })}
             </div>
           </div>
