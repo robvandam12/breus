@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -447,25 +448,33 @@ export function ModularSidebar() {
   };
 
   const filteredMenuItems = menuItems.filter(item => {
-    // Filtrar por rol
+    // Filtrar por rol del item
     if (item.roleRequired && !isSuperuser && profile?.role !== item.roleRequired) return false;
     
-    // Filtrar por módulo
+    // Si el item tiene subitems, filtrar los subitems primero
+    if (item.items) {
+      const validSubItems = item.items.filter(subItem => {
+        // Filtrar subitem por rol
+        if (subItem.roleRequired && !isSuperuser && profile?.role !== subItem.roleRequired) return false;
+        
+        // Filtrar subitem por módulo
+        if (subItem.moduleRequired && !isSuperuser && !hasModuleAccess(subItem.moduleRequired)) return false;
+        
+        return true;
+      });
+      
+      // Si no hay subitems válidos después del filtrado, no mostrar el item padre
+      if (validSubItems.length === 0) return false;
+      
+      // Actualizar el item con solo los subitems válidos
+      item.items = validSubItems;
+    }
+    
+    // Filtrar item padre por módulo solo si él mismo requiere módulo
     if (item.moduleRequired && !isSuperuser && !hasModuleAccess(item.moduleRequired)) return false;
     
     return true;
-  }).map(item => ({
-    ...item,
-    items: item.items?.filter(subItem => {
-      // Filtrar subitems por rol
-      if (subItem.roleRequired && !isSuperuser && profile?.role !== subItem.roleRequired) return false;
-      
-      // Filtrar subitems por módulo
-      if (subItem.moduleRequired && !isSuperuser && !hasModuleAccess(subItem.moduleRequired)) return false;
-      
-      return true;
-    })
-  }));
+  });
 
   const handleLogout = async () => {
     try {
