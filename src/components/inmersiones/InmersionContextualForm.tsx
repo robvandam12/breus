@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,7 @@ export const InmersionContextualForm = ({
 
   const [isIndependent, setIsIndependent] = useState(!operacionId && !editingInmersion?.operacion_id);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   const { 
     loading, 
@@ -63,71 +63,69 @@ export const InmersionContextualForm = ({
     canAccessFeature 
   } = useIndependentOperations();
 
-  // Validación mejorada
-  const validateForm = () => {
-    console.log('Validating form data:', formData);
+  // Verificar si el usuario puede crear inmersiones independientes
+  const canCreateIndependent = () => {
+    // Si tiene módulo de planning activo, puede crear ambos tipos
+    if (context.selectedCompany?.modulos?.includes('planning_operations')) {
+      return true;
+    }
     
+    // Si no tiene planning pero puede crear inmersiones directas (core)
+    return canAccessFeature('create_immersion');
+  };
+
+  // Validación mejorada - solo básica
+  const validateForm = () => {
     const requiredFields = [
-      { field: 'codigo', value: formData.codigo, label: 'Código' },
-      { field: 'fecha_inmersion', value: formData.fecha_inmersion, label: 'Fecha' },
-      { field: 'hora_inicio', value: formData.hora_inicio, label: 'Hora de inicio' },
-      { field: 'buzo_principal', value: formData.buzo_principal, label: 'Buzo principal' },
-      { field: 'supervisor', value: formData.supervisor, label: 'Supervisor' },
-      { field: 'objetivo', value: formData.objetivo, label: 'Objetivo' },
-      { field: 'corriente', value: formData.corriente, label: 'Corriente' }
+      'codigo', 'fecha_inmersion', 'hora_inicio', 'buzo_principal', 
+      'supervisor', 'objetivo', 'corriente'
     ];
 
     // Para inmersiones independientes, requerir descripción de operación
     if (isIndependent) {
-      requiredFields.push({ 
-        field: 'operacion_descripcion', 
-        value: formData.operacion_descripcion, 
-        label: 'Descripción de operación' 
-      });
+      requiredFields.push('operacion_descripcion');
     }
 
-    const emptyFields = requiredFields.filter(field => {
-      if (typeof field.value === 'string') {
-        return !field.value.trim();
-      }
-      return !field.value;
+    const hasEmptyFields = requiredFields.some(field => {
+      const value = formData[field as keyof typeof formData];
+      return !value || (typeof value === 'string' && !value.trim());
     });
 
-    const numericFields = [
-      { field: 'profundidad_max', value: formData.profundidad_max, label: 'Profundidad máxima' },
-      { field: 'temperatura_agua', value: formData.temperatura_agua, label: 'Temperatura del agua' },
-      { field: 'visibilidad', value: formData.visibilidad, label: 'Visibilidad' }
-    ];
+    const hasInvalidNumbers = 
+      formData.profundidad_max <= 0 || 
+      formData.temperatura_agua <= 0 || 
+      formData.visibilidad <= 0;
 
-    const invalidNumericFields = numericFields.filter(field => field.value <= 0);
+    const hasCompanyIssue = requiresCompanySelection() && !context.selectedCompany;
 
-    // Validación de empresa para superuser
-    if (requiresCompanySelection() && !context.selectedCompany) {
-      emptyFields.push({ field: 'company', value: '', label: 'Empresa destino' });
-    }
-
-    const allErrors = [...emptyFields, ...invalidNumericFields];
-    
-    console.log('Validation errors:', allErrors);
-    
     return {
-      isValid: allErrors.length === 0,
-      errors: allErrors.map(field => `${field.label} es requerido`)
+      isValid: !hasEmptyFields && !hasInvalidNumbers && !hasCompanyIssue,
+      hasEmptyFields,
+      hasInvalidNumbers,
+      hasCompanyIssue
     };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
     
     const validation = validateForm();
     
     if (!validation.isValid) {
-      console.log('Form validation failed:', validation.errors);
-      toast({
-        title: "Campos requeridos",
-        description: "Por favor complete todos los campos obligatorios",
-        variant: "destructive",
-      });
+      if (validation.hasCompanyIssue) {
+        toast({
+          title: "Empresa requerida",
+          description: "Debes seleccionar una empresa antes de crear la inmersión",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Campos requeridos",
+          description: "Por favor complete todos los campos obligatorios",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -163,10 +161,8 @@ export const InmersionContextualForm = ({
         context_type: isIndependent ? 'direct' as const : 'planned' as const,
         operacion_id: isIndependent ? null : formData.operacion_id,
         is_independent: isIndependent,
-        // Usar empresa seleccionada o empresa del usuario
         company_id: context.selectedCompany?.id || context.companyId,
         company_type: context.selectedCompany?.tipo || context.companyType,
-        // Para inmersiones independientes, guardar la descripción en observaciones
         ...(isIndependent && formData.operacion_descripcion && {
           observaciones: `Operación: ${formData.operacion_descripcion}\n${formData.observaciones || ''}`.trim()
         })
@@ -174,11 +170,9 @@ export const InmersionContextualForm = ({
 
       console.log('Submitting clean inmersion data:', cleanFormData);
       
-      // Usar el método apropiado según el contexto
       if (isIndependent) {
         await createIndependentInmersion(cleanFormData);
       } else {
-        // Para inmersiones con operación, crear a través de Supabase directamente
         const { data, error } = await supabase
           .from('inmersion')
           .insert([cleanFormData])
@@ -236,6 +230,7 @@ export const InmersionContextualForm = ({
   };
 
   const validation = validateForm();
+  const shouldShowValidationErrors = hasAttemptedSubmit && !validation.isValid;
 
   if (context.isLoading) {
     return (
@@ -261,7 +256,7 @@ export const InmersionContextualForm = ({
             </p>
           </div>
           
-          {!operacionId && (
+          {!operacionId && canCreateIndependent() && (
             <div className="flex items-center gap-2">
               <Label htmlFor="independent-switch" className="text-sm">
                 {isIndependent ? 'Independiente' : 'Con Operación'}
@@ -277,7 +272,7 @@ export const InmersionContextualForm = ({
       </CardHeader>
 
       <CardContent>
-        {/* Selector de empresa universal */}
+        {/* Selector de empresa universal con estilos consistentes */}
         <div className="mb-6">
           <UniversalCompanySelector 
             title="Empresa para esta Inmersión"
@@ -285,16 +280,13 @@ export const InmersionContextualForm = ({
           />
         </div>
 
-        {!validation.isValid && (
+        {shouldShowValidationErrors && (
           <Alert className="mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription>
-              <p className="font-medium text-red-800 mb-2">Por favor complete los siguientes campos:</p>
-              <ul className="space-y-1">
-                {validation.errors.map((error, index) => (
-                  <li key={index} className="text-sm text-red-700">• {error}</li>
-                ))}
-              </ul>
+              <p className="font-medium text-red-800">
+                Por favor complete todos los campos obligatorios marcados con *
+              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -303,7 +295,7 @@ export const InmersionContextualForm = ({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="codigo" className={!formData.codigo ? 'text-red-600' : ''}>
+              <Label htmlFor="codigo" className={shouldShowValidationErrors && !formData.codigo ? 'text-red-600' : ''}>
                 Código de Inmersión *
               </Label>
               <Input
@@ -311,13 +303,13 @@ export const InmersionContextualForm = ({
                 value={formData.codigo}
                 onChange={(e) => setFormData(prev => ({...prev, codigo: e.target.value}))}
                 placeholder="Ej: INM-2024-001"
-                className={!formData.codigo ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.codigo ? 'border-red-300' : ''}
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="fecha" className={!formData.fecha_inmersion ? 'text-red-600' : ''}>
+              <Label htmlFor="fecha" className={shouldShowValidationErrors && !formData.fecha_inmersion ? 'text-red-600' : ''}>
                 Fecha de Inmersión *
               </Label>
               <Input
@@ -325,7 +317,7 @@ export const InmersionContextualForm = ({
                 type="date"
                 value={formData.fecha_inmersion}
                 onChange={(e) => setFormData(prev => ({...prev, fecha_inmersion: e.target.value}))}
-                className={!formData.fecha_inmersion ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.fecha_inmersion ? 'border-red-300' : ''}
                 required
               />
             </div>
@@ -334,7 +326,7 @@ export const InmersionContextualForm = ({
           {/* Descripción de operación para inmersiones independientes */}
           {isIndependent && (
             <div>
-              <Label htmlFor="operacion_descripcion" className={!formData.operacion_descripcion ? 'text-red-600' : ''}>
+              <Label htmlFor="operacion_descripcion" className={shouldShowValidationErrors && !formData.operacion_descripcion ? 'text-red-600' : ''}>
                 Descripción de la Operación *
               </Label>
               <Input
@@ -342,7 +334,7 @@ export const InmersionContextualForm = ({
                 value={formData.operacion_descripcion}
                 onChange={(e) => setFormData(prev => ({...prev, operacion_descripcion: e.target.value}))}
                 placeholder="Ej: Inspección de cascos, Mantenimiento de redes, etc."
-                className={!formData.operacion_descripcion ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.operacion_descripcion ? 'border-red-300' : ''}
                 required
               />
               <p className="text-sm text-gray-600 mt-1">
@@ -354,7 +346,7 @@ export const InmersionContextualForm = ({
           {/* Time Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="hora_inicio" className={!formData.hora_inicio ? 'text-red-600' : ''}>
+              <Label htmlFor="hora_inicio" className={shouldShowValidationErrors && !formData.hora_inicio ? 'text-red-600' : ''}>
                 Hora de Inicio *
               </Label>
               <Input
@@ -362,7 +354,7 @@ export const InmersionContextualForm = ({
                 type="time"
                 value={formData.hora_inicio}
                 onChange={(e) => setFormData(prev => ({...prev, hora_inicio: e.target.value}))}
-                className={!formData.hora_inicio ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.hora_inicio ? 'border-red-300' : ''}
                 required
               />
             </div>
@@ -392,7 +384,7 @@ export const InmersionContextualForm = ({
           {/* Personnel */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="buzo_principal" className={!formData.buzo_principal ? 'text-red-600' : ''}>
+              <Label htmlFor="buzo_principal" className={shouldShowValidationErrors && !formData.buzo_principal ? 'text-red-600' : ''}>
                 Buzo Principal *
               </Label>
               <Input
@@ -400,7 +392,7 @@ export const InmersionContextualForm = ({
                 value={formData.buzo_principal}
                 onChange={(e) => setFormData(prev => ({...prev, buzo_principal: e.target.value}))}
                 placeholder="Nombre del buzo principal"
-                className={!formData.buzo_principal ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.buzo_principal ? 'border-red-300' : ''}
                 required
               />
             </div>
@@ -416,7 +408,7 @@ export const InmersionContextualForm = ({
             </div>
 
             <div>
-              <Label htmlFor="supervisor" className={!formData.supervisor ? 'text-red-600' : ''}>
+              <Label htmlFor="supervisor" className={shouldShowValidationErrors && !formData.supervisor ? 'text-red-600' : ''}>
                 Supervisor *
               </Label>
               <Input
@@ -424,7 +416,7 @@ export const InmersionContextualForm = ({
                 value={formData.supervisor}
                 onChange={(e) => setFormData(prev => ({...prev, supervisor: e.target.value}))}
                 placeholder="Nombre del supervisor"
-                className={!formData.supervisor ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && !formData.supervisor ? 'border-red-300' : ''}
                 required
               />
             </div>
@@ -432,14 +424,14 @@ export const InmersionContextualForm = ({
 
           {/* Work Details */}
           <div>
-            <Label htmlFor="objetivo" className={!formData.objetivo ? 'text-red-600' : ''}>
+            <Label htmlFor="objetivo" className={shouldShowValidationErrors && !formData.objetivo ? 'text-red-600' : ''}>
               Objetivo de la Inmersión *
             </Label>
             <Select 
               value={formData.objetivo} 
               onValueChange={(value) => setFormData(prev => ({...prev, objetivo: value}))}
             >
-              <SelectTrigger className={!formData.objetivo ? 'border-red-300' : ''}>
+              <SelectTrigger className={shouldShowValidationErrors && !formData.objetivo ? 'border-red-300' : ''}>
                 <SelectValue placeholder="Selecciona el objetivo" />
               </SelectTrigger>
               <SelectContent>
@@ -458,7 +450,7 @@ export const InmersionContextualForm = ({
           {/* Environmental Conditions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="profundidad" className={formData.profundidad_max <= 0 ? 'text-red-600' : ''}>
+              <Label htmlFor="profundidad" className={shouldShowValidationErrors && formData.profundidad_max <= 0 ? 'text-red-600' : ''}>
                 Profundidad Máxima (m) *
               </Label>
               <Input
@@ -468,13 +460,13 @@ export const InmersionContextualForm = ({
                 min="0.1"
                 value={formData.profundidad_max}
                 onChange={(e) => setFormData(prev => ({...prev, profundidad_max: parseFloat(e.target.value) || 0}))}
-                className={formData.profundidad_max <= 0 ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && formData.profundidad_max <= 0 ? 'border-red-300' : ''}
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="temperatura" className={formData.temperatura_agua <= 0 ? 'text-red-600' : ''}>
+              <Label htmlFor="temperatura" className={shouldShowValidationErrors && formData.temperatura_agua <= 0 ? 'text-red-600' : ''}>
                 Temperatura del Agua (°C) *
               </Label>
               <Input
@@ -484,13 +476,13 @@ export const InmersionContextualForm = ({
                 min="0.1"
                 value={formData.temperatura_agua}
                 onChange={(e) => setFormData(prev => ({...prev, temperatura_agua: parseFloat(e.target.value) || 0}))}
-                className={formData.temperatura_agua <= 0 ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && formData.temperatura_agua <= 0 ? 'border-red-300' : ''}
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="visibilidad" className={formData.visibilidad <= 0 ? 'text-red-600' : ''}>
+              <Label htmlFor="visibilidad" className={shouldShowValidationErrors && formData.visibilidad <= 0 ? 'text-red-600' : ''}>
                 Visibilidad (m) *
               </Label>
               <Input
@@ -500,21 +492,21 @@ export const InmersionContextualForm = ({
                 min="0.1"
                 value={formData.visibilidad}
                 onChange={(e) => setFormData(prev => ({...prev, visibilidad: parseFloat(e.target.value) || 0}))}
-                className={formData.visibilidad <= 0 ? 'border-red-300' : ''}
+                className={shouldShowValidationErrors && formData.visibilidad <= 0 ? 'border-red-300' : ''}
                 required
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="corriente" className={!formData.corriente ? 'text-red-600' : ''}>
+            <Label htmlFor="corriente" className={shouldShowValidationErrors && !formData.corriente ? 'text-red-600' : ''}>
               Condiciones de Corriente *
             </Label>
             <Select 
               value={formData.corriente} 
               onValueChange={(value) => setFormData(prev => ({...prev, corriente: value}))}
             >
-              <SelectTrigger className={!formData.corriente ? 'border-red-300' : ''}>
+              <SelectTrigger className={shouldShowValidationErrors && !formData.corriente ? 'border-red-300' : ''}>
                 <SelectValue placeholder="Selecciona las condiciones" />
               </SelectTrigger>
               <SelectContent>
@@ -546,8 +538,8 @@ export const InmersionContextualForm = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !validation.isValid || isSubmitting || !canCreateRecords()}
-              className={validation.isValid && canCreateRecords() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
+              disabled={loading || isSubmitting || !canCreateRecords()}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isSubmitting ? 'Creando...' : (editingInmersion ? 'Actualizar' : 'Crear Inmersión')}
             </Button>
