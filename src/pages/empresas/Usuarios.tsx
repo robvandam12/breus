@@ -11,7 +11,7 @@ import { UserStatsCards } from "@/components/users/UserStatsCards";
 import { UsersList } from "@/components/users/UsersList";
 import { UserInviteDialog } from "@/components/users/UserInviteDialog";
 import { useState } from "react";
-import { useUsuarios } from "@/hooks/useUsuarios";
+import { useUsuarios, InviteUserOptions } from "@/hooks/useUsuarios";
 
 export default function Usuarios() {
   const { profile } = useAuth();
@@ -37,13 +37,25 @@ export default function Usuarios() {
     );
   }
 
-  const handleInviteUser = async (userData: { email: string; rol: string }) => {
-    await inviteUsuario(userData);
+  const handleInviteUser = async (options: InviteUserOptions) => {
+    await inviteUsuario(options);
   };
 
   const totalUsers = usuarios.length;
   const activeUsers = usuarios.filter(u => u.perfil_completado).length;
   const pendingUsers = usuarios.filter(u => !u.perfil_completado).length;
+
+  // Determinar roles permitidos según el perfil del usuario
+  const getAllowedRoles = () => {
+    if (profile?.rol === 'admin_salmonera') {
+      return ['admin_salmonera', 'supervisor', 'buzo'];
+    } else if (profile?.rol === 'admin_servicio') {
+      return ['admin_servicio', 'supervisor', 'buzo'];
+    } else if (profile?.rol === 'superuser') {
+      return ['admin_salmonera', 'admin_servicio', 'supervisor', 'buzo'];
+    }
+    return ['buzo'];
+  };
 
   return (
     <MainLayout
@@ -95,6 +107,7 @@ export default function Usuarios() {
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
         onSubmit={handleInviteUser}
+        allowedRoles={getAllowedRoles()}
       />
     </MainLayout>
   );

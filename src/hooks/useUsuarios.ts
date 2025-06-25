@@ -4,6 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
 import { Usuario } from "@/types/usuario";
+import { toast } from "@/hooks/use-toast";
+
+export interface InviteUserOptions {
+  email: string;
+  rol: string;
+  overwriteExisting?: boolean;
+  cancelPrevious?: boolean;
+}
 
 export const useUsuarios = () => {
   const queryClient = useQueryClient();
@@ -37,7 +45,6 @@ export const useUsuarios = () => {
 
       if (error) throw error;
       
-      // Transform data to match Usuario interface
       return (data || []).map(user => ({
         ...user,
         contratista: user.servicio_id ? { nombre: 'Contratista', rut: '' } : null
@@ -58,26 +65,46 @@ export const useUsuarios = () => {
     });
   };
 
-  const inviteUsuario = async (userData: { email: string; rol: string }) => {
+  const inviteUsuario = async (options: InviteUserOptions) => {
+    const { email, rol, overwriteExisting = false, cancelPrevious = false } = options;
+    
     return executeInvite(async () => {
-      console.log('Inviting user:', userData);
+      console.log('Inviting user with options:', options);
       
+      // Si se debe cancelar invitaciones previas, hacerlo primero
+      if (cancelPrevious) {
+        const { error: cancelError } = await supabase
+          .from('usuario_invitaciones')
+          .update({ 
+            estado: 'cancelada',
+            updated_at: new Date().toISOString()
+          })
+          .eq('email', email.toLowerCase())
+          .eq('estado', 'pendiente')
+          .eq('invitado_por', profile?.id);
+
+        if (cancelError) {
+          console.warn('Error canceling previous invitations:', cancelError);
+        } else {
+          console.log('Previous invitations canceled for email:', email);
+        }
+      }
+
       // Generar token único para la invitación
       const token = crypto.randomUUID();
       
-      // Guardar invitación en la base de datos usando la tabla real
+      // Guardar invitación en la base de datos
       const { error: dbError } = await supabase
         .from('usuario_invitaciones')
         .insert([{
-          email: userData.email,
-          rol: userData.rol,
+          email: email.toLowerCase(),
+          rol: rol,
           token: token,
           invitado_por: profile?.id,
           fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           estado: 'pendiente',
-          // Campos requeridos por la tabla que no estamos usando en esta vista
-          apellido: '',
-          nombre: ''
+          nombre: '',
+          apellido: ''
         }]);
 
       if (dbError) throw dbError;
@@ -85,16 +112,24 @@ export const useUsuarios = () => {
       // Enviar email de invitación
       const { error: emailError } = await supabase.functions.invoke('send-user-invitation', {
         body: {
-          email: userData.email,
-          rol: userData.rol,
+          email: email,
+          rol: rol,
           invitedBy: `${profile?.nombre} ${profile?.apellido}`,
           token: token
         }
       });
 
-      if (emailError) throw emailError;
+      if (emailError) {
+        console.error('Error sending email:', emailError);
+        toast({
+          title: "Advertencia",
+          description: "Invitación creada pero el email no se pudo enviar. Verifique la configuración de Resend.",
+          variant: "destructive"
+        });
+      }
       
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      queryClient.invalidateQueries({ queryKey: ['invitations'] });
     });
   };
 
