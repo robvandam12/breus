@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     const emailResponse = await resend.emails.send({
-      from: "Breus Platform <noreply@emaisl.breus.cl>",
+      from: "Breus Platform <no-reply@emails.breus.cl>",
       to: [email],
       subject: `Invitación para unirte a Breus como ${getRoleDisplayName(rol)}`,
       html: `
