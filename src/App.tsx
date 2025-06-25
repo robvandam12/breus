@@ -88,10 +88,10 @@ function App() {
                 <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
 
                 {/* Operaciones Routes */}
-                 <Route path="/operaciones" element={<ModuleProtectedRoute module="planning_operations"><Operaciones /></ModuleProtectedRoute>} />
-                <Route path="/operaciones/hpt" element={<ModuleProtectedRoute module="planning_operations"><OperacionesHPT /></ModuleProtectedRoute>} />
-                <Route path="/operaciones/anexo-bravo" element={<ModuleProtectedRoute module="planning_operations"><OperacionesAnexoBravo /></ModuleProtectedRoute>} />
-                 <Route path="/operaciones/network-maintenance" element={<ModuleProtectedRoute module="maintenance_networks"><NetworkMaintenance /></ModuleProtectedRoute>} />
+                 <Route path="/operaciones" element={<ModuleProtectedRoute requiredModule="planning_operations"><Operaciones /></ModuleProtectedRoute>} />
+                <Route path="/operaciones/hpt" element={<ModuleProtectedRoute requiredModule="planning_operations"><OperacionesHPT /></ModuleProtectedRoute>} />
+                <Route path="/operaciones/anexo-bravo" element={<ModuleProtectedRoute requiredModule="planning_operations"><OperacionesAnexoBravo /></ModuleProtectedRoute>} />
+                 <Route path="/operaciones/network-maintenance" element={<ModuleProtectedRoute requiredModule="maintenance_networks"><NetworkMaintenance /></ModuleProtectedRoute>} />
               </Routes>
             </SidebarProvider>
           </AuthProvider>

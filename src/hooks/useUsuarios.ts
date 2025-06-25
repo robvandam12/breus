@@ -72,9 +72,12 @@ export const useUsuarios = () => {
           email: userData.email,
           rol: userData.rol,
           token: token,
-          invitado_por: profile?.usuario_id,
+          invitado_por: profile?.id,
           fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          estado: 'pendiente'
+          estado: 'pendiente',
+          // Campos requeridos por la tabla que no estamos usando en esta vista
+          apellido: '',
+          nombre: ''
         }]);
 
       if (dbError) throw dbError;

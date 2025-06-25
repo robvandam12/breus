@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -56,9 +57,8 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
     rol: string;
   }) => {
     await inviteUsuario({
-      ...data,
-      empresa_id: contratista.id,
-      empresa_tipo: 'contratista'
+      email: data.email,
+      rol: data.rol
     });
     setShowInviteForm(false);
   };
