@@ -3,13 +3,39 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "react-router-dom";
 import { RoleBasedUserManagement } from "@/components/users/RoleBasedUserManagement";
 
 export default function UserManagement() {
   const { profile } = useAuth();
+  const location = useLocation();
+  
+  // Determinar si estamos en la ruta de admin (solo superuser) o empresas (otros roles)
+  const isAdminRoute = location.pathname === '/admin/users';
+  const isEmpresasRoute = location.pathname === '/empresas/usuarios';
 
-  // Permitir acceso a superuser, admin_salmonera y admin_servicio
-  const hasAccess = profile?.role && ['superuser', 'admin_salmonera', 'admin_servicio'].includes(profile.role);
+  // Verificar acceso según la ruta
+  let hasAccess = false;
+  let title = 'Gestión de Usuarios';
+  let subtitle = 'Administración de usuarios del sistema';
+
+  if (isAdminRoute) {
+    // Ruta /admin/users - solo superuser
+    hasAccess = profile?.role === 'superuser';
+    title = 'Gestión Global de Usuarios';
+    subtitle = 'Administración completa de usuarios del sistema';
+  } else if (isEmpresasRoute) {
+    // Ruta /empresas/usuarios - admin_salmonera y admin_servicio
+    hasAccess = profile?.role && ['admin_salmonera', 'admin_servicio'].includes(profile.role);
+    
+    if (profile?.role === 'admin_salmonera') {
+      title = 'Personal de la Salmonera';
+      subtitle = 'Gestión de usuarios de la salmonera y contratistas asociados';
+    } else if (profile?.role === 'admin_servicio') {
+      title = 'Personal del Contratista';
+      subtitle = 'Gestión de usuarios del contratista';
+    }
+  }
 
   if (!hasAccess) {
     return (
@@ -27,37 +53,10 @@ export default function UserManagement() {
     );
   }
 
-  // Determinar título y subtítulo según el rol
-  const getTitle = () => {
-    switch (profile?.role) {
-      case 'superuser':
-        return 'Gestión Global de Usuarios';
-      case 'admin_salmonera':
-        return 'Personal de la Salmonera';
-      case 'admin_servicio':
-        return 'Personal del Contratista';
-      default:
-        return 'Gestión de Usuarios';
-    }
-  };
-
-  const getSubtitle = () => {
-    switch (profile?.role) {
-      case 'superuser':
-        return 'Administración completa de usuarios del sistema';
-      case 'admin_salmonera':
-        return 'Gestión de usuarios de la salmonera y contratistas asociados';
-      case 'admin_servicio':
-        return 'Gestión de usuarios del contratista';
-      default:
-        return 'Administración de usuarios del sistema';
-    }
-  };
-
   return (
     <MainLayout
-      title={getTitle()}
-      subtitle={getSubtitle()}
+      title={title}
+      subtitle={subtitle}
       icon={Shield}
     >
       <RoleBasedUserManagement />
