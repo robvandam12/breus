@@ -7,7 +7,7 @@ export const useModularSystem = () => {
     TEAM_MANAGEMENT: 'team_management'
   };
 
-  // Mock system modules data
+  // Mock system modules data with dependencies
   const systemModules = [
     {
       id: 'planning_operations',
@@ -16,7 +16,8 @@ export const useModularSystem = () => {
       description: 'Gestión completa de operaciones de buceo',
       category: 'operations',
       is_core: false,
-      is_active: true
+      is_active: true,
+      dependencies: ['document_management']
     },
     {
       id: 'maintenance_networks',
@@ -25,7 +26,8 @@ export const useModularSystem = () => {
       description: 'Gestión de mantención de redes y faenas',
       category: 'maintenance',
       is_core: false,
-      is_active: true
+      is_active: true,
+      dependencies: []
     },
     {
       id: 'document_management',
@@ -34,7 +36,8 @@ export const useModularSystem = () => {
       description: 'Gestión de documentos y formularios',
       category: 'documents',
       is_core: true,
-      is_active: true
+      is_active: true,
+      dependencies: []
     },
     {
       id: 'team_management',
@@ -43,7 +46,8 @@ export const useModularSystem = () => {
       description: 'Gestión de equipos de buceo',
       category: 'teams',
       is_core: true,
-      is_active: true
+      is_active: true,
+      dependencies: []
     }
   ];
 
