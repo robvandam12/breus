@@ -47,11 +47,11 @@ export default function Usuarios() {
 
   // Determinar roles permitidos según el perfil del usuario
   const getAllowedRoles = () => {
-    if (profile?.rol === 'admin_salmonera') {
+    if (profile?.role === 'admin_salmonera') {
       return ['admin_salmonera', 'supervisor', 'buzo'];
-    } else if (profile?.rol === 'admin_servicio') {
+    } else if (profile?.role === 'admin_servicio') {
       return ['admin_servicio', 'supervisor', 'buzo'];
-    } else if (profile?.rol === 'superuser') {
+    } else if (profile?.role === 'superuser') {
       return ['admin_salmonera', 'admin_servicio', 'supervisor', 'buzo'];
     }
     return ['buzo'];
