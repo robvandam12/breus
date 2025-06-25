@@ -65,7 +65,7 @@ export const useCompanyContext = () => {
           const userCompany = await loadUserCompany(contextData);
           setContext({
             companyId: contextData?.company_id || null,
-            companyType: contextData?.company_type || null,
+            companyType: contextData?.company_type as 'salmonera' | 'contratista' || null,
             isSuperuser: false,
             selectedCompany: userCompany,
             availableCompanies: userCompany ? [userCompany] : [],
@@ -153,7 +153,7 @@ export const useCompanyContext = () => {
       return {
         id: company.id,
         nombre: company.nombre,
-        tipo: contextData.company_type,
+        tipo: contextData.company_type as 'salmonera' | 'contratista',
         modulos: modules,
       };
     } catch (error) {

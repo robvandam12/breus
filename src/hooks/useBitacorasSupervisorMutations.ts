@@ -1,191 +1,145 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { z } from 'zod';
-import { toast } from '@/hooks/use-toast';
-import { BitacoraSupervisorCompleta } from '@/types/bitacoras';
-import { useOfflineSync } from './useOfflineSync';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-const bitacoraSupervisorFormSchema = z.object({
-  codigo: z.string(),
-  inmersion_id: z.string().uuid(),
-  supervisor: z.string().optional(),
-  desarrollo_inmersion: z.string(),
-  incidentes: z.string().optional(),
-  evaluacion_general: z.string(),
-  fecha: z.string(),
-  firmado: z.boolean().default(false),
-  estado_aprobacion: z.string().default('pendiente'),
-  fecha_inicio_faena: z.string().optional(),
-  hora_inicio_faena: z.string().optional(),
-  hora_termino_faena: z.string().optional(),
-  lugar_trabajo: z.string().optional(),
-  supervisor_nombre_matricula: z.string().optional(),
-  estado_mar: z.string().optional(),
-  visibilidad_fondo: z.number().optional(),
-  inmersiones_buzos: z.array(z.any()).optional(),
-  equipos_utilizados: z.array(z.any()).optional(),
-  trabajo_a_realizar: z.string().optional(),
-  descripcion_trabajo: z.string().optional(),
-  embarcacion_apoyo: z.string().optional(),
-  observaciones_generales_texto: z.string().optional(),
-  validacion_contratista: z.boolean().optional(),
-  comentarios_validacion: z.string().optional(),
-  diving_records: z.array(z.any()).optional(),
-});
-
-export type BitacoraSupervisorFormData = z.infer<typeof bitacoraSupervisorFormSchema>;
+export interface BitacoraSupervisorFormData {
+  inmersion_id?: string;
+  codigo?: string;
+  fecha?: string;
+  firmado?: boolean;
+  supervisor?: string;
+  estado_aprobacion?: string;
+  comentarios_validacion?: string;
+  desarrollo_inmersion?: string;
+  descripcion_trabajo?: string;
+  trabajo_a_realizar?: string;
+  incidentes?: string;
+  evaluacion_general?: string;
+  lugar_trabajo?: string;
+  centro_nombre?: string;
+  empresa_nombre?: string;
+  estado_mar?: string;
+  embarcacion_apoyo?: string;
+  fecha_inicio_faena?: string;
+  hora_inicio_faena?: string;
+  hora_termino_faena?: string;
+  visibilidad_fondo?: number;
+  // Agregar campos de contexto empresarial
+  company_id?: string;
+  company_type?: 'salmonera' | 'contratista';
+}
 
 export const useBitacorasSupervisorMutations = () => {
   const queryClient = useQueryClient();
-  const { isOnline, addPendingAction } = useOfflineSync();
 
   const createBitacoraSupervisor = useMutation({
-    mutationFn: async (formData: BitacoraSupervisorFormData) => {
-      // VALIDACIÓN DE UNICIDAD: Verificar si ya existe una bitácora para esta inmersión
-      const { data: existing } = await supabase
-        .from('bitacora_supervisor')
-        .select('bitacora_id')
-        .eq('inmersion_id', formData.inmersion_id)
-        .single();
-      
-      if (existing) {
-        throw new Error('Ya existe una bitácora de supervisor para esta inmersión. Solo se permite una bitácora por inmersión. Puede editarla desde la lista de bitácoras.');
+    mutationFn: async (data: Partial<BitacoraSupervisorFormData>) => {
+      // Validar que tenga contexto empresarial
+      if (!data.company_id || !data.company_type) {
+        throw new Error('Contexto empresarial requerido para crear bitácora de supervisor');
       }
 
-      // Preparar datos para inserción con validación de campos
-      const dataToInsert = {
-        codigo: formData.codigo,
-        inmersion_id: formData.inmersion_id,
-        supervisor: formData.supervisor || '',
-        desarrollo_inmersion: formData.desarrollo_inmersion,
-        incidentes: formData.incidentes || '',
-        evaluacion_general: formData.evaluacion_general,
-        fecha: formData.fecha || new Date().toISOString().split('T')[0],
-        firmado: formData.firmado || false,
-        estado_aprobacion: formData.estado_aprobacion || 'pendiente',
-        fecha_inicio_faena: formData.fecha_inicio_faena,
-        hora_inicio_faena: formData.hora_inicio_faena,
-        hora_termino_faena: formData.hora_termino_faena,
-        lugar_trabajo: formData.lugar_trabajo,
-        supervisor_nombre_matricula: formData.supervisor_nombre_matricula,
-        estado_mar: formData.estado_mar,
-        visibilidad_fondo: formData.visibilidad_fondo,
-        inmersiones_buzos: Array.isArray(formData.inmersiones_buzos) ? formData.inmersiones_buzos : [],
-        equipos_utilizados: Array.isArray(formData.equipos_utilizados) ? formData.equipos_utilizados : [],
-        trabajo_a_realizar: formData.trabajo_a_realizar,
-        descripcion_trabajo: formData.descripcion_trabajo,
-        embarcacion_apoyo: formData.embarcacion_apoyo,
-        observaciones_generales_texto: formData.observaciones_generales_texto,
-        validacion_contratista: formData.validacion_contratista || false,
-        comentarios_validacion: formData.comentarios_validacion,
-        diving_records: Array.isArray(formData.diving_records) ? formData.diving_records : [],
-      };
-      
-      if (!isOnline) {
-        addPendingAction({ type: 'create', table: 'bitacora_supervisor', payload: dataToInsert });
-        const tempId = `offline_${Date.now()}`;
-        const newBitacora = { ...dataToInsert, bitacora_id: tempId };
-        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) => [...oldData, newBitacora]);
-        return newBitacora;
-      }
-      
-      const { error } = await supabase.from('bitacora_supervisor').insert(dataToInsert);
-      if (error) throw new Error(error.message);
+      const { data: result, error } = await supabase
+        .from('bitacora_supervisor')
+        .insert([{
+          inmersion_id: data.inmersion_id,
+          codigo: data.codigo,
+          fecha: data.fecha,
+          supervisor: data.supervisor,
+          desarrollo_inmersion: data.desarrollo_inmersion,
+          incidentes: data.incidentes || '',
+          evaluacion_general: data.evaluacion_general,
+          lugar_trabajo: data.lugar_trabajo,
+          estado_aprobacion: data.estado_aprobacion || 'pendiente',
+          firmado: data.firmado || false,
+          company_id: data.company_id,
+          company_type: data.company_type,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
       toast({
-        title: isOnline ? "Bitácora de Supervisor Creada" : "Bitácora guardada (Offline)",
-        description: isOnline ? "La bitácora ha sido registrada exitosamente." : "Se sincronizará cuando haya conexión.",
+        title: "Bitácora creada",
+        description: "La bitácora de supervisor ha sido creada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error creating bitacora supervisor:', error);
       toast({
-        title: "Error al crear bitácora",
-        description: error.message,
+        title: "Error",
+        description: error.message || "No se pudo crear la bitácora de supervisor.",
         variant: "destructive",
       });
     },
   });
 
   const updateBitacoraSupervisor = useMutation({
-    mutationFn: async ({ bitacoraId, formData }: { bitacoraId: string; formData: Partial<BitacoraSupervisorFormData> }) => {
-      const dataToUpdate = {
-        ...formData,
-        updated_at: new Date().toISOString(),
-        inmersiones_buzos: Array.isArray(formData.inmersiones_buzos) ? formData.inmersiones_buzos : [],
-        equipos_utilizados: Array.isArray(formData.equipos_utilizados) ? formData.equipos_utilizados : [],
-        diving_records: Array.isArray(formData.diving_records) ? formData.diving_records : [],
-      };
-
-      if (!isOnline) {
-        addPendingAction({ type: 'update', table: 'bitacora_supervisor', payload: { pk: { bitacora_id: bitacoraId }, data: dataToUpdate } });
-        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
-          oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...dataToUpdate } : b)
-        );
-        return;
-      }
-
-      const { error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: Partial<BitacoraSupervisorFormData> }) => {
+      const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .update(dataToUpdate)
-        .eq('bitacora_id', bitacoraId);
+        .update(data)
+        .eq('bitacora_id', id)
+        .select()
+        .single();
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
       toast({
-        title: isOnline ? "Bitácora Actualizada" : "Cambios guardados (Offline)",
-        description: isOnline ? "Los cambios han sido guardados exitosamente." : "Se sincronizará cuando haya conexión.",
+        title: "Bitácora actualizada",
+        description: "La bitácora de supervisor ha sido actualizada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error updating bitacora supervisor:', error);
       toast({
-        title: "Error al actualizar bitácora",
-        description: error.message,
+        title: "Error",
+        description: "No se pudo actualizar la bitácora de supervisor.",
         variant: "destructive",
       });
     },
   });
 
-  const updateBitacoraSupervisorSignature = useMutation({
-    mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
-      const payload = { supervisor_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
-      if (!isOnline) {
-        addPendingAction({ type: 'update', table: 'bitacora_supervisor', payload: { pk: { bitacora_id: bitacoraId }, data: payload } });
-        queryClient.setQueryData(['bitacorasSupervisor'], (oldData: BitacoraSupervisorCompleta[] = []) =>
-          oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...payload } : b)
-        );
-        return;
-      }
+  const deleteBitacoraSupervisor = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('bitacora_supervisor')
-        .update(payload)
-        .eq('bitacora_id', bitacoraId);
+        .delete()
+        .eq('bitacora_id', id);
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
       toast({
-        title: isOnline ? "Bitácora Firmada" : "Firma guardada (Offline)",
-        description: isOnline ? "La firma ha sido registrada exitosamente." : "Se sincronizará cuando haya conexión.",
+        title: "Bitácora eliminada",
+        description: "La bitácora de supervisor ha sido eliminada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error deleting bitacora supervisor:', error);
       toast({
-        title: "Error al firmar",
-        description: error.message,
+        title: "Error",
+        description: "No se pudo eliminar la bitácora de supervisor.",
         variant: "destructive",
       });
     },
   });
 
   return {
-    createBitacoraSupervisor,
-    updateBitacoraSupervisor,
-    updateBitacoraSupervisorSignature,
+    createBitacoraSupervisor: createBitacoraSupervisor.mutateAsync,
+    updateBitacoraSupervisor: updateBitacoraSupervisor.mutateAsync,
+    deleteBitacoraSupervisor: deleteBitacoraSupervisor.mutateAsync,
+    isCreating: createBitacoraSupervisor.isPending,
+    isUpdating: updateBitacoraSupervisor.isPending,
+    isDeleting: deleteBitacoraSupervisor.isPending,
   };
 };
