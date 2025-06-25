@@ -3,11 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useOperationalContext } from './useOperationalContext';
+import { useContextualValidations } from './useContextualValidations';
 import { useModularSystem } from './useModularSystem';
 
 export const useInmersionesContextual = () => {
   const { profile } = useAuth();
-  const { operationalContext, canCreateDirectImmersions } = useOperationalContext();
+  const { operationalContext, getWorkflowType } = useOperationalContext();
+  const { validateInmersionCreation } = useContextualValidations();
   const { hasModuleAccess, modules } = useModularSystem();
 
   const { data: inmersiones = [], isLoading } = useQuery({
@@ -54,21 +56,44 @@ export const useInmersionesContextual = () => {
     enabled: !!profile,
   });
 
-  // Obtener estadísticas contextuales
+  // Obtener estadísticas contextuales mejoradas
   const estadisticas = {
     total: inmersiones?.length || 0,
     planificadas: inmersiones?.filter(i => i.operacion_id && !i.is_independent).length || 0,
     independientes: inmersiones?.filter(i => !i.operacion_id || i.is_independent).length || 0,
     completadas: inmersiones?.filter(i => i.estado === 'completada').length || 0,
     enProceso: inmersiones?.filter(i => i.estado === 'en_proceso').length || 0,
+    pendientes: inmersiones?.filter(i => i.estado === 'planificada').length || 0,
   };
 
-  // Verificar capacidades según módulos activos
+  // Verificar capacidades según contexto operativo
   const capacidades = {
-    puedeCrearInmersiones: canCreateDirectImmersions(),
+    // Core - siempre disponible
+    puedeCrearInmersionesDirectas: true,
+    puedeCrearBitacoras: true,
+    
+    // Módulos opcionales
     puedeCrearOperaciones: hasModuleAccess(modules.PLANNING_OPERATIONS),
     puedeCrearFormulariosMantencion: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
     puedeAccederReportesAvanzados: hasModuleAccess(modules.ADVANCED_REPORTING),
+    puedeUsarIntegraciones: hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
+  };
+
+  // Validación contextual para nuevas inmersiones
+  const validateNewInmersion = (data?: { operacion_id?: string; is_independent?: boolean }) => {
+    return validateInmersionCreation(data);
+  };
+
+  // Obtener contexto de flujo de trabajo
+  const workflowContext = {
+    type: getWorkflowType(),
+    description: getWorkflowType() === 'direct' 
+      ? 'Creación directa de inmersiones sin planificación previa'
+      : getWorkflowType() === 'planned'
+      ? 'Todas las inmersiones deben estar asociadas a operaciones planificadas'
+      : 'Permite tanto inmersiones directas como planificadas',
+    allowsDirectCreation: getWorkflowType() !== 'planned',
+    requiresPlanning: getWorkflowType() === 'planned',
   };
 
   return {
@@ -77,6 +102,11 @@ export const useInmersionesContextual = () => {
     estadisticas,
     capacidades,
     operationalContext,
-    canCreateDirectImmersion: canCreateDirectImmersions,
+    workflowContext,
+    validateNewInmersion,
+    
+    // Helpers de compatibilidad
+    canCreateDirectImmersion: true, // Core siempre disponible
+    canPlanOperations: capacidades.puedeCrearOperaciones,
   };
 };
