@@ -264,7 +264,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: Building,
         items: [
           { title: "Información", url: "/empresas/contratistas" },
-          { title: "Gestión de Personal", url: "/empresas/usuarios" }
+          { title: "Gestión de Personal", url: "/admin/users" }
         ]
       },
       {
@@ -331,7 +331,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Sitios", url: "/empresas/sitios" },
           { title: "Contratistas", url: "/empresas/contratistas" },
-          { title: "Gestión de Personal", url: "/empresas/usuarios" }
+          { title: "Gestión de Personal", url: "/admin/users" }
         ]
       },
       {
@@ -409,7 +409,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Admin",
         icon: Shield,
         items: [
-          { title: "Gestión de Usuarios", url: "/empresas/usuarios", roleRequired: "superuser" },
+          { title: "Gestión de Usuarios", url: "/admin/users", roleRequired: "superuser" },
           { title: "Roles y Permisos", url: "/admin/roles", roleRequired: "superuser" },
           { title: "Módulos", url: "/admin/modules", roleRequired: "superuser" },
           { title: "Monitoreo", url: "/admin/system-monitoring", roleRequired: "superuser" }
