@@ -7,7 +7,7 @@ import { NetworkMaintenanceDataTable } from "@/components/network-maintenance/Ne
 export default function NetworkMaintenance() {
   return (
     <MainLayout
-      title="Mantención de Redes"
+      title="Módulo de Redes"
       subtitle="Gestión completa de formularios operativos para mantención y faenas en sistemas de redes marinas"
       icon={Network}
     >

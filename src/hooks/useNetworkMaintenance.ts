@@ -1,8 +1,6 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { NetworkMaintenanceData } from '@/types/network-maintenance';
 
 export interface NetworkMaintenanceFormData {
   codigo: string;
@@ -13,12 +11,12 @@ export interface NetworkMaintenanceFormData {
   hora_termino: string;
   profundidad_max: number;
   nave_maniobras: string;
-  team_s: string;
-  team_be: string;
-  team_bi: string;
+  team_s?: string;
+  team_be?: string;
+  team_bi?: string;
   matricula_nave: string;
   estado_puerto: string;
-  tipo_formulario: 'mantencion' | 'faena_redes';
+  tipo_formulario: 'mantencion_redes' | 'faena_redes';
   multix_data: any;
   estado: string;
   progreso: number;
@@ -48,7 +46,7 @@ export const useNetworkMaintenance = () => {
       
       toast({
         title: "Formulario creado",
-        description: "El formulario de mantención ha sido creado exitosamente.",
+        description: "El formulario ha sido creado exitosamente.",
       });
 
       return data;
@@ -100,44 +98,6 @@ export const useNetworkMaintenance = () => {
     }
   }, []);
 
-  const completeNetworkMaintenance = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('multix')
-        .update({ 
-          estado: 'completado',
-          progreso: 100
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setNetworkMaintenanceForms(prev => 
-        prev.map(form => form.id === id ? data : form)
-      );
-
-      toast({
-        title: "Formulario completado",
-        description: "El formulario ha sido marcado como completado.",
-      });
-
-      return data;
-    } catch (error) {
-      console.error('Error completing network maintenance form:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo completar el formulario",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const deleteNetworkMaintenance = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -173,6 +133,7 @@ export const useNetworkMaintenance = () => {
       const { data, error } = await supabase
         .from('multix')
         .select('*')
+        .in('tipo_formulario', ['mantencion_redes', 'faena_redes'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -190,6 +151,11 @@ export const useNetworkMaintenance = () => {
     }
   }, []);
 
+  // Auto-fetch on mount
+  useEffect(() => {
+    fetchNetworkMaintenanceForms();
+  }, [fetchNetworkMaintenanceForms]);
+
   const refetch = useCallback(async () => {
     await fetchNetworkMaintenanceForms();
   }, [fetchNetworkMaintenanceForms]);
@@ -199,7 +165,6 @@ export const useNetworkMaintenance = () => {
     loading,
     createNetworkMaintenance,
     updateNetworkMaintenance,
-    completeNetworkMaintenance,
     deleteNetworkMaintenance,
     fetchNetworkMaintenanceForms,
     refetch,

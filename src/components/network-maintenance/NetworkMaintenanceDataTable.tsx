@@ -1,17 +1,18 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Edit, Trash2, Plus, Settings, Network, Activity } from "lucide-react";
-import { NetworkMaintenanceWizard } from "./NetworkMaintenanceWizard";
+import { FishingNetworkMaintenanceForm } from "@/components/fishing-networks/FishingNetworkMaintenanceForm";
 import { useNetworkMaintenance } from "@/hooks/useNetworkMaintenance";
 
 export const NetworkMaintenanceDataTable = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedForm, setSelectedForm] = useState<any>(null);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
-  const [selectedFormType, setSelectedFormType] = useState<'mantencion' | 'faena_redes'>('mantencion');
+  const [selectedFormType, setSelectedFormType] = useState<'mantencion_redes' | 'faena_redes'>('mantencion_redes');
 
   const { 
     networkMaintenanceForms, 
@@ -22,7 +23,7 @@ export const NetworkMaintenanceDataTable = () => {
     refetch 
   } = useNetworkMaintenance();
 
-  const handleCreateForm = (type: 'mantencion' | 'faena_redes') => {
+  const handleCreateForm = (type: 'mantencion_redes' | 'faena_redes') => {
     setSelectedFormType(type);
     setDialogMode('create');
     setSelectedForm(null);
@@ -59,7 +60,7 @@ export const NetworkMaintenanceDataTable = () => {
       if (dialogMode === 'create') {
         await createNetworkMaintenance({
           ...formData,
-          codigo: `MANT-${Date.now()}`,
+          codigo: `${selectedFormType === 'mantencion_redes' ? 'MANT' : 'FAENA'}-${Date.now()}`,
           tipo_formulario: selectedFormType,
           multix_data: formData,
           estado: 'borrador',
@@ -101,6 +102,9 @@ export const NetworkMaintenanceDataTable = () => {
     }
   };
 
+  const mantencionForms = networkMaintenanceForms.filter(f => f.tipo_formulario === 'mantencion_redes');
+  const faenaForms = networkMaintenanceForms.filter(f => f.tipo_formulario === 'faena_redes');
+
   return (
     <div className="space-y-6">
       {/* Header con estadísticas */}
@@ -121,10 +125,8 @@ export const NetworkMaintenanceDataTable = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Mantenimientos</p>
-                <p className="text-2xl font-bold">
-                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'mantencion').length}
-                </p>
+                <p className="text-sm text-gray-600">Mantención Redes</p>
+                <p className="text-2xl font-bold">{mantencionForms.length}</p>
               </div>
               <Settings className="w-8 h-8 text-green-500" />
             </div>
@@ -136,9 +138,7 @@ export const NetworkMaintenanceDataTable = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Faenas</p>
-                <p className="text-2xl font-bold">
-                  {networkMaintenanceForms.filter(f => f.tipo_formulario === 'faena_redes').length}
-                </p>
+                <p className="text-2xl font-bold">{faenaForms.length}</p>
               </div>
               <Network className="w-8 h-8 text-purple-500" />
             </div>
@@ -163,15 +163,15 @@ export const NetworkMaintenanceDataTable = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Formularios de Mantención</CardTitle>
+            <CardTitle>Formularios del Módulo de Redes</CardTitle>
             <div className="flex gap-2">
-              <Button onClick={() => handleCreateForm('mantencion')}>
+              <Button onClick={() => handleCreateForm('mantencion_redes')}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nueva Mantención
+                Nueva Mantención de Redes
               </Button>
               <Button variant="outline" onClick={() => handleCreateForm('faena_redes')}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nueva Faena
+                Nueva Faena de Redes
               </Button>
             </div>
           </div>
@@ -191,6 +191,9 @@ export const NetworkMaintenanceDataTable = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold">{form.codigo}</h3>
                       {getStatusBadge(form.estado)}
+                      <Badge variant="outline">
+                        {form.tipo_formulario === 'mantencion_redes' ? 'Mantención' : 'Faena'}
+                      </Badge>
                     </div>
                     <p className="text-sm text-gray-600">{form.lugar_trabajo}</p>
                     <p className="text-sm text-gray-500">{form.fecha}</p>
@@ -217,19 +220,24 @@ export const NetworkMaintenanceDataTable = () => {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === 'create' && 'Crear Formulario'}
+              {dialogMode === 'create' && `Crear ${selectedFormType === 'mantencion_redes' ? 'Mantención de Redes' : 'Faena de Redes'}`}
               {dialogMode === 'edit' && 'Editar Formulario'}
               {dialogMode === 'view' && 'Ver Formulario'}
             </DialogTitle>
           </DialogHeader>
-          <NetworkMaintenanceWizard
-            operationId={selectedForm?.operacion_id || 'temp-operation-id'}
-            tipoFormulario={selectedFormType}
-            onComplete={handleFormComplete}
-            onCancel={handleCloseDialog}
-            readOnly={dialogMode === 'view'}
-            initialData={selectedForm?.multix_data}
-          />
+          {selectedFormType === 'mantencion_redes' && (
+            <FishingNetworkMaintenanceForm
+              onComplete={handleFormComplete}
+              onCancel={handleCloseDialog}
+              readOnly={dialogMode === 'view'}
+              initialData={selectedForm?.multix_data}
+            />
+          )}
+          {selectedFormType === 'faena_redes' && (
+            <div className="p-8 text-center text-gray-500">
+              Formulario de Faena de Redes en desarrollo...
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
