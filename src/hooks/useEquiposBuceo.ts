@@ -10,6 +10,12 @@ export interface EquipoBuceoMiembro {
   matricula?: string;
   invitado: boolean;
   estado_invitacion?: string;
+  usuario?: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+  };
 }
 
 export interface EquipoBuceo {
@@ -19,7 +25,15 @@ export interface EquipoBuceo {
   empresa_id: string;
   tipo_empresa: string;
   estado: string;
+  activo?: boolean;
   miembros?: EquipoBuceoMiembro[];
+}
+
+export interface EquipoBuceoFormData {
+  nombre: string;
+  descripcion?: string;
+  empresa_id: string;
+  tipo_empresa: string;
 }
 
 export const useEquiposBuceo = () => {
@@ -28,11 +42,11 @@ export const useEquiposBuceo = () => {
   const isLoading = false;
   const error = null;
 
-  const createEquipo = async (data: any) => {
+  const createEquipo = async (data: EquipoBuceoFormData) => {
     console.log('Creating equipo:', data);
   };
 
-  const updateEquipo = async (id: string, data: any) => {
+  const updateEquipo = async (id: string, data: Partial<EquipoBuceoFormData>) => {
     console.log('Updating equipo:', id, data);
   };
 
