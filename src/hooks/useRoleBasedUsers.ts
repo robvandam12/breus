@@ -89,11 +89,12 @@ export const useRoleBasedUsers = () => {
         let empresaNombre = 'Sin asignar';
         let empresaTipo: 'salmonera' | 'contratista' | undefined;
 
-        if (user.salmoneras && user.salmoneras.length > 0) {
-          empresaNombre = user.salmoneras[0].nombre;
+        // Cambio aquí: tratar salmoneras y contratistas como objetos únicos, no arrays
+        if (user.salmoneras) {
+          empresaNombre = user.salmoneras.nombre;
           empresaTipo = 'salmonera';
-        } else if (user.contratistas && user.contratistas.length > 0) {
-          empresaNombre = user.contratistas[0].nombre;
+        } else if (user.contratistas) {
+          empresaNombre = user.contratistas.nombre;
           empresaTipo = 'contratista';
         } else if (user.salmonera_id) {
           empresaNombre = 'Salmonera';
