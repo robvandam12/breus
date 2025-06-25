@@ -19,26 +19,6 @@ export interface UserByCompany {
   created_at: string;
 }
 
-// Helper function to extract valid UUID from potentially malformed ID
-const extractValidId = (id: any): string | null => {
-  if (!id) return null;
-  
-  // If it's an object with a value property, extract it
-  if (typeof id === 'object' && id.value !== undefined) {
-    const value = id.value;
-    if (value === 'undefined' || value === 'null' || !value) return null;
-    return value;
-  }
-  
-  // If it's already a string, return it (unless it's 'undefined' or 'null')
-  if (typeof id === 'string') {
-    if (id === 'undefined' || id === 'null' || id === '') return null;
-    return id;
-  }
-  
-  return null;
-};
-
 export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' | 'contratista') => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
@@ -46,42 +26,14 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
   const { data: usuarios = [], isLoading, error } = useQuery({
     queryKey: ['users-by-company', empresaId, empresaTipo, profile?.role],
     queryFn: async () => {
-      console.log('🔍 Fetching users by company with profile:', { 
-        profileRole: profile?.role,
-        profileSalmoneraId: profile?.salmonera_id,
-        profileServicioId: profile?.servicio_id,
+      console.log('Fetching users by company:', { 
         empresaId, 
-        empresaTipo
+        empresaTipo, 
+        userRole: profile?.role,
+        userSalmoneraId: profile?.salmonera_id 
       });
 
-      // Extract and validate IDs from profile
-      const profileSalmoneraId = extractValidId(profile?.salmonera_id);
-      const profileServicioId = extractValidId(profile?.servicio_id);
-      
-      console.log('🔧 Extracted valid IDs:', {
-        profileSalmoneraId,
-        profileServicioId,
-        originalSalmoneraId: profile?.salmonera_id,
-        originalServicioId: profile?.servicio_id
-      });
-
-      // Determine target company
-      const targetEmpresaId = empresaId || profileSalmoneraId || profileServicioId;
-      const targetEmpresaTipo = empresaTipo || (profileSalmoneraId ? 'salmonera' : 'contratista');
-
-      console.log('🎯 Target empresa:', { 
-        targetEmpresaId, 
-        targetEmpresaTipo,
-        hasValidTargetId: !!targetEmpresaId
-      });
-
-      // If no valid company ID, return empty array for now (instead of throwing error)
-      if (!targetEmpresaId) {
-        console.warn('⚠️ No valid company ID found, returning empty array');
-        return [];
-      }
-
-      // Build query with joins
+      // Query principal con joins
       let query = supabase
         .from('usuario')
         .select(`
@@ -89,35 +41,42 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
           salmonera:salmoneras(nombre)
         `);
 
-      // Apply company filter
-      if (targetEmpresaTipo === 'salmonera') {
-        query = query.eq('salmonera_id', targetEmpresaId);
-      } else if (targetEmpresaTipo === 'contratista') {
-        query = query.eq('servicio_id', targetEmpresaId);
-      }
+      // Si no se especifica empresa, usar la empresa del usuario actual
+      const targetEmpresaId = empresaId || profile?.salmonera_id || profile?.servicio_id;
+      const targetEmpresaTipo = empresaTipo || (profile?.salmonera_id ? 'salmonera' : 'contratista');
 
-      // Apply role-based filters for additional security
-      if (profile?.role === 'admin_salmonera' && profileSalmoneraId) {
-        query = query.eq('salmonera_id', profileSalmoneraId);
-      } else if (profile?.role === 'admin_servicio' && profileServicioId) {
-        query = query.eq('servicio_id', profileServicioId);
+      console.log('Target empresa:', { targetEmpresaId, targetEmpresaTipo });
+
+      if (targetEmpresaId) {
+        if (targetEmpresaTipo === 'salmonera') {
+          query = query.eq('salmonera_id', targetEmpresaId);
+        } else if (targetEmpresaTipo === 'contratista') {
+          query = query.eq('servicio_id', targetEmpresaId);
+        }
+      } else {
+        // Si no hay empresa específica, aplicar filtros según permisos
+        if (profile?.role === 'superuser') {
+          // Superuser ve todos los usuarios
+        } else if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
+          query = query.eq('salmonera_id', profile.salmonera_id);
+        } else if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
+          query = query.eq('servicio_id', profile.servicio_id);
+        } else {
+          // Usuario sin permisos específicos, no devolver nada
+          return [];
+        }
       }
 
       query = query.order('created_at', { ascending: false });
 
-      console.log('📡 Executing query for:', { targetEmpresaId, targetEmpresaTipo, role: profile?.role });
-
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ Error fetching users:', error);
+        console.error('Error fetching users:', error);
         throw error;
       }
 
-      console.log('✅ Users found:', {
-        count: data?.length || 0,
-        users: data?.map(u => ({ id: u.usuario_id, nombre: u.nombre, rol: u.rol }))
-      });
+      console.log('Users found:', data?.length || 0);
 
       const mappedUsers = (data || []).map(user => {
         let empresaNombre = 'Sin asignar';
@@ -142,11 +101,9 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
     },
     enabled: !!profile,
     retry: (failureCount, error: any) => {
-      console.log('🔄 Query retry attempt:', { failureCount, errorCode: error?.code });
-      
       // No reintentar si es un error de políticas RLS
-      if (error?.code === '42P17' || error?.message?.includes('policy')) {
-        console.error('🚫 RLS policy error, not retrying:', error);
+      if (error?.code === '42P17') {
+        console.error('RLS policy error, not retrying:', error);
         return false;
       }
       return failureCount < 3;
@@ -183,7 +140,6 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
       });
     },
     onError: (error: any) => {
-      console.error('❌ Error sending invitation:', error);
       toast({
         title: 'Error',
         description: `Error al enviar invitación: ${error.message}`,
@@ -200,57 +156,37 @@ export const useUsersByCompany = (empresaId?: string, empresaTipo?: 'salmonera' 
       rol: string;
       empresa_id?: string;
       tipo_empresa?: 'salmonera' | 'contratista';
-      usuario_id?: string;
     }) => {
-      // If usuario_id is provided, we're adding an existing user to the company
-      if (userData.usuario_id) {
-        const { data, error } = await supabase
-          .from('usuario')
-          .update({
-            salmonera_id: userData.tipo_empresa === 'salmonera' ? userData.empresa_id : null,
-            servicio_id: userData.tipo_empresa === 'contratista' ? userData.empresa_id : null,
-            rol: userData.rol
-          })
-          .eq('usuario_id', userData.usuario_id)
-          .select()
-          .single();
+      const userId = crypto.randomUUID();
+      const { data, error } = await supabase
+        .from('usuario')
+        .insert({
+          usuario_id: userId,
+          nombre: userData.nombre,
+          apellido: userData.apellido,
+          email: userData.email,
+          rol: userData.rol,
+          salmonera_id: userData.tipo_empresa === 'salmonera' ? userData.empresa_id : null,
+          servicio_id: userData.tipo_empresa === 'contratista' ? userData.empresa_id : null,
+          perfil_completado: true
+        })
+        .select()
+        .single();
 
-        if (error) throw error;
-        return data;
-      } else {
-        // Create new user
-        const userId = crypto.randomUUID();
-        const { data, error } = await supabase
-          .from('usuario')
-          .insert({
-            usuario_id: userId,
-            nombre: userData.nombre,
-            apellido: userData.apellido,
-            email: userData.email,
-            rol: userData.rol,
-            salmonera_id: userData.tipo_empresa === 'salmonera' ? userData.empresa_id : null,
-            servicio_id: userData.tipo_empresa === 'contratista' ? userData.empresa_id : null,
-            perfil_completado: true
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      }
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-by-company'] });
       toast({
-        title: 'Usuario agregado',
-        description: 'El usuario ha sido agregado exitosamente.',
+        title: 'Usuario creado',
+        description: 'El usuario ha sido creado exitosamente.',
       });
     },
     onError: (error: any) => {
-      console.error('❌ Error creating/updating user:', error);
       toast({
         title: 'Error',
-        description: `Error al gestionar usuario: ${error.message}`,
+        description: `Error al crear usuario: ${error.message}`,
         variant: 'destructive',
       });
     },
