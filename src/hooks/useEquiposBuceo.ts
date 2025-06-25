@@ -1,113 +1,72 @@
 
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+export interface EquipoBuceoMiembro {
+  id: string;
+  equipo_id: string;
+  usuario_id?: string;
+  nombre_completo: string;
+  email?: string;
+  telefono?: string;
+  rol: string;
+  matricula?: string;
+  invitado: boolean;
+  estado_invitacion?: string;
+}
 
 export interface EquipoBuceo {
   id: string;
   nombre: string;
   descripcion?: string;
   empresa_id: string;
-  tipo_empresa: 'salmonera' | 'contratista';
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
+  tipo_empresa: string;
+  estado: string;
   miembros?: EquipoBuceoMiembro[];
 }
 
-export interface EquipoBuceoMiembro {
-  id: string;
-  equipo_id: string;
-  usuario_id: string;
-  rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
-  disponible: boolean;
-  usuario?: {
-    nombre: string;
-    apellido: string;
-    email: string;
-    rol: string;
-  };
-}
-
 export const useEquiposBuceo = () => {
-  const queryClient = useQueryClient();
+  // Mock data - replace with actual Supabase query
+  const equipos: EquipoBuceo[] = [];
+  const isLoading = false;
+  const error = null;
 
-  const { data: equipos = [], isLoading } = useQuery({
-    queryKey: ['equipos-buceo'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('equipos_buceo')
-        .select(`
-          *,
-          miembros:equipo_buceo_miembros(
-            *,
-            usuario:usuario(nombre, apellido, email, rol)
-          )
-        `)
-        .order('created_at', { ascending: false });
+  const createEquipo = async (data: any) => {
+    console.log('Creating equipo:', data);
+  };
 
-      if (error) throw error;
-      return data as EquipoBuceo[];
-    },
-  });
+  const updateEquipo = async (id: string, data: any) => {
+    console.log('Updating equipo:', id, data);
+  };
 
-  const createEquipo = useMutation({
-    mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('equipos_buceo')
-        .insert(equipoData)
-        .select()
-        .single();
+  const deleteEquipo = async (id: string) => {
+    console.log('Deleting equipo:', id);
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-      toast({
-        title: 'Equipo creado',
-        description: 'El equipo de buceo ha sido creado exitosamente.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Error al crear el equipo: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+  const addMiembro = async (data: any) => {
+    console.log('Adding member:', data);
+  };
 
-  const addMiembro = useMutation({
-    mutationFn: async ({ equipo_id, usuario_id, rol_equipo }: {
-      equipo_id: string;
-      usuario_id: string;
-      rol_equipo: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('equipo_buceo_miembros')
-        .insert({ equipo_id, usuario_id, rol_equipo })
-        .select()
-        .single();
+  const removeMiembro = async (equipoId: string, miembroId: string) => {
+    console.log('Removing member:', equipoId, miembroId);
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-      toast({
-        title: 'Miembro agregado',
-        description: 'El miembro ha sido agregado al equipo exitosamente.',
-      });
-    },
-  });
+  const updateMiembroRole = async (equipoId: string, miembroId: string, newRole: string) => {
+    console.log('Updating member role:', equipoId, miembroId, newRole);
+  };
+
+  const inviteMember = async (data: any) => {
+    console.log('Inviting member:', data);
+  };
 
   return {
     equipos,
     isLoading,
-    createEquipo: createEquipo.mutate,
-    addMiembro: addMiembro.mutate,
-    isCreating: createEquipo.isPending,
+    error,
+    createEquipo,
+    updateEquipo,
+    deleteEquipo,
+    addMiembro,
+    removeMiembro,
+    updateMiembroRole,
+    inviteMember,
+    isCreating: false
   };
 };

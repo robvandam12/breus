@@ -1,7 +1,7 @@
 
 import { useEquiposBuceo } from './useEquiposBuceo';
 import { useOperationalFlow } from '@/contexts/OperationalFlowContext';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useEquiposBuceoEnhanced = () => {
   const equiposBasicos = useEquiposBuceo();

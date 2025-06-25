@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -15,10 +16,10 @@ import Configuracion from "@/pages/Configuracion";
 import Profile from "@/pages/Profile";
 import Mantenedores from "@/pages/Mantenedores";
 import { Register } from "@/pages/auth/Register";
-import { Login } from "@/pages/auth/Login";
-import { ForgotPassword } from "@/pages/auth/ForgotPassword";
-import { ResetPassword } from "@/pages/auth/ResetPassword";
-import { VerifyEmail } from "@/pages/auth/VerifyEmail";
+import Login from "@/pages/auth/Login";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import ResetPassword from "@/pages/auth/ResetPassword";
+import VerifyEmail from "@/pages/auth/VerifyEmail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
