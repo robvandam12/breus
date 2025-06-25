@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -36,20 +37,14 @@ export const useRoleBasedUsers = () => {
         throw new Error('No profile available');
       }
 
-      let query = supabase.from('usuario').select(`
-        *,
-        salmoneras!left(nombre, rut),
-        contratistas!left(nombre, rut)
-      `);
+      // Primero obtenemos los usuarios básicos
+      let query = supabase.from('usuario').select('*');
 
       // Aplicar filtros según el rol
       if (profile.role === 'superuser') {
-        // Superuser ve todos los usuarios
         console.log('👑 Superuser: fetching all users');
+        // Superuser ve todos los usuarios - sin filtros adicionales
       } else if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
-        // Admin salmonera ve:
-        // 1. Usuarios de su salmonera
-        // 2. Usuarios de contratistas asociados a su salmonera
         console.log('🏢 Admin salmonera: filtering by salmonera and associated contractors');
         
         // Primero obtener los contratistas asociados a esta salmonera
@@ -62,9 +57,12 @@ export const useRoleBasedUsers = () => {
         const contratistaIds = asociaciones?.map(a => a.contratista_id) || [];
         
         // Filtrar usuarios de la salmonera o de contratistas asociados
-        query = query.or(`salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`);
+        if (contratistaIds.length > 0) {
+          query = query.or(`salmonera_id.eq.${profile.salmonera_id},servicio_id.in.(${contratistaIds.join(',')})`);
+        } else {
+          query = query.eq('salmonera_id', profile.salmonera_id);
+        }
       } else if (profile.role === 'admin_servicio' && profile.servicio_id) {
-        // Admin servicio ve solo usuarios de su contratista
         console.log('🛠️ Admin servicio: filtering by servicio_id');
         query = query.eq('servicio_id', profile.servicio_id);
       } else {
@@ -74,60 +72,64 @@ export const useRoleBasedUsers = () => {
 
       query = query.order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      const { data: basicUsers, error } = await query;
 
       if (error) {
         console.error('❌ Error fetching users:', error);
         throw error;
       }
 
-      console.log('✅ Users found:', data?.length || 0);
+      console.log('✅ Basic users found:', basicUsers?.length || 0);
 
-      // Mapear datos y agregar información de empresa
-      const mappedUsers = (data || []).map(user => {
-        let empresaNombre = 'Sin asignar';
-        let empresaTipo: 'salmonera' | 'contratista' | undefined;
+      // Ahora obtenemos los datos de empresa por separado
+      const usersWithCompanyData = await Promise.all(
+        (basicUsers || []).map(async (user) => {
+          let empresaNombre = 'Sin asignar';
+          let empresaTipo: 'salmonera' | 'contratista' | undefined;
 
-        // Manejar relaciones de manera consistente con type assertions
-        if (user.salmoneras) {
-          if (Array.isArray(user.salmoneras) && user.salmoneras.length > 0) {
-            empresaNombre = (user.salmoneras as any[])[0].nombre;
-            empresaTipo = 'salmonera';
-          } else if (!Array.isArray(user.salmoneras)) {
-            empresaNombre = (user.salmoneras as any).nombre;
-            empresaTipo = 'salmonera';
+          // Obtener datos de salmonera si aplica
+          if (user.salmonera_id) {
+            const { data: salmonera } = await supabase
+              .from('salmoneras')
+              .select('nombre')
+              .eq('id', user.salmonera_id)
+              .single();
+            
+            if (salmonera) {
+              empresaNombre = salmonera.nombre;
+              empresaTipo = 'salmonera';
+            }
           }
-        } else if (user.contratistas) {
-          if (Array.isArray(user.contratistas) && user.contratistas.length > 0) {
-            empresaNombre = (user.contratistas as any[])[0].nombre;
-            empresaTipo = 'contratista';
-          } else if (!Array.isArray(user.contratistas)) {
-            empresaNombre = (user.contratistas as any).nombre;
-            empresaTipo = 'contratista';
+          // Obtener datos de contratista si aplica
+          else if (user.servicio_id) {
+            const { data: contratista } = await supabase
+              .from('contratistas')
+              .select('nombre')
+              .eq('id', user.servicio_id)
+              .single();
+            
+            if (contratista) {
+              empresaNombre = contratista.nombre;
+              empresaTipo = 'contratista';
+            }
           }
-        } else if (user.salmonera_id) {
-          empresaNombre = 'Salmonera';
-          empresaTipo = 'salmonera';
-        } else if (user.servicio_id) {
-          empresaNombre = 'Empresa de servicio';
-          empresaTipo = 'contratista';
-        }
 
-        return {
-          ...user,
-          empresa_nombre: empresaNombre,
-          empresa_tipo: empresaTipo
-        };
-      }) as RoleBasedUser[];
+          return {
+            ...user,
+            empresa_nombre: empresaNombre,
+            empresa_tipo: empresaTipo
+          };
+        })
+      );
 
-      console.log('🔄 Mapped users:', mappedUsers.length);
-      return mappedUsers;
+      console.log('🔄 Mapped users with company data:', usersWithCompanyData.length);
+      return usersWithCompanyData as RoleBasedUser[];
     },
     enabled: !!profile && ['superuser', 'admin_salmonera', 'admin_servicio'].includes(profile.role),
     retry: (failureCount, error: any) => {
       console.log('🔄 Retry attempt:', failureCount, 'Error:', error?.message);
-      if (error?.code === '42501' || error?.code === 'PGRST301') {
-        console.error('🚫 RLS/Auth error, not retrying:', error);
+      if (error?.code === '42501' || error?.code === 'PGRST301' || error?.code === 'PGRST200') {
+        console.error('🚫 RLS/Schema error, not retrying:', error);
         return false;
       }
       return failureCount < 2;
