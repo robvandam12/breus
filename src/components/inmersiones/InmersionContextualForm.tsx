@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,12 +47,13 @@ export const InmersionContextualForm = ({
     visibilidad: editingInmersion?.visibilidad || 0,
     corriente: editingInmersion?.corriente || '',
     observaciones: editingInmersion?.observaciones || '',
+    operacion_descripcion: editingInmersion?.operacion_descripcion || '', // Nuevo campo para descripción
     context_type: (editingInmersion?.context_type || 'direct') as 'planned' | 'direct',
     operacion_id: operacionId || editingInmersion?.operacion_id || null,
     planned_bottom_time: editingInmersion?.planned_bottom_time || 0
   });
 
-  const [isDirectMode, setIsDirectMode] = useState(formData.context_type === 'direct');
+  const [isIndependent, setIsIndependent] = useState(!operacionId && !editingInmersion?.operacion_id);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { 
@@ -61,7 +63,7 @@ export const InmersionContextualForm = ({
     canAccessFeature 
   } = useIndependentOperations();
 
-  // Validación mejorada que incluye validación de empresa
+  // Validación mejorada
   const validateForm = () => {
     console.log('Validating form data:', formData);
     
@@ -74,6 +76,15 @@ export const InmersionContextualForm = ({
       { field: 'objetivo', value: formData.objetivo, label: 'Objetivo' },
       { field: 'corriente', value: formData.corriente, label: 'Corriente' }
     ];
+
+    // Para inmersiones independientes, requerir descripción de operación
+    if (isIndependent) {
+      requiredFields.push({ 
+        field: 'operacion_descripcion', 
+        value: formData.operacion_descripcion, 
+        label: 'Descripción de operación' 
+      });
+    }
 
     const emptyFields = requiredFields.filter(field => {
       if (typeof field.value === 'string') {
@@ -90,8 +101,8 @@ export const InmersionContextualForm = ({
 
     const invalidNumericFields = numericFields.filter(field => field.value <= 0);
 
-    // Validación especial para superuser - debe tener empresa seleccionada
-    if (requiresCompanySelection()) {
+    // Validación de empresa para superuser
+    if (requiresCompanySelection() && !context.selectedCompany) {
       emptyFields.push({ field: 'company', value: '', label: 'Empresa destino' });
     }
 
@@ -132,7 +143,7 @@ export const InmersionContextualForm = ({
     setIsSubmitting(true);
     
     try {
-      // Preparar datos limpios solo con campos que existen en la tabla
+      // Preparar datos limpios
       const cleanFormData = {
         codigo: formData.codigo,
         fecha_inmersion: formData.fecha_inmersion,
@@ -149,18 +160,22 @@ export const InmersionContextualForm = ({
         observaciones: formData.observaciones || '',
         estado: 'planificada',
         planned_bottom_time: formData.planned_bottom_time || null,
-        context_type: isDirectMode ? 'direct' as const : 'planned' as const,
-        operacion_id: formData.operacion_id || null,
-        is_independent: !formData.operacion_id,
+        context_type: isIndependent ? 'direct' as const : 'planned' as const,
+        operacion_id: isIndependent ? null : formData.operacion_id,
+        is_independent: isIndependent,
         // Usar empresa seleccionada o empresa del usuario
         company_id: context.selectedCompany?.id || context.companyId,
-        company_type: context.selectedCompany?.tipo || context.companyType
+        company_type: context.selectedCompany?.tipo || context.companyType,
+        // Para inmersiones independientes, guardar la descripción en observaciones
+        ...(isIndependent && formData.operacion_descripcion && {
+          observaciones: `Operación: ${formData.operacion_descripcion}\n${formData.observaciones || ''}`.trim()
+        })
       };
 
       console.log('Submitting clean inmersion data:', cleanFormData);
       
       // Usar el método apropiado según el contexto
-      if (cleanFormData.is_independent) {
+      if (isIndependent) {
         await createIndependentInmersion(cleanFormData);
       } else {
         // Para inmersiones con operación, crear a través de Supabase directamente
@@ -202,6 +217,10 @@ export const InmersionContextualForm = ({
   };
 
   const getContextBadge = () => {
+    if (isIndependent) {
+      return <Badge className="bg-green-100 text-green-800">Independiente</Badge>;
+    }
+    
     if (!operationalContext) return null;
 
     switch (operationalContext.context_type) {
@@ -217,9 +236,6 @@ export const InmersionContextualForm = ({
   };
 
   const validation = validateForm();
-  const canCreateDirect = canAccessFeature('create_direct_inmersions');
-  const canCreatePlanned = canAccessFeature('create_operations');
-  const showModeSwitch = operationalContext?.context_type === 'mixed';
 
   if (context.isLoading) {
     return (
@@ -241,25 +257,19 @@ export const InmersionContextualForm = ({
               {editingInmersion ? 'Editar Inmersión' : 'Nueva Inmersión'}
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">
-              Contexto: {getContextBadge()}
+              Tipo: {getContextBadge()}
             </p>
           </div>
           
-          {showModeSwitch && !context.isSuperuser && (
+          {!operacionId && (
             <div className="flex items-center gap-2">
-              <Label htmlFor="mode-switch" className="text-sm">
-                {isDirectMode ? 'Directo' : 'Planificado'}
+              <Label htmlFor="independent-switch" className="text-sm">
+                {isIndependent ? 'Independiente' : 'Con Operación'}
               </Label>
               <Switch
-                id="mode-switch"
-                checked={!isDirectMode}
-                onCheckedChange={(checked) => {
-                  setIsDirectMode(!checked);
-                  setFormData(prev => ({
-                    ...prev,
-                    context_type: checked ? 'planned' : 'direct'
-                  }));
-                }}
+                id="independent-switch"
+                checked={isIndependent}
+                onCheckedChange={setIsIndependent}
               />
             </div>
           )}
@@ -320,6 +330,26 @@ export const InmersionContextualForm = ({
               />
             </div>
           </div>
+
+          {/* Descripción de operación para inmersiones independientes */}
+          {isIndependent && (
+            <div>
+              <Label htmlFor="operacion_descripcion" className={!formData.operacion_descripcion ? 'text-red-600' : ''}>
+                Descripción de la Operación *
+              </Label>
+              <Input
+                id="operacion_descripcion"
+                value={formData.operacion_descripcion}
+                onChange={(e) => setFormData(prev => ({...prev, operacion_descripcion: e.target.value}))}
+                placeholder="Ej: Inspección de cascos, Mantenimiento de redes, etc."
+                className={!formData.operacion_descripcion ? 'border-red-300' : ''}
+                required
+              />
+              <p className="text-sm text-gray-600 mt-1">
+                Describe brevemente el tipo de operación que se realizará
+              </p>
+            </div>
+          )}
 
           {/* Time Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
