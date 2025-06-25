@@ -6,15 +6,22 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Search, Eye, Edit, FileText, Calendar, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useInmersionesContextual } from '@/hooks/useInmersionesContextual';
 import { useModularSystem } from '@/hooks/useModularSystem';
+import { useInmersiones } from '@/hooks/useInmersiones';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { InmersionWizard } from '@/components/inmersion/InmersionWizard';
+import { toast } from '@/hooks/use-toast';
 
 export const InmersionesDataTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [showNewInmersionDialog, setShowNewInmersionDialog] = useState(false);
+  const [showPlannedInmersionDialog, setShowPlannedInmersionDialog] = useState(false);
   
   const { 
     inmersiones, 
@@ -25,6 +32,8 @@ export const InmersionesDataTable = () => {
   } = useInmersionesContextual();
   
   const { hasModuleAccess, modules } = useModularSystem();
+  const { createInmersion } = useInmersiones();
+  const { operaciones } = useOperaciones();
 
   const filteredInmersiones = inmersiones.filter(inmersion => {
     const matchesSearch = inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,6 +48,56 @@ export const InmersionesDataTable = () => {
     
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  // Manejar creación de inmersión directa (CORE)
+  const handleCreateDirectInmersion = async (data: any) => {
+    try {
+      const inmersionData = {
+        ...data,
+        is_independent: true,
+        operacion_id: null, // Inmersión independiente
+      };
+      
+      await createInmersion(inmersionData);
+      toast({
+        title: "Inmersión creada",
+        description: "La inmersión independiente ha sido creada exitosamente.",
+      });
+      setShowNewInmersionDialog(false);
+    } catch (error) {
+      console.error('Error creating direct inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión independiente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Manejar creación de inmersión planificada (PLANNING)
+  const handleCreatePlannedInmersion = async (data: any) => {
+    try {
+      const inmersionData = {
+        ...data,
+        is_independent: false,
+        // operacion_id viene del formulario
+      };
+      
+      await createInmersion(inmersionData);
+      toast({
+        title: "Inmersión creada",
+        description: "La inmersión planificada ha sido creada exitosamente.",
+      });
+      setShowPlannedInmersionDialog(false);
+    } catch (error) {
+      console.error('Error creating planned inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión planificada.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusBadge = (estado: string) => {
     switch (estado) {
@@ -158,14 +217,21 @@ export const InmersionesDataTable = () => {
             <div className="flex gap-2">
               {/* CORE: Siempre mostrar botón de nueva inmersión directa */}
               {capacidades.puedeCrearInmersionesDirectas && (
-                <Button className="flex items-center gap-2">
+                <Button 
+                  className="flex items-center gap-2"
+                  onClick={() => setShowNewInmersionDialog(true)}
+                >
                   <Plus className="w-4 h-4" />
                   Nueva Inmersión
                 </Button>
               )}
               {/* PLANNING: Solo mostrar si módulo está activo */}
               {capacidades.puedeCrearOperaciones && (
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={() => setShowPlannedInmersionDialog(true)}
+                >
                   <Calendar className="w-4 h-4" />
                   Desde Operación
                 </Button>
@@ -290,6 +356,34 @@ export const InmersionesDataTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para crear inmersión directa (CORE) */}
+      <Dialog open={showNewInmersionDialog} onOpenChange={setShowNewInmersionDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Inmersión Independiente</DialogTitle>
+          </DialogHeader>
+          <InmersionWizard
+            onComplete={handleCreateDirectInmersion}
+            onCancel={() => setShowNewInmersionDialog(false)}
+            showOperationSelector={false}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para crear inmersión planificada (PLANNING) */}
+      <Dialog open={showPlannedInmersionDialog} onOpenChange={setShowPlannedInmersionDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Inmersión desde Operación</DialogTitle>
+          </DialogHeader>
+          <InmersionWizard
+            onComplete={handleCreatePlannedInmersion}
+            onCancel={() => setShowPlannedInmersionDialog(false)}
+            showOperationSelector={true}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
