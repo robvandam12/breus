@@ -88,21 +88,21 @@ export const useRoleBasedUsers = () => {
         let empresaNombre = 'Sin asignar';
         let empresaTipo: 'salmonera' | 'contratista' | undefined;
 
-        // Manejar relaciones de manera consistente - verificar si son arrays o objetos
+        // Manejar relaciones de manera consistente con type assertions
         if (user.salmoneras) {
           if (Array.isArray(user.salmoneras) && user.salmoneras.length > 0) {
-            empresaNombre = user.salmoneras[0].nombre;
+            empresaNombre = (user.salmoneras as any[])[0].nombre;
             empresaTipo = 'salmonera';
           } else if (!Array.isArray(user.salmoneras)) {
-            empresaNombre = user.salmoneras.nombre;
+            empresaNombre = (user.salmoneras as any).nombre;
             empresaTipo = 'salmonera';
           }
         } else if (user.contratistas) {
           if (Array.isArray(user.contratistas) && user.contratistas.length > 0) {
-            empresaNombre = user.contratistas[0].nombre;
+            empresaNombre = (user.contratistas as any[])[0].nombre;
             empresaTipo = 'contratista';
           } else if (!Array.isArray(user.contratistas)) {
-            empresaNombre = user.contratistas.nombre;
+            empresaNombre = (user.contratistas as any).nombre;
             empresaTipo = 'contratista';
           }
         } else if (user.salmonera_id) {
