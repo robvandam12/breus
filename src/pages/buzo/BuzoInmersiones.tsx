@@ -9,13 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Anchor, Calendar, MapPin, Eye, Search, Filter } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useInmersionesData } from '@/hooks/useInmersionesData';
+import { useInmersiones } from '@/hooks/useInmersiones';
 import { useInmersionesFilters } from '@/hooks/useInmersionesFilters';
 import type { BuzoInmersion } from '@/types/inmersion';
 
 export default function BuzoInmersiones() {
   const { profile } = useAuth();
-  const { inmersiones: inmersionesCompletas, loadingInmersiones } = useInmersionesData();
+  const { inmersiones: inmersionesCompletas, isLoading: loadingInmersiones } = useInmersiones();
 
   const buzoInmersiones = useMemo((): BuzoInmersion[] => {
     if (!profile || !inmersionesCompletas) return [];

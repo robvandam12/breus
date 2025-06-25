@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useBitacorasSupervisor } from './useBitacorasSupervisor';
 import { useBitacorasBuzo } from './useBitacorasBuzo';
-import { useInmersionesData } from './useInmersionesData';
+import { useInmersiones } from './useInmersiones';
 import { useOperaciones } from './useOperaciones';
 import { useAlertas } from './useAlertas';
 
@@ -15,16 +15,13 @@ export interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  // Nota: Algunos hooks subyacentes podrían no exportar isLoading.
-  // El estado de carga es una aproximación.
   const { bitacorasSupervisor } = useBitacorasSupervisor();
   const { bitacorasBuzo } = useBitacorasBuzo();
-  const { inmersiones } = useInmersionesData();
+  const { inmersiones, isLoading: isLoadingInmersiones } = useInmersiones();
   const { operaciones, isLoading: isLoadingOperaciones } = useOperaciones();
   const { alertasNoLeidas, isLoading: isLoadingAlertas } = useAlertas();
 
-  // Una comprobación de carga más robusta verificaría todas las consultas subyacentes.
-  const isLoading = isLoadingOperaciones || isLoadingAlertas;
+  const isLoading = isLoadingInmersiones || isLoadingOperaciones || isLoadingAlertas;
 
   const stats: DashboardStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, Anchor, Save, X } from 'lucide-react';
 import { BitacoraBuzoFormData } from '@/hooks/useBitacorasBuzo';
 import type { Inmersion } from '@/types/inmersion';
-import { useInmersionesData } from '@/hooks/useInmersionesData';
+import { useInmersiones } from '@/hooks/useInmersiones';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CreateBitacoraBuzoFormEnhancedProps {
@@ -23,7 +24,7 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
   onCancel
 }) => {
   const { profile } = useAuth();
-  const { inmersiones, loadingInmersiones } = useInmersionesData();
+  const { inmersiones, isLoading: loadingInmersiones } = useInmersiones();
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
   const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);

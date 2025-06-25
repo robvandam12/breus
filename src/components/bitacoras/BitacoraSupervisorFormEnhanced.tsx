@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anch
 import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
 import { useAuth } from '@/hooks/useAuth';
 import { useOperaciones } from '@/hooks/useOperaciones';
-import { useInmersionesData } from '@/hooks/useInmersionesData';
+import { useInmersiones } from '@/hooks/useInmersiones';
 import type { Inmersion } from '@/types/inmersion';
 
 interface CreateBitacoraSupervisorFormEnhancedProps {
@@ -24,7 +25,7 @@ export const CreateBitacoraSupervisorFormEnhanced: React.FC<CreateBitacoraSuperv
   onCancel
 }) => {
   const { profile } = useAuth();
-  const { inmersiones, loadingInmersiones } = useInmersionesData();
+  const { inmersiones, isLoading: loadingInmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
   
   const [selectedInmersionId, setSelectedInmersionId] = useState('');
