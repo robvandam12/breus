@@ -108,7 +108,7 @@ export const InmersionesDataTable = () => {
                 <Users className="w-5 h-5 text-yellow-600" />
                 <div>
                   <p className="text-sm text-gray-600">En Progreso</p>
-                  <p className="text-2xl font-bold">{estadisticas.en_progreso}</p>
+                  <p className="text-2xl font-bold">{estadisticas.enProceso}</p>
                 </div>
               </div>
             </CardContent>
