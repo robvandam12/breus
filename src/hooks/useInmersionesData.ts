@@ -13,6 +13,8 @@ const getInmersionesCompletas = async (): Promise<Inmersion[]> => {
         codigo,
         nombre,
         equipo_buceo_id,
+        salmonera_id,
+        contratista_id,
         salmoneras:salmonera_id(nombre),
         sitios:sitio_id(nombre),
         contratistas:contratista_id(nombre)

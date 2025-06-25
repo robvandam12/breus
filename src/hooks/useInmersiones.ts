@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -32,6 +33,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
             codigo,
             nombre,
             equipo_buceo_id,
+            salmonera_id,
+            contratista_id,
             salmoneras:salmonera_id(nombre),
             sitios:sitio_id(nombre),
             contratistas:contratista_id(nombre)
