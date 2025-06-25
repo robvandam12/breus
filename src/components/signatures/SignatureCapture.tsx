@@ -4,17 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 export interface SignatureCaptureProps {
-  onSignatureChange: (signature: string) => void;
+  onSignatureChange?: (signature: string) => void;
+  onSignatureCapture?: (signature: string) => void;
   existingSignature?: string;
   width?: number;
   height?: number;
+  title?: string;
+  required?: boolean;
 }
 
 export const SignatureCapture = ({ 
   onSignatureChange, 
+  onSignatureCapture,
   existingSignature = '', 
   width = 400, 
-  height = 200 
+  height = 200,
+  title,
+  required = false
 }: SignatureCaptureProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -73,7 +79,12 @@ export const SignatureCapture = ({
   const saveSignature = () => {
     if (canvasRef.current) {
       const dataURL = canvasRef.current.toDataURL('image/png');
-      onSignatureChange(dataURL);
+      if (onSignatureChange) {
+        onSignatureChange(dataURL);
+      }
+      if (onSignatureCapture) {
+        onSignatureCapture(dataURL);
+      }
     }
   };
 
@@ -83,13 +94,21 @@ export const SignatureCapture = ({
       if (ctx) {
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         setHasSignature(false);
-        onSignatureChange('');
+        if (onSignatureChange) {
+          onSignatureChange('');
+        }
+        if (onSignatureCapture) {
+          onSignatureCapture('');
+        }
       }
     }
   };
 
   return (
     <div className="space-y-2">
+      {title && (
+        <h3 className="text-lg font-medium">{title}</h3>
+      )}
       <div className="border border-gray-300 rounded-lg p-2 bg-white">
         <canvas
           ref={canvasRef}
@@ -116,7 +135,7 @@ export const SignatureCapture = ({
         </Button>
       )}
       <p className="text-xs text-gray-500">
-        Dibuje su firma en el área de arriba
+        Dibuje su firma en el área de arriba{required ? ' (requerido)' : ''}
       </p>
     </div>
   );

@@ -37,10 +37,25 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
   };
 
   const updateApoyoFaenas = (field: string, value: any) => {
+    const currentApoyoFaenas = ficha.apoyo_faenas || {
+      red_lober: false,
+      red_pecera: false,
+      balsas: false,
+      cosecha: false,
+      actividades: {
+        soltar_reinstalar_tensores: { checked: false, cantidad: 0 },
+        reparacion_red: { checked: false, cantidad: 0 },
+        reinstalacion_extractor: { checked: false, cantidad: 0 },
+        instalacion_reventadores: { checked: false, cantidad: 0 },
+        recuperacion_fondones: { checked: false, cantidad: 0 }
+      },
+      observaciones: ''
+    };
+
     onUpdate({
       ...ficha,
       apoyo_faenas: {
-        ...ficha.apoyo_faenas,
+        ...currentApoyoFaenas,
         [field]: value
       }
     });
@@ -56,11 +71,18 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
         });
       }
     } else {
-      const currentActivities = ficha.apoyo_faenas.actividades || {};
+      const currentActivities = ficha.apoyo_faenas?.actividades || {
+        soltar_reinstalar_tensores: { checked: false, cantidad: 0 },
+        reparacion_red: { checked: false, cantidad: 0 },
+        reinstalacion_extractor: { checked: false, cantidad: 0 },
+        instalacion_reventadores: { checked: false, cantidad: 0 },
+        recuperacion_fondones: { checked: false, cantidad: 0 }
+      };
+      
       const currentActivity = currentActivities[field as keyof typeof currentActivities];
       if (typeof currentActivity === 'object' && currentActivity !== null && 'checked' in currentActivity) {
         updateApoyoFaenas('actividades', {
-          ...currentActivities,
+          ...currentActividades,
           [field]: {
             ...currentActivity,
             [subField]: value
@@ -299,7 +321,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={`apoyo_red_lober_${ficha.buzo_numero}`}
-                checked={ficha.apoyo_faenas.red_lober}
+                checked={ficha.apoyo_faenas?.red_lober || false}
                 onCheckedChange={(checked) => updateApoyoFaenas('red_lober', checked)}
                 disabled={readOnly}
               />
@@ -308,7 +330,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={`apoyo_red_pecera_${ficha.buzo_numero}`}
-                checked={ficha.apoyo_faenas.red_pecera}
+                checked={ficha.apoyo_faenas?.red_pecera || false}
                 onCheckedChange={(checked) => updateApoyoFaenas('red_pecera', checked)}
                 disabled={readOnly}
               />
@@ -317,7 +339,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={`apoyo_balsas_${ficha.buzo_numero}`}
-                checked={ficha.apoyo_faenas.balsas}
+                checked={ficha.apoyo_faenas?.balsas || false}
                 onCheckedChange={(checked) => updateApoyoFaenas('balsas', checked)}
                 disabled={readOnly}
               />
@@ -326,7 +348,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={`apoyo_cosecha_${ficha.buzo_numero}`}
-                checked={ficha.apoyo_faenas.cosecha}
+                checked={ficha.apoyo_faenas?.cosecha || false}
                 onCheckedChange={(checked) => updateApoyoFaenas('cosecha', checked)}
                 disabled={readOnly}
               />
@@ -346,7 +368,15 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
                 { key: 'instalacion_reventadores', label: 'Instalación de reventadores' },
                 { key: 'recuperacion_fondones', label: 'Recuperación de fondones' }
               ].map((actividad) => {
-                const actData = ficha.apoyo_faenas.actividades[actividad.key as keyof typeof ficha.apoyo_faenas.actividades];
+                const actividades = ficha.apoyo_faenas?.actividades || {
+                  soltar_reinstalar_tensores: { checked: false, cantidad: 0 },
+                  reparacion_red: { checked: false, cantidad: 0 },
+                  reinstalacion_extractor: { checked: false, cantidad: 0 },
+                  instalacion_reventadores: { checked: false, cantidad: 0 },
+                  recuperacion_fondones: { checked: false, cantidad: 0 }
+                };
+                
+                const actData = actividades[actividad.key as keyof typeof actividades];
                 if (typeof actData === 'object' && actData !== null && 'checked' in actData) {
                   return (
                     <div key={actividad.key} className="flex items-center space-x-3">
@@ -378,7 +408,7 @@ export const BuzoFormSection = ({ ficha, onUpdate, readOnly = false }: BuzoFormS
           <div className="space-y-2">
             <Label>Observaciones</Label>
             <Textarea
-              value={ficha.apoyo_faenas.observaciones}
+              value={ficha.apoyo_faenas?.observaciones || ''}
               onChange={(e) => updateApoyoFaenas('observaciones', e.target.value)}
               placeholder="Observaciones de apoyo a faenas"
               disabled={readOnly}

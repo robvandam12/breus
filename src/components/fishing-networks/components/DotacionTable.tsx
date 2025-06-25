@@ -31,27 +31,43 @@ export const DotacionTable = ({ formData, updateFormData, readOnly = false }: Do
     { key: 'compresor_2', label: 'Compresor 2' },
   ];
 
-  // Crear dotación por defecto si no existe
-  const defaultDotacion = roles.reduce((acc, role) => {
-    acc[role.key as keyof typeof acc] = {
-      rol: role.label,
-      nombre: '',
-      apellido: '',
-      matricula: ''
+  // Crear dotación completa con todos los roles requeridos
+  const createCompleteDotacion = () => {
+    const dotacion = {
+      contratista: { rol: 'Contratista', nombre: '', apellido: '', matricula: '' },
+      supervisor: { rol: 'Supervisor', nombre: '', apellido: '', matricula: '' },
+      buzo_emerg_1: { rol: 'Buzo Emerg 1', nombre: '', apellido: '', matricula: '' },
+      buzo_emerg_2: { rol: 'Buzo Emerg 2', nombre: '', apellido: '', matricula: '' },
+      buzo_1: { rol: 'Buzo Nº 1', nombre: '', apellido: '', matricula: '' },
+      buzo_2: { rol: 'Buzo Nº 2', nombre: '', apellido: '', matricula: '' },
+      buzo_3: { rol: 'Buzo Nº 3', nombre: '', apellido: '', matricula: '' },
+      buzo_4: { rol: 'Buzo Nº 4', nombre: '', apellido: '', matricula: '' },
+      buzo_5: { rol: 'Buzo Nº 5', nombre: '', apellido: '', matricula: '' },
+      buzo_6: { rol: 'Buzo Nº 6', nombre: '', apellido: '', matricula: '' },
+      buzo_7: { rol: 'Buzo Nº 7', nombre: '', apellido: '', matricula: '' },
+      buzo_8: { rol: 'Buzo Nº 8', nombre: '', apellido: '', matricula: '' },
+      compresor_1: { rol: 'Compresor 1', nombre: '', apellido: '', matricula: '' },
+      compresor_2: { rol: 'Compresor 2', nombre: '', apellido: '', matricula: '' },
     };
-    return acc;
-  }, {} as Record<string, DotacionMember>);
 
-  const currentDotacion = formData.dotacion || defaultDotacion;
+    // Fusionar con datos existentes si los hay
+    if (formData.dotacion) {
+      roles.forEach(role => {
+        const existingMember = formData.dotacion[role.key as keyof typeof formData.dotacion];
+        if (existingMember) {
+          dotacion[role.key as keyof typeof dotacion] = existingMember;
+        }
+      });
+    }
+
+    return dotacion;
+  };
+
+  const currentDotacion = createCompleteDotacion();
 
   const handleMemberChange = (roleKey: string, field: keyof DotacionMember, value: string) => {
-    const currentMember = currentDotacion[roleKey as keyof typeof currentDotacion] || {
-      rol: roles.find(r => r.key === roleKey)?.label || '',
-      nombre: '',
-      apellido: '',
-      matricula: ''
-    };
-
+    const currentMember = currentDotacion[roleKey as keyof typeof currentDotacion];
+    
     updateFormData({
       dotacion: {
         ...currentDotacion,
@@ -64,14 +80,7 @@ export const DotacionTable = ({ formData, updateFormData, readOnly = false }: Do
   };
 
   const getMemberData = (roleKey: string): DotacionMember => {
-    const defaultMember: DotacionMember = {
-      rol: roles.find(r => r.key === roleKey)?.label || '',
-      nombre: '',
-      apellido: '',
-      matricula: ''
-    };
-
-    return currentDotacion[roleKey as keyof typeof currentDotacion] || defaultMember;
+    return currentDotacion[roleKey as keyof typeof currentDotacion];
   };
 
   return (
