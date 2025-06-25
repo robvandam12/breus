@@ -22,7 +22,7 @@ export const IndependentImmersionManager = () => {
   const { 
     inmersiones, 
     isLoading: isLoadingContextual,
-    capacidades 
+    canCreateDirectImmersion 
   } = useInmersionesContextual();
 
   // Use CRUD hook for operations
@@ -171,7 +171,7 @@ export const IndependentImmersionManager = () => {
         
         <Button 
           onClick={handleCreateNew}
-          disabled={!capacidades.puedeCrearInmersionesDirectas}
+          disabled={!canCreateDirectImmersion()}
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -180,7 +180,7 @@ export const IndependentImmersionManager = () => {
       </div>
 
       {/* Alert informativo */}
-      {!capacidades.puedeCrearInmersionesDirectas && (
+      {!canCreateDirectImmersion() && (
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-amber-800">
@@ -257,7 +257,7 @@ export const IndependentImmersionManager = () => {
             <p className="text-gray-600 mb-6">
               Comienza creando tu primera inmersión independiente
             </p>
-            {capacidades.puedeCrearInmersionesDirectas && (
+            {canCreateDirectImmersion() && (
               <Button onClick={handleCreateNew}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Primera Inmersión

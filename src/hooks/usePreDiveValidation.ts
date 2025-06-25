@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useContextualValidations } from './useContextualValidations';
-import { useOperationalContext } from './useOperationalContext';
+import { useModuleAccess } from './useModuleAccess';
+import { useContextualValidation } from './useContextualValidation';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -28,26 +28,26 @@ export const usePreDiveValidation = () => {
   const [validations, setValidations] = useState<OperationValidation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { validateInmersionCreation, validateDocumentRequirement } = useContextualValidations();
-  const { canCreateOperations, requiresDocuments } = useOperationalContext();
+  const { canPlanOperations, isModuleActive, modules } = useModuleAccess();
+  const { validateInmersionCreation } = useContextualValidation();
 
   const validateOperation = async (operationId: string): Promise<ValidationResult> => {
     try {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // Contexto modular actualizado
+      // Contexto modular
       const context = {
-        moduleActive: canCreateOperations(),
-        requiresDocuments: requiresDocuments(),
-        allowDirectCreation: true, // Siempre true para core
+        moduleActive: canPlanOperations,
+        requiresDocuments: canPlanOperations,
+        allowDirectCreation: !canPlanOperations,
       };
 
       let hptStatus: ValidationResult['hptStatus'] = 'not_required';
       let anexoBravoStatus: ValidationResult['anexoBravoStatus'] = 'not_required';
 
-      // Solo validar documentos si el módulo de planificación está activo Y se requieren documentos
-      if (canCreateOperations() && requiresDocuments()) {
+      // Solo validar documentos si el módulo de planificación está activo
+      if (canPlanOperations) {
         // Verificar HPT
         const { data: hptData } = await supabase
           .from('hpt')
@@ -86,18 +86,14 @@ export const usePreDiveValidation = () => {
           warnings.push('Anexo Bravo no encontrado para esta operación');
         }
       } else {
-        // Módulo no activo o documentos no requeridos
-        if (!canCreateOperations()) {
-          warnings.push('Módulo de planificación no activo - Documentos no requeridos');
-        } else {
-          warnings.push('Configuración no requiere documentos para esta empresa');
-        }
+        // Módulo no activo - documentos no requeridos
+        warnings.push('Módulo de planificación no activo - Documentos no requeridos');
       }
 
       // Validación final contextual
-      const isValid = canCreateOperations() && requiresDocuments()
+      const isValid = canPlanOperations 
         ? (hptStatus === 'signed' && anexoBravoStatus === 'signed')
-        : true; // Si no hay módulo de planificación o no requiere documentos, siempre es válido
+        : true; // Si no hay módulo de planificación, siempre es válido
 
       return {
         isValid,
@@ -111,15 +107,15 @@ export const usePreDiveValidation = () => {
     } catch (error) {
       console.error('Error validating operation:', error);
       return {
-        isValid: true, // En caso de error, permitir continuar (no bloquear core)
-        hptStatus: canCreateOperations() && requiresDocuments() ? 'missing' : 'not_required',
-        anexoBravoStatus: canCreateOperations() && requiresDocuments() ? 'missing' : 'not_required',
-        errors: canCreateOperations() ? ['Error al validar la operación'] : [],
-        warnings: canCreateOperations() ? [] : ['Modo independiente - validación no requerida'],
+        isValid: !canPlanOperations, // Si no hay planificación, permitir
+        hptStatus: canPlanOperations ? 'missing' : 'not_required',
+        anexoBravoStatus: canPlanOperations ? 'missing' : 'not_required',
+        errors: canPlanOperations ? ['Error al validar la operación'] : [],
+        warnings: canPlanOperations ? [] : ['Modo independiente - validación no requerida'],
         context: {
-          moduleActive: canCreateOperations(),
-          requiresDocuments: requiresDocuments(),
-          allowDirectCreation: true,
+          moduleActive: canPlanOperations,
+          requiresDocuments: canPlanOperations,
+          allowDirectCreation: !canPlanOperations,
         }
       };
     }
@@ -128,8 +124,8 @@ export const usePreDiveValidation = () => {
   const createImmersionWithValidation = async (immersionData: any) => {
     console.log('Creating immersion with contextual validation:', immersionData);
     
-    // Usar nueva validación contextual
-    const validation = validateInmersionCreation(immersionData);
+    // Usar validación contextual
+    const validation = await validateInmersionCreation(immersionData);
     
     if (!validation.canProceed) {
       const errorMessage = validation.errors.join(', ');
@@ -140,22 +136,19 @@ export const usePreDiveValidation = () => {
       const warningMessage = validation.warnings.join(', ');
       console.warn('Advertencias de validación:', warningMessage);
       
-      // Solo mostrar toast para advertencias importantes
-      if (validation.warnings.some(w => w.includes('Modo directo') || w.includes('mixto'))) {
-        toast({
-          title: "Información",
-          description: warningMessage,
-        });
-      }
+      toast({
+        title: "Información",
+        description: `Inmersión creada con advertencias: ${warningMessage}`,
+      });
     }
 
     // Determinar estados de validación según contexto
-    const hptValidado = requiresDocuments() && immersionData.operacion_id
-      ? await checkDocumentSigned('hpt', immersionData.operacion_id)
+    const hptValidado = validation.context.requiresDocuments 
+      ? (immersionData.operacion_id ? await checkDocumentSigned('hpt', immersionData.operacion_id) : false)
       : true; // Si no requiere documentos, marcar como validado
 
-    const anexoBravoValidado = requiresDocuments() && immersionData.operacion_id
-      ? await checkDocumentSigned('anexo_bravo', immersionData.operacion_id)
+    const anexoBravoValidado = validation.context.requiresDocuments
+      ? (immersionData.operacion_id ? await checkDocumentSigned('anexo_bravo', immersionData.operacion_id) : false)
       : true; // Si no requiere documentos, marcar como validado
 
     // Crear la inmersión
@@ -173,9 +166,9 @@ export const usePreDiveValidation = () => {
     
     toast({
       title: "Inmersión creada",
-      description: canCreateOperations()
-        ? "La inmersión ha sido creada con validaciones contextuales."
-        : "La inmersión ha sido creada en modo directo.",
+      description: canPlanOperations 
+        ? "La inmersión ha sido creada con validaciones completas."
+        : "La inmersión ha sido creada en modo independiente.",
     });
     
     return data;
@@ -203,7 +196,7 @@ export const usePreDiveValidation = () => {
     isLoading,
     validateOperation,
     createImmersionWithValidation,
-    canPlanOperations: canCreateOperations(),
-    contextualMode: !canCreateOperations(),
+    canPlanOperations,
+    contextualMode: !canPlanOperations,
   };
 };

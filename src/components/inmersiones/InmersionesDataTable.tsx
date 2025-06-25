@@ -57,7 +57,7 @@ export const InmersionesDataTable = () => {
 
   const getContextInfo = () => {
     const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
-    const canCreateDirect = capacidades.puedeCrearInmersionesDirectas;
+    const canCreateDirect = capacidades.puedeCrearInmersiones;
 
     if (hasPlanning && canCreateDirect) {
       return {
@@ -156,7 +156,7 @@ export const InmersionesDataTable = () => {
               Inmersiones ({filteredInmersiones.length})
             </CardTitle>
             <div className="flex gap-2">
-              {capacidades.puedeCrearInmersionesDirectas && (
+              {capacidades.puedeCrearInmersiones && (
                 <Button className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   Nueva Inmersión
