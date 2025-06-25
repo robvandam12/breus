@@ -57,7 +57,7 @@ export const NetworkInstallationStep1 = ({
                   disabled={readOnly}
                 />
                 <Label htmlFor="red_lober" className="text-sm font-medium">
-                  Lober
+                  Lobera
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
