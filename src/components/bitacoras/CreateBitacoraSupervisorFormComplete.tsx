@@ -54,7 +54,7 @@ export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSuperv
       fecha: inmersion.fecha_inmersion,
       firmado: false,
       estado_aprobacion: 'pendiente',
-      lugar_trabajo: operacionData?.sitio?.nombre || 'N/A',
+      lugar_trabajo: operacionData?.sitios?.nombre || 'N/A',
     };
 
     onSubmit(submitData);
