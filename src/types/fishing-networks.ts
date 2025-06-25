@@ -137,3 +137,121 @@ export interface FishingNetworkMaintenanceData {
     jefe_centro: { nombre: string; firma: string };
   };
 }
+
+// NUEVOS TIPOS PARA LOS FORMULARIOS ADICIONALES
+
+// Tipos para "Instalación / Cambio de Redes"
+export interface NetworkInstallationData {
+  // 1. Selección inicial
+  seleccion_inicial: {
+    red_lober: boolean;
+    red_pecera: boolean;
+    faena_instalacion: boolean;
+    faena_cambio: boolean;
+    faena_retiro: boolean;
+  };
+
+  // 3. Instalación de Loberos/Peceras
+  instalacion_redes: {
+    instalacion_redes: { [franja: string]: string }; // jaula numbers
+    instalacion_impias: { [franja: string]: string };
+    contrapeso_250kg: { [franja: string]: string };
+    contrapeso_150kg: { [franja: string]: string };
+    reticulado_cabecera: { [franja: string]: string };
+  };
+
+  // 4. Cambio de Franjas
+  cambio_franjas: {
+    costura_ftc_fcd: string; // jaula number
+    costura_fced_fcs: string;
+    costura_fces_fcs: string;
+    costura_fma: string;
+  };
+
+  // 5. Cambio de Pecera por buzo
+  cambio_pecera_buzos: {
+    [buzo_numero: string]: {
+      jaula_numero: string;
+      actividades: {
+        soltar_tensores: number;
+        descosturar_extractor: number;
+        liberar_micropesos: number;
+        reconectar_tensores: number;
+        reinstalar_tensores: number;
+        costurar_extractor: number;
+        reinstalar_micropesos: number;
+      };
+    };
+  };
+
+  // 6. Observaciones
+  observaciones_generales: string;
+
+  // 7. Firmas
+  firmas: {
+    supervisor_buceo: { nombre: string; firma: string };
+    jefe_centro: { nombre: string; firma: string };
+  };
+}
+
+// Tipos para "Faenas de Redes"
+export interface NetworkOperationsData {
+  // 1. Datos generales
+  datos_generales: {
+    lugar_trabajo: string;
+    supervisor: string;
+    hora_inicio_faena: string;
+    hora_termino_faena: string;
+    profundidad_maxima: number;
+    team_s: number;
+    team_e: number;
+    team_b: number;
+    fecha: string;
+    temperatura: number;
+    nave_maniobras: string;
+    matricula_nave: string;
+    estado_puerto: string;
+  };
+
+  // 2. Dotación de Personal (reutiliza la estructura existente)
+  dotacion: {
+    contratista: DotacionMember;
+    supervisor: DotacionMember;
+    buzo_emerg_1: DotacionMember;
+    buzo_emerg_2: DotacionMember;
+    buzo_1: DotacionMember;
+    buzo_2: DotacionMember;
+    buzo_3: DotacionMember;
+    buzo_4: DotacionMember;
+    buzo_5: DotacionMember;
+    buzo_6: DotacionMember;
+    buzo_7: DotacionMember;
+    buzo_8: DotacionMember;
+    compresor_1: DotacionMember;
+    compresor_2: DotacionMember;
+  };
+
+  // 3. Equipo de Inmersión
+  equipo_inmersion: EquipoInmersion;
+
+  // 5. Observaciones
+  observaciones_generales: string;
+
+  // 6. Firmas
+  firmas: {
+    supervisor_buceo: { nombre: string; firma: string };
+    jefe_centro: { nombre: string; firma: string };
+  };
+}
+
+// Tipo unión para todos los formularios del módulo de redes
+export type NetworkFormsData = 
+  | FishingNetworkMaintenanceData 
+  | NetworkInstallationData 
+  | NetworkOperationsData;
+
+export type NetworkFormType = 
+  | 'mantencion_redes' 
+  | 'instalacion_cambio_redes' 
+  | 'faenas_redes';
+
