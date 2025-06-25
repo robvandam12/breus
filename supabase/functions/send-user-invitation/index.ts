@@ -45,12 +45,23 @@ const handler = async (req: Request): Promise<Response> => {
       }
     };
 
+    // Para pruebas con dominio de Resend, enviar siempre a tu email registrado
+    // pero mostrar en el contenido el email real del destinatario
+    const testEmail = "dragon.tkd@gmail.com"; // Tu email registrado en Resend
+    const realEmail = email; // Email real del usuario invitado
+
     const emailResponse = await resend.emails.send({
       from: "Breus Platform <onboarding@resend.dev>",
-      to: [email],
-      subject: `Invitación para unirte a Breus como ${getRoleDisplayName(rol)}`,
+      to: [testEmail], // Enviamos a tu email para pruebas
+      subject: `[PRUEBA] Invitación para ${realEmail} - ${getRoleDisplayName(rol)}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+              🧪 <strong>MODO PRUEBA:</strong> Este email se envió a tu cuenta de prueba. En producción se enviaría a: <strong>${realEmail}</strong>
+            </p>
+          </div>
+          
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 16px; text-align: center; margin-bottom: 30px;">
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Breus</h1>
             <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Plataforma de Gestión de Buceo Profesional</p>
@@ -59,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
             <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">¡Hola!</h2>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-              <strong>${invitedBy}</strong> te ha invitado a unirte a la plataforma Breus con el rol de <strong>${getRoleDisplayName(rol)}</strong>.
+              <strong>${invitedBy}</strong> ha invitado a <strong>${realEmail}</strong> a unirte a la plataforma Breus con el rol de <strong>${getRoleDisplayName(rol)}</strong>.
             </p>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
               Breus te permitirá gestionar de forma digital todos los aspectos de las operaciones de buceo profesional, incluyendo:
@@ -84,13 +95,13 @@ const handler = async (req: Request): Promise<Response> => {
                       font-size: 16px; 
                       display: inline-block;
                       box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39);">
-              Crear mi cuenta en Breus
+              Crear cuenta para ${realEmail}
             </a>
           </div>
           
           <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 20px; border-radius: 8px; margin: 30px 0;">
             <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
-              ⚠️ Esta invitación es válida por 7 días. Si no puedes acceder al enlace, copia y pega la siguiente URL en tu navegador:
+              ⚠️ Esta invitación es válida por 7 días. Token de invitación incluido en el enlace.
             </p>
             <p style="color: #92400e; font-size: 12px; margin: 10px 0 0 0; word-break: break-all;">
               ${invitationUrl}
@@ -100,6 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
             <p style="color: #6b7280; font-size: 14px; margin: 0;">
               Este correo fue enviado por Breus Platform<br>
+              Email real del destinatario: <strong>${realEmail}</strong><br>
               Si tienes problemas, contacta a soporte@breus.cl
             </p>
           </div>
@@ -107,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("User invitation email sent successfully:", emailResponse);
+    console.log("User invitation email sent successfully to test email:", emailResponse);
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
