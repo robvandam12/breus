@@ -5,9 +5,12 @@ import { useOperacionesMutations } from "./useOperacionesMutations";
 export type { 
   BasicOperacion, 
   OperacionConRelaciones, 
-  Operacion,
-  OperacionFormData 
+  Operacion
 } from "./useOperacionesQuery";
+
+export type { 
+  OperacionFormData 
+} from "./useOperacionesMutations";
 
 export const useOperaciones = () => {
   const { data: operaciones = [], isLoading, refetch } = useOperacionesQuery();

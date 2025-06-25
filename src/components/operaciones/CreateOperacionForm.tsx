@@ -207,7 +207,7 @@ export const CreateOperacionForm = ({
                       <SelectItem value="no_data" disabled>No hay salmoneras disponibles</SelectItem>
                     ) : (
                       validSalmoneras.map((salmonera) => (
-                        <SelectItem key={salmonera.id} value={salmonera.id}>
+                        <SelectItem key={salmonera.id} value={String(salmonera.id)}>
                           {salmonera.nombre}
                         </SelectItem>
                       ))
@@ -234,7 +234,7 @@ export const CreateOperacionForm = ({
                     <SelectItem value="no_data" disabled>No hay sitios disponibles</SelectItem>
                   ) : (
                     validSitios.map((sitio) => (
-                      <SelectItem key={sitio.id} value={sitio.id}>
+                      <SelectItem key={sitio.id} value={String(sitio.id)}>
                         {sitio.nombre}
                       </SelectItem>
                     ))
@@ -260,7 +260,7 @@ export const CreateOperacionForm = ({
                     <SelectItem value="no_data" disabled>No hay contratistas disponibles</SelectItem>
                   ) : (
                     validContratistas.map((contratista) => (
-                      <SelectItem key={contratista.id} value={contratista.id}>
+                      <SelectItem key={contratista.id} value={String(contratista.id)}>
                         {contratista.nombre}
                       </SelectItem>
                     ))
