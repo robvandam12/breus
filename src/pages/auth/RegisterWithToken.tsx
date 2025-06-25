@@ -12,8 +12,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 interface InvitationData {
   email: string;
   rol: string;
-  invited_by: string;
-  expires_at: string;
+  invitado_por: string;
+  fecha_expiracion: string;
 }
 
 export default function RegisterWithToken() {
@@ -51,8 +51,8 @@ export default function RegisterWithToken() {
         .from('usuario_invitaciones')
         .select('*')
         .eq('token', token)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
+        .eq('estado', 'pendiente')
+        .gt('fecha_expiracion', new Date().toISOString())
         .single();
 
       if (error || !data) {
@@ -141,8 +141,8 @@ export default function RegisterWithToken() {
         await supabase
           .from('usuario_invitaciones')
           .update({ 
-            status: 'accepted',
-            accepted_at: new Date().toISOString()
+            estado: 'aceptada',
+            fecha_invitacion: new Date().toISOString()
           })
           .eq('token', token);
 

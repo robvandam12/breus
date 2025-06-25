@@ -7,10 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UserInviteForm } from "@/components/users/forms/UserInviteForm";
+import { useUsuarios } from "@/hooks/useUsuarios";
 
 export default function Usuarios() {
   const { profile } = useAuth();
-  const { usuarios, isLoading, inviteUser, createUser, isInviting } = useUsersByCompany();
+  const { usuarios, isLoading } = useUsersByCompany();
+  const { inviteUsuario } = useUsuarios();
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   
   console.log('Usuarios page rendering, profile:', profile);
   console.log('Users data:', usuarios);
@@ -59,13 +65,21 @@ export default function Usuarios() {
     }
   };
 
+  const handleInviteUser = async (userData: { email: string; rol: string }) => {
+    await inviteUsuario(userData);
+    setShowInviteDialog(false);
+  };
+
   return (
     <MainLayout
       title="Gestión de Usuarios"
       subtitle="Administra los usuarios de tu empresa"
       icon={Users}
       headerChildren={
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowInviteDialog(true)}
+        >
           <UserPlus className="w-4 h-4" />
           Invitar Usuario
         </Button>
@@ -125,7 +139,10 @@ export default function Usuarios() {
                 <p className="text-gray-600 mb-4">
                   Comienza invitando usuarios a tu empresa.
                 </p>
-                <Button className="flex items-center gap-2 mx-auto">
+                <Button 
+                  className="flex items-center gap-2 mx-auto"
+                  onClick={() => setShowInviteDialog(true)}
+                >
                   <UserPlus className="w-4 h-4" />
                   Invitar Primer Usuario
                 </Button>
@@ -170,6 +187,19 @@ export default function Usuarios() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Invite User Dialog */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invitar Usuario</DialogTitle>
+          </DialogHeader>
+          <UserInviteForm
+            onSubmit={handleInviteUser}
+            onCancel={() => setShowInviteDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,26 +10,25 @@ import { ModuleProtectedRoute } from "@/components/auth/ModuleProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 // Pages
-import Index from "@/pages";
+import Index from "@/pages/Index";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
-import ResetPassword from "@/pages/auth/ResetPassword";
-import AcceptInvitation from "@/pages/auth/AcceptInvitation";
+import ResetPassword from "@/pages/auth/ForgotPassword";
 import Usuarios from "@/pages/Usuarios";
 import Salmoneras from "@/pages/empresas/Salmoneras";
 import Sitios from "@/pages/empresas/Sitios";
 import Contratistas from "@/pages/empresas/Contratistas";
 import EmpresasUsuarios from "@/pages/empresas/Usuarios";
 import AdminUsers from "@/pages/admin/UserManagement";
-import AdminRoles from "@/pages/admin/RoleManagement";
+import AdminRoles from "@/pages/admin/AdminRoles";
 import AdminModules from "@/pages/admin/ModuleManagement";
 import SystemMonitoring from "@/pages/admin/SystemMonitoring";
 import Configuracion from "@/pages/Configuracion";
 import Inmersiones from "@/pages/Inmersiones";
-import BitacoraSupervisor from "@/pages/bitacoras/BitacoraSupervisor";
-import BitacoraBuzo from "@/pages/bitacoras/BitacoraBuzo";
+import BitacoraSupervisor from "@/pages/operaciones/BitacorasSupervisor";
+import BitacoraBuzo from "@/pages/operaciones/BitacorasBuzo";
 import Reportes from "@/pages/Reportes";
-import Operaciones from "@/pages/Operaciones";
+import Operaciones from "@/pages/operaciones/Operaciones";
 import OperacionesHPT from "@/pages/operaciones/HPT";
 import OperacionesAnexoBravo from "@/pages/operaciones/AnexoBravo";
 import NetworkMaintenance from "@/pages/operaciones/NetworkMaintenance";
@@ -54,7 +54,6 @@ function App() {
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/register" element={<RegisterWithToken />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/auth/accept-invitation" element={<AcceptInvitation />} />
                 
                 {/* Protected Routes */}
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

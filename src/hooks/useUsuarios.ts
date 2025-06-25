@@ -65,16 +65,16 @@ export const useUsuarios = () => {
       // Generar token único para la invitación
       const token = crypto.randomUUID();
       
-      // Guardar invitación en la base de datos
+      // Guardar invitación en la base de datos usando la tabla real
       const { error: dbError } = await supabase
         .from('usuario_invitaciones')
         .insert([{
           email: userData.email,
           rol: userData.rol,
           token: token,
-          invited_by: profile?.id,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días
-          status: 'pending'
+          invitado_por: profile?.usuario_id,
+          fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          estado: 'pendiente'
         }]);
 
       if (dbError) throw dbError;
