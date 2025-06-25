@@ -2,10 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useAuth } from "@/hooks/useAuth";
 import { Usuario } from "@/types/usuario";
 
 export const useUsuarios = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   
   const { execute: executeUpdate } = useAsyncAction({
     successMessage: "Usuario actualizado exitosamente",
@@ -13,8 +15,8 @@ export const useUsuarios = () => {
   });
 
   const { execute: executeInvite } = useAsyncAction({
-    successMessage: "Usuario invitado exitosamente",
-    errorMessage: "Error al invitar usuario"
+    successMessage: "Invitación enviada exitosamente",
+    errorMessage: "Error al enviar invitación"
   });
 
   const { execute: executeDelete } = useAsyncAction({
@@ -56,10 +58,39 @@ export const useUsuarios = () => {
     });
   };
 
-  const inviteUsuario = async (userData: any) => {
+  const inviteUsuario = async (userData: { email: string; rol: string }) => {
     return executeInvite(async () => {
-      // Implementar lógica de invitación
       console.log('Inviting user:', userData);
+      
+      // Generar token único para la invitación
+      const token = crypto.randomUUID();
+      
+      // Guardar invitación en la base de datos
+      const { error: dbError } = await supabase
+        .from('usuario_invitaciones')
+        .insert([{
+          email: userData.email,
+          rol: userData.rol,
+          token: token,
+          invited_by: profile?.id,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días
+          status: 'pending'
+        }]);
+
+      if (dbError) throw dbError;
+
+      // Enviar email de invitación
+      const { error: emailError } = await supabase.functions.invoke('send-user-invitation', {
+        body: {
+          email: userData.email,
+          rol: userData.rol,
+          invitedBy: `${profile?.nombre} ${profile?.apellido}`,
+          token: token
+        }
+      });
+
+      if (emailError) throw emailError;
+      
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
     });
   };

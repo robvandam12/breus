@@ -97,13 +97,17 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       icon: BarChart3,
       url: "/",
       badge: role === 'superuser' ? "3" : role === 'admin_salmonera' ? "15" : "5"
-    },
-    {
+    }
+  ];
+
+  // Solo superuser puede ver Personal de Buceo (que era company-personnel)
+  if (role === 'superuser') {
+    baseItems.push({
       title: "Personal de Buceo",
       icon: Users,
       url: "/personal-de-buceo"
-    }
-  ];
+    });
+  }
 
   // Módulos opcionales que dependen de activación
   const planningModule: MenuItem = {
@@ -160,10 +164,13 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
       companyItems.push(
         { title: "Sitios", url: "/empresas/sitios" },
         { title: "Contratistas", url: "/empresas/contratistas" },
-        { title: "Personal Disponible", url: "/admin/salmonera" }
+        { title: "Usuarios", url: "/empresas/usuarios" }
       );
     } else {
-      companyItems.push({ title: "Información", url: "/empresas/contratistas" });
+      companyItems.push(
+        { title: "Información", url: "/empresas/contratistas" },
+        { title: "Usuarios", url: "/empresas/usuarios" }
+      );
     }
 
     baseItems.push({
