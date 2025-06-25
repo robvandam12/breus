@@ -45,7 +45,6 @@ export const InmersionContextualForm = ({
   });
 
   const [isDirectMode, setIsDirectMode] = useState(formData.context_type === 'direct');
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const { profile } = useAuth();
   const { 
@@ -55,53 +54,53 @@ export const InmersionContextualForm = ({
     canAccessFeature 
   } = useIndependentOperations();
 
-  // Validación simplificada de campos requeridos
-  const validateRequiredFields = () => {
-    const errors: string[] = [];
+  // Validación mejorada
+  const validateForm = () => {
+    console.log('Validating form data:', formData);
+    
+    // Verificar campos básicos requeridos
+    const requiredFields = [
+      { field: 'codigo', value: formData.codigo, label: 'Código' },
+      { field: 'fecha_inmersion', value: formData.fecha_inmersion, label: 'Fecha' },
+      { field: 'hora_inicio', value: formData.hora_inicio, label: 'Hora de inicio' },
+      { field: 'buzo_principal', value: formData.buzo_principal, label: 'Buzo principal' },
+      { field: 'supervisor', value: formData.supervisor, label: 'Supervisor' },
+      { field: 'objetivo', value: formData.objetivo, label: 'Objetivo' },
+      { field: 'corriente', value: formData.corriente, label: 'Corriente' }
+    ];
 
-    if (!formData.codigo.trim()) {
-      errors.push('El código de inmersión es requerido');
-    }
-    if (!formData.fecha_inmersion) {
-      errors.push('La fecha de inmersión es requerida');
-    }
-    if (!formData.hora_inicio) {
-      errors.push('La hora de inicio es requerida');
-    }
-    if (!formData.buzo_principal.trim()) {
-      errors.push('El buzo principal es requerido');
-    }
-    if (!formData.supervisor.trim()) {
-      errors.push('El supervisor es requerido');
-    }
-    if (!formData.objetivo) {
-      errors.push('El objetivo es requerido');
-    }
-    if (formData.profundidad_max <= 0) {
-      errors.push('La profundidad máxima debe ser mayor a 0');
-    }
-    if (formData.temperatura_agua <= 0) {
-      errors.push('La temperatura del agua debe ser mayor a 0');
-    }
-    if (formData.visibilidad <= 0) {
-      errors.push('La visibilidad debe ser mayor a 0');
-    }
-    if (!formData.corriente) {
-      errors.push('Las condiciones de corriente son requeridas');
-    }
+    const emptyFields = requiredFields.filter(field => {
+      if (typeof field.value === 'string') {
+        return !field.value.trim();
+      }
+      return !field.value;
+    });
 
-    setValidationErrors(errors);
-    return errors.length === 0;
+    const numericFields = [
+      { field: 'profundidad_max', value: formData.profundidad_max, label: 'Profundidad máxima' },
+      { field: 'temperatura_agua', value: formData.temperatura_agua, label: 'Temperatura del agua' },
+      { field: 'visibilidad', value: formData.visibilidad, label: 'Visibilidad' }
+    ];
+
+    const invalidNumericFields = numericFields.filter(field => field.value <= 0);
+
+    const allErrors = [...emptyFields, ...invalidNumericFields];
+    
+    console.log('Validation errors:', allErrors);
+    
+    return {
+      isValid: allErrors.length === 0,
+      errors: allErrors.map(field => `${field.label} es requerido`)
+    };
   };
-
-  useEffect(() => {
-    validateRequiredFields();
-  }, [formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateRequiredFields()) {
+    const validation = validateForm();
+    
+    if (!validation.isValid) {
+      console.log('Form validation failed:', validation.errors);
       return;
     }
     
@@ -112,6 +111,7 @@ export const InmersionContextualForm = ({
         estado: 'planificada'
       };
 
+      console.log('Submitting inmersion data:', inmersionData);
       await createIndependentInmersion(inmersionData);
       onSuccess();
     } catch (error) {
@@ -134,10 +134,10 @@ export const InmersionContextualForm = ({
     }
   };
 
+  const validation = validateForm();
   const canCreateDirect = canAccessFeature('create_direct_inmersions');
   const canCreatePlanned = canAccessFeature('create_operations');
   const showModeSwitch = operationalContext?.context_type === 'mixed';
-  const isFormValid = validationErrors.length === 0;
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -175,14 +175,13 @@ export const InmersionContextualForm = ({
       </CardHeader>
 
       <CardContent>
-        {/* Validation Errors */}
-        {validationErrors.length > 0 && (
+        {!validation.isValid && (
           <Alert className="mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription>
               <p className="font-medium text-red-800 mb-2">Por favor complete los siguientes campos:</p>
               <ul className="space-y-1">
-                {validationErrors.map((error, index) => (
+                {validation.errors.map((error, index) => (
                   <li key={index} className="text-sm text-red-700">• {error}</li>
                 ))}
               </ul>
@@ -201,7 +200,6 @@ export const InmersionContextualForm = ({
                 onChange={(e) => setFormData(prev => ({...prev, codigo: e.target.value}))}
                 placeholder="Ej: INM-2024-001"
                 required
-                className={!formData.codigo.trim() ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
 
@@ -213,7 +211,6 @@ export const InmersionContextualForm = ({
                 value={formData.fecha_inmersion}
                 onChange={(e) => setFormData(prev => ({...prev, fecha_inmersion: e.target.value}))}
                 required
-                className={!formData.fecha_inmersion ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
           </div>
@@ -228,7 +225,6 @@ export const InmersionContextualForm = ({
                 value={formData.hora_inicio}
                 onChange={(e) => setFormData(prev => ({...prev, hora_inicio: e.target.value}))}
                 required
-                className={!formData.hora_inicio ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
 
@@ -253,7 +249,6 @@ export const InmersionContextualForm = ({
                 onChange={(e) => setFormData(prev => ({...prev, buzo_principal: e.target.value}))}
                 placeholder="Nombre del buzo principal"
                 required
-                className={!formData.buzo_principal.trim() ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
 
@@ -275,7 +270,6 @@ export const InmersionContextualForm = ({
                 onChange={(e) => setFormData(prev => ({...prev, supervisor: e.target.value}))}
                 placeholder="Nombre del supervisor"
                 required
-                className={!formData.supervisor.trim() ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
           </div>
@@ -287,7 +281,7 @@ export const InmersionContextualForm = ({
               value={formData.objetivo} 
               onValueChange={(value) => setFormData(prev => ({...prev, objetivo: value}))}
             >
-              <SelectTrigger className={!formData.objetivo ? 'border-red-300 focus:border-red-500' : ''}>
+              <SelectTrigger>
                 <SelectValue placeholder="Selecciona el objetivo" />
               </SelectTrigger>
               <SelectContent>
@@ -315,7 +309,6 @@ export const InmersionContextualForm = ({
                 value={formData.profundidad_max}
                 onChange={(e) => setFormData(prev => ({...prev, profundidad_max: parseFloat(e.target.value) || 0}))}
                 required
-                className={formData.profundidad_max <= 0 ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
 
@@ -329,7 +322,6 @@ export const InmersionContextualForm = ({
                 value={formData.temperatura_agua}
                 onChange={(e) => setFormData(prev => ({...prev, temperatura_agua: parseFloat(e.target.value) || 0}))}
                 required
-                className={formData.temperatura_agua <= 0 ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
 
@@ -343,7 +335,6 @@ export const InmersionContextualForm = ({
                 value={formData.visibilidad}
                 onChange={(e) => setFormData(prev => ({...prev, visibilidad: parseFloat(e.target.value) || 0}))}
                 required
-                className={formData.visibilidad <= 0 ? 'border-red-300 focus:border-red-500' : ''}
               />
             </div>
           </div>
@@ -354,7 +345,7 @@ export const InmersionContextualForm = ({
               value={formData.corriente} 
               onValueChange={(value) => setFormData(prev => ({...prev, corriente: value}))}
             >
-              <SelectTrigger className={!formData.corriente ? 'border-red-300 focus:border-red-500' : ''}>
+              <SelectTrigger>
                 <SelectValue placeholder="Selecciona las condiciones" />
               </SelectTrigger>
               <SelectContent>
@@ -386,8 +377,8 @@ export const InmersionContextualForm = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !isFormValid}
-              className={isFormValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
+              disabled={loading || !validation.isValid}
+              className={validation.isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}
             >
               {loading ? 'Creando...' : editingInmersion ? 'Actualizar' : 'Crear Inmersión'}
             </Button>
