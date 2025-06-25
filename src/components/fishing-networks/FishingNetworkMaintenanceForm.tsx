@@ -8,6 +8,12 @@ import { ArrowLeft, ArrowRight, Save, Network } from "lucide-react";
 import { Step1DatosGenerales } from "./steps/Step1DatosGenerales";
 import { DotacionTable } from "./components/DotacionTable";
 import { Step3EquipoInmersion } from "./steps/Step3EquipoInmersion";
+import { Step4FichasBuzos } from "./steps/Step4FichasBuzos";
+import { Step5Otros } from "./steps/Step5Otros";
+import { Step6Contingencias } from "./steps/Step6Contingencias";
+import { Step7Totales } from "./steps/Step7Totales";
+import { Step8Observaciones } from "./steps/Step8Observaciones";
+import { Step9Firmas } from "./steps/Step9Firmas";
 import type { FishingNetworkMaintenanceData } from '@/types/fishing-networks';
 
 export interface FishingNetworkMaintenanceFormProps {
@@ -94,7 +100,12 @@ export const FishingNetworkMaintenanceForm = ({
     { number: 1, title: "Datos Generales", component: Step1DatosGenerales },
     { number: 2, title: "Dotación", component: DotacionTable },
     { number: 3, title: "Equipo Inmersión", component: Step3EquipoInmersion },
-    // Agregamos más pasos según vayamos implementando
+    { number: 4, title: "Fichas Buzos", component: Step4FichasBuzos },
+    { number: 5, title: "Otros", component: Step5Otros },
+    { number: 6, title: "Contingencias", component: Step6Contingencias },
+    { number: 7, title: "Totales", component: Step7Totales },
+    { number: 8, title: "Observaciones", component: Step8Observaciones },
+    { number: 9, title: "Firmas", component: Step9Firmas },
   ];
 
   const updateFormData = (updates: Partial<FishingNetworkMaintenanceData>) => {
@@ -118,37 +129,26 @@ export const FishingNetworkMaintenanceForm = ({
   };
 
   const getCurrentStepComponent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <Step1DatosGenerales
-            formData={formData}
-            updateFormData={updateFormData}
-            readOnly={readOnly}
-          />
-        );
-      case 2:
-        return (
-          <DotacionTable
-            formData={formData}
-            updateFormData={updateFormData}
-            readOnly={readOnly}
-          />
-        );
-      case 3:
-        return (
-          <Step3EquipoInmersion
-            formData={formData}
-            updateFormData={updateFormData}
-            readOnly={readOnly}
-          />
-        );
-      default:
-        return <div>Paso en desarrollo...</div>;
-    }
+    const StepComponent = steps[currentStep - 1]?.component;
+    if (!StepComponent) return <div>Paso no encontrado</div>;
+
+    return (
+      <StepComponent
+        formData={formData}
+        updateFormData={updateFormData}
+        readOnly={readOnly}
+      />
+    );
   };
 
   const progress = (currentStep / steps.length) * 100;
+
+  // Validar si el formulario está completo para firmas
+  const isFormComplete = () => {
+    const hasBasicData = formData.datos_generales.lugar_trabajo && formData.datos_generales.fecha;
+    const hasFirmas = formData.firmas.supervisor_buceo.firma && formData.firmas.jefe_centro.firma;
+    return hasBasicData && hasFirmas;
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -234,12 +234,45 @@ export const FishingNetworkMaintenanceForm = ({
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+            <Button 
+              onClick={handleSubmit} 
+              className={isFormComplete() ? "bg-green-600 hover:bg-green-700" : ""}
+              disabled={readOnly && !isFormComplete()}
+            >
               {readOnly ? 'Cerrar' : 'Completar Formulario'}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Estado del formulario */}
+      {currentStep === steps.length && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-900 mb-2">Estado del Formulario</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Datos completos:</span>
+              <span className={formData.datos_generales.lugar_trabajo && formData.datos_generales.fecha ? 'text-green-600' : 'text-gray-500'}>
+                {formData.datos_generales.lugar_trabajo && formData.datos_generales.fecha ? '✓' : '✗'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Fichas buzos:</span>
+              <span className="text-blue-600">{formData.fichas_buzos.length}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Firmas:</span>
+              <span className={isFormComplete() ? 'text-green-600' : 'text-gray-500'}>
+                {(formData.firmas.supervisor_buceo.firma ? 1 : 0) + (formData.firmas.jefe_centro.firma ? 1 : 0)}/2
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Total horas:</span>
+              <span className="text-blue-600">{formData.totales.total_horas}h</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
