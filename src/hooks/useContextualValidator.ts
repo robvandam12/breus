@@ -1,11 +1,25 @@
 
 import { useEffect, useState } from 'react';
-import { useContextualOperations, type ContextualValidationResult } from './useContextualOperations';
+import { useContextualValidation } from './useContextualValidation';
+import { useEnhancedValidation } from './useEnhancedValidation';
 
 export interface ValidationState {
   isValidating: boolean;
-  result: ContextualValidationResult | null;
+  result: ValidationResult | null;
   lastValidated: string | null;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  canProceed: boolean;
+  warnings: string[];
+  errors: string[];
+  requiredModule?: string;
+  context: {
+    moduleActive: boolean;
+    requiresDocuments: boolean;
+    allowDirectCreation: boolean;
+  };
 }
 
 export const useContextualValidator = (operacionId?: string) => {
@@ -15,7 +29,8 @@ export const useContextualValidator = (operacionId?: string) => {
     lastValidated: null,
   });
 
-  const { validateInmersionCreation, getOperacionContext } = useContextualOperations();
+  const { validateOperationByType } = useContextualValidation();
+  const { validateWithErrorHandling } = useEnhancedValidation();
 
   // Validar automáticamente cuando cambia la operación
   useEffect(() => {
@@ -35,7 +50,24 @@ export const useContextualValidator = (operacionId?: string) => {
     setValidationState(prev => ({ ...prev, isValidating: true }));
     
     try {
-      const result = await getOperacionContext(opId);
+      // Usar el nuevo sistema de validación contextual
+      const contextualResult = validateOperationByType('create_planned_immersion', { 
+        operacion_id: opId 
+      });
+      
+      const result: ValidationResult = {
+        isValid: contextualResult.isValid,
+        canProceed: contextualResult.canProceed,
+        warnings: contextualResult.warnings,
+        errors: contextualResult.errors,
+        requiredModule: contextualResult.requiredModule,
+        context: {
+          moduleActive: contextualResult.context.moduleAccess.planning,
+          requiresDocuments: contextualResult.context.requiresDocuments,
+          allowDirectCreation: contextualResult.context.allowDirectCreation,
+        }
+      };
+
       setValidationState({
         isValidating: false,
         result,
@@ -47,44 +79,63 @@ export const useContextualValidator = (operacionId?: string) => {
         isValidating: false,
         result: {
           isValid: false,
-          contexto: null,
-          requiere_documentos: true,
-          requiere_hpt: true,
-          requiere_anexo_bravo: true,
-          es_operativa_directa: false,
-          es_legacy: true,
+          canProceed: false,
           warnings: [],
-          errors: ['Error al validar operación']
+          errors: ['Error al validar operación'],
+          context: {
+            moduleActive: false,
+            requiresDocuments: true,
+            allowDirectCreation: true, // CORE: Siempre permitir fallback
+          }
         },
         lastValidated: opId,
       });
     }
   };
 
-  const validateForInmersion = async (opId: string): Promise<ContextualValidationResult> => {
+  const validateForInmersion = async (opId: string): Promise<ValidationResult> => {
     setValidationState(prev => ({ ...prev, isValidating: true }));
     
     try {
-      // Use getOperacionContext instead of validateInmersionCreation for contextual validation
-      const result = await getOperacionContext(opId);
+      // Usar validateWithErrorHandling para manejo automático de errores
+      const { success, result } = await validateWithErrorHandling(
+        'create_planned_immersion',
+        { operacion_id: opId },
+        { showToast: false } // No mostrar toast aquí, manejado por el componente
+      );
+
+      const validationResult: ValidationResult = {
+        isValid: success && result?.isValid,
+        canProceed: success && result?.canProceed,
+        warnings: result?.warnings || [],
+        errors: result?.errors || [],
+        requiredModule: result?.requiredModule,
+        context: {
+          moduleActive: result?.context?.moduleAccess?.planning || false,
+          requiresDocuments: result?.context?.requiresDocuments || false,
+          allowDirectCreation: result?.context?.allowDirectCreation || true,
+        }
+      };
+
       setValidationState({
         isValidating: false,
-        result,
+        result: validationResult,
         lastValidated: opId,
       });
-      return result;
+      
+      return validationResult;
     } catch (error) {
       console.error('Error validating for immersion:', error);
-      const errorResult: ContextualValidationResult = {
+      const errorResult: ValidationResult = {
         isValid: false,
-        contexto: null,
-        requiere_documentos: true,
-        requiere_hpt: true,
-        requiere_anexo_bravo: true,
-        es_operativa_directa: false,
-        es_legacy: true,
+        canProceed: false,
         warnings: [],
-        errors: ['Error al validar para inmersión']
+        errors: ['Error al validar para inmersión'],
+        context: {
+          moduleActive: false,
+          requiresDocuments: true,
+          allowDirectCreation: true, // CORE: Fallback seguro
+        }
       };
       
       setValidationState({
@@ -109,8 +160,9 @@ export const useContextualValidator = (operacionId?: string) => {
     refresh,
     // Helpers para acceso rápido
     isValid: validationState.result?.isValid ?? false,
-    isOperativaDirecta: validationState.result?.es_operativa_directa ?? false,
-    requiereDocumentos: validationState.result?.requiere_documentos ?? true,
+    canProceed: validationState.result?.canProceed ?? false,
+    requiereDocumentos: validationState.result?.context?.requiresDocuments ?? true,
+    moduleActive: validationState.result?.context?.moduleActive ?? false,
     warnings: validationState.result?.warnings ?? [],
     errors: validationState.result?.errors ?? [],
     isValidating: validationState.isValidating,
