@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -89,13 +88,23 @@ export const useRoleBasedUsers = () => {
         let empresaNombre = 'Sin asignar';
         let empresaTipo: 'salmonera' | 'contratista' | undefined;
 
-        // Cambio aquí: tratar salmoneras y contratistas como objetos únicos, no arrays
+        // Manejar relaciones de manera consistente - verificar si son arrays o objetos
         if (user.salmoneras) {
-          empresaNombre = user.salmoneras.nombre;
-          empresaTipo = 'salmonera';
+          if (Array.isArray(user.salmoneras) && user.salmoneras.length > 0) {
+            empresaNombre = user.salmoneras[0].nombre;
+            empresaTipo = 'salmonera';
+          } else if (!Array.isArray(user.salmoneras)) {
+            empresaNombre = user.salmoneras.nombre;
+            empresaTipo = 'salmonera';
+          }
         } else if (user.contratistas) {
-          empresaNombre = user.contratistas.nombre;
-          empresaTipo = 'contratista';
+          if (Array.isArray(user.contratistas) && user.contratistas.length > 0) {
+            empresaNombre = user.contratistas[0].nombre;
+            empresaTipo = 'contratista';
+          } else if (!Array.isArray(user.contratistas)) {
+            empresaNombre = user.contratistas.nombre;
+            empresaTipo = 'contratista';
+          }
         } else if (user.salmonera_id) {
           empresaNombre = 'Salmonera';
           empresaTipo = 'salmonera';
