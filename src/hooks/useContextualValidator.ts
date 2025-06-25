@@ -20,6 +20,9 @@ interface ValidationResult {
     requiresDocuments: boolean;
     allowDirectCreation: boolean;
   };
+  // Propiedades para compatibilidad con componentes existentes
+  es_legacy?: boolean;
+  isOperativaDirecta?: boolean;
 }
 
 export const useContextualValidator = (operacionId?: string) => {
@@ -65,7 +68,10 @@ export const useContextualValidator = (operacionId?: string) => {
           moduleActive: contextualResult.context.moduleAccess.planning,
           requiresDocuments: contextualResult.context.requiresDocuments,
           allowDirectCreation: contextualResult.context.allowDirectCreation,
-        }
+        },
+        // Compatibilidad: determinar si es operativa directa
+        isOperativaDirecta: contextualResult.context.allowDirectCreation && !contextualResult.context.requiresDocuments,
+        es_legacy: false // No tenemos operaciones legacy en el nuevo sistema
       };
 
       setValidationState({
@@ -86,7 +92,9 @@ export const useContextualValidator = (operacionId?: string) => {
             moduleActive: false,
             requiresDocuments: true,
             allowDirectCreation: true, // CORE: Siempre permitir fallback
-          }
+          },
+          isOperativaDirecta: true, // Fallback seguro
+          es_legacy: false
         },
         lastValidated: opId,
       });
@@ -114,7 +122,10 @@ export const useContextualValidator = (operacionId?: string) => {
           moduleActive: result?.context?.moduleAccess?.planning || false,
           requiresDocuments: result?.context?.requiresDocuments || false,
           allowDirectCreation: result?.context?.allowDirectCreation || true,
-        }
+        },
+        // Compatibilidad
+        isOperativaDirecta: (result?.context?.allowDirectCreation || true) && !(result?.context?.requiresDocuments || false),
+        es_legacy: false
       };
 
       setValidationState({
@@ -135,7 +146,9 @@ export const useContextualValidator = (operacionId?: string) => {
           moduleActive: false,
           requiresDocuments: true,
           allowDirectCreation: true, // CORE: Fallback seguro
-        }
+        },
+        isOperativaDirecta: true, // Fallback seguro
+        es_legacy: false
       };
       
       setValidationState({
@@ -166,5 +179,7 @@ export const useContextualValidator = (operacionId?: string) => {
     warnings: validationState.result?.warnings ?? [],
     errors: validationState.result?.errors ?? [],
     isValidating: validationState.isValidating,
+    // Propiedades de compatibilidad
+    isOperativaDirecta: validationState.result?.isOperativaDirecta ?? false,
   };
 };
