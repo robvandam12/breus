@@ -23,31 +23,54 @@ export const useInmersionesContextual = () => {
             id,
             nombre,
             codigo,
-            estado
+            estado,
+            salmonera_id,
+            contratista_id
           )
         `)
         .order('created_at', { ascending: false });
 
-      // Filtrar según el contexto del usuario
+      // Filtrar según el contexto del usuario - sin usar OR complejos
       if (profile.salmonera_id) {
-        // Salmonera ve todas las inmersiones de sus operaciones
-        query = query.or(
-          `operacion.salmonera_id.eq.${profile.salmonera_id},empresa_creadora_id.eq.${profile.salmonera_id}`
-        );
+        // Salmonera: sus inmersiones directas + inmersiones de sus operaciones
+        const { data: operacionesData } = await supabase
+          .from('operacion')
+          .select('id')
+          .eq('salmonera_id', profile.salmonera_id);
+        
+        const operacionIds = operacionesData?.map(op => op.id) || [];
+        
+        if (operacionIds.length > 0) {
+          query = query.or(`operacion_id.in.(${operacionIds.join(',')}),empresa_creadora_id.eq.${profile.salmonera_id}`);
+        } else {
+          query = query.eq('empresa_creadora_id', profile.salmonera_id);
+        }
       } else if (profile.servicio_id) {
-        // Contratista ve sus inmersiones y las de operaciones asignadas
-        query = query.or(
-          `empresa_creadora_id.eq.${profile.servicio_id},operacion.contratista_id.eq.${profile.servicio_id}`
-        );
+        // Contratista: sus inmersiones directas + inmersiones de operaciones asignadas
+        const { data: operacionesData } = await supabase
+          .from('operacion')
+          .select('id')
+          .eq('contratista_id', profile.servicio_id);
+        
+        const operacionIds = operacionesData?.map(op => op.id) || [];
+        
+        if (operacionIds.length > 0) {
+          query = query.or(`operacion_id.in.(${operacionIds.join(',')}),empresa_creadora_id.eq.${profile.servicio_id}`);
+        } else {
+          query = query.eq('empresa_creadora_id', profile.servicio_id);
+        }
       } else {
-        // Usuario individual ve solo sus inmersiones
+        // Usuario individual: solo sus inmersiones donde participó
         query = query.or(
           `supervisor_id.eq.${profile.id},buzo_principal_id.eq.${profile.id},buzo_asistente_id.eq.${profile.id}`
         );
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading contextual immersions:', error);
+        return [];
+      }
 
       return data || [];
     },

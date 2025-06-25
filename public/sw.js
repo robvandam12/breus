@@ -4,7 +4,9 @@ const urlsToCache = [
   '/',
   '/static/js/bundle.js',
   '/static/css/main.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg'
 ];
 
 // Install event
