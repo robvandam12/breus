@@ -46,7 +46,7 @@ export const ModularSidebar = () => {
   const { profile } = useAuth();
   const location = useLocation();
   const { canCreateOperations, canCreateMaintenanceForms, getWorkflowType } = useOperationalContext();
-  const { hasModuleAccess, modules, canAccessAdvancedReports, canUseIntegrations } = useModularSystem();
+  const { hasModuleAccess, modules, canAccessAdvancedReports, canUseIntegractions } = useModularSystem();
 
   const getNavigationItems = (): NavigationItem[] => {
     const items: NavigationItem[] = [
@@ -68,7 +68,7 @@ export const ModularSidebar = () => {
     });
 
     // MÓDULOS OPCIONALES - Solo si están activos
-    if (canCreateOperations()) {
+    if (canCreateOperations) {
       items.push(
         {
           title: "Operaciones",
@@ -87,7 +87,7 @@ export const ModularSidebar = () => {
     }
 
     // Módulo de Mantención de Redes
-    if (canCreateMaintenanceForms()) {
+    if (canCreateMaintenanceForms) {
       items.push(
         {
           title: "Mantención de Redes",
@@ -105,7 +105,7 @@ export const ModularSidebar = () => {
     }
 
     // Reportes Avanzados
-    if (canAccessAdvancedReports()) {
+    if (canAccessAdvancedReports) {
       items.push({
         title: "Reportes Avanzados",
         icon: BarChart3,
@@ -115,7 +115,7 @@ export const ModularSidebar = () => {
     }
 
     // Integraciones
-    if (canUseIntegrations()) {
+    if (canUseIntegractions) {
       items.push({
         title: "Integraciones",
         icon: Zap,
@@ -284,14 +284,14 @@ export const ModularSidebar = () => {
               </div>
               <div className="flex justify-between">
                 <span>Planificación:</span>
-                <Badge variant={canCreateOperations() ? "default" : "outline"} className="text-xs">
-                  {canCreateOperations() ? 'Activo' : 'Inactivo'}
+                <Badge variant={canCreateOperations ? "default" : "outline"} className="text-xs">
+                  {canCreateOperations ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
               <div className="flex justify-between">
                 <span>Mantención:</span>
-                <Badge variant={canCreateMaintenanceForms() ? "default" : "outline"} className="text-xs">
-                  {canCreateMaintenanceForms() ? 'Activo' : 'Inactivo'}
+                <Badge variant={canCreateMaintenanceForms ? "default" : "outline"} className="text-xs">
+                  {canCreateMaintenanceForms ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
             </div>
