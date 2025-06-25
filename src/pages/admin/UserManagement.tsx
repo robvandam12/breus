@@ -3,16 +3,27 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { RoleBasedUserManagement } from "@/components/users/RoleBasedUserManagement";
 
 export default function UserManagement() {
   const { profile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Determinar si estamos en la ruta de admin (solo superuser) o empresas (otros roles)
   const isAdminRoute = location.pathname === '/admin/users';
   const isEmpresasRoute = location.pathname === '/empresas/usuarios';
+
+  // Redirección automática: si un usuario no-superuser accede a /admin/users, redirigir a /empresas/usuarios
+  useEffect(() => {
+    if (isAdminRoute && profile?.role && ['admin_salmonera', 'admin_servicio'].includes(profile.role)) {
+      console.log('🔄 Redirecting non-superuser from /admin/users to /empresas/usuarios');
+      navigate('/empresas/usuarios', { replace: true });
+      return;
+    }
+  }, [isAdminRoute, profile?.role, navigate]);
 
   // Verificar acceso según la ruta
   let hasAccess = false;
