@@ -1,36 +1,25 @@
 
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Usuarios() {
   const { profile } = useAuth();
   
+  console.log('Usuarios page rendering, profile:', profile);
+  
   return (
-    <MainLayout
-      title="Usuarios de Empresa"
-      subtitle="Gestión de usuarios de la empresa"
-      icon={Users}
-    >
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Página de Usuarios - Test</h2>
-          <p className="text-gray-600">
-            Esta es una página de prueba para verificar la navegación.
-          </p>
-          <div className="mt-4 p-4 bg-gray-100 rounded">
-            <p className="text-sm">
-              <strong>Usuario actual:</strong> {profile?.nombre} {profile?.apellido}
-            </p>
-            <p className="text-sm">
-              <strong>Rol:</strong> {profile?.role}
-            </p>
-            <p className="text-sm">
-              <strong>Email:</strong> {profile?.email}
-            </p>
-          </div>
-        </div>
+    <div style={{ padding: '20px', backgroundColor: 'lightblue', minHeight: '100vh' }}>
+      <h1 style={{ color: 'black', fontSize: '24px' }}>TEST PAGE - USUARIOS</h1>
+      <p style={{ color: 'black', fontSize: '16px' }}>
+        Si puedes ver este texto azul, la navegación funciona.
+      </p>
+      <div style={{ backgroundColor: 'yellow', padding: '10px', margin: '10px 0' }}>
+        <p style={{ color: 'black' }}>Usuario: {profile?.nombre} {profile?.apellido}</p>
+        <p style={{ color: 'black' }}>Rol: {profile?.role}</p>
+        <p style={{ color: 'black' }}>Email: {profile?.email}</p>
       </div>
-    </MainLayout>
+      <p style={{ color: 'red', fontSize: '14px' }}>
+        Esta página usa estilos inline para asegurar que se vea.
+      </p>
+    </div>
   );
 }
