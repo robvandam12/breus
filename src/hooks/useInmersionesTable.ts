@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useInmersionesContextual } from '@/hooks/useInmersionesContextual';
-import { useModularSystem } from '@/hooks/useModularSystem';
+import { useModuleAccess } from '@/hooks/useModuleAccess';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { toast } from '@/hooks/use-toast';
@@ -21,7 +21,7 @@ export const useInmersionesTable = () => {
     operationalContext 
   } = useInmersionesContextual();
   
-  const { hasModuleAccess, modules } = useModularSystem();
+  const { canPlanOperations } = useModuleAccess();
   const { createInmersion } = useInmersiones();
   const { operaciones } = useOperaciones();
 
@@ -42,7 +42,7 @@ export const useInmersionesTable = () => {
 
   // Obtener información contextual
   const getContextInfo = () => {
-    const hasPlanning = hasModuleAccess(modules.PLANNING_OPERATIONS);
+    const hasPlanning = canPlanOperations;
     const canCreateDirect = capacidades.puedeCrearInmersionesDirectas;
 
     if (hasPlanning && canCreateDirect) {
@@ -70,6 +70,32 @@ export const useInmersionesTable = () => {
         variant: 'destructive' as const
       };
     }
+  };
+
+  // Tabs disponibles según módulos activos
+  const getAvailableTabs = () => {
+    const tabs = [];
+    
+    // Tab "Todas" siempre disponible
+    tabs.push({ id: 'all', label: 'Todas', count: estadisticas.total });
+    
+    // Tab "Independientes" siempre disponible (core functionality)
+    tabs.push({ 
+      id: 'independent', 
+      label: 'Independientes', 
+      count: estadisticas.independientes 
+    });
+    
+    // Tab "Planificadas" solo si tiene módulo de planificación
+    if (canPlanOperations) {
+      tabs.push({ 
+        id: 'planned', 
+        label: 'Planificadas', 
+        count: estadisticas.planificadas 
+      });
+    }
+    
+    return tabs;
   };
 
   // Handlers para creación de inmersiones
@@ -143,7 +169,8 @@ export const useInmersionesTable = () => {
     
     // Computed
     contextInfo: getContextInfo(),
-    hasPlanning: hasModuleAccess(modules.PLANNING_OPERATIONS),
+    availableTabs: getAvailableTabs(),
+    hasPlanning: canPlanOperations,
     
     // Handlers
     handleCreateDirectInmersion,
