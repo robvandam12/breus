@@ -15,8 +15,9 @@ export interface OperacionFormData {
   contratista_id?: string;
   sitio_id?: string;
   servicio_id?: string;
-  equipo_buceo_id?: string;
   supervisor_asignado_id?: string;
+  company_id?: string;
+  company_type?: string;
 }
 
 export const useOperacionesMutations = () => {

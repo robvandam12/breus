@@ -1782,7 +1782,6 @@ export type Database = {
           company_type: string | null
           contratista_id: string | null
           created_at: string
-          equipo_buceo_id: string | null
           estado: string
           estado_aprobacion: string | null
           fecha_fin: string | null
@@ -1802,7 +1801,6 @@ export type Database = {
           company_type?: string | null
           contratista_id?: string | null
           created_at?: string
-          equipo_buceo_id?: string | null
           estado?: string
           estado_aprobacion?: string | null
           fecha_fin?: string | null
@@ -1822,7 +1820,6 @@ export type Database = {
           company_type?: string | null
           contratista_id?: string | null
           created_at?: string
-          equipo_buceo_id?: string | null
           estado?: string
           estado_aprobacion?: string | null
           fecha_fin?: string | null
@@ -1856,13 +1853,6 @@ export type Database = {
             columns: ["sitio_id"]
             isOneToOne: false
             referencedRelation: "sitios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "operacion_equipo_buceo_id_fkey"
-            columns: ["equipo_buceo_id"]
-            isOneToOne: false
-            referencedRelation: "equipos_buceo"
             referencedColumns: ["id"]
           },
           {
