@@ -4,56 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, Filter, Info, Calendar, Zap } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Filter, Calendar, Zap, Anchor } from "lucide-react";
 import { useInmersionesTable } from '@/hooks/useInmersionesTable';
 import { IndependentImmersionForm } from './IndependentImmersionForm';
 import { InmersionContextualForm } from './InmersionContextualForm';
-
-// Componente simple para mostrar inmersiones hasta tener el ImmersionCard completo
-const SimpleInmersionCard = ({ inmersion }: { inmersion: any }) => {
-  const getEstadoBadgeColor = (estado: string) => {
-    const colors: Record<string, string> = {
-      planificada: 'bg-blue-100 text-blue-700',
-      en_proceso: 'bg-yellow-100 text-yellow-700',
-      completada: 'bg-green-100 text-green-700',
-      cancelada: 'bg-red-100 text-red-700',
-    };
-    return colors[estado] || 'bg-gray-100 text-gray-700';
-  };
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
-          <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-            {inmersion.estado}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</span>
-        </div>
-        <div className="text-sm text-gray-600">
-          <p><strong>Buzo:</strong> {inmersion.buzo_principal}</p>
-          <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
-          <p><strong>Profundidad:</strong> {inmersion.profundidad_max}m</p>
-        </div>
-        {inmersion.operacion_id && (
-          <div className="text-sm text-blue-600">
-            <p>Operación: {inmersion.operacion_id}</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+import { InmersionActions } from '../inmersion/InmersionActions';
 
 export const InmersionesDataTable = () => {
   const {
@@ -70,12 +28,34 @@ export const InmersionesDataTable = () => {
     filteredInmersiones,
     isLoading,
     estadisticas,
-    contextInfo,
-    availableTabs,
     hasPlanning,
     handleCreateDirectInmersion,
     handleCreatePlannedInmersion,
   } = useInmersionesTable();
+
+  const getEstadoBadgeColor = (estado: string) => {
+    const colors: Record<string, string> = {
+      planificada: 'bg-blue-100 text-blue-700',
+      en_proceso: 'bg-yellow-100 text-yellow-700',
+      completada: 'bg-green-100 text-green-700',
+      cancelada: 'bg-red-100 text-red-700',
+    };
+    return colors[estado] || 'bg-gray-100 text-gray-700';
+  };
+
+  const getTipoBadgeColor = (isIndependent: boolean, operacionId: string | null) => {
+    if (isIndependent || !operacionId) {
+      return 'bg-purple-100 text-purple-700';
+    }
+    return 'bg-blue-100 text-blue-700';
+  };
+
+  const getTipoLabel = (isIndependent: boolean, operacionId: string | null) => {
+    if (isIndependent || !operacionId) {
+      return 'Independiente';
+    }
+    return 'Planificada';
+  };
 
   if (isLoading) {
     return (
@@ -109,15 +89,17 @@ export const InmersionesDataTable = () => {
             </Button>
           )}
         </div>
-      </div>
 
-      {/* Información contextual */}
-      <Alert className={contextInfo.variant === 'destructive' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          {contextInfo.message}
-        </AlertDescription>
-      </Alert>
+        {/* Estadísticas rápidas */}
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Anchor className="w-4 h-4" />
+            Total: {estadisticas.total}
+          </span>
+          <span>Completadas: {estadisticas.completadas}</span>
+          <span>En Proceso: {estadisticas.enProceso}</span>
+        </div>
+      </div>
 
       {/* Filtros */}
       <Card>
@@ -153,65 +135,103 @@ export const InmersionesDataTable = () => {
                 <SelectItem value="cancelada">Cancelada</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Filtro de tipo solo si tiene planning */}
+            {hasPlanning && (
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="independent">Independientes</SelectItem>
+                  <SelectItem value="planned">Planificadas</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabs dinámicas según módulos activos */}
-      <Tabs value={typeFilter} onValueChange={setTypeFilter} className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
-          {availableTabs.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
-              {tab.id === 'planned' && <Calendar className="w-4 h-4" />}
-              {tab.id === 'independent' && <Zap className="w-4 h-4" />}
-              {tab.label}
-              <Badge variant="secondary" className="ml-1">
-                {tab.count}
-              </Badge>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {availableTabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-6">
-            {filteredInmersiones.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
-                      {tab.id === 'planned' ? <Calendar className="w-full h-full" /> : <Zap className="w-full h-full" />}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      No hay {tab.label.toLowerCase()}
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      {tab.id === 'planned' 
-                        ? 'No se encontraron inmersiones planificadas con los filtros aplicados.'
-                        : 'No se encontraron inmersiones independientes con los filtros aplicados.'
-                      }
-                    </p>
-                    <Button 
-                      onClick={() => tab.id === 'planned' ? setShowPlannedInmersionDialog(true) : setShowNewInmersionDialog(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Crear {tab.id === 'planned' ? 'Inmersión Planificada' : 'Nueva Inmersión'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredInmersiones.map((inmersion) => (
-                  <SimpleInmersionCard 
-                    key={inmersion.inmersion_id} 
-                    inmersion={inmersion}
-                  />
-                ))}
+      {/* Tabla de inmersiones */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredInmersiones.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+                  <Anchor className="w-full h-full" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  No hay inmersiones
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  No se encontraron inmersiones con los filtros aplicados.
+                </p>
+                <Button onClick={() => setShowNewInmersionDialog(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Nueva Inmersión
+                </Button>
               </div>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Buzo Principal</TableHead>
+                  <TableHead>Supervisor</TableHead>
+                  <TableHead>Profundidad</TableHead>
+                  <TableHead>Operación</TableHead>
+                  <TableHead className="w-[50px]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInmersiones.map((inmersion) => (
+                  <TableRow key={inmersion.inmersion_id}>
+                    <TableCell className="font-medium">
+                      {inmersion.codigo}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getTipoBadgeColor(inmersion.is_independent, inmersion.operacion_id)}>
+                        {getTipoLabel(inmersion.is_independent, inmersion.operacion_id)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(inmersion.fecha_inmersion).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+                        {inmersion.estado}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{inmersion.buzo_principal}</TableCell>
+                    <TableCell>{inmersion.supervisor}</TableCell>
+                    <TableCell>{inmersion.profundidad_max}m</TableCell>
+                    <TableCell>
+                      {inmersion.operacion_id ? (
+                        <span className="text-sm text-blue-600">
+                          {(inmersion as any).operacion?.codigo || inmersion.operacion_id}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <InmersionActions 
+                        inmersionId={inmersion.inmersion_id}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Diálogo para nueva inmersión independiente */}
       <Dialog open={showNewInmersionDialog} onOpenChange={setShowNewInmersionDialog}>
