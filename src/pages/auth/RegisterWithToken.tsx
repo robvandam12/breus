@@ -139,29 +139,82 @@ export default function RegisterWithToken() {
 
       console.log('Usuario creado en Auth:', authData.user?.id);
 
-      // Paso 2: Crear perfil en la tabla usuario
-      // La política RLS ahora permite esto gracias a la invitación válida
+      // Paso 2: Verificar si el perfil ya existe (por el trigger automático)
       if (authData.user) {
-        console.log('Creando perfil de usuario...');
+        console.log('Verificando si el perfil ya existe...');
         
-        const { error: profileError } = await supabase
+        const { data: existingProfile, error: checkError } = await supabase
           .from('usuario')
-          .insert([{
-            usuario_id: authData.user.id,
-            email: invitation.email,
-            nombre: formData.nombre,
-            apellido: formData.apellido,
-            rol: invitation.rol,
-            perfil_completado: true,
-            estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
-          }]);
+          .select('usuario_id')
+          .eq('usuario_id', authData.user.id)
+          .single();
 
-        if (profileError) {
-          console.error('Error creando perfil:', profileError);
-          throw profileError;
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Error verificando perfil existente:', checkError);
+          // Si hay un error diferente a "no encontrado", continuar con la creación
         }
 
-        console.log('Perfil creado exitosamente');
+        if (!existingProfile) {
+          // Solo crear el perfil si no existe
+          console.log('Creando perfil de usuario...');
+          
+          const { error: profileError } = await supabase
+            .from('usuario')
+            .insert([{
+              usuario_id: authData.user.id,
+              email: invitation.email,
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              rol: invitation.rol,
+              perfil_completado: true,
+              estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
+            }]);
+
+          if (profileError) {
+            console.error('Error creando perfil:', profileError);
+            // Si es error de duplicación, intentar actualizar en lugar de crear
+            if (profileError.code === '23505') {
+              console.log('Perfil ya existe, actualizando...');
+              const { error: updateError } = await supabase
+                .from('usuario')
+                .update({
+                  nombre: formData.nombre,
+                  apellido: formData.apellido,
+                  rol: invitation.rol,
+                  perfil_completado: true,
+                  estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
+                })
+                .eq('usuario_id', authData.user.id);
+
+              if (updateError) {
+                console.error('Error actualizando perfil:', updateError);
+                throw updateError;
+              }
+            } else {
+              throw profileError;
+            }
+          }
+        } else {
+          console.log('Perfil ya existe, actualizando datos...');
+          // Actualizar el perfil existente con los nuevos datos
+          const { error: updateError } = await supabase
+            .from('usuario')
+            .update({
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              rol: invitation.rol,
+              perfil_completado: true,
+              estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
+            })
+            .eq('usuario_id', authData.user.id);
+
+          if (updateError) {
+            console.error('Error actualizando perfil existente:', updateError);
+            throw updateError;
+          }
+        }
+
+        console.log('Perfil creado/actualizado exitosamente');
 
         // Paso 3: Marcar invitación como aceptada
         const { error: invitationError } = await supabase
