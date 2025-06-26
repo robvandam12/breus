@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Mail, RefreshCcw, X, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useInvitationManagement, Invitation } from "@/hooks/useInvitationManagement";
-import { InvitationManagementSkeleton } from "./InvitationManagementSkeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -61,7 +61,11 @@ export const InvitationManagement = () => {
   };
 
   if (isLoading) {
-    return <InvitationManagementSkeleton />;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner text="Cargando invitaciones..." />
+      </div>
+    );
   }
 
   return (

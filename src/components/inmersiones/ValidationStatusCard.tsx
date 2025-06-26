@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, FileCheck, AlertTriangle, Play, CheckSquare } from "lucide-react";
 import { ValidationStatus, useInmersiones } from "@/hooks/useInmersiones";
-import { ValidationStatusSkeleton } from "./ValidationStatusSkeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ValidationStatusCardProps {
   operacionId: string;
@@ -66,7 +66,13 @@ export const ValidationStatusCard = ({
   };
 
   if (loading && !validation) {
-    return <ValidationStatusSkeleton />;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <LoadingSpinner text="Verificando documentos..." />
+        </CardContent>
+      </Card>
+    );
   }
 
   const getStatusColor = (hasValid: boolean) => 
@@ -125,7 +131,11 @@ export const ValidationStatusCard = ({
               disabled={loading}
               className="w-full bg-green-600 hover:bg-green-700"
             >
-              <Play className="w-4 h-4 mr-2" />
+              {loading ? (
+                <LoadingSpinner size="sm" className="mr-2" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
               Ejecutar Inmersión
             </Button>
           )}
@@ -136,7 +146,11 @@ export const ValidationStatusCard = ({
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
-              <CheckSquare className="w-4 h-4 mr-2" />
+              {loading ? (
+                <LoadingSpinner size="sm" className="mr-2" />
+              ) : (
+                <CheckSquare className="w-4 h-4 mr-2" />
+              )}
               Completar Inmersión
             </Button>
           )}
