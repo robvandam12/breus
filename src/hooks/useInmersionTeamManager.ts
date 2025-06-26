@@ -23,10 +23,12 @@ interface NewTeamMember {
 export const useInmersionTeamManager = (inmersionId: string) => {
   const queryClient = useQueryClient();
 
-  // Obtener miembros del equipo
+  // Obtener miembros del equipo - solo si hay ID de inmersión
   const { data: teamMembers = [], isLoading } = useQuery({
     queryKey: ['inmersion-team', inmersionId],
     queryFn: async () => {
+      if (!inmersionId) return [];
+      
       const { data, error } = await supabase
         .from('inmersion_team_members')
         .select(`
@@ -60,6 +62,10 @@ export const useInmersionTeamManager = (inmersionId: string) => {
   // Agregar miembro al equipo
   const addTeamMemberMutation = useMutation({
     mutationFn: async (newMember: NewTeamMember) => {
+      if (!inmersionId) {
+        throw new Error('No se puede agregar miembro sin ID de inmersión');
+      }
+      
       const { data, error } = await supabase
         .from('inmersion_team_members')
         .insert({
@@ -120,7 +126,7 @@ export const useInmersionTeamManager = (inmersionId: string) => {
 
   return {
     teamMembers,
-    isLoading,
+    isLoading: isLoading && !!inmersionId,
     addTeamMember: addTeamMemberMutation.mutateAsync,
     removeTeamMember: removeTeamMemberMutation.mutateAsync,
     isAddingMember: addTeamMemberMutation.isPending,

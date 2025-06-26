@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +167,29 @@ export const InmersionesDataTable = () => {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredInmersiones.map((inmersion) => (
-                  <ImmersionCard key={inmersion.inmersion_id} inmersion={inmersion} />
+                  <ImmersionCard 
+                    key={inmersion.inmersion_id} 
+                    inmersion={{
+                      inmersion_id: inmersion.inmersion_id,
+                      codigo: inmersion.codigo,
+                      fecha_inmersion: inmersion.fecha_inmersion,
+                      estado: inmersion.estado,
+                      objetivo: inmersion.objetivo,
+                      supervisor: inmersion.supervisor,
+                      buzo_principal: inmersion.buzo_principal,
+                      profundidad_max: inmersion.profundidad_max,
+                      operacion_id: inmersion.operacion_id,
+                      is_independent: inmersion.is_independent || false,
+                      hora_inicio: inmersion.hora_inicio,
+                      temperatura_agua: inmersion.temperatura_agua,
+                      visibilidad: inmersion.visibilidad,
+                      corriente: inmersion.corriente,
+                      hpt_validado: inmersion.hpt_validado,
+                      anexo_bravo_validado: inmersion.anexo_bravo_validado,
+                      created_at: inmersion.created_at,
+                      updated_at: inmersion.updated_at
+                    }} 
+                  />
                 ))}
               </div>
             )}

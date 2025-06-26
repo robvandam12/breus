@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,16 +10,21 @@ import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { useInmersionTeamManager } from "@/hooks/useInmersionTeamManager";
 
 interface InmersionTeamManagerEnhancedProps {
-  inmersionId: string;
+  inmersionId: string | null;
   onInviteUser?: (userData: any) => void;
+  onTeamUpdate?: (teamMembers: any[]) => void;
+  isCreatingNew?: boolean;
 }
 
 export const InmersionTeamManagerEnhanced = ({
   inmersionId,
-  onInviteUser
+  onInviteUser,
+  onTeamUpdate,
+  isCreatingNew = false
 }: InmersionTeamManagerEnhancedProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'supervisor' | 'buzo_principal' | 'buzo_asistente' | 'buzo_emergencia'>('buzo_principal');
+  const [localTeamMembers, setLocalTeamMembers] = useState<any[]>([]);
 
   const {
     teamMembers,
@@ -28,19 +33,45 @@ export const InmersionTeamManagerEnhanced = ({
     removeTeamMember,
     isAddingMember,
     isRemovingMember
-  } = useInmersionTeamManager(inmersionId);
+  } = useInmersionTeamManager(inmersionId || '');
+
+  // Para inmersiones nuevas, usar estado local
+  const currentTeamMembers = isCreatingNew ? localTeamMembers : teamMembers;
+
+  // Notificar cambios al componente padre
+  useEffect(() => {
+    if (onTeamUpdate) {
+      onTeamUpdate(currentTeamMembers);
+    }
+  }, [currentTeamMembers, onTeamUpdate]);
 
   const handleSelectUser = async (user: any) => {
-    try {
-      await addTeamMember({
-        user_id: user.usuario_id,
-        role: selectedRole,
-        is_emergency: selectedRole === 'buzo_emergencia'
-      });
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error('Error adding team member:', error);
+    const newMember = {
+      id: `temp-${Date.now()}`,
+      user_id: user.usuario_id,
+      role: selectedRole,
+      is_emergency: selectedRole === 'buzo_emergencia',
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email
+    };
+
+    if (isCreatingNew) {
+      // Para inmersiones nuevas, agregar al estado local
+      setLocalTeamMembers(prev => [...prev, newMember]);
+    } else {
+      // Para inmersiones existentes, usar la función del hook
+      try {
+        await addTeamMember({
+          user_id: user.usuario_id,
+          role: selectedRole,
+          is_emergency: selectedRole === 'buzo_emergencia'
+        });
+      } catch (error) {
+        console.error('Error adding team member:', error);
+      }
     }
+    setIsAddDialogOpen(false);
   };
 
   const handleInviteUser = (userData: any) => {
@@ -55,10 +86,16 @@ export const InmersionTeamManagerEnhanced = ({
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    try {
-      await removeTeamMember(memberId);
-    } catch (error) {
-      console.error('Error removing team member:', error);
+    if (isCreatingNew) {
+      // Para inmersiones nuevas, remover del estado local
+      setLocalTeamMembers(prev => prev.filter(member => member.id !== memberId));
+    } else {
+      // Para inmersiones existentes, usar la función del hook
+      try {
+        await removeTeamMember(memberId);
+      } catch (error) {
+        console.error('Error removing team member:', error);
+      }
     }
   };
 
@@ -88,10 +125,10 @@ export const InmersionTeamManagerEnhanced = ({
     return labels[role] || role;
   };
 
-  const emergencyDivers = teamMembers.filter(member => member.is_emergency || member.role === 'buzo_emergencia');
-  const activeDivers = teamMembers.filter(member => !member.is_emergency && member.role !== 'buzo_emergencia');
+  const emergencyDivers = currentTeamMembers.filter(member => member.is_emergency || member.role === 'buzo_emergencia');
+  const activeDivers = currentTeamMembers.filter(member => !member.is_emergency && member.role !== 'buzo_emergencia');
 
-  if (isLoading) {
+  if (isLoading && !isCreatingNew) {
     return (
       <Card>
         <CardHeader>
@@ -169,7 +206,7 @@ export const InmersionTeamManagerEnhanced = ({
       </CardHeader>
       
       <CardContent>
-        {teamMembers.length === 0 ? (
+        {currentTeamMembers.length === 0 ? (
           <div className="text-center py-8">
             <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-zinc-900 mb-2">No hay miembros asignados</h3>
