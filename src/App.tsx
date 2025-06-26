@@ -40,6 +40,24 @@ import RegisterWithToken from "@/pages/auth/RegisterWithToken";
 
 const queryClient = new QueryClient();
 
+// Component wrapper for protected routes with sidebar
+const ProtectedWithSidebar = ({ children }: { children: React.ReactNode }) => (
+  <SidebarProvider>
+    <ProtectedRoute>
+      {children}
+    </ProtectedRoute>
+  </SidebarProvider>
+);
+
+// Component wrapper for module protected routes with sidebar
+const ModuleProtectedWithSidebar = ({ children, requiredModule }: { children: React.ReactNode; requiredModule: string }) => (
+  <SidebarProvider>
+    <ModuleProtectedRoute requiredModule={requiredModule}>
+      {children}
+    </ModuleProtectedRoute>
+  </SidebarProvider>
+);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -48,53 +66,52 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <SidebarProvider>
-              <Routes>
-                {/* Auth Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/auth/register" element={<RegisterWithToken />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                
-                {/* Protected Routes */}
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                
-                <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
-                <Route path="/personal-de-buceo" element={<ProtectedRoute><PersonalDeBuceo /></ProtectedRoute>} />
-                <Route path="/company-personnel" element={<ProtectedRoute><PersonalPoolAdmin /></ProtectedRoute>} />
+            <Routes>
+              {/* Auth Routes - SIN SIDEBAR */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<RegisterWithToken />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              
+              {/* Protected Routes - CON SIDEBAR */}
+              <Route path="/" element={<ProtectedWithSidebar><Index /></ProtectedWithSidebar>} />
+              
+              <Route path="/profile-setup" element={<ProtectedWithSidebar><ProfileSetup /></ProtectedWithSidebar>} />
+              <Route path="/personal-de-buceo" element={<ProtectedWithSidebar><PersonalDeBuceo /></ProtectedWithSidebar>} />
+              <Route path="/company-personnel" element={<ProtectedWithSidebar><PersonalPoolAdmin /></ProtectedWithSidebar>} />
 
-                {/* Empresas Routes */}
-                <Route path="/empresas/salmoneras" element={<ProtectedRoute><Salmoneras /></ProtectedRoute>} />
-                <Route path="/empresas/sitios" element={<ProtectedRoute><Sitios /></ProtectedRoute>} />
-                <Route path="/empresas/contratistas" element={<ProtectedRoute><Contratistas /></ProtectedRoute>} />
-                <Route path="/empresas/usuarios" element={<ProtectedRoute><EmpresasUsuarios /></ProtectedRoute>} />
+              {/* Empresas Routes */}
+              <Route path="/empresas/salmoneras" element={<ProtectedWithSidebar><Salmoneras /></ProtectedWithSidebar>} />
+              <Route path="/empresas/sitios" element={<ProtectedWithSidebar><Sitios /></ProtectedWithSidebar>} />
+              <Route path="/empresas/contratistas" element={<ProtectedWithSidebar><Contratistas /></ProtectedWithSidebar>} />
+              <Route path="/empresas/usuarios" element={<ProtectedWithSidebar><EmpresasUsuarios /></ProtectedWithSidebar>} />
 
-                {/* Admin Routes */}
-                <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
-                <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
-                <Route path="/admin/modules" element={<ProtectedRoute><AdminModules /></ProtectedRoute>} />
-                <Route path="/admin/system-monitoring" element={<ProtectedRoute><SystemMonitoring /></ProtectedRoute>} />
+              {/* Admin Routes */}
+              <Route path="/admin/users" element={<ProtectedWithSidebar><AdminUsers /></ProtectedWithSidebar>} />
+              <Route path="/admin/roles" element={<ProtectedWithSidebar><AdminRoles /></ProtectedWithSidebar>} />
+              <Route path="/admin/modules" element={<ProtectedWithSidebar><AdminModules /></ProtectedWithSidebar>} />
+              <Route path="/admin/system-monitoring" element={<ProtectedWithSidebar><SystemMonitoring /></ProtectedWithSidebar>} />
 
-                {/* Configuración Route */}
-                <Route path="/configuracion" element={<ProtectedRoute><Configuracion /></ProtectedRoute>} />
+              {/* Configuración Route */}
+              <Route path="/configuracion" element={<ProtectedWithSidebar><Configuracion /></ProtectedWithSidebar>} />
 
-                {/* Inmersiones Route */}
-                <Route path="/inmersiones" element={<ProtectedRoute><Inmersiones /></ProtectedRoute>} />
+              {/* Inmersiones Route */}
+              <Route path="/inmersiones" element={<ProtectedWithSidebar><Inmersiones /></ProtectedWithSidebar>} />
 
-                {/* Bitácoras Routes */}
-                <Route path="/bitacoras/supervisor" element={<ProtectedRoute><BitacoraSupervisor /></ProtectedRoute>} />
-                <Route path="/bitacoras/buzo" element={<ProtectedRoute><BitacoraBuzo /></ProtectedRoute>} />
+              {/* Bitácoras Routes */}
+              <Route path="/bitacoras/supervisor" element={<ProtectedWithSidebar><BitacoraSupervisor /></ProtectedWithSidebar>} />
+              <Route path="/bitacoras/buzo" element={<ProtectedWithSidebar><BitacoraBuzo /></ProtectedWithSidebar>} />
 
-                {/* Reportes Route */}
-                <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
+              {/* Reportes Route */}
+              <Route path="/reportes" element={<ProtectedWithSidebar><Reportes /></ProtectedWithSidebar>} />
 
-                {/* Operaciones Routes */}
-                 <Route path="/operaciones" element={<ModuleProtectedRoute requiredModule="planning_operations"><Operaciones /></ModuleProtectedRoute>} />
-                <Route path="/operaciones/hpt" element={<ModuleProtectedRoute requiredModule="planning_operations"><OperacionesHPT /></ModuleProtectedRoute>} />
-                <Route path="/operaciones/anexo-bravo" element={<ModuleProtectedRoute requiredModule="planning_operations"><OperacionesAnexoBravo /></ModuleProtectedRoute>} />
-                 <Route path="/operaciones/network-maintenance" element={<ModuleProtectedRoute requiredModule="maintenance_networks"><NetworkMaintenance /></ModuleProtectedRoute>} />
-              </Routes>
-            </SidebarProvider>
+              {/* Operaciones Routes */}
+              <Route path="/operaciones" element={<ModuleProtectedWithSidebar requiredModule="planning_operations"><Operaciones /></ModuleProtectedWithSidebar>} />
+              <Route path="/operaciones/hpt" element={<ModuleProtectedWithSidebar requiredModule="planning_operations"><OperacionesHPT /></ModuleProtectedWithSidebar>} />
+              <Route path="/operaciones/anexo-bravo" element={<ModuleProtectedWithSidebar requiredModule="planning_operations"><OperacionesAnexoBravo /></ModuleProtectedWithSidebar>} />
+              <Route path="/operaciones/network-maintenance" element={<ModuleProtectedWithSidebar requiredModule="maintenance_networks"><NetworkMaintenance /></ModuleProtectedWithSidebar>} />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
