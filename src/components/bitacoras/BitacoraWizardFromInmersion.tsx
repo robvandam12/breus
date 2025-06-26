@@ -121,15 +121,16 @@ export const BitacoraWizardFromInmersion = ({
   
   const selectedInmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
   const selectedOperation = selectedInmersion ? operaciones.find(op => op.id === selectedInmersion.operacion_id) : null;
-  const assignedTeam = selectedOperation?.equipo_buceo_id 
-    ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
-    : null;
+  
+  // Since operations no longer have direct team assignments, we need to find available teams
+  const availableTeams = equipos || [];
+  const assignedTeam = availableTeams.length > 0 ? availableTeams[0] : null; // Use first available team as fallback
 
   // Auto-poblar datos de la inmersión y personal de buceo
   useEffect(() => {
-    if (selectedInmersion && selectedOperation && assignedTeam) {
+    if (selectedInmersion && selectedOperation) {
       // Auto-poblar buzos del personal usando las propiedades correctas
-      const buzosEquipo = assignedTeam.miembros?.filter(miembro => {
+      const buzosEquipo = assignedTeam?.miembros?.filter(miembro => {
         // Usar 'any' temporalmente para acceder a las propiedades
         const miembroAny = miembro as any;
         const rol = (miembroAny.rol_equipo || miembroAny.rol || 'buzo').toLowerCase();
@@ -175,7 +176,6 @@ export const BitacoraWizardFromInmersion = ({
         supervisor: selectedInmersion.supervisor,
         supervisor_nombre_matricula: selectedInmersion.supervisor,
         operacion_id: selectedOperation.id,
-        equipo_buceo_id: selectedOperation.equipo_buceo_id,
         inmersiones_buzos: buzosEquipo,
         fecha_inicio_faena: selectedInmersion.fecha_inmersion
       }));

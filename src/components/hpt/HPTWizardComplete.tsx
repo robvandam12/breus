@@ -72,10 +72,9 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 
         if (opError) throw opError;
 
-        // Obtener equipo de buceo asignado
-        const equipoAsignado = operacion.equipo_buceo_id 
-          ? equipos.find(eq => eq.id === operacion.equipo_buceo_id)
-          : null;
+        // Since operations no longer have direct team assignments, get available teams
+        const availableTeams = equipos || [];
+        const equipoAsignado = availableTeams.length > 0 ? availableTeams[0] : null;
 
         // Crear objeto con las propiedades que existen en el tipo de datos
         const autoDataUpdates: any = {

@@ -1,23 +1,17 @@
-
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Save, FileText, Shield, AlertTriangle } from "lucide-react";
-import { HPTStep1 } from "./steps/HPTStep1";
-import { HPTStep2 } from "./steps/HPTStep2";
-import { HPTStep3Personal } from "./steps/HPTStep3Personal";
-import { HPTStep4 } from "./steps/HPTStep4";
-import { HPTStep5 } from "./steps/HPTStep5";
-import { HPTStep6 } from "./steps/HPTStep6";
-import { HPTOperationSelector } from "./HPTOperationSelector";
-import { useToast } from "@/hooks/use-toast";
-import { useHPTWizard, HPTWizardData } from "@/hooks/useHPTWizard";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useEquiposBuceoEnhanced } from "@/hooks/useEquiposBuceoEnhanced";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { HPTStep1 } from './HPTStep1';
+import { HPTStep2 } from './HPTStep2';
+import { HPTStep3 } from './HPTStep3';
+import { HPTStep4 } from './HPTStep4';
+import { HPTStep5 } from './HPTStep5';
+import { HPTOperationSelector } from './HPTOperationSelector';
+import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
 interface HPTWizardProps {
   operacionId?: string;
@@ -26,358 +20,332 @@ interface HPTWizardProps {
   onCancel?: () => void;
 }
 
-export const HPTWizard = ({ operacionId: initialOperacionId, hptId, onComplete, onCancel }: HPTWizardProps) => {
-  const { toast } = useToast();
-  const { operaciones } = useOperaciones();
+export const HPTWizard: React.FC<HPTWizardProps> = ({
+  operacionId: initialOperacionId,
+  hptId,
+  onComplete,
+  onCancel
+}) => {
   const { equipos } = useEquiposBuceoEnhanced();
-  const { getFormDefaults } = useUserProfile();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
-  const [isDataPopulated, setIsDataPopulated] = useState(false);
 
-  const {
-    currentStep,
-    data,
-    steps,
-    updateData,
-    nextStep,
-    prevStep,
-    submitHPT,
-    isFormComplete,
-    progress,
-    isLoading,
-    autoSaveEnabled,
-    setAutoSaveEnabled
-  } = useHPTWizard(currentOperacionId, hptId);
+  const [formData, setFormData] = useState<any>({
+    folio: '',
+    fecha: new Date().toISOString().split('T')[0],
+    empresa_servicio_nombre: '',
+    centro_trabajo_nombre: '',
+    lugar_especifico: '',
+    descripcion_tarea: '',
+    plan_trabajo: '',
+    supervisor_nombre: '',
+    supervisor_cargo: '',
+    supervisor_firma: '',
+    aprueba_nombre: '',
+    aprueba_cargo: '',
+    aprueba_firma: '',
+    responsable_nombre: '',
+    responsable_cargo: '',
+    responsable_firma: '',
+    riesgos_tarea: [],
+    personal_participante: [],
+    equipos_utilizados: [],
+    procedimientos_seguridad: [],
+    observaciones: '',
+    operacion_id: currentOperacionId,
+    estado: 'borrador'
+  });
 
-  // Pre-populate data when operation is selected - only once
-  const populateOperationData = useCallback(async () => {
-    if (!currentOperacionId || hptId || isDataPopulated) return;
+  const steps = [
+    { id: 1, title: "Información General", isValid: !!(formData.folio && formData.fecha && formData.empresa_servicio_nombre && formData.centro_trabajo_nombre) },
+    { id: 2, title: "Personal y Supervisor", isValid: !!(formData.supervisor_nombre && formData.responsable_nombre) },
+    { id: 3, title: "Análisis de Riesgos", isValid: formData.riesgos_tarea && formData.riesgos_tarea.length > 0 },
+    { id: 4, title: "Equipos y Procedimientos", isValid: formData.equipos_utilizados && formData.procedimientos_seguridad },
+    { id: 5, title: "Aprobaciones y Observaciones", isValid: true }
+  ];
 
-    try {
-      setIsDataPopulated(true); // Evitar loops infinitos
-      
-      // Get operation with related data
-      const { data: opData, error } = await supabase
-        .from('operacion')
-        .select(`
-          *,
-          sitios:sitio_id (nombre, ubicacion),
-          contratistas:contratista_id (nombre),
-          salmoneras:salmonera_id (nombre)
-        `)
-        .eq('id', currentOperacionId)
-        .single();
+  const totalSteps = steps.length;
+  const progress = (currentStep / totalSteps) * 100;
 
-      if (error) throw error;
+  const updateData = (updates: any) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
 
-      const operacion = opData;
-      const defaults = getFormDefaults();
-      
-      // Find assigned team
-      let supervisor = null;
-      let teamMembers = [];
-      if (operacion.equipo_buceo_id) {
-        const equipo = equipos.find(e => e.id === operacion.equipo_buceo_id);
-        if (equipo?.miembros) {
-          supervisor = equipo.miembros.find(m => 
-            (m as any).rol === 'supervisor' || (m as any).rol_equipo === 'supervisor'
-          );
-          teamMembers = equipo.miembros;
-        }
-      }
-
-      // Generate folio based on operation - único y estable
-      const folio = `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`;
-      
-      console.log('HPT data populated:', {
-        operacion,
-        supervisor,
-        teamMembers,
-        folio
-      });
-
-      // Auto-populate with operation and user data
-      updateData({
-        operacion_id: currentOperacionId,
-        folio,
-        empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-        supervisor_nombre: supervisor ? 
-          ((supervisor as any).nombre_completo || 
-           ((supervisor as any).usuario?.nombre && (supervisor as any).usuario?.apellido 
-             ? `${(supervisor as any).usuario.nombre} ${(supervisor as any).usuario.apellido}` 
-             : defaults.nombre + ' ' + defaults.apellido)) : 
-          (defaults.nombre + ' ' + defaults.apellido),
-        centro_trabajo_nombre: operacion.sitios?.nombre || '',
-        lugar_especifico: operacion.sitios?.ubicacion || '',
-        plan_trabajo: operacion.tareas || '',
-        descripcion_tarea: operacion.nombre || 'Operación de buceo comercial',
-        // Pre-populate team data
-        buzos: teamMembers.filter(m => {
-          const rol = (m as any).rol || (m as any).rol_equipo || '';
-          return rol.toLowerCase().includes('buzo');
-        }).map(miembro => {
-          const miembroAny = miembro as any;
-          const nombreCompleto = miembroAny.nombre_completo || 
-                                (miembroAny.usuario?.nombre && miembroAny.usuario?.apellido 
-                                  ? `${miembroAny.usuario.nombre} ${miembroAny.usuario.apellido}` 
-                                  : 'Sin nombre');
-          const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
-          
-          return {
-            id: miembroAny.id || `temp_${Date.now()}_${Math.random()}`,
-            nombre: nombre || '',
-            apellido: apellidoParts.join(' ') || '',
-            rol: miembroAny.rol || miembroAny.rol_equipo || 'Buzo Principal',
-            matricula: miembroAny.usuario?.perfil_buzo?.matricula || '',
-            rut: miembroAny.usuario?.perfil_buzo?.rut || ''
-          };
-        }),
-        asistentes: [] // Empty initially, can be added manually
-      });
-
-    } catch (error) {
-      console.error('Error populating operation data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos de la operación",
-        variant: "destructive",
-      });
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
     }
-  }, [currentOperacionId, equipos, updateData, toast, hptId, getFormDefaults, isDataPopulated]);
+  };
 
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const goToStep = (stepNumber: number) => {
+    if (stepNumber >= 1 && stepNumber <= totalSteps) {
+      setCurrentStep(stepNumber);
+    }
+  };
+
+  const saveDraft = async () => {
+    setIsLoading(true);
+    try {
+      const hptData = { ...formData, operacion_id: currentOperacionId, estado: 'borrador' };
+      
+      if (hptId) {
+        // Update existing HPT
+        const { data, error } = await supabase
+          .from('hpt')
+          .update(hptData)
+          .eq('id', hptId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log('HPT actualizado:', data);
+      } else {
+        // Create new HPT
+        const { data, error } = await supabase
+          .from('hpt')
+          .insert([hptData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log('HPT guardado como borrador:', data);
+      }
+      
+      console.log('HPT guardado como borrador');
+    } catch (error) {
+      console.error('Error al guardar borrador:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitHPT = async () => {
+    setIsLoading(true);
+    try {
+      const hptData = { ...formData, operacion_id: currentOperacionId, estado: 'firmado', firmado: true };
+
+      if (hptId) {
+        // Update existing HPT
+        const { data, error } = await supabase
+          .from('hpt')
+          .update(hptData)
+          .eq('id', hptId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log('HPT actualizado y firmado:', data);
+        return hptId;
+      } else {
+        // Create new HPT
+        const { data, error } = await supabase
+          .from('hpt')
+          .insert([hptData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log('HPT firmado y guardado:', data);
+        return data.id;
+      }
+    } catch (error) {
+      console.error('Error al firmar HPT:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isFormComplete = () => {
+    return steps.every(step => step.isValid);
+  };
+
+  // Poblar datos automáticamente cuando se selecciona una operación
   useEffect(() => {
-    populateOperationData();
-  }, [populateOperationData]);
+    const populateOperacionData = async () => {
+      if (!currentOperacionId || hptId) return; // No poblar si es edición
 
-  const handleOperacionSelected = (operacionId: string) => {
-    setCurrentOperacionId(operacionId);
-    setShowOperacionSelector(false);
-    setIsDataPopulated(false); // Reset para permitir nueva población
-  };
+      try {
+        // Obtener datos de la operación
+        const { data: operacion, error: opError } = await supabase
+          .from('operacion')
+          .select(`
+            *,
+            salmoneras:salmonera_id (nombre, rut),
+            sitios:sitio_id (nombre, ubicacion),
+            contratistas:contratista_id (nombre, rut)
+          `)
+          .eq('id', currentOperacionId)
+          .single();
 
-  const handleNext = () => {
-    const currentStepData = steps[currentStep - 1];
-    if (!currentStepData.isValid) {
-      toast({
-        title: "Paso incompleto",
-        description: "Complete todos los campos requeridos para continuar",
-        variant: "destructive",
-      });
-      return;
-    }
-    nextStep();
-  };
+        if (opError) throw opError;
 
-  const handleSubmit = async () => {
-    try {
-      const finalHptId = await submitHPT();
-      if (finalHptId && onComplete) {
-        onComplete(finalHptId);
+        // Since operations no longer have direct team assignments, we'll use available teams
+        const availableTeams = equipos || [];
+        const selectedTeam = availableTeams.length > 0 ? availableTeams[0] : null;
+
+        // Crear objeto con las propiedades que existen en el tipo de datos
+        const autoDataUpdates: any = {
+          folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
+          fecha: new Date().toISOString().split('T')[0],
+          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
+          centro_trabajo_nombre: operacion.sitios?.nombre || '',
+          lugar_especifico: operacion.sitios?.ubicacion || '',
+          descripcion_tarea: operacion.tareas || 'Operación de buceo comercial',
+          plan_trabajo: operacion.nombre || ''
+        };
+
+        // Si hay equipo disponible, poblar datos del supervisor
+        if (selectedTeam?.miembros) {
+          const supervisor = selectedTeam.miembros.find(m => m.rol === 'supervisor');
+          if (supervisor) {
+            autoDataUpdates.supervisor_nombre = supervisor.nombre_completo;
+            autoDataUpdates.supervisor = supervisor.nombre_completo;
+          }
+        }
+
+        setFormData(prev => ({ ...prev, ...autoDataUpdates }));
+        console.log('Datos poblados automáticamente:', autoDataUpdates);
+      } catch (error) {
+        console.error('Error populating operation data:', error);
       }
-    } catch (error) {
-      console.error('Error submitting HPT:', error);
-    }
-  };
+    };
 
-  const renderStep = () => {
+    populateOperacionData();
+  }, [currentOperacionId, hptId, equipos]);
+
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={data} onUpdate={updateData} />;
+        return <HPTStep1 data={formData} updateData={updateData} />;
       case 2:
-        return <HPTStep2 data={data} onUpdate={updateData} operacionId={currentOperacionId || ''} />;
+        return <HPTStep2 data={formData} updateData={updateData} />;
       case 3:
-        return <HPTStep3Personal data={data} onUpdate={updateData} />;
+        return <HPTStep3 data={formData} updateData={updateData} />;
       case 4:
-        return <HPTStep4 data={data} onUpdate={updateData} />;
+        return <HPTStep4 data={formData} updateData={updateData} />;
       case 5:
-        return <HPTStep5 data={data} onUpdate={updateData} />;
-      case 6:
-        return <HPTStep6 data={data} onUpdate={updateData} />;
+        return <HPTStep5 data={formData} updateData={updateData} />;
       default:
-        return null;
+        return <div>Paso no encontrado</div>;
     }
   };
 
-  // Show operation selector if no operation selected
-  if (showOperacionSelector) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <HPTOperationSelector 
-          onOperacionSelected={handleOperacionSelected}
-          selectedOperacionId={currentOperacionId}
-        />
-        
-        {onCancel && (
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onCancel} className="ios-button">
-              Cancelar
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const currentStepData = steps[currentStep - 1];
-
   return (
-    <div className="h-full max-h-[90vh] flex flex-col">
-      {/* Header with Progress */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-b bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <FileText className="w-6 h-6" />
-            </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {showOperacionSelector && (
+        <HPTOperationSelector
+          onOperacionSelected={setCurrentOperacionId}
+          onClose={() => setShowOperacionSelector(false)}
+        />
+      )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl md:text-2xl text-gray-900">
+              <CardTitle>
                 {hptId ? 'Editar' : 'Crear'} Hoja de Planificación de Tarea (HPT)
               </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
+              <p className="text-sm text-gray-600 mt-1">
+                Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
               </p>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge 
-              variant={autoSaveEnabled ? "default" : "secondary"}
-              className={autoSaveEnabled ? "bg-green-100 text-green-700" : ""}
-            >
-              {autoSaveEnabled ? "Auto-guardado ON" : "Auto-guardado OFF"}
+            <Badge variant="outline">
+              {progress.toFixed(0)}% Completado
             </Badge>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {progress}% Completado
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowOperacionSelector(true)}
-              className="ios-button-sm"
-            >
-              Cambiar Operación
-            </Button>
           </div>
-        </div>
+          <Progress value={progress} className="mt-4" />
+        </CardHeader>
+      </Card>
 
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Progress value={progress} className="h-3" />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Progreso General</span>
-            <span>{progress}%</span>
-          </div>
-        </div>
-
-        {/* Step Indicators */}
-        <div className="flex justify-between mt-6">
-          {steps.map((step, index) => (
-            <div 
-              key={step.id}
-              className={`flex-1 ${index < steps.length - 1 ? 'mr-2' : ''}`}
-            >
-              <div className={`h-2 rounded-full ${
-                step.id < currentStep ? 'bg-green-500' : 
-                step.id === currentStep ? 'bg-blue-500' : 
-                'bg-gray-200'
-              }`} />
-              <div className="mt-2 text-xs text-center">
-                <span className={`${
-                  step.id === currentStep ? 'text-blue-600 font-medium' : 
-                  step.id < currentStep ? 'text-green-600' : 
-                  'text-gray-500'
-                }`}>
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            {steps.map((step) => (
+              <Button
+                key={step.id}
+                variant={step.id === currentStep ? "default" : "outline"}
+                size="sm"
+                onClick={() => goToStep(step.id)}
+                className="h-auto p-2 flex flex-col items-center gap-1"
+              >
+                <div className="flex items-center gap-1">
+                  {step.isValid ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Circle className="h-4 w-4" />
+                  )}
+                  <span className="font-semibold">{step.id}</span>
+                </div>
+                <span className="text-xs text-center leading-tight">
                   {step.title}
                 </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-auto">
-        <Card className="border-0 shadow-none">
-          <CardContent className="p-6 md:p-8">
-            {renderStep()}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Navigation - Fixed at bottom */}
-      <div className="flex-shrink-0 flex justify-between items-center p-4 md:p-6 gap-4 border-t bg-white">
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isLoading}
-            className="ios-button min-w-[100px]"
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-            disabled={isLoading}
-            className="ios-button min-w-[140px]"
-          >
-            {autoSaveEnabled ? "Desactivar" : "Activar"} Auto-guardado
-          </Button>
-        </div>
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1 || isLoading}
-            className="ios-button flex items-center gap-2 min-w-[100px]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Anterior
-          </Button>
-          
-          {currentStep < steps.length ? (
-            <Button
-              onClick={handleNext}
-              disabled={!steps[currentStep - 1]?.isValid || isLoading}
-              className="ios-button flex items-center gap-2 min-w-[100px] bg-blue-600 hover:bg-blue-700"
-            >
-              Siguiente
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!isFormComplete || isLoading}
-              className="ios-button flex items-center gap-2 min-w-[120px] bg-green-600 hover:bg-green-700"
-            >
-              <Save className="w-4 h-4" />
-              {isLoading ? 'Enviando...' : 'Crear HPT'}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Operation Selector Dialog */}
-      {showOperacionSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <HPTOperationSelector 
-              onOperacionSelected={handleOperacionSelected}
-              selectedOperacionId={currentOperacionId}
-            />
-            <div className="flex justify-end mt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowOperacionSelector(false)}
-                className="ios-button"
-              >
-                Cancelar
               </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {renderStepContent()}
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Anterior
+            </Button>
+
+            <div className="flex gap-2">
+              {onCancel && (
+                <Button variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+              )}
+              
+              <Button
+                variant="outline"
+                onClick={saveDraft}
+                disabled={isLoading}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isLoading ? 'Guardando...' : 'Guardar Borrador'}
+              </Button>
+
+              {currentStep < totalSteps ? (
+                <Button
+                  onClick={nextStep}
+                  disabled={!steps[currentStep - 1]?.isValid}
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={submitHPT}
+                  disabled={!isFormComplete() || isLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isLoading ? 'Enviando...' : 'Completar HPT'}
+                </Button>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

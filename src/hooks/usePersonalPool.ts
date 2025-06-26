@@ -19,6 +19,11 @@ export interface PersonalFormData {
   email: string;
   rol: string;
   estado_buzo?: string;
+  empresa_id?: string;
+  tipo_empresa?: 'salmonera' | 'contratista';
+  matricula?: string;
+  especialidades?: string[];
+  certificaciones?: string[];
 }
 
 export const usePersonalPool = () => {
@@ -48,12 +53,24 @@ export const usePersonalPool = () => {
 
   const createPersonalMutation = useMutation({
     mutationFn: async (formData: PersonalFormData) => {
+      // Create the user data for insertion
+      const userData = {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        email: formData.email,
+        rol: formData.rol,
+        estado_buzo: formData.estado_buzo || 'activo',
+        usuario_id: crypto.randomUUID(), // Generate a UUID for the user
+        perfil_buzo: {
+          matricula: formData.matricula || '',
+          especialidades: formData.especialidades || [],
+          certificaciones: formData.certificaciones || []
+        }
+      };
+
       const { data, error } = await supabase
         .from('usuario')
-        .insert([{
-          ...formData,
-          estado_buzo: formData.estado_buzo || 'activo'
-        }])
+        .insert([userData])
         .select()
         .single();
 

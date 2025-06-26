@@ -21,16 +21,16 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
   const { equipos } = useEquiposBuceoEnhanced();
   const { operaciones } = useOperaciones();
 
-  // Get current operation and its team
+  // Get current operation
   const currentOperation = operaciones.find(op => op.id === data.operacion_id);
-  const currentTeam = currentOperation?.equipo_buceo_id 
-    ? equipos.find(eq => eq.id === currentOperation.equipo_buceo_id)
-    : null;
 
-  // Get available divers from the team (excluding supervisor)
-  const availableDivers = currentTeam?.miembros?.filter(m => 
-    m.rol === 'buzo_principal' || m.rol === 'buzo_asistente'
-  ) || [];
+  // Get available divers from teams (since teams are no longer directly assigned to operations)
+  const availableDivers = equipos.reduce((divers: any[], equipo) => {
+    const teamDivers = equipo.miembros?.filter(m => 
+      m.rol === 'buzo_principal' || m.rol === 'buzo_asistente'
+    ) || [];
+    return [...divers, ...teamDivers];
+  }, []);
 
   const handleInputChange = (field: string, value: any) => {
     onUpdate({ [field]: value });
@@ -86,13 +86,7 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
                 value={data.buzo_o_empresa_nombre || ''}
                 onChange={(e) => handleInputChange('buzo_o_empresa_nombre', e.target.value)}
                 placeholder="Nombre completo o razón social"
-                disabled={!!currentTeam} // Disabled if auto-populated from team
               />
-              {currentTeam && (
-                <p className="text-xs text-blue-600 mt-1">
-                  Auto-poblado desde el equipo de buceo asignado
-                </p>
-              )}
             </div>
 
             <div>
@@ -179,7 +173,7 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
         <CardContent className="space-y-4">
           {availableDivers.length > 0 ? (
             <div>
-              <Label htmlFor="asistente_select">Seleccionar Asistente del Equipo</Label>
+              <Label htmlFor="asistente_select">Seleccionar Asistente de Equipos Disponibles</Label>
               <Select
                 value={data.asistente_buzo_nombre || ''}
                 onValueChange={(value) => {
@@ -191,7 +185,7 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un buzo del equipo" />
+                  <SelectValue placeholder="Seleccione un buzo de los equipos disponibles" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableDivers.map((diver, index) => (
