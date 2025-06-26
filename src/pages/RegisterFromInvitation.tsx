@@ -56,21 +56,10 @@ export default function RegisterFromInvitation() {
           throw new Error('Invitación no válida o expirada');
         }
 
-        // Type assertion to ensure tipo_empresa is the correct type
-        const invitationData: InvitationData = {
-          email: data.email,
+        setInvitation(data);
+        setFormData({
           nombre: data.nombre || '',
           apellido: data.apellido || '',
-          rol: data.rol,
-          empresa_id: data.empresa_id,
-          tipo_empresa: data.tipo_empresa as 'salmonera' | 'contratista',
-          invitado_por: data.invitado_por
-        };
-
-        setInvitation(invitationData);
-        setFormData({
-          nombre: invitationData.nombre,
-          apellido: invitationData.apellido,
           password: '',
           confirmPassword: ''
         });

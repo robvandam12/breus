@@ -1,9 +1,9 @@
 
-import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-interface InvitationRegistrationData {
+export interface RegisterFromInvitationData {
   token: string;
   email: string;
   password: string;
@@ -12,87 +12,44 @@ interface InvitationRegistrationData {
 }
 
 export const useInvitationRegistration = () => {
-  const [isRegistering, setIsRegistering] = useState(false);
-
-  const registerFromInvitation = async (data: InvitationRegistrationData) => {
-    setIsRegistering(true);
-    
-    try {
-      // Verificar que la invitación sea válida
-      const { data: invitation, error: invitationError } = await supabase
-        .from('usuario_invitaciones')
-        .select('*')
-        .eq('token', data.token)
-        .eq('estado', 'pendiente')
-        .gt('fecha_expiracion', new Date().toISOString())
-        .single();
-
-      if (invitationError || !invitation) {
-        throw new Error('Invitación no válida o expirada');
-      }
-
-      // Crear la cuenta de usuario
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            nombre: data.nombre,
-            apellido: data.apellido,
-            role: invitation.rol
-          }
-        }
+  const registerFromInvitationMutation = useMutation({
+    mutationFn: async (data: RegisterFromInvitationData) => {
+      console.log('Registrando desde invitación:', data);
+      
+      const { data: result, error } = await supabase.functions.invoke('register-from-invitation', {
+        body: data
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Crear el perfil del usuario
-        const { error: profileError } = await supabase
-          .from('usuario')
-          .insert([{
-            usuario_id: authData.user.id,
-            email: data.email,
-            nombre: data.nombre,
-            apellido: data.apellido,
-            rol: invitation.rol,
-            salmonera_id: invitation.tipo_empresa === 'salmonera' ? invitation.empresa_id : null,
-            servicio_id: invitation.tipo_empresa === 'contratista' ? invitation.empresa_id : null
-          }]);
-
-        if (profileError) throw profileError;
-
-        // Marcar la invitación como aceptada
-        await supabase
-          .from('usuario_invitaciones')
-          .update({ 
-            estado: 'aceptada',
-            updated_at: new Date().toISOString()
-          })
-          .eq('token', data.token);
+      if (error) {
+        console.error('Error en registro desde invitación:', error);
+        throw error;
       }
 
-      toast({
-        title: "Cuenta creada exitosamente",
-        description: "Ya puedes iniciar sesión con tu nueva cuenta",
-      });
+      if (!result?.success) {
+        throw new Error(result?.error || 'Error en el registro');
+      }
 
-    } catch (error: any) {
-      console.error('Error in invitation registration:', error);
+      return result;
+    },
+    onSuccess: (result) => {
+      console.log('Registro exitoso:', result);
       toast({
-        title: "Error",
-        description: error.message || "Error al crear la cuenta",
+        title: "¡Cuenta creada exitosamente!",
+        description: `Bienvenido a Breus. Tu cuenta ha sido asociada a la empresa.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error en registro:', error);
+      toast({
+        title: "Error en el registro",
+        description: error.message || "No se pudo crear la cuenta. Intenta nuevamente.",
         variant: "destructive",
       });
-      throw error;
-    } finally {
-      setIsRegistering(false);
-    }
-  };
+    },
+  });
 
   return {
-    registerFromInvitation,
-    isRegistering,
+    registerFromInvitation: registerFromInvitationMutation.mutateAsync,
+    isRegistering: registerFromInvitationMutation.isPending,
   };
 };
