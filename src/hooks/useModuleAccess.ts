@@ -24,9 +24,20 @@ export const useModuleAccess = () => {
     };
   };
 
+  // Helpers específicos
+  const canPlanOperations = isModuleActive(modules.PLANNING_OPERATIONS);
+  const canManageNetworks = isModuleActive(modules.MAINTENANCE_NETWORKS);
+  const canAccessAdvancedReports = isModuleActive(modules.ADVANCED_REPORTING);
+  const canUseIntegrations = isModuleActive(modules.EXTERNAL_INTEGRATIONS);
+
   return {
     isModuleActive,
     getModuleAccess,
     modules,
+    // Helpers específicos
+    canPlanOperations,
+    canManageNetworks,
+    canAccessAdvancedReports,
+    canUseIntegrations,
   };
 };
