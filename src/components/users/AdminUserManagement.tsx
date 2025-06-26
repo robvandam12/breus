@@ -4,13 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
 import { UserInviteForm } from "./forms/UserInviteForm";
-import { EditUserForm } from "./forms/EditUserForm";
+import { SuperuserEditUserForm } from "./forms/SuperuserEditUserForm";
 import { InvitationManagement } from "@/components/invitations/InvitationManagement";
 import { useUsuarios } from "@/hooks/useUsuarios";
+import { useAuth } from "@/hooks/useAuth";
 import { Shield, Mail, CheckCircle, Clock } from "lucide-react";
 
 export const AdminUserManagement = () => {
   const { usuarios, isLoading, updateUsuario, inviteUsuario, deleteUsuario } = useUsuarios();
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
 
   // Transform usuarios to BaseUser format
@@ -38,6 +40,8 @@ export const AdminUserManagement = () => {
       estado: estado,
       empresa_nombre: salmoneraData?.nombre || contratistaData?.nombre || 'Sin asignar',
       empresa_tipo: user.salmonera_id ? 'salmonera' : 'contratista',
+      salmonera_id: user.salmonera_id,
+      servicio_id: user.servicio_id,
       created_at: user.created_at,
     };
   });
@@ -45,7 +49,7 @@ export const AdminUserManagement = () => {
   const config: UserManagementConfig = {
     title: "Gestión de Usuarios",
     showInviteButton: true,
-    showDeleteButton: false,
+    showDeleteButton: profile?.role === 'superuser', // Solo superuser puede eliminar
     showSearch: true,
     customStats: (
       <>
@@ -138,7 +142,7 @@ export const AdminUserManagement = () => {
           onUpdateUser={handleUpdateUser}
           onDeleteUser={handleDeleteUser}
           onInviteUser={handleInviteUser}
-          EditUserForm={EditUserForm}
+          EditUserForm={SuperuserEditUserForm}
           InviteUserForm={UserInviteForm}
         />
       </TabsContent>

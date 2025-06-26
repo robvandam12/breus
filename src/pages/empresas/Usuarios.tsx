@@ -1,8 +1,9 @@
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useUsersByCompany } from "@/hooks/useUsersByCompany";
+import { useCompanyUserManagement } from "@/hooks/useCompanyUserManagement";
 import { useAuth } from "@/hooks/useAuth";
-import { Users, UserPlus, Mail } from "lucide-react";
+import { Users, UserPlus, Mail, UserMinus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -10,6 +11,9 @@ import { InvitationManagement } from "@/components/invitations/InvitationManagem
 import { UserStatsCards } from "@/components/users/UserStatsCards";
 import { UsersList } from "@/components/users/UsersList";
 import { UserInviteDialog } from "@/components/users/UserInviteDialog";
+import { InviteExistingUserForm } from "@/components/users/forms/InviteExistingUserForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 import { useUsuarios, InviteUserOptions } from "@/hooks/useUsuarios";
 
@@ -17,7 +21,12 @@ export default function Usuarios() {
   const { profile } = useAuth();
   const { usuarios, isLoading } = useUsersByCompany();
   const { inviteUsuario } = useUsuarios();
+  const { removeUserFromCompany, inviteExistingUser, isRemoving } = useCompanyUserManagement();
+  
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showInviteExistingDialog, setShowInviteExistingDialog] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [userToRemove, setUserToRemove] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("users");
   
   console.log('Usuarios page rendering, profile:', profile);
@@ -39,6 +48,24 @@ export default function Usuarios() {
 
   const handleInviteUser = async (options: InviteUserOptions) => {
     await inviteUsuario(options);
+  };
+
+  const handleInviteExistingUser = async (userData: { email: string; userId: string }) => {
+    await inviteExistingUser(userData);
+    setShowInviteExistingDialog(false);
+  };
+
+  const handleRemoveUser = (user: any) => {
+    setUserToRemove(user);
+    setShowRemoveDialog(true);
+  };
+
+  const confirmRemoveUser = async () => {
+    if (userToRemove) {
+      await removeUserFromCompany(userToRemove.usuario_id);
+      setShowRemoveDialog(false);
+      setUserToRemove(null);
+    }
   };
 
   const totalUsers = usuarios.length;
@@ -63,13 +90,23 @@ export default function Usuarios() {
       subtitle="Administra los usuarios de tu empresa"
       icon={Users}
       headerChildren={
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => setShowInviteDialog(true)}
-        >
-          <UserPlus className="w-4 h-4" />
-          Invitar Usuario
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => setShowInviteExistingDialog(true)}
+          >
+            <UserCheck className="w-4 h-4" />
+            Agregar Existente
+          </Button>
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => setShowInviteDialog(true)}
+          >
+            <UserPlus className="w-4 h-4" />
+            Invitar Usuario
+          </Button>
+        </div>
       }
     >
       <div className="space-y-6">
@@ -77,7 +114,7 @@ export default function Usuarios() {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Usuarios Registrados
+              Usuarios de la Empresa
             </TabsTrigger>
             <TabsTrigger value="invitations" className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
@@ -94,6 +131,8 @@ export default function Usuarios() {
             <UsersList 
               usuarios={usuarios}
               onInviteUser={() => setShowInviteDialog(true)}
+              showRemoveAction={true}
+              onRemoveUser={handleRemoveUser}
             />
           </TabsContent>
 
@@ -103,11 +142,37 @@ export default function Usuarios() {
         </Tabs>
       </div>
 
+      {/* Dialog para invitar nuevo usuario */}
       <UserInviteDialog
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
         onSubmit={handleInviteUser}
         allowedRoles={getAllowedRoles()}
+      />
+
+      {/* Dialog para agregar usuario existente */}
+      <Dialog open={showInviteExistingDialog} onOpenChange={setShowInviteExistingDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agregar Usuario Existente</DialogTitle>
+          </DialogHeader>
+          <InviteExistingUserForm
+            onSubmit={handleInviteExistingUser}
+            onCancel={() => setShowInviteExistingDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmación para remover usuario */}
+      <ConfirmDialog
+        open={showRemoveDialog}
+        onOpenChange={setShowRemoveDialog}
+        title="¿Remover usuario de la empresa?"
+        description={`¿Estás seguro de que deseas remover a ${userToRemove?.nombre} ${userToRemove?.apellido} de tu empresa? El usuario seguirá existiendo en el sistema pero ya no tendrá acceso a tu empresa.`}
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmRemoveUser}
       />
     </MainLayout>
   );

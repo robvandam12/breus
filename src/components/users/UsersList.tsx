@@ -1,109 +1,122 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus } from "lucide-react";
-import { UserByCompany } from "@/hooks/useUsersByCompany";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserMinus, Users } from "lucide-react";
 
 interface UsersListProps {
-  usuarios: UserByCompany[];
+  usuarios: any[];
   onInviteUser: () => void;
+  showRemoveAction?: boolean;
+  onRemoveUser?: (user: any) => void;
 }
 
-export const UsersList = ({ usuarios, onInviteUser }: UsersListProps) => {
+export const UsersList = ({ 
+  usuarios, 
+  onInviteUser, 
+  showRemoveAction = false, 
+  onRemoveUser 
+}: UsersListProps) => {
   const getRoleBadgeColor = (rol: string) => {
-    switch (rol) {
-      case 'admin_salmonera':
-        return 'bg-blue-100 text-blue-800';
-      case 'admin_servicio':
-        return 'bg-green-100 text-green-800';
-      case 'supervisor':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'buzo':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    const colorMap: Record<string, string> = {
+      superuser: 'bg-red-100 text-red-700',
+      admin_salmonera: 'bg-blue-100 text-blue-700',
+      admin_servicio: 'bg-purple-100 text-purple-700',
+      supervisor: 'bg-orange-100 text-orange-700',
+      buzo: 'bg-teal-100 text-teal-700',
+    };
+    return colorMap[rol] || 'bg-gray-100 text-gray-700';
   };
 
-  const getRoleDisplayName = (rol: string) => {
-    switch (rol) {
-      case 'admin_salmonera':
-        return 'Admin Salmonera';
-      case 'admin_servicio':
-        return 'Admin Servicio';
-      case 'supervisor':
-        return 'Supervisor';
-      case 'buzo':
-        return 'Buzo';
-      default:
-        return rol;
-    }
+  const getEstadoBadge = (estado: boolean) => {
+    return estado ? (
+      <Badge className="bg-green-100 text-green-700">Activo</Badge>
+    ) : (
+      <Badge className="bg-yellow-100 text-yellow-700">Pendiente</Badge>
+    );
   };
+
+  if (usuarios.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+            <h3 className="font-medium text-zinc-900 mb-2">No hay usuarios</h3>
+            <p className="text-zinc-500 mb-4">
+              No tienes usuarios en tu empresa aún. Invita a tu primer usuario.
+            </p>
+            <Button onClick={onInviteUser}>
+              Invitar Usuario
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lista de Usuarios</CardTitle>
-        <CardDescription>
-          Todos los usuarios asociados a tu empresa
-        </CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          Usuarios de la Empresa
+          <Badge variant="outline" className="ml-2">
+            {usuarios.length} usuarios
+          </Badge>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        {usuarios.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No hay usuarios registrados
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Comienza invitando usuarios a tu empresa.
-            </p>
-            <Button 
-              className="flex items-center gap-2 mx-auto"
-              onClick={onInviteUser}
-            >
-              <UserPlus className="w-4 h-4" />
-              Invitar Primer Usuario
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {usuarios.map((usuario) => (
-              <div
-                key={usuario.usuario_id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-semibold">
-                      {usuario.nombre.charAt(0)}
-                    </span>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Usuario</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Estado</TableHead>
+              {showRemoveAction && <TableHead className="text-right">Acciones</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {usuarios.map((user) => (
+              <TableRow key={user.usuario_id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-medium">{user.nombre} {user.apellido}</div>
+                      <div className="text-xs text-zinc-500">ID: {user.usuario_id.slice(0, 8)}</div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold">
-                      {usuario.nombre} {usuario.apellido}
-                    </h4>
-                    <p className="text-sm text-gray-600">{usuario.email}</p>
-                    {usuario.empresa_nombre && (
-                      <p className="text-xs text-gray-500">
-                        {usuario.empresa_nombre}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getRoleBadgeColor(usuario.rol)}>
-                    {getRoleDisplayName(usuario.rol)}
+                </TableCell>
+                <TableCell className="text-zinc-600">{user.email}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={getRoleBadgeColor(user.rol)}>
+                    {user.rol.replace('_', ' ').toUpperCase()}
                   </Badge>
-                  <Badge variant={usuario.perfil_completado ? "default" : "secondary"}>
-                    {usuario.perfil_completado ? "Activo" : "Pendiente"}
-                  </Badge>
-                </div>
-              </div>
+                </TableCell>
+                <TableCell>
+                  {getEstadoBadge(user.perfil_completado)}
+                </TableCell>
+                {showRemoveAction && (
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onRemoveUser?.(user)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <UserMinus className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
             ))}
-          </div>
-        )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
