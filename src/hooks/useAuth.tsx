@@ -116,17 +116,13 @@ export const useAuthProvider = (): AuthContextType => {
           
           // Fetch profile if user exists
           if (initialSession?.user) {
-            try {
-              const userProfile = await fetchUserProfile(initialSession.user.id);
-              if (mounted) {
-                setProfile(userProfile);
-              }
-            } catch (error) {
-              console.error('Error fetching initial profile:', error);
+            console.log('User found, fetching profile...');
+            const userProfile = await fetchUserProfile(initialSession.user.id);
+            if (mounted) {
+              setProfile(userProfile);
             }
           }
           
-          // IMPORTANT: Always set loading to false at the end
           setLoading(false);
         }
       } catch (error) {
@@ -151,23 +147,19 @@ export const useAuthProvider = (): AuthContextType => {
         setProfile(null);
         setUser(null);
         setSession(null);
-        setLoading(false);
-      } else if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        // Only fetch profile on sign in or token refresh
-        try {
-          const userProfile = await fetchUserProfile(session.user.id);
+      } else if (session?.user) {
+        // Defer profile fetching to avoid blocking
+        setTimeout(async () => {
           if (mounted) {
-            setProfile(userProfile);
-            setLoading(false);
+            const userProfile = await fetchUserProfile(session.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
           }
-        } catch (error) {
-          console.error('Error fetching profile on auth change:', error);
-          if (mounted) {
-            setLoading(false);
-          }
-        }
-      } else {
-        // For other events, just ensure loading is false
+        }, 0);
+      }
+      
+      if (event === 'SIGNED_IN') {
         setLoading(false);
       }
     });
@@ -260,20 +252,13 @@ export const useAuthProvider = (): AuthContextType => {
   const signOut = async () => {
     try {
       console.log('🚪 Cerrando sesión...');
-      
-      // Clear local state first
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Limpiar estado inmediatamente
       setUser(null);
       setProfile(null);
       setSession(null);
-      setLoading(false);
-
-      // Only attempt Supabase signout if we have a session
-      if (session) {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.log('Logout error (but continuing):', error);
-        }
-      }
 
       toast({
         title: "Sesión cerrada",
@@ -282,8 +267,8 @@ export const useAuthProvider = (): AuthContextType => {
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
-        title: "Sesión cerrada",
-        description: "La sesión se ha cerrado",
+        title: "Error",
+        description: error.message || "Error al cerrar sesión",
       });
     }
   };

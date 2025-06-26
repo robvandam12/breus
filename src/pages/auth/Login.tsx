@@ -32,13 +32,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, user, session, loading } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
-      console.log('Login - User already authenticated, redirecting to dashboard');
       navigate('/', { replace: true });
     }
   }, [user, loading, navigate]);
@@ -56,10 +55,7 @@ export default function Login() {
     try {
       const result = await signIn(email, password);
       if (result.success) {
-        console.log('Login successful, redirecting...');
         navigate(result.redirectPath || '/', { replace: true });
-      } else {
-        setError('Error al iniciar sesión. Verifica tus credenciales.');
       }
     } catch (error: any) {
       console.error('Error during login:', error);
@@ -79,11 +75,6 @@ export default function Login() {
         </div>
       </div>
     );
-  }
-
-  // Don't render if already authenticated (will redirect)
-  if (user) {
-    return null;
   }
 
   return (
@@ -176,7 +167,7 @@ export default function Login() {
 
               <div className="text-center space-y-2">
                 <Link 
-                  to="/forgot-password" 
+                  to="/auth/forgot-password" 
                   className="text-sm text-blue-600 hover:text-blue-500"
                 >
                   ¿Olvidaste tu contraseña?

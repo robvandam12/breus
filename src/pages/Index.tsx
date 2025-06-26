@@ -28,10 +28,10 @@ export default function Index() {
     );
   }
 
-  // Check if user is authenticated
-  if (!user) {
-    console.log('Index - Usuario no autenticado, redirigiendo a login');
-    return <Navigate to="/login" replace />;
+  // CRÍTICO: Verificar si el usuario está realmente autenticado
+  if (!user || !session) {
+    console.log('Index - Usuario no autenticado o sesión expirada, redirigiendo a login');
+    return <Navigate to="/auth/login" replace />;
   }
 
   // Check for onboarding only after profile is available

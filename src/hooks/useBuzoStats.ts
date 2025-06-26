@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useBitacorasBuzo } from '@/hooks/useBitacorasBuzo';
@@ -20,7 +20,7 @@ export const useBuzoStats = () => {
   
   const isLoading = isLoadingInmersiones || isLoadingBitacoras || isLoadingOperaciones;
 
-  const calculateStats = useCallback(() => {
+  useEffect(() => {
     if (isLoading || !profile?.nombre || !profile?.apellido) return;
     
     const buzoFullName = `${profile.nombre} ${profile.apellido}`;
@@ -43,19 +43,13 @@ export const useBuzoStats = () => {
       return inmDate.getMonth() === currentMonth && inmDate.getFullYear() === currentYear;
     }).length;
 
-    const newStats = {
+    setStats({
       totalOperaciones: buzoOperaciones.length,
       bitacorasPendientes: buzoBitacoras.filter(b => !b.firmado).length,
       bitacorasCompletadas: buzoBitacoras.filter(b => b.firmado).length,
       inmersionesMes
-    };
-
-    setStats(newStats);
+    });
   }, [inmersiones, bitacorasBuzo, operaciones, profile, isLoading]);
-
-  useEffect(() => {
-    calculateStats();
-  }, [calculateStats]);
 
   return { stats, isLoading };
 };
