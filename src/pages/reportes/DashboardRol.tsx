@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Users, Shield, Wrench, Activity, CheckCircle, AlertTriangle, Clock, Tar
 import { useAuth } from '@/hooks/useAuth';
 import { useInmersiones } from '@/hooks/useInmersiones';
 import { useBitacoras } from '@/hooks/useBitacoras';
+import { GlobalTimeline } from '@/components/timeline/GlobalTimeline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function DashboardRol() {
@@ -247,39 +247,63 @@ export default function DashboardRol() {
           </CardContent>
         </Card>
 
-        {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {roleMetrics.metrics.map((metric, index) => (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+        {/* Timeline y análisis en pestañas */}
+        <Tabs defaultValue="timeline" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="timeline">Actividad Reciente</TabsTrigger>
+            <TabsTrigger value="analytics">Análisis</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="timeline" className="space-y-4">
+            <GlobalTimeline className="w-full" />
+          </TabsContent>
+          
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Métricas de Rendimiento</CardTitle>
+                <CardDescription>Análisis detallado de actividades por rol</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Gráfico de actividad semanal */}
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{metric.label}</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {typeof metric.value === 'number' && metric.label.includes('%') 
-                        ? `${metric.value}%` 
-                        : Math.round(metric.value)}
-                    </p>
-                    <p className="text-sm text-green-600 mt-1">{metric.trend}</p>
+                    <h4 className="font-medium mb-4">Actividad Últimos 7 Días</h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getColorClasses(metric.color)}`}>
-                    <metric.icon className="w-6 h-6" />
+                  
+                  {/* Estadísticas contextuales */}
+                  <div>
+                    <h4 className="font-medium mb-4">Resumen del Período</h4>
+                    <div className="space-y-3">
+                      {roleMetrics.metrics.slice(0, 2).map((metric, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">{metric.label}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={getColorClasses(metric.color)}>
+                              {typeof metric.value === 'number' && metric.label.includes('%') 
+                                ? `${metric.value}%` 
+                                : Math.round(metric.value)}
+                            </Badge>
+                            <span className="text-xs text-green-600">{metric.trend}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {/* Gráficos y análisis específicos por rol */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">Dashboard contextual por rol implementado exitosamente.</p>
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );

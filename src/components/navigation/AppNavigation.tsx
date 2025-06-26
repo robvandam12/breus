@@ -1,6 +1,7 @@
 
 import { useAdaptiveNavigation } from "./AdaptiveNavigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useModularSystem } from "@/hooks/useModularSystem";
 import { 
   Calendar, 
   FileText, 
@@ -23,7 +24,9 @@ interface NavigationItem {
 
 export const useAppNavigation = () => {
   const { profile } = useAuth();
-  const { isModuleActive, modules } = useAdaptiveNavigation(profile?.role);
+  const { hasModuleAccess, modules, getUserContext } = useModularSystem();
+  
+  const userContext = getUserContext();
 
   const getNavigationItems = (): NavigationItem[] => {
     const items: NavigationItem[] = [
@@ -35,13 +38,14 @@ export const useAppNavigation = () => {
     ];
 
     // Módulo de Planificación (Operaciones, HPT, Anexo Bravo)
-    if (isModuleActive(modules.PLANNING_OPERATIONS)) {
+    if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
       items.push(
         {
           title: "Operaciones",
           icon: Calendar,
           url: "/operaciones",
           moduleRequired: modules.PLANNING_OPERATIONS,
+          badge: userContext.isContratista ? "Asociar" : undefined
         },
         {
           title: "Documentos",
@@ -57,6 +61,7 @@ export const useAppNavigation = () => {
       title: "Inmersiones",
       icon: Anchor,
       url: "/inmersiones",
+      badge: userContext.isContratista && !hasModuleAccess(modules.PLANNING_OPERATIONS) ? "Independientes" : undefined
     });
 
     // Gestión de Personal - Diferenciado por rol
@@ -107,7 +112,7 @@ export const useAppNavigation = () => {
 
     return items.filter(item => {
       // Filtrar por módulo requerido
-      if (item.moduleRequired && !isModuleActive(item.moduleRequired)) {
+      if (item.moduleRequired && !hasModuleAccess(item.moduleRequired)) {
         return false;
       }
       
@@ -122,7 +127,8 @@ export const useAppNavigation = () => {
 
   return {
     navigationItems: getNavigationItems(),
-    isModuleActive,
+    hasModuleAccess,
     modules,
+    userContext,
   };
 };

@@ -1,185 +1,196 @@
 
-import { useEffect, useState } from 'react';
-import { useContextualValidation } from './useContextualValidation';
-import { useEnhancedValidation } from './useEnhancedValidation';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useModularSystem } from './useModularSystem';
+import { useAuth } from './useAuth';
 
-export interface ValidationState {
-  isValidating: boolean;
-  result: ValidationResult | null;
-  lastValidated: string | null;
+interface ValidationState {
+  isValid: boolean;
+  hasPlanning: boolean;
+  requiresDocuments: boolean;
+  canCreateIndependent: boolean;
+  contextType: 'planned' | 'independent' | 'mixed';
 }
 
 interface ValidationResult {
-  isValid: boolean;
-  canProceed: boolean;
-  warnings: string[];
-  errors: string[];
-  requiredModule?: string;
-  context: {
-    moduleActive: boolean;
-    requiresDocuments: boolean;
-    allowDirectCreation: boolean;
-  };
-  // Propiedades para compatibilidad con componentes existentes
-  es_legacy?: boolean;
-  isOperativaDirecta?: boolean;
+  success: boolean;
+  message: string;
+  suggestions?: string[];
+  nextStep?: string;
 }
 
-export const useContextualValidator = (operacionId?: string) => {
+export const useContextualValidator = (operationId?: string) => {
   const [validationState, setValidationState] = useState<ValidationState>({
-    isValidating: false,
-    result: null,
-    lastValidated: null,
+    isValid: true,
+    hasPlanning: false,
+    requiresDocuments: false,
+    canCreateIndependent: true,
+    contextType: 'independent'
   });
 
-  const { validateOperationByType } = useContextualValidation();
-  const { validateWithErrorHandling } = useEnhancedValidation();
+  const { getUserContext, hasModuleAccess, modules } = useModularSystem();
+  const { profile } = useAuth();
+  const userContext = getUserContext();
 
-  // Validar automáticamente cuando cambia la operación
-  useEffect(() => {
-    if (!operacionId) {
-      setValidationState({
-        isValidating: false,
-        result: null,
-        lastValidated: null,
-      });
-      return;
-    }
+  // Obtener contexto operacional
+  const { data: operationalContext, refetch: refreshContext } = useQuery({
+    queryKey: ['operational-context', profile?.salmonera_id || profile?.servicio_id],
+    queryFn: async () => {
+      if (!profile) return null;
 
-    validateOperation(operacionId);
-  }, [operacionId]);
-
-  const validateOperation = async (opId: string) => {
-    setValidationState(prev => ({ ...prev, isValidating: true }));
-    
-    try {
-      // Usar el nuevo sistema de validación contextual
-      const contextualResult = validateOperationByType('create_planned_immersion', { 
-        operacion_id: opId 
-      });
-      
-      const result: ValidationResult = {
-        isValid: contextualResult.isValid,
-        canProceed: contextualResult.canProceed,
-        warnings: contextualResult.warnings,
-        errors: contextualResult.errors,
-        requiredModule: contextualResult.requiredModule,
-        context: {
-          moduleActive: contextualResult.context.moduleAccess.planning,
-          requiresDocuments: contextualResult.context.requiresDocuments,
-          allowDirectCreation: contextualResult.context.allowDirectCreation,
-        },
-        // Compatibilidad: determinar si es operativa directa
-        isOperativaDirecta: contextualResult.context.allowDirectCreation && !contextualResult.context.requiresDocuments,
-        es_legacy: false // No tenemos operaciones legacy en el nuevo sistema
+      const context = {
+        hasPlanning: hasModuleAccess(modules.PLANNING_OPERATIONS),
+        isContratista: userContext.isContratista,
+        isSalmonera: userContext.isSalmonera,
+        canCreateOperations: userContext.canCreateOperations,
+        requiresDocuments: hasModuleAccess(modules.PLANNING_OPERATIONS) && userContext.isSalmonera
       };
 
+      return context;
+    },
+    enabled: !!profile
+  });
+
+  // Actualizar estado de validación
+  useEffect(() => {
+    if (operationalContext) {
+      const contextType = operationalContext.hasPlanning ? 
+        (operationalContext.isContratista ? 'planned' : 'mixed') : 'independent';
+
       setValidationState({
-        isValidating: false,
-        result,
-        lastValidated: opId,
+        isValid: true,
+        hasPlanning: operationalContext.hasPlanning,
+        requiresDocuments: operationalContext.requiresDocuments,
+        canCreateIndependent: true, // Core siempre disponible
+        contextType
       });
+    }
+  }, [operationalContext]);
+
+  // Validar para inmersión específica
+  const validateForInmersion = async (operationId: string): Promise<ValidationResult> => {
+    if (!operationalContext) {
+      return {
+        success: false,
+        message: 'Contexto operacional no disponible'
+      };
+    }
+
+    try {
+      // Verificar si la operación existe y está disponible
+      const { data: operation } = await supabase
+        .from('operacion')
+        .select('id, nombre, codigo, estado')
+        .eq('id', operationId)
+        .single();
+
+      if (!operation) {
+        return {
+          success: false,
+          message: 'Operación no encontrada',
+          nextStep: 'Crear inmersión independiente'
+        };
+      }
+
+      if (operation.estado !== 'activa') {
+        return {
+          success: false,
+          message: `La operación ${operation.codigo} no está activa`,
+          nextStep: 'Seleccionar operación activa'
+        };
+      }
+
+      // Verificar documentos requeridos si aplica
+      if (operationalContext.requiresDocuments) {
+        const { data: hpt } = await supabase
+          .from('hpt')
+          .select('id, firmado')
+          .eq('operacion_id', operationId)
+          .eq('firmado', true)
+          .maybeSingle();
+
+        const { data: anexo } = await supabase
+          .from('anexo_bravo')
+          .select('id, firmado')
+          .eq('operacion_id', operationId)
+          .eq('firmado', true)
+          .maybeSingle();
+
+        if (!hpt || !anexo) {
+          return {
+            success: false,
+            message: 'Operación requiere HPT y Anexo Bravo firmados',
+            suggestions: ['Completar documentos requeridos', 'Crear inmersión independiente']
+          };
+        }
+      }
+
+      return {
+        success: true,
+        message: `Inmersión puede asociarse a ${operation.codigo}`,
+        nextStep: 'Proceder con inmersión planificada'
+      };
+
     } catch (error) {
       console.error('Error validating operation:', error);
-      setValidationState({
-        isValidating: false,
-        result: {
-          isValid: false,
-          canProceed: false,
-          warnings: [],
-          errors: ['Error al validar operación'],
-          context: {
-            moduleActive: false,
-            requiresDocuments: true,
-            allowDirectCreation: true, // CORE: Siempre permitir fallback
-          },
-          isOperativaDirecta: true, // Fallback seguro
-          es_legacy: false
-        },
-        lastValidated: opId,
-      });
+      return {
+        success: false,
+        message: 'Error en validación',
+        nextStep: 'Reintentar o crear inmersión independiente'
+      };
     }
   };
 
-  const validateForInmersion = async (opId: string): Promise<ValidationResult> => {
-    setValidationState(prev => ({ ...prev, isValidating: true }));
-    
+  // Obtener sugerencias para códigos de operación
+  const getOperationSuggestions = async (query: string): Promise<string[]> => {
+    if (query.length < 2) return [];
+
     try {
-      // Usar validateWithErrorHandling para manejo automático de errores
-      const { success, result } = await validateWithErrorHandling(
-        'create_planned_immersion',
-        { operacion_id: opId },
-        { showToast: false } // No mostrar toast aquí, manejado por el componente
-      );
+      const { data: operations } = await supabase
+        .from('operacion')
+        .select('codigo, nombre')
+        .eq('estado', 'activa')
+        .ilike('codigo', `%${query}%`)
+        .limit(5);
 
-      const validationResult: ValidationResult = {
-        isValid: success && result?.isValid,
-        canProceed: success && result?.canProceed,
-        warnings: result?.warnings || [],
-        errors: result?.errors || [],
-        requiredModule: result?.requiredModule,
-        context: {
-          moduleActive: result?.context?.moduleAccess?.planning || false,
-          requiresDocuments: result?.context?.requiresDocuments || false,
-          allowDirectCreation: result?.context?.allowDirectCreation || true,
-        },
-        // Compatibilidad
-        isOperativaDirecta: (result?.context?.allowDirectCreation || true) && !(result?.context?.requiresDocuments || false),
-        es_legacy: false
-      };
-
-      setValidationState({
-        isValidating: false,
-        result: validationResult,
-        lastValidated: opId,
-      });
-      
-      return validationResult;
+      return operations?.map(op => `${op.codigo} - ${op.nombre}`) || [];
     } catch (error) {
-      console.error('Error validating for immersion:', error);
-      const errorResult: ValidationResult = {
-        isValid: false,
-        canProceed: false,
-        warnings: [],
-        errors: ['Error al validar para inmersión'],
-        context: {
-          moduleActive: false,
-          requiresDocuments: true,
-          allowDirectCreation: true, // CORE: Fallback seguro
-        },
-        isOperativaDirecta: true, // Fallback seguro
-        es_legacy: false
-      };
-      
-      setValidationState({
-        isValidating: false,
-        result: errorResult,
-        lastValidated: opId,
-      });
-      
-      return errorResult;
-    }
-  };
-
-  const refresh = () => {
-    if (operacionId) {
-      validateOperation(operacionId);
+      console.error('Error getting suggestions:', error);
+      return [];
     }
   };
 
   return {
     validationState,
     validateForInmersion,
-    refresh,
-    // Helpers para acceso rápido
-    isValid: validationState.result?.isValid ?? false,
-    canProceed: validationState.result?.canProceed ?? false,
-    requiereDocumentos: validationState.result?.context?.requiresDocuments ?? true,
-    moduleActive: validationState.result?.context?.moduleActive ?? false,
-    warnings: validationState.result?.warnings ?? [],
-    errors: validationState.result?.errors ?? [],
-    isValidating: validationState.isValidating,
-    // Propiedades de compatibilidad
-    isOperativaDirecta: validationState.result?.isOperativaDirecta ?? false,
+    getOperationSuggestions,
+    refresh: refreshContext,
+    
+    // Helpers contextuales
+    shouldShowPlanningOption: validationState.hasPlanning,
+    shouldShowIndependentOption: validationState.canCreateIndependent,
+    isPlannedOnly: validationState.contextType === 'planned',
+    isIndependentOnly: validationState.contextType === 'independent',
+    isMixedMode: validationState.contextType === 'mixed',
+    
+    // Mensajes contextuales
+    getContextMessage: () => {
+      if (userContext.isContratista && validationState.hasPlanning) {
+        return 'Puedes asociar inmersiones a operaciones planificadas o crear inmersiones independientes';
+      }
+      if (userContext.isContratista && !validationState.hasPlanning) {
+        return 'Crea inmersiones independientes con código de operación externa';
+      }
+      if (userContext.isSalmonera && validationState.hasPlanning) {
+        return 'Gestiona operaciones planificadas o crea inmersiones directas';
+      }
+      return 'Crea inmersiones según las necesidades operativas';
+    },
+    
+    // Estados específicos
+    canAssociateToOperations: validationState.hasPlanning,
+    requiresOperationCode: userContext.isContratista,
+    isOperativaDirecta: !validationState.hasPlanning || userContext.isContratista
   };
 };
