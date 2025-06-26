@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,7 +146,7 @@ export default function RegisterWithToken() {
     try {
       console.log('Iniciando proceso de registro con invitación...');
       
-      // Paso 1: Crear usuario en Supabase Auth
+      // Paso 1: Crear usuario en Supabase Auth con auto-confirmación
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: invitation.email,
         password: formData.password,
@@ -154,7 +155,10 @@ export default function RegisterWithToken() {
           data: {
             nombre: formData.nombre,
             apellido: formData.apellido,
-            role: invitation.rol
+            role: invitation.rol,
+            // Marcar que viene de invitación para auto-confirmación
+            from_invitation: true,
+            invitation_token: token
           }
         }
       });
@@ -179,7 +183,29 @@ export default function RegisterWithToken() {
 
       console.log('Usuario creado en Auth:', authData.user?.id);
 
-      // Paso 2: Verificar si el perfil ya existe (por el trigger automático)
+      // Si el usuario se creó pero necesita confirmación, intentar confirmarlo automáticamente
+      if (authData.user && !authData.user.email_confirmed_at) {
+        console.log('Intentando confirmar email automáticamente...');
+        
+        try {
+          // Usar la función edge para confirmar el email automáticamente
+          const { error: confirmError } = await supabase.functions.invoke('confirm-invitation-user', {
+            body: {
+              user_id: authData.user.id,
+              email: invitation.email,
+              token: token
+            }
+          });
+
+          if (confirmError) {
+            console.warn('No se pudo confirmar automáticamente, pero continuamos:', confirmError);
+          }
+        } catch (confirmErr) {
+          console.warn('Error en confirmación automática, continuamos:', confirmErr);
+        }
+      }
+
+      // Paso 2: Crear o actualizar perfil de usuario
       if (authData.user) {
         console.log('Verificando si el perfil ya existe...');
         
@@ -191,11 +217,9 @@ export default function RegisterWithToken() {
 
         if (checkError && checkError.code !== 'PGRST116') {
           console.error('Error verificando perfil existente:', checkError);
-          // Si hay un error diferente a "no encontrado", continuar con la creación
         }
 
         if (!existingProfile) {
-          // Solo crear el perfil si no existe
           console.log('Creando perfil de usuario...');
           
           const { error: profileError } = await supabase
@@ -212,7 +236,6 @@ export default function RegisterWithToken() {
 
           if (profileError) {
             console.error('Error creando perfil:', profileError);
-            // Si es error de duplicación, intentar actualizar en lugar de crear
             if (profileError.code === '23505') {
               console.log('Perfil ya existe, actualizando...');
               const { error: updateError } = await supabase
@@ -236,7 +259,6 @@ export default function RegisterWithToken() {
           }
         } else {
           console.log('Perfil ya existe, actualizando datos...');
-          // Actualizar el perfil existente con los nuevos datos
           const { error: updateError } = await supabase
             .from('usuario')
             .update({
@@ -268,7 +290,6 @@ export default function RegisterWithToken() {
 
         if (invitationError) {
           console.error('Error updating invitation status:', invitationError);
-          // No fallar por esto, el usuario ya se creó
         }
 
         console.log('Proceso completado exitosamente');
@@ -278,8 +299,14 @@ export default function RegisterWithToken() {
           description: "Tu cuenta ha sido creada exitosamente. Puedes iniciar sesión ahora.",
         });
 
-        // Redirigir al login
-        navigate('/auth/login');
+        // Intentar hacer login automático si el email está confirmado
+        if (authData.user.email_confirmed_at || authData.session) {
+          console.log('Usuario confirmado, redirigiendo al dashboard...');
+          navigate('/');
+        } else {
+          console.log('Redirigiendo al login...');
+          navigate('/auth/login?message=account_created');
+        }
       }
     } catch (error: any) {
       console.error('Registration error:', error);
