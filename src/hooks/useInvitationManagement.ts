@@ -58,15 +58,19 @@ export const useInvitationManagement = () => {
         .eq('invitado_por', profile.id)
         .order('created_at', { ascending: false });
 
-      // Aplicar filtros adicionales según el tipo de empresa del usuario
-      if (profile.role !== 'superuser') {
-        if (profile.salmonera_id) {
-          console.log('Filtering by salmonera_id:', profile.salmonera_id);
-          query = query.eq('empresa_id', profile.salmonera_id).eq('tipo_empresa', 'salmonera');
-        } else if (profile.servicio_id) {
-          console.log('Filtering by servicio_id:', profile.servicio_id);
-          query = query.eq('empresa_id', profile.servicio_id).eq('tipo_empresa', 'contratista');
-        }
+      // Para usuarios con rol específico, no aplicar filtros adicionales por empresa
+      // ya que queremos ver TODAS las invitaciones que han enviado
+      if (profile.role === 'superuser') {
+        console.log('Superuser: fetching all invitations');
+        // Superuser ve todas sus invitaciones sin filtros adicionales
+      } else if (profile.role === 'admin_salmonera' && profile.salmonera_id) {
+        console.log('Admin salmonera: fetching invitations for salmonera_id:', profile.salmonera_id);
+        // Filtrar por invitaciones que pertenezcan a su salmonera O que no tengan empresa_id asignado (legacy)
+        query = query.or(`empresa_id.eq.${profile.salmonera_id},empresa_id.is.null`);
+      } else if (profile.role === 'admin_servicio' && profile.servicio_id) {
+        console.log('Admin servicio: fetching invitations for servicio_id:', profile.servicio_id);
+        // Filtrar por invitaciones que pertenezcan a su servicio O que no tengan empresa_id asignado (legacy)
+        query = query.or(`empresa_id.eq.${profile.servicio_id},empresa_id.is.null`);
       }
 
       const { data, error } = await query;
@@ -78,7 +82,8 @@ export const useInvitationManagement = () => {
       
       console.log('Invitations fetched:', {
         count: data?.length || 0,
-        sampleData: data?.[0]
+        sampleData: data?.[0],
+        allData: data
       });
       
       return (data || []) as Invitation[];
