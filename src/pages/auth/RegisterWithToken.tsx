@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +16,7 @@ interface InvitationData {
   nombre: string;
   apellido: string;
   empresa_id: string;
-  tipo_empresa: 'salmonera' | 'contratista';
+  tipo_empresa: string; // Cambiado de 'salmonera' | 'contratista' a string
 }
 
 export default function RegisterWithToken() {
