@@ -1,29 +1,32 @@
 
 import { useModularSystem } from "./useModularSystem";
 
-// Re-exportar todo desde useModularSystem para mantener compatibilidad
+interface ModuleAccess {
+  planning: boolean;
+  maintenance: boolean;
+  reporting: boolean;
+  integrations: boolean;
+}
+
 export const useModuleAccess = () => {
-  const modularSystem = useModularSystem();
-  
-  // Mantener la interfaz anterior para compatibilidad
+  const { hasModuleAccess, modules } = useModularSystem();
+
+  const isModuleActive = (moduleId: string): boolean => {
+    return hasModuleAccess(moduleId);
+  };
+
+  const getModuleAccess = (): ModuleAccess => {
+    return {
+      planning: isModuleActive(modules.PLANNING_OPERATIONS),
+      maintenance: isModuleActive(modules.MAINTENANCE_NETWORKS),
+      reporting: isModuleActive(modules.ADVANCED_REPORTING),
+      integrations: isModuleActive(modules.EXTERNAL_INTEGRATIONS),
+    };
+  };
+
   return {
-    ...modularSystem,
-    
-    // Aliases para compatibilidad con código existente
-    isModuleActive: modularSystem.hasModuleAccess,
-    toggleModule: modularSystem.toggleModule,
-    isToggling: modularSystem.isToggling,
-    
-    // Helpers específicos mantenidos
-    canPlanOperations: modularSystem.canPlanOperations,
-    canManageNetworks: modularSystem.canManageNetworks,
-    canAccessReports: modularSystem.canAccessAdvancedReports,
-    canUseIntegrations: modularSystem.canUseIntegrations,
-    
-    // Helpers específicos por módulo
-    canMaintainNetworks: modularSystem.canManageNetworks,
-    canOperateNetworks: modularSystem.canManageNetworks,
-    canGenerateAdvancedReports: modularSystem.canAccessAdvancedReports,
-    canManageIntegrations: modularSystem.canUseIntegrations,
+    isModuleActive,
+    getModuleAccess,
+    modules,
   };
 };

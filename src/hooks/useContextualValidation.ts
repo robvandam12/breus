@@ -1,6 +1,6 @@
 
+import { useOperationTypeValidator } from "./validation/useOperationTypeValidator";
 import { useModuleAccess } from "./useModuleAccess";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ValidationContext {
   requiresOperations: boolean;
@@ -25,209 +25,38 @@ interface ValidationResult {
 }
 
 export const useContextualValidation = () => {
-  const { isModuleActive, modules } = useModuleAccess();
+  const { getModuleAccess } = useModuleAccess();
+  const { validateCoreOperation, validateModularOperation } = useOperationTypeValidator();
 
   // Obtener contexto modular actualizado
   const getModularContext = (): ValidationContext => {
-    const hasPlanningModule = isModuleActive(modules.PLANNING_OPERATIONS);
-    const hasMaintenanceModule = isModuleActive(modules.MAINTENANCE_NETWORKS);
-    const hasReportingModule = isModuleActive(modules.ADVANCED_REPORTING);
-    const hasIntegrationsModule = isModuleActive(modules.EXTERNAL_INTEGRATIONS);
+    const moduleAccess = getModuleAccess();
 
     return {
-      requiresOperations: hasPlanningModule,
-      requiresDocuments: hasPlanningModule,
-      requiresTeam: hasPlanningModule,
+      requiresOperations: moduleAccess.planning,
+      requiresDocuments: moduleAccess.planning,
+      requiresTeam: moduleAccess.planning,
       allowDirectCreation: true, // CORE: Siempre permitir creación directa
-      moduleAccess: {
-        planning: hasPlanningModule,
-        maintenance: hasMaintenanceModule,
-        reporting: hasReportingModule,
-        integrations: hasIntegrationsModule,
-      }
+      moduleAccess
     };
   };
 
   // Validación mejorada por tipo de operación
   const validateOperationByType = (operationType: string, data?: any): ValidationResult => {
     const context = getModularContext();
-    const warnings: string[] = [];
-    const errors: string[] = [];
+    
+    // Determinar si es operación core o modular
+    const coreOperations = ['create_immersion', 'create_bitacora'];
+    const isCore = coreOperations.includes(operationType);
+    
+    const result = isCore 
+      ? validateCoreOperation(operationType, data)
+      : validateModularOperation(operationType, data);
 
-    switch (operationType) {
-      case 'create_immersion':
-        // CORE: Inmersiones siempre permitidas (funcionalidad base)
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: context.moduleAccess.planning 
-            ? [] 
-            : ['Módulo de planificación no activo - Solo inmersiones directas disponibles'],
-          errors: [],
-          context
-        };
-
-      case 'create_planned_immersion':
-        // PLANNING: Solo con módulo activo
-        if (!context.moduleAccess.planning) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de planificación de operaciones activo'],
-            context,
-            requiredModule: 'planning_operations'
-          };
-        }
-        
-        // Validar que hay operación
-        if (data?.operacion_id) {
-          warnings.push('Inmersión planificada - Verificar documentos HPT y Anexo Bravo');
-        } else {
-          errors.push('Inmersión planificada requiere operación asociada');
-        }
-        
-        return {
-          isValid: errors.length === 0,
-          canProceed: errors.length === 0,
-          warnings,
-          errors,
-          context
-        };
-
-      case 'create_operation':
-        // PLANNING: Solo con módulo activo
-        if (!context.moduleAccess.planning) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de planificación de operaciones activo'],
-            context,
-            requiredModule: 'planning_operations'
-          };
-        }
-        
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: [],
-          errors: [],
-          context
-        };
-
-      case 'create_hpt':
-      case 'create_anexo_bravo':
-        // PLANNING: Documentos solo con módulo activo
-        if (!context.moduleAccess.planning) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de planificación de operaciones activo'],
-            context,
-            requiredModule: 'planning_operations'
-          };
-        }
-        
-        if (!data?.operacion_id) {
-          errors.push('Documento requiere operación asociada');
-        }
-        
-        return {
-          isValid: errors.length === 0,
-          canProceed: errors.length === 0,
-          warnings,
-          errors,
-          context
-        };
-
-      case 'create_maintenance_form':
-        // MAINTENANCE: Solo con módulo activo
-        if (!context.moduleAccess.maintenance) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de mantención de redes activo'],
-            context,
-            requiredModule: 'maintenance_networks'
-          };
-        }
-        
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: [],
-          errors: [],
-          context
-        };
-
-      case 'create_bitacora':
-        // CORE: Bitácoras siempre permitidas
-        if (!data?.inmersion_id) {
-          errors.push('Bitácora requiere inmersión asociada');
-        }
-        
-        return {
-          isValid: errors.length === 0,
-          canProceed: true, // Siempre puede proceder (core)
-          warnings,
-          errors,
-          context
-        };
-
-      case 'access_advanced_reports':
-        // REPORTING: Solo con módulo activo
-        if (!context.moduleAccess.reporting) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de reportes avanzados activo'],
-            context,
-            requiredModule: 'advanced_reporting'
-          };
-        }
-        
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: [],
-          errors: [],
-          context
-        };
-
-      case 'use_integrations':
-        // INTEGRATIONS: Solo con módulo activo
-        if (!context.moduleAccess.integrations) {
-          return {
-            isValid: false,
-            canProceed: false,
-            warnings: [],
-            errors: ['Requiere módulo de integraciones externas activo'],
-            context,
-            requiredModule: 'external_integrations'
-          };
-        }
-        
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: [],
-          errors: [],
-          context
-        };
-
-      default:
-        return {
-          isValid: true,
-          canProceed: true,
-          warnings: [`Tipo de operación '${operationType}' no reconocido - Usando validación por defecto`],
-          errors: [],
-          context
-        };
-    }
+    return {
+      ...result,
+      context
+    };
   };
 
   // Validar creación de inmersión según contexto modular (mantenido para compatibilidad)
