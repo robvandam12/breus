@@ -89,15 +89,8 @@ export const InmersionesDataTable = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con información contextual */}
+      {/* Header con botones de acción */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Inmersiones</h2>
-          <p className="text-muted-foreground">
-            {contextInfo.message}
-          </p>
-        </div>
-        
         <div className="flex gap-2">
           {/* Botón crear inmersión independiente siempre disponible */}
           <Button onClick={() => setShowNewInmersionDialog(true)}>
