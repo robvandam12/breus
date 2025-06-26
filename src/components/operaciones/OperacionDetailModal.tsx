@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,7 +146,7 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
                 Nueva Inmersión
               </Button>
             </div>
-            <OperacionInmersiones operacionId={operacion.id} />
+            <OperacionInmersiones operacion={operacion} />
           </div>
         );
       case "formularios":

@@ -1,13 +1,14 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { HPTStep1 } from './HPTStep1';
-import { HPTStep2 } from './HPTStep2';
-import { HPTStep3 } from './HPTStep3';
-import { HPTStep4 } from './HPTStep4';
-import { HPTStep5 } from './HPTStep5';
+import { HPTWizardStep1 } from './HPTWizardStep1';
+import { HPTWizardStep2 } from './HPTWizardStep2';
+import { HPTWizardStep3 } from './HPTWizardStep3';
+import { HPTWizardStep4 } from './HPTWizardStep4';
+import { HPTWizardStep5 } from './HPTWizardStep5';
 import { HPTOperationSelector } from './HPTOperationSelector';
 import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,15 +226,15 @@ export const HPTWizard: React.FC<HPTWizardProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTStep1 data={formData} updateData={updateData} />;
+        return <HPTWizardStep1 data={formData} updateData={updateData} />;
       case 2:
-        return <HPTStep2 data={formData} updateData={updateData} />;
+        return <HPTWizardStep2 data={formData} updateData={updateData} />;
       case 3:
-        return <HPTStep3 data={formData} updateData={updateData} />;
+        return <HPTWizardStep3 data={formData} updateData={updateData} />;
       case 4:
-        return <HPTStep4 data={formData} updateData={updateData} />;
+        return <HPTWizardStep4 data={formData} updateData={updateData} />;
       case 5:
-        return <HPTStep5 data={formData} updateData={updateData} />;
+        return <HPTWizardStep5 data={formData} updateData={updateData} />;
       default:
         return <div>Paso no encontrado</div>;
     }
@@ -244,7 +245,7 @@ export const HPTWizard: React.FC<HPTWizardProps> = ({
       {showOperacionSelector && (
         <HPTOperationSelector
           onOperacionSelected={setCurrentOperacionId}
-          onClose={() => setShowOperacionSelector(false)}
+          selectedOperacionId={currentOperacionId}
         />
       )}
 

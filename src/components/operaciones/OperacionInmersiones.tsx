@@ -67,7 +67,7 @@ export const OperacionInmersiones: React.FC<OperacionInmersionesProps> = ({
                       <p className="text-sm text-gray-600">{equipo.descripcion}</p>
                     </div>
                     <Badge variant="outline">
-                      {equipo.estado || 'disponible'}
+                      disponible
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">

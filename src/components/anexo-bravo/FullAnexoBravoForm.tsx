@@ -153,7 +153,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
       case 1:
         return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
       case 2:
-        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} operacionId={currentOperacionId} />;
+        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
       case 3:
         return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
       case 4:
