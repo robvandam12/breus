@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,6 +126,7 @@ export const useAuthProvider = (): AuthContextType => {
             }
           }
           
+          // IMPORTANT: Always set loading to false at the end
           setLoading(false);
         }
       } catch (error) {
@@ -149,19 +151,23 @@ export const useAuthProvider = (): AuthContextType => {
         setProfile(null);
         setUser(null);
         setSession(null);
-      } else if (session?.user && event === 'SIGNED_IN') {
-        // Only fetch profile on sign in to avoid loops
+        setLoading(false);
+      } else if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        // Only fetch profile on sign in or token refresh
         try {
           const userProfile = await fetchUserProfile(session.user.id);
           if (mounted) {
             setProfile(userProfile);
+            setLoading(false);
           }
         } catch (error) {
-          console.error('Error fetching profile on sign in:', error);
+          console.error('Error fetching profile on auth change:', error);
+          if (mounted) {
+            setLoading(false);
+          }
         }
-      }
-      
-      if (mounted && event === 'SIGNED_IN') {
+      } else {
+        // For other events, just ensure loading is false
         setLoading(false);
       }
     });
@@ -255,16 +261,18 @@ export const useAuthProvider = (): AuthContextType => {
     try {
       console.log('🚪 Cerrando sesión...');
       
-      // Clear local state first to prevent issues
+      // Clear local state first
       setUser(null);
       setProfile(null);
       setSession(null);
+      setLoading(false);
 
-      // Then attempt to sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.log('Logout error (but continuing):', error);
+      // Only attempt Supabase signout if we have a session
+      if (session) {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.log('Logout error (but continuing):', error);
+        }
       }
 
       toast({
@@ -273,7 +281,6 @@ export const useAuthProvider = (): AuthContextType => {
       });
     } catch (error: any) {
       console.error('Logout error:', error);
-      
       toast({
         title: "Sesión cerrada",
         description: "La sesión se ha cerrado",

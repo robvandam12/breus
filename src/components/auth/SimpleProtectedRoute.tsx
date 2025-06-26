@@ -8,10 +8,11 @@ interface ProtectedRouteProps {
 }
 
 export const SimpleProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, session, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  console.log('SimpleProtectedRoute - loading:', loading, 'user:', !!user, 'session:', !!session);
+  console.log('SimpleProtectedRoute - loading:', loading, 'user:', !!user);
 
+  // Show loading spinner while auth is being initialized
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -23,11 +24,12 @@ export const SimpleProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // Only check for user - session can be refreshed
+  // If not loading and no user, redirect to login
   if (!user) {
     console.log('SimpleProtectedRoute - No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  // User is authenticated, render children
   return <>{children}</>;
 };
