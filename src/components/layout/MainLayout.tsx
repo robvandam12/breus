@@ -12,13 +12,25 @@ interface MainLayoutProps {
   subtitle?: string;
   icon?: React.ElementType;
   breadcrumbs?: { label: string; href?: string }[];
+  headerChildren?: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
 }
 
-export const MainLayout = ({ children, title, subtitle, icon: Icon, breadcrumbs }: MainLayoutProps) => {
+export const MainLayout = ({ 
+  children, 
+  title, 
+  subtitle, 
+  icon: Icon, 
+  breadcrumbs, 
+  headerChildren,
+  className = "",
+  contentClassName = ""
+}: MainLayoutProps) => {
   return (
     <SidebarProvider>
       <ModularSidebar />
-      <SidebarInset>
+      <SidebarInset className={className}>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
@@ -49,11 +61,12 @@ export const MainLayout = ({ children, title, subtitle, icon: Icon, breadcrumbs 
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {headerChildren}
             <EnhancedNotificationButton />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className={`flex flex-1 flex-col gap-4 p-4 ${contentClassName}`}>
           <div className="flex items-center gap-2">
             {Icon && <Icon className="w-6 h-6" />}
             <div>
