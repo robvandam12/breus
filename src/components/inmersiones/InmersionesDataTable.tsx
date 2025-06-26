@@ -171,7 +171,7 @@ export const InmersionesDataTable = () => {
                   <ImmersionCard 
                     key={inmersion.inmersion_id} 
                     inmersion={{
-                      id: inmersion.inmersion_id.toString(),
+                      id: inmersion.inmersion_id,
                       fecha: inmersion.fecha_inmersion,
                       hora: inmersion.hora_inicio,
                       buzo: inmersion.buzo_principal,
@@ -180,10 +180,7 @@ export const InmersionesDataTable = () => {
                       profundidad: inmersion.profundidad_max,
                       objetivo: inmersion.objetivo,
                       codigo: inmersion.codigo,
-                      operacion: inmersion.operacion_id ? {
-                        nombre: `Operación ${inmersion.operacion_id}`,
-                        codigo: inmersion.codigo
-                      } : undefined
+                      operacion: inmersion.operacion_id ? `Operación ${inmersion.operacion_id}` : undefined
                     }} 
                   />
                 ))}
