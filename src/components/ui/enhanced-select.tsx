@@ -43,9 +43,18 @@ export const EnhancedSelect = ({
 }: EnhancedSelectProps) => {
   const [open, setOpen] = React.useState(false);
 
-  // Ensure options is always an array
+  // Ensure options is always an array and filter out invalid values
   const safeOptions = React.useMemo(() => {
-    return Array.isArray(options) ? options : [];
+    if (!Array.isArray(options)) return [];
+    
+    return options.filter(option => {
+      return option && 
+             option.value && 
+             typeof option.value === 'string' && 
+             option.value.trim() !== '' && 
+             option.value !== 'undefined' && 
+             option.value !== 'null';
+    });
   }, [options]);
 
   // Find selected option safely

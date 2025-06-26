@@ -27,7 +27,17 @@ export const BitacoraSelectWithEmpty = ({
   emptyMessage,
   emptyDescription 
 }: BitacoraSelectWithEmptyProps) => {
-  if (!options || options.length === 0) {
+  // Filtrar opciones de manera más robusta para evitar valores vacíos
+  const validOptions = (options || []).filter(option => {
+    return option && 
+           option.id && 
+           typeof option.id === 'string' && 
+           option.id.trim() !== '' && 
+           option.id !== 'undefined' && 
+           option.id !== 'null';
+  });
+
+  if (validOptions.length === 0) {
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -50,9 +60,7 @@ export const BitacoraSelectWithEmpty = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {options
-            .filter(option => option && option.id && option.id.trim() !== '')
-            .map((option) => (
+          {validOptions.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               {option.label || 'Sin nombre'}
             </SelectItem>
