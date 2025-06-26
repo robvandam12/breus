@@ -14,6 +14,8 @@ interface InvitationData {
   rol: string;
   invitado_por: string;
   fecha_expiracion: string;
+  nombre: string;
+  apellido: string;
 }
 
 export default function RegisterWithToken() {
@@ -66,6 +68,15 @@ export default function RegisterWithToken() {
       }
 
       setInvitation(data);
+      
+      // Pre-poblar datos si están disponibles
+      if (data.nombre || data.apellido) {
+        setFormData(prev => ({
+          ...prev,
+          nombre: data.nombre || '',
+          apellido: data.apellido || ''
+        }));
+      }
     } catch (error) {
       console.error('Error validating token:', error);
       toast({
@@ -105,7 +116,9 @@ export default function RegisterWithToken() {
     setSubmitting(true);
 
     try {
-      // Crear usuario en Supabase Auth
+      console.log('Iniciando proceso de registro con invitación...');
+      
+      // Paso 1: Crear usuario en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: invitation.email,
         password: formData.password,
@@ -119,10 +132,18 @@ export default function RegisterWithToken() {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Error en auth.signUp:', authError);
+        throw authError;
+      }
 
+      console.log('Usuario creado en Auth:', authData.user?.id);
+
+      // Paso 2: Crear perfil en la tabla usuario
+      // La política RLS ahora permite esto gracias a la invitación válida
       if (authData.user) {
-        // Crear perfil en la tabla usuario
+        console.log('Creando perfil de usuario...');
+        
         const { error: profileError } = await supabase
           .from('usuario')
           .insert([{
@@ -135,9 +156,14 @@ export default function RegisterWithToken() {
             estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
           }]);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Error creando perfil:', profileError);
+          throw profileError;
+        }
 
-        // Marcar invitación como aceptada
+        console.log('Perfil creado exitosamente');
+
+        // Paso 3: Marcar invitación como aceptada
         const { error: invitationError } = await supabase
           .from('usuario_invitaciones')
           .update({ 
@@ -152,19 +178,32 @@ export default function RegisterWithToken() {
           // No fallar por esto, el usuario ya se creó
         }
 
+        console.log('Proceso completado exitosamente');
+
         toast({
           title: "¡Bienvenido a Breus!",
-          description: "Tu cuenta ha sido creada exitosamente.",
+          description: "Tu cuenta ha sido creada exitosamente. Puedes iniciar sesión ahora.",
         });
 
-        // Redirigir al login o dashboard
+        // Redirigir al login
         navigate('/auth/login');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
+      
+      let errorMessage = "Error al crear la cuenta.";
+      
+      if (error.message?.includes('Email rate limit exceeded')) {
+        errorMessage = "Límite de envío de emails excedido. Intenta nuevamente en unos minutos.";
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = "Este email ya está registrado. Intenta iniciar sesión.";
+      } else if (error.message?.includes('row-level security')) {
+        errorMessage = "Error de permisos. Verifica que la invitación sea válida.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Error al crear la cuenta.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

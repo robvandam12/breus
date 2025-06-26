@@ -2621,6 +2621,10 @@ export type Database = {
         Args: { target_company_id: string; target_company_type: string }
         Returns: boolean
       }
+      check_valid_invitation: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
       create_user_profile: {
         Args: {
           user_id: string
