@@ -23,9 +23,9 @@ export const SimpleProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // Check both user and session for better reliability
-  if (!user || !session) {
-    console.log('SimpleProtectedRoute - No user or session, redirecting to login');
+  // Only check for user - session can be refreshed
+  if (!user) {
+    console.log('SimpleProtectedRoute - No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 

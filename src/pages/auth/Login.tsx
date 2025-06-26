@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,11 +37,11 @@ export default function Login() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!loading && user && session) {
+    if (!loading && user) {
       console.log('Login - User already authenticated, redirecting to dashboard');
       navigate('/', { replace: true });
     }
-  }, [user, session, loading, navigate]);
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +82,7 @@ export default function Login() {
   }
 
   // Don't render if already authenticated (will redirect)
-  if (user && session) {
+  if (user) {
     return null;
   }
 

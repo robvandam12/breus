@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -116,10 +115,13 @@ export const useAuthProvider = (): AuthContextType => {
           
           // Fetch profile if user exists
           if (initialSession?.user) {
-            console.log('User found, fetching profile...');
-            const userProfile = await fetchUserProfile(initialSession.user.id);
-            if (mounted) {
-              setProfile(userProfile);
+            try {
+              const userProfile = await fetchUserProfile(initialSession.user.id);
+              if (mounted) {
+                setProfile(userProfile);
+              }
+            } catch (error) {
+              console.error('Error fetching initial profile:', error);
             }
           }
           
@@ -147,19 +149,19 @@ export const useAuthProvider = (): AuthContextType => {
         setProfile(null);
         setUser(null);
         setSession(null);
-      } else if (session?.user) {
-        // Defer profile fetching to avoid blocking
-        setTimeout(async () => {
+      } else if (session?.user && event === 'SIGNED_IN') {
+        // Only fetch profile on sign in to avoid loops
+        try {
+          const userProfile = await fetchUserProfile(session.user.id);
           if (mounted) {
-            const userProfile = await fetchUserProfile(session.user.id);
-            if (mounted) {
-              setProfile(userProfile);
-            }
+            setProfile(userProfile);
           }
-        }, 0);
+        } catch (error) {
+          console.error('Error fetching profile on sign in:', error);
+        }
       }
       
-      if (event === 'SIGNED_IN') {
+      if (mounted && event === 'SIGNED_IN') {
         setLoading(false);
       }
     });
@@ -251,34 +253,19 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signOut = async () => {
     try {
-      // Check if there's an active session before attempting logout
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      if (!currentSession) {
-        console.log('🚪 No active session found, clearing local state');
-        // Clean up local state even if no session exists
-        setUser(null);
-        setProfile(null);
-        setSession(null);
-        return;
-      }
-
       console.log('🚪 Cerrando sesión...');
-      const { error } = await supabase.auth.signOut();
       
-      if (error) {
-        // If error is about missing session, just clean up locally
-        if (error.message?.includes('session') || error.message?.includes('Session')) {
-          console.log('🚪 Session already ended, cleaning up locally');
-        } else {
-          throw error;
-        }
-      }
-
-      // Clean up state regardless of API response
+      // Clear local state first to prevent issues
       setUser(null);
       setProfile(null);
       setSession(null);
+
+      // Then attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.log('Logout error (but continuing):', error);
+      }
 
       toast({
         title: "Sesión cerrada",
@@ -287,14 +274,9 @@ export const useAuthProvider = (): AuthContextType => {
     } catch (error: any) {
       console.error('Logout error:', error);
       
-      // Even if logout fails, clean up local state
-      setUser(null);
-      setProfile(null);
-      setSession(null);
-      
       toast({
         title: "Sesión cerrada",
-        description: "La sesión se ha cerrado localmente",
+        description: "La sesión se ha cerrado",
       });
     }
   };
