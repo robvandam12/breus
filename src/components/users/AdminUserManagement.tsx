@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,7 +117,14 @@ export const AdminUserManagement = () => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    await deleteUsuario(id);
+    console.log('AdminUserManagement: Attempting to delete user with ID:', id);
+    try {
+      await deleteUsuario(id);
+      console.log('AdminUserManagement: User deleted successfully');
+    } catch (error) {
+      console.error('AdminUserManagement: Error deleting user:', error);
+      throw error; // Re-throw to let the UI handle the error
+    }
   };
 
   return (

@@ -41,21 +41,23 @@ export const DeleteUserDialog = ({ isOpen, onClose, onConfirm, user }: DeleteUse
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              ¿Estás seguro de que deseas eliminar al usuario{' '}
-              <span className="font-semibold">{user.nombre} {user.apellido}</span>?
-            </p>
-            <p className="text-sm text-red-600">
-              Esta acción no se puede deshacer y eliminará permanentemente:
-            </p>
-            <ul className="text-sm text-red-600 list-disc list-inside ml-4">
-              <li>El perfil del usuario</li>
-              <li>Sus permisos y roles asignados</li>
-              <li>Su historial de actividades</li>
-            </ul>
+          <AlertDialogDescription>
+            ¿Estás seguro de que deseas eliminar al usuario{' '}
+            <span className="font-semibold">{user.nombre} {user.apellido}</span>?
           </AlertDialogDescription>
         </AlertDialogHeader>
+        
+        <div className="py-4">
+          <p className="text-sm text-red-600 mb-3">
+            Esta acción no se puede deshacer y eliminará permanentemente:
+          </p>
+          <div className="text-sm text-red-600 space-y-1 ml-4">
+            <div>• El perfil del usuario</div>
+            <div>• Sus permisos y roles asignados</div>
+            <div>• Su historial de actividades</div>
+          </div>
+        </div>
+        
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
           <AlertDialogAction 

@@ -106,9 +106,16 @@ export const BaseUserManagement = ({
   };
 
   const handleDeleteUser = async (user: BaseUser) => {
+    console.log('Attempting to delete user:', user);
     if (onDeleteUser) {
-      await onDeleteUser(user.id || user.usuario_id!);
-      setDeletingUser(null);
+      try {
+        await onDeleteUser(user.id || user.usuario_id!);
+        console.log('User deleted successfully');
+        setDeletingUser(null);
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        // Don't close dialog on error, let user try again
+      }
     }
   };
 
