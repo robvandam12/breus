@@ -16,6 +16,8 @@ interface InvitationData {
   fecha_expiracion: string;
   nombre: string;
   apellido: string;
+  empresa_id: string;
+  tipo_empresa: 'salmonera' | 'contratista';
 }
 
 export default function RegisterWithToken() {
@@ -144,7 +146,11 @@ export default function RegisterWithToken() {
     setSubmitting(true);
 
     try {
-      console.log('Iniciando proceso de registro con invitación...');
+      console.log('Iniciando proceso de registro con invitación...', {
+        email: invitation.email,
+        empresa_id: invitation.empresa_id,
+        tipo_empresa: invitation.tipo_empresa
+      });
       
       // Paso 1: Crear usuario en Supabase Auth con auto-confirmación
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -199,16 +205,28 @@ export default function RegisterWithToken() {
 
           if (confirmError) {
             console.warn('No se pudo confirmar automáticamente, pero continuamos:', confirmError);
+          } else {
+            console.log('Email confirmado automáticamente');
           }
         } catch (confirmErr) {
           console.warn('Error en confirmación automática, continuamos:', confirmErr);
         }
       }
 
-      // Paso 2: Crear o actualizar perfil de usuario
+      // Paso 2: Crear perfil de usuario con asignación automática a la empresa
       if (authData.user) {
-        console.log('Verificando si el perfil ya existe...');
+        console.log('Creando perfil de usuario con empresa:', {
+          userId: authData.user.id,
+          empresa_id: invitation.empresa_id,
+          tipo_empresa: invitation.tipo_empresa
+        });
         
+        // Determinar qué campo de empresa usar
+        const empresaData = invitation.tipo_empresa === 'salmonera' 
+          ? { salmonera_id: invitation.empresa_id, servicio_id: null }
+          : { salmonera_id: null, servicio_id: invitation.empresa_id };
+
+        // Verificar si el perfil ya existe
         const { data: existingProfile, error: checkError } = await supabase
           .from('usuario')
           .select('usuario_id')
@@ -219,20 +237,24 @@ export default function RegisterWithToken() {
           console.error('Error verificando perfil existente:', checkError);
         }
 
+        const profileData = {
+          usuario_id: authData.user.id,
+          email: invitation.email,
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          rol: invitation.rol,
+          ...empresaData,
+          // Usuario invitado siempre queda con perfil completado y activo
+          perfil_completado: true,
+          estado_buzo: 'activo'
+        };
+
         if (!existingProfile) {
-          console.log('Creando perfil de usuario...');
+          console.log('Creando nuevo perfil...', profileData);
           
           const { error: profileError } = await supabase
             .from('usuario')
-            .insert([{
-              usuario_id: authData.user.id,
-              email: invitation.email,
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              rol: invitation.rol,
-              perfil_completado: true,
-              estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
-            }]);
+            .insert([profileData]);
 
           if (profileError) {
             console.error('Error creando perfil:', profileError);
@@ -240,13 +262,7 @@ export default function RegisterWithToken() {
               console.log('Perfil ya existe, actualizando...');
               const { error: updateError } = await supabase
                 .from('usuario')
-                .update({
-                  nombre: formData.nombre,
-                  apellido: formData.apellido,
-                  rol: invitation.rol,
-                  perfil_completado: true,
-                  estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
-                })
+                .update(profileData)
                 .eq('usuario_id', authData.user.id);
 
               if (updateError) {
@@ -258,16 +274,10 @@ export default function RegisterWithToken() {
             }
           }
         } else {
-          console.log('Perfil ya existe, actualizando datos...');
+          console.log('Perfil ya existe, actualizando datos...', profileData);
           const { error: updateError } = await supabase
             .from('usuario')
-            .update({
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              rol: invitation.rol,
-              perfil_completado: true,
-              estado_buzo: invitation.rol === 'buzo' ? 'activo' : 'activo'
-            })
+            .update(profileData)
             .eq('usuario_id', authData.user.id);
 
           if (updateError) {
@@ -276,7 +286,7 @@ export default function RegisterWithToken() {
           }
         }
 
-        console.log('Perfil creado/actualizado exitosamente');
+        console.log('Perfil creado/actualizado exitosamente con empresa asignada');
 
         // Paso 3: Marcar invitación como aceptada
         const { error: invitationError } = await supabase
@@ -294,9 +304,11 @@ export default function RegisterWithToken() {
 
         console.log('Proceso completado exitosamente');
 
+        const empresaTipo = invitation.tipo_empresa === 'salmonera' ? 'salmonera' : 'empresa de servicio';
+        
         toast({
           title: "¡Bienvenido a Breus!",
-          description: "Tu cuenta ha sido creada exitosamente. Puedes iniciar sesión ahora.",
+          description: `Tu cuenta ha sido creada exitosamente y has sido asignado a la ${empresaTipo}. Puedes iniciar sesión ahora.`,
         });
 
         // Intentar hacer login automático si el email está confirmado
@@ -352,6 +364,10 @@ export default function RegisterWithToken() {
     }
   };
 
+  const getEmpresaTipoDisplayName = (tipo: string) => {
+    return tipo === 'salmonera' ? 'Salmonera' : 'Empresa de Servicio';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -373,6 +389,9 @@ export default function RegisterWithToken() {
           </CardTitle>
           <CardDescription>
             Has sido invitado como <strong>{getRoleDisplayName(invitation.rol)}</strong>
+            {invitation.tipo_empresa && (
+              <span> para la {getEmpresaTipoDisplayName(invitation.tipo_empresa)}</span>
+            )}
           </CardDescription>
           {rateLimited && (
             <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800 text-sm">

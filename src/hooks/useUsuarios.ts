@@ -86,6 +86,10 @@ export const useUsuarios = () => {
         tipo_empresa = 'contratista';
       }
       
+      if (!empresa_id) {
+        throw new Error('No se pudo determinar la empresa del invitador');
+      }
+      
       console.log('Empresa info for invitation:', { empresa_id, tipo_empresa });
       
       // Si se debe cancelar invitaciones previas, hacerlo primero
@@ -110,7 +114,7 @@ export const useUsuarios = () => {
       // Generar token único para la invitación
       const token = crypto.randomUUID();
       
-      // Preparar datos de invitación
+      // Preparar datos de invitación con información completa de la empresa
       const invitationData = {
         email: email.toLowerCase(),
         nombre: nombre,
@@ -142,6 +146,7 @@ export const useUsuarios = () => {
           email: email,
           rol: rol,
           invitedBy: `${profile?.nombre} ${profile?.apellido}`,
+          empresaTipo: tipo_empresa,
           token: token
         }
       });

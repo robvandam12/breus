@@ -7,7 +7,7 @@ import { UserInviteForm } from "./forms/UserInviteForm";
 import { EditUserForm } from "./forms/EditUserForm";
 import { InvitationManagement } from "@/components/invitations/InvitationManagement";
 import { useUsuarios } from "@/hooks/useUsuarios";
-import { Shield, Mail } from "lucide-react";
+import { Shield, Mail, CheckCircle, Clock } from "lucide-react";
 
 export const AdminUserManagement = () => {
   const { usuarios, isLoading, updateUsuario, inviteUsuario, deleteUsuario } = useUsuarios();
@@ -21,6 +21,13 @@ export const AdminUserManagement = () => {
       ? user.contratista[0] 
       : null;
     
+    // Determinar estado basado en perfil_completado y confirmación de email
+    let estado: 'activo' | 'pendiente' = 'pendiente';
+    
+    if (user.perfil_completado) {
+      estado = 'activo';
+    }
+    
     return {
       id: user.usuario_id,
       usuario_id: user.usuario_id,
@@ -28,7 +35,7 @@ export const AdminUserManagement = () => {
       nombre: user.nombre,
       apellido: user.apellido,
       rol: user.rol,
-      estado: user.perfil_completado ? 'activo' : 'pendiente',
+      estado: estado,
       empresa_nombre: salmoneraData?.nombre || contratistaData?.nombre || 'Sin asignar',
       empresa_tipo: user.salmonera_id ? 'salmonera' : 'contratista',
       created_at: user.created_at,
@@ -71,11 +78,11 @@ export const AdminUserManagement = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-green-600" />
+              <CheckCircle className="w-4 h-4 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">Supervisores</p>
+                <p className="text-sm text-gray-600">Usuarios Activos</p>
                 <p className="text-2xl font-bold">
-                  {usuarios.filter(u => u.rol === 'supervisor').length}
+                  {usuarios.filter(u => u.perfil_completado).length}
                 </p>
               </div>
             </div>
@@ -84,11 +91,11 @@ export const AdminUserManagement = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-teal-600" />
+              <Clock className="w-4 h-4 text-yellow-600" />
               <div>
-                <p className="text-sm text-gray-600">Buzos</p>
+                <p className="text-sm text-gray-600">Usuarios Pendientes</p>
                 <p className="text-2xl font-bold">
-                  {usuarios.filter(u => u.rol === 'buzo').length}
+                  {usuarios.filter(u => !u.perfil_completado).length}
                 </p>
               </div>
             </div>
