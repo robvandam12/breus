@@ -251,11 +251,31 @@ export const useAuthProvider = (): AuthContextType => {
 
   const signOut = async () => {
     try {
+      // Check if there's an active session before attempting logout
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        console.log('🚪 No active session found, clearing local state');
+        // Clean up local state even if no session exists
+        setUser(null);
+        setProfile(null);
+        setSession(null);
+        return;
+      }
+
       console.log('🚪 Cerrando sesión...');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      if (error) {
+        // If error is about missing session, just clean up locally
+        if (error.message?.includes('session') || error.message?.includes('Session')) {
+          console.log('🚪 Session already ended, cleaning up locally');
+        } else {
+          throw error;
+        }
+      }
 
-      // Limpiar estado inmediatamente
+      // Clean up state regardless of API response
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -266,9 +286,15 @@ export const useAuthProvider = (): AuthContextType => {
       });
     } catch (error: any) {
       console.error('Logout error:', error);
+      
+      // Even if logout fails, clean up local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
       toast({
-        title: "Error",
-        description: error.message || "Error al cerrar sesión",
+        title: "Sesión cerrada",
+        description: "La sesión se ha cerrado localmente",
       });
     }
   };
