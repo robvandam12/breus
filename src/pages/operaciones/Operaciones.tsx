@@ -51,7 +51,7 @@ export default function Operaciones() {
                 <h4 className="font-semibold text-blue-900">Vista de Contratista</h4>
                 <p className="text-sm text-blue-700 mt-1">
                   Puedes ver las operaciones disponibles y crear inmersiones asociadas. 
-                  Tu salmonera gestiona la planificación de operaciones.
+                  El personal de buceo se gestiona individualmente para cada inmersión.
                 </p>
               </div>
             </div>
@@ -65,7 +65,8 @@ export default function Operaciones() {
               <div>
                 <h4 className="font-semibold text-green-900">Módulo de Planificación Activo</h4>
                 <p className="text-sm text-green-700 mt-1">
-                  Tu salmonera tiene activo el módulo de planificación. Puedes asociar inmersiones a operaciones planificadas.
+                  Tu salmonera tiene activo el módulo de planificación. Puedes asociar inmersiones a operaciones planificadas 
+                  y gestionar el personal de buceo específicamente para cada inmersión.
                 </p>
               </div>
             </div>

@@ -11,7 +11,6 @@ import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
 import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
 import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
 import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
-import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
 import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
 import { useOperaciones } from "@/hooks/useOperaciones";
@@ -72,17 +71,12 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
       { id: "general", title: "General", required: true }
     ];
 
-    // Solo mostrar pestaña de personal si tiene acceso a planning
-    if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
-      baseTabs.push({ id: "personal", title: "Personal de Buceo", required: false });
-    }
-
     // Solo mostrar documentos si tiene acceso a planning
     if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
       baseTabs.push({ id: "documentos", title: "Documentos", required: false });
     }
 
-    // Inmersiones siempre disponible (core)
+    // Inmersiones siempre disponible (core) - aquí se gestiona el personal por inmersión
     baseTabs.push({ id: "inmersiones", title: "Inmersiones", required: true });
 
     // Solo mostrar formularios de mantención si tiene el módulo
@@ -134,14 +128,6 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
             <OperacionInfo operacion={operacion} />
           </div>
         );
-      case "personal":
-        return (
-          <OperacionTeamManagerEnhanced 
-            operacionId={operacion.id} 
-            salmoneraId={operacion.salmonera_id || undefined}
-            contratistaId={operacion.contratista_id || undefined}
-          />
-        );
       case "documentos":
         return <OperacionDocuments operacionId={operacion.id} operacion={operacion} />;
       case "inmersiones":
@@ -152,8 +138,8 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
                 <h3 className="text-lg font-semibold">Inmersiones de la Operación</h3>
                 <p className="text-sm text-gray-600">
                   {userContext.isContratista 
-                    ? "Crea inmersiones asociadas a esta operación planificada"
-                    : "Gestiona las inmersiones de esta operación"
+                    ? "Crea inmersiones asociadas a esta operación planificada. El personal de buceo se gestiona por cada inmersión individual."
+                    : "Gestiona las inmersiones de esta operación. El personal de buceo se asigna específicamente a cada inmersión."
                   }
                 </p>
               </div>
