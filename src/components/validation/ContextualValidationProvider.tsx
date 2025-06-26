@@ -5,8 +5,7 @@ import { useContextualValidator } from '@/hooks/useContextualValidator';
 
 interface ValidationContextType {
   validateWithErrorHandling: ReturnType<typeof useEnhancedValidation>['validateWithErrorHandling'];
-  validateRouteAccess: ReturnType<typeof useEnhancedValidation>['validateRouteAccess'];
-  withModuleValidation: ReturnType<typeof useEnhancedValidation>['withModuleValidation'];
+  validateOperationCode: ReturnType<typeof useEnhancedValidation>['validateOperationCode'];
   contextualValidator: ReturnType<typeof useContextualValidator>;
 }
 
@@ -25,7 +24,8 @@ export const ContextualValidationProvider: React.FC<ContextualValidationProvider
   const contextualValidator = useContextualValidator(operationId);
 
   const value: ValidationContextType = {
-    ...enhancedValidation,
+    validateWithErrorHandling: enhancedValidation.validateWithErrorHandling,
+    validateOperationCode: enhancedValidation.validateOperationCode,
     contextualValidator,
   };
 

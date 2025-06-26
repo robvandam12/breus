@@ -1,7 +1,7 @@
-
 import { useModularSystem } from './useModularSystem';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ValidationOptions {
   showToast?: boolean;
