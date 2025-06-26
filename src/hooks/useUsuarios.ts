@@ -9,6 +9,8 @@ import { toast } from "@/hooks/use-toast";
 export interface InviteUserOptions {
   email: string;
   rol: string;
+  nombre?: string;
+  apellido?: string;
   overwriteExisting?: boolean;
   cancelPrevious?: boolean;
 }
@@ -66,10 +68,25 @@ export const useUsuarios = () => {
   };
 
   const inviteUsuario = async (options: InviteUserOptions) => {
-    const { email, rol, overwriteExisting = false, cancelPrevious = false } = options;
+    const { email, rol, nombre = '', apellido = '', overwriteExisting = false, cancelPrevious = false } = options;
     
     return executeInvite(async () => {
       console.log('Inviting user with options:', options);
+      console.log('Current profile:', profile);
+      
+      // Determinar empresa_id y tipo_empresa basado en el perfil del usuario que invita
+      let empresa_id = null;
+      let tipo_empresa = null;
+      
+      if (profile?.salmonera_id) {
+        empresa_id = profile.salmonera_id;
+        tipo_empresa = 'salmonera';
+      } else if (profile?.servicio_id) {
+        empresa_id = profile.servicio_id;
+        tipo_empresa = 'contratista';
+      }
+      
+      console.log('Empresa info for invitation:', { empresa_id, tipo_empresa });
       
       // Si se debe cancelar invitaciones previas, hacerlo primero
       if (cancelPrevious) {
@@ -93,21 +110,31 @@ export const useUsuarios = () => {
       // Generar token único para la invitación
       const token = crypto.randomUUID();
       
+      // Preparar datos de invitación
+      const invitationData = {
+        email: email.toLowerCase(),
+        nombre: nombre,
+        apellido: apellido,
+        rol: rol,
+        token: token,
+        invitado_por: profile?.id,
+        empresa_id: empresa_id,
+        tipo_empresa: tipo_empresa,
+        fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        estado: 'pendiente'
+      };
+      
+      console.log('Creating invitation with data:', invitationData);
+      
       // Guardar invitación en la base de datos
       const { error: dbError } = await supabase
         .from('usuario_invitaciones')
-        .insert([{
-          email: email.toLowerCase(),
-          rol: rol,
-          token: token,
-          invitado_por: profile?.id,
-          fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          estado: 'pendiente',
-          nombre: '',
-          apellido: ''
-        }]);
+        .insert([invitationData]);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Error saving invitation to DB:', dbError);
+        throw dbError;
+      }
 
       // Enviar email de invitación
       const { error: emailError } = await supabase.functions.invoke('send-user-invitation', {
@@ -126,10 +153,13 @@ export const useUsuarios = () => {
           description: "Invitación creada pero el email no se pudo enviar. Verifique la configuración de Resend.",
           variant: "destructive"
         });
+      } else {
+        console.log('Invitation email sent successfully');
       }
       
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['users-by-company'] });
     });
   };
 

@@ -38,11 +38,19 @@ export const useInvitationManagement = () => {
 
   // Obtener invitaciones
   const { data: invitations = [], isLoading, error } = useQuery({
-    queryKey: ['invitations', profile?.id],
+    queryKey: ['invitations', profile?.id, profile?.salmonera_id, profile?.servicio_id],
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!profile?.id) {
+        console.log('No profile ID available');
+        return [];
+      }
       
-      console.log('Fetching invitations for user:', profile.id);
+      console.log('Fetching invitations for user:', {
+        userId: profile.id,
+        role: profile.role,
+        salmoneraId: profile.salmonera_id,
+        servicioId: profile.servicio_id
+      });
       
       let query = supabase
         .from('usuario_invitaciones')
@@ -50,11 +58,15 @@ export const useInvitationManagement = () => {
         .eq('invitado_por', profile.id)
         .order('created_at', { ascending: false });
 
-      // Si es admin de empresa específica, filtrar por empresa
-      if (profile.salmonera_id) {
-        query = query.eq('empresa_id', profile.salmonera_id);
-      } else if (profile.servicio_id) {
-        query = query.eq('empresa_id', profile.servicio_id);
+      // Aplicar filtros adicionales según el tipo de empresa del usuario
+      if (profile.role !== 'superuser') {
+        if (profile.salmonera_id) {
+          console.log('Filtering by salmonera_id:', profile.salmonera_id);
+          query = query.eq('empresa_id', profile.salmonera_id).eq('tipo_empresa', 'salmonera');
+        } else if (profile.servicio_id) {
+          console.log('Filtering by servicio_id:', profile.servicio_id);
+          query = query.eq('empresa_id', profile.servicio_id).eq('tipo_empresa', 'contratista');
+        }
       }
 
       const { data, error } = await query;
@@ -64,7 +76,11 @@ export const useInvitationManagement = () => {
         throw error;
       }
       
-      console.log('Invitations found:', data?.length || 0);
+      console.log('Invitations fetched:', {
+        count: data?.length || 0,
+        sampleData: data?.[0]
+      });
+      
       return (data || []) as Invitation[];
     },
     enabled: !!profile?.id,
@@ -88,6 +104,7 @@ export const useInvitationManagement = () => {
       
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      queryClient.invalidateQueries({ queryKey: ['users-by-company'] });
     });
   };
 
