@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from "@/components/ui/badge";
-import { Edit } from "lucide-react";
+import { Edit, Info } from "lucide-react";
 import { OperacionInfo } from "@/components/operaciones/OperacionInfo";
 import { OperacionDocuments } from "@/components/operaciones/OperacionDocuments";
 import { OperacionInmersiones } from "@/components/operaciones/OperacionInmersiones";
@@ -31,8 +32,12 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
     canPlanOperations, 
     canManageNetworks, 
     hasModuleAccess,
+    getUserContext,
+    modules,
     isSuperuser 
   } = useModularSystem();
+
+  const userContext = getUserContext();
 
   const handleEditOperacion = async (data: any) => {
     try {
@@ -45,7 +50,6 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
 
   const handleCreateInmersion = async (data: any) => {
     try {
-      // Create inmersion logic here
       setIsInmersionDialogOpen(false);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -62,15 +66,37 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  // Definir pestañas disponibles según módulos activos
-  const availableTabs = [
-    { id: "general", title: "General", required: true },
-    ...(canPlanOperations || isSuperuser ? [{ id: "personal", title: "Personal de Buceo", required: false }] : []),
-    ...(canPlanOperations || isSuperuser ? [{ id: "documentos", title: "Documentos", required: false }] : []),
-    { id: "inmersiones", title: "Inmersiones", required: true },
-    ...(canManageNetworks || isSuperuser ? [{ id: "formularios", title: "Formularios Operativos", required: false }] : []),
-    { id: "timeline", title: "Timeline", required: true }
-  ];
+  // Definir pestañas disponibles según contexto modular del usuario
+  const getAvailableTabs = () => {
+    const baseTabs = [
+      { id: "general", title: "General", required: true }
+    ];
+
+    // Solo mostrar pestaña de personal si tiene acceso a planning
+    if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
+      baseTabs.push({ id: "personal", title: "Personal de Buceo", required: false });
+    }
+
+    // Solo mostrar documentos si tiene acceso a planning
+    if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
+      baseTabs.push({ id: "documentos", title: "Documentos", required: false });
+    }
+
+    // Inmersiones siempre disponible (core)
+    baseTabs.push({ id: "inmersiones", title: "Inmersiones", required: true });
+
+    // Solo mostrar formularios de mantención si tiene el módulo
+    if (hasModuleAccess(modules.MAINTENANCE_NETWORKS)) {
+      baseTabs.push({ id: "formularios", title: "Formularios Operativos", required: false });
+    }
+
+    // Timeline siempre disponible
+    baseTabs.push({ id: "timeline", title: "Timeline", required: true });
+
+    return baseTabs;
+  };
+
+  const availableTabs = getAvailableTabs();
 
   // Ajustar activeTab si la pestaña actual no está disponible
   React.useEffect(() => {
@@ -80,10 +106,34 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
     }
   }, [availableTabs, activeTab]);
 
+  const renderContextualMessage = () => {
+    if (userContext.isContratista && !hasModuleAccess(modules.PLANNING_OPERATIONS)) {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Info className="w-5 h-5 text-blue-600" />
+            <div>
+              <h4 className="font-semibold text-blue-900">Acceso Limitado</h4>
+              <p className="text-sm text-blue-700">
+                Como contratista, puedes ver esta operación y crear inmersiones asociadas, pero no modificar la planificación.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "general":
-        return <OperacionInfo operacion={operacion} />;
+        return (
+          <div className="space-y-4">
+            {renderContextualMessage()}
+            <OperacionInfo operacion={operacion} />
+          </div>
+        );
       case "personal":
         return (
           <OperacionTeamManagerEnhanced 
@@ -98,7 +148,15 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
         return (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Inmersiones de la Operación</h3>
+              <div>
+                <h3 className="text-lg font-semibold">Inmersiones de la Operación</h3>
+                <p className="text-sm text-gray-600">
+                  {userContext.isContratista 
+                    ? "Crea inmersiones asociadas a esta operación planificada"
+                    : "Gestiona las inmersiones de esta operación"
+                  }
+                </p>
+              </div>
               <Button onClick={() => setIsInmersionDialogOpen(true)}>
                 Nueva Inmersión
               </Button>
@@ -143,7 +201,8 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
             <Badge className={getStatusColor(operacion.estado)}>
               {operacion.estado}
             </Badge>
-            {(canPlanOperations || isSuperuser) && (
+            {/* Solo mostrar botón de editar si puede planificar operaciones */}
+            {userContext.canCreateOperations && (
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <Button 
                   variant="outline"
@@ -167,7 +226,7 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
 
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
+            <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
               {availableTabs.map(tab => (
                 <TabsTrigger key={tab.id} value={tab.id}>
                   {tab.title}

@@ -60,7 +60,7 @@ export const useModularSystem = () => {
     },
   });
 
-  // Obtener módulos activos para la empresa del usuario
+  // Obtener módulos activos considerando herencia de salmonera para contratistas
   const { data: activeModules = [], isLoading: loadingActiveModules } = useQuery({
     queryKey: ['active-modules', profile?.salmonera_id || profile?.servicio_id],
     queryFn: async () => {
@@ -77,8 +77,37 @@ export const useModularSystem = () => {
 
       if (!profile?.salmonera_id && !profile?.servicio_id) return [];
       
-      const companyId = profile.salmonera_id || profile.servicio_id;
-      const companyType = profile.salmonera_id ? 'salmonera' : 'contratista';
+      let companyId = profile.salmonera_id || profile.servicio_id;
+      let companyType = profile.salmonera_id ? 'salmonera' : 'contratista';
+      
+      // Si es contratista, buscar la salmonera asociada para herencia de módulos
+      if (profile.servicio_id && !profile.salmonera_id) {
+        const { data: association } = await supabase
+          .from('salmonera_contratista')
+          .select('salmonera_id')
+          .eq('contratista_id', profile.servicio_id)
+          .eq('estado', 'activa')
+          .single();
+
+        if (association?.salmonera_id) {
+          // Obtener módulos de la salmonera asociada
+          const { data: salmoneraModules } = await supabase
+            .rpc('get_company_active_modules', {
+              p_company_id: association.salmonera_id,
+              p_company_type: 'salmonera'
+            });
+
+          if (salmoneraModules) {
+            return salmoneraModules.map((module: any) => ({
+              module_name: module.module_name,
+              display_name: module.display_name,
+              description: module.description,
+              category: module.category,
+              configuration: module.configuration || {}
+            })) as ActiveModule[];
+          }
+        }
+      }
       
       const { data, error } = await supabase
         .rpc('get_company_active_modules', {
@@ -168,9 +197,24 @@ export const useModularSystem = () => {
     
     // Módulos opcionales
     PLANNING_OPERATIONS: 'planning_operations',
-    MAINTENANCE_NETWORKS: 'maintenance_networks', // Renombrado de MultiX
+    MAINTENANCE_NETWORKS: 'maintenance_networks',
     ADVANCED_REPORTING: 'advanced_reporting',
     EXTERNAL_INTEGRATIONS: 'external_integrations',
+  };
+
+  // Determinar el contexto del usuario
+  const getUserContext = () => {
+    const isContratista = !!profile?.servicio_id && !profile?.salmonera_id;
+    const isSalmonera = !!profile?.salmonera_id;
+    
+    return {
+      isContratista,
+      isSalmonera,
+      isSuperuser,
+      canCreateOperations: hasModuleAccess(modules.PLANNING_OPERATIONS) && (isSalmonera || isSuperuser),
+      canAssociateToOperations: hasModuleAccess(modules.PLANNING_OPERATIONS),
+      canCreateIndependentImmersions: true, // Core siempre disponible
+    };
   };
 
   return {
@@ -183,6 +227,7 @@ export const useModularSystem = () => {
     hasModuleAccess,
     hasAnyModule,
     getModuleConfig,
+    getUserContext,
     
     // Acciones
     toggleModule: toggleModule.mutateAsync,
@@ -190,7 +235,7 @@ export const useModularSystem = () => {
     
     // Helpers específicos (siempre true para superusers)
     canPlanOperations: isSuperuser || hasModuleAccess(modules.PLANNING_OPERATIONS),
-    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS), // Renombrado
+    canManageNetworks: isSuperuser || hasModuleAccess(modules.MAINTENANCE_NETWORKS),
     canAccessAdvancedReports: isSuperuser || hasModuleAccess(modules.ADVANCED_REPORTING),
     canUseIntegrations: isSuperuser || hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
     
