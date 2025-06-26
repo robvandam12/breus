@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Waves, Calendar, Clock, Users, Target, Thermometer, Eye, Waves as WavesIcon } from "lucide-react";
 import { ValidationStatusCard } from "./ValidationStatusCard";
+import { InmersionDetailsSkeleton } from "./InmersionDetailsSkeleton";
 import { useInmersiones, type Inmersion } from "@/hooks/useInmersiones";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export const InmersionDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,11 +52,7 @@ export const InmersionDetails = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <LoadingSpinner text="Cargando detalles de inmersión..." />
-      </div>
-    );
+    return <InmersionDetailsSkeleton />;
   }
 
   if (!inmersion) {
