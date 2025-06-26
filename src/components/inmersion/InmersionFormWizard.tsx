@@ -49,21 +49,16 @@ export const InmersionFormWizard: React.FC<InmersionFormWizardProps> = ({
   const { validateWithErrorHandling } = useEnhancedValidation();
 
   const selectedOperation = operaciones.find(op => op.id === selectedOperacionId);
-  const assignedTeam = selectedOperation?.equipo_buceo_id 
-    ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
-    : null;
+  
+  // Nota: Ya no tenemos equipos asignados a operaciones, se gestionan a nivel de inmersión
+  // const assignedTeam = selectedOperation?.equipo_buceo_id 
+  //   ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
+  //   : null;
   
   // Determinar campos deshabilitados según contexto
   const isFieldDisabled = (fieldName: string) => {
-    if (!assignedTeam) return false;
-    
-    // PLANNING: Si hay equipo asignado, algunos campos se auto-populan
-    if (moduleActive) {
-      const autoPopulatedFields = ['supervisor', 'buzo_principal', 'buzo_asistente', 'objetivo', 'codigo'];
-      return autoPopulatedFields.includes(fieldName);
-    }
-    
     // CORE: En modo directo, todos los campos son editables
+    // PLANNING: Los campos se auto-populan desde la selección de equipos en el wizard
     return false;
   };
 

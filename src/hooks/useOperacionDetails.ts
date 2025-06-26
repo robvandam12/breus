@@ -14,7 +14,6 @@ export interface OperacionFull {
   tareas?: string;
   sitio_nombre?: string;
   contratista_nombre?: string;
-  equipo_buceo_id?: string;
   created_at: string;
   salmonera_id?: string;
   contratista_id?: string;
@@ -27,7 +26,6 @@ export interface DocumentStatus {
   hpts: any[];
   anexosBravo: any[];
   inmersiones: any[];
-  hasTeam: boolean;
 }
 
 const fetchOperacionDetails = async (operacionId: string) => {
@@ -73,8 +71,7 @@ const fetchOperacionDetails = async (operacionId: string) => {
   console.log('Documents data:', {
     hpts: hptData.data,
     anexosBravo: anexoData.data,
-    inmersiones: inmersionData.data,
-    hasTeam: !!opData.equipo_buceo_id
+    inmersiones: inmersionData.data
   });
 
   const operacion: OperacionFull = {
@@ -86,8 +83,7 @@ const fetchOperacionDetails = async (operacionId: string) => {
   const documentStatus: DocumentStatus = {
     hpts: hptData.data || [],
     anexosBravo: anexoData.data || [],
-    inmersiones: inmersionData.data || [],
-    hasTeam: !!opData.equipo_buceo_id
+    inmersiones: inmersionData.data || []
   };
   
   return { operacion, documentStatus };
@@ -100,11 +96,10 @@ export const useOperacionDetails = (operacionId: string) => {
         queryKey: ['operacionDetails', operacionId],
         queryFn: () => fetchOperacionDetails(operacionId),
         enabled: !!operacionId,
-        staleTime: 0, // CORRECCIÓN: Siempre refetch para detectar cambios de equipo
+        staleTime: 0,
         refetchOnWindowFocus: true,
         refetchOnMount: true,
-        // CORRECCIÓN CRÍTICA: Agregar refetchInterval para detectar cambios de equipo
-        refetchInterval: 5000, // Revalidar cada 5 segundos
+        refetchInterval: 5000,
     });
 
     const createInmersionMutation = useMutation({
@@ -123,13 +118,11 @@ export const useOperacionDetails = (operacionId: string) => {
           console.log('Immersion creation successful, invalidating queries');
           toast({ title: "Inmersión creada", description: "La inmersión ha sido creada exitosamente." });
           
-          // CORRECCIÓN: Invalidar más queries para mejor reactivity
           queryClient.invalidateQueries({ queryKey: ['operacionDetails', operacionId] });
           queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
           queryClient.invalidateQueries({ queryKey: ['inmersionesCompletas'] });
-          queryClient.invalidateQueries({ queryKey: ['operaciones'] }); // También invalidar operaciones
+          queryClient.invalidateQueries({ queryKey: ['operaciones'] });
           
-          // Forzar refetch inmediato de múltiples queries
           queryClient.refetchQueries({ queryKey: ['operacionDetails', operacionId] });
           queryClient.refetchQueries({ queryKey: ['inmersiones'] });
           queryClient.refetchQueries({ queryKey: ['operaciones'] });
@@ -153,8 +146,9 @@ export const useOperacionDetails = (operacionId: string) => {
         const { documentStatus } = data;
         const hasValidHPT = documentStatus.hpts.some(h => h.firmado);
         const hasValidAnexo = documentStatus.anexosBravo.some(a => a.firmado);
-        const hasTeam = documentStatus.hasTeam;
-        const canExecute = hasValidHPT && hasValidAnexo && hasTeam;
+        // Ya no verificamos equipos a nivel de operación
+        const hasTeam = true; // Los equipos se gestionan a nivel de inmersión
+        const canExecute = hasValidHPT && hasValidAnexo;
         
         console.log('Compliance calculation:', {
           hasValidHPT,
@@ -166,13 +160,11 @@ export const useOperacionDetails = (operacionId: string) => {
         });
         
         return { hasValidHPT, hasValidAnexo, canExecute, hasTeam };
-    }, [data?.documentStatus]); // CORRECCIÓN: Dependency correcta para recalcular
+    }, [data?.documentStatus]);
 
-    // Función para refrescar manualmente los datos
     const refreshOperacionDetails = async () => {
       console.log('Manually refreshing operation details');
       await refetch();
-      // CORRECCIÓN: También invalidar otras queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
     };

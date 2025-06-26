@@ -40,10 +40,10 @@ export const StepPersonalEnhanced = ({
   const { personalPool, isLoading: loadingPersonal } = usePersonalPool();
 
   const handleSelectFromTeam = (equipo: any) => {
-    const teamMembers: TeamMember[] = equipo.equipo_buceo_miembros?.map((miembro: any) => ({
+    const teamMembers: TeamMember[] = equipo.miembros?.map((miembro: any) => ({
       id: miembro.usuario_id || `temp_${Date.now()}_${Math.random()}`,
-      nombre: miembro.usuario?.nombre || '',
-      apellido: miembro.usuario?.apellido || '',
+      nombre: miembro.nombre || '',
+      apellido: miembro.apellido || '',
       rol: miembro.rol_equipo,
       isFromTeam: true,
       teamName: equipo.nombre,
@@ -276,9 +276,9 @@ export const StepPersonalEnhanced = ({
                           <h4 className="font-semibold">{equipo.nombre}</h4>
                           <p className="text-sm text-gray-600 mb-2">{equipo.descripcion}</p>
                           <div className="flex flex-wrap gap-1">
-                            {equipo.equipo_buceo_miembros?.map((miembro: any, idx: number) => (
+                            {equipo.miembros?.map((miembro: any, idx: number) => (
                               <Badge key={idx} variant="outline" className="text-xs">
-                                {miembro.usuario?.nombre} - {miembro.rol_equipo}
+                                {miembro.nombre} - {miembro.rol}
                               </Badge>
                             ))}
                           </div>

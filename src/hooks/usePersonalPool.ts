@@ -1,166 +1,80 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export interface PersonalPool {
-  id: string;
   usuario_id: string;
   nombre: string;
   apellido: string;
   email: string;
-  rol: 'supervisor' | 'buzo';
-  empresa_asociada?: string;
-  tipo_empresa?: 'salmonera' | 'contratista';
-  matricula?: string;
-  especialidades?: string[];
-  certificaciones?: string[];
-  disponible: boolean;
-  created_at: string;
-  updated_at: string;
+  rol: string;
+  estado_buzo: string;
+  perfil_buzo?: any;
 }
 
 export interface PersonalFormData {
   nombre: string;
   apellido: string;
   email: string;
-  rol: 'supervisor' | 'buzo';
-  empresa_id?: string;
-  tipo_empresa?: 'salmonera' | 'contratista';
-  matricula?: string;
-  especialidades?: string[];
-  certificaciones?: string[];
+  rol: string;
+  estado_buzo?: string;
 }
 
 export const usePersonalPool = () => {
   const queryClient = useQueryClient();
 
-  const { data: personal = [], isLoading } = useQuery({
-    queryKey: ['personal-pool'],
+  const { data: personalPool = [], isLoading } = useQuery<PersonalPool[]>({
+    queryKey: ['personalPool'],
     queryFn: async () => {
-      console.log('Fetching personal pool...');
       const { data, error } = await supabase
         .from('usuario')
         .select(`
-          *,
-          salmonera:salmoneras(nombre),
-          servicio:contratistas(nombre)
+          usuario_id,
+          nombre,
+          apellido,
+          email,
+          rol,
+          estado_buzo,
+          perfil_buzo
         `)
-        .in('rol', ['supervisor', 'buzo'])
-        .order('created_at', { ascending: false });
+        .in('rol', ['buzo', 'supervisor', 'admin_servicio'])
+        .eq('estado_buzo', 'activo');
 
-      if (error) {
-        console.error('Error fetching personal pool:', error);
-        throw error;
-      }
-
-      return (data || []).map(user => {
-        const perfilBuzo = typeof user.perfil_buzo === 'object' && user.perfil_buzo !== null 
-          ? user.perfil_buzo as any 
-          : {};
-
-        // Determine empresa_asociada based on the user's assignment
-        let empresaAsociada = 'Sin asignar';
-        let tipoEmpresa: 'salmonera' | 'contratista' = 'salmonera';
-
-        if (user.salmonera && typeof user.salmonera === 'object' && 'nombre' in user.salmonera) {
-          empresaAsociada = String(user.salmonera.nombre);
-          tipoEmpresa = 'salmonera';
-        } else if (user.servicio && typeof user.servicio === 'object' && 'nombre' in user.servicio) {
-          empresaAsociada = String(user.servicio.nombre);
-          tipoEmpresa = 'contratista';
-        }
-
-        return {
-          id: user.usuario_id,
-          usuario_id: user.usuario_id,
-          nombre: user.nombre,
-          apellido: user.apellido,
-          email: user.email || '',
-          rol: user.rol as 'supervisor' | 'buzo',
-          empresa_asociada: empresaAsociada,
-          tipo_empresa: tipoEmpresa,
-          matricula: perfilBuzo.matricula || '',
-          especialidades: Array.isArray(perfilBuzo.especialidades) ? perfilBuzo.especialidades : [],
-          certificaciones: Array.isArray(perfilBuzo.certificaciones) ? perfilBuzo.certificaciones : [],
-          disponible: perfilBuzo.disponible !== false,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        };
-      }) as PersonalPool[];
+      if (error) throw error;
+      return data || [];
     },
   });
 
   const createPersonalMutation = useMutation({
-    mutationFn: async (data: PersonalFormData) => {
-      console.log('Creating personal:', data);
-      
-      const userId = crypto.randomUUID();
-      const { data: result, error } = await supabase
+    mutationFn: async (formData: PersonalFormData) => {
+      const { data, error } = await supabase
         .from('usuario')
         .insert([{
-          usuario_id: userId,
-          nombre: data.nombre,
-          apellido: data.apellido,
-          email: data.email,
-          rol: data.rol,
-          salmonera_id: data.tipo_empresa === 'salmonera' ? data.empresa_id : null,
-          servicio_id: data.tipo_empresa === 'contratista' ? data.empresa_id : null,
-          perfil_buzo: {
-            matricula: data.matricula,
-            especialidades: data.especialidades || [],
-            certificaciones: data.certificaciones || [],
-            disponible: true
-          },
-          perfil_completado: true
+          ...formData,
+          estado_buzo: formData.estado_buzo || 'activo'
         }])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating personal:', error);
-        throw error;
-      }
-
-      return result;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast({
-        title: "Personal agregado",
-        description: "El miembro del personal ha sido agregado exitosamente.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['personalPool'] });
+      toast({ title: "Personal creado", description: "El personal ha sido creado exitosamente." });
     },
     onError: (error) => {
       console.error('Error creating personal:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo agregar el personal.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo crear el personal.", variant: "destructive" });
     },
   });
 
   const updatePersonalMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PersonalFormData> }) => {
-      console.log('Updating personal:', id, data);
-      
       const { data: result, error } = await supabase
         .from('usuario')
-        .update({
-          nombre: data.nombre,
-          apellido: data.apellido,
-          email: data.email,
-          rol: data.rol,
-          salmonera_id: data.tipo_empresa === 'salmonera' ? data.empresa_id : null,
-          servicio_id: data.tipo_empresa === 'contratista' ? data.empresa_id : null,
-          perfil_buzo: {
-            matricula: data.matricula,
-            especialidades: data.especialidades || [],
-            certificaciones: data.certificaciones || [],
-            disponible: true
-          }
-        })
+        .update(data)
         .eq('usuario_id', id)
         .select()
         .single();
@@ -169,44 +83,43 @@ export const usePersonalPool = () => {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast({
-        title: "Personal actualizado",
-        description: "Los datos del personal han sido actualizados exitosamente.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['personalPool'] });
+      toast({ title: "Personal actualizado", description: "El personal ha sido actualizado exitosamente." });
+    },
+    onError: (error) => {
+      console.error('Error updating personal:', error);
+      toast({ title: "Error", description: "No se pudo actualizar el personal.", variant: "destructive" });
     },
   });
 
   const deletePersonalMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting personal:', id);
-      
       const { error } = await supabase
         .from('usuario')
-        .delete()
+        .update({ estado_buzo: 'inactivo' })
         .eq('usuario_id', id);
 
       if (error) throw error;
+      return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['personal-pool'] });
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast({
-        title: "Personal eliminado",
-        description: "El miembro del personal ha sido eliminado exitosamente.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['personalPool'] });
+      toast({ title: "Personal desactivado", description: "El personal ha sido desactivado exitosamente." });
+    },
+    onError: (error) => {
+      console.error('Error deactivating personal:', error);
+      toast({ title: "Error", description: "No se pudo desactivar el personal.", variant: "destructive" });
     },
   });
 
   return {
-    personal,
+    personalPool,
     isLoading,
     createPersonal: createPersonalMutation.mutateAsync,
-    updatePersonal: updatePersonalMutation.mutateAsync,
-    deletePersonal: deletePersonalMutation.mutateAsync,
     isCreating: createPersonalMutation.isPending,
+    updatePersonal: updatePersonalMutation.mutateAsync,
     isUpdating: updatePersonalMutation.isPending,
+    deletePersonal: deletePersonalMutation.mutateAsync,
     isDeleting: deletePersonalMutation.isPending,
   };
 };

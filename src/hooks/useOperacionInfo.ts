@@ -31,36 +31,8 @@ export const getOperationCompleteData = async (operacionId: string) => {
       .eq('firmado', true)
       .maybeSingle();
 
+    // Ya no hay equipos asignados a operaciones
     let equipoBuceoData = null;
-    if (operacionData.equipo_buceo_id) {
-      const { data: equipoData } = await supabase
-        .from('equipos_buceo')
-        .select(`
-          id,
-          nombre,
-          equipo_buceo_miembros (
-            usuario_id,
-            rol_equipo,
-            usuario:usuario_id (
-              nombre,
-              apellido
-            )
-          )
-        `)
-        .eq('id', operacionData.equipo_buceo_id)
-        .single();
-
-      if (equipoData) {
-        equipoBuceoData = {
-          ...equipoData,
-          miembros: equipoData.equipo_buceo_miembros?.map((miembro: any) => ({
-            usuario_id: miembro.usuario_id,
-            rol_equipo: miembro.rol_equipo,
-            nombre: miembro.usuario ? `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : ''
-          })) || []
-        };
-      }
-    }
 
     return {
       operacion: operacionData as OperationData,
@@ -90,21 +62,16 @@ export const validateOperationDocuments = async (operacionId: string): Promise<V
       .eq('firmado', true)
       .single();
 
-    const { data: operacionData } = await supabase
-      .from('operacion')
-      .select('equipo_buceo_id')
-      .eq('id', operacionId)
-      .single();
-
     const hasValidHPT = !!hptData;
     const hasValidAnexoBravo = !!anexoData;
-    const hasTeam = !!(operacionData?.equipo_buceo_id);
+    // Ya no verificamos equipos a nivel de operación
+    const hasTeam = true; // Los equipos se gestionan a nivel de inmersión
 
     return {
       hasValidHPT,
       hasValidAnexoBravo,
       hasTeam,
-      canExecute: hasValidHPT && hasValidAnexoBravo && hasTeam,
+      canExecute: hasValidHPT && hasValidAnexoBravo,
       hptCode: hptData?.codigo,
       anexoBravoCode: anexoData?.codigo
     };
