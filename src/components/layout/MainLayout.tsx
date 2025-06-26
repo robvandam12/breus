@@ -1,60 +1,69 @@
 
 import React from 'react';
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ModularSidebar } from "@/components/navigation/ModularSidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { EnhancedNotificationButton } from "@/components/layout/EnhancedNotificationButton";
 
 interface MainLayoutProps {
+  children: React.ReactNode;
   title: string;
   subtitle?: string;
   icon?: React.ElementType;
-  children: React.ReactNode;
-  actions?: React.ReactNode;
-  headerChildren?: React.ReactNode; // Alias para actions
-  className?: string;
-  contentClassName?: string;
+  breadcrumbs?: { label: string; href?: string }[];
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ 
-  title, 
-  subtitle, 
-  icon: Icon, 
-  children, 
-  actions,
-  headerChildren, // Nueva prop para compatibilidad
-  className = "",
-  contentClassName = ""
-}) => {
-  // Use headerChildren if provided, otherwise fall back to actions
-  const headerContent = headerChildren || actions;
-
+export const MainLayout = ({ children, title, subtitle, icon: Icon, breadcrumbs }: MainLayoutProps) => {
   return (
-    <div className={`min-h-screen flex w-full bg-gray-50 ${className}`}>
+    <SidebarProvider>
       <ModularSidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="mr-2" />
-            {Icon && <Icon className="w-8 h-8 text-blue-600" />}
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/">
+                  Dashboard
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {breadcrumbs?.map((breadcrumb, index) => (
+                <React.Fragment key={index}>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    {breadcrumb.href ? (
+                      <BreadcrumbLink href={breadcrumb.href}>
+                        {breadcrumb.label}
+                      </BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </React.Fragment>
+              ))}
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <div className="ml-auto">
+            <EnhancedNotificationButton />
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex items-center gap-2">
+            {Icon && <Icon className="w-6 h-6" />}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-              {subtitle && (
-                <p className="text-gray-600 text-sm mt-1">{subtitle}</p>
-              )}
+              <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+              {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
-          {headerContent && (
-            <div className="flex items-center gap-3">
-              {headerContent}
-            </div>
-          )}
-        </div>
-        
-        {/* Content */}
-        <div className={`flex-1 overflow-auto p-6 ${contentClassName}`}>
           {children}
         </div>
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
