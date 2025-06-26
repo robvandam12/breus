@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -58,9 +57,10 @@ const useInmersionesCRUD = (operacionId?: string) => {
         query = query.eq('operacion_id', operacionId);
       }
 
-      // Si no es superuser, filtrar por empresa del usuario
+      // Si no es superuser, filtrar por empresa del usuario usando el contexto correcto
       if (!isSuperuser && contextData?.company_id) {
-        query = query.eq('company_id', contextData.company_id);
+        // Filtrar por empresa_creadora_id en lugar de company_id
+        query = query.eq('empresa_creadora_id', contextData.company_id);
       }
 
       const { data, error } = await query;
@@ -87,9 +87,12 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
-      // Validar que tenga contexto empresarial
-      if (!inmersionData.company_id || !inmersionData.company_type) {
-        throw new Error('Contexto empresarial requerido para crear inmersión');
+      // Obtener contexto empresarial del usuario
+      const { data: userContext } = await supabase.rpc('get_user_company_context');
+      const contextData = userContext?.[0];
+
+      if (!contextData?.company_id) {
+        throw new Error('No se pudo determinar el contexto empresarial del usuario');
       }
 
       // Limpiar datos para enviar solo campos que existen en la tabla
@@ -112,8 +115,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
         planned_bottom_time: inmersionData.planned_bottom_time || null,
         context_type: inmersionData.context_type || 'direct',
         is_independent: inmersionData.is_independent || false,
-        company_id: inmersionData.company_id,
-        company_type: inmersionData.company_type,
+        empresa_creadora_id: contextData.company_id,
+        empresa_creadora_tipo: contextData.company_type,
         hpt_validado: inmersionData.hpt_validado || false,
         anexo_bravo_validado: inmersionData.anexo_bravo_validado || false
       };
