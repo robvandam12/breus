@@ -152,7 +152,7 @@ export const ModularSidebar = () => {
   const { profile, signOut } = useAuth();
 
   const hasAccess = (roles: string[]) => {
-    return roles.includes(profile?.rol || 'buzo');
+    return roles.includes(profile?.role || 'buzo');
   };
 
   const handleSignOut = async () => {
@@ -186,7 +186,7 @@ export const ModularSidebar = () => {
             </div>
             <div>
               <h2 className="font-bold text-lg">AquaSystem</h2>
-              <p className="text-xs text-gray-500">{profile?.rol || 'Usuario'}</p>
+              <p className="text-xs text-gray-500">{profile?.role || 'Usuario'}</p>
             </div>
           </div>
           <EnhancedNotificationButton />

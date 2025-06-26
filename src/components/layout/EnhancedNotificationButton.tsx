@@ -39,6 +39,10 @@ export const EnhancedNotificationButton = () => {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'inmersion_assignment':
@@ -106,7 +110,7 @@ export const EnhancedNotificationButton = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={markAllAsRead}
+                    onClick={handleMarkAllAsRead}
                     className="text-xs"
                   >
                     <CheckCheck className="w-4 h-4 mr-1" />

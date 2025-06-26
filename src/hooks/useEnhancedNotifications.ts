@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from './use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export interface EnhancedNotification {
   id: string;
@@ -127,7 +127,6 @@ export const useEnhancedNotifications = () => {
             toast({
               title: newNotification.title,
               description: newNotification.message,
-              duration: 5000,
             });
           }
         }

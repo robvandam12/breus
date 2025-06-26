@@ -37,7 +37,7 @@ const Inmersiones = () => {
       subtitle="Gestión de inmersiones y operaciones de buceo con sistema de notificaciones mejorado"
       icon={Anchor}
     >
-      <InmersionesDataTable onViewDetails={handleViewDetails} />
+      <InmersionesDataTable />
     </MainLayout>
   );
 };
