@@ -1169,7 +1169,6 @@ export type Database = {
       }
       inmersion: {
         Row: {
-          actual_end_time: string | null
           anexo_bravo_validado: boolean
           buzo_asistente: string | null
           buzo_asistente_id: string | null
@@ -1187,7 +1186,6 @@ export type Database = {
           empresa_creadora_id: string | null
           empresa_creadora_tipo: string | null
           estado: string
-          estimated_end_time: string | null
           external_operation_code: string | null
           fecha_inmersion: string
           hora_fin: string | null
@@ -1196,7 +1194,6 @@ export type Database = {
           inmersion_id: string
           is_independent: boolean | null
           metadata: Json | null
-          notification_status: Json | null
           objetivo: string
           observaciones: string | null
           operacion_id: string
@@ -1215,7 +1212,6 @@ export type Database = {
           work_type: string | null
         }
         Insert: {
-          actual_end_time?: string | null
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
           buzo_asistente_id?: string | null
@@ -1233,7 +1229,6 @@ export type Database = {
           empresa_creadora_id?: string | null
           empresa_creadora_tipo?: string | null
           estado?: string
-          estimated_end_time?: string | null
           external_operation_code?: string | null
           fecha_inmersion: string
           hora_fin?: string | null
@@ -1242,7 +1237,6 @@ export type Database = {
           inmersion_id?: string
           is_independent?: boolean | null
           metadata?: Json | null
-          notification_status?: Json | null
           objetivo: string
           observaciones?: string | null
           operacion_id: string
@@ -1261,7 +1255,6 @@ export type Database = {
           work_type?: string | null
         }
         Update: {
-          actual_end_time?: string | null
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
           buzo_asistente_id?: string | null
@@ -1279,7 +1272,6 @@ export type Database = {
           empresa_creadora_id?: string | null
           empresa_creadora_tipo?: string | null
           estado?: string
-          estimated_end_time?: string | null
           external_operation_code?: string | null
           fecha_inmersion?: string
           hora_fin?: string | null
@@ -1288,7 +1280,6 @@ export type Database = {
           inmersion_id?: string
           is_independent?: boolean | null
           metadata?: Json | null
-          notification_status?: Json | null
           objetivo?: string
           observaciones?: string | null
           operacion_id?: string
@@ -1331,51 +1322,6 @@ export type Database = {
           {
             foreignKeyName: "inmersion_supervisor_id_fkey"
             columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "usuario"
-            referencedColumns: ["usuario_id"]
-          },
-        ]
-      }
-      inmersion_team_members: {
-        Row: {
-          created_at: string
-          id: string
-          inmersion_id: string
-          is_emergency: boolean
-          role: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          inmersion_id: string
-          is_emergency?: boolean
-          role: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          inmersion_id?: string
-          is_emergency?: boolean
-          role?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inmersion_team_members_inmersion_id_fkey"
-            columns: ["inmersion_id"]
-            isOneToOne: false
-            referencedRelation: "inmersion"
-            referencedColumns: ["inmersion_id"]
-          },
-          {
-            foreignKeyName: "inmersion_team_members_user_id_fkey"
-            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "usuario"
             referencedColumns: ["usuario_id"]
@@ -2619,14 +2565,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_estimated_end_time: {
-        Args: {
-          start_date: string
-          start_time: string
-          planned_bottom_time: number
-        }
-        Returns: string
-      }
       can_access_company: {
         Args: { target_company_id: string; target_company_type: string }
         Returns: boolean
@@ -2642,16 +2580,6 @@ export type Database = {
           user_servicio_id?: string
         }
         Returns: undefined
-      }
-      create_workflow_notification: {
-        Args: {
-          p_user_id: string
-          p_type: string
-          p_title: string
-          p_message: string
-          p_metadata?: Json
-        }
-        Returns: string
       }
       emit_domain_event: {
         Args: {

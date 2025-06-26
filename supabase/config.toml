@@ -1,23 +1,21 @@
 
-# Configuración de Supabase
 project_id = "mwxytzuootrrudjfwsif"
 
 [api]
 enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+extra_is_healthy_checks = []
+
+[database]
+major_version = 15
+
+[functions.alert-escalation]
+verify_jwt = false
 
 [auth]
+# ... (configuraciones de auth existentes)
+
+[analytics]
+# ... (configuraciones de analytics existentes)
+
+[realtime]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://lovable.dev"]
-jwt_expiry = 3600
-enable_signup = true
-
-[functions.check-immersion-status]
-verify_jwt = false
-
-[functions.send-immersion-notifications]
-verify_jwt = false
