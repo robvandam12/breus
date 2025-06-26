@@ -27,7 +27,7 @@ export const EnhancedUserInviteForm = ({
   const [checkEmail, setCheckEmail] = useState(false);
   const [overwriteExisting, setOverwriteExisting] = useState(false);
 
-  const { data: emailStatus, isLoading: checkingEmail } = useEmailValidation(
+  const { data: emailStatus, isLoading: checkingEmail, error: validationError } = useEmailValidation(
     email, 
     checkEmail && email.includes('@')
   );
@@ -95,6 +95,11 @@ export const EnhancedUserInviteForm = ({
         {checkingEmail && (
           <p className="text-xs text-gray-500 mt-1">Verificando email...</p>
         )}
+        {validationError && (
+          <p className="text-xs text-red-500 mt-1">
+            No se pudo verificar el email. La invitación se creará sin validación previa.
+          </p>
+        )}
       </div>
 
       {/* Estado del email */}
@@ -150,6 +155,7 @@ export const EnhancedUserInviteForm = ({
             id="overwrite"
             checked={overwriteExisting}
             onCheckedChange={(checked) => setOverwriteExisting(checked as boolean)}
+            disabled={emailStatus.hasUser} // No permitir sobrescribir usuarios existentes
           />
           <Label htmlFor="overwrite" className="text-sm">
             {emailStatus.hasUser 

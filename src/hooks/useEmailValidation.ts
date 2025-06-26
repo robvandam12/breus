@@ -31,51 +31,76 @@ export const useEmailValidation = (email: string, enabled: boolean = true) => {
 
       console.log('Validating email:', email);
 
-      // Verificar si existe usuario registrado
-      const { data: userData, error: userError } = await supabase
-        .from('usuario')
-        .select('nombre, apellido, rol')
-        .eq('email', email.toLowerCase())
-        .single();
+      try {
+        // Verificar si existe usuario registrado
+        console.log('Checking for existing user...');
+        const { data: userData, error: userError } = await supabase
+          .from('usuario')
+          .select('nombre, apellido, rol')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') {
-        console.error('Error checking user:', userError);
+        console.log('User query result:', { userData, userError });
+
+        if (userError) {
+          console.error('Error checking user:', userError);
+          // Si es un error de RLS, continuar sin fallar completamente
+          if (userError.code !== 'PGRST116' && !userError.message.includes('row-level security')) {
+            throw userError;
+          }
+        }
+
+        // Verificar si existe invitación pendiente
+        console.log('Checking for pending invitation...');
+        const { data: invitationData, error: invitationError } = await supabase
+          .from('usuario_invitaciones')
+          .select('rol, fecha_expiracion')
+          .eq('email', email.toLowerCase())
+          .eq('estado', 'pendiente')
+          .gt('fecha_expiracion', new Date().toISOString())
+          .maybeSingle();
+
+        console.log('Invitation query result:', { invitationData, invitationError });
+
+        if (invitationError) {
+          console.error('Error checking invitation:', invitationError);
+          // Si es un error de RLS, continuar sin fallar completamente
+          if (invitationError.code !== 'PGRST116' && !invitationError.message.includes('row-level security')) {
+            throw invitationError;
+          }
+        }
+
+        const hasUser = !!userData;
+        const hasPendingInvitation = !!invitationData;
+        const exists = hasUser || hasPendingInvitation;
+
+        const result = {
+          exists,
+          hasUser,
+          hasPendingInvitation,
+          user: userData || undefined,
+          pendingInvitation: invitationData || undefined
+        };
+
+        console.log('Email validation result:', result);
+        return result;
+
+      } catch (error) {
+        console.error('Email validation error:', error);
+        // En caso de error, devolver resultado por defecto que permite continuar
+        return {
+          exists: false,
+          hasUser: false,
+          hasPendingInvitation: false
+        };
       }
-
-      // Verificar si existe invitación pendiente
-      const { data: invitationData, error: invitationError } = await supabase
-        .from('usuario_invitaciones')
-        .select('rol, fecha_expiracion')
-        .eq('email', email.toLowerCase())
-        .eq('estado', 'pendiente')
-        .gt('fecha_expiracion', new Date().toISOString())
-        .single();
-
-      if (invitationError && invitationError.code !== 'PGRST116') {
-        console.error('Error checking invitation:', invitationError);
-      }
-
-      const hasUser = !!userData;
-      const hasPendingInvitation = !!invitationData;
-      const exists = hasUser || hasPendingInvitation;
-
-      console.log('Email validation result:', {
-        email,
-        exists,
-        hasUser,
-        hasPendingInvitation
-      });
-
-      return {
-        exists,
-        hasUser,
-        hasPendingInvitation,
-        user: userData || undefined,
-        pendingInvitation: invitationData || undefined
-      };
     },
     enabled: enabled && !!email && email.includes('@'),
     staleTime: 30000, // 30 segundos
-    retry: 1
+    retry: (failureCount, error) => {
+      console.log('Retry attempt:', failureCount, error);
+      // Solo reintentar una vez para errores de red, no para errores de RLS
+      return failureCount < 1 && !error?.message?.includes('row-level security');
+    }
   });
 };
