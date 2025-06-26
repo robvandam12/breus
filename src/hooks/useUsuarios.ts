@@ -167,37 +167,22 @@ export const useUsuarios = () => {
     console.log('useUsuarios: deleteUsuario called with ID:', id);
     
     try {
-      // Primero verificar que el usuario existe
-      const { data: existingUser, error: checkError } = await supabase
-        .from('usuario')
-        .select('usuario_id')
-        .eq('usuario_id', id)
-        .single();
+      // Llamar a la Edge Function para eliminar el usuario
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-      if (checkError) {
-        console.error('useUsuarios: Error checking user existence:', checkError);
-        throw new Error(`Error verificando usuario: ${checkError.message}`);
+      if (error) {
+        console.error('useUsuarios: Error calling delete-user function:', error);
+        throw new Error(`Error eliminando usuario: ${error.message}`);
       }
 
-      if (!existingUser) {
-        console.error('useUsuarios: User not found with ID:', id);
-        throw new Error('Usuario no encontrado');
+      if (!data?.success) {
+        console.error('useUsuarios: Delete function returned failure:', data);
+        throw new Error(data?.error || 'Error eliminando usuario');
       }
 
-      console.log('useUsuarios: User exists, proceeding with deletion');
-
-      // Eliminar el usuario
-      const { error: deleteError } = await supabase
-        .from('usuario')
-        .delete()
-        .eq('usuario_id', id);
-
-      if (deleteError) {
-        console.error('useUsuarios: Error deleting user:', deleteError);
-        throw new Error(`Error eliminando usuario: ${deleteError.message}`);
-      }
-
-      console.log('useUsuarios: User deleted successfully from database');
+      console.log('useUsuarios: User deleted successfully via Edge Function');
       
       // Invalidar queries para refrescar los datos
       await queryClient.invalidateQueries({ queryKey: ['usuarios'] });
