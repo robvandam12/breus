@@ -15,6 +15,7 @@ interface ValidationState {
 
 interface ValidationResult {
   success: boolean;
+  isValid: boolean;
   message: string;
   suggestions?: string[];
   nextStep?: string;
@@ -28,6 +29,10 @@ export const useContextualValidator = (operationId?: string) => {
     canCreateIndependent: true,
     contextType: 'independent'
   });
+
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isValidating, setIsValidating] = useState(false);
 
   const { getUserContext, hasModuleAccess, modules } = useModularSystem();
   const { profile } = useAuth();
@@ -65,18 +70,28 @@ export const useContextualValidator = (operationId?: string) => {
         canCreateIndependent: true, // Core siempre disponible
         contextType
       });
+
+      // Actualizar warnings según contexto
+      const newWarnings: string[] = [];
+      if (userContext.isContratista && !operationalContext.hasPlanning) {
+        newWarnings.push('Módulo de planificación no activo - Solo inmersiones independientes disponibles');
+      }
+      setWarnings(newWarnings);
+      setErrors([]);
     }
-  }, [operationalContext]);
+  }, [operationalContext, userContext]);
 
   // Validar para inmersión específica
   const validateForInmersion = async (operationId: string): Promise<ValidationResult> => {
     if (!operationalContext) {
       return {
         success: false,
+        isValid: false,
         message: 'Contexto operacional no disponible'
       };
     }
 
+    setIsValidating(true);
     try {
       // Verificar si la operación existe y está disponible
       const { data: operation } = await supabase
@@ -88,6 +103,7 @@ export const useContextualValidator = (operationId?: string) => {
       if (!operation) {
         return {
           success: false,
+          isValid: false,
           message: 'Operación no encontrada',
           nextStep: 'Crear inmersión independiente'
         };
@@ -96,6 +112,7 @@ export const useContextualValidator = (operationId?: string) => {
       if (operation.estado !== 'activa') {
         return {
           success: false,
+          isValid: false,
           message: `La operación ${operation.codigo} no está activa`,
           nextStep: 'Seleccionar operación activa'
         };
@@ -120,6 +137,7 @@ export const useContextualValidator = (operationId?: string) => {
         if (!hpt || !anexo) {
           return {
             success: false,
+            isValid: false,
             message: 'Operación requiere HPT y Anexo Bravo firmados',
             suggestions: ['Completar documentos requeridos', 'Crear inmersión independiente']
           };
@@ -128,6 +146,7 @@ export const useContextualValidator = (operationId?: string) => {
 
       return {
         success: true,
+        isValid: true,
         message: `Inmersión puede asociarse a ${operation.codigo}`,
         nextStep: 'Proceder con inmersión planificada'
       };
@@ -136,9 +155,12 @@ export const useContextualValidator = (operationId?: string) => {
       console.error('Error validating operation:', error);
       return {
         success: false,
+        isValid: false,
         message: 'Error en validación',
         nextStep: 'Reintentar o crear inmersión independiente'
       };
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -161,18 +183,34 @@ export const useContextualValidator = (operationId?: string) => {
     }
   };
 
+  // Propiedades directas que los componentes esperan
+  const isValid = validationState.isValid && errors.length === 0;
+  const canProceed = isValid && validationState.canCreateIndependent;
+  const moduleActive = validationState.hasPlanning;
+  const requiereDocumentos = validationState.requiresDocuments;
+
   return {
     validationState,
     validateForInmersion,
     getOperationSuggestions,
     refresh: refreshContext,
     
-    // Helpers contextuales
+    // Propiedades directas esperadas por los componentes
+    isValid,
+    canProceed,
+    moduleActive,
+    warnings,
+    errors,
+    isValidating,
+    requiereDocumentos,
+    
+    // Helpers contextuales (mantenidos para compatibilidad)
     shouldShowPlanningOption: validationState.hasPlanning,
     shouldShowIndependentOption: validationState.canCreateIndependent,
     isPlannedOnly: validationState.contextType === 'planned',
     isIndependentOnly: validationState.contextType === 'independent',
     isMixedMode: validationState.contextType === 'mixed',
+    isOperativaDirecta: !validationState.hasPlanning || userContext.isContratista,
     
     // Mensajes contextuales
     getContextMessage: () => {
@@ -190,7 +228,6 @@ export const useContextualValidator = (operationId?: string) => {
     
     // Estados específicos
     canAssociateToOperations: validationState.hasPlanning,
-    requiresOperationCode: userContext.isContratista,
-    isOperativaDirecta: !validationState.hasPlanning || userContext.isContratista
+    requiresOperationCode: userContext.isContratista
   };
 };
