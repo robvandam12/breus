@@ -2674,7 +2674,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_salmonera_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_user_servicio: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_servicio_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
