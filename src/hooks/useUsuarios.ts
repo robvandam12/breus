@@ -29,11 +29,6 @@ export const useUsuarios = () => {
     errorMessage: "Error al enviar invitación"
   });
 
-  const { execute: executeDelete } = useAsyncAction({
-    successMessage: "Usuario eliminado exitosamente",
-    errorMessage: "Error al eliminar usuario"
-  });
-
   const { data: usuarios = [], isLoading, error } = useQuery({
     queryKey: ['usuarios'],
     queryFn: async () => {
@@ -169,16 +164,61 @@ export const useUsuarios = () => {
   };
 
   const deleteUsuario = async (id: string) => {
-    return executeDelete(async () => {
-      const { error } = await supabase
+    console.log('useUsuarios: deleteUsuario called with ID:', id);
+    
+    try {
+      // Primero verificar que el usuario existe
+      const { data: existingUser, error: checkError } = await supabase
+        .from('usuario')
+        .select('usuario_id')
+        .eq('usuario_id', id)
+        .single();
+
+      if (checkError) {
+        console.error('useUsuarios: Error checking user existence:', checkError);
+        throw new Error(`Error verificando usuario: ${checkError.message}`);
+      }
+
+      if (!existingUser) {
+        console.error('useUsuarios: User not found with ID:', id);
+        throw new Error('Usuario no encontrado');
+      }
+
+      console.log('useUsuarios: User exists, proceeding with deletion');
+
+      // Eliminar el usuario
+      const { error: deleteError } = await supabase
         .from('usuario')
         .delete()
         .eq('usuario_id', id);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('useUsuarios: Error deleting user:', deleteError);
+        throw new Error(`Error eliminando usuario: ${deleteError.message}`);
+      }
+
+      console.log('useUsuarios: User deleted successfully from database');
       
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-    });
+      // Invalidar queries para refrescar los datos
+      await queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      await queryClient.invalidateQueries({ queryKey: ['users-by-company'] });
+      
+      console.log('useUsuarios: Queries invalidated');
+
+      toast({
+        title: "Usuario eliminado",
+        description: "El usuario ha sido eliminado exitosamente.",
+      });
+
+    } catch (error: any) {
+      console.error('useUsuarios: deleteUsuario error:', error);
+      toast({
+        title: "Error",
+        description: `Error al eliminar usuario: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error; // Re-throw para que el componente pueda manejarlo
+    }
   };
 
   return {
