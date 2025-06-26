@@ -51,6 +51,7 @@ function App() {
             <SidebarProvider>
               <Routes>
                 {/* Auth Routes */}
+                <Route path="/login" element={<Login />} />
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/register" element={<RegisterWithToken />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
