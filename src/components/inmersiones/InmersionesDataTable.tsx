@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -170,24 +171,19 @@ export const InmersionesDataTable = () => {
                   <ImmersionCard 
                     key={inmersion.inmersion_id} 
                     inmersion={{
-                      inmersion_id: inmersion.inmersion_id,
-                      codigo: inmersion.codigo,
-                      fecha_inmersion: inmersion.fecha_inmersion,
-                      estado: inmersion.estado,
-                      objetivo: inmersion.objetivo,
+                      id: inmersion.inmersion_id.toString(),
+                      fecha: inmersion.fecha_inmersion,
+                      hora: inmersion.hora_inicio,
+                      buzo: inmersion.buzo_principal,
                       supervisor: inmersion.supervisor,
-                      buzo_principal: inmersion.buzo_principal,
-                      profundidad_max: inmersion.profundidad_max,
-                      operacion_id: inmersion.operacion_id,
-                      is_independent: inmersion.is_independent || false,
-                      hora_inicio: inmersion.hora_inicio,
-                      temperatura_agua: inmersion.temperatura_agua,
-                      visibilidad: inmersion.visibilidad,
-                      corriente: inmersion.corriente,
-                      hpt_validado: inmersion.hpt_validado,
-                      anexo_bravo_validado: inmersion.anexo_bravo_validado,
-                      created_at: inmersion.created_at,
-                      updated_at: inmersion.updated_at
+                      estado: inmersion.estado,
+                      profundidad: inmersion.profundidad_max,
+                      objetivo: inmersion.objetivo,
+                      codigo: inmersion.codigo,
+                      operacion: inmersion.operacion_id ? {
+                        nombre: `Operación ${inmersion.operacion_id}`,
+                        codigo: inmersion.codigo
+                      } : undefined
                     }} 
                   />
                 ))}
@@ -230,7 +226,7 @@ export const InmersionesDataTable = () => {
               </DialogDescription>
             </DialogHeader>
             <InmersionContextualForm 
-              onSubmit={handleCreatePlannedInmersion}
+              onSuccess={() => setShowPlannedInmersionDialog(false)}
               onCancel={() => setShowPlannedInmersionDialog(false)}
             />
           </DialogContent>
