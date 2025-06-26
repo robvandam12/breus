@@ -13,9 +13,9 @@ export const ContextualOperationBadge = ({
   operacionId, 
   showDetails = false 
 }: ContextualOperationBadgeProps) => {
-  const { validationState, isOperativaDirecta, requiereDocumentos, warnings, errors } = useContextualValidator(operacionId);
+  const { validationState, isOperativaDirecta, requiereDocumentos, warnings, errors, isValidating } = useContextualValidator(operacionId);
 
-  if (!validationState.result) {
+  if (isValidating) {
     return (
       <Badge variant="outline" className="flex items-center gap-1">
         <Clock className="w-3 h-3" />
@@ -34,19 +34,19 @@ export const ContextualOperationBadge = ({
       );
     }
 
-    if (validationState.result?.es_legacy) {
+    if (validationState.contextType === 'planned') {
       return (
-        <Badge variant="outline" className="flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          Legacy
+        <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" />
+          Planificada
         </Badge>
       );
     }
 
     return (
-      <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
-        <CheckCircle className="w-3 h-3" />
-        Planificada
+      <Badge variant="outline" className="flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" />
+        Independiente
       </Badge>
     );
   };

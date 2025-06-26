@@ -18,18 +18,19 @@ export const ContextualInmersionCreator = ({
   onCreateInmersion,
   disabled = false
 }: ContextualInmersionCreatorProps) => {
-  const [isValidating, setIsValidating] = useState(false);
+  const [isLocalValidating, setIsLocalValidating] = useState(false);
   const { 
     validationState, 
     validateForInmersion, 
     isValid, 
     isOperativaDirecta, 
     warnings, 
-    errors 
+    errors,
+    isValidating
   } = useContextualValidator(operacionId);
 
   const handleCreateInmersion = async () => {
-    setIsValidating(true);
+    setIsLocalValidating(true);
     try {
       const result = await validateForInmersion(operacionId);
       
@@ -39,11 +40,12 @@ export const ContextualInmersionCreator = ({
     } catch (error) {
       console.error('Error validating for immersion creation:', error);
     } finally {
-      setIsValidating(false);
+      setIsLocalValidating(false);
     }
   };
 
   const canCreate = isValid && !disabled;
+  const isCurrentlyValidating = isValidating || isLocalValidating;
 
   return (
     <Card>
@@ -56,7 +58,7 @@ export const ContextualInmersionCreator = ({
       
       <CardContent className="space-y-4">
         {/* Estado de validación */}
-        {validationState.isValidating && (
+        {isCurrentlyValidating && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -106,12 +108,12 @@ export const ContextualInmersionCreator = ({
         {/* Botón de crear */}
         <Button 
           onClick={handleCreateInmersion}
-          disabled={!canCreate || isValidating}
+          disabled={!canCreate || isCurrentlyValidating}
           className="w-full"
           size="lg"
         >
           <Plus className="w-4 h-4 mr-2" />
-          {isValidating ? 'Validando...' : 'Crear Inmersión'}
+          {isCurrentlyValidating ? 'Validando...' : 'Crear Inmersión'}
         </Button>
 
         {/* Estado final */}
