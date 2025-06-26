@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +25,8 @@ export default function RegisterWithToken() {
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -46,6 +47,23 @@ export default function RegisterWithToken() {
 
     validateToken();
   }, [token, navigate]);
+
+  // Timer for rate limit
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (rateLimited && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            setRateLimited(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [rateLimited, timeRemaining]);
 
   const validateToken = async () => {
     try {
@@ -95,6 +113,15 @@ export default function RegisterWithToken() {
     
     if (!invitation) return;
 
+    if (rateLimited) {
+      toast({
+        title: "Límite de intentos",
+        description: `Debe esperar ${timeRemaining} segundos antes de intentar nuevamente.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -134,6 +161,19 @@ export default function RegisterWithToken() {
 
       if (authError) {
         console.error('Error en auth.signUp:', authError);
+        
+        // Manejar rate limiting específicamente
+        if (authError.message?.includes('rate limit') || authError.message?.includes('36 seconds')) {
+          setRateLimited(true);
+          setTimeRemaining(36);
+          toast({
+            title: "Límite de intentos excedido",
+            description: "Por seguridad, debe esperar 36 segundos antes de intentar nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         throw authError;
       }
 
@@ -248,10 +288,16 @@ export default function RegisterWithToken() {
       
       if (error.message?.includes('Email rate limit exceeded')) {
         errorMessage = "Límite de envío de emails excedido. Intenta nuevamente en unos minutos.";
+        setRateLimited(true);
+        setTimeRemaining(60);
       } else if (error.message?.includes('User already registered')) {
         errorMessage = "Este email ya está registrado. Intenta iniciar sesión.";
       } else if (error.message?.includes('row-level security')) {
         errorMessage = "Error de permisos. Verifica que la invitación sea válida.";
+      } else if (error.message?.includes('rate limit') || error.message?.includes('36 seconds')) {
+        errorMessage = "Límite de intentos excedido. Debe esperar antes de intentar nuevamente.";
+        setRateLimited(true);
+        setTimeRemaining(36);
       }
       
       toast({
@@ -301,6 +347,11 @@ export default function RegisterWithToken() {
           <CardDescription>
             Has sido invitado como <strong>{getRoleDisplayName(invitation.rol)}</strong>
           </CardDescription>
+          {rateLimited && (
+            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800 text-sm">
+              Debe esperar {timeRemaining} segundos antes de intentar nuevamente
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -322,7 +373,7 @@ export default function RegisterWithToken() {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 required
-                disabled={submitting}
+                disabled={submitting || rateLimited}
               />
             </div>
 
@@ -333,7 +384,7 @@ export default function RegisterWithToken() {
                 value={formData.apellido}
                 onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
                 required
-                disabled={submitting}
+                disabled={submitting || rateLimited}
               />
             </div>
 
@@ -345,7 +396,7 @@ export default function RegisterWithToken() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                disabled={submitting}
+                disabled={submitting || rateLimited}
                 minLength={6}
               />
             </div>
@@ -358,7 +409,7 @@ export default function RegisterWithToken() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
-                disabled={submitting}
+                disabled={submitting || rateLimited}
                 minLength={6}
               />
             </div>
@@ -366,9 +417,9 @@ export default function RegisterWithToken() {
             <Button 
               type="submit" 
               className="w-full"
-              disabled={submitting || !formData.nombre || !formData.apellido || !formData.password}
+              disabled={submitting || rateLimited || !formData.nombre || !formData.apellido || !formData.password}
             >
-              {submitting ? "Creando cuenta..." : "Crear cuenta"}
+              {submitting ? "Creando cuenta..." : rateLimited ? `Esperar ${timeRemaining}s` : "Crear cuenta"}
             </Button>
           </form>
         </CardContent>

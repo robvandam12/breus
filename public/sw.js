@@ -2,11 +2,7 @@
 const CACHE_NAME = 'breus-v1';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/icon-192x192.svg',
-  '/icon-512x512.svg'
+  '/manifest.json'
 ];
 
 // Install event
@@ -14,7 +10,16 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        return cache.addAll(urlsToCache);
+        // Cache only URLs that are likely to exist
+        return cache.addAll(urlsToCache.filter(url => {
+          // Skip bundled assets as they change frequently
+          return !url.includes('/static/') && !url.includes('bundle.js') && !url.includes('main.css');
+        }));
+      })
+      .catch(error => {
+        console.error('Failed to cache resources:', error);
+        // Continue without caching if there's an error
+        return Promise.resolve();
       })
   );
 });
@@ -28,9 +33,18 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
+        return fetch(event.request).catch(error => {
+          console.error('Failed to fetch:', error);
+          // Return a basic response for navigation requests if offline
+          if (event.request.mode === 'navigate') {
+            return new Response('App is offline. Please check your connection.', {
+              status: 200,
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
+          throw error;
+        });
+      })
   );
 });
 
@@ -57,21 +71,30 @@ self.addEventListener('sync', event => {
 });
 
 async function doBackgroundSync() {
-  // Sync offline actions when back online
-  const pendingActions = await getStoredActions();
-  for (const action of pendingActions) {
-    try {
-      await syncAction(action);
-    } catch (error) {
-      console.error('Failed to sync action:', error);
+  try {
+    // Sync offline actions when back online
+    const pendingActions = await getStoredActions();
+    for (const action of pendingActions) {
+      try {
+        await syncAction(action);
+      } catch (error) {
+        console.error('Failed to sync action:', error);
+      }
     }
+  } catch (error) {
+    console.error('Background sync failed:', error);
   }
 }
 
 async function getStoredActions() {
-  // Get actions from IndexedDB or localStorage
-  const stored = localStorage.getItem('breus_pending_actions');
-  return stored ? JSON.parse(stored) : [];
+  try {
+    // Get actions from localStorage
+    const stored = localStorage.getItem('breus_pending_actions');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to get stored actions:', error);
+    return [];
+  }
 }
 
 async function syncAction(action) {
