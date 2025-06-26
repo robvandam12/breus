@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -28,7 +27,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending invitation to:', email, 'Role:', rol, 'Invited by:', invitedBy);
 
-    const invitationUrl = `${req.headers.get('origin')}/auth/register?token=${token}`;
+    // Cambiar la URL de invitación para usar la nueva página
+    const invitationUrl = `${req.headers.get('origin')}/auth/register-invitation?token=${token}`;
 
     const getRoleDisplayName = (role: string) => {
       switch (role) {
@@ -62,15 +62,8 @@ const handler = async (req: Request): Promise<Response> => {
               <strong>${invitedBy}</strong> te ha invitado a unirte a la plataforma Breus con el rol de <strong>${getRoleDisplayName(rol)}</strong>.
             </p>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-              Breus te permitirá gestionar de forma digital todos los aspectos de las operaciones de buceo profesional, incluyendo:
+              Al completar tu registro, serás automáticamente asociado a la empresa y tendrás acceso a todas las funcionalidades de la plataforma.
             </p>
-            <ul style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0; padding-left: 20px;">
-              <li>Gestión de inmersiones y bitácoras</li>
-              <li>Formularios HPT y Anexo Bravo</li>
-              <li>Control de cumplimiento normativo</li>
-              <li>Reportes y trazabilidad completa</li>
-              <li>Seguimiento de personal de buceo</li>
-            </ul>
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
@@ -84,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
                       font-size: 16px; 
                       display: inline-block;
                       box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39);">
-              Crear mi cuenta en Breus
+              Completar mi registro
             </a>
           </div>
           
