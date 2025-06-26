@@ -10,9 +10,50 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Search, Filter, Info, Calendar, Zap } from "lucide-react";
 import { useInmersionesTable } from '@/hooks/useInmersionesTable';
-import { ImmersionCard } from './ImmersionCard';
 import { IndependentImmersionForm } from './IndependentImmersionForm';
 import { InmersionContextualForm } from './InmersionContextualForm';
+
+// Componente simple para mostrar inmersiones hasta tener el ImmersionCard completo
+const SimpleInmersionCard = ({ inmersion }: { inmersion: any }) => {
+  const getEstadoBadgeColor = (estado: string) => {
+    const colors: Record<string, string> = {
+      planificada: 'bg-blue-100 text-blue-700',
+      en_proceso: 'bg-yellow-100 text-yellow-700',
+      completada: 'bg-green-100 text-green-700',
+      cancelada: 'bg-red-100 text-red-700',
+    };
+    return colors[estado] || 'bg-gray-100 text-gray-700';
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
+          <Badge className={getEstadoBadgeColor(inmersion.estado)}>
+            {inmersion.estado}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Calendar className="w-4 h-4" />
+          <span>{new Date(inmersion.fecha_inmersion).toLocaleDateString()}</span>
+        </div>
+        <div className="text-sm text-gray-600">
+          <p><strong>Buzo:</strong> {inmersion.buzo_principal}</p>
+          <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
+          <p><strong>Profundidad:</strong> {inmersion.profundidad_max}m</p>
+        </div>
+        {inmersion.operacion_id && (
+          <div className="text-sm text-blue-600">
+            <p>Operación: {inmersion.operacion_id}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 export const InmersionesDataTable = () => {
   const {
@@ -168,20 +209,9 @@ export const InmersionesDataTable = () => {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredInmersiones.map((inmersion) => (
-                  <ImmersionCard 
+                  <SimpleInmersionCard 
                     key={inmersion.inmersion_id} 
-                    inmersion={{
-                      id: inmersion.inmersion_id,
-                      fecha: inmersion.fecha_inmersion,
-                      hora: inmersion.hora_inicio,
-                      buzo: inmersion.buzo_principal,
-                      supervisor: inmersion.supervisor,
-                      estado: inmersion.estado,
-                      profundidad: inmersion.profundidad_max,
-                      objetivo: inmersion.objetivo,
-                      codigo: inmersion.codigo,
-                      operacion: inmersion.operacion_id ? `Operación ${inmersion.operacion_id}` : undefined
-                    }} 
+                    inmersion={inmersion}
                   />
                 ))}
               </div>
