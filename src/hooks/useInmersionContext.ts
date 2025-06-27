@@ -78,9 +78,9 @@ export const useInmersionContext = () => {
   const getContextForUser = () => {
     if (!profile) return null;
 
-    const isSuperuser = profile.rol === 'superuser';
-    const isSalmonera = profile.rol === 'admin_salmonera' && profile.salmonera_id;
-    const isContratista = profile.rol === 'admin_servicio' && profile.servicio_id;
+    const isSuperuser = profile.role === 'superuser';
+    const isSalmonera = profile.role === 'admin_salmonera' && profile.salmonera_id;
+    const isContratista = profile.role === 'admin_servicio' && profile.servicio_id;
 
     return {
       isSuperuser,
