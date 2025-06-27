@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -34,8 +35,6 @@ const useInmersionesCRUD = (operacionId?: string) => {
       const contextData = userContext?.[0];
       const isSuperuser = contextData?.is_superuser;
 
-      console.log('User context data:', contextData);
-
       let query = supabase
         .from('inmersion')
         .select(`
@@ -44,6 +43,7 @@ const useInmersionesCRUD = (operacionId?: string) => {
             id,
             codigo,
             nombre,
+            equipo_buceo_id,
             salmonera_id,
             contratista_id,
             salmoneras:salmonera_id(nombre),
@@ -58,29 +58,14 @@ const useInmersionesCRUD = (operacionId?: string) => {
         query = query.eq('operacion_id', operacionId);
       }
 
-      // Si no es superuser, aplicar filtros según el contexto del usuario
-      if (!isSuperuser && contextData) {
-        if (contextData.company_type === 'salmonera') {
-          const salmoneraId = contextData.company_id;
-          console.log('Filtering for salmonera ID:', salmoneraId);
-          
-          // Consulta directa sin el filtro OR problemático
-          query = query.eq('operacion.salmonera_id', salmoneraId);
-        } else if (contextData.company_type === 'contratista') {
-          const contratistaId = contextData.company_id;
-          console.log('Filtering for contratista ID:', contratistaId);
-          
-          // Consulta directa sin el filtro OR problemático
-          query = query.eq('operacion.contratista_id', contratistaId);
-        }
+      // Si no es superuser, filtrar por empresa del usuario
+      if (!isSuperuser && contextData?.company_id) {
+        query = query.eq('company_id', contextData.company_id);
       }
 
       const { data, error } = await query;
 
-      if (error) {
-        console.error('Query error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       return data.map(inmersion => ({
         ...inmersion,
@@ -102,9 +87,10 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
-      // Obtener contexto del usuario para establecer company_id y company_type
-      const { data: userContext } = await supabase.rpc('get_user_company_context');
-      const contextData = userContext?.[0];
+      // Validar que tenga contexto empresarial
+      if (!inmersionData.company_id || !inmersionData.company_type) {
+        throw new Error('Contexto empresarial requerido para crear inmersión');
+      }
 
       // Limpiar datos para enviar solo campos que existen en la tabla
       const cleanData = {
@@ -126,8 +112,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
         planned_bottom_time: inmersionData.planned_bottom_time || null,
         context_type: inmersionData.context_type || 'direct',
         is_independent: inmersionData.is_independent || false,
-        company_id: contextData?.company_id || null,
-        company_type: contextData?.company_type || null,
+        company_id: inmersionData.company_id,
+        company_type: inmersionData.company_type,
         hpt_validado: inmersionData.hpt_validado || false,
         anexo_bravo_validado: inmersionData.anexo_bravo_validado || false
       };
