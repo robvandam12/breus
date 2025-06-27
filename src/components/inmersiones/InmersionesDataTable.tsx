@@ -1,94 +1,277 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { UnifiedInmersionForm } from '@/components/inmersion/UnifiedInmersionForm';
-import { useInmersiones } from '@/hooks/useInmersiones';
-import { toast } from '@/hooks/use-toast';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Filter, Calendar, Zap, Anchor } from "lucide-react";
+import { useInmersionesTable } from '@/hooks/useInmersionesTable';
+import { IndependentImmersionForm } from './IndependentImmersionForm';
+import { InmersionContextualForm } from './InmersionContextualForm';
+import { InmersionActions } from '../inmersion/InmersionActions';
 
 export const InmersionesDataTable = () => {
-  const [showForm, setShowForm] = useState(false);
-  const { inmersiones, createInmersion, isCreating } = useInmersiones();
+  const {
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    typeFilter,
+    setTypeFilter,
+    showNewInmersionDialog,
+    setShowNewInmersionDialog,
+    showPlannedInmersionDialog,
+    setShowPlannedInmersionDialog,
+    filteredInmersiones,
+    isLoading,
+    estadisticas,
+    hasPlanning,
+    handleCreateDirectInmersion,
+    handleCreatePlannedInmersion,
+  } = useInmersionesTable();
 
-  const handleCreateInmersion = async (data: any) => {
-    try {
-      await createInmersion(data);
-      setShowForm(false);
-      toast({
-        title: "Éxito",
-        description: "Inmersión creada correctamente",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Error al crear la inmersión",
-        variant: "destructive",
-      });
-    }
+  const getEstadoBadgeColor = (estado: string) => {
+    const colors: Record<string, string> = {
+      planificada: 'bg-blue-100 text-blue-700',
+      en_proceso: 'bg-yellow-100 text-yellow-700',
+      completada: 'bg-green-100 text-green-700',
+      cancelada: 'bg-red-100 text-red-700',
+    };
+    return colors[estado] || 'bg-gray-100 text-gray-700';
   };
 
-  if (showForm) {
+  const getTipoBadgeColor = (isIndependent: boolean, operacionId: string | null) => {
+    if (isIndependent || !operacionId) {
+      return 'bg-purple-100 text-purple-700';
+    }
+    return 'bg-blue-100 text-blue-700';
+  };
+
+  const getTipoLabel = (isIndependent: boolean, operacionId: string | null) => {
+    if (isIndependent || !operacionId) {
+      return 'Independiente';
+    }
+    return 'Planificada';
+  };
+
+  if (isLoading) {
     return (
-      <UnifiedInmersionForm
-        onSubmit={handleCreateInmersion}
-        onCancel={() => setShowForm(false)}
-        isLoading={isCreating}
-      />
+      <div className="space-y-4">
+        <div className="h-8 bg-gray-200 rounded animate-pulse" />
+        <div className="h-32 bg-gray-200 rounded animate-pulse" />
+        <div className="h-64 bg-gray-200 rounded animate-pulse" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Inmersiones</h2>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Inmersión
-        </Button>
+      {/* Header con botones de acción */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {/* Botón crear inmersión independiente siempre disponible */}
+          <Button onClick={() => setShowNewInmersionDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Inmersión
+          </Button>
+          
+          {/* Botón crear inmersión planificada solo si tiene planning */}
+          {hasPlanning && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowPlannedInmersionDialog(true)}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Inmersión Planificada
+            </Button>
+          )}
+        </div>
+
+        {/* Estadísticas rápidas */}
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Anchor className="w-4 h-4" />
+            Total: {estadisticas.total}
+          </span>
+          <span>Completadas: {estadisticas.completadas}</span>
+          <span>En Proceso: {estadisticas.enProceso}</span>
+        </div>
       </div>
 
+      {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Inmersiones</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            Filtros
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {inmersiones.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No hay inmersiones registradas</p>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Primera Inmersión
-              </Button>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar por código, objetivo o observaciones..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="planificada">Planificada</SelectItem>
+                <SelectItem value="en_proceso">En Proceso</SelectItem>
+                <SelectItem value="completada">Completada</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filtro de tipo solo si tiene planning */}
+            {hasPlanning && (
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="independent">Independientes</SelectItem>
+                  <SelectItem value="planned">Planificadas</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabla de inmersiones */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredInmersiones.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+                  <Anchor className="w-full h-full" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  No hay inmersiones
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  No se encontraron inmersiones con los filtros aplicados.
+                </p>
+                <Button onClick={() => setShowNewInmersionDialog(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Nueva Inmersión
+                </Button>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {inmersiones.map((inmersion) => (
-                <div key={inmersion.inmersion_id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold">{inmersion.codigo}</h3>
-                      <p className="text-sm text-gray-600">{inmersion.objetivo}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')} - {inmersion.hora_inicio}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`inline-block px-2 py-1 rounded text-xs ${
-                        inmersion.estado === 'completada' ? 'bg-green-100 text-green-800' :
-                        inmersion.estado === 'en_curso' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Buzo Principal</TableHead>
+                  <TableHead>Supervisor</TableHead>
+                  <TableHead>Profundidad</TableHead>
+                  <TableHead>Operación</TableHead>
+                  <TableHead className="w-[50px]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInmersiones.map((inmersion) => (
+                  <TableRow key={inmersion.inmersion_id}>
+                    <TableCell className="font-medium">
+                      {inmersion.codigo}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getTipoBadgeColor(inmersion.is_independent, inmersion.operacion_id)}>
+                        {getTipoLabel(inmersion.is_independent, inmersion.operacion_id)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(inmersion.fecha_inmersion).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getEstadoBadgeColor(inmersion.estado)}>
                         {inmersion.estado}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{inmersion.buzo_principal}</TableCell>
+                    <TableCell>{inmersion.supervisor}</TableCell>
+                    <TableCell>{inmersion.profundidad_max}m</TableCell>
+                    <TableCell>
+                      {inmersion.operacion_id ? (
+                        <span className="text-sm text-blue-600">
+                          {(inmersion as any).operacion?.codigo || inmersion.operacion_id}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <InmersionActions 
+                        inmersionId={inmersion.inmersion_id}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo para nueva inmersión independiente */}
+      <Dialog open={showNewInmersionDialog} onOpenChange={setShowNewInmersionDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Nueva Inmersión Independiente
+            </DialogTitle>
+            <DialogDescription>
+              Crea una inmersión independiente sin operación asociada. Incluye la selección del personal de buceo para la inmersión.
+            </DialogDescription>
+          </DialogHeader>
+          <IndependentImmersionForm 
+            onSubmit={handleCreateDirectInmersion}
+            onCancel={() => setShowNewInmersionDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para inmersión planificada (solo si tiene planning) */}
+      {hasPlanning && (
+        <Dialog open={showPlannedInmersionDialog} onOpenChange={setShowPlannedInmersionDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Nueva Inmersión Planificada
+              </DialogTitle>
+              <DialogDescription>
+                Crea una inmersión asociada a una operación planificada existente.
+              </DialogDescription>
+            </DialogHeader>
+            <InmersionContextualForm 
+              onSuccess={() => setShowPlannedInmersionDialog(false)}
+              onCancel={() => setShowPlannedInmersionDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
