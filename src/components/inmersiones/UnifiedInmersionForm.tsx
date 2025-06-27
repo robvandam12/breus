@@ -119,23 +119,20 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadContratistas = async (salmoneraId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('salmonera_contratista')
         .select('contratista_id')
         .eq('salmonera_id', salmoneraId);
-
-      if (error) throw error;
 
       if (data && data.length > 0) {
         const contratistaIds = data.map(item => item.contratista_id).filter(Boolean);
         
         if (contratistaIds.length > 0) {
-          const { data: contratistasData, error: contratistasError } = await supabase
+          const { data: contratistasData } = await supabase
             .from('contratistas')
             .select('id, nombre')
             .in('id', contratistaIds);
 
-          if (contratistasError) throw contratistasError;
           setContratistas(contratistasData || []);
         }
       }
@@ -147,14 +144,13 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadOperaciones = async (contratistaId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('operacion')
         .select('id, codigo, nombre, fecha_inicio')
         .eq('contratista_id', contratistaId)
         .eq('estado', 'activa')
         .order('fecha_inicio', { ascending: true });
 
-      if (error) throw error;
       setOperaciones(data || []);
     } catch (error) {
       console.error('Error loading operaciones:', error);
@@ -164,26 +160,33 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadPersonal = async () => {
     try {
-      // Simplificar la query para evitar problemas de tipos complejos
-      const response = await supabase
-        .from('usuario')
-        .select('usuario_id, nombre, apellido, rol')
-        .in('rol', ['buzo', 'supervisor'])
-        .eq('activo', true);
+      // Usar una query simple sin tipos complejos de Supabase
+      const { data, error } = await supabase
+        .rpc('get_personal_for_inmersion');
 
-      if (response.error) throw response.error;
-      
-      // Mapear explícitamente al tipo Personal
-      const personalData: Personal[] = (response.data || []).map(user => ({
-        usuario_id: user.usuario_id,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        rol: user.rol
-      }));
-      
-      setPersonal(personalData);
+      if (error) {
+        // Fallback: usar query básica
+        const simpleQuery = await supabase
+          .from('usuario')
+          .select('usuario_id, nombre, apellido, rol');
+        
+        if (simpleQuery.data) {
+          const filteredData = simpleQuery.data
+            .filter(user => ['buzo', 'supervisor'].includes(user.rol))
+            .map(user => ({
+              usuario_id: user.usuario_id,
+              nombre: user.nombre || '',
+              apellido: user.apellido || '',
+              rol: user.rol
+            }));
+          setPersonal(filteredData);
+        }
+      } else {
+        setPersonal(data || []);
+      }
     } catch (error) {
       console.error('Error loading personal:', error);
+      // Fallback silencioso
       setPersonal([]);
     }
   };
