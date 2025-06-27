@@ -86,7 +86,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         const { data: salmonerasData } = await supabase
           .from('salmoneras')
           .select('id, nombre')
-          .eq('activa', true);
+          .eq('estado', 'activa');
         setSalmoneras(salmonerasData || []);
       }
 
@@ -113,7 +113,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const loadContratistas = async (salmoneraId: string) => {
     try {
       const { data } = await supabase
-        .from('salmonera_contratistas')
+        .from('salmonera_contratista')
         .select(`
           contratista_id,
           contratistas!inner(id, nombre)
@@ -121,8 +121,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         .eq('salmonera_id', salmoneraId);
 
       const contratistasData = data?.map(item => ({
-        id: item.contratista_id,
-        nombre: item.contratistas.nombre
+        id: item.contratista_id!,
+        nombre: (item.contratistas as any).nombre
       })) || [];
 
       setContratistas(contratistasData);
@@ -134,10 +134,10 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const loadOperaciones = async (contratistaId: string) => {
     try {
       const { data } = await supabase
-        .from('operaciones')
+        .from('operacion')
         .select('id, codigo, nombre, fecha_inicio')
         .eq('contratista_id', contratistaId)
-        .eq('estado', 'planificada')
+        .eq('estado', 'activa')
         .order('fecha_inicio', { ascending: true });
 
       setOperaciones(data || []);
