@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Filter, Anchor } from "lucide-react";
+import { Plus, Search, Filter, Calendar, Zap, Anchor } from "lucide-react";
 import { useInmersionesTable } from '@/hooks/useInmersionesTable';
-import { UnifiedInmersionForm } from '@/components/inmersion/UnifiedInmersionForm';
+import { IndependentImmersionForm } from './IndependentImmersionForm';
+import { InmersionContextualForm } from './InmersionContextualForm';
 import { InmersionActions } from '../inmersion/InmersionActions';
 
 export const InmersionesDataTable = () => {
@@ -22,10 +23,14 @@ export const InmersionesDataTable = () => {
     setTypeFilter,
     showNewInmersionDialog,
     setShowNewInmersionDialog,
+    showPlannedInmersionDialog,
+    setShowPlannedInmersionDialog,
     filteredInmersiones,
     isLoading,
     estadisticas,
+    hasPlanning,
     handleCreateDirectInmersion,
+    handleCreatePlannedInmersion,
   } = useInmersionesTable();
 
   const getEstadoBadgeColor = (estado: string) => {
@@ -64,13 +69,25 @@ export const InmersionesDataTable = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con botón de acción unificado */}
+      {/* Header con botones de acción */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
+          {/* Botón crear inmersión independiente siempre disponible */}
           <Button onClick={() => setShowNewInmersionDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nueva Inmersión
           </Button>
+          
+          {/* Botón crear inmersión planificada solo si tiene planning */}
+          {hasPlanning && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowPlannedInmersionDialog(true)}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Inmersión Planificada
+            </Button>
+          )}
         </div>
 
         {/* Estadísticas rápidas */}
@@ -119,16 +136,19 @@ export const InmersionesDataTable = () => {
               </SelectContent>
             </Select>
 
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="independent">Independientes</SelectItem>
-                <SelectItem value="planned">Planificadas</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filtro de tipo solo si tiene planning */}
+            {hasPlanning && (
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="independent">Independientes</SelectItem>
+                  <SelectItem value="planned">Planificadas</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -197,9 +217,7 @@ export const InmersionesDataTable = () => {
                           {(inmersion as any).operacion?.codigo || inmersion.operacion_id}
                         </span>
                       ) : (
-                        <span className="text-sm text-gray-500">
-                          {inmersion.external_operation_code || '-'}
-                        </span>
+                        <span className="text-sm text-gray-500">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -215,24 +233,45 @@ export const InmersionesDataTable = () => {
         </CardContent>
       </Card>
 
-      {/* Diálogo para nueva inmersión unificada */}
+      {/* Diálogo para nueva inmersión independiente */}
       <Dialog open={showNewInmersionDialog} onOpenChange={setShowNewInmersionDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Anchor className="w-5 h-5" />
-              Nueva Inmersión
+              <Zap className="w-5 h-5" />
+              Nueva Inmersión Independiente
             </DialogTitle>
             <DialogDescription>
-              Crear una nueva inmersión. Puede ser planificada (asociada a una operación) o independiente (con código externo).
+              Crea una inmersión independiente sin operación asociada. Incluye la selección del personal de buceo para la inmersión.
             </DialogDescription>
           </DialogHeader>
-          <UnifiedInmersionForm 
+          <IndependentImmersionForm 
             onSubmit={handleCreateDirectInmersion}
             onCancel={() => setShowNewInmersionDialog(false)}
           />
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo para inmersión planificada (solo si tiene planning) */}
+      {hasPlanning && (
+        <Dialog open={showPlannedInmersionDialog} onOpenChange={setShowPlannedInmersionDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Nueva Inmersión Planificada
+              </DialogTitle>
+              <DialogDescription>
+                Crea una inmersión asociada a una operación planificada existente.
+              </DialogDescription>
+            </DialogHeader>
+            <InmersionContextualForm 
+              onSuccess={() => setShowPlannedInmersionDialog(false)}
+              onCancel={() => setShowPlannedInmersionDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
