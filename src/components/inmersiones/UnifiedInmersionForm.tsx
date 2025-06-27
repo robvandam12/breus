@@ -35,6 +35,13 @@ interface Operacion {
   fecha_inicio: string;
 }
 
+interface Personal {
+  usuario_id: string;
+  nombre: string;
+  apellido: string;
+  rol: string;
+}
+
 export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFormProps) => {
   const { profile } = useAuth();
   const [isPlanned, setIsPlanned] = useState(false);
@@ -58,7 +65,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const [salmoneras, setSalmoneras] = useState<Salmonera[]>([]);
   const [contratistas, setContratistas] = useState<Contratista[]>([]);
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
-  const [personal, setPersonal] = useState<any[]>([]);
+  const [personal, setPersonal] = useState<Personal[]>([]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -157,14 +164,24 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadPersonal = async () => {
     try {
-      const { data, error } = await supabase
+      // Simplificar la query para evitar problemas de tipos complejos
+      const response = await supabase
         .from('usuario')
         .select('usuario_id, nombre, apellido, rol')
         .in('rol', ['buzo', 'supervisor'])
         .eq('activo', true);
 
-      if (error) throw error;
-      setPersonal(data || []);
+      if (response.error) throw response.error;
+      
+      // Mapear explícitamente al tipo Personal
+      const personalData: Personal[] = (response.data || []).map(user => ({
+        usuario_id: user.usuario_id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        rol: user.rol
+      }));
+      
+      setPersonal(personalData);
     } catch (error) {
       console.error('Error loading personal:', error);
       setPersonal([]);
