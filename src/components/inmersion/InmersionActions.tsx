@@ -1,155 +1,101 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, FileText } from "lucide-react";
-import { BitacoraWizardFromInmersion } from "@/components/bitacoras/BitacoraWizardFromInmersion";
-import { CreateBitacoraBuzoFormCompleteWithInmersion } from "@/components/bitacoras/CreateBitacoraBuzoFormCompleteWithInmersion";
-import { useInmersiones } from "@/hooks/useInmersiones";
-import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
-import { useBitacorasBuzo, BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
-import { toast } from "@/hooks/use-toast";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, Eye, Play, CheckCircle } from 'lucide-react';
+import { useInmersiones, type Inmersion } from '@/hooks/useInmersiones';
+import { useNavigate } from 'react-router-dom';
 
 interface InmersionActionsProps {
-  inmersionId: string;
-  onRefresh?: () => void;
+  inmersion: Inmersion;
+  onEdit?: (inmersion: Inmersion) => void;
 }
 
-export const InmersionActions = ({ inmersionId, onRefresh }: InmersionActionsProps) => {
-  const { deleteInmersion } = useInmersiones();
-  const { createBitacoraSupervisor } = useBitacorasSupervisor();
-  const { createBitacoraBuzo } = useBitacorasBuzo();
-  
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showBitacoraSupervisorForm, setShowBitacoraSupervisorForm] = useState(false);
-  const [showBitacoraBuzoForm, setShowBitacoraBuzoForm] = useState(false);
+export const InmersionActions = ({ inmersion, onEdit }: InmersionActionsProps) => {
+  const navigate = useNavigate();
+  const { deleteInmersion, executeInmersion, completeInmersion } = useInmersiones();
+
+  const handleView = () => {
+    navigate(`/inmersiones/${inmersion.inmersion_id}`);
+  };
+
+  const handleEdit = () => {
+    onEdit?.(inmersion);
+  };
 
   const handleDelete = async () => {
-    try {
-      await deleteInmersion(inmersionId);
-      toast({
-        title: "Inmersión eliminada",
-        description: "La inmersión ha sido eliminada exitosamente.",
-      });
-      setShowDeleteDialog(false);
-      onRefresh?.();
-    } catch (error) {
-      console.error('Error deleting inmersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la inmersión.",
-        variant: "destructive",
-      });
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta inmersión?')) {
+      try {
+        await deleteInmersion(inmersion.inmersion_id);
+      } catch (error) {
+        console.error('Error deleting inmersion:', error);
+      }
     }
   };
 
-  const handleCreateBitacoraSupervisor = async (data: any) => {
+  const handleExecute = async () => {
     try {
-      await createBitacoraSupervisor(data);
-      toast({
-        title: "Bitácora creada",
-        description: "La bitácora de supervisor ha sido creada exitosamente.",
-      });
-      setShowBitacoraSupervisorForm(false);
-      onRefresh?.();
+      await executeInmersion(inmersion.inmersion_id);
     } catch (error) {
-      console.error('Error creating bitacora supervisor:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la bitácora de supervisor.",
-        variant: "destructive",
-      });
+      console.error('Error executing inmersion:', error);
     }
   };
 
-  const handleCreateBitacoraBuzo = async (data: BitacoraBuzoFormData) => {
+  const handleComplete = async () => {
     try {
-      await createBitacoraBuzo.mutateAsync(data);
-      toast({
-        title: "Bitácora creada",
-        description: "La bitácora de buzo ha sido creada exitosamente.",
-      });
-      setShowBitacoraBuzoForm(false);
-      onRefresh?.();
+      await completeInmersion(inmersion.inmersion_id);
     } catch (error) {
-      console.error('Error creating bitacora buzo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la bitácora de buzo.",
-        variant: "destructive",
-      });
+      console.error('Error completing inmersion:', error);
     }
   };
+
+  const canExecute = inmersion.hpt_validado && inmersion.anexo_bravo_validado && 
+                    inmersion.estado === 'planificada';
+  const canComplete = inmersion.estado === 'en_progreso';
+  const canEdit = inmersion.estado === 'planificada';
+  const canDelete = inmersion.estado === 'planificada';
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => setShowBitacoraSupervisorForm(true)}>
-            <FileText className="w-4 h-4 mr-2" />
-            Bitácora Supervisor
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleView}>
+          <Eye className="mr-2 h-4 w-4" />
+          Ver detalles
+        </DropdownMenuItem>
+        
+        {canEdit && (
+          <DropdownMenuItem onClick={handleEdit}>
+            <Edit className="mr-2 h-4 w-4" />
+            Editar
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowBitacoraBuzoForm(true)}>
-            <FileText className="w-4 h-4 mr-2" />
-            Bitácora Buzo
+        )}
+        
+        {canExecute && (
+          <DropdownMenuItem onClick={handleExecute}>
+            <Play className="mr-2 h-4 w-4" />
+            Ejecutar
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={() => setShowDeleteDialog(true)}
-            className="text-red-600 focus:text-red-600"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
+        )}
+        
+        {canComplete && (
+          <DropdownMenuItem onClick={handleComplete}>
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Completar
+          </DropdownMenuItem>
+        )}
+        
+        {canDelete && (
+          <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />
             Eliminar
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Modal de confirmación para eliminar */}
-      <ConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        title="Eliminar Inmersión"
-        description="¿Estás seguro de que deseas eliminar esta inmersión? Esta acción no se puede deshacer y eliminará también todas las bitácoras asociadas."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        variant="destructive"
-        onConfirm={handleDelete}
-      />
-
-      {/* Modal para crear bitácora de supervisor - usando el wizard de 6 pasos */}
-      <Dialog open={showBitacoraSupervisorForm} onOpenChange={setShowBitacoraSupervisorForm}>
-        <DialogContent className="max-w-6xl">
-          <BitacoraWizardFromInmersion
-            inmersionId={inmersionId}
-            onComplete={handleCreateBitacoraSupervisor}
-            onCancel={() => setShowBitacoraSupervisorForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal para crear bitácora de buzo */}
-      <Dialog open={showBitacoraBuzoForm} onOpenChange={setShowBitacoraBuzoForm}>
-        <DialogContent className="max-w-6xl">
-          <CreateBitacoraBuzoFormCompleteWithInmersion
-            inmersionId={inmersionId}
-            onSubmit={handleCreateBitacoraBuzo}
-            onCancel={() => setShowBitacoraBuzoForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

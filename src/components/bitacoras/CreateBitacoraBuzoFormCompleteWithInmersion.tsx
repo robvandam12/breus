@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete";
 import { BitacoraBuzoFormData, useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
-import { useInmersiones } from "@/hooks/useInmersiones";
+import { useInmersiones, type Inmersion } from "@/hooks/useInmersiones";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

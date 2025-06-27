@@ -10,8 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, Anchor, Save, X } from 'lucide-react';
 import { BitacoraBuzoFormData } from '@/hooks/useBitacorasBuzo';
-import type { Inmersion } from '@/types/inmersion';
-import { useInmersiones } from '@/hooks/useInmersiones';
+import { useInmersiones, type Inmersion } from '@/hooks/useInmersiones';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CreateBitacoraBuzoFormEnhancedProps {
@@ -49,7 +48,7 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
           ...prev,
           inmersion_id: selectedInmersionId,
           fecha: inmersion.fecha_inmersion,
-          profundidad_maxima: inmersion.profundidad_max
+          profundidad_maxima: inmersion.profundidad_max || 0
         }));
       }
     }
@@ -124,12 +123,12 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Empresa:</span>
-                        <span>{(selectedInmersion.operacion as any)?.salmoneras?.nombre || (selectedInmersion.operacion as any)?.contratistas?.nombre || 'N/A'}</span>
+                        <span>{selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Sitio:</span>
-                        <span>{(selectedInmersion.operacion as any)?.sitios?.nombre || 'N/A'}</span>
+                        <span>{selectedInmersion.operacion?.sitios?.nombre || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />
@@ -212,7 +211,7 @@ export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnha
                         step="0.1"
                         value={formData.profundidad_maxima}
                         onChange={(e) => setFormData({...formData, profundidad_maxima: parseFloat(e.target.value) || 0})}
-                        max={selectedInmersion.profundidad_max}
+                        max={selectedInmersion.profundidad_max || undefined}
                         required
                       />
                       <p className="text-sm text-gray-500 mt-1">

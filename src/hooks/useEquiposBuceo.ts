@@ -1,50 +1,44 @@
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-export interface EquipoBuceo {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  empresa_id: string;
-  tipo_empresa: 'salmonera' | 'contratista';
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
+export interface EquipoBuceo extends Tables<'cuadrillas_buceo'> {
   miembros?: EquipoBuceoMiembro[];
 }
 
-export interface EquipoBuceoMiembro {
-  id: string;
-  equipo_id: string;
-  usuario_id: string;
-  rol_equipo: 'supervisor' | 'buzo_principal' | 'buzo_asistente';
-  disponible: boolean;
+export interface EquipoBuceoMiembro extends Tables<'cuadrilla_miembros'> {
   usuario?: {
     nombre: string;
     apellido: string;
     email: string;
-    rol: string;
   };
+}
+
+export interface EquipoBuceoFormData {
+  nombre: string;
+  descripcion?: string;
+  empresa_id: string;
+  tipo_empresa: 'salmonera' | 'contratista';
 }
 
 export const useEquiposBuceo = () => {
   const queryClient = useQueryClient();
 
-  const { data: equipos = [], isLoading } = useQuery({
-    queryKey: ['equipos-buceo'],
+  const { data: equipos = [], isLoading, error } = useQuery({
+    queryKey: ['cuadrillas-buceo'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('equipos_buceo')
+        .from('cuadrillas_buceo')
         .select(`
           *,
-          miembros:equipo_buceo_miembros(
+          miembros:cuadrilla_miembros(
             *,
-            usuario:usuario(nombre, apellido, email, rol)
+            usuario:usuario_id(nombre, apellido, email)
           )
         `)
+        .eq('activo', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -53,10 +47,16 @@ export const useEquiposBuceo = () => {
   });
 
   const createEquipo = useMutation({
-    mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (equipoData: EquipoBuceoFormData) => {
       const { data, error } = await supabase
-        .from('equipos_buceo')
-        .insert(equipoData)
+        .from('cuadrillas_buceo')
+        .insert({
+          nombre: equipoData.nombre,
+          descripcion: equipoData.descripcion,
+          empresa_id: equipoData.empresa_id,
+          tipo_empresa: equipoData.tipo_empresa,
+          activo: true
+        })
         .select()
         .single();
 
@@ -64,41 +64,50 @@ export const useEquiposBuceo = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo'] });
       toast({
-        title: 'Equipo creado',
-        description: 'El equipo de buceo ha sido creado exitosamente.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Error al crear el equipo: ${error.message}`,
-        variant: 'destructive',
+        title: 'Cuadrilla creada',
+        description: 'La cuadrilla ha sido creada exitosamente.',
       });
     },
   });
 
-  const addMiembro = useMutation({
-    mutationFn: async ({ equipo_id, usuario_id, rol_equipo }: {
-      equipo_id: string;
-      usuario_id: string;
-      rol_equipo: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('equipo_buceo_miembros')
-        .insert({ equipo_id, usuario_id, rol_equipo })
+  const updateEquipo = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<EquipoBuceo> }) => {
+      const { data: updatedData, error } = await supabase
+        .from('cuadrillas_buceo')
+        .update(data)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return updatedData;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo'] });
       toast({
-        title: 'Miembro agregado',
-        description: 'El miembro ha sido agregado al equipo exitosamente.',
+        title: 'Cuadrilla actualizada',
+        description: 'La cuadrilla ha sido actualizada exitosamente.',
+      });
+    },
+  });
+
+  const deleteEquipo = useMutation({
+    mutationFn: async (equipoId: string) => {
+      const { error } = await supabase
+        .from('cuadrillas_buceo')
+        .update({ activo: false })
+        .eq('id', equipoId);
+
+      if (error) throw error;
+      return equipoId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo'] });
+      toast({
+        title: 'Cuadrilla desactivada',
+        description: 'La cuadrilla ha sido desactivada exitosamente.',
       });
     },
   });
@@ -106,8 +115,10 @@ export const useEquiposBuceo = () => {
   return {
     equipos,
     isLoading,
+    error,
     createEquipo: createEquipo.mutate,
-    addMiembro: addMiembro.mutate,
+    updateEquipo: updateEquipo.mutate,
+    deleteEquipo: deleteEquipo.mutate,
     isCreating: createEquipo.isPending,
   };
 };

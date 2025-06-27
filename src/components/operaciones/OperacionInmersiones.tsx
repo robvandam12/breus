@@ -71,11 +71,17 @@ export const OperacionInmersiones: React.FC<OperacionInmersionesProps> = ({
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {equipo.miembros?.map((miembro: any, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {miembro.nombre} - {miembro.rol}
-                      </Badge>
-                    ))}
+                    {equipo.miembros?.map((miembro: any, idx: number) => {
+                      const nombreCompleto = miembro.usuario ? 
+                        `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : 
+                        `Miembro ${idx + 1}`;
+                      
+                      return (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {nombreCompleto} - {miembro.rol_equipo}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

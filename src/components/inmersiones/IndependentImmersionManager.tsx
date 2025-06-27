@@ -1,372 +1,191 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Anchor, Calendar, Users, MapPin, Clock, Eye, Edit, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
-import { useInmersionesContextual } from "@/hooks/useInmersionesContextual";
-import { useInmersiones } from "@/hooks/useInmersiones";
-import { InmersionWizard } from "@/components/inmersion/InmersionWizard";
-import { UniversalConfirmation } from "@/components/ui/universal-confirmation";
-import { useUniversalConfirmation } from "@/hooks/useUniversalConfirmation";
-import { toast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Calendar, MapPin, Users } from 'lucide-react';
+import { useInmersiones, type Inmersion } from '@/hooks/useInmersiones';
+import { UnifiedInmersionForm } from './UnifiedInmersionForm';
 
 export const IndependentImmersionManager = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedImmersion, setSelectedImmersion] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [editingInmersion, setEditingInmersion] = useState<Inmersion | null>(null);
   
-  // Use contextual hook for permissions and filtering
-  const { 
-    inmersiones, 
-    isLoading: isLoadingContextual,
-    canCreateDirectImmersion,
-    capacidades
-  } = useInmersionesContextual();
-
-  // Use CRUD hook for operations
   const {
+    inmersiones,
+    isLoading,
     createInmersion,
     updateInmersion,
-    deleteInmersion,
-    isCreating
+    deleteInmersion
   } = useInmersiones();
 
-  const {
-    isOpen,
-    isLoading,
-    options,
-    showConfirmation,
-    handleConfirm,
-    handleCancel,
-    setIsOpen
-  } = useUniversalConfirmation();
+  // Filter independent immersions
+  const independentImmersions = inmersiones.filter(i => i.is_independent || !i.operacion_id);
 
-  // Filter only independent immersions (without operation or marked as independent)
-  const independentImmersions = inmersiones?.filter(
-    inmersion => !inmersion.operacion_id || inmersion.is_independent
-  ) || [];
-
-  const handleCreateNew = () => {
-    setSelectedImmersion(null);
-    setViewMode('create');
-    setShowCreateForm(true);
-  };
-
-  const handleEdit = (inmersion: any) => {
-    setSelectedImmersion(inmersion);
-    setViewMode('edit');
-    setShowCreateForm(true);
-  };
-
-  const handleView = (inmersion: any) => {
-    setSelectedImmersion(inmersion);
-    setViewMode('view');
-    setShowCreateForm(true);
-  };
-
-  const handleDelete = (inmersion: any) => {
-    showConfirmation({
-      title: "Eliminar Inmersión",
-      description: `¿Está seguro de que desea eliminar la inmersión "${inmersion.codigo}"? Esta acción no se puede deshacer.`,
-      confirmText: "Eliminar",
-      cancelText: "Cancelar",
-      variant: "destructive",
-      onConfirm: async () => {
-        try {
-          await deleteInmersion(inmersion.inmersion_id);
-          toast({
-            title: "Inmersión eliminada",
-            description: "La inmersión ha sido eliminada exitosamente.",
-          });
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "No se pudo eliminar la inmersión.",
-            variant: "destructive",
-          });
-        }
-      }
-    });
-  };
-
-  const handleCreateSubmit = async (data: any) => {
+  const handleCreate = async (data: any) => {
     try {
       await createInmersion({
         ...data,
         is_independent: true,
-        contexto_operativo: 'independiente',
-        operacion_id: null // Ensure no operation is associated
+        operacion_id: null
       });
       setShowCreateForm(false);
-      toast({
-        title: "Inmersión creada",
-        description: "La inmersión independiente ha sido creada exitosamente.",
-      });
     } catch (error) {
       console.error('Error creating independent immersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la inmersión independiente.",
-        variant: "destructive",
-      });
     }
   };
 
-  const handleUpdateSubmit = async (data: any) => {
-    if (!selectedImmersion) return;
+  const handleEdit = (inmersion: Inmersion) => {
+    setEditingInmersion(inmersion);
+  };
+
+  const handleUpdate = async (data: any) => {
+    if (!editingInmersion) return;
     
     try {
       await updateInmersion({
-        id: selectedImmersion.inmersion_id,
-        data: data
+        id: editingInmersion.inmersion_id,
+        data
       });
-      setShowCreateForm(false);
-      toast({
-        title: "Inmersión actualizada",
-        description: "La inmersión ha sido actualizada exitosamente.",
-      });
+      setEditingInmersion(null);
     } catch (error) {
       console.error('Error updating immersion:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la inmersión.",
-        variant: "destructive",
-      });
     }
   };
 
-  const getEstadoBadgeColor = (estado: string) => {
+  const handleDelete = async (inmersionId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta inmersión?')) {
+      try {
+        await deleteInmersion(inmersionId);
+      } catch (error) {
+        console.error('Error deleting immersion:', error);
+      }
+    }
+  };
+
+  const getEstadoBadge = (estado: string) => {
     switch (estado) {
-      case 'planificada': return 'bg-blue-100 text-blue-800';
-      case 'en_progreso': return 'bg-yellow-100 text-yellow-800';
-      case 'completada': return 'bg-green-100 text-green-800';
-      case 'cancelada': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "planificada":
+        return "bg-blue-100 text-blue-700";
+      case "en_progreso":
+        return "bg-amber-100 text-amber-700";
+      case "completada":
+        return "bg-emerald-100 text-emerald-700";
+      case "cancelada":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-zinc-100 text-zinc-700";
     }
   };
 
-  if (isLoadingContextual) {
+  if (showCreateForm) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <UnifiedInmersionForm
+        isIndependent={true}
+        onSubmit={handleCreate}
+        onCancel={() => setShowCreateForm(false)}
+      />
+    );
+  }
+
+  if (editingInmersion) {
+    return (
+      <UnifiedInmersionForm
+        isIndependent={true}
+        initialData={editingInmersion}
+        onSubmit={handleUpdate}
+        onCancel={() => setEditingInmersion(null)}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-3">
-            <Anchor className="w-8 h-8 text-blue-600" />
-            Inmersiones Independientes
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Gestiona inmersiones que no requieren documentación previa (HPT/Anexo Bravo)
-          </p>
+          <h2 className="text-2xl font-bold">Inmersiones Independientes</h2>
+          <p className="text-gray-600">Gestiona inmersiones que no requieren operación planificada</p>
         </div>
-        
-        <Button 
-          onClick={handleCreateNew}
-          disabled={!capacidades.puedeCrearInmersionesDirectas}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Inmersión Independiente
+        <Button onClick={() => setShowCreateForm(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Inmersión
         </Button>
       </div>
 
-      {/* Alert informativo */}
-      {!capacidades.puedeCrearInmersionesDirectas && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-amber-800">
-            <strong>Inmersiones independientes no habilitadas:</strong> Tu organización requiere documentación previa para todas las inmersiones.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Cargando inmersiones...</p>
+        </div>
+      ) : independentImmersions.length === 0 ? (
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Independientes</p>
-                <p className="text-2xl font-bold">{independentImmersions.length}</p>
-              </div>
-              <Anchor className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">En Progreso</p>
-                <p className="text-2xl font-bold">
-                  {independentImmersions.filter(i => i.estado === 'en_progreso').length}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Completadas</p>
-                <p className="text-2xl font-bold">
-                  {independentImmersions.filter(i => i.estado === 'completada').length}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Planificadas</p>
-                <p className="text-2xl font-bold">
-                  {independentImmersions.filter(i => i.estado === 'planificada').length}
-                </p>
-              </div>
-              <Calendar className="w-8 h-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de inmersiones */}
-      {independentImmersions.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Anchor className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No hay inmersiones independientes
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Comienza creando tu primera inmersión independiente
+          <CardContent className="p-8 text-center">
+            <h3 className="text-lg font-medium mb-2">No hay inmersiones independientes</h3>
+            <p className="text-gray-500 mb-4">
+              Crea tu primera inmersión independiente para comenzar
             </p>
-            {capacidades.puedeCrearInmersionesDirectas && (
-              <Button onClick={handleCreateNew}>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Primera Inmersión
-              </Button>
-            )}
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Inmersión
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {independentImmersions.map((inmersion) => (
-            <Card key={inmersion.inmersion_id} className="border-l-4 border-l-blue-500">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-lg">{inmersion.codigo}</h3>
-                      <Badge className={getEstadoBadgeColor(inmersion.estado)}>
-                        {inmersion.estado}
-                      </Badge>
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
-                        Independiente
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{inmersion.fecha_inmersion}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>{inmersion.buzo_principal}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>Prof. máx: {inmersion.profundidad_max}m</span>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Objetivo:</span> {inmersion.objetivo}
-                    </p>
-                  </div>
-
-                  {/* Acciones */}
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleView(inmersion)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(inmersion)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(inmersion)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+            <Card key={inmersion.inmersion_id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
+                  <Badge className={getEstadoBadge(inmersion.estado)}>
+                    {inmersion.estado}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  Profundidad: {inmersion.profundidad_max}m
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Users className="w-4 h-4" />
+                  {inmersion.buzo_principal}
+                </div>
+                
+                <p className="text-sm text-gray-600">
+                  <strong>Objetivo:</strong> {inmersion.objetivo}
+                </p>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(inmersion)}
+                    disabled={inmersion.estado !== 'planificada'}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(inmersion.inmersion_id)}
+                    disabled={inmersion.estado !== 'planificada'}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Eliminar
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
-
-      {/* Modal para crear/editar inmersión */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {viewMode === 'create' && 'Nueva Inmersión Independiente'}
-              {viewMode === 'edit' && 'Editar Inmersión'}
-              {viewMode === 'view' && 'Ver Inmersión'}
-            </DialogTitle>
-          </DialogHeader>
-          <InmersionWizard
-            operationId="" // Sin operación para inmersiones independientes
-            onComplete={viewMode === 'create' ? handleCreateSubmit : handleUpdateSubmit}
-            onCancel={() => setShowCreateForm(false)}
-            initialData={viewMode !== 'create' ? selectedImmersion : undefined}
-            readOnly={viewMode === 'view'}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de confirmación universal */}
-      <UniversalConfirmation
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        title={options.title}
-        description={options.description}
-        confirmText={options.confirmText}
-        cancelText={options.cancelText}
-        variant={options.variant}
-        onConfirm={handleConfirm}
-        loading={isLoading}
-      />
     </div>
   );
 };
