@@ -104,9 +104,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Personal de Buceo",
+        title: "Cuadrillas de Buceo",
         icon: Users,
-        url: "/personal-de-buceo"
+        url: "/cuadrillas-de-buceo"
       },
       {
         title: "Operaciones",
@@ -161,9 +161,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "5"
       },
       {
-        title: "Personal de Buceo",
+        title: "Cuadrillas de Buceo",
         icon: Users,
-        url: "/personal-de-buceo"
+        url: "/cuadrillas-de-buceo"
       },
       {
         title: "Operaciones",
@@ -219,9 +219,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "8"
       },
       {
-        title: "Personal de Buceo",
+        title: "Cuadrillas de Buceo",
         icon: Users,
-        url: "/personal-de-buceo"
+        url: "/cuadrillas-de-buceo"
       },
       {
         title: "Operaciones",
@@ -284,9 +284,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "15"
       },
       {
-        title: "Personal de Buceo",
+        title: "Cuadrillas de Buceo",
         icon: Users,
-        url: "/personal-de-buceo"
+        url: "/cuadrillas-de-buceo"
       },
       {
         title: "Operaciones",
@@ -351,9 +351,9 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         badge: "3"
       },
       {
-        title: "Personal de Buceo",
+        title: "Cuadrillas de Buceo",
         icon: Users,
-        url: "/personal-de-buceo"
+        url: "/cuadrillas-de-buceo"
       },
       {
         title: "Operaciones",

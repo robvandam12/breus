@@ -85,7 +85,7 @@ const PersonalDeBuceo = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
         <Input
-          placeholder="Buscar personal..."
+          placeholder="Buscar cuadrillas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 w-64"
@@ -93,7 +93,7 @@ const PersonalDeBuceo = () => {
       </div>
 
       <WizardDialog
-        triggerText="Nuevo Personal"
+        triggerText="Nueva Cuadrilla"
         triggerIcon={Plus}
         triggerClassName="bg-blue-600 hover:bg-blue-700"
         open={isCreateDialogOpen}
@@ -111,8 +111,8 @@ const PersonalDeBuceo = () => {
   if (isLoading) {
     return (
       <MainLayout
-        title="Personal de Buceo"
-        subtitle="Gestión de personal y equipos de buceo"
+        title="Cuadrillas de Buceo"
+        subtitle="Gestión de cuadrillas y personal de buceo"
         icon={Users}
         headerChildren={headerActions}
       >
@@ -127,8 +127,8 @@ const PersonalDeBuceo = () => {
 
   return (
     <MainLayout
-      title="Personal de Buceo"
-      subtitle="Gestión de personal y equipos de buceo"
+      title="Cuadrillas de Buceo"
+      subtitle="Gestión de cuadrillas y personal de buceo"
       icon={Users}
       headerChildren={headerActions}
     >
@@ -138,7 +138,7 @@ const PersonalDeBuceo = () => {
           <div className="text-2xl font-bold text-blue-600">
             {equipos.length}
           </div>
-          <div className="text-sm text-zinc-500">Equipos Activos</div>
+          <div className="text-sm text-zinc-500">Cuadrillas Activas</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-green-600">
@@ -165,17 +165,17 @@ const PersonalDeBuceo = () => {
           <CardContent>
             <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-zinc-900 mb-2">
-              {equipos.length === 0 ? "No hay personal registrado" : "No se encontró personal"}
+              {equipos.length === 0 ? "No hay cuadrillas registradas" : "No se encontraron cuadrillas"}
             </h3>
             <p className="text-zinc-500 mb-4">
               {equipos.length === 0 
-                ? "Comience creando el primer equipo de personal de buceo"
+                ? "Comience creando la primera cuadrilla de buceo"
                 : "Intenta ajustar la búsqueda"}
             </p>
             {equipos.length === 0 && (
               <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Personal
+                Nueva Cuadrilla
               </Button>
             )}
           </CardContent>
@@ -185,7 +185,7 @@ const PersonalDeBuceo = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Personal</TableHead>
+                <TableHead>Cuadrilla</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead>Miembros</TableHead>
                 <TableHead>Estado</TableHead>

@@ -744,6 +744,135 @@ export type Database = {
         }
         Relationships: []
       }
+      cuadrilla_asignaciones: {
+        Row: {
+          created_at: string
+          cuadrilla_id: string
+          estado: string
+          fecha_asignacion: string
+          id: string
+          inmersion_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cuadrilla_id: string
+          estado?: string
+          fecha_asignacion: string
+          id?: string
+          inmersion_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cuadrilla_id?: string
+          estado?: string
+          fecha_asignacion?: string
+          id?: string
+          inmersion_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuadrilla_asignaciones_cuadrilla_id_fkey"
+            columns: ["cuadrilla_id"]
+            isOneToOne: false
+            referencedRelation: "cuadrillas_buceo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuadrilla_asignaciones_inmersion_id_fkey"
+            columns: ["inmersion_id"]
+            isOneToOne: false
+            referencedRelation: "inmersion"
+            referencedColumns: ["inmersion_id"]
+          },
+        ]
+      }
+      cuadrilla_miembros: {
+        Row: {
+          created_at: string
+          cuadrilla_id: string | null
+          disponible: boolean
+          id: string
+          rol_equipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          cuadrilla_id?: string | null
+          disponible?: boolean
+          id?: string
+          rol_equipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          cuadrilla_id?: string | null
+          disponible?: boolean
+          id?: string
+          rol_equipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipo_buceo_miembros_equipo_id_fkey"
+            columns: ["cuadrilla_id"]
+            isOneToOne: false
+            referencedRelation: "cuadrillas_buceo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipo_buceo_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuario"
+            referencedColumns: ["usuario_id"]
+          },
+        ]
+      }
+      cuadrillas_buceo: {
+        Row: {
+          activo: boolean
+          company_id: string | null
+          company_type: string | null
+          created_at: string
+          descripcion: string | null
+          empresa_id: string
+          estado: string
+          id: string
+          nombre: string
+          tipo_empresa: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          company_id?: string | null
+          company_type?: string | null
+          created_at?: string
+          descripcion?: string | null
+          empresa_id: string
+          estado?: string
+          id?: string
+          nombre: string
+          tipo_empresa: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          company_id?: string | null
+          company_type?: string | null
+          created_at?: string
+          descripcion?: string | null
+          empresa_id?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          tipo_empresa?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dashboard_layouts: {
         Row: {
           created_at: string
@@ -842,90 +971,6 @@ export type Database = {
           event_type?: string
           id?: string
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      equipo_buceo_miembros: {
-        Row: {
-          created_at: string
-          disponible: boolean
-          equipo_id: string | null
-          id: string
-          rol_equipo: string
-          usuario_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          disponible?: boolean
-          equipo_id?: string | null
-          id?: string
-          rol_equipo: string
-          usuario_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          disponible?: boolean
-          equipo_id?: string | null
-          id?: string
-          rol_equipo?: string
-          usuario_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipo_buceo_miembros_equipo_id_fkey"
-            columns: ["equipo_id"]
-            isOneToOne: false
-            referencedRelation: "equipos_buceo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "equipo_buceo_miembros_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuario"
-            referencedColumns: ["usuario_id"]
-          },
-        ]
-      }
-      equipos_buceo: {
-        Row: {
-          activo: boolean
-          company_id: string | null
-          company_type: string | null
-          created_at: string
-          descripcion: string | null
-          empresa_id: string
-          estado: string
-          id: string
-          nombre: string
-          tipo_empresa: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          company_id?: string | null
-          company_type?: string | null
-          created_at?: string
-          descripcion?: string | null
-          empresa_id: string
-          estado?: string
-          id?: string
-          nombre: string
-          tipo_empresa: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          company_id?: string | null
-          company_type?: string | null
-          created_at?: string
-          descripcion?: string | null
-          empresa_id?: string
-          estado?: string
-          id?: string
-          nombre?: string
-          tipo_empresa?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -2738,6 +2783,18 @@ export type Database = {
       jwt_servicio: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validate_cuadrilla_availability: {
+        Args: {
+          p_cuadrilla_id: string
+          p_fecha_inmersion: string
+          p_inmersion_id?: string
+        }
+        Returns: {
+          is_available: boolean
+          conflicting_inmersion_id: string
+          conflicting_inmersion_codigo: string
+        }[]
       }
       validate_rut: {
         Args: { rut_input: string }

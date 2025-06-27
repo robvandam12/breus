@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InmersionTeamManagerEnhanced } from './InmersionTeamManagerEnhanced';
+import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
 
 interface UnifiedInmersionFormProps {
   onSubmit: (data: any) => void;
@@ -47,6 +48,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const [isPlanned, setIsPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(null);
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -59,7 +61,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     profundidad_max: '',
     observaciones: '',
     buzo_principal_id: '',
-    supervisor_id: ''
+    supervisor_id: '',
+    metadata: {}
   });
 
   // Datos para selects
@@ -209,6 +212,18 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     }
   };
 
+  const handleCuadrillaChange = (cuadrillaId: string | null) => {
+    setSelectedCuadrillaId(cuadrillaId);
+    // Limpiar el equipo manual si se selecciona una cuadrilla
+    if (cuadrillaId) {
+      setTeamMembers([]);
+    }
+  };
+
+  const handleCuadrillaCreated = (newCuadrilla: any) => {
+    setSelectedCuadrillaId(newCuadrilla.id);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -221,7 +236,12 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         codigo_operacion_externa: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
         estado: 'planificada',
-        team_members: teamMembers // Incluir los miembros del equipo
+        team_members: teamMembers,
+        cuadrilla_id: selectedCuadrillaId, // Incluir cuadrilla seleccionada
+        metadata: {
+          ...formData.metadata,
+          cuadrilla_id: selectedCuadrillaId
+        }
       };
 
       await onSubmit(inmersionData);
@@ -407,19 +427,31 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
             />
           </div>
 
-          {/* Gestión de Personal de Buceo */}
+          {/* Selector de Cuadrilla */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <Label className="text-lg font-medium">Personal de Buceo</Label>
-            </div>
-            
-            <InmersionTeamManagerEnhanced
-              inmersionId={null} // Para nuevas inmersiones
-              onTeamUpdate={handleTeamUpdate}
-              isCreatingNew={true}
+            <CuadrillaSelector
+              selectedCuadrillaId={selectedCuadrillaId}
+              onCuadrillaChange={handleCuadrillaChange}
+              fechaInmersion={formData.fecha_inmersion}
+              onCuadrillaCreated={handleCuadrillaCreated}
             />
           </div>
+
+          {/* Gestión Manual de Personal (solo si no hay cuadrilla seleccionada) */}
+          {!selectedCuadrillaId && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <Label className="text-lg font-medium">Asignación Manual de Personal</Label>
+              </div>
+              
+              <InmersionTeamManagerEnhanced
+                inmersionId={null}
+                onTeamUpdate={handleTeamUpdate}
+                isCreatingNew={true}
+              />
+            </div>
+          )}
 
           <div>
             <Label htmlFor="observaciones">Observaciones</Label>

@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -132,7 +131,16 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
-        {/* Personal Routes */}
+        {/* Cuadrillas Routes - Actualizado */}
+        <Route path="/cuadrillas-de-buceo" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <PersonalDeBuceo />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        
+        {/* Legacy route redirect para mantener compatibilidad */}
         <Route path="/personal-de-buceo" element={
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>
