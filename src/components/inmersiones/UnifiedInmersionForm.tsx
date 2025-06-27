@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,33 +159,28 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadPersonal = async () => {
     try {
-      // Usar una query simple sin tipos complejos de Supabase
       const { data, error } = await supabase
-        .rpc('get_personal_for_inmersion');
+        .from('usuario')
+        .select('usuario_id, nombre, apellido, rol')
+        .in('rol', ['buzo', 'supervisor']);
 
       if (error) {
-        // Fallback: usar query básica
-        const simpleQuery = await supabase
-          .from('usuario')
-          .select('usuario_id, nombre, apellido, rol');
-        
-        if (simpleQuery.data) {
-          const filteredData = simpleQuery.data
-            .filter(user => ['buzo', 'supervisor'].includes(user.rol))
-            .map(user => ({
-              usuario_id: user.usuario_id,
-              nombre: user.nombre || '',
-              apellido: user.apellido || '',
-              rol: user.rol
-            }));
-          setPersonal(filteredData);
-        }
-      } else {
-        setPersonal(data || []);
+        console.error('Error loading personal:', error);
+        setPersonal([]);
+        return;
       }
+
+      // Mapear explícitamente al tipo Personal
+      const personalData: Personal[] = (data || []).map(user => ({
+        usuario_id: user.usuario_id,
+        nombre: user.nombre || '',
+        apellido: user.apellido || '',
+        rol: user.rol
+      }));
+
+      setPersonal(personalData);
     } catch (error) {
       console.error('Error loading personal:', error);
-      // Fallback silencioso
       setPersonal([]);
     }
   };
