@@ -12,13 +12,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CreatePersonalForm } from "@/components/personal/CreatePersonalForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from '@/hooks/use-toast';
 
 const PersonalDeBuceo = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
-  const { personalPool, isLoading } = usePersonalPool();
+  const { personalPool, isLoading, createPersonal } = usePersonalPool();
 
   // Obtener asignaciones actuales del personal
   const { data: assignments = {} } = useQuery({
@@ -91,6 +92,28 @@ const PersonalDeBuceo = () => {
     }
   };
 
+  const handleCreatePersonal = async (data: any) => {
+    try {
+      await createPersonal(data);
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Personal creado",
+        description: "El nuevo personal de buceo ha sido registrado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error creating personal:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el personal de buceo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelCreate = () => {
+    setIsCreateDialogOpen(false);
+  };
+
   if (isLoading) {
     return (
       <MainLayout
@@ -138,11 +161,14 @@ const PersonalDeBuceo = () => {
                 Agregar Personal
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nuevo Personal de Buceo</DialogTitle>
               </DialogHeader>
-              <CreatePersonalForm onSuccess={() => setIsCreateDialogOpen(false)} />
+              <CreatePersonalForm 
+                onSubmit={handleCreatePersonal}
+                onCancel={handleCancelCreate}
+              />
             </DialogContent>
           </Dialog>
         </div>
