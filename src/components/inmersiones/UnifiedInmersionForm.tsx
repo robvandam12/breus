@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Zap, AlertCircle } from "lucide-react";
+import { Calendar, Zap, AlertCircle, Users } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { InmersionTeamManagerEnhanced } from './InmersionTeamManagerEnhanced';
 
 interface UnifiedInmersionFormProps {
   onSubmit: (data: any) => void;
@@ -45,6 +46,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const { profile } = useAuth();
   const [isPlanned, setIsPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -185,6 +187,28 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     }
   };
 
+  const handleTeamUpdate = (updatedTeam: any[]) => {
+    setTeamMembers(updatedTeam);
+    
+    // Actualizar campos principales basados en el equipo
+    const supervisor = updatedTeam.find(member => member.role === 'supervisor');
+    const buzoPrincipal = updatedTeam.find(member => member.role === 'buzo_principal');
+    
+    if (supervisor) {
+      setFormData(prev => ({
+        ...prev,
+        supervisor_id: supervisor.user_id
+      }));
+    }
+    
+    if (buzoPrincipal) {
+      setFormData(prev => ({
+        ...prev,
+        buzo_principal_id: buzoPrincipal.user_id
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -196,7 +220,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         operacion_id: isPlanned ? formData.operacion_id : null,
         codigo_operacion_externa: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
-        estado: 'planificada'
+        estado: 'planificada',
+        team_members: teamMembers // Incluir los miembros del equipo
       };
 
       await onSubmit(inmersionData);
@@ -216,7 +241,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const shouldShowOperacionWarning = isPlanned && formData.contratista_id && operaciones.length === 0;
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card className="w-full max-w-6xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Nueva Inmersión</span>
@@ -379,6 +404,20 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
               onChange={(e) => setFormData(prev => ({ ...prev, profundidad_max: e.target.value }))}
               placeholder="Ej: 15.5"
               required
+            />
+          </div>
+
+          {/* Gestión de Personal de Buceo */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              <Label className="text-lg font-medium">Personal de Buceo</Label>
+            </div>
+            
+            <InmersionTeamManagerEnhanced
+              inmersionId={null} // Para nuevas inmersiones
+              onTeamUpdate={handleTeamUpdate}
+              isCreatingNew={true}
             />
           </div>
 
