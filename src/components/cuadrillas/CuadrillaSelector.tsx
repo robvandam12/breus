@@ -109,7 +109,6 @@ export const CuadrillaSelector = ({
           <WizardDialog
             triggerText="Nueva Cuadrilla"
             triggerIcon={Plus}
-            triggerVariant="outline"
             open={showCreateForm}
             onOpenChange={setShowCreateForm}
             size="xl"

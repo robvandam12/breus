@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, UserPlus, Mail } from "lucide-react";
-import { useEquiposBuceoEnhanced, EquipoBuceoFormData } from "@/hooks/useEquiposBuceoEnhanced";
+import { useEquiposBuceoEnhanced, EquipoBuceoFormData, CuadrillaBuceo } from "@/hooks/useEquiposBuceoEnhanced";
 import { useUsuarios } from "@/hooks/useUsuarios";
 import { CreateEquipoForm } from "./CreateEquipoForm";
 
@@ -124,7 +125,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
       </div>
 
       <div className="grid gap-6">
-        {filteredEquipos.map((equipo) => (
+        {filteredEquipos.map((equipo: CuadrillaBuceo) => (
           <Card key={equipo.id} className="ios-card">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -258,38 +259,32 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
                     {equipo.miembros.map((miembro) => (
                       <TableRow key={miembro.id}>
                         <TableCell>
-                          <div className="font-medium">{miembro.nombre_completo}</div>
+                          <div className="font-medium">
+                            {miembro.usuario ? 
+                              `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : 
+                              'Usuario no encontrado'
+                            }
+                          </div>
                           {miembro.matricula && (
                             <div className="text-sm text-zinc-500">Matrícula: {miembro.matricula}</div>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getRolBadgeColor(miembro.rol)}>
-                            {miembro.rol.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          <Badge variant="outline" className={getRolBadgeColor(miembro.rol_equipo)}>
+                            {miembro.rol_equipo.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={
-                            miembro.invitado 
-                              ? miembro.estado_invitacion === 'pendiente' 
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-green-100 text-green-700'
-                              : 'bg-green-100 text-green-700'
-                          }>
-                            {miembro.invitado 
-                              ? miembro.estado_invitacion === 'pendiente' ? 'Invitado' : 'Activo'
-                              : 'Activo'}
+                          <Badge variant="outline" className="bg-green-100 text-green-700">
+                            Activo
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {miembro.email && (
+                          {miembro.usuario?.email && (
                             <div className="flex items-center gap-1 text-sm text-zinc-600">
                               <Mail className="w-3 h-3" />
-                              {miembro.email}
+                              {miembro.usuario.email}
                             </div>
-                          )}
-                          {miembro.telefono && (
-                            <div className="text-sm text-zinc-600">{miembro.telefono}</div>
                           )}
                         </TableCell>
                       </TableRow>

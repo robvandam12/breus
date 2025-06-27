@@ -21,7 +21,7 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
     inmersion.estado === 'completada' &&
     (inmersion.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
      inmersion.objetivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     inmersion.operacion_nombre?.toLowerCase().includes(searchTerm.toLowerCase()))
+     (inmersion.operacion?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (isLoading) {
@@ -96,7 +96,7 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
                         )}
                       </div>
                       <p className="text-sm text-zinc-600 mb-1">
-                        <strong>Operación:</strong> {inmersion.operacion_nombre || 'Sin nombre'}
+                        <strong>Operación:</strong> {inmersion.operacion?.nombre || 'Sin operación'}
                       </p>
                       <p className="text-sm text-zinc-600 mb-1">
                         <strong>Objetivo:</strong> {inmersion.objetivo}
@@ -109,11 +109,7 @@ export const BitacoraInmersionSelector = ({ onInmersionSelected, selectedInmersi
                       </p>
                     </div>
                     <div className="text-right text-sm text-zinc-500">
-                      <p><strong>Prof. Máx:</strong> {inmersion.profundidad_max}m</p>
                       <p><strong>Supervisor:</strong> {inmersion.supervisor}</p>
-                      {inmersion.hora_inicio && (
-                        <p><strong>Hora:</strong> {inmersion.hora_inicio}</p>
-                      )}
                     </div>
                   </div>
                 </CardContent>

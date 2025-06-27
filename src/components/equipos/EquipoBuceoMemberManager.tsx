@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -183,13 +184,20 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
                 <TableRow key={miembro.id}>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{miembro.nombre_completo}</div>
-                      <div className="text-sm text-gray-500">{miembro.email}</div>
+                      <div className="font-medium">
+                        {miembro.usuario ? 
+                          `${miembro.usuario.nombre} ${miembro.usuario.apellido}` : 
+                          'Usuario no encontrado'
+                        }
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {miembro.usuario?.email || 'Email no disponible'}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getRoleBadgeColor(miembro.rol)}>
-                      {miembro.rol}
+                    <Badge className={getRoleBadgeColor(miembro.rol_equipo)}>
+                      {miembro.rol_equipo}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -204,7 +212,7 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
                         variant="outline"
                         onClick={() => {
                           setSelectedMember(miembro);
-                          setNewRole(miembro.rol);
+                          setNewRole(miembro.rol_equipo);
                           setShowEditDialog(true);
                         }}
                       >
@@ -271,7 +279,12 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                Miembro: <strong>{selectedMember?.nombre_completo}</strong>
+                Miembro: <strong>
+                  {selectedMember?.usuario ? 
+                    `${selectedMember.usuario.nombre} ${selectedMember.usuario.apellido}` : 
+                    'Usuario no encontrado'
+                  }
+                </strong>
               </p>
               <Select value={newRole} onValueChange={setNewRole}>
                 <SelectTrigger>
@@ -288,7 +301,7 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleEditRole} disabled={!newRole || newRole === selectedMember?.rol}>
+              <Button onClick={handleEditRole} disabled={!newRole || newRole === selectedMember?.rol_equipo}>
                 Actualizar Rol
               </Button>
             </div>
@@ -308,7 +321,12 @@ export const EquipoBuceoMemberManager = ({ equipoId, equipo }: EquipoBuceoMember
               <div>
                 <p className="font-medium text-yellow-800">¿Está seguro?</p>
                 <p className="text-sm text-yellow-700">
-                  Se removerá a <strong>{selectedMember?.nombre_completo}</strong> del equipo.
+                  Se removerá a <strong>
+                    {selectedMember?.usuario ? 
+                      `${selectedMember.usuario.nombre} ${selectedMember.usuario.apellido}` : 
+                      'Usuario no encontrado'
+                    }
+                  </strong> del equipo.
                   Esta acción quedará registrada para trazabilidad.
                 </p>
               </div>

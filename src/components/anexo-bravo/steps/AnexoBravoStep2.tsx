@@ -27,7 +27,7 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
   // Get available divers from teams (since teams are no longer directly assigned to operations)
   const availableDivers = equipos.reduce((divers: any[], equipo) => {
     const teamDivers = equipo.miembros?.filter(m => 
-      m.rol === 'buzo_principal' || m.rol === 'buzo_asistente'
+      m.rol_equipo === 'buzo_principal' || m.rol_equipo === 'buzo_asistente'
     ) || [];
     return [...divers, ...teamDivers];
   }, []);
@@ -177,9 +177,11 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
               <Select
                 value={data.asistente_buzo_nombre || ''}
                 onValueChange={(value) => {
-                  const selectedDiver = availableDivers.find(d => d.nombre_completo === value);
+                  const selectedDiver = availableDivers.find(d => 
+                    (d.usuario?.nombre + ' ' + d.usuario?.apellido) === value
+                  );
                   if (selectedDiver) {
-                    handleInputChange('asistente_buzo_nombre', selectedDiver.nombre_completo);
+                    handleInputChange('asistente_buzo_nombre', value);
                     handleInputChange('asistente_buzo_matricula', selectedDiver.matricula || '');
                   }
                 }}
@@ -188,17 +190,23 @@ export const AnexoBravoStep2 = ({ data, onUpdate }: AnexoBravoStep2Props) => {
                   <SelectValue placeholder="Seleccione un buzo de los equipos disponibles" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableDivers.map((diver, index) => (
-                    <SelectItem key={index} value={diver.nombre_completo}>
-                      <div className="flex flex-col">
-                        <span>{diver.nombre_completo}</span>
-                        <span className="text-xs text-gray-500">
-                          {diver.rol === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente'}
-                          {diver.matricula && ` - Mat: ${diver.matricula}`}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {availableDivers.map((diver, index) => {
+                    const nombre = diver.usuario ? 
+                      `${diver.usuario.nombre} ${diver.usuario.apellido}` : 
+                      `Miembro ${index + 1}`;
+                    
+                    return (
+                      <SelectItem key={diver.id} value={nombre}>
+                        <div className="flex flex-col">
+                          <span>{nombre}</span>
+                          <span className="text-xs text-gray-500">
+                            {diver.rol_equipo === 'buzo_principal' ? 'Buzo Principal' : 'Buzo Asistente'}
+                            {diver.matricula && ` - Mat: ${diver.matricula}`}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
