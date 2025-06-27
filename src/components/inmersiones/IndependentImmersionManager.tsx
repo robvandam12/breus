@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,7 +80,6 @@ export const IndependentImmersionManager = () => {
   if (showCreateForm) {
     return (
       <UnifiedInmersionForm
-        isIndependent={true}
         onSubmit={handleCreate}
         onCancel={() => setShowCreateForm(false)}
       />
@@ -91,7 +89,6 @@ export const IndependentImmersionManager = () => {
   if (editingInmersion) {
     return (
       <UnifiedInmersionForm
-        isIndependent={true}
         initialData={editingInmersion}
         onSubmit={handleUpdate}
         onCancel={() => setEditingInmersion(null)}
@@ -99,6 +96,7 @@ export const IndependentImmersionManager = () => {
     );
   }
 
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

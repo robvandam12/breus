@@ -223,9 +223,9 @@ const PersonalDeBuceo = () => {
                             <div
                               key={miembro.id}
                               className="w-6 h-6 bg-zinc-300 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white"
-                              title={miembro.nombre_completo}
+                              title={miembro.usuario?.nombre || 'Usuario'}
                             >
-                              {(miembro.nombre_completo || '').charAt(0).toUpperCase()}
+                              {(miembro.usuario?.nombre || 'U').charAt(0).toUpperCase()}
                             </div>
                           ))}
                           {(equipo.miembros?.length || 0) > 3 && (

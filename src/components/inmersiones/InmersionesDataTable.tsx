@@ -206,7 +206,7 @@ export const InmersionesDataTable = () => {
                     </TableCell>
                     <TableCell>
                       <InmersionActions 
-                        inmersionId={inmersion.inmersion_id}
+                        inmersion={inmersion}
                       />
                     </TableCell>
                   </TableRow>

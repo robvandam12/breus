@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
-export const EquipmentStatusWidget = () => {
+const EquipmentStatusWidget = () => {
   const { equipos, isLoading } = useEquiposBuceoEnhanced();
 
   if (isLoading) {
@@ -83,3 +83,5 @@ export const EquipmentStatusWidget = () => {
     </Card>
   );
 };
+
+export default EquipmentStatusWidget;
