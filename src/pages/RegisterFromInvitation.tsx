@@ -56,10 +56,21 @@ export default function RegisterFromInvitation() {
           throw new Error('Invitación no válida o expirada');
         }
 
-        setInvitation(data);
-        setFormData({
+        // Asegurar tipo correcto
+        const invitationData: InvitationData = {
+          email: data.email,
           nombre: data.nombre || '',
           apellido: data.apellido || '',
+          rol: data.rol,
+          empresa_id: data.empresa_id,
+          tipo_empresa: data.tipo_empresa as 'salmonera' | 'contratista',
+          invitado_por: data.invitado_por
+        };
+
+        setInvitation(invitationData);
+        setFormData({
+          nombre: invitationData.nombre,
+          apellido: invitationData.apellido,
           password: '',
           confirmPassword: ''
         });
@@ -96,7 +107,6 @@ export default function RegisterFromInvitation() {
         apellido: formData.apellido
       });
 
-      // Redirigir al login después del registro exitoso
       navigate('/auth/login?message=registration_success');
     } catch (error) {
       console.error('Error en registro:', error);
