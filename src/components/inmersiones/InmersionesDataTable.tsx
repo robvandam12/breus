@@ -7,10 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Filter, Calendar, Zap, Anchor } from "lucide-react";
+import { Plus, Search, Filter, Anchor } from "lucide-react";
 import { useInmersionesTable } from '@/hooks/useInmersionesTable';
-import { IndependentImmersionForm } from './IndependentImmersionForm';
-import { InmersionContextualForm } from './InmersionContextualForm';
+import { UnifiedInmersionForm } from './UnifiedInmersionForm';
 import { InmersionActions } from '../inmersion/InmersionActions';
 
 export const InmersionesDataTable = () => {
@@ -23,14 +22,11 @@ export const InmersionesDataTable = () => {
     setTypeFilter,
     showNewInmersionDialog,
     setShowNewInmersionDialog,
-    showPlannedInmersionDialog,
-    setShowPlannedInmersionDialog,
     filteredInmersiones,
     isLoading,
     estadisticas,
     hasPlanning,
     handleCreateDirectInmersion,
-    handleCreatePlannedInmersion,
   } = useInmersionesTable();
 
   const getEstadoBadgeColor = (estado: string) => {
@@ -69,25 +65,13 @@ export const InmersionesDataTable = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con botones de acción */}
+      {/* Header con botón de acción unificado */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          {/* Botón crear inmersión independiente siempre disponible */}
           <Button onClick={() => setShowNewInmersionDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nueva Inmersión
           </Button>
-          
-          {/* Botón crear inmersión planificada solo si tiene planning */}
-          {hasPlanning && (
-            <Button 
-              variant="outline"
-              onClick={() => setShowPlannedInmersionDialog(true)}
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Inmersión Planificada
-            </Button>
-          )}
         </div>
 
         {/* Estadísticas rápidas */}
@@ -233,45 +217,23 @@ export const InmersionesDataTable = () => {
         </CardContent>
       </Card>
 
-      {/* Diálogo para nueva inmersión independiente */}
+      {/* Diálogo para nueva inmersión unificada */}
       <Dialog open={showNewInmersionDialog} onOpenChange={setShowNewInmersionDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Nueva Inmersión Independiente
+            <DialogTitle>
+              Nueva Inmersión
             </DialogTitle>
             <DialogDescription>
-              Crea una inmersión independiente sin operación asociada. Incluye la selección del personal de buceo para la inmersión.
+              Crea una inmersión independiente o asociada a una operación planificada.
             </DialogDescription>
           </DialogHeader>
-          <IndependentImmersionForm 
+          <UnifiedInmersionForm 
             onSubmit={handleCreateDirectInmersion}
             onCancel={() => setShowNewInmersionDialog(false)}
           />
         </DialogContent>
       </Dialog>
-
-      {/* Diálogo para inmersión planificada (solo si tiene planning) */}
-      {hasPlanning && (
-        <Dialog open={showPlannedInmersionDialog} onOpenChange={setShowPlannedInmersionDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Nueva Inmersión Planificada
-              </DialogTitle>
-              <DialogDescription>
-                Crea una inmersión asociada a una operación planificada existente.
-              </DialogDescription>
-            </DialogHeader>
-            <InmersionContextualForm 
-              onSuccess={() => setShowPlannedInmersionDialog(false)}
-              onCancel={() => setShowPlannedInmersionDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };

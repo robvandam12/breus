@@ -56,7 +56,21 @@ export default function RegisterFromInvitation() {
           throw new Error('Invitación no válida o expirada');
         }
 
-        setInvitation(data);
+        // Validar tipo_empresa antes de asignar
+        const tipoEmpresa = data.tipo_empresa === 'salmonera' || data.tipo_empresa === 'contratista' 
+          ? data.tipo_empresa 
+          : 'contratista';
+
+        setInvitation({
+          email: data.email,
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          rol: data.rol,
+          empresa_id: data.empresa_id,
+          tipo_empresa: tipoEmpresa,
+          invitado_por: data.invitado_por
+        });
+        
         setFormData({
           nombre: data.nombre || '',
           apellido: data.apellido || '',
