@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, Zap, AlertCircle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
+import { useModuleAccess } from '@/hooks/useModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
@@ -40,7 +40,12 @@ interface Operacion {
 
 export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: UnifiedInmersionFormProps) => {
   const { profile } = useAuth();
-  const [isPlanned, setIsPlanned] = useState(initialData ? !initialData.is_independent : false);
+  const { canPlanOperations } = useModuleAccess();
+  
+  // Solo permitir toggle a planificada si tiene acceso al módulo de planning
+  const [isPlanned, setIsPlanned] = useState(
+    initialData ? (!initialData.is_independent && canPlanOperations) : false
+  );
   const [loading, setLoading] = useState(false);
   
   // Manejo seguro del metadata para cuadrilla_id
@@ -219,16 +224,19 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</span>
-          <div className="flex items-center space-x-2">
-            <Zap className="w-4 h-4" />
-            <Switch
-              checked={isPlanned}
-              onCheckedChange={setIsPlanned}
-              id="inmersion-type"
-              disabled={!!initialData} // Disable if editing
-            />
-            <Calendar className="w-4 h-4" />
-          </div>
+          {/* Solo mostrar toggle si puede planificar operaciones */}
+          {canPlanOperations && (
+            <div className="flex items-center space-x-2">
+              <Zap className="w-4 h-4" />
+              <Switch
+                checked={isPlanned}
+                onCheckedChange={setIsPlanned}
+                id="inmersion-type"
+                disabled={!!initialData} // Disable if editing
+              />
+              <Calendar className="w-4 h-4" />
+            </div>
+          )}
         </CardTitle>
         <div className="flex gap-2">
           <Badge variant={!isPlanned ? "default" : "secondary"}>
@@ -289,8 +297,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
             </div>
           )}
 
-          {/* Selector de Operación o Código Externo */}
-          {isPlanned ? (
+          {/* Solo mostrar selector de operación si puede planificar */}
+          {canPlanOperations && isPlanned ? (
             <div>
               <Label htmlFor="operacion">Operación *</Label>
               {canShowOperacionSelector ? (
@@ -332,7 +340,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                 <Input disabled placeholder="Selecciona un contratista primero" />
               )}
             </div>
-          ) : (
+          ) : !canPlanOperations || !isPlanned ? (
             <div>
               <Label htmlFor="codigo_externo">Código de Operación Externa *</Label>
               <Input
@@ -343,7 +351,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                 required
               />
             </div>
-          )}
+          ) : null}
 
           {/* Campos básicos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
