@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -27,14 +28,14 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
       await updateEquipo({ id: equipo.id, data });
       setShowEditDialog(false);
       toast({
-        title: "Equipo actualizado",
-        description: "El equipo ha sido actualizado exitosamente.",
+        title: "Cuadrilla actualizada",
+        description: "La cuadrilla ha sido actualizada exitosamente.",
       });
     } catch (error) {
       console.error('Error updating equipo:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el equipo.",
+        description: "No se pudo actualizar la cuadrilla.",
         variant: "destructive",
       });
     }
@@ -45,14 +46,14 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
       await deleteEquipo(equipo.id);
       setShowDeleteDialog(false);
       toast({
-        title: "Equipo eliminado",
-        description: "El equipo ha sido eliminado exitosamente.",
+        title: "Cuadrilla eliminada",
+        description: "La cuadrilla ha sido eliminada exitosamente.",
       });
     } catch (error) {
       console.error('Error deleting equipo:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el equipo.",
+        description: "No se pudo eliminar la cuadrilla.",
         variant: "destructive",
       });
     }
@@ -70,7 +71,7 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             <Edit className="mr-2 h-4 w-4" />
-            Editar equipo
+            Editar cuadrilla
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setShowMemberDialog(true)}>
             <Users className="mr-2 h-4 w-4" />
@@ -82,7 +83,7 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
             className="text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Eliminar equipo
+            Eliminar cuadrilla
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -114,7 +115,7 @@ export const EquipoBuceoActions = ({ equipo, onEdit, onDelete, onAddMember }: Eq
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el equipo
+              Esta acción no se puede deshacer. Esto eliminará permanentemente la cuadrilla
               "{equipo.nombre}" y removerá todos sus miembros.
             </AlertDialogDescription>
           </AlertDialogHeader>
