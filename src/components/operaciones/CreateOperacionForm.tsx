@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ export const CreateOperacionForm = ({
     tareas: initialData?.tareas || "",
   });
 
-  // Filter out any items with empty or invalid IDs
+  // Filter out any items with empty or invalid IDs and ensure they are strings
   const validSalmoneras = (salmoneras || []).filter(item => 
     item && typeof item === 'object' && item.id && typeof item.id === 'string' && item.id.trim() !== ""
   );
@@ -207,7 +206,7 @@ export const CreateOperacionForm = ({
                       <SelectItem value="no_data" disabled>No hay salmoneras disponibles</SelectItem>
                     ) : (
                       validSalmoneras.map((salmonera) => (
-                        <SelectItem key={salmonera.id} value={String(salmonera.id)}>
+                        <SelectItem key={salmonera.id} value={salmonera.id}>
                           {salmonera.nombre}
                         </SelectItem>
                       ))
@@ -234,7 +233,7 @@ export const CreateOperacionForm = ({
                     <SelectItem value="no_data" disabled>No hay sitios disponibles</SelectItem>
                   ) : (
                     validSitios.map((sitio) => (
-                      <SelectItem key={sitio.id} value={String(sitio.id)}>
+                      <SelectItem key={sitio.id} value={sitio.id}>
                         {sitio.nombre}
                       </SelectItem>
                     ))
@@ -260,7 +259,7 @@ export const CreateOperacionForm = ({
                     <SelectItem value="no_data" disabled>No hay contratistas disponibles</SelectItem>
                   ) : (
                     validContratistas.map((contratista) => (
-                      <SelectItem key={contratista.id} value={String(contratista.id)}>
+                      <SelectItem key={contratista.id} value={contratista.id}>
                         {contratista.nombre}
                       </SelectItem>
                     ))
