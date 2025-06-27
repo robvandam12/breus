@@ -21,12 +21,35 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <AppRoutes />
-      </QueryClientProvider>
-    </AuthProvider>
+    <QueryClient>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route 
+              path="/*" 
+              element={
+                <ProtectedRoute>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/inmersiones" element={<Inmersiones />} />
+                    <Route path="/operaciones" element={<Operaciones />} />
+                    <Route path="/cuadrillas-de-buceo" element={<CuadrillasDeBuceo />} />
+                    <Route path="/personal-de-buceo" element={<Navigate to="/cuadrillas-de-buceo" replace />} />
+                    <Route path="/hpt" element={<HPTManagement />} />
+                    <Route path="/anexo-bravo" element={<AnexoBravoManagement />} />
+                    <Route path="/bitacoras" element={<BitacoraManagement />} />
+                    <Route path="/bitacoras/buzo" element={<BitacoraBuzoPage />} />
+                    <Route path="/bitacoras/supervisor" element={<BitacoraSupervisorPage />} />
+                    <Route path="/configuracion" element={<Configuracion />} />
+                  </Routes>
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </QueryClient>
   );
 }
 
