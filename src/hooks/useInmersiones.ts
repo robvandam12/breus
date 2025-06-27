@@ -61,73 +61,26 @@ const useInmersionesCRUD = (operacionId?: string) => {
       // Si no es superuser, aplicar filtros según el contexto del usuario
       if (!isSuperuser && contextData) {
         if (contextData.company_type === 'salmonera') {
-          // Para usuarios de salmonera, filtrar por:
-          // 1. Inmersiones que tienen company_id que coincida
-          // 2. O inmersiones cuya operación pertenezca a la salmonera (para compatibilidad con registros antiguos)
           const salmoneraId = contextData.company_id;
+          console.log('Filtering for salmonera ID:', salmoneraId);
           
-          // Usar una consulta que incluya ambos casos
-          const { data, error } = await supabase
-            .from('inmersion')
-            .select(`
-              *,
-              operacion:operacion_id (
-                id,
-                codigo,
-                nombre,
-                salmonera_id,
-                contratista_id,
-                salmoneras:salmonera_id(nombre),
-                sitios:sitio_id(nombre),
-                contratistas:contratista_id(nombre)
-              )
-            `)
-            .or(`company_id.eq.${salmoneraId},operacion.salmonera_id.eq.${salmoneraId}`)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-          
-          return data.map(inmersion => ({
-            ...inmersion,
-            operacion_nombre: (inmersion.operacion as any)?.nombre || '',
-            depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
-          })) as unknown as Inmersion[];
+          // Consulta directa sin el filtro OR problemático
+          query = query.eq('operacion.salmonera_id', salmoneraId);
         } else if (contextData.company_type === 'contratista') {
-          // Para usuarios de contratista, filtrar por company_id o por operaciones asignadas
           const contratistaId = contextData.company_id;
+          console.log('Filtering for contratista ID:', contratistaId);
           
-          const { data, error } = await supabase
-            .from('inmersion')
-            .select(`
-              *,
-              operacion:operacion_id (
-                id,
-                codigo,
-                nombre,
-                salmonera_id,
-                contratista_id,
-                salmoneras:salmonera_id(nombre),
-                sitios:sitio_id(nombre),
-                contratistas:contratista_id(nombre)
-              )
-            `)
-            .or(`company_id.eq.${contratistaId},operacion.contratista_id.eq.${contratistaId}`)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-          
-          return data.map(inmersion => ({
-            ...inmersion,
-            operacion_nombre: (inmersion.operacion as any)?.nombre || '',
-            depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
-          })) as unknown as Inmersion[];
+          // Consulta directa sin el filtro OR problemático
+          query = query.eq('operacion.contratista_id', contratistaId);
         }
       }
 
-      // Para superusers o casos sin contexto específico, usar la consulta original
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Query error:', error);
+        throw error;
+      }
       
       return data.map(inmersion => ({
         ...inmersion,
