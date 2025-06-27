@@ -74,10 +74,70 @@ export const useOperacionesMutations = () => {
     },
   });
 
+  const deleteOperacion = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('operacion')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operaciones'] });
+      toast({
+        title: "Operación eliminada",
+        description: "La operación se ha eliminado exitosamente.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar la operación: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const checkCanDelete = async (id: string) => {
+    try {
+      // Verificar si hay inmersiones asociadas
+      const { data: inmersiones, error } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .eq('operacion_id', id)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (inmersiones && inmersiones.length > 0) {
+        return {
+          canDelete: false,
+          reason: 'tiene inmersiones asociadas'
+        };
+      }
+
+      return {
+        canDelete: true,
+        reason: null
+      };
+    } catch (error) {
+      console.error('Error checking if can delete:', error);
+      return {
+        canDelete: false,
+        reason: 'error al verificar dependencias'
+      };
+    }
+  };
+
   return {
     createOperacion: createOperacion.mutateAsync,
     updateOperacion: updateOperacion.mutateAsync,
+    deleteOperacion: deleteOperacion.mutateAsync,
+    checkCanDelete,
     isCreating: createOperacion.isPending,
     isUpdating: updateOperacion.isPending,
+    isDeleting: deleteOperacion.isPending,
   };
 };

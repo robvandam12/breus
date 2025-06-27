@@ -112,51 +112,62 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
 
   const loadContratistas = async (salmoneraId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('salmonera_contratista')
-        .select(`
-          contratista_id,
-          contratistas!inner(id, nombre)
-        `)
+        .select('contratista_id')
         .eq('salmonera_id', salmoneraId);
 
-      const contratistasData = data?.map(item => ({
-        id: item.contratista_id!,
-        nombre: (item.contratistas as any).nombre
-      })) || [];
+      if (error) throw error;
 
-      setContratistas(contratistasData);
+      if (data && data.length > 0) {
+        const contratistaIds = data.map(item => item.contratista_id).filter(Boolean);
+        
+        if (contratistaIds.length > 0) {
+          const { data: contratistasData, error: contratistasError } = await supabase
+            .from('contratistas')
+            .select('id, nombre')
+            .in('id', contratistaIds);
+
+          if (contratistasError) throw contratistasError;
+          setContratistas(contratistasData || []);
+        }
+      }
     } catch (error) {
       console.error('Error loading contratistas:', error);
+      setContratistas([]);
     }
   };
 
   const loadOperaciones = async (contratistaId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('operacion')
         .select('id, codigo, nombre, fecha_inicio')
         .eq('contratista_id', contratistaId)
         .eq('estado', 'activa')
         .order('fecha_inicio', { ascending: true });
 
+      if (error) throw error;
       setOperaciones(data || []);
     } catch (error) {
       console.error('Error loading operaciones:', error);
+      setOperaciones([]);
     }
   };
 
   const loadPersonal = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('usuario')
         .select('usuario_id, nombre, apellido, rol')
         .in('rol', ['buzo', 'supervisor'])
         .eq('activo', true);
 
+      if (error) throw error;
       setPersonal(data || []);
     } catch (error) {
       console.error('Error loading personal:', error);
+      setPersonal([]);
     }
   };
 
