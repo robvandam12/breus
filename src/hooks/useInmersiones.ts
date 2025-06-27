@@ -14,16 +14,6 @@ import { usePreDiveValidation } from './usePreDiveValidation';
 export { validateOperationDocuments };
 export type { Inmersion, ValidationStatus, OperationData, HPTData, AnexoBravoData, EquipoBuceoData };
 
-// Helper function to get user context
-const getUserContext = async () => {
-  const { data: userContext, error } = await supabase.rpc('get_user_company_context');
-  if (error) {
-    console.error('Error getting user context:', error);
-    return null;
-  }
-  return userContext?.[0] || null;
-};
-
 // CRUD operations with contextual validation and company context
 const useInmersionesCRUD = (operacionId?: string) => {
   const queryClient = useQueryClient();
@@ -34,15 +24,16 @@ const useInmersionesCRUD = (operacionId?: string) => {
   const { data: inmersiones = [], isLoading, error, refetch } = useQuery({
     queryKey: ['inmersiones', operacionId],
     queryFn: async () => {
-      const contextData = await getUserContext();
-      if (!contextData) {
-        console.warn('No user context available');
-        return [];
+      // Obtener contexto del usuario para filtrar por empresa si no es superuser
+      const { data: userContext, error: contextError } = await supabase
+        .rpc('get_user_company_context');
+
+      if (contextError) {
+        console.error('Error getting user context:', contextError);
       }
 
-      const isSuperuser = contextData.is_superuser;
-      const userCompanyId = contextData.company_id;
-      const userCompanyType = contextData.company_type;
+      const contextData = userContext?.[0];
+      const isSuperuser = contextData?.is_superuser;
 
       let query = supabase
         .from('inmersion')
@@ -52,6 +43,7 @@ const useInmersionesCRUD = (operacionId?: string) => {
             id,
             codigo,
             nombre,
+            equipo_buceo_id,
             salmonera_id,
             contratista_id,
             salmoneras:salmonera_id(nombre),
@@ -66,54 +58,16 @@ const useInmersionesCRUD = (operacionId?: string) => {
         query = query.eq('operacion_id', operacionId);
       }
 
-      // Si es superuser, ver todo
-      if (isSuperuser) {
-        const { data, error } = await query;
-        if (error) throw error;
-        return data.map(inmersion => ({
-          ...inmersion,
-          operacion_nombre: (inmersion.operacion as any)?.nombre || '',
-          depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
-        })) as unknown as Inmersion[];
-      }
-
-      // Para usuarios normales, filtrar por contexto empresarial
-      if (!userCompanyId || !userCompanyType) {
-        console.warn('User has no company context');
-        return [];
-      }
-
-      // Construir filtros basados en el contexto del usuario
-      let filterApplied = false;
-
-      if (userCompanyType === 'salmonera') {
-        // Para salmoneras: 
-        // 1. Inmersiones donde company_id coincide (nuevas)
-        // 2. Inmersiones donde operacion.salmonera_id coincide (con operación)
-        // 3. Inmersiones donde empresa_creadora_id coincide (independientes)
-        query = query.or(`company_id.eq.${userCompanyId},operacion.salmonera_id.eq.${userCompanyId},empresa_creadora_id.eq.${userCompanyId}`);
-        filterApplied = true;
-      } else if (userCompanyType === 'contratista') {
-        // Para contratistas:
-        // 1. Inmersiones donde company_id coincide (nuevas)
-        // 2. Inmersiones donde operacion.contratista_id coincide (asignadas)
-        // 3. Inmersiones donde empresa_creadora_id coincide (independientes)
-        query = query.or(`company_id.eq.${userCompanyId},operacion.contratista_id.eq.${userCompanyId},empresa_creadora_id.eq.${userCompanyId}`);
-        filterApplied = true;
-      }
-
-      if (!filterApplied) {
-        console.warn('No filter applied for user context');
-        return [];
+      // Si no es superuser, filtrar por empresa del usuario
+      if (!isSuperuser && contextData?.company_id) {
+        query = query.eq('company_id', contextData.company_id);
       }
 
       const { data, error } = await query;
-      if (error) {
-        console.error('Error loading inmersiones:', error);
-        throw error;
-      }
+
+      if (error) throw error;
       
-      return (data || []).map(inmersion => ({
+      return data.map(inmersion => ({
         ...inmersion,
         operacion_nombre: (inmersion.operacion as any)?.nombre || '',
         depth_history: Array.isArray(inmersion.depth_history) ? inmersion.depth_history : [],
@@ -133,9 +87,8 @@ const useInmersionesCRUD = (operacionId?: string) => {
         return newInmersion;
       }
 
-      // Obtener contexto del usuario para asignar empresa
-      const contextData = await getUserContext();
-      if (!contextData?.company_id || !contextData?.company_type) {
+      // Validar que tenga contexto empresarial
+      if (!inmersionData.company_id || !inmersionData.company_type) {
         throw new Error('Contexto empresarial requerido para crear inmersión');
       }
 
@@ -159,17 +112,15 @@ const useInmersionesCRUD = (operacionId?: string) => {
         planned_bottom_time: inmersionData.planned_bottom_time || null,
         context_type: inmersionData.context_type || 'direct',
         is_independent: inmersionData.is_independent || false,
-        company_id: contextData.company_id,
-        company_type: contextData.company_type,
-        empresa_creadora_id: contextData.company_id,
-        empresa_creadora_tipo: contextData.company_type,
+        company_id: inmersionData.company_id,
+        company_type: inmersionData.company_type,
         hpt_validado: inmersionData.hpt_validado || false,
         anexo_bravo_validado: inmersionData.anexo_bravo_validado || false
       };
 
       console.log('Creating inmersion with clean data:', cleanData);
 
-      // Para inmersiones independientes, crear directamente sin validaciones complejas
+      // Para inmersiones independientes, crear directamente
       if (cleanData.is_independent || !cleanData.operacion_id) {
         const { data, error } = await supabase
           .from('inmersion')
