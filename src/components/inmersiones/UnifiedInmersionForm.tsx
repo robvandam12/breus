@@ -7,11 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Zap, AlertCircle, Users } from "lucide-react";
+import { Calendar, Zap, AlertCircle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { InmersionTeamManagerEnhanced } from './InmersionTeamManagerEnhanced';
 import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
 import type { Inmersion } from '@/hooks/useInmersiones';
 
@@ -38,21 +37,26 @@ interface Operacion {
   fecha_inicio: string;
 }
 
-interface Personal {
-  usuario_id: string;
-  nombre: string;
-  apellido: string;
-  rol: string;
-}
-
 export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: UnifiedInmersionFormProps) => {
   const { profile } = useAuth();
   const [isPlanned, setIsPlanned] = useState(initialData ? !initialData.is_independent : false);
   const [loading, setLoading] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(
-    initialData?.metadata?.cuadrilla_id || null
-  );
+  
+  // Manejo seguro del metadata para cuadrilla_id
+  const getInitialCuadrillaId = () => {
+    if (!initialData?.metadata) return null;
+    
+    try {
+      const metadata = typeof initialData.metadata === 'string' 
+        ? JSON.parse(initialData.metadata) 
+        : initialData.metadata;
+      return metadata?.cuadrilla_id || null;
+    } catch {
+      return null;
+    }
+  };
+  
+  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(getInitialCuadrillaId());
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -65,15 +69,13 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
     profundidad_max: initialData?.profundidad_max?.toString() || '',
     observaciones: initialData?.observaciones || '',
     buzo_principal_id: initialData?.buzo_principal_id || '',
-    supervisor_id: initialData?.supervisor_id || '',
-    metadata: initialData?.metadata || {}
+    supervisor_id: initialData?.supervisor_id || ''
   });
 
   // Datos para selects
   const [salmoneras, setSalmoneras] = useState<Salmonera[]>([]);
   const [contratistas, setContratistas] = useState<Contratista[]>([]);
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
-  const [personal, setPersonal] = useState<Personal[]>([]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -166,62 +168,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
     }
   };
 
-  const loadPersonal = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('usuario')
-        .select('usuario_id, nombre, apellido, rol')
-        .in('rol', ['buzo', 'supervisor']);
-
-      if (error) {
-        console.error('Error loading personal:', error);
-        setPersonal([]);
-        return;
-      }
-
-      // Mapear explícitamente al tipo Personal
-      const personalData: Personal[] = (data || []).map(user => ({
-        usuario_id: user.usuario_id,
-        nombre: user.nombre || '',
-        apellido: user.apellido || '',
-        rol: user.rol
-      }));
-
-      setPersonal(personalData);
-    } catch (error) {
-      console.error('Error loading personal:', error);
-      setPersonal([]);
-    }
-  };
-
-  const handleTeamUpdate = (updatedTeam: any[]) => {
-    setTeamMembers(updatedTeam);
-    
-    // Actualizar campos principales basados en el equipo
-    const supervisor = updatedTeam.find(member => member.role === 'supervisor');
-    const buzoPrincipal = updatedTeam.find(member => member.role === 'buzo_principal');
-    
-    if (supervisor) {
-      setFormData(prev => ({
-        ...prev,
-        supervisor_id: supervisor.user_id
-      }));
-    }
-    
-    if (buzoPrincipal) {
-      setFormData(prev => ({
-        ...prev,
-        buzo_principal_id: buzoPrincipal.user_id
-      }));
-    }
-  };
-
   const handleCuadrillaChange = (cuadrillaId: string | null) => {
     setSelectedCuadrillaId(cuadrillaId);
-    // Limpiar el equipo manual si se selecciona una cuadrilla
-    if (cuadrillaId) {
-      setTeamMembers([]);
-    }
   };
 
   const handleCuadrillaCreated = (newCuadrilla: any) => {
@@ -233,6 +181,11 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
     setLoading(true);
 
     try {
+      // Manejo seguro del metadata
+      const currentMetadata = initialData?.metadata ? 
+        (typeof initialData.metadata === 'string' ? JSON.parse(initialData.metadata) : initialData.metadata) : 
+        {};
+
       const inmersionData = {
         ...formData,
         is_independent: !isPlanned,
@@ -240,10 +193,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         codigo_operacion_externa: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
         estado: initialData?.estado || 'planificada',
-        team_members: teamMembers,
         cuadrilla_id: selectedCuadrillaId,
         metadata: {
-          ...formData.metadata,
+          ...currentMetadata,
           cuadrilla_id: selectedCuadrillaId
         }
       };
@@ -441,22 +393,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
               onCuadrillaCreated={handleCuadrillaCreated}
             />
           </div>
-
-          {/* Gestión Manual de Personal (solo si no hay cuadrilla seleccionada) */}
-          {!selectedCuadrillaId && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <Label className="text-lg font-medium">Asignación Manual de Personal</Label>
-              </div>
-              
-              <InmersionTeamManagerEnhanced
-                inmersionId={initialData?.inmersion_id || null}
-                onTeamUpdate={handleTeamUpdate}
-                isCreatingNew={!initialData}
-              />
-            </div>
-          )}
 
           <div>
             <Label htmlFor="observaciones">Observaciones</Label>
