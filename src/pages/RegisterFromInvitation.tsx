@@ -56,7 +56,15 @@ export default function RegisterFromInvitation() {
           throw new Error('Invitación no válida o expirada');
         }
 
-        setInvitation(data);
+        setInvitation({
+          email: data.email,
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          rol: data.rol,
+          empresa_id: data.empresa_id,
+          tipo_empresa: data.tipo_empresa as 'salmonera' | 'contratista',
+          invitado_por: data.invitado_por
+        });
         setFormData({
           nombre: data.nombre || '',
           apellido: data.apellido || '',
