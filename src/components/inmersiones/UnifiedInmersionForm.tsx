@@ -13,10 +13,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InmersionTeamManagerEnhanced } from './InmersionTeamManagerEnhanced';
 import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
+import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface UnifiedInmersionFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  initialData?: Inmersion;
 }
 
 interface Salmonera {
@@ -43,26 +45,28 @@ interface Personal {
   rol: string;
 }
 
-export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFormProps) => {
+export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: UnifiedInmersionFormProps) => {
   const { profile } = useAuth();
-  const [isPlanned, setIsPlanned] = useState(false);
+  const [isPlanned, setIsPlanned] = useState(initialData ? !initialData.is_independent : false);
   const [loading, setLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(null);
+  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(
+    initialData?.metadata?.cuadrilla_id || null
+  );
   
   // Estado del formulario
   const [formData, setFormData] = useState({
-    salmonera_id: '',
-    contratista_id: '',
-    operacion_id: '',
-    codigo_operacion_externa: '',
-    objetivo: '',
-    fecha_inmersion: '',
-    profundidad_max: '',
-    observaciones: '',
-    buzo_principal_id: '',
-    supervisor_id: '',
-    metadata: {}
+    salmonera_id: initialData?.company_id || '',
+    contratista_id: initialData?.operacion_id ? '' : '', // Will be loaded from operacion
+    operacion_id: initialData?.operacion_id || '',
+    codigo_operacion_externa: initialData?.external_operation_code || '',
+    objetivo: initialData?.objetivo || '',
+    fecha_inmersion: initialData?.fecha_inmersion || '',
+    profundidad_max: initialData?.profundidad_max?.toString() || '',
+    observaciones: initialData?.observaciones || '',
+    buzo_principal_id: initialData?.buzo_principal_id || '',
+    supervisor_id: initialData?.supervisor_id || '',
+    metadata: initialData?.metadata || {}
   });
 
   // Datos para selects
@@ -235,9 +239,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         operacion_id: isPlanned ? formData.operacion_id : null,
         codigo_operacion_externa: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
-        estado: 'planificada',
+        estado: initialData?.estado || 'planificada',
         team_members: teamMembers,
-        cuadrilla_id: selectedCuadrillaId, // Incluir cuadrilla seleccionada
+        cuadrilla_id: selectedCuadrillaId,
         metadata: {
           ...formData.metadata,
           cuadrilla_id: selectedCuadrillaId
@@ -249,7 +253,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
       console.error('Error creating inmersion:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la inmersión",
+        description: `No se pudo ${initialData ? 'actualizar' : 'crear'} la inmersión`,
         variant: "destructive",
       });
     } finally {
@@ -264,13 +268,14 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     <Card className="w-full max-w-6xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Nueva Inmersión</span>
+          <span>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</span>
           <div className="flex items-center space-x-2">
             <Zap className="w-4 h-4" />
             <Switch
               checked={isPlanned}
               onCheckedChange={setIsPlanned}
               id="inmersion-type"
+              disabled={!!initialData} // Disable if editing
             />
             <Calendar className="w-4 h-4" />
           </div>
@@ -446,9 +451,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
               </div>
               
               <InmersionTeamManagerEnhanced
-                inmersionId={null}
+                inmersionId={initialData?.inmersion_id || null}
                 onTeamUpdate={handleTeamUpdate}
-                isCreatingNew={true}
+                isCreatingNew={!initialData}
               />
             </div>
           )}
@@ -467,7 +472,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
           {/* Botones */}
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Creando...' : 'Crear Inmersión'}
+              {loading ? (initialData ? 'Actualizando...' : 'Creando...') : (initialData ? 'Actualizar Inmersión' : 'Crear Inmersión')}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
