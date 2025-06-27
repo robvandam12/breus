@@ -12,7 +12,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InmersionTeamManagerEnhanced } from './InmersionTeamManagerEnhanced';
-import { CuadrillaSelector } from './CuadrillaSelector';
 
 interface UnifiedInmersionFormProps {
   onSubmit: (data: any) => void;
@@ -48,7 +47,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
   const [isPlanned, setIsPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(null);
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -211,15 +209,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     }
   };
 
-  const handleCuadrillaChange = (cuadrillaId: string | null) => {
-    setSelectedCuadrillaId(cuadrillaId);
-    
-    // Si se selecciona una cuadrilla, limpiar el equipo manual
-    if (cuadrillaId) {
-      setTeamMembers([]);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -232,8 +221,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
         codigo_operacion_externa: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
         estado: 'planificada',
-        team_members: teamMembers,
-        metadata: selectedCuadrillaId ? { cuadrilla_id: selectedCuadrillaId } : {}
+        team_members: teamMembers // Incluir los miembros del equipo
       };
 
       await onSubmit(inmersionData);
@@ -419,39 +407,18 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
             />
           </div>
 
-          {/* Gestión de Cuadrillas de Buceo */}
+          {/* Gestión de Personal de Buceo */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              <Label className="text-lg font-medium">Cuadrilla de Buceo</Label>
+              <Label className="text-lg font-medium">Personal de Buceo</Label>
             </div>
             
-            <CuadrillaSelector
-              selectedCuadrillaId={selectedCuadrillaId}
-              fechaInmersion={formData.fecha_inmersion}
-              onCuadrillaChange={handleCuadrillaChange}
-              onCuadrillaCreated={(cuadrilla) => {
-                toast({
-                  title: "Cuadrilla creada",
-                  description: `Cuadrilla "${cuadrilla.nombre}" creada y asignada exitosamente.`,
-                });
-              }}
+            <InmersionTeamManagerEnhanced
+              inmersionId={null} // Para nuevas inmersiones
+              onTeamUpdate={handleTeamUpdate}
+              isCreatingNew={true}
             />
-            
-            {/* Solo mostrar gestión manual si no hay cuadrilla seleccionada */}
-            {!selectedCuadrillaId && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="w-4 h-4 text-orange-600" />
-                  <Label className="text-sm font-medium text-orange-700">O asignar personal manualmente</Label>
-                </div>
-                <InmersionTeamManagerEnhanced
-                  inmersionId={null}
-                  onTeamUpdate={handleTeamUpdate}
-                  isCreatingNew={true}
-                />
-              </div>
-            )}
           </div>
 
           <div>

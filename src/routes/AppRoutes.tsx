@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -46,7 +47,6 @@ const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
 const SuperuserModules = lazy(() => import("../pages/admin/SuperuserModules"));
 const SystemMonitoring = lazy(() => import("../pages/admin/SystemMonitoring"));
 const Usuarios = lazy(() => import("../pages/empresas/Usuarios"));
-const CuadrillasDeBuceo = lazy(() => import("../pages/CuadrillasDeBuceo"));
 
 const FullPageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -137,15 +137,6 @@ export const AppRoutes = () => {
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>
               <PersonalDeBuceo />
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        
-        {/* Cuadrillas de Buceo Route - Nueva funcionalidad */}
-        <Route path="/cuadrillas-de-buceo" element={
-          <ProtectedRoute>
-            <Suspense fallback={<PageWithSidebarSkeleton />}>
-              <CuadrillasDeBuceo />
             </Suspense>
           </ProtectedRoute>
         } />
