@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,9 +68,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
     objetivo: initialData?.objetivo || '',
     fecha_inmersion: initialData?.fecha_inmersion || '',
     profundidad_max: initialData?.profundidad_max?.toString() || '',
-    observaciones: initialData?.observaciones || '',
-    buzo_principal_id: initialData?.buzo_principal_id || '',
-    supervisor_id: initialData?.supervisor_id || ''
+    observaciones: initialData?.observaciones || ''
   });
 
   // Datos para selects
@@ -119,7 +118,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
           salmonera_id: profile.salmonera_id!,
           contratista_id: profile.servicio_id!
         }));
-        loadPersonal();
       }
 
     } catch (error) {
@@ -217,7 +215,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const shouldShowOperacionWarning = isPlanned && formData.contratista_id && operaciones.length === 0;
 
   return (
-    <Card className="w-full max-w-6xl">
+    <Card className="w-full max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</span>
@@ -386,6 +384,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
 
           {/* Selector de Cuadrilla */}
           <div className="space-y-4">
+            <Label>Cuadrilla de Buceo *</Label>
             <CuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={handleCuadrillaChange}
