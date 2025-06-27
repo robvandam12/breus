@@ -197,16 +197,14 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
     if (supervisor) {
       setFormData(prev => ({
         ...prev,
-        supervisor_id: supervisor.user_id,
-        supervisor: `${supervisor.nombre} ${supervisor.apellido || ''}`.trim()
+        supervisor_id: supervisor.user_id
       }));
     }
     
     if (buzoPrincipal) {
       setFormData(prev => ({
         ...prev,
-        buzo_principal_id: buzoPrincipal.user_id,
-        buzo_principal: `${buzoPrincipal.nombre} ${buzoPrincipal.apellido || ''}`.trim()
+        buzo_principal_id: buzoPrincipal.user_id
       }));
     }
   };
@@ -420,7 +418,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel }: UnifiedInmersionFor
               inmersionId={null} // Para nuevas inmersiones
               onTeamUpdate={handleTeamUpdate}
               isCreatingNew={true}
-              targetDate={formData.fecha_inmersion} // Pasar fecha objetivo
             />
           </div>
 
