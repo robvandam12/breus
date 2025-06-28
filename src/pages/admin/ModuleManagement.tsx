@@ -2,7 +2,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Settings } from "lucide-react";
-import { ModuleManagementDashboard } from "@/components/admin/ModuleManagementDashboard";
+import { SuperuserModuleManager } from "@/components/admin/SuperuserModuleManager";
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
@@ -41,7 +41,7 @@ export default function ModuleManagement() {
       subtitle="Panel de administración y configuración de módulos del sistema"
       icon={Settings}
     >
-      <ModuleManagementDashboard />
+      <SuperuserModuleManager />
     </MainLayout>
   );
 }
