@@ -72,7 +72,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           .select(`
             *,
             salmoneras:salmonera_id (nombre, rut),
-            sitios:sitio_id (nombre, ubicacion),
+            centros:centro_id (nombre, ubicacion),
             contratistas:contratista_id (nombre, rut)
           `)
           .eq('id', currentOperacionId)
@@ -87,7 +87,7 @@ export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
           ...prev,
           codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           empresa_nombre: operacion.contratistas?.nombre || '',
-          lugar_faena: operacion.sitios?.nombre || '',
+          lugar_faena: operacion.centros?.nombre || '',
           buzo_o_empresa_nombre: operacion.contratistas?.nombre || ''
         }));
 

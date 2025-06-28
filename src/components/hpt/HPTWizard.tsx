@@ -1,352 +1,306 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { HPTWizardStep1 } from './HPTWizardStep1';
-import { HPTWizardStep2 } from './HPTWizardStep2';
-import { HPTWizardStep3 } from './HPTWizardStep3';
-import { HPTWizardStep4 } from './HPTWizardStep4';
-import { HPTWizardStep5 } from './HPTWizardStep5';
-import { HPTOperationSelector } from './HPTOperationSelector';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+import { useContratistas } from '@/hooks/useContratistas';
+import { useCentros } from '@/hooks/useCentros';
 
 interface HPTWizardProps {
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
   operacionId?: string;
-  hptId?: string;
-  onComplete?: (hptId: string) => void;
-  onCancel?: () => void;
 }
 
-export const HPTWizard: React.FC<HPTWizardProps> = ({
-  operacionId: initialOperacionId,
-  hptId,
-  onComplete,
-  onCancel
-}) => {
-  const { equipos } = useEquiposBuceoEnhanced();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
-  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
+export const HPTWizard = ({ onSubmit, onCancel, operacionId }: HPTWizardProps) => {
+  const { operaciones } = useOperaciones();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
+  const { centros } = useCentros();
 
-  const [formData, setFormData] = useState<any>({
-    folio: '',
-    fecha: new Date().toISOString().split('T')[0],
-    empresa_servicio_nombre: '',
-    centro_trabajo_nombre: '',
+  const [formData, setFormData] = useState({
+    operacion_id: operacionId || '',
+    codigo: '',
+    fecha_programada: new Date().toISOString().split('T')[0],
+    hora_inicio: '',
+    hora_fin: '',
+    supervisor: '',
     lugar_especifico: '',
-    descripcion_tarea: '',
+    descripcion_trabajo: '',
+    tipo_trabajo: '',
     plan_trabajo: '',
-    supervisor_nombre: '',
-    supervisor_cargo: '',
-    supervisor_firma: '',
-    aprueba_nombre: '',
-    aprueba_cargo: '',
-    aprueba_firma: '',
-    responsable_nombre: '',
-    responsable_cargo: '',
-    responsable_firma: '',
-    riesgos_tarea: [],
-    personal_participante: [],
-    equipos_utilizados: [],
-    procedimientos_seguridad: [],
-    observaciones: '',
-    operacion_id: currentOperacionId,
-    estado: 'borrador'
+    riesgos_identificados: [],
+    medidas_control: [],
+    equipos_requeridos: [],
+    personal_asignado: [],
+    plan_emergencia: '',
+    hospital_cercano: '',
+    camara_hiperbarica: '',
+    observaciones: ''
   });
 
-  const steps = [
-    { id: 1, title: "Información General", isValid: !!(formData.folio && formData.fecha && formData.empresa_servicio_nombre && formData.centro_trabajo_nombre) },
-    { id: 2, title: "Personal y Supervisor", isValid: !!(formData.supervisor_nombre && formData.responsable_nombre) },
-    { id: 3, title: "Análisis de Riesgos", isValid: formData.riesgos_tarea && formData.riesgos_tarea.length > 0 },
-    { id: 4, title: "Equipos y Procedimientos", isValid: formData.equipos_utilizados && formData.procedimientos_seguridad },
-    { id: 5, title: "Aprobaciones y Observaciones", isValid: true }
-  ];
+  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
 
-  const totalSteps = steps.length;
-  const progress = (currentStep / totalSteps) * 100;
-
-  const updateData = (updates: any) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const goToStep = (stepNumber: number) => {
-    if (stepNumber >= 1 && stepNumber <= totalSteps) {
-      setCurrentStep(stepNumber);
-    }
-  };
-
-  const saveDraft = async () => {
-    setIsLoading(true);
-    try {
-      const hptData = { ...formData, operacion_id: currentOperacionId, estado: 'borrador' };
-      
-      if (hptId) {
-        // Update existing HPT
-        const { data, error } = await supabase
-          .from('hpt')
-          .update(hptData)
-          .eq('id', hptId)
-          .select()
-          .single();
-
-        if (error) throw error;
-        console.log('HPT actualizado:', data);
-      } else {
-        // Create new HPT
-        const { data, error } = await supabase
-          .from('hpt')
-          .insert([hptData])
-          .select()
-          .single();
-
-        if (error) throw error;
-        console.log('HPT guardado como borrador:', data);
-      }
-      
-      console.log('HPT guardado como borrador');
-    } catch (error) {
-      console.error('Error al guardar borrador:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const submitHPT = async () => {
-    setIsLoading(true);
-    try {
-      const hptData = { ...formData, operacion_id: currentOperacionId, estado: 'firmado', firmado: true };
-
-      if (hptId) {
-        // Update existing HPT
-        const { data, error } = await supabase
-          .from('hpt')
-          .update(hptData)
-          .eq('id', hptId)
-          .select()
-          .single();
-
-        if (error) throw error;
-        console.log('HPT actualizado y firmado:', data);
-        return hptId;
-      } else {
-        // Create new HPT
-        const { data, error } = await supabase
-          .from('hpt')
-          .insert([hptData])
-          .select()
-          .single();
-
-        if (error) throw error;
-        console.log('HPT firmado y guardado:', data);
-        return data.id;
-      }
-    } catch (error) {
-      console.error('Error al firmar HPT:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isFormComplete = () => {
-    return steps.every(step => step.isValid);
-  };
-
-  // Poblar datos automáticamente cuando se selecciona una operación
+  // Auto-poblar datos cuando se selecciona una operación
   useEffect(() => {
-    const populateOperacionData = async () => {
-      if (!currentOperacionId || hptId) return; // No poblar si es edición
+    const loadOperacionData = async () => {
+      if (!formData.operacion_id) return;
 
       try {
-        // Obtener datos de la operación
-        const { data: operacion, error: opError } = await supabase
+        const { data: operacion, error } = await supabase
           .from('operacion')
           .select(`
             *,
             salmoneras:salmonera_id (nombre, rut),
-            sitios:sitio_id (nombre, ubicacion),
+            centros:centro_id (nombre, ubicacion),
             contratistas:contratista_id (nombre, rut)
           `)
-          .eq('id', currentOperacionId)
+          .eq('id', formData.operacion_id)
           .single();
 
-        if (opError) throw opError;
+        if (error) throw error;
 
-        // Since operations no longer have direct team assignments, we'll use available teams
-        const availableTeams = equipos || [];
-        const selectedTeam = availableTeams.length > 0 ? availableTeams[0] : null;
+        setSelectedOperacion(operacion);
+        
+        // Auto-poblar campos basado en la operación
+        const salmonera = salmoneras.find(s => s.id === operacion.salmonera_id);
+        const centro = centros.find(s => s.id === operacion.centro_id);
+        const contratista = contratistas.find(c => c.id === operacion.contratista_id);
+        
+        setFormData(prev => ({
+          ...prev,
+          codigo: `HPT-${operacion.codigo}-${new Date().getFullYear()}`,
+          descripcion_trabajo: operacion.tareas || '',
+          lugar_especifico: centro?.nombre || '',
+        }));
 
-        // Crear objeto con las propiedades que existen en el tipo de datos
-        const autoDataUpdates: any = {
-          folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
-          fecha: new Date().toISOString().split('T')[0],
-          empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-          centro_trabajo_nombre: operacion.sitios?.nombre || '',
-          lugar_especifico: operacion.sitios?.ubicacion || '',
-          descripcion_tarea: operacion.tareas || 'Operación de buceo comercial',
-          plan_trabajo: operacion.nombre || ''
-        };
-
-        // Si hay equipo disponible, poblar datos del supervisor
-        if (selectedTeam?.miembros) {
-          const supervisor = selectedTeam.miembros.find(m => m.rol === 'supervisor');
-          if (supervisor) {
-            autoDataUpdates.supervisor_nombre = supervisor.nombre_completo;
-            autoDataUpdates.supervisor = supervisor.nombre_completo;
-          }
-        }
-
-        setFormData(prev => ({ ...prev, ...autoDataUpdates }));
-        console.log('Datos poblados automáticamente:', autoDataUpdates);
       } catch (error) {
-        console.error('Error populating operation data:', error);
+        console.error('Error loading operation data:', error);
       }
     };
 
-    populateOperacionData();
-  }, [currentOperacionId, hptId, equipos]);
+    loadOperacionData();
+  }, [formData.operacion_id, salmoneras, centros, contratistas]);
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return <HPTWizardStep1 data={formData} updateData={updateData} />;
-      case 2:
-        return <HPTWizardStep2 data={formData} updateData={updateData} />;
-      case 3:
-        return <HPTWizardStep3 data={formData} updateData={updateData} />;
-      case 4:
-        return <HPTWizardStep4 data={formData} updateData={updateData} />;
-      case 5:
-        return <HPTWizardStep5 data={formData} updateData={updateData} />;
-      default:
-        return <div>Paso no encontrado</div>;
-    }
+  const handleOperacionChange = (value: string) => {
+    setFormData(prev => ({ ...prev, operacion_id: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      estado: 'borrador',
+      firmado: false,
+      form_version: 1
+    });
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {showOperacionSelector && (
-        <HPTOperationSelector
-          onOperacionSelected={setCurrentOperacionId}
-          selectedOperacionId={currentOperacionId}
-        />
-      )}
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Crear Nuevo HPT</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Selección de Operación */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <CardTitle>
-                {hptId ? 'Editar' : 'Crear'} Hoja de Planificación de Tarea (HPT)
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Paso {currentStep} de {totalSteps}: {steps[currentStep - 1]?.title}
-              </p>
-            </div>
-            <Badge variant="outline">
-              {progress.toFixed(0)}% Completado
-            </Badge>
-          </div>
-          <Progress value={progress} className="mt-4" />
-        </CardHeader>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {steps.map((step) => (
-              <Button
-                key={step.id}
-                variant={step.id === currentStep ? "default" : "outline"}
-                size="sm"
-                onClick={() => goToStep(step.id)}
-                className="h-auto p-2 flex flex-col items-center gap-1"
+              <Label htmlFor="operacion">Operación *</Label>
+              <Select
+                value={formData.operacion_id}
+                onValueChange={handleOperacionChange}
+                disabled={!!operacionId}
               >
-                <div className="flex items-center gap-1">
-                  {step.isValid ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                  <span className="font-semibold">{step.id}</span>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar operación..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {operaciones.filter(op => op.estado === 'activa').map((operacion) => (
+                    <SelectItem key={operacion.id} value={operacion.id}>
+                      {operacion.codigo} - {operacion.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="codigo">Código HPT *</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                placeholder="Código automático del HPT"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Información auto-poblada de la operación */}
+          {selectedOperacion && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Información de la Operación</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Salmonera:</span>
+                  <p>{selectedOperacion.salmoneras?.nombre || 'No asignada'}</p>
                 </div>
-                <span className="text-xs text-center leading-tight">
-                  {step.title}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                <div>
+                  <span className="font-medium">Centro:</span>
+                  <p>{selectedOperacion.centros?.nombre || 'No asignado'}</p>
+                </div>
+                <div>
+                  <span className="font-medium">Contratista:</span>
+                  <p>{selectedOperacion.contratistas?.nombre || 'No asignado'}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-      {renderStepContent()}
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
-
-            <div className="flex gap-2">
-              {onCancel && (
-                <Button variant="outline" onClick={onCancel}>
-                  Cancelar
-                </Button>
-              )}
-              
-              <Button
-                variant="outline"
-                onClick={saveDraft}
-                disabled={isLoading}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar Borrador'}
-              </Button>
-
-              {currentStep < totalSteps ? (
-                <Button
-                  onClick={nextStep}
-                  disabled={!steps[currentStep - 1]?.isValid}
-                >
-                  Siguiente
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={submitHPT}
-                  disabled={!isFormComplete() || isLoading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isLoading ? 'Enviando...' : 'Completar HPT'}
-                </Button>
-              )}
+          {/* Fechas y horarios */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="fecha_programada">Fecha Programada *</Label>
+              <Input
+                id="fecha_programada"
+                type="date"
+                value={formData.fecha_programada}
+                onChange={(e) => setFormData(prev => ({ ...prev, fecha_programada: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="hora_inicio">Hora Inicio</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={formData.hora_inicio}
+                onChange={(e) => setFormData(prev => ({ ...prev, hora_inicio: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="hora_fin">Hora Fin</Label>
+              <Input
+                id="hora_fin"
+                type="time"
+                value={formData.hora_fin}
+                onChange={(e) => setFormData(prev => ({ ...prev, hora_fin: e.target.value }))}
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Información del trabajo */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="supervisor">Supervisor *</Label>
+              <Input
+                id="supervisor"
+                value={formData.supervisor}
+                onChange={(e) => setFormData(prev => ({ ...prev, supervisor: e.target.value }))}
+                placeholder="Nombre del supervisor responsable"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="lugar_especifico">Lugar Específico</Label>
+              <Input
+                id="lugar_especifico"
+                value={formData.lugar_especifico}
+                onChange={(e) => setFormData(prev => ({ ...prev, lugar_especifico: e.target.value }))}
+                placeholder="Ubicación específica del trabajo"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="descripcion_trabajo">Descripción del Trabajo *</Label>
+              <Textarea
+                id="descripcion_trabajo"
+                value={formData.descripcion_trabajo}
+                onChange={(e) => setFormData(prev => ({ ...prev, descripcion_trabajo: e.target.value }))}
+                placeholder="Describe detalladamente el trabajo a realizar..."
+                rows={3}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="plan_trabajo">Plan de Trabajo *</Label>
+              <Textarea
+                id="plan_trabajo"
+                value={formData.plan_trabajo}
+                onChange={(e) => setFormData(prev => ({ ...prev, plan_trabajo: e.target.value }))}
+                placeholder="Detalla el plan paso a paso..."
+                rows={3}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Seguridad */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="plan_emergencia">Plan de Emergencia</Label>
+              <Textarea
+                id="plan_emergencia"
+                value={formData.plan_emergencia}
+                onChange={(e) => setFormData(prev => ({ ...prev, plan_emergencia: e.target.value }))}
+                placeholder="Procedimientos en caso de emergencia..."
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="hospital_cercano">Hospital Más Cercano</Label>
+                <Input
+                  id="hospital_cercano"
+                  value={formData.hospital_cercano}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hospital_cercano: e.target.value }))}
+                  placeholder="Nombre y ubicación del hospital"
+                />
+              </div>
+              <div>
+                <Label htmlFor="camara_hiperbarica">Cámara Hiperbárica</Label>
+                <Input
+                  id="camara_hiperbarica"
+                  value={formData.camara_hiperbarica}
+                  onChange={(e) => setFormData(prev => ({ ...prev, camara_hiperbarica: e.target.value }))}
+                  placeholder="Ubicación de cámara hiperbárica"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Observaciones */}
+          <div>
+            <Label htmlFor="observaciones">Observaciones Adicionales</Label>
+            <Textarea
+              id="observaciones"
+              value={formData.observaciones}
+              onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+              placeholder="Observaciones adicionales..."
+              rows={2}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button type="submit" className="flex-1">
+              Crear HPT
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

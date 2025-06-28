@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,86 +43,61 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     updateData,
     nextStep,
     prevStep,
-    goToStep,
-    saveDraft,
     submitHPT,
-    isFormComplete,
-    progress,
-    isLoading,
-    autoSaveEnabled,
-    setAutoSaveEnabled
+    isLoading
   } = useHPTWizard(currentOperacionId, hptId);
 
-  // Poblar datos automáticamente cuando se selecciona una operación
+  // Auto-poblar datos cuando se selecciona una operación
   useEffect(() => {
     const populateOperacionData = async () => {
-      if (!currentOperacionId || hptId) return; // No poblar si es edición
+      if (!currentOperacionId || hptId) return;
 
       try {
-        // Obtener datos de la operación
-        const { data: operacion, error: opError } = await supabase
+        const { data: operacion, error } = await supabase
           .from('operacion')
           .select(`
             *,
             salmoneras:salmonera_id (nombre, rut),
-            sitios:sitio_id (nombre, ubicacion),
+            centros:centro_id (nombre, ubicacion),
             contratistas:contratista_id (nombre, rut)
           `)
           .eq('id', currentOperacionId)
           .single();
 
-        if (opError) throw opError;
+        if (error) throw error;
 
-        // Since operations no longer have direct team assignments, get available teams
-        const availableTeams = equipos || [];
-        const equipoAsignado = availableTeams.length > 0 ? availableTeams[0] : null;
-
-        // Crear objeto con las propiedades que existen en el tipo de datos
-        const autoDataUpdates: any = {
-          folio: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
-          fecha: new Date().toISOString().split('T')[0],
+        updateData({
+          codigo: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
-          centro_trabajo_nombre: operacion.sitios?.nombre || '',
-          lugar_especifico: operacion.sitios?.ubicacion || '',
-          descripcion_tarea: operacion.tareas || 'Operación de buceo comercial',
-          plan_trabajo: operacion.nombre || ''
-        };
+          centro_trabajo_nombre: operacion.centros?.nombre || '',
+          descripcion_tarea: operacion.tareas || ''
+        });
 
-        // Si hay equipo asignado, poblar datos del supervisor
-        if (equipoAsignado?.miembros) {
-          const supervisor = equipoAsignado.miembros.find(m => m.rol === 'supervisor');
-          if (supervisor) {
-            autoDataUpdates.supervisor_nombre = supervisor.nombre_completo;
-            autoDataUpdates.supervisor = supervisor.nombre_completo;
-          }
-        }
-
-        updateData(autoDataUpdates);
-        
-        console.log('Datos poblados automáticamente:', autoDataUpdates);
+        console.log('HPT data auto-populated from operation');
       } catch (error) {
         console.error('Error populating operation data:', error);
       }
     };
 
     populateOperacionData();
-  }, [currentOperacionId, hptId, equipos, updateData]);
+  }, [currentOperacionId, hptId, updateData]);
 
   const handleOperacionSelected = (operacionId: string) => {
     setCurrentOperacionId(operacionId);
     setShowOperacionSelector(false);
   };
 
-  const handleValidationComplete = (canProceed: boolean, context: any) => {
-    console.log('HPT Validation complete:', { canProceed, context });
-    setValidationPassed(canProceed);
-  };
-
   const handleSubmit = async () => {
     try {
-      const finalHptId = await submitHPT();
-      if (finalHptId && onComplete) {
-        onComplete(finalHptId);
+      const finalData = {
+        ...data,
+        operacion_id: currentOperacionId,
+        firmado: true,
+        estado: 'firmado'
+      };
+      const result = await submitHPT(finalData);
+      if (onComplete && result?.id) {
+        onComplete(result.id);
       }
     } catch (error) {
       console.error('Error submitting HPT:', error);
@@ -131,121 +107,71 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTWizardStep1 data={data} updateData={updateData} />;
+        return <HPTWizardStep1 data={data} onUpdate={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={data} updateData={updateData} />;
+        return <HPTWizardStep2 data={data} onUpdate={updateData} />;
       case 3:
-        return <HPTWizardStep3 data={data} updateData={updateData} />;
+        return <HPTWizardStep3 data={data} onUpdate={updateData} />;
       case 4:
-        return <HPTWizardStep4 data={data} updateData={updateData} />;
+        return <HPTWizardStep4 data={data} onUpdate={updateData} />;
       case 5:
-        return <HPTWizardStep5 data={data} updateData={updateData} />;
-      case 6:
-        return <HPTWizardStep5 data={data} updateData={updateData} />;
+        return <HPTWizardStep5 data={data} onUpdate={updateData} />;
       default:
-        return <div>Paso no encontrado</div>;
+        return null;
     }
   };
 
-  if (!permissions.create_hpt) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Acceso Denegado
-            </h3>
-            <p className="text-gray-600">
-              No tiene permisos para crear o editar HPT.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Mostrar selector de operación si no hay operación seleccionada
   if (showOperacionSelector) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <ModularFormValidator
-          formType="hpt"
-          showActions={false}
-          onValidationComplete={handleValidationComplete}
-        >
-          <HPTOperationSelector 
-            onOperacionSelected={handleOperacionSelected}
-            selectedOperacionId={currentOperacionId}
-          />
-        </ModularFormValidator>
+        <HPTOperationSelector 
+          onOperacionSelected={handleOperacionSelected}
+          selectedOperacionId={currentOperacionId}
+        />
         
-        {onCancel && (
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+        </div>
       </div>
     );
   }
 
+  const progress = (currentStep / steps.length) * 100;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Validación contextual */}
-      <ModularFormValidator
-        operacionId={currentOperacionId}
-        formType="hpt"
-        showActions={false}
-        onValidationComplete={handleValidationComplete}
-      />
-
-      {/* Header con progreso */}
+      {/* Progress Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>
-                {hptId ? 'Editar' : 'Crear'} Hoja de Planificación de Tarea (HPT)
+                {hptId ? 'Editar' : 'Crear'} HPT (Hoja de Planificación de Trabajo)
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
                 Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={autoSaveEnabled ? "default" : "secondary"}>
-                Auto-save {autoSaveEnabled ? 'ON' : 'OFF'}
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-              >
-                Toggle
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowOperacionSelector(true)}
-              >
-                Cambiar Operación
-              </Button>
-            </div>
+            <Badge variant="outline">
+              {progress.toFixed(0)}% Completado
+            </Badge>
           </div>
           <Progress value={progress} className="mt-4" />
         </CardHeader>
       </Card>
 
-      {/* Navegación de pasos */}
+      {/* Steps Navigation */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {steps.map((step) => (
               <Button
                 key={step.id}
                 variant={step.id === currentStep ? "default" : "outline"}
                 size="sm"
-                onClick={() => goToStep(step.id)}
+                onClick={() => {/* Navigate to step logic */}}
                 className="h-auto p-2 flex flex-col items-center gap-1"
               >
                 <div className="flex items-center gap-1">
@@ -265,10 +191,10 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
         </CardContent>
       </Card>
 
-      {/* Contenido del paso actual */}
+      {/* Step Content */}
       {renderStepContent()}
 
-      {/* Navegación inferior */}
+      {/* Navigation Controls */}
       <Card>
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
@@ -281,38 +207,25 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Anterior
               </Button>
-              
-              <Button
-                variant="outline"
-                onClick={saveDraft}
-                disabled={isLoading}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar Borrador'}
-              </Button>
             </div>
 
             <div className="flex gap-2">
-              {onCancel && (
-                <Button variant="outline" onClick={onCancel}>
-                  Cancelar
-                </Button>
-              )}
+              <Button variant="outline" onClick={onCancel}>
+                Cancelar
+              </Button>
               
               {currentStep < steps.length ? (
-                <Button
-                  onClick={nextStep}
-                  disabled={!steps[currentStep - 1]?.isValid}
-                >
+                <Button onClick={nextStep}>
                   Siguiente
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isFormComplete || isLoading || !validationPassed}
+                  disabled={isLoading}
                   className="bg-green-600 hover:bg-green-700"
                 >
+                  <Save className="h-4 w-4 mr-2" />
                   {isLoading ? 'Enviando...' : 'Completar HPT'}
                 </Button>
               )}

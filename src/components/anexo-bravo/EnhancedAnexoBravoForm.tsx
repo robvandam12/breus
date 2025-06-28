@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { useSalmoneras } from '@/hooks/useSalmoneras';
-import { useSitios } from '@/hooks/useSitios';
+import { useCentros } from '@/hooks/useCentros';
 import { FileText, MapPin, Building } from 'lucide-react';
 
 interface EnhancedAnexoBravoFormProps {
@@ -19,7 +19,7 @@ interface EnhancedAnexoBravoFormProps {
 export const EnhancedAnexoBravoForm = ({ onSubmit, onCancel }: EnhancedAnexoBravoFormProps) => {
   const { operaciones } = useOperaciones();
   const { salmoneras } = useSalmoneras();
-  const { sitios } = useSitios();
+  const { centros } = useCentros();
   
   const [formData, setFormData] = useState({
     operacion_id: '',
@@ -34,18 +34,18 @@ export const EnhancedAnexoBravoForm = ({ onSubmit, onCancel }: EnhancedAnexoBrav
 
   const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
   const selectedSalmonera = salmoneras.find(s => s.id === selectedOperacion?.salmonera_id);
-  const selectedSitio = sitios.find(s => s.id === selectedOperacion?.sitio_id);
+  const selectedCentro = centros.find(s => s.id === selectedOperacion?.centro_id);
 
   useEffect(() => {
-    if (selectedOperacion && selectedSalmonera && selectedSitio) {
+    if (selectedOperacion && selectedSalmonera && selectedCentro) {
       setFormData(prev => ({
         ...prev,
         empresa_nombre: selectedSalmonera.nombre,
-        lugar_faena: `${selectedSitio.nombre} - ${selectedSitio.ubicacion}`,
+        lugar_faena: `${selectedCentro.nombre} - ${selectedCentro.ubicacion}`,
         codigo: `AB-${selectedOperacion.codigo}-${new Date().getFullYear()}`
       }));
     }
-  }, [selectedOperacion, selectedSalmonera, selectedSitio]);
+  }, [selectedOperacion, selectedSalmonera, selectedCentro]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +151,7 @@ export const EnhancedAnexoBravoForm = ({ onSubmit, onCancel }: EnhancedAnexoBrav
                 <p className="text-sm text-green-800">
                   <strong>Operación seleccionada:</strong> {selectedOperacion.nombre}
                   {selectedSalmonera && ` - ${selectedSalmonera.nombre}`}
-                  {selectedSitio && ` - ${selectedSitio.nombre}`}
+                  {selectedCentro && ` - ${selectedCentro.nombre}`}
                 </p>
               </div>
             </div>

@@ -12,13 +12,13 @@ export interface OperacionFull {
   fecha_inicio: string;
   fecha_fin?: string;
   tareas?: string;
-  sitio_nombre?: string;
+  centro_nombre?: string;
   contratista_nombre?: string;
   created_at: string;
   salmonera_id?: string;
   contratista_id?: string;
   salmoneras?: { nombre: string };
-  sitios?: { nombre: string };
+  centros?: { nombre: string };
   contratistas?: { nombre: string };
 }
 
@@ -36,7 +36,7 @@ const fetchOperacionDetails = async (operacionId: string) => {
     .select(`
       *,
       salmoneras:salmonera_id (nombre),
-      sitios:sitio_id (nombre),
+      centros:centro_id (nombre),
       contratistas:contratista_id (nombre)
     `)
     .eq('id', operacionId)
@@ -76,7 +76,7 @@ const fetchOperacionDetails = async (operacionId: string) => {
 
   const operacion: OperacionFull = {
     ...opData,
-    sitio_nombre: opData.sitios?.nombre,
+    centro_nombre: opData.centros?.nombre,
     contratista_nombre: opData.contratistas?.nombre
   };
 

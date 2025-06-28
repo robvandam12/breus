@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useOperaciones } from '@/hooks/useOperaciones';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,7 +97,7 @@ const CalendarWidget = () => {
                                             </Badge>
                                         </div>
                                         <p className="text-xs text-muted-foreground">{op.codigo}</p>
-                                        {op.sitios && <p className="text-xs text-muted-foreground mt-1">{op.sitios.nombre}</p>}
+                                        {op.centros && <p className="text-xs text-muted-foreground mt-1">{op.centros.nombre}</p>}
                                     </li>
                                 ))}
                             </ul>

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOperaciones } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useSitios } from "@/hooks/useSitios";
+import { useCentros } from "@/hooks/useCentros";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
 
 interface AnexoBravoWizardProps {
@@ -40,7 +40,7 @@ export const AnexoBravoWizard = ({
   const { operaciones } = useOperaciones();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
-  const { sitios } = useSitios();
+  const { centros } = useCentros();
   const { equipos } = useEquipoBuceo();
 
   const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
@@ -51,14 +51,14 @@ export const AnexoBravoWizard = ({
       // Auto-populate fields based on operation
       const salmonera = salmoneras.find(s => s.id === operacion.salmonera_id);
       const contratista = contratistas.find(c => c.id === operacion.contratista_id);
-      const sitio = sitios.find(s => s.id === operacion.sitio_id);
+      const centro = centros.find(s => s.id === operacion.centro_id);
       
       setFormData(prev => ({
         ...prev,
         operacion_id: operacionId,
         codigo: `AB-${operacion.codigo}-${Date.now()}`,
         empresa_nombre: salmonera?.nombre || '',
-        lugar_faena: sitio?.nombre || '',
+        lugar_faena: centro?.nombre || '',
         buzo_o_empresa_nombre: contratista?.nombre || ''
       }));
     }
@@ -148,7 +148,7 @@ export const AnexoBravoWizard = ({
             </div>
 
             <div>
-              <Label htmlFor="lugar_faena">Lugar de Faena (Sitio)</Label>
+              <Label htmlFor="lugar_faena">Lugar de Faena (Centro)</Label>
               <Input
                 id="lugar_faena"
                 value={formData.lugar_faena}

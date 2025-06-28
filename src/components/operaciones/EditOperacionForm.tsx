@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useOperaciones, OperacionFormData } from "@/hooks/useOperaciones";
 import { useSalmoneras } from "@/hooks/useSalmoneras";
 import { useContratistas } from "@/hooks/useContratistas";
-import { useSitios } from "@/hooks/useSitios";
+import { useCentros } from "@/hooks/useCentros";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditOperacionFormProps {
@@ -22,14 +22,14 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
   const { toast } = useToast();
   const { salmoneras } = useSalmoneras();
   const { contratistas } = useContratistas();
-  const { sitios } = useSitios();
+  const { centros } = useCentros();
   const [isLoading, setIsLoading] = useState(false);
   
   // CORRECCIÓN CRÍTICA: Inicializar con valores string vacíos en lugar de null/undefined
   const [formData, setFormData] = useState<OperacionFormData>({
     codigo: operacion?.codigo || '',
     nombre: operacion?.nombre || '',
-    sitio_id: operacion?.sitio_id || '',
+    centro_id: operacion?.centro_id || '',
     servicio_id: operacion?.servicio_id || '',
     salmonera_id: operacion?.salmonera_id || '',
     contratista_id: operacion?.contratista_id || '',
@@ -61,7 +61,7 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
       const dataToSubmit = {
         codigo: formData.codigo,
         nombre: formData.nombre,
-        sitio_id: formData.sitio_id || null,
+        centro_id: formData.centro_id || null,
         servicio_id: formData.servicio_id || null,
         salmonera_id: formData.salmonera_id || null,
         contratista_id: formData.contratista_id || null,
@@ -206,21 +206,21 @@ export const EditOperacionForm = ({ operacion, onSubmit, onCancel }: EditOperaci
           </div>
 
           <div>
-            <Label htmlFor="sitio_id">Sitio</Label>
+            <Label htmlFor="centro_id">Centro</Label>
             <Select
-              value={formData.sitio_id || "empty"}
-              onValueChange={(value) => handleChange('sitio_id', value === 'empty' ? '' : value)}
+              value={formData.centro_id || "empty"}
+              onValueChange={(value) => handleChange('centro_id', value === 'empty' ? '' : value)}
             >
               <SelectTrigger className="ios-input">
-                <SelectValue placeholder="Seleccionar sitio" />
+                <SelectValue placeholder="Seleccionar centro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="empty">Sin sitio</SelectItem>
-                {sitios
-                  .filter(sitio => sitio && sitio.id && sitio.id.trim() !== '' && (!formData.salmonera_id || sitio.salmonera_id === formData.salmonera_id))
-                  .map((sitio) => (
-                    <SelectItem key={sitio.id} value={sitio.id}>
-                      {sitio.nombre || 'Sin nombre'}
+                <SelectItem value="empty">Sin centro</SelectItem>
+                {centros
+                  .filter(centro => centro && centro.id && centro.id.trim() !== '' && (!formData.salmonera_id || centro.salmonera_id === formData.salmonera_id))
+                  .map((centro) => (
+                    <SelectItem key={centro.id} value={centro.id}>
+                      {centro.nombre || 'Sin nombre'}
                     </SelectItem>
                   ))}
               </SelectContent>

@@ -12,7 +12,7 @@ export interface Inmersion extends Tables<'inmersion'> {
     salmonera_id?: string;
     contratista_id?: string;
     salmoneras?: { nombre: string } | null;
-    sitios?: { nombre: string } | null;
+    centros?: { nombre: string } | null;
     contratistas?: { nombre: string } | null;
   };
   operacion_nombre?: string;
@@ -44,7 +44,7 @@ export const useInmersiones = () => {
             salmonera_id,
             contratista_id,
             salmoneras:salmonera_id(nombre),
-            sitios:sitio_id(nombre),
+            centros:centro_id(nombre),
             contratistas:contratista_id(nombre)
           )
         `)

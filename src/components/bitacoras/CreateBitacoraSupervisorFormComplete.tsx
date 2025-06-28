@@ -1,178 +1,248 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Save, X } from 'lucide-react';
-import { BitacoraSupervisorFormData } from '@/hooks/useBitacorasSupervisor';
-import { useAuth } from '@/hooks/useAuth';
-import { useOperaciones } from '@/hooks/useOperaciones';
 import { useInmersiones } from '@/hooks/useInmersiones';
-import { useCompanyContext } from '@/hooks/useCompanyContext';
-import { UniversalCompanySelector } from '@/components/common/UniversalCompanySelector';
-import type { Inmersion } from '@/types/inmersion';
+import { useOperaciones } from '@/hooks/useOperaciones';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+import { useCentros } from '@/hooks/useCentros';
+import { Building, MapPin, FileText } from 'lucide-react';
 
 interface CreateBitacoraSupervisorFormCompleteProps {
-  onSubmit: (data: Partial<BitacoraSupervisorFormData>) => void;
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
-  inmersion?: Inmersion;
+  inmersionId?: string;
 }
 
-export const CreateBitacoraSupervisorFormComplete: React.FC<CreateBitacoraSupervisorFormCompleteProps> = ({
-  onSubmit,
-  onCancel,
-  inmersion
-}) => {
-  const { profile } = useAuth();
+export const CreateBitacoraSupervisorFormComplete = ({ 
+  onSubmit, 
+  onCancel, 
+  inmersionId 
+}: CreateBitacoraSupervisorFormCompleteProps) => {
+  const { inmersiones } = useInmersiones();
   const { operaciones } = useOperaciones();
-  const { context, requiresCompanySelection, canCreateRecords } = useCompanyContext();
+  const { salmoneras } = useSalmoneras();
+  const { centros } = useCentros();
   
   const [formData, setFormData] = useState({
+    inmersion_id: inmersionId || '',
+    codigo: '',
+    fecha: new Date().toISOString().split('T')[0],
+    supervisor: '',
+    empresa_nombre: '',
+    centro_nombre: '',
+    lugar_trabajo: '',
+    fecha_inicio_faena: new Date().toISOString().split('T')[0],
+    hora_inicio_faena: '',
+    hora_termino_faena: '',
+    trabajo_a_realizar: '',
+    descripcion_trabajo: '',
+    estado_mar: '',
+    visibilidad_fondo: '',
+    embarcacion_apoyo: '',
+    equipos_utilizados: [],
+    inmersiones_buzos: [],
     desarrollo_inmersion: '',
+    evaluacion_general: '',
     incidentes: '',
-    evaluacion_general: ''
+    observaciones_generales_texto: ''
   });
 
-  const operacionData = inmersion?.operacion_id 
-    ? operaciones.find(op => op.id === inmersion.operacion_id)
-    : null;
+  const selectedInmersion = inmersiones.find(i => i.inmersion_id === formData.inmersion_id);
+  const selectedOperacion = selectedInmersion ? operaciones.find(o => o.id === selectedInmersion.operacion_id) : null;
+  const selectedSalmonera = selectedOperacion ? salmoneras.find(s => s.id === selectedOperacion.salmonera_id) : null;
+  const selectedCentro = selectedOperacion ? centros.find(s => s.id === selectedOperacion.centro_id) : null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (selectedInmersion && selectedOperacion) {
+      setFormData(prev => ({
+        ...prev,
+        codigo: `BS-${selectedInmersion.codigo}-${new Date().getFullYear()}`,
+        supervisor: selectedInmersion.supervisor || '',
+        empresa_nombre: selectedSalmonera?.nombre || '',
+        centro_nombre: selectedCentro?.nombre || '',
+        lugar_trabajo: selectedCentro?.ubicacion || '',
+        trabajo_a_realizar: selectedInmersion.objetivo || '',
+        descripcion_trabajo: selectedOperacion.tareas || ''
+      }));
+    }
+  }, [selectedInmersion, selectedOperacion, selectedSalmonera, selectedCentro]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!inmersion || !formData.desarrollo_inmersion || !formData.evaluacion_general) {
-      return;
-    }
+    if (!formData.inmersion_id || !formData.supervisor) return;
 
-    if (!canCreateRecords()) {
-      return;
-    }
-
-    const submitData: Partial<BitacoraSupervisorFormData> = {
-      codigo: `BIT-SUP-${Date.now()}`,
-      inmersion_id: inmersion.inmersion_id,
-      supervisor: (profile?.nombre || '') + ' ' + (profile?.apellido || ''),
-      desarrollo_inmersion: formData.desarrollo_inmersion,
-      incidentes: formData.incidentes || '',
-      evaluacion_general: formData.evaluacion_general,
-      fecha: inmersion.fecha_inmersion,
-      firmado: false,
-      estado_aprobacion: 'pendiente',
-      lugar_trabajo: operacionData?.sitios?.nombre || 'N/A',
-      // Incluir contexto empresarial
-      company_id: context.selectedCompany?.id || context.companyId,
-      company_type: context.selectedCompany?.tipo || context.companyType,
-    };
-
-    onSubmit(submitData);
+    await onSubmit({
+      ...formData,
+      equipos_utilizados: JSON.stringify(formData.equipos_utilizados),
+      inmersiones_buzos: JSON.stringify(formData.inmersiones_buzos),
+      visibilidad_fondo: formData.visibilidad_fondo ? parseFloat(formData.visibilidad_fondo) : null
+    });
   };
 
-  if (context.isLoading) {
-    return (
-      <Card className="max-w-4xl mx-auto">
-        <CardContent className="p-6 text-center">
-          <p>Cargando contexto empresarial...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Nueva Bitácora de Supervisor</h2>
+        <p className="mt-2 text-gray-600">
+          Complete la información de la bitácora de supervisión
+        </p>
+      </div>
+
+      {/* Selección de Inmersión */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-600" />
-            Bitácora de Supervisor - {inmersion?.codigo}
+            <FileText className="w-5 h-5 text-blue-600" />
+            Inmersión Asociada
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Selector de empresa universal */}
-          <div className="mb-6">
-            <UniversalCompanySelector 
-              title="Empresa para esta Bitácora"
-              description="Especifica la empresa para la cual se creará esta bitácora"
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="inmersion_id">Inmersión *</Label>
+            <Select 
+              value={formData.inmersion_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, inmersion_id: value }))}
+              disabled={!!inmersionId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar inmersión" />
+              </SelectTrigger>
+              <SelectContent>
+                {inmersiones.filter(i => i.estado === 'completada').map((inmersion) => (
+                  <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
+                    {inmersion.codigo} - {inmersion.objetivo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Información auto-poblada */}
+      {selectedInmersion && selectedOperacion && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-5 h-5 text-green-600" />
+              Información de la Inmersión
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="codigo">Código de Bitácora</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                  placeholder="Código automático"
+                />
+              </div>
+              <div>
+                <Label htmlFor="fecha">Fecha</Label>
+                <Input
+                  id="fecha"
+                  type="date"
+                  value={formData.fecha}
+                  onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-green-600" />
+                <p className="text-sm text-green-800">
+                  <strong>Operación:</strong> {selectedOperacion.nombre}
+                  {selectedSalmonera && ` - ${selectedSalmonera.nombre}`}
+                  {selectedCentro && ` - ${selectedCentro.nombre}`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Información del Supervisor */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Información del Supervisor</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="supervisor">Supervisor *</Label>
+              <Input
+                id="supervisor"
+                value={formData.supervisor}
+                onChange={(e) => setFormData(prev => ({ ...prev, supervisor: e.target.value }))}
+                placeholder="Nombre del supervisor"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="empresa_nombre">Empresa</Label>
+              <Input
+                id="empresa_nombre"
+                value={formData.empresa_nombre}
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Desarrollo de la Inmersión */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Desarrollo de la Inmersión</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión *</Label>
+            <Textarea
+              id="desarrollo_inmersion"
+              value={formData.desarrollo_inmersion}
+              onChange={(e) => setFormData(prev => ({ ...prev, desarrollo_inmersion: e.target.value }))}
+              placeholder="Describa cómo se desarrolló la inmersión..."
+              rows={4}
+              required
             />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {inmersion && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <Label className="font-medium">Inmersión:</Label>
-                  <Badge variant="outline">{inmersion.codigo}</Badge>
-                </div>
-                <div>
-                  <Label className="font-medium">Fecha:</Label>
-                  <span className="text-sm">{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
-                </div>
-                <div>
-                  <Label className="font-medium">Objetivo:</Label>
-                  <p className="text-sm text-gray-600">{inmersion.objetivo}</p>
-                </div>
-                <div>
-                  <Label className="font-medium">Buzo Principal:</Label>
-                  <span className="text-sm">{inmersion.buzo_principal}</span>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="desarrollo_inmersion">Desarrollo de la Inmersión *</Label>
-              <Textarea
-                id="desarrollo_inmersion"
-                value={formData.desarrollo_inmersion}
-                onChange={(e) => setFormData({...formData, desarrollo_inmersion: e.target.value})}
-                placeholder="Describa cómo se desarrolló la inmersión..."
-                className="min-h-[120px]"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="incidentes">Incidentes (Opcional)</Label>
-              <Textarea
-                id="incidentes"
-                value={formData.incidentes}
-                onChange={(e) => setFormData({...formData, incidentes: e.target.value})}
-                placeholder="Describa cualquier incidente ocurrido..."
-                className="min-h-[80px]"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="evaluacion_general">Evaluación General *</Label>
-              <Textarea
-                id="evaluacion_general"
-                value={formData.evaluacion_general}
-                onChange={(e) => setFormData({...formData, evaluacion_general: e.target.value})}
-                placeholder="Evaluación general de la inmersión..."
-                className="min-h-[120px]"
-                required
-              />
-            </div>
-
-            <div className="flex gap-3 pt-6">
-              <Button 
-                type="submit" 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={!formData.desarrollo_inmersion || !formData.evaluacion_general || !canCreateRecords()}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Crear Bitácora
-              </Button>
-              <Button type="button" variant="outline" onClick={onCancel}>
-                <X className="w-4 h-4 mr-2" />
-                Cancelar
-              </Button>
-            </div>
-          </form>
+          <div>
+            <Label htmlFor="evaluacion_general">Evaluación General *</Label>
+            <Textarea
+              id="evaluacion_general"
+              value={formData.evaluacion_general}
+              onChange={(e) => setFormData(prev => ({ ...prev, evaluacion_general: e.target.value }))}
+              placeholder="Evaluación general del trabajo realizado..."
+              rows={3}
+              required
+            />
+          </div>
         </CardContent>
       </Card>
-    </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button 
+          type="submit" 
+          disabled={!formData.inmersion_id || !formData.supervisor || !formData.desarrollo_inmersion || !formData.evaluacion_general}
+          className="flex-1"
+        >
+          Crear Bitácora
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   );
 };
