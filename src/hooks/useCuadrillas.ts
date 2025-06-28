@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -44,7 +43,7 @@ export const useCuadrillas = () => {
   const { profile } = useAuth();
 
   const { data: cuadrillas = [], isLoading } = useQuery({
-    queryKey: ['cuadrillas'],
+    queryKey: ['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role],
     queryFn: async () => {
       let query = supabase
         .from('cuadrillas_buceo')
@@ -66,6 +65,9 @@ export const useCuadrillas = () => {
           query = query.eq('empresa_id', profile.salmonera_id).eq('tipo_empresa', 'salmonera');
         } else if (profile?.servicio_id) {
           query = query.eq('empresa_id', profile.servicio_id).eq('tipo_empresa', 'contratista');
+        } else {
+          // Usuario sin empresa asignada - no puede ver cuadrillas
+          return [];
         }
       }
 
@@ -87,6 +89,7 @@ export const useCuadrillas = () => {
 
       return processedData as Cuadrilla[];
     },
+    enabled: !!profile // Solo ejecutar si hay perfil de usuario
   });
 
   const createMutation = useMutation({
@@ -108,6 +111,8 @@ export const useCuadrillas = () => {
             empresa_id: profile.servicio_id,
             tipo_empresa: 'contratista'
           };
+        } else {
+          throw new Error('Usuario no tiene empresa asignada');
         }
       }
 

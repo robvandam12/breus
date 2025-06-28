@@ -147,9 +147,9 @@ export const useContextualNavigation = () => {
     if (profile?.role === 'admin_salmonera' || profile?.role === 'superuser') {
       managementItems.push(
         {
-          id: 'empresas-sitios',
-          title: 'Sitios',
-          url: '/empresas/sitios',
+          id: 'empresas-centros',
+          title: 'Centros',  // CAMBIADO: Sitios -> Centros
+          url: '/empresas/centros',
           icon: 'Building',
           isVisible: true,
           isDisabled: false

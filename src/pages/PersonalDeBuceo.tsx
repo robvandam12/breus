@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,14 +15,41 @@ import { WizardDialog } from "@/components/forms/WizardDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
 import { useAuth } from "@/hooks/useAuth";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useContratistas } from "@/hooks/useContratistas";
 
 const PersonalDeBuceo = () => {
   const { profile } = useAuth();
+  const { salmoneras } = useSalmoneras();
+  const { contratistas } = useContratistas();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
   
   const { equipos, isLoading, createEquipo, updateEquipo, deleteEquipo } = useEquipoBuceo();
+
+  // Determinar si el usuario tiene empresa asignada
+  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
+  const isSuperuser = profile?.role === 'superuser';
+
+  // Obtener nombre de la empresa del usuario
+  const getCompanyName = () => {
+    if (profile?.salmonera_id) {
+      const salmonera = salmoneras.find(s => s.id === profile.salmonera_id);
+      return salmonera?.nombre || 'Salmonera';
+    }
+    if (profile?.servicio_id) {
+      const contratista = contratistas.find(c => c.id === profile.servicio_id);
+      return contratista?.nombre || 'Contratista';
+    }
+    return null;
+  };
+
+  const getCompanyType = () => {
+    if (profile?.salmonera_id) return 'Salmonera';
+    if (profile?.servicio_id) return 'Contratista';
+    return null;
+  };
 
   const filteredEquipos = equipos.filter(equipo => 
     equipo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,12 +58,12 @@ const PersonalDeBuceo = () => {
 
   const handleCreateEquipo = async (data: any) => {
     try {
-      const newEquipo = await createEquipo(data.equipoData);
+      await createEquipo(data.equipoData);
       
       if (data.members && data.members.length > 0) {
         toast({
-          title: "Personal creado",
-          description: `Personal "${data.equipoData.nombre}" creado exitosamente con ${data.members.length} miembros.`,
+          title: "Cuadrilla creada",
+          description: `Cuadrilla "${data.equipoData.nombre}" creada exitosamente con ${data.members.length} miembros.`,
         });
       }
       
@@ -44,7 +72,7 @@ const PersonalDeBuceo = () => {
       console.error('Error creating equipo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el personal.",
+        description: "No se pudo crear la cuadrilla.",
         variant: "destructive",
       });
     }
@@ -95,7 +123,8 @@ const PersonalDeBuceo = () => {
         />
       </div>
 
-      {selectedEnterprise && (
+      {/* Solo mostrar botón de crear si usuario tiene empresa asignada O es superuser con empresa seleccionada */}
+      {(isAssigned || (isSuperuser && selectedEnterprise)) && (
         <WizardDialog
           triggerText="Nueva Cuadrilla"
           triggerIcon={Plus}
@@ -131,7 +160,7 @@ const PersonalDeBuceo = () => {
   }
 
   // Si es superuser y no ha seleccionado empresa, mostrar selector
-  if (profile?.role === 'superuser' && !selectedEnterprise) {
+  if (isSuperuser && !selectedEnterprise) {
     return (
       <MainLayout
         title="Cuadrillas de Buceo"
@@ -160,19 +189,66 @@ const PersonalDeBuceo = () => {
     );
   }
 
+  // Si usuario no tiene empresa asignada (buzo sin asignar), mostrar mensaje
+  if (!isAssigned && !isSuperuser) {
+    return (
+      <MainLayout
+        title="Cuadrillas de Buceo"
+        subtitle="Gestión de cuadrillas y personal de buceo"
+        icon={Users}
+      >
+        <Card className="text-center py-12">
+          <CardContent>
+            <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-zinc-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-zinc-500 mb-4">
+              Necesita estar asignado a una empresa para gestionar cuadrillas de buceo.
+            </p>
+            <p className="text-sm text-zinc-400">
+              Contacte a su administrador para obtener acceso.
+            </p>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout
       title="Cuadrillas de Buceo"
       subtitle={
-        selectedEnterprise 
+        isSuperuser && selectedEnterprise 
           ? `Gestión de cuadrillas - ${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}`
+          : isAssigned
+          ? `Gestión de cuadrillas - ${getCompanyType()}: ${getCompanyName()}`
           : "Gestión de cuadrillas y personal de buceo"
       }
       icon={Users}
       headerChildren={headerActions}
     >
+      {/* Mostrar información de empresa para usuarios asignados */}
+      {isAssigned && (
+        <Card className="mb-6 border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-5 h-5 text-blue-600" />
+              <div>
+                <h4 className="font-semibold text-blue-900">
+                  {getCompanyType()}: {getCompanyName()}
+                </h4>
+                <p className="text-sm text-blue-700">
+                  Gestionando cuadrillas de su empresa
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Mostrar información de empresa seleccionada para superuser */}
-      {profile?.role === 'superuser' && selectedEnterprise && (
+      {isSuperuser && selectedEnterprise && (
         <Card className="mb-6 border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -240,7 +316,7 @@ const PersonalDeBuceo = () => {
                 ? "Comience creando la primera cuadrilla de buceo"
                 : "Intenta ajustar la búsqueda"}
             </p>
-            {equipos.length === 0 && selectedEnterprise && (
+            {equipos.length === 0 && (isAssigned || (isSuperuser && selectedEnterprise)) && (
               <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Cuadrilla

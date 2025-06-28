@@ -1,8 +1,8 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface EquipoBuceo {
   id: string;
@@ -32,12 +32,14 @@ export interface EquipoBuceoMiembro {
 
 export const useEquipoBuceo = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
 
   const { data: equipos = [], isLoading } = useQuery({
-    queryKey: ['cuadrillas-buceo'],
+    queryKey: ['cuadrillas-buceo', profile?.salmonera_id, profile?.servicio_id, profile?.role],
     queryFn: async () => {
-      console.log('Fetching cuadrillas de buceo...');
-      const { data, error } = await supabase
+      console.log('Fetching cuadrillas de buceo for user role:', profile?.role);
+      
+      let query = supabase
         .from('cuadrillas_buceo')
         .select(`
           *,
@@ -46,22 +48,68 @@ export const useEquipoBuceo = () => {
             usuario:usuario_id(nombre, apellido, email, rol)
           )
         `)
-        .eq('activo', true)
-        .order('created_at', { ascending: false });
+        .eq('activo', true);
+
+      // Filtrar por empresa según el rol del usuario
+      if (profile?.role !== 'superuser') {
+        if (profile?.salmonera_id) {
+          console.log('Filtering by salmonera_id:', profile.salmonera_id);
+          query = query
+            .eq('empresa_id', profile.salmonera_id)
+            .eq('tipo_empresa', 'salmonera');
+        } else if (profile?.servicio_id) {
+          console.log('Filtering by servicio_id:', profile.servicio_id);
+          query = query
+            .eq('empresa_id', profile.servicio_id)
+            .eq('tipo_empresa', 'contratista');
+        } else {
+          // Usuario sin empresa asignada - no puede ver cuadrillas
+          console.log('User has no company assigned, returning empty array');
+          return [];
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching cuadrillas:', error);
         throw error;
       }
+
+      console.log('Fetched cuadrillas:', data?.length || 0);
       return data as EquipoBuceo[];
     },
+    enabled: !!profile // Solo ejecutar si hay perfil de usuario
   });
 
   const createEquipo = useMutation({
     mutationFn: async (equipoData: Omit<EquipoBuceo, 'id' | 'created_at' | 'updated_at'>) => {
+      // Auto-asignar empresa según el perfil del usuario (excepto superuser)
+      let finalEquipoData = { ...equipoData };
+      
+      if (profile?.role !== 'superuser') {
+        if (profile?.salmonera_id) {
+          finalEquipoData = {
+            ...equipoData,
+            empresa_id: profile.salmonera_id,
+            tipo_empresa: 'salmonera'
+          };
+        } else if (profile?.servicio_id) {
+          finalEquipoData = {
+            ...equipoData,
+            empresa_id: profile.servicio_id,
+            tipo_empresa: 'contratista'
+          };
+        } else {
+          throw new Error('Usuario no tiene empresa asignada');
+        }
+      }
+
+      console.log('Creating cuadrilla with data:', finalEquipoData);
+
       const { data, error } = await supabase
         .from('cuadrillas_buceo')
-        .insert(equipoData)
+        .insert(finalEquipoData)
         .select()
         .single();
 
@@ -76,6 +124,7 @@ export const useEquipoBuceo = () => {
       });
     },
     onError: (error) => {
+      console.error('Error creating cuadrilla:', error);
       toast({
         title: 'Error',
         description: `Error al crear la cuadrilla: ${error.message}`,
