@@ -18,6 +18,12 @@ export default function Operaciones() {
 
   const handleCreateOperacion = async (data: OperacionFormData) => {
     try {
+      // Validar que los campos requeridos estén presentes
+      if (!data.codigo || !data.nombre || !data.fecha_inicio) {
+        console.error('Missing required fields');
+        return;
+      }
+
       // Asegurar que todos los campos requeridos estén presentes
       const operacionData: OperacionFormData = {
         codigo: data.codigo,
@@ -88,6 +94,12 @@ export default function Operaciones() {
     );
   }
 
+  // Transformar operaciones para que coincidan con el tipo esperado por la tabla
+  const operacionesParaTabla = operaciones.map(operacion => ({
+    ...operacion,
+    tipo_trabajo: 'Buceo' // Valor por defecto
+  }));
+
   return (
     <MainLayout
       title="Operaciones"
@@ -96,7 +108,7 @@ export default function Operaciones() {
       headerChildren={headerActions}
     >
       <OperacionesTable 
-        operaciones={operaciones}
+        operaciones={operacionesParaTabla}
         onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
