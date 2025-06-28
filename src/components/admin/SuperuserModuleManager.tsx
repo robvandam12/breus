@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 import { 
   Settings, 
   Activity, 
@@ -16,7 +17,10 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Search
+  Search,
+  Download,
+  Eye,
+  Filter
 } from "lucide-react";
 import { useModuleManagementDashboard } from "@/hooks/useModuleManagementDashboard";
 
@@ -32,6 +36,7 @@ export const SuperuserModuleManager = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompanyType, setSelectedCompanyType] = useState<'all' | 'salmonera' | 'contratista'>('all');
+  const [moduleFilter, setModuleFilter] = useState<'all' | 'core' | 'optional'>('all');
 
   if (!isSuperuser) {
     return (
@@ -81,6 +86,22 @@ export const SuperuserModuleManager = () => {
       isActive: !currentStatus
     });
   };
+
+  // Datos para la vista por módulos
+  const moduleUsageData = moduleStats?.usage_by_module || {};
+  const systemModules = [
+    { name: 'core_immersions', display_name: 'Inmersiones Core', category: 'operational', is_core: true },
+    { name: 'planning_operations', display_name: 'Planificación de Operaciones', category: 'planning', is_core: false },
+    { name: 'maintenance_networks', display_name: 'Mantención de Redes', category: 'operational', is_core: false },
+    { name: 'advanced_reporting', display_name: 'Reportes Avanzados', category: 'reporting', is_core: false },
+    { name: 'external_integrations', display_name: 'Integraciones Externas', category: 'integration', is_core: false }
+  ];
+
+  const filteredModules = systemModules.filter(module => {
+    if (moduleFilter === 'core') return module.is_core;
+    if (moduleFilter === 'optional') return !module.is_core;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -270,21 +291,84 @@ export const SuperuserModuleManager = () => {
         </TabsContent>
 
         <TabsContent value="modules" className="space-y-6">
+          {/* Filtros para módulos */}
           <Card>
             <CardHeader>
-              <CardTitle>Uso por Módulo</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Vista por Módulos</CardTitle>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-gray-500" />
+                    <select 
+                      className="p-2 border rounded-md text-sm"
+                      value={moduleFilter}
+                      onChange={(e) => setModuleFilter(e.target.value as any)}
+                    >
+                      <option value="all">Todos los módulos</option>
+                      <option value="core">Solo Core</option>
+                      <option value="optional">Solo Opcionales</option>
+                    </select>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {moduleStats?.usage_by_module && Object.entries(moduleStats.usage_by_module).map(([module, usage]) => (
-                  <div key={module} className="flex justify-between items-center p-3 border rounded-lg">
-                    <span className="font-medium">{module}</span>
-                    <Badge variant="outline">{usage} empresa{usage !== 1 ? 's' : ''}</Badge>
-                  </div>
-                ))}
-                {(!moduleStats?.usage_by_module || Object.keys(moduleStats.usage_by_module).length === 0) && (
-                  <p className="text-gray-500 text-center py-8">No hay datos de uso disponibles</p>
-                )}
+              <div className="space-y-4">
+                {filteredModules.map((module) => {
+                  const usage = moduleUsageData[module.name] || 0;
+                  const totalCompanies = companiesWithModules.length;
+                  const usagePercentage = totalCompanies > 0 ? (usage / totalCompanies) * 100 : 0;
+                  
+                  return (
+                    <Card key={module.name} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold">{module.display_name}</h3>
+                            <Badge className={module.is_core ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                              {module.is_core ? 'Core' : 'Opcional'}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {module.category}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <div className="text-sm font-medium">{usage} empresas</div>
+                              <div className="text-xs text-gray-500">{usagePercentage.toFixed(1)}% adopción</div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <Progress value={usagePercentage} className="h-2" />
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Activo en:</span>
+                            <div className="font-medium">{usage} empresas</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Disponible para:</span>
+                            <div className="font-medium">{totalCompanies} empresas</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Tasa de adopción:</span>
+                            <div className="font-medium">{usagePercentage.toFixed(1)}%</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -293,35 +377,72 @@ export const SuperuserModuleManager = () => {
         <TabsContent value="logs" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Actividad Reciente</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Actividad Reciente</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar Logs
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {moduleStats?.recent_activations?.map((log) => (
-                  <div key={log.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={
-                          log.action === 'activated' ? "bg-green-100 text-green-800" :
-                          log.action === 'deactivated' ? "bg-red-100 text-red-800" :
-                          "bg-blue-100 text-blue-800"
-                        }>
-                          {log.action}
-                        </Badge>
-                        <span className="font-medium">{log.module_name}</span>
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(log.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p>Empresa: {log.company_id} ({log.company_type})</p>
-                      {log.reason && <p>Razón: {log.reason}</p>}
-                    </div>
+              <div className="space-y-4">
+                {moduleStats?.recent_activations?.length > 0 ? (
+                  moduleStats.recent_activations.map((log) => (
+                    <Card key={log.id} className="border-l-4 border-l-gray-300">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <Badge className={
+                              log.action === 'activated' ? "bg-green-100 text-green-800" :
+                              log.action === 'deactivated' ? "bg-red-100 text-red-800" :
+                              "bg-blue-100 text-blue-800"
+                            }>
+                              {log.action === 'activated' ? 'Activado' : 
+                               log.action === 'deactivated' ? 'Desactivado' : 
+                               log.action}
+                            </Badge>
+                            <span className="font-medium">{log.module_name}</span>
+                            {log.action === 'activated' && <TrendingUp className="w-4 h-4 text-green-600" />}
+                            {log.action === 'deactivated' && <AlertTriangle className="w-4 h-4 text-red-600" />}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              {new Date(log.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>
+                            <span className="font-medium">Empresa:</span> {log.company_id} ({log.company_type})
+                          </p>
+                          {log.reason && (
+                            <p>
+                              <span className="font-medium">Razón:</span> {log.reason}
+                            </p>
+                          )}
+                          {log.performed_by && (
+                            <p>
+                              <span className="font-medium">Realizado por:</span> {log.performed_by}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No hay actividad reciente
+                    </h3>
+                    <p className="text-gray-600">
+                      Las activaciones y desactivaciones de módulos aparecerán aquí.
+                    </p>
                   </div>
-                ))}
-                {(!moduleStats?.recent_activations || moduleStats.recent_activations.length === 0) && (
-                  <p className="text-gray-500 text-center py-8">No hay actividad reciente</p>
                 )}
               </div>
             </CardContent>

@@ -599,6 +599,65 @@ export type Database = {
           },
         ]
       }
+      centros: {
+        Row: {
+          capacidad_jaulas: number | null
+          codigo: string
+          coordenadas_lat: number | null
+          coordenadas_lng: number | null
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          observaciones: string | null
+          profundidad_maxima: number | null
+          region: string | null
+          salmonera_id: string
+          ubicacion: string
+          updated_at: string
+        }
+        Insert: {
+          capacidad_jaulas?: number | null
+          codigo: string
+          coordenadas_lat?: number | null
+          coordenadas_lng?: number | null
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          observaciones?: string | null
+          profundidad_maxima?: number | null
+          region?: string | null
+          salmonera_id: string
+          ubicacion: string
+          updated_at?: string
+        }
+        Update: {
+          capacidad_jaulas?: number | null
+          codigo?: string
+          coordenadas_lat?: number | null
+          coordenadas_lng?: number | null
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          observaciones?: string | null
+          profundidad_maxima?: number | null
+          region?: string | null
+          salmonera_id?: string
+          ubicacion?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitios_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_modules: {
         Row: {
           activated_at: string | null
@@ -834,6 +893,7 @@ export type Database = {
       cuadrillas_buceo: {
         Row: {
           activo: boolean
+          centro_id: string | null
           company_id: string | null
           company_type: string | null
           created_at: string
@@ -847,6 +907,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          centro_id?: string | null
           company_id?: string | null
           company_type?: string | null
           created_at?: string
@@ -860,6 +921,7 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          centro_id?: string | null
           company_id?: string | null
           company_type?: string | null
           created_at?: string
@@ -871,7 +933,15 @@ export type Database = {
           tipo_empresa?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cuadrillas_buceo_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dashboard_layouts: {
         Row: {
@@ -1220,6 +1290,7 @@ export type Database = {
           buzo_asistente_id: string | null
           buzo_principal: string
           buzo_principal_id: string | null
+          centro_id: string | null
           codigo: string
           company_id: string | null
           company_type: string | null
@@ -1266,6 +1337,7 @@ export type Database = {
           buzo_asistente_id?: string | null
           buzo_principal: string
           buzo_principal_id?: string | null
+          centro_id?: string | null
           codigo: string
           company_id?: string | null
           company_type?: string | null
@@ -1312,6 +1384,7 @@ export type Database = {
           buzo_asistente_id?: string | null
           buzo_principal?: string
           buzo_principal_id?: string | null
+          centro_id?: string | null
           codigo?: string
           company_id?: string | null
           company_type?: string | null
@@ -1365,6 +1438,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuario"
             referencedColumns: ["usuario_id"]
+          },
+          {
+            foreignKeyName: "inmersion_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inmersion_operacion_id_fkey"
@@ -1822,6 +1902,7 @@ export type Database = {
       }
       operacion: {
         Row: {
+          centro_id: string | null
           codigo: string
           company_id: string | null
           company_type: string | null
@@ -1835,12 +1916,12 @@ export type Database = {
           nombre: string
           salmonera_id: string | null
           servicio_id: string | null
-          sitio_id: string | null
           supervisor_asignado_id: string | null
           tareas: string | null
           updated_at: string
         }
         Insert: {
+          centro_id?: string | null
           codigo: string
           company_id?: string | null
           company_type?: string | null
@@ -1854,12 +1935,12 @@ export type Database = {
           nombre: string
           salmonera_id?: string | null
           servicio_id?: string | null
-          sitio_id?: string | null
           supervisor_asignado_id?: string | null
           tareas?: string | null
           updated_at?: string
         }
         Update: {
+          centro_id?: string | null
           codigo?: string
           company_id?: string | null
           company_type?: string | null
@@ -1873,7 +1954,6 @@ export type Database = {
           nombre?: string
           salmonera_id?: string | null
           servicio_id?: string | null
-          sitio_id?: string | null
           supervisor_asignado_id?: string | null
           tareas?: string | null
           updated_at?: string
@@ -1895,9 +1975,9 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_operacion_sitio"
-            columns: ["sitio_id"]
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: "sitios"
+            referencedRelation: "centros"
             referencedColumns: ["id"]
           },
           {
@@ -2274,65 +2354,6 @@ export type Database = {
             columns: ["rule_id"]
             isOneToOne: false
             referencedRelation: "security_alert_rules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sitios: {
-        Row: {
-          capacidad_jaulas: number | null
-          codigo: string
-          coordenadas_lat: number | null
-          coordenadas_lng: number | null
-          created_at: string
-          estado: string
-          id: string
-          nombre: string
-          observaciones: string | null
-          profundidad_maxima: number | null
-          region: string | null
-          salmonera_id: string
-          ubicacion: string
-          updated_at: string
-        }
-        Insert: {
-          capacidad_jaulas?: number | null
-          codigo: string
-          coordenadas_lat?: number | null
-          coordenadas_lng?: number | null
-          created_at?: string
-          estado?: string
-          id?: string
-          nombre: string
-          observaciones?: string | null
-          profundidad_maxima?: number | null
-          region?: string | null
-          salmonera_id: string
-          ubicacion: string
-          updated_at?: string
-        }
-        Update: {
-          capacidad_jaulas?: number | null
-          codigo?: string
-          coordenadas_lat?: number | null
-          coordenadas_lng?: number | null
-          created_at?: string
-          estado?: string
-          id?: string
-          nombre?: string
-          observaciones?: string | null
-          profundidad_maxima?: number | null
-          region?: string | null
-          salmonera_id?: string
-          ubicacion?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sitios_salmonera_id_fkey"
-            columns: ["salmonera_id"]
-            isOneToOne: false
-            referencedRelation: "salmoneras"
             referencedColumns: ["id"]
           },
         ]

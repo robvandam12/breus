@@ -10,7 +10,7 @@ export interface OperacionFormData {
   fecha_fin?: string;
   estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
   salmonera_id?: string;
-  sitio_id?: string;
+  centro_id?: string;
   contratista_id?: string;
   servicio_id?: string;
   tareas?: string;

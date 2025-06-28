@@ -14,7 +14,7 @@ export interface BasicOperacion {
   estado_aprobacion?: string;
   salmonera_id?: string;
   contratista_id?: string;
-  sitio_id?: string;
+  centro_id?: string;
   servicio_id?: string;
   supervisor_asignado_id?: string;
   company_id?: string;
@@ -26,7 +26,7 @@ export interface BasicOperacion {
 export interface OperacionConRelaciones extends BasicOperacion {
   salmoneras?: { nombre: string };
   contratistas?: { nombre: string };
-  sitios?: { nombre: string };
+  centros?: { nombre: string };
   usuario_supervisor?: { nombre: string; apellido: string };
 }
 
@@ -44,7 +44,7 @@ export const useOperacionesQuery = () => {
           *,
           salmoneras:salmonera_id(nombre),
           contratistas:contratista_id(nombre),
-          sitios:sitio_id(nombre),
+          centros:centro_id(nombre),
           usuario_supervisor:supervisor_asignado_id(nombre, apellido)
         `)
         .order('created_at', { ascending: false });

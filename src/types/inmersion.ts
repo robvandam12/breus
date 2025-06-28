@@ -6,12 +6,13 @@ export interface Inmersion extends Tables<'inmersion'> {
   operacion?: OperationData;
   operacion_nombre?: string;
   security_alerts?: SecurityAlert[];
+  centro?: { nombre: string };
 }
 
 export interface BuzoInmersion extends Inmersion {
   operacionNombre: string;
   salmoneraNombre: string;
-  sitioNombre: string;
+  centroNombre: string;
   rol: 'Principal' | 'Asistente';
 }
 
@@ -30,7 +31,7 @@ export interface OperationData {
   nombre: string;
   equipo_buceo_id?: string;
   salmoneras?: { nombre: string } | null;
-  sitios?: { nombre: string } | null;
+  centros?: { nombre: string } | null;
   contratistas?: { nombre: string } | null;
 }
 
