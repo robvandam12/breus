@@ -37,17 +37,17 @@ export const InviteUserForm = ({ onSubmit, onCancel }: InviteUserFormProps) => {
   ];
 
   // Determinar qué tipos de empresa puede invitar según el rol del usuario
-  const getIncludeTypes = () => {
+  const getIncludeTypes = (): ('salmonera' | 'contratista')[] => {
     if (profile?.role === 'superuser') {
-      return ['salmonera', 'contratista'] as const;
+      return ['salmonera', 'contratista'];
     }
     if (profile?.role === 'admin_salmonera') {
-      return ['salmonera'] as const;
+      return ['salmonera'];
     }
     if (profile?.role === 'admin_servicio') {
-      return ['contratista'] as const;
+      return ['contratista'];
     }
-    return ['salmonera', 'contratista'] as const;
+    return ['salmonera', 'contratista'];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

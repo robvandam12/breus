@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle, User, Mail, UserCheck } from "lucide-react";
 import { useEmailValidation } from "@/hooks/useEmailValidation";
 import { InviteUserOptions } from "@/hooks/useUsuarios";
+import { CompanySelector } from "@/components/common/CompanySelector";
+import { useAuth } from "@/hooks/useAuth";
 
 interface EnhancedUserInviteFormProps {
   onSubmit: (options: InviteUserOptions) => Promise<void>;
@@ -21,8 +23,10 @@ export const EnhancedUserInviteForm = ({
   onCancel,
   allowedRoles = ['admin_salmonera', 'admin_servicio', 'supervisor', 'buzo']
 }: EnhancedUserInviteFormProps) => {
+  const { profile } = useAuth();
   const [email, setEmail] = useState("");
   const [rol, setRol] = useState("");
+  const [empresaSelection, setEmpresaSelection] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [overwriteExisting, setOverwriteExisting] = useState(false);
@@ -41,6 +45,20 @@ export const EnhancedUserInviteForm = ({
     }
   }, [email]);
 
+  // Determinar qué tipos de empresa puede invitar según el rol del usuario
+  const getIncludeTypes = (): ('salmonera' | 'contratista')[] => {
+    if (profile?.role === 'superuser') {
+      return ['salmonera', 'contratista'];
+    }
+    if (profile?.role === 'admin_salmonera') {
+      return ['salmonera'];
+    }
+    if (profile?.role === 'admin_servicio') {
+      return ['contratista'];
+    }
+    return ['salmonera', 'contratista'];
+  };
+
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
       admin_salmonera: 'Admin Salmonera',
@@ -54,7 +72,7 @@ export const EnhancedUserInviteForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !rol) {
+    if (!email || !rol || !empresaSelection) {
       return;
     }
 
@@ -64,6 +82,7 @@ export const EnhancedUserInviteForm = ({
       await onSubmit({
         email: email.toLowerCase(),
         rol,
+        empresa_selection: empresaSelection,
         overwriteExisting,
         cancelPrevious: emailStatus?.hasPendingInvitation && overwriteExisting
       });
@@ -72,7 +91,7 @@ export const EnhancedUserInviteForm = ({
     }
   };
 
-  const canSubmit = email && rol && (!emailStatus?.exists || overwriteExisting);
+  const canSubmit = email && rol && empresaSelection && (!emailStatus?.exists || overwriteExisting);
   const showWarning = emailStatus?.exists && !overwriteExisting;
 
   return (
@@ -148,6 +167,16 @@ export const EnhancedUserInviteForm = ({
         </Select>
       </div>
 
+      <CompanySelector
+        value={empresaSelection}
+        onValueChange={setEmpresaSelection}
+        label="Empresa"
+        required
+        includeTypes={getIncludeTypes()}
+        placeholder="Seleccionar empresa de destino"
+        disabled={loading}
+      />
+
       {/* Opción para sobrescribir */}
       {emailStatus?.exists && (
         <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
@@ -155,7 +184,7 @@ export const EnhancedUserInviteForm = ({
             id="overwrite"
             checked={overwriteExisting}
             onCheckedChange={(checked) => setOverwriteExisting(checked as boolean)}
-            disabled={emailStatus.hasUser} // No permitir sobrescribir usuarios existentes
+            disabled={emailStatus.hasUser}
           />
           <Label htmlFor="overwrite" className="text-sm">
             {emailStatus.hasUser 

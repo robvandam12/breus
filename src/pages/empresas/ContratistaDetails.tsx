@@ -58,7 +58,10 @@ export const ContratistaDetails = ({ contratista, onBack }: ContratistaDetailsPr
   }) => {
     await inviteUsuario({
       email: data.email,
-      rol: data.rol
+      rol: data.rol,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      empresa_selection: `contratista_${contratista.id}`
     });
     setShowInviteForm(false);
   };

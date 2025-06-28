@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ interface BaseUserManagementProps {
   onInviteUser?: (userData: any) => Promise<void>;
   CreateUserForm?: React.ComponentType<any>;
   EditUserForm?: React.ComponentType<any>;
+  InviteUserForm?: React.ComponentType<any>;
 }
 
 export const BaseUserManagement = ({
@@ -59,7 +59,8 @@ export const BaseUserManagement = ({
   onDeleteUser,
   onInviteUser,
   CreateUserForm,
-  EditUserForm
+  EditUserForm,
+  InviteUserForm
 }: BaseUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("all");
@@ -302,20 +303,22 @@ export const BaseUserManagement = ({
       )}
 
       {/* Dialog de Invitación */}
-      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invitar Usuario</DialogTitle>
-          </DialogHeader>
-          <InviteUserForm
-            onSubmit={async (data: any) => {
-              await onInviteUser?.(data);
-              setShowInviteDialog(false);
-            }}
-            onCancel={() => setShowInviteDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {InviteUserForm && (
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Invitar Usuario</DialogTitle>
+            </DialogHeader>
+            <InviteUserForm
+              onSubmit={async (data: any) => {
+                await onInviteUser?.(data);
+                setShowInviteDialog(false);
+              }}
+              onCancel={() => setShowInviteDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Dialog de Edición */}
       {EditUserForm && editingUser && (
