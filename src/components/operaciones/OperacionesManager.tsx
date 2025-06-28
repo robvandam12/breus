@@ -16,12 +16,14 @@ import {
   Filter
 } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperacionesMutations } from "@/hooks/useOperacionesMutations";
 import { OperationFlowWizard } from "./OperationFlowWizard";
 import { CreateOperacionForm } from "./CreateOperacionForm";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 
 export const OperacionesManager = () => {
   const { operaciones, isLoading } = useOperaciones();
+  const { createOperacion } = useOperacionesMutations();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -42,9 +44,12 @@ export const OperacionesManager = () => {
   };
 
   const handleCreateOperacion = async (data: any) => {
-    // Lógica para crear operación
-    console.log('Creating operacion:', data);
-    setIsCreateDialogOpen(false);
+    try {
+      await createOperacion(data);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating operacion:', error);
+    }
   };
 
   return (
@@ -75,10 +80,18 @@ export const OperacionesManager = () => {
             onOpenChange={setIsCreateDialogOpen}
             size="xl"
           >
-            <CreateOperacionForm
-              onSubmit={handleCreateOperacion}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">Nueva Operación</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Crear una nueva operación de buceo
+                </p>
+              </div>
+              <CreateOperacionForm
+                onSubmit={handleCreateOperacion}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </div>
           </WizardDialog>
         </div>
       </div>
@@ -144,10 +157,10 @@ export const OperacionesManager = () => {
                               {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
                             </td>
                             <td className="p-4 text-sm text-gray-600">
-                              {operacion.salmonera?.nombre || '-'}
+                              {operacion.salmoneras?.nombre || '-'}
                             </td>
                             <td className="p-4 text-sm text-gray-600">
-                              {operacion.contratista?.nombre || '-'}
+                              {operacion.contratistas?.nombre || '-'}
                             </td>
                             <td className="p-4 text-right">
                               <Button variant="ghost" size="sm">
@@ -207,17 +220,17 @@ export const OperacionesManager = () => {
                         <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
                       </div>
                       
-                      {operacion.salmonera && (
+                      {operacion.salmoneras && (
                         <div className="flex items-center gap-2 text-sm">
                           <Building2 className="w-4 h-4 text-blue-500" />
-                          <span>{operacion.salmonera.nombre}</span>
+                          <span>{operacion.salmoneras.nombre}</span>
                         </div>
                       )}
                       
-                      {operacion.contratista && (
+                      {operacion.contratistas && (
                         <div className="flex items-center gap-2 text-sm">
                           <Users className="w-4 h-4 text-orange-500" />
-                          <span>{operacion.contratista.nombre}</span>
+                          <span>{operacion.contratistas.nombre}</span>
                         </div>
                       )}
                       
