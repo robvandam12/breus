@@ -25,7 +25,7 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
     nombre: '',
     fecha_inicio: '',
     fecha_fin: '',
-    estado: 'activa' as const,
+    estado: 'activa' as 'activa' | 'pausada' | 'completada' | 'cancelada',
     tareas: ''
   });
 
