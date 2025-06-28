@@ -17,6 +17,7 @@ interface EnhancedValidationResult {
     canProceed: boolean;
     errors: string[];
     warnings: string[];
+    context?: any; // Add context property
   };
 }
 
@@ -67,7 +68,8 @@ export const useEnhancedValidation = (config: ValidationConfig = {}) => {
           isValid: result.isValid,
           canProceed: result.canProceed || result.isValid,
           errors: result.errors,
-          warnings: result.warnings
+          warnings: result.warnings,
+          context: result.contextData // Include context from the validation result
         }
       };
     } catch (error) {
@@ -87,7 +89,8 @@ export const useEnhancedValidation = (config: ValidationConfig = {}) => {
           isValid: false,
           canProceed: false,
           errors: [errorMessage],
-          warnings: []
+          warnings: [],
+          context: undefined // Provide context even in error case
         }
       };
     } finally {

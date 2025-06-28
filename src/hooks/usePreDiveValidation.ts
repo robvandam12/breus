@@ -133,7 +133,7 @@ export const usePreDiveValidation = () => {
       console.log('Creating independent immersion (core functionality)');
       
       // Usar validateWithErrorHandling para manejo automático de errores
-      const { success } = await validateWithErrorHandling(
+      const { success, result } = await validateWithErrorHandling(
         'create_immersion',
         immersionData,
         { showToast: false } // Manejar toast manualmente
@@ -189,11 +189,11 @@ export const usePreDiveValidation = () => {
     }
 
     // Determinar estados de validación según contexto
-    const hptValidado = result.context.requiresDocuments 
+    const hptValidado = result.context?.requiresDocuments 
       ? (immersionData.operacion_id ? await checkDocumentSigned('hpt', immersionData.operacion_id) : false)
       : true; // CORE: Si no requiere documentos, marcar como validado
 
-    const anexoBravoValidado = result.context.requiresDocuments
+    const anexoBravoValidado = result.context?.requiresDocuments
       ? (immersionData.operacion_id ? await checkDocumentSigned('anexo_bravo', immersionData.operacion_id) : false)
       : true; // CORE: Si no requiere documentos, marcar como validado
 
@@ -212,7 +212,7 @@ export const usePreDiveValidation = () => {
     
     toast({
       title: "Inmersión creada",
-      description: result.context.moduleAccess?.planning 
+      description: result.context?.moduleAccess?.planning 
         ? "La inmersión ha sido creada con validaciones completas."
         : "La inmersión ha sido creada en modo core.",
     });
