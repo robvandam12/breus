@@ -47,6 +47,7 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
         company_type: selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista'
       };
 
+      console.log('Submitting operacion with data:', operacionData);
       await onSubmit(operacionData);
     } catch (error) {
       console.error('Error creating operacion:', error);
@@ -82,7 +83,10 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
         </CardHeader>
         <CardContent>
           <EnterpriseSelector
-            onSelectionChange={setSelectedEnterprise}
+            onSelectionChange={(result) => {
+              console.log('Enterprise selected:', result);
+              setSelectedEnterprise(result);
+            }}
             showCard={false}
             title="Contexto Empresarial"
             description="Seleccione las empresas para esta operación"
