@@ -15,7 +15,6 @@ import {
   Activity, 
   Shield, 
   Search,
-  Plus,
   CheckCircle,
   XCircle,
   AlertTriangle
@@ -26,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CompanyModuleManager } from "./CompanyModuleManager";
 import { ModuleStatsPanel } from "./ModuleStatsPanel";
+import { SuperuserModuleManager } from "./SuperuserModuleManager";
 import { useModuleSystemInitializer } from "@/hooks/useModuleSystemInitializer";
 
 export const ModuleManagementDashboard = () => {
@@ -180,6 +180,7 @@ export const ModuleManagementDashboard = () => {
         <TabsList>
           <TabsTrigger value="companies">Gestión por Empresa</TabsTrigger>
           <TabsTrigger value="modules">Vista por Módulos</TabsTrigger>
+          <TabsTrigger value="advanced">Panel Avanzado</TabsTrigger>
           <TabsTrigger value="stats">Estadísticas y Reportes</TabsTrigger>
         </TabsList>
 
@@ -309,6 +310,10 @@ export const ModuleManagementDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-6">
+          <SuperuserModuleManager />
         </TabsContent>
 
         <TabsContent value="stats" className="space-y-6">

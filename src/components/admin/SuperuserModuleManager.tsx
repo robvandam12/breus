@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { 
   Settings, 
@@ -28,9 +27,7 @@ export const SuperuserModuleManager = () => {
     advancedStats,
     isLoading,
     canManageModules,
-    configureModule,
     toggleModule,
-    isConfiguring,
     isToggling,
   } = useAdvancedModuleManagement();
 
@@ -76,14 +73,6 @@ export const SuperuserModuleManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión Avanzada de Módulos</h1>
-          <p className="text-gray-600">Panel de administración completo para superusuarios</p>
-        </div>
-      </div>
-
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
