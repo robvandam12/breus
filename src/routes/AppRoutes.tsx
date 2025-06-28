@@ -16,6 +16,7 @@ import AuthCallback from "../pages/auth/AuthCallback";
 // Lazy-loaded pages
 const Index = lazy(() => import("../pages/Index"));
 const NotFound = lazy(() => import("../pages/NotFound"));
+const RegisterFromInvitation = lazy(() => import("../pages/RegisterFromInvitation"));
 const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
 const Sitios = lazy(() => import("../pages/empresas/Sitios"));
 const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
@@ -71,19 +72,19 @@ export const AppRoutes = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/email-confirmation" element={<EmailConfirmation />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        
+        {/* Invitation Registration Route */}
+        <Route path="/register-invitation" element={
+          <Suspense fallback={<FullPageLoader />}>
+            <RegisterFromInvitation />
+          </Suspense>
+        } />
 
         {/* Onboarding & Profile Setup */}
         <Route path="/onboarding" element={
           <ProtectedRoute>
             <Suspense fallback={<FullPageLoader />}>
               <BuzoOnboardingPage />
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile-setup" element={
-          <ProtectedRoute>
-            <Suspense fallback={<FullPageLoader />}>
-              <ProfileSetup />
             </Suspense>
           </ProtectedRoute>
         } />

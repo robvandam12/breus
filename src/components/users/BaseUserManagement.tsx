@@ -6,8 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Plus, Edit, Trash2, Shield, Search } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Shield, Search, Eye } from "lucide-react";
 import { DeleteUserDialog } from "./DeleteUserDialog";
+import { UserDetailModal } from "./UserDetailModal";
 
 export interface BaseUser {
   id: string;
@@ -66,6 +67,7 @@ export const BaseUserManagement = ({
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<BaseUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<BaseUser | null>(null);
+  const [viewingUser, setViewingUser] = useState<BaseUser | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -247,6 +249,14 @@ export const BaseUserManagement = ({
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => setViewingUser(user)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                               onClick={() => setEditingUser(user)}
                             >
                               <Edit className="w-4 h-4" />
@@ -325,6 +335,15 @@ export const BaseUserManagement = ({
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Modal de Detalle de Usuario */}
+      {viewingUser && (
+        <UserDetailModal
+          user={viewingUser}
+          isOpen={!!viewingUser}
+          onClose={() => setViewingUser(null)}
+        />
       )}
 
       {/* Dialog de Eliminación */}
