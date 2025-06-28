@@ -1,109 +1,96 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Settings, Activity, AlertTriangle, CheckCircle, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Building2, 
+  Settings, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  Info
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useModularSystem } from "@/hooks/useModularSystem";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CompanyModuleManagerProps {
   companyId: string;
+  companyType: 'salmonera' | 'contratista';
   onClose: () => void;
 }
 
-export const CompanyModuleManager: React.FC<CompanyModuleManagerProps> = ({
-  companyId,
-  onClose
-}) => {
-  const [reason, setReason] = useState('');
+export const CompanyModuleManager = ({ companyId, companyType, onClose }: CompanyModuleManagerProps) => {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
-  
-  const { systemModules } = useModularSystem();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Obtener información de la empresa
   const { data: companyInfo } = useQuery({
-    queryKey: ['company-info', companyId],
+    queryKey: ['company-info', companyId, companyType],
     queryFn: async () => {
-      // Intentar obtener de salmoneras primero
-      const { data: salmonera } = await supabase
-        .from('salmoneras')
+      const table = companyType === 'salmonera' ? 'salmoneras' : 'contratistas';
+      const { data, error } = await supabase
+        .from(table)
         .select('id, nombre, rut')
         .eq('id', companyId)
         .single();
 
-      if (salmonera) {
-        return { ...salmonera, type: 'salmonera' as const };
-      }
+      if (error) throw error;
+      return data;
+    },
+  });
 
-      // Si no es salmonera, buscar en contratistas
-      const { data: contratista } = await supabase
-        .from('contratistas')
-        .select('id, nombre, rut')
-        .eq('id', companyId)
-        .single();
+  // Obtener módulos del sistema
+  const { data: systemModules = [] } = useQuery({
+    queryKey: ['system-modules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('system_modules')
+        .select('*')
+        .order('category, display_name');
 
-      if (contratista) {
-        return { ...contratista, type: 'contratista' as const };
-      }
-
-      throw new Error('Empresa no encontrada');
+      if (error) throw error;
+      return data;
     },
   });
 
   // Obtener módulos activos de la empresa
   const { data: companyModules = [] } = useQuery({
-    queryKey: ['company-modules', companyId],
+    queryKey: ['company-modules', companyId, companyType],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('company_modules')
         .select('*')
         .eq('company_id', companyId)
-        .eq('company_type', companyInfo?.type);
+        .eq('company_type', companyType);
 
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: !!companyInfo,
   });
 
-  // Mutation para activar/desactivar módulo
+  // Mutation para activar/desactivar módulos
   const toggleModuleMutation = useMutation({
-    mutationFn: async ({ 
-      moduleName, 
-      isActive 
-    }: { 
-      moduleName: string; 
-      isActive: boolean; 
-    }) => {
-      if (!companyInfo) throw new Error('Información de empresa no disponible');
-
-      // Obtener configuración actual
-      const { data: currentConfig } = await supabase
-        .from('company_modules')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('company_type', companyInfo.type)
-        .eq('module_name', moduleName)
-        .single();
-
-      // Actualizar o insertar
+    mutationFn: async ({ moduleName, isActive }: { moduleName: string; isActive: boolean }) => {
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('company_modules')
         .upsert({
           company_id: companyId,
-          company_type: companyInfo.type,
+          company_type: companyType,
           module_name: moduleName,
           is_active: isActive,
-          activated_by: null, // Se establece automáticamente por el trigger
-          configuration: currentConfig?.configuration || {},
+          activated_by: isActive ? profile?.id : null,
+          configuration: {},
         }, {
           onConflict: 'company_id,company_type,module_name'
         })
@@ -112,186 +99,205 @@ export const CompanyModuleManager: React.FC<CompanyModuleManagerProps> = ({
 
       if (error) throw error;
 
-      // Registrar log de activación
+      // Registrar log de activación/desactivación
       await supabase
         .from('module_activation_logs')
         .insert({
-          company_id: companyId,
-          company_type: companyInfo.type,
           module_name: moduleName,
+          company_id: companyId,
+          company_type: companyType,
           action: isActive ? 'activated' : 'deactivated',
-          previous_state: currentConfig ? { is_active: currentConfig.is_active } : {},
-          new_state: { is_active: isActive },
-          reason: reason || null,
-          performed_by: null, // Se establece automáticamente
+          performed_by: profile?.id,
         });
 
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['company-modules', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['company-modules', companyId, companyType] });
       queryClient.invalidateQueries({ queryKey: ['module-stats'] });
-      
       toast({
-        title: variables.isActive ? 'Módulo Activado' : 'Módulo Desactivado',
+        title: variables.isActive ? "Módulo Activado" : "Módulo Desactivado",
         description: `El módulo ha sido ${variables.isActive ? 'activado' : 'desactivado'} exitosamente.`,
       });
-      
-      setReason('');
+      setIsLoading(false);
     },
     onError: (error) => {
+      console.error('Error toggling module:', error);
       toast({
-        title: 'Error',
-        description: 'No se pudo cambiar el estado del módulo.',
-        variant: 'destructive',
+        title: "Error",
+        description: "No se pudo cambiar el estado del módulo.",
+        variant: "destructive",
       });
+      setIsLoading(false);
     },
   });
 
   const getModuleStatus = (moduleName: string) => {
-    const module = companyModules.find(m => m.module_name === moduleName);
-    return module?.is_active ?? false;
+    return companyModules.find(m => m.module_name === moduleName)?.is_active || false;
   };
 
-  const isModuleCore = (moduleName: string) => {
-    const module = systemModules.find(m => m.name === moduleName);
-    return module?.is_core ?? false;
+  const handleToggleModule = (moduleName: string, currentStatus: boolean) => {
+    toggleModuleMutation.mutate({
+      moduleName,
+      isActive: !currentStatus
+    });
   };
 
-  const handleToggleModule = async (moduleName: string, isActive: boolean) => {
-    if (isModuleCore(moduleName) && !isActive) {
-      toast({
-        title: 'Módulo Core',
-        description: 'Los módulos core no pueden ser desactivados.',
-        variant: 'destructive',
-      });
-      return;
+  const groupedModules = systemModules.reduce((acc, module) => {
+    if (!acc[module.category]) {
+      acc[module.category] = [];
     }
+    acc[module.category].push(module);
+    return acc;
+  }, {} as Record<string, typeof systemModules>);
 
-    await toggleModuleMutation.mutateAsync({ moduleName, isActive });
+  const categoryLabels = {
+    operational: 'Operacionales',
+    planning: 'Planificación',
+    reporting: 'Reportes',
+    integration: 'Integraciones'
   };
-
-  if (!companyInfo) {
-    return null;
-  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Gestión de Módulos - {companyInfo.nombre}
-              </DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant={companyInfo.type === 'salmonera' ? 'default' : 'secondary'}>
-                  {companyInfo.type === 'salmonera' ? 'Salmonera' : 'Contratista'}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {companyInfo.rut}
-                </Badge>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Gestión de Módulos - {companyInfo?.nombre}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Campo para razón del cambio */}
+          {/* Información de la empresa */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Razón del Cambio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Describe el motivo del cambio de estado del módulo..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="min-h-[60px]"
-              />
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">{companyInfo?.nombre}</h3>
+                  <p className="text-sm text-gray-600">
+                    {companyType === 'salmonera' ? 'Salmonera' : 'Contratista'} - RUT: {companyInfo?.rut}
+                  </p>
+                </div>
+                <Badge variant={companyType === 'salmonera' ? 'default' : 'secondary'}>
+                  {companyType === 'salmonera' ? 'Salmonera' : 'Contratista'}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Lista de módulos */}
-          <div className="space-y-4">
-            {systemModules.map((module) => {
-              const isActive = getModuleStatus(module.name);
-              const isCore = module.is_core;
-              
-              return (
-                <Card key={module.name} className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold">{module.display_name}</h3>
-                          <Badge className={isCore ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
-                            {isCore ? 'Core' : 'Opcional'}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {module.category}
-                          </Badge>
-                          {isActive ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 text-gray-400" />
+          {/* Información sobre módulos core */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Los módulos marcados como "Core" están siempre disponibles y no pueden ser desactivados.
+              Los módulos opcionales pueden ser activados o desactivados según las necesidades de la empresa.
+            </AlertDescription>
+          </Alert>
+
+          {/* Módulos por categoría */}
+          <div className="space-y-6">
+            {Object.entries(groupedModules).map(([category, modules]) => (
+              <Card key={category}>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {categoryLabels[category as keyof typeof categoryLabels] || category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {modules.map((module) => {
+                    const isActive = getModuleStatus(module.name);
+                    const isCore = module.is_core;
+                    
+                    return (
+                      <div key={module.name} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{module.display_name}</h4>
+                            <Badge className={isCore ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                              {isCore ? 'Core' : 'Opcional'}
+                            </Badge>
+                            {isActive && (
+                              <Badge className="bg-green-100 text-green-800">
+                                Activo
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{module.description}</p>
+                          {module.dependencies && module.dependencies.length > 0 && (
+                            <p className="text-xs text-gray-500">
+                              Dependencias: {module.dependencies.join(', ')}
+                            </p>
                           )}
                         </div>
-                        <p className="text-gray-600 text-sm mb-3">{module.description}</p>
-                        {module.dependencies && module.dependencies.length > 0 && (
-                          <div className="text-xs text-gray-500">
-                            <span className="font-medium">Dependencias:</span> {module.dependencies.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-3 ml-4">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`module-${module.name}`}
-                            checked={isActive}
-                            onCheckedChange={(checked) => handleToggleModule(module.name, checked)}
-                            disabled={isCore || toggleModuleMutation.isPending}
-                          />
-                          <Label htmlFor={`module-${module.name}`} className="text-sm">
-                            {isActive ? 'Activo' : 'Inactivo'}
-                          </Label>
+                        <div className="flex items-center gap-2">
+                          {isCore ? (
+                            <div className="flex items-center gap-2 text-sm text-blue-600">
+                              <CheckCircle className="w-4 h-4" />
+                              Siempre Activo
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <Label htmlFor={`module-${module.name}`} className="text-sm">
+                                {isActive ? 'Activado' : 'Desactivado'}
+                              </Label>
+                              <Switch
+                                id={`module-${module.name}`}
+                                checked={isActive}
+                                onCheckedChange={() => handleToggleModule(module.name, isActive)}
+                                disabled={isLoading}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Información adicional */}
+          {/* Resumen */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                Información Importante
-              </CardTitle>
+              <CardTitle className="text-base">Resumen de Módulos</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <span>Los módulos <strong>Core</strong> están siempre activos y no pueden desactivarse.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <span>Desactivar un módulo puede afectar funcionalidades que dependen de él.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Activity className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Los cambios se aplicarán inmediatamente y se registrarán en los logs del sistema.</span>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {systemModules.filter(m => m.is_core).length}
+                  </div>
+                  <div className="text-sm text-gray-600">Módulos Core</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {companyModules.filter(m => m.is_active).length}
+                  </div>
+                  <div className="text-sm text-gray-600">Módulos Activos</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-600">
+                    {systemModules.filter(m => !m.is_core).length}
+                  </div>
+                  <div className="text-sm text-gray-600">Módulos Opcionales</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {systemModules.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Disponibles</div>
+                </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={onClose}>
+              Cerrar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -26,11 +26,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CompanyModuleManager } from "./CompanyModuleManager";
 import { ModuleStatsPanel } from "./ModuleStatsPanel";
+import { useModuleSystemInitializer } from "@/hooks/useModuleSystemInitializer";
 
 export const ModuleManagementDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompanyType, setSelectedCompanyType] = useState<'all' | 'salmonera' | 'contratista'>('all');
   const [selectedCompany, setSelectedCompany] = useState<string>('');
+
+  // Inicializar módulos del sistema
+  useModuleSystemInitializer();
 
   const { systemModules, isSuperuser, isLoading: loadingModules } = useModularSystem();
 
@@ -48,7 +52,7 @@ export const ModuleManagementDashboard = () => {
         ...(contratistas.data || []).map(c => ({ ...c, type: 'contratista' as const }))
       ];
 
-      return allCompanies;
+      return allCompanies.sort((a, b) => a.nombre.localeCompare(b.nombre));
     },
     enabled: isSuperuser,
   });
@@ -65,14 +69,14 @@ export const ModuleManagementDashboard = () => {
 
       const stats = {
         totalModules: systemModules.length,
-        activeModules: 0,
+        activeActivations: 0,
         companiesWithModules: new Set(),
         moduleUsage: {} as Record<string, number>
       };
 
       data?.forEach(module => {
         if (module.is_active) {
-          stats.activeModules++;
+          stats.activeActivations++;
           stats.companiesWithModules.add(module.company_id);
           stats.moduleUsage[module.module_name] = (stats.moduleUsage[module.module_name] || 0) + 1;
         }
@@ -140,8 +144,8 @@ export const ModuleManagementDashboard = () => {
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Módulos Activos</p>
-                <p className="text-2xl font-bold text-gray-900">{moduleStats?.activeModules || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Activaciones Totales</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.activeActivations || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -213,6 +217,11 @@ export const ModuleManagementDashboard = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex items-end">
+                  <div className="text-sm text-gray-500">
+                    {filteredCompanies.length} empresa{filteredCompanies.length !== 1 ? 's' : ''} encontrada{filteredCompanies.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -233,10 +242,14 @@ export const ModuleManagementDashboard = () => {
                           {company.rut}
                         </Badge>
                       </div>
+                      <div className="text-sm text-gray-600">
+                        Estado: <span className="font-medium">{company.estado}</span>
+                      </div>
                     </div>
                     <Button
                       variant="outline"
-                      onClick={() => setSelectedCompany(company.id)}
+                      onClick={() => setSelectedCompany(`${company.type}-${company.id}`)}
+                      className="ml-4"
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Gestionar Módulos
@@ -252,10 +265,13 @@ export const ModuleManagementDashboard = () => {
               <CardContent className="text-center py-12">
                 <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No se encontraron empresas
+                  {companies.length === 0 ? 'No hay empresas registradas' : 'No se encontraron empresas'}
                 </h3>
                 <p className="text-gray-600">
-                  Ajusta los filtros de búsqueda o agrega nuevas empresas al sistema.
+                  {companies.length === 0 
+                    ? 'Primero debe registrar empresas en el sistema para poder gestionar sus módulos.'
+                    : 'Ajusta los filtros de búsqueda para encontrar las empresas deseadas.'
+                  }
                 </p>
               </CardContent>
             </Card>
@@ -281,6 +297,11 @@ export const ModuleManagementDashboard = () => {
                       <p className="text-gray-600 mb-3">{module.description}</p>
                       <div className="text-sm text-gray-500">
                         <span>Uso: {moduleStats?.moduleUsage[module.name] || 0} empresas</span>
+                        {module.dependencies && module.dependencies.length > 0 && (
+                          <span className="ml-4">
+                            Dependencias: {module.dependencies.join(', ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -298,7 +319,8 @@ export const ModuleManagementDashboard = () => {
       {/* Modal para gestión específica de empresa */}
       {selectedCompany && (
         <CompanyModuleManager
-          companyId={selectedCompany}
+          companyId={selectedCompany.split('-')[1]}
+          companyType={selectedCompany.split('-')[0] as 'salmonera' | 'contratista'}
           onClose={() => setSelectedCompany('')}
         />
       )}
