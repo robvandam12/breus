@@ -84,6 +84,26 @@ export default function BitacorasSupervisor() {
     setSelectedOperacionId(null);
   };
 
+  if (showHPTWizard && selectedOperacionId) {
+    return (
+      <HPTWizardComplete
+        operacionId={selectedOperacionId}
+        onComplete={handleHPTComplete}
+        onCancel={handleHPTCancel}
+      />
+    );
+  }
+
+  if (showAnexoBravoWizard && selectedOperacionId) {
+    return (
+      <AnexoBravoWizard
+        operacionId={selectedOperacionId}
+        onComplete={handleAnexoBravoComplete}
+        onCancel={handleAnexoBravoCancel}
+      />
+    );
+  }
+
   return (
     <MainLayout
       title="Bitácoras de Supervisor"
@@ -268,7 +288,7 @@ export default function BitacorasSupervisor() {
                   if (pendingOperacion) {
                     handleShowAnexoBravoWizard(pendingOperacion.id);
                   } else {
-                     toast({
+                    toast({
                       title: "Error",
                       description: "Debe seleccionar una operación primero.",
                       variant: "destructive",
@@ -284,15 +304,13 @@ export default function BitacorasSupervisor() {
         </Card>
       </div>
 
-      {showHPTWizard && selectedOperacionId) {
-    return (
-      <HPTWizardComplete
-        operacionId={selectedOperacionId}
-        onComplete={handleHPTComplete}
-        onCancel={handleHPTCancel}
-      />
-    );
-  }
+      {showHPTWizard && selectedOperacionId && (
+    <HPTWizardComplete
+      operacionId={selectedOperacionId}
+      onComplete={handleHPTComplete}
+      onCancel={handleHPTCancel}
+    />
+  )}
 
       {showAnexoBravoWizard && selectedOperacionId && (
         <AnexoBravoWizard
