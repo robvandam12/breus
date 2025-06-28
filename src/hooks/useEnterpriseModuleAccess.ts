@@ -1,0 +1,163 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+
+export interface ModuleAccessInfo {
+  module_name: string;
+  is_active: boolean;
+  display_name: string;
+  description?: string;
+}
+
+export interface EnterpriseModuleAccess {
+  companyId: string;
+  companyType: 'salmonera' | 'contratista';
+  modules: ModuleAccessInfo[];
+  hasPlanning: boolean;
+  hasMaintenance: boolean;
+  hasReporting: boolean;
+  hasIntegrations: boolean;
+}
+
+export const useEnterpriseModuleAccess = () => {
+  const { profile } = useAuth();
+  const [moduleCache, setModuleCache] = useState<Map<string, EnterpriseModuleAccess>>(new Map());
+  const [loading, setLoading] = useState(false);
+
+  const getModuleKey = (companyId: string, companyType: string) => `${companyId}-${companyType}`;
+
+  const getModulesForCompany = async (
+    companyId: string, 
+    companyType: 'salmonera' | 'contratista'
+  ): Promise<EnterpriseModuleAccess> => {
+    const cacheKey = getModuleKey(companyId, companyType);
+    
+    // Check cache first
+    if (moduleCache.has(cacheKey)) {
+      return moduleCache.get(cacheKey)!;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Si es superuser, obtener todos los módulos como activos
+      if (profile?.role === 'superuser') {
+        const { data: systemModules } = await supabase
+          .from('system_modules')
+          .select('name, display_name, description');
+
+        const modules: ModuleAccessInfo[] = systemModules?.map(module => ({
+          module_name: module.name,
+          is_active: true,
+          display_name: module.display_name,
+          description: module.description
+        })) || [];
+
+        const result: EnterpriseModuleAccess = {
+          companyId,
+          companyType,
+          modules,
+          hasPlanning: true,
+          hasMaintenance: true,
+          hasReporting: true,
+          hasIntegrations: true
+        };
+
+        moduleCache.set(cacheKey, result);
+        setModuleCache(new Map(moduleCache));
+        return result;
+      }
+
+      // Para usuarios normales, consultar módulos reales
+      const { data, error } = await supabase
+        .rpc('get_company_active_modules', {
+          p_company_id: companyId,
+          p_company_type: companyType
+        });
+
+      if (error) throw error;
+
+      const modules: ModuleAccessInfo[] = data?.map((module: any) => ({
+        module_name: module.module_name,
+        is_active: true, // Si está en el resultado de la función, está activo
+        display_name: module.display_name || module.module_name,
+        description: module.description
+      })) || [];
+
+      // Siempre incluir core_immersions como activo
+      if (!modules.find(m => m.module_name === 'core_immersions')) {
+        modules.unshift({
+          module_name: 'core_immersions',
+          is_active: true,
+          display_name: 'Inmersiones Core',
+          description: 'Funcionalidad básica de inmersiones'
+        });
+      }
+
+      const result: EnterpriseModuleAccess = {
+        companyId,
+        companyType,
+        modules,
+        hasPlanning: modules.some(m => m.module_name === 'planning_operations'),
+        hasMaintenance: modules.some(m => m.module_name === 'maintenance_networks'),
+        hasReporting: modules.some(m => m.module_name === 'advanced_reporting'),
+        hasIntegrations: modules.some(m => m.module_name === 'external_integrations')
+      };
+
+      moduleCache.set(cacheKey, result);
+      setModuleCache(new Map(moduleCache));
+      return result;
+
+    } catch (error) {
+      console.error('Error loading company modules:', error);
+      
+      // Fallback: solo core_immersions
+      const fallbackResult: EnterpriseModuleAccess = {
+        companyId,
+        companyType,
+        modules: [{
+          module_name: 'core_immersions',
+          is_active: true,
+          display_name: 'Inmersiones Core',
+          description: 'Funcionalidad básica de inmersiones'
+        }],
+        hasPlanning: false,
+        hasMaintenance: false,
+        hasReporting: false,
+        hasIntegrations: false
+      };
+
+      moduleCache.set(cacheKey, fallbackResult);
+      setModuleCache(new Map(moduleCache));
+      return fallbackResult;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hasModuleAccess = (
+    companyId: string,
+    companyType: 'salmonera' | 'contratista',
+    moduleName: string
+  ): boolean => {
+    const cacheKey = getModuleKey(companyId, companyType);
+    const cached = moduleCache.get(cacheKey);
+    
+    if (!cached) return false;
+    
+    return cached.modules.some(m => m.module_name === moduleName && m.is_active);
+  };
+
+  const clearCache = () => {
+    setModuleCache(new Map());
+  };
+
+  return {
+    getModulesForCompany,
+    hasModuleAccess,
+    loading,
+    clearCache,
+    moduleCache: Array.from(moduleCache.values())
+  };
+};

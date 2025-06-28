@@ -1,5 +1,6 @@
 
 import { useAuth } from './useAuth';
+import { useEnterpriseModuleAccess } from './useEnterpriseModuleAccess';
 
 // Constantes de módulos
 export const MODULES = {
@@ -11,19 +12,38 @@ export const MODULES = {
 
 export const useModuleAccess = () => {
   const { profile } = useAuth();
+  const { hasModuleAccess: hasEnterpriseModuleAccess } = useEnterpriseModuleAccess();
 
   const getModuleAccess = () => {
-    // Por defecto, todos los módulos están activos para simplificar
-    // En una implementación real, esto vendría de la base de datos
+    // Si es superuser, todos los módulos están disponibles
+    if (profile?.role === 'superuser') {
+      return {
+        planning: true,
+        maintenance: true,
+        reporting: true,  
+        integrations: true
+      };
+    }
+
+    // Para usuarios normales, necesitamos verificar módulos por empresa
+    // Esto requiere contexto empresarial, por lo que devolvemos false por defecto
+    // Los componentes deben usar useEnterpriseModuleAccess directamente para validaciones específicas
     return {
-      planning: true,
-      maintenance: true,
-      reporting: true,  
-      integrations: true
+      planning: false,
+      maintenance: false,
+      reporting: false,  
+      integrations: false
     };
   };
 
   const hasModuleAccess = (moduleId: string): boolean => {
+    // Si es superuser, siempre tiene acceso
+    if (profile?.role === 'superuser') {
+      return true;
+    }
+
+    // Para otros usuarios, esto es un fallback básico
+    // Los componentes deben usar useEnterpriseModuleAccess para validaciones reales
     const access = getModuleAccess();
     
     switch (moduleId) {

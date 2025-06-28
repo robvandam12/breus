@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,28 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Zap, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Calendar, Zap, AlertCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
-import { useModuleAccess } from '@/hooks/useModuleAccess';
+import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
+import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface UnifiedInmersionFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
   initialData?: Inmersion;
-}
-
-interface Salmonera {
-  id: string;
-  nombre: string;
-}
-
-interface Contratista {
-  id: string;
-  nombre: string;
 }
 
 interface Operacion {
@@ -40,11 +33,15 @@ interface Operacion {
 
 export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: UnifiedInmersionFormProps) => {
   const { profile } = useAuth();
-  const { canPlanOperations } = useModuleAccess();
+  const { getModulesForCompany } = useEnterpriseModuleAccess();
   
-  // Solo permitir toggle a planificada si tiene acceso al módulo de planning
+  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
+  const [canShowPlanningToggle, setCanShowPlanningToggle] = useState(false);
+  
+  // Solo permitir toggle a planificada si tiene access al módulo de planning y la empresa lo tiene activo
   const [isPlanned, setIsPlanned] = useState(
-    initialData ? (!initialData.is_independent && canPlanOperations) : false
+    initialData ? (!initialData.is_independent && canShowPlanningToggle) : false
   );
   const [loading, setLoading] = useState(false);
   
@@ -77,81 +74,58 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   });
 
   // Datos para selects
-  const [salmoneras, setSalmoneras] = useState<Salmonera[]>([]);
-  const [contratistas, setContratistas] = useState<Contratista[]>([]);
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
 
-  // Cargar datos iniciales
+  // Para usuarios no superuser, configurar empresa automáticamente
   useEffect(() => {
-    loadInitialData();
+    if (profile && profile.role !== 'superuser') {
+      const autoEnterprise = {
+        salmonera_id: profile.salmonera_id,
+        contratista_id: profile.servicio_id,
+        context_metadata: {
+          selection_mode: profile.salmonera_id ? 'salmonera_admin' : 'contratista_admin',
+          empresa_origen_tipo: profile.salmonera_id ? 'salmonera' : 'contratista'
+        }
+      };
+      setSelectedEnterprise(autoEnterprise);
+    }
   }, [profile]);
 
-  // Cargar contratistas cuando cambia salmonera
+  // Cargar módulos cuando se selecciona empresa
   useEffect(() => {
-    if (formData.salmonera_id) {
-      loadContratistas(formData.salmonera_id);
+    if (selectedEnterprise) {
+      loadEnterpriseModules();
     }
-  }, [formData.salmonera_id]);
+  }, [selectedEnterprise]);
 
-  // Cargar operaciones cuando cambia contratista
+  // Cargar operaciones cuando cambia contratista y se puede planificar
   useEffect(() => {
-    if (formData.contratista_id && isPlanned) {
-      loadOperaciones(formData.contratista_id);
+    if (selectedEnterprise && canShowPlanningToggle && isPlanned) {
+      const contratistaId = selectedEnterprise.contratista_id;
+      if (contratistaId) {
+        loadOperaciones(contratistaId);
+      }
     }
-  }, [formData.contratista_id, isPlanned]);
+  }, [selectedEnterprise, canShowPlanningToggle, isPlanned]);
 
-  const loadInitialData = async () => {
+  const loadEnterpriseModules = async () => {
+    if (!selectedEnterprise) return;
+
     try {
-      // Cargar salmoneras (solo para superuser)
-      if (profile?.role === 'superuser') {
-        const { data: salmonerasData } = await supabase
-          .from('salmoneras')
-          .select('id, nombre')
-          .eq('estado', 'activa');
-        setSalmoneras(salmonerasData || []);
-      }
-
-      // Preseleccionar datos según rol
-      if (profile?.role === 'admin_salmonera' && profile.salmonera_id) {
-        setFormData(prev => ({ ...prev, salmonera_id: profile.salmonera_id! }));
-        loadContratistas(profile.salmonera_id);
-      }
-
-      if (profile?.role === 'admin_servicio' && profile.servicio_id && profile.salmonera_id) {
-        setFormData(prev => ({
-          ...prev,
-          salmonera_id: profile.salmonera_id!,
-          contratista_id: profile.servicio_id!
-        }));
-      }
-
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-    }
-  };
-
-  const loadContratistas = async (salmoneraId: string) => {
-    try {
-      const { data } = await supabase
-        .from('salmonera_contratista')
-        .select('contratista_id')
-        .eq('salmonera_id', salmoneraId);
-
-      if (data && data.length > 0) {
-        const contratistaIds = data.map(item => item.contratista_id).filter(Boolean);
-        
-        if (contratistaIds.length > 0) {
-          const { data: contratistasData } = await supabase
-            .from('contratistas')
-            .select('id, nombre')
-            .in('id', contratistaIds);
-
-          setContratistas(contratistasData || []);
-        }
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      
+      const modules = await getModulesForCompany(companyId, companyType);
+      setEnterpriseModules(modules);
+      setCanShowPlanningToggle(modules.hasPlanning);
+      
+      // Si no tiene planning y estaba en modo planificado, cambiar a independiente
+      if (!modules.hasPlanning && isPlanned) {
+        setIsPlanned(false);
       }
     } catch (error) {
-      console.error('Error loading contratistas:', error);
-      setContratistas([]);
+      console.error('Error loading enterprise modules:', error);
+      setCanShowPlanningToggle(false);
     }
   };
 
@@ -181,6 +155,37 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar que se haya seleccionado empresa (para superusers)
+    if (profile?.role === 'superuser' && !selectedEnterprise) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar una empresa antes de continuar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar que si está en modo planificado, tenga operación
+    if (isPlanned && !formData.operacion_id) {
+      toast({
+        title: "Error", 
+        description: "Debe seleccionar una operación para inmersiones planificadas",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar que si está en modo independiente, tenga código externo
+    if (!isPlanned && !formData.codigo_operacion_externa) {
+      toast({
+        title: "Error",
+        description: "Debe ingresar un código de operación externa para inmersiones independientes", 
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -197,9 +202,11 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         profundidad_max: parseFloat(formData.profundidad_max),
         estado: initialData?.estado || 'planificada',
         cuadrilla_id: selectedCuadrillaId,
+        company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         metadata: {
           ...currentMetadata,
-          cuadrilla_id: selectedCuadrillaId
+          cuadrilla_id: selectedCuadrillaId,
+          enterprise_context: selectedEnterprise
         }
       };
 
@@ -216,23 +223,43 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
     }
   };
 
-  const canShowOperacionSelector = isPlanned && formData.contratista_id && operaciones.length > 0;
-  const shouldShowOperacionWarning = isPlanned && formData.contratista_id && operaciones.length === 0;
+  const canShowOperacionSelector = isPlanned && selectedEnterprise?.contratista_id && operaciones.length > 0;
+  const shouldShowOperacionWarning = isPlanned && selectedEnterprise?.contratista_id && operaciones.length === 0;
+
+  // Solo mostrar selector de empresa para superusers
+  if (profile?.role === 'superuser' && !selectedEnterprise) {
+    return (
+      <Card className="w-full max-w-4xl">
+        <CardHeader>
+          <CardTitle>Seleccionar Empresa</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EnterpriseSelector
+            onSelectionChange={setSelectedEnterprise}
+            showCard={false}
+            title="Contexto Empresarial"
+            description="Seleccione la empresa para la cual crear la inmersión"
+            requiredModule="planning_operations"
+            showModuleInfo={true}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</span>
-          {/* Solo mostrar toggle si puede planificar operaciones */}
-          {canPlanOperations && (
+          {/* Solo mostrar toggle si la empresa tiene módulo de planning */}
+          {canShowPlanningToggle && !initialData && (
             <div className="flex items-center space-x-2">
               <Zap className="w-4 h-4" />
               <Switch
                 checked={isPlanned}
                 onCheckedChange={setIsPlanned}
                 id="inmersion-type"
-                disabled={!!initialData} // Disable if editing
               />
               <Calendar className="w-4 h-4" />
             </div>
@@ -247,58 +274,29 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
               Asociada a Operación
             </Badge>
           )}
+          {enterpriseModules && !enterpriseModules.hasPlanning && (
+            <Badge variant="secondary">
+              Modo Core
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
       <CardContent>
+        {/* Alerta si no tiene módulo de planning */}
+        {enterpriseModules && !enterpriseModules.hasPlanning && (
+          <Alert className="mb-6">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription>
+              Esta empresa no tiene el módulo de planificación activo. 
+              Solo se pueden crear inmersiones independientes (modo core).
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Selector de Salmonera (solo superuser) */}
-          {profile?.role === 'superuser' && (
-            <div>
-              <Label htmlFor="salmonera">Salmonera *</Label>
-              <Select
-                value={formData.salmonera_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, salmonera_id: value, contratista_id: '', operacion_id: '' }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar salmonera" />
-                </SelectTrigger>
-                <SelectContent>
-                  {salmoneras.map(salmonera => (
-                    <SelectItem key={salmonera.id} value={salmonera.id}>
-                      {salmonera.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Selector de Contratista */}
-          {(profile?.role === 'superuser' || profile?.role === 'admin_salmonera') && (
-            <div>
-              <Label htmlFor="contratista">Contratista *</Label>
-              <Select
-                value={formData.contratista_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, contratista_id: value, operacion_id: '' }))}
-                disabled={!formData.salmonera_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar contratista" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contratistas.map(contratista => (
-                    <SelectItem key={contratista.id} value={contratista.id}>
-                      {contratista.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Solo mostrar selector de operación si puede planificar */}
-          {canPlanOperations && isPlanned ? (
+          {canShowPlanningToggle && isPlanned ? (
             <div>
               <Label htmlFor="operacion">Operación *</Label>
               {canShowOperacionSelector ? (
@@ -340,7 +338,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                 <Input disabled placeholder="Selecciona un contratista primero" />
               )}
             </div>
-          ) : !canPlanOperations || !isPlanned ? (
+          ) : (!canShowPlanningToggle || !isPlanned) ? (
             <div>
               <Label htmlFor="codigo_externo">Código de Operación Externa *</Label>
               <Input
@@ -391,15 +389,12 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
           </div>
 
           {/* Selector de Cuadrilla */}
-          <div className="space-y-4">
-            <Label>Cuadrilla de Buceo *</Label>
-            <CuadrillaSelector
-              selectedCuadrillaId={selectedCuadrillaId}
-              onCuadrillaChange={handleCuadrillaChange}
-              fechaInmersion={formData.fecha_inmersion}
-              onCuadrillaCreated={handleCuadrillaCreated}
-            />
-          </div>
+          <CuadrillaSelector
+            selectedCuadrillaId={selectedCuadrillaId}
+            onCuadrillaChange={handleCuadrillaChange}
+            fechaInmersion={formData.fecha_inmersion}
+            onCuadrillaCreated={handleCuadrillaCreated}
+          />
 
           <div>
             <Label htmlFor="observaciones">Observaciones</Label>

@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Users, Info } from "lucide-react";
 import { useEnterpriseContext, EnterpriseOption } from "@/hooks/useEnterpriseContext";
+import { useEnterpriseModuleAccess } from "@/hooks/useEnterpriseModuleAccess";
+import { EnterpriseModuleIndicator } from "./EnterpriseModuleIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface EnterpriseSelectorProps {
@@ -14,6 +16,8 @@ interface EnterpriseSelectorProps {
   showCard?: boolean;
   title?: string;
   description?: string;
+  requiredModule?: string;
+  showModuleInfo?: boolean;
 }
 
 export const EnterpriseSelector = ({
@@ -21,9 +25,13 @@ export const EnterpriseSelector = ({
   disabled = false,
   showCard = true,
   title = "Contexto Empresarial",
-  description = "Seleccione las empresas involucradas en esta operación"
+  description = "Seleccione las empresas involucradas en esta operación",
+  requiredModule,
+  showModuleInfo = true
 }: EnterpriseSelectorProps) => {
   const { state, actions } = useEnterpriseContext();
+  const { getModulesForCompany, loading: modulesLoading } = useEnterpriseModuleAccess();
+  const [selectedCompanyModules, setSelectedCompanyModules] = React.useState<any>(null);
 
   React.useEffect(() => {
     const result = actions.getSelectionResult();
@@ -31,6 +39,23 @@ export const EnterpriseSelector = ({
       onSelectionChange(result);
     }
   }, [state.selectedSalmonera, state.selectedContratista, onSelectionChange]);
+
+  // Cargar módulos cuando se selecciona una empresa
+  React.useEffect(() => {
+    const loadModules = async () => {
+      if (state.selectedSalmonera && showModuleInfo) {
+        const modules = await getModulesForCompany(state.selectedSalmonera.id, 'salmonera');
+        setSelectedCompanyModules(modules);
+      } else if (state.selectedContratista && showModuleInfo) {
+        const modules = await getModulesForCompany(state.selectedContratista.id, 'contratista');
+        setSelectedCompanyModules(modules);
+      } else {
+        setSelectedCompanyModules(null);
+      }
+    };
+
+    loadModules();
+  }, [state.selectedSalmonera, state.selectedContratista, showModuleInfo]);
 
   const handleSalmoneraChange = (salmoneraId: string) => {
     const salmonera = state.availableSalmoneras.find(s => s.id === salmoneraId);
@@ -159,6 +184,18 @@ export const EnterpriseSelector = ({
           )}
         </div>
       </div>
+
+      {/* Información de módulos */}
+      {showModuleInfo && selectedCompanyModules && !modulesLoading && (
+        <div className="mt-4">
+          <EnterpriseModuleIndicator
+            modules={selectedCompanyModules.modules}
+            requiredModule={requiredModule}
+            showAll={false}
+            compact={false}
+          />
+        </div>
+      )}
 
       {/* Resumen de la selección */}
       {(state.selectedSalmonera || state.selectedContratista) && (
