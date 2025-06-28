@@ -1,102 +1,78 @@
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { MapPin, Building, Anchor, ChevronLeft, ChevronRight } from "lucide-react";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
-import { useCentros } from "@/hooks/useCentros";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Building, X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useCentros } from '@/hooks/useCentros';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
+
+const centroSchema = z.object({
+  nombre: z.string().min(1, 'Nombre es requerido'),
+  codigo: z.string().min(1, 'Código es requerido'),
+  ubicacion: z.string().min(1, 'Ubicación es requerida'),
+  salmonera_id: z.string().min(1, 'Salmonera es requerida'),
+  coordenadas_lat: z.number().optional(),
+  coordenadas_lng: z.number().optional(),
+  profundidad_maxima: z.number().optional(),
+  capacidad_jaulas: z.number().optional(),
+  region: z.string().optional(),
+  observaciones: z.string().optional(),
+  estado: z.enum(['activo', 'inactivo', 'mantenimiento']).default('activo'),
+});
+
+type CentroFormData = z.infer<typeof centroSchema>;
 
 interface CreateSitioFormAnimatedProps {
-  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
 }
 
-const steps = [
-  { id: 1, title: "Información Básica", icon: Building },
-  { id: 2, title: "Ubicación", icon: MapPin },
-  { id: 3, title: "Características", icon: Anchor }
-];
-
-export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormAnimatedProps) => {
-  const { toast } = useToast();
-  const { salmoneras } = useSalmoneras();
-  const { createCentro } = useCentros();
+export const CreateSitioFormAnimated = ({ onCancel }: CreateSitioFormAnimatedProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const totalSteps = 3;
   
-  const [formData, setFormData] = useState({
-    nombre: '',
-    codigo: '',
-    salmonera_id: '',
-    ubicacion: '',
-    coordenadas_lat: '',
-    coordenadas_lng: '',
-    region: '',
-    profundidad_maxima: '',
-    capacidad_jaulas: '',
-    observaciones: '',
-    estado: 'activo'
+  const { createCentro, isCreating } = useCentros();
+  const { salmoneras } = useSalmoneras();
+  
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<CentroFormData>({
+    resolver: zodResolver(centroSchema),
+    defaultValues: {
+      estado: 'activo'
+    }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nombre || !formData.codigo || !formData.ubicacion) {
-      toast({
-        title: "Campos requeridos",
-        description: "Nombre, código y ubicación son obligatorios.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: CentroFormData) => {
     try {
-      const dataToSubmit = {
-        ...formData,
-        salmonera_id: formData.salmonera_id || null,
-        coordenadas_lat: formData.coordenadas_lat ? parseFloat(formData.coordenadas_lat) : null,
-        coordenadas_lng: formData.coordenadas_lng ? parseFloat(formData.coordenadas_lng) : null,
-        profundidad_maxima: formData.profundidad_maxima ? parseFloat(formData.profundidad_maxima) : null,
-        capacidad_jaulas: formData.capacidad_jaulas ? parseInt(formData.capacidad_jaulas) : null,
-        observaciones: formData.observaciones || null,
-      };
-
-      await createCentro(dataToSubmit);
-      toast({
-        title: "Centro creado",
-        description: "El centro ha sido creado exitosamente.",
+      await createCentro({
+        ...data,
+        coordenadas_lat: data.coordenadas_lat || 0,
+        coordenadas_lng: data.coordenadas_lng || 0,
+        profundidad_maxima: data.profundidad_maxima || 0,
+        capacidad_jaulas: data.capacidad_jaulas || 0,
+        observaciones: data.observaciones || ''
       });
-      onCancel(); // Close form after success
+      onCancel();
     } catch (error) {
       console.error('Error creating centro:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el centro.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   const nextStep = () => {
-    if (currentStep < steps.length) {
+    if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -107,257 +83,235 @@ export const CreateSitioFormAnimated = ({ onSubmit, onCancel }: CreateSitioFormA
     }
   };
 
-  const progress = (currentStep / steps.length) * 100;
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="nombre">Nombre del Centro *</Label>
-              <Input
-                id="nombre"
-                value={formData.nombre}
-                onChange={(e) => handleChange('nombre', e.target.value)}
-                placeholder="Ej: Centro Norte"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="codigo">Código *</Label>
-              <Input
-                id="codigo"
-                value={formData.codigo}
-                onChange={(e) => handleChange('codigo', e.target.value)}
-                placeholder="Ej: CN001"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="salmonera_id">Salmonera</Label>
-              <Select
-                value={formData.salmonera_id || "empty"}
-                onValueChange={(value) => handleChange('salmonera_id', value === 'empty' ? '' : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar salmonera" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="empty">Sin asignar</SelectItem>
-                  {salmoneras.map((salmonera) => (
-                    <SelectItem key={salmonera.id} value={salmonera.id}>
-                      {salmonera.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="estado">Estado</Label>
-              <Select
-                value={formData.estado}
-                onValueChange={(value) => handleChange('estado', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="activo">Activo</SelectItem>
-                  <SelectItem value="inactivo">Inactivo</SelectItem>
-                  <SelectItem value="mantenimiento">En Mantenimiento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </motion.div>
-        );
-      
-      case 2:
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-4"
-          >
-            <div>
-              <Label htmlFor="ubicacion">Ubicación *</Label>
-              <Input
-                id="ubicacion"
-                value={formData.ubicacion}
-                onChange={(e) => handleChange('ubicacion', e.target.value)}
-                placeholder="Ej: Bahía Norte, Puerto Montt"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="region">Región</Label>
-              <Input
-                id="region"
-                value={formData.region}
-                onChange={(e) => handleChange('region', e.target.value)}
-                placeholder="Ej: Los Lagos"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="coordenadas_lat">Latitud</Label>
-                <Input
-                  id="coordenadas_lat"
-                  type="number"
-                  step="any"
-                  value={formData.coordenadas_lat}
-                  onChange={(e) => handleChange('coordenadas_lat', e.target.value)}
-                  placeholder="-41.4693"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="coordenadas_lng">Longitud</Label>
-                <Input
-                  id="coordenadas_lng"
-                  type="number"
-                  step="any"
-                  value={formData.coordenadas_lng}
-                  onChange={(e) => handleChange('coordenadas_lng', e.target.value)}
-                  placeholder="-72.9424"
-                />
-              </div>
-            </div>
-          </motion.div>
-        );
-      
-      case 3:
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
-                <Input
-                  id="profundidad_maxima"
-                  type="number"
-                  step="0.1"
-                  value={formData.profundidad_maxima}
-                  onChange={(e) => handleChange('profundidad_maxima', e.target.value)}
-                  placeholder="25.5"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="capacidad_jaulas">Capacidad de Jaulas</Label>
-                <Input
-                  id="capacidad_jaulas"
-                  type="number"
-                  value={formData.capacidad_jaulas}
-                  onChange={(e) => handleChange('capacidad_jaulas', e.target.value)}
-                  placeholder="12"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="observaciones">Observaciones</Label>
-              <Textarea
-                id="observaciones"
-                value={formData.observaciones}
-                onChange={(e) => handleChange('observaciones', e.target.value)}
-                placeholder="Observaciones adicionales sobre el centro..."
-                rows={4}
-              />
-            </div>
-          </motion.div>
-        );
-      
-      default:
-        return null;
-    }
-  };
+  const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building className="w-5 h-5" />
-          Nuevo Centro de Acuicultura
-        </CardTitle>
-        <div className="mt-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Paso {currentStep} de {steps.length}</span>
-            <span>{Math.round(progress)}% completado</span>
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Building className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Nuevo Centro</CardTitle>
+              <p className="text-sm text-zinc-500">
+                Paso {currentStep} de {totalSteps} - Crear un nuevo centro de trabajo
+              </p>
+            </div>
           </div>
-          <Progress value={progress} className="w-full" />
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="w-4 h-4" />
+          </Button>
         </div>
-        
-        {/* Step indicators */}
-        <div className="flex justify-between mt-4">
-          {steps.map((step) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.id}
-                className={`flex flex-col items-center ${
-                  step.id === currentStep ? 'text-primary' : 
-                  step.id < currentStep ? 'text-green-600' : 'text-gray-400'
-                }`}
-              >
-                <div className={`rounded-full p-2 ${
-                  step.id === currentStep ? 'bg-primary/10' : 
-                  step.id < currentStep ? 'bg-green-100' : 'bg-gray-100'
-                }`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-xs mt-1 text-center">{step.title}</span>
-              </div>
-            );
-          })}
+
+        {/* Progress bar */}
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit}>
+
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <AnimatePresence mode="wait">
-            {renderStepContent()}
+            {currentStep === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-blue-700">Información Básica</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nombre">Nombre del Centro *</Label>
+                    <Input
+                      id="nombre"
+                      {...register('nombre')}
+                      placeholder="Ej: Centro Punta Arenas"
+                    />
+                    {errors.nombre && (
+                      <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="codigo">Código *</Label>
+                    <Input
+                      id="codigo"
+                      {...register('codigo')}
+                      placeholder="Ej: CPA-001"
+                    />
+                    {errors.codigo && (
+                      <p className="text-red-500 text-sm mt-1">{errors.codigo.message}</p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="salmonera_id">Salmonera *</Label>
+                    <Select onValueChange={(value) => setValue('salmonera_id', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar salmonera..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salmoneras.map((salmonera) => (
+                          <SelectItem key={salmonera.id} value={salmonera.id}>
+                            {salmonera.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.salmonera_id && (
+                      <p className="text-red-500 text-sm mt-1">{errors.salmonera_id.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="estado">Estado</Label>
+                    <Select onValueChange={(value: 'activo' | 'inactivo' | 'mantenimiento') => setValue('estado', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar estado..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activo">Activo</SelectItem>
+                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                        <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-blue-700">Ubicación y Coordenadas</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="ubicacion">Ubicación *</Label>
+                    <Input
+                      id="ubicacion"
+                      {...register('ubicacion')}
+                      placeholder="Ej: Región de Magallanes, Chile"
+                    />
+                    {errors.ubicacion && (
+                      <p className="text-red-500 text-sm mt-1">{errors.ubicacion.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="region">Región</Label>
+                    <Input
+                      id="region"
+                      {...register('region')}
+                      placeholder="Ej: XII Región de Magallanes"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="coordenadas_lat">Latitud</Label>
+                    <Input
+                      id="coordenadas_lat"
+                      type="number"
+                      step="any"
+                      {...register('coordenadas_lat', { valueAsNumber: true })}
+                      placeholder="Ej: -53.1638"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="coordenadas_lng">Longitud</Label>
+                    <Input
+                      id="coordenadas_lng"
+                      type="number"
+                      step="any"
+                      {...register('coordenadas_lng', { valueAsNumber: true })}
+                      placeholder="Ej: -70.9171"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-blue-700">Características Técnicas</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
+                    <Input
+                      id="profundidad_maxima"
+                      type="number"
+                      step="0.1"
+                      {...register('profundidad_maxima', { valueAsNumber: true })}
+                      placeholder="Ej: 40.5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="capacidad_jaulas">Capacidad de Jaulas</Label>
+                    <Input
+                      id="capacidad_jaulas"
+                      type="number"
+                      {...register('capacidad_jaulas', { valueAsNumber: true })}
+                      placeholder="Ej: 12"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="observaciones">Observaciones</Label>
+                    <Textarea
+                      id="observaciones"
+                      {...register('observaciones')}
+                      placeholder="Comentarios adicionales sobre el centro..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
-          
-          <div className="flex justify-between mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Anterior
-            </Button>
-            
-            <div className="flex gap-2">
+
+          <div className="flex justify-between pt-6 border-t">
+            <div>
+              {currentStep > 1 && (
+                <Button type="button" variant="outline" onClick={prevStep}>
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Anterior
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancelar
               </Button>
-              
-              {currentStep < steps.length ? (
-                <Button type="button" onClick={nextStep}>
+              {currentStep < totalSteps ? (
+                <Button type="button" onClick={nextStep} className="bg-blue-600 hover:bg-blue-700">
                   Siguiente
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creando...' : 'Crear Centro'}
+                <Button type="submit" disabled={isCreating} className="bg-blue-600 hover:bg-blue-700">
+                  {isCreating ? 'Creando...' : 'Crear Centro'}
                 </Button>
               )}
             </div>
