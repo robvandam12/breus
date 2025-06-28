@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -20,6 +19,7 @@ const NotFound = lazy(() => import("../pages/NotFound"));
 const RegisterFromInvitation = lazy(() => import("../pages/RegisterFromInvitation"));
 const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
 const Sitios = lazy(() => import("../pages/empresas/Sitios"));
+const Centros = lazy(() => import("../pages/empresas/Centros"));  // AGREGADO: Import para Centros
 const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
 const Usuarios = lazy(() => import("../pages/empresas/Usuarios"));
 const PersonalDeBuceo = lazy(() => import("../pages/PersonalDeBuceo"));
@@ -115,6 +115,17 @@ export const AppRoutes = () => {
             </Suspense>
           </ProtectedRoute>
         } />
+        
+        {/* CORREGIDO: Ruta principal para Centros */}
+        <Route path="/empresas/centros" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageWithSidebarSkeleton />}>
+              <Centros />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        
+        {/* Legacy route redirect - mantener por compatibilidad */}
         <Route path="/empresas/sitios" element={
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -122,6 +133,7 @@ export const AppRoutes = () => {
             </Suspense>
           </ProtectedRoute>
         } />
+        
         <Route path="/empresas/contratistas" element={
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>

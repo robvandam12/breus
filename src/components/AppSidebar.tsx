@@ -101,7 +101,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAcces
     }
   ];
 
-  // Cuadrillas de Buceo - disponible para roles operativos
+  // Cuadrillas de Buceo - disponible para todos los roles administrativos y operativos
   if (role === 'admin_salmonera' || role === 'admin_servicio' || role === 'supervisor' || role === 'superuser') {
     baseItems.push({
       title: "Cuadrillas de Buceo",
@@ -172,7 +172,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAcces
     
     if (role === 'admin_salmonera') {
       companyItems.push(
-        { title: "Sitios", url: "/empresas/sitios" },
+        { title: "Centros", url: "/empresas/centros" },  // CAMBIADO: Sitios -> Centros
         { title: "Contratistas", url: "/empresas/contratistas" },
         { title: "Usuarios", url: "/empresas/usuarios" }
       );
@@ -197,7 +197,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAcces
         icon: Folder,
         items: [
           { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
+          { title: "Centros", url: "/empresas/centros" },  // CAMBIADO: Sitios -> Centros
           { title: "Contratistas", url: "/empresas/contratistas" },
           { title: "Usuarios", url: "/empresas/usuarios" }
         ]
