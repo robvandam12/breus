@@ -25,6 +25,7 @@ const PersonalDeBuceo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [showEnterpriseSelector, setShowEnterpriseSelector] = useState(true);
   
   const { equipos, isLoading, createEquipo, updateEquipo, deleteEquipo } = useEquipoBuceo();
 
@@ -124,7 +125,7 @@ const PersonalDeBuceo = () => {
       </div>
 
       {/* Solo mostrar botón de crear si usuario tiene empresa asignada O es superuser con empresa seleccionada */}
-      {(isAssigned || (isSuperuser && selectedEnterprise)) && (
+      {(isAssigned || (isSuperuser && selectedEnterprise && !showEnterpriseSelector)) && (
         <WizardDialog
           triggerText="Nueva Cuadrilla"
           triggerIcon={Plus}
@@ -159,8 +160,8 @@ const PersonalDeBuceo = () => {
     );
   }
 
-  // Si es superuser y no ha seleccionado empresa, mostrar selector
-  if (isSuperuser && !selectedEnterprise) {
+  // Si es superuser y está mostrando el selector, mostrar selector
+  if (isSuperuser && showEnterpriseSelector) {
     return (
       <MainLayout
         title="Cuadrillas de Buceo"
@@ -177,12 +178,25 @@ const PersonalDeBuceo = () => {
               Seleccione la empresa para gestionar sus cuadrillas.
             </p>
             <EnterpriseSelector
-              onSelectionChange={setSelectedEnterprise}
+              onSelectionChange={(result) => {
+                setSelectedEnterprise(result);
+                // No ocultar automáticamente el selector, dejar que el usuario proceda manualmente
+              }}
               showCard={false}
               title="Empresa para Gestión de Cuadrillas"
               description="Seleccione la empresa para ver y gestionar sus cuadrillas"
               showModuleInfo={false}
             />
+            {selectedEnterprise && (
+              <div className="mt-4 flex justify-end">
+                <Button 
+                  onClick={() => setShowEnterpriseSelector(false)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Continuar con {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </MainLayout>
@@ -215,30 +229,34 @@ const PersonalDeBuceo = () => {
     );
   }
 
+  const getSubtitle = () => {
+    if (isSuperuser && selectedEnterprise && !showEnterpriseSelector) {
+      return `Gestionando: ${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}`;
+    }
+    return "Gestión de cuadrillas y personal de buceo";
+  };
+
   return (
     <MainLayout
       title="Cuadrillas de Buceo"
-      subtitle={
-        isSuperuser && selectedEnterprise 
-          ? `${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'} seleccionada`
-          : isAssigned
-          ? `${getCompanyType()}: ${getCompanyName()}`
-          : "Gestión de cuadrillas y personal de buceo"
-      }
+      subtitle={getSubtitle()}
       icon={Users}
       headerChildren={headerActions}
     >
-      {/* Solo mostrar información de empresa seleccionada para superuser, de forma más sutil */}
-      {isSuperuser && selectedEnterprise && (
+      {/* Solo mostrar botón de cambio para superuser cuando haya selección activa */}
+      {isSuperuser && selectedEnterprise && !showEnterpriseSelector && (
         <div className="mb-4">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>
-              Gestionando: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+              Empresa: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedEnterprise(null)}
+              onClick={() => {
+                setShowEnterpriseSelector(true);
+                setSelectedEnterprise(null);
+              }}
               className="text-blue-600 hover:text-blue-800 h-auto p-1"
             >
               Cambiar
@@ -287,7 +305,7 @@ const PersonalDeBuceo = () => {
                 ? "Comience creando la primera cuadrilla de buceo"
                 : "Intenta ajustar la búsqueda"}
             </p>
-            {equipos.length === 0 && (isAssigned || (isSuperuser && selectedEnterprise)) && (
+            {equipos.length === 0 && (isAssigned || (isSuperuser && selectedEnterprise && !showEnterpriseSelector)) && (
               <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Cuadrilla
