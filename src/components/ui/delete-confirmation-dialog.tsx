@@ -1,5 +1,4 @@
 
-import React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
@@ -31,35 +30,48 @@ export const DeleteConfirmationDialog = ({
   onConfirm,
   loading = false
 }: DeleteConfirmationDialogProps) => {
+  const handleConfirm = () => {
+    onConfirm();
+    onOpenChange(false);
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-red-100 rounded-full">
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </div>
-            <AlertDialogTitle>{title}</AlertDialogTitle>
+      <AlertDialogContent className="max-w-md rounded-2xl border-0 shadow-2xl ios-card">
+        <AlertDialogHeader className="text-center pb-4">
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
-          <AlertDialogDescription className="text-left">
+          <AlertDialogTitle className="text-xl font-semibold text-gray-900">
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-600 text-base leading-relaxed">
             {description}
-            {itemName && (
-              <div className="mt-2 p-2 bg-gray-50 rounded border">
-                <strong>{itemName}</strong>
-              </div>
-            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>
+        
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <p className="text-sm text-red-800 font-medium text-center">
+            Se eliminará permanentemente: <span className="font-semibold">"{itemName}"</span>
+          </p>
+          <p className="text-xs text-red-600 text-center mt-1">
+            Esta acción no se puede deshacer
+          </p>
+        </div>
+
+        <AlertDialogFooter className="flex gap-3 pt-0">
+          <AlertDialogCancel 
+            className="flex-1 rounded-xl border-gray-300 hover:bg-gray-50 ios-button"
+            disabled={loading}
+          >
             Cancelar
           </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
+          <AlertDialogAction 
+            onClick={handleConfirm}
             disabled={loading}
-            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl ios-button"
           >
-            {loading ? "Eliminando..." : "Eliminar"}
+            {loading ? 'Eliminando...' : 'Eliminar'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -85,7 +85,7 @@ export const useOperacionesMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       toast({
         title: "Operación actualizada",
-        description: "La operación se ha actualizada exitosamente.",
+        description: "La operación se ha actualizado exitosamente.",
       });
     },
     onError: (error: any) => {
