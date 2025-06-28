@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,17 +12,17 @@ import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, User, Building, MapPin, FileText, Save, X, Users, Anchor } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useOperaciones } from '@/hooks/useOperaciones';
-import { useAnexosBravo } from '@/hooks/useAnexosBravo';
-import { useHPTs } from '@/hooks/useHPTs';
+import { useAnexoBravo } from '@/hooks/useAnexoBravo';
+import { useHPT } from '@/hooks/useHPT';
 import { HPTWizardComplete } from '@/components/hpt/HPTWizardComplete';
-import { AnexoBravoWizard } from '@/components/anexo_bravo/AnexoBravoWizard';
+import { AnexoBravoWizard } from '@/components/anexo-bravo/AnexoBravoWizard';
 import { useToast } from '@/hooks/use-toast';
 
 export default function BitacorasSupervisor() {
   const { profile } = useAuth();
   const { operaciones, isLoading: loadingOperaciones } = useOperaciones();
-  const { anexosBravo, isLoading: loadingAnexosBravo } = useAnexosBravo();
-  const { hpts, isLoading: loadingHPTs } = useHPTs();
+  const { anexosBravo, isLoading: loadingAnexosBravo } = useAnexoBravo();
+  const { hpts, isLoading: loadingHPTs } = useHPT();
   const [selectedOperacionId, setSelectedOperacionId] = useState<string | null>(null);
   const [showHPTWizard, setShowHPTWizard] = useState(false);
   const [showAnexoBravoWizard, setShowAnexoBravoWizard] = useState(false);
@@ -162,8 +163,8 @@ export default function BitacorasSupervisor() {
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium">Sitio:</span>
-                          <span>{pendingOperacion.sitios?.nombre || 'N/A'}</span>
+                          <span className="font-medium">Centro:</span>
+                          <span>{pendingOperacion.centros?.nombre || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-500" />
@@ -303,22 +304,6 @@ export default function BitacorasSupervisor() {
           </CardContent>
         </Card>
       </div>
-
-      {showHPTWizard && selectedOperacionId && (
-    <HPTWizardComplete
-      operacionId={selectedOperacionId}
-      onComplete={handleHPTComplete}
-      onCancel={handleHPTCancel}
-    />
-  )}
-
-      {showAnexoBravoWizard && selectedOperacionId && (
-        <AnexoBravoWizard
-          operacionId={selectedOperacionId}
-          onComplete={handleAnexoBravoComplete}
-          onCancel={handleAnexoBravoCancel}
-        />
-      )}
     </MainLayout>
   );
 }

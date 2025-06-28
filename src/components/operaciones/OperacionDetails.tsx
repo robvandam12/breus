@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +81,7 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
 
               <TabsContent value="general" className="space-y-6">
                 <OperacionInfo operacion={operacion} />
-                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+                <OperacionDocuments operacion={operacion} />
               </TabsContent>
 
               <TabsContent value="equipo" className="space-y-6">
@@ -92,7 +93,7 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
               </TabsContent>
 
               <TabsContent value="documentos" className="space-y-6">
-                <OperacionDocuments operacionId={operacion.id} operacion={operacion} />
+                <OperacionDocuments operacion={operacion} />
               </TabsContent>
 
               <TabsContent value="inmersiones" className="space-y-6">

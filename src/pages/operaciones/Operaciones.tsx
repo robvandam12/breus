@@ -6,6 +6,7 @@ import { Plus, Building } from 'lucide-react';
 import { OperacionesTable } from '@/components/operaciones/OperacionesTable';
 import { CreateOperacionForm } from '@/components/operaciones/CreateOperacionForm';
 import { useOperacionesMutations } from '@/hooks/useOperacionesMutations';
+import { useOperaciones } from '@/hooks/useOperaciones';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { OperacionFormData } from '@/components/operaciones/CreateOperacionForm';
 
@@ -13,10 +14,11 @@ export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { createOperacion } = useOperacionesMutations();
+  const { operaciones, isLoading } = useOperaciones();
 
   const handleCreateOperacion = async (data: OperacionFormData) => {
     try {
-      await createOperacion.mutateAsync(data);
+      await createOperacion(data);
       setShowCreateForm(false);
       setShowCreateDialog(false);
     } catch (error) {
@@ -47,7 +49,7 @@ export default function Operaciones() {
         <CreateOperacionForm
           onSubmit={handleCreateOperacion}
           onCancel={() => setShowCreateForm(false)}
-          isLoading={createOperacion.isPending}
+          isLoading={false}
         />
       </MainLayout>
     );
@@ -60,7 +62,13 @@ export default function Operaciones() {
       icon={Building}
       headerChildren={headerActions}
     >
-      <OperacionesTable />
+      <OperacionesTable 
+        operaciones={operaciones}
+        onEdit={() => {}}
+        onView={() => {}}
+        onDelete={() => {}}
+        onViewDocuments={() => {}}
+      />
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-4xl">
@@ -70,7 +78,7 @@ export default function Operaciones() {
           <CreateOperacionForm
             onSubmit={handleCreateOperacion}
             onCancel={() => setShowCreateDialog(false)}
-            isLoading={createOperacion.isPending}
+            isLoading={false}
           />
         </DialogContent>
       </Dialog>

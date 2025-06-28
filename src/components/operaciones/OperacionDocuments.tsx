@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building, FileText, Plus } from "lucide-react";
 import { HPTWizardComplete } from "@/components/hpt/HPTWizardComplete";
-import { AnexoBravoWizard } from "@/components/anexo_bravo/AnexoBravoWizard";
+import { AnexoBravoWizard } from "@/components/anexo-bravo/AnexoBravoWizard";
 import { useOperacionDetails } from "@/hooks/useOperacionDetails";
 
 interface OperacionDocumentsProps {
@@ -13,7 +14,7 @@ interface OperacionDocumentsProps {
 export const OperacionDocuments = ({ operacion }: OperacionDocumentsProps) => {
   const [showHPTWizard, setShowHPTWizard] = useState(false);
   const [showAnexoBravoWizard, setShowAnexoBravoWizard] = useState(false);
-  const { refetch, isLoading, isError } = useOperacionDetails(operacion.id);
+  const { refreshOperacionDetails, isLoading, isError } = useOperacionDetails(operacion.id);
 
   const handleCreateHPT = () => {
     setShowHPTWizard(true);
@@ -21,7 +22,7 @@ export const OperacionDocuments = ({ operacion }: OperacionDocumentsProps) => {
 
   const handleHPTComplete = () => {
     setShowHPTWizard(false);
-    refetch();
+    refreshOperacionDetails();
   };
 
   const handleHPTCancel = () => {
@@ -34,7 +35,7 @@ export const OperacionDocuments = ({ operacion }: OperacionDocumentsProps) => {
 
   const handleAnexoBravoComplete = () => {
     setShowAnexoBravoWizard(false);
-    refetch();
+    refreshOperacionDetails();
   };
 
   const handleAnexoBravoCancel = () => {

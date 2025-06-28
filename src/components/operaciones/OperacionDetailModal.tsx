@@ -128,7 +128,7 @@ const OperacionDetailModal = ({ operacion, isOpen, onClose }: OperacionDetailMod
           </div>
         );
       case "documentos":
-        return <OperacionDocuments operacionId={operacion.id} operacion={operacion} />;
+        return <OperacionDocuments operacion={operacion} />;
       case "inmersiones":
         return (
           <div className="space-y-4">
