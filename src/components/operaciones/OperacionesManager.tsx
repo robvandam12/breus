@@ -16,12 +16,14 @@ import {
   Filter
 } from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
+import { useOperacionesMutations } from "@/hooks/useOperacionesMutations";
 import { OperationFlowWizard } from "./OperationFlowWizard";
 import { CreateOperacionForm } from "./CreateOperacionForm";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 
 export const OperacionesManager = () => {
   const { operaciones, isLoading } = useOperaciones();
+  const { createOperacion } = useOperacionesMutations();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -42,9 +44,12 @@ export const OperacionesManager = () => {
   };
 
   const handleCreateOperacion = async (data: any) => {
-    // Lógica para crear operación
-    console.log('Creating operacion:', data);
-    setIsCreateDialogOpen(false);
+    try {
+      await createOperacion(data);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating operacion:', error);
+    }
   };
 
   return (
@@ -75,10 +80,18 @@ export const OperacionesManager = () => {
             onOpenChange={setIsCreateDialogOpen}
             size="xl"
           >
-            <CreateOperacionForm
-              onSubmit={handleCreateOperacion}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">Nueva Operación</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Crear una nueva operación de buceo
+                </p>
+              </div>
+              <CreateOperacionForm
+                onSubmit={handleCreateOperacion}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </div>
           </WizardDialog>
         </div>
       </div>
