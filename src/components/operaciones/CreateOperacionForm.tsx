@@ -25,7 +25,7 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
     nombre: '',
     fecha_inicio: '',
     fecha_fin: '',
-    estado: 'activa' as 'activa' | 'pausada' | 'completada' | 'cancelada',
+    estado: 'activa' as const,
     tareas: ''
   });
 
@@ -87,7 +87,6 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
             title="Contexto Empresarial"
             description="Seleccione las empresas para esta operación"
             showModuleInfo={false}
-            autoSubmit={false}
           />
         </CardContent>
       </Card>
