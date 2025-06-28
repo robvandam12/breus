@@ -13,16 +13,24 @@ import type { OperacionFormData } from '@/components/operaciones/CreateOperacion
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { createOperacion, isLoading: isCreating } = useOperacionesMutations();
+  const { createOperacion, isCreating } = useOperacionesMutations();
   const { operaciones, isLoading } = useOperaciones();
 
   const handleCreateOperacion = async (data: OperacionFormData) => {
     try {
-      // Agregar estado por defecto si no está presente
-      const operacionData = {
-        ...data,
-        estado: data.estado || 'activa'
+      // Asegurar que todos los campos requeridos estén presentes
+      const operacionData: OperacionFormData = {
+        codigo: data.codigo,
+        nombre: data.nombre,
+        fecha_inicio: data.fecha_inicio,
+        estado: data.estado || 'activa',
+        fecha_fin: data.fecha_fin,
+        centro_id: data.centro_id,
+        contratista_id: data.contratista_id,
+        salmonera_id: data.salmonera_id,
+        tareas: data.tareas
       };
+      
       await createOperacion(operacionData);
       setShowCreateForm(false);
       setShowCreateDialog(false);
@@ -31,24 +39,24 @@ export default function Operaciones() {
     }
   };
 
-  const handleEdit = async (id: string) => {
+  const handleEdit = async (operacion: any) => {
     // Implementar lógica de edición
-    console.log('Edit operacion:', id);
+    console.log('Edit operacion:', operacion.id);
   };
 
-  const handleView = (id: string) => {
+  const handleView = (operacion: any) => {
     // Implementar lógica de visualización
-    console.log('View operacion:', id);
+    console.log('View operacion:', operacion.id);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (operacion: any) => {
     // Implementar lógica de eliminación
-    console.log('Delete operacion:', id);
+    console.log('Delete operacion:', operacion.id);
   };
 
-  const handleViewDocuments = (id: string) => {
+  const handleViewDocuments = (operacion: any) => {
     // Implementar lógica de visualización de documentos
-    console.log('View documents for operacion:', id);
+    console.log('View documents for operacion:', operacion.id);
   };
 
   const headerActions = (
