@@ -28,6 +28,9 @@ export const useAppNavigation = () => {
   const { hasModuleAccess, modules, getUserContext } = useModularSystem();
   
   const userContext = getUserContext();
+  
+  // Calculate if user is assigned to a company
+  const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
 
   const getNavigationItems = (): NavigationItem[] => {
     const items: NavigationItem[] = [
@@ -39,7 +42,7 @@ export const useAppNavigation = () => {
     ];
 
     // Cuadrillas de Buceo - disponible para roles operativos
-    if (profile?.role !== 'buzo' || userContext.isAssigned) {
+    if (profile?.role !== 'buzo' || isAssigned) {
       items.push({
         title: "Cuadrillas de Buceo",
         icon: Users,
