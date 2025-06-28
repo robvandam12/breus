@@ -24,11 +24,11 @@ export default function Operaciones() {
         return;
       }
 
-      // Asegurar que todos los campos requeridos estén presentes
+      // Crear el objeto con campos garantizados como no-undefined
       const operacionData: OperacionFormData = {
-        codigo: data.codigo,
-        nombre: data.nombre,
-        fecha_inicio: data.fecha_inicio,
+        codigo: data.codigo as string, // TypeScript assertion después de validación
+        nombre: data.nombre as string,
+        fecha_inicio: data.fecha_inicio as string,
         estado: data.estado || 'activa',
         fecha_fin: data.fecha_fin,
         centro_id: data.centro_id,
