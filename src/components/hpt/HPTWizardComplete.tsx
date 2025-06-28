@@ -62,10 +62,16 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 
         if (error) throw error;
 
-        updateData({
+        // Actualizar los datos usando el método updateData del hook
+        const dataToUpdate = {
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
           centro_trabajo_nombre: operacion.centros?.nombre || '',
           descripcion_tarea: operacion.tareas || ''
+        };
+        
+        // Llamar updateData con cada campo individualmente
+        Object.entries(dataToUpdate).forEach(([key, value]) => {
+          updateData(key, value);
         });
 
         console.log('HPT data auto-populated from operation');

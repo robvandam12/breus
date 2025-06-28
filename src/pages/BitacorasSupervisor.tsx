@@ -98,8 +98,8 @@ export default function BitacorasSupervisor() {
   if (showAnexoBravoWizard && selectedOperacionId) {
     return (
       <AnexoBravoWizard
-        operacionId={selectedOperacionId}
-        onComplete={handleAnexoBravoComplete}
+        defaultOperacionId={selectedOperacionId}
+        onSubmit={handleAnexoBravoComplete}
         onCancel={handleAnexoBravoCancel}
       />
     );

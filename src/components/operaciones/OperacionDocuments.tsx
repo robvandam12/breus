@@ -63,8 +63,8 @@ export const OperacionDocuments = ({ operacion }: OperacionDocumentsProps) => {
   if (showAnexoBravoWizard) {
     return (
       <AnexoBravoWizard
-        operacionId={operacion.id}
-        onComplete={handleAnexoBravoComplete}
+        defaultOperacionId={operacion.id}
+        onSubmit={handleAnexoBravoComplete}
         onCancel={handleAnexoBravoCancel}
       />
     );

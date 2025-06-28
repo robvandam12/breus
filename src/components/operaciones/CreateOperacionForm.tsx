@@ -22,6 +22,7 @@ const operacionSchema = z.object({
   centro_id: z.string().optional(),
   contratista_id: z.string().optional(),
   salmonera_id: z.string().optional(),
+  estado: z.enum(['activa', 'pausada', 'completada', 'cancelada']).default('activa'),
 });
 
 export type OperacionFormData = z.infer<typeof operacionSchema>;
@@ -44,6 +45,9 @@ export const CreateOperacionForm = ({ onSubmit, onCancel, isLoading }: CreateOpe
     formState: { errors },
   } = useForm<OperacionFormData>({
     resolver: zodResolver(operacionSchema),
+    defaultValues: {
+      estado: 'activa'
+    }
   });
 
   return (
@@ -134,7 +138,22 @@ export const CreateOperacionForm = ({ onSubmit, onCancel, isLoading }: CreateOpe
               </Select>
             </div>
 
-            <div className="md:col-span-2">
+            <div>
+              <Label htmlFor="estado">Estado</Label>
+              <Select onValueChange={(value: 'activa' | 'pausada' | 'completada' | 'cancelada') => setValue('estado', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activa">Activa</SelectItem>
+                  <SelectItem value="pausada">Pausada</SelectItem>
+                  <SelectItem value="completada">Completada</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="contratista_id">Contratista</Label>
               <Select onValueChange={(value) => setValue('contratista_id', value)}>
                 <SelectTrigger>

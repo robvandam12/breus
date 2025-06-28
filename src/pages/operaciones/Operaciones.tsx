@@ -13,17 +13,42 @@ import type { OperacionFormData } from '@/components/operaciones/CreateOperacion
 export default function Operaciones() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { createOperacion } = useOperacionesMutations();
+  const { createOperacion, isLoading: isCreating } = useOperacionesMutations();
   const { operaciones, isLoading } = useOperaciones();
 
   const handleCreateOperacion = async (data: OperacionFormData) => {
     try {
-      await createOperacion(data);
+      // Agregar estado por defecto si no está presente
+      const operacionData = {
+        ...data,
+        estado: data.estado || 'activa'
+      };
+      await createOperacion(operacionData);
       setShowCreateForm(false);
       setShowCreateDialog(false);
     } catch (error) {
       console.error('Error creating operacion:', error);
     }
+  };
+
+  const handleEdit = async (id: string) => {
+    // Implementar lógica de edición
+    console.log('Edit operacion:', id);
+  };
+
+  const handleView = (id: string) => {
+    // Implementar lógica de visualización
+    console.log('View operacion:', id);
+  };
+
+  const handleDelete = async (id: string) => {
+    // Implementar lógica de eliminación
+    console.log('Delete operacion:', id);
+  };
+
+  const handleViewDocuments = (id: string) => {
+    // Implementar lógica de visualización de documentos
+    console.log('View documents for operacion:', id);
   };
 
   const headerActions = (
@@ -49,7 +74,7 @@ export default function Operaciones() {
         <CreateOperacionForm
           onSubmit={handleCreateOperacion}
           onCancel={() => setShowCreateForm(false)}
-          isLoading={false}
+          isLoading={isCreating}
         />
       </MainLayout>
     );
@@ -64,10 +89,10 @@ export default function Operaciones() {
     >
       <OperacionesTable 
         operaciones={operaciones}
-        onEdit={() => {}}
-        onView={() => {}}
-        onDelete={() => {}}
-        onViewDocuments={() => {}}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={handleDelete}
+        onViewDocuments={handleViewDocuments}
       />
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -78,7 +103,7 @@ export default function Operaciones() {
           <CreateOperacionForm
             onSubmit={handleCreateOperacion}
             onCancel={() => setShowCreateDialog(false)}
-            isLoading={false}
+            isLoading={isCreating}
           />
         </DialogContent>
       </Dialog>
