@@ -38,11 +38,11 @@ export const useContextualNavigation = () => {
         isDisabled: false
       },
       {
-        id: 'personal',
-        title: 'Personal de Buceo',
-        url: '/personal-de-buceo',
+        id: 'cuadrillas',
+        title: 'Cuadrillas de Buceo',
+        url: '/cuadrillas-de-buceo',
         icon: 'Users',
-        isVisible: true,
+        isVisible: profile?.role !== 'buzo' || isAssigned,
         isDisabled: false
       },
       {
@@ -54,9 +54,17 @@ export const useContextualNavigation = () => {
         isDisabled: false
       },
       {
-        id: 'bitacoras',
-        title: 'Bitácoras',
-        url: '/bitacoras',
+        id: 'bitacoras-supervisor',
+        title: 'Bitácoras Supervisor',
+        url: '/bitacoras/supervisor',
+        icon: 'Book',
+        isVisible: profile?.role !== 'buzo',
+        isDisabled: false
+      },
+      {
+        id: 'bitacoras-buzo',
+        title: 'Bitácoras Buzo',
+        url: '/bitacoras/buzo',
         icon: 'Book',
         isVisible: true,
         isDisabled: false
@@ -139,10 +147,55 @@ export const useContextualNavigation = () => {
     if (profile?.role === 'admin_salmonera' || profile?.role === 'superuser') {
       managementItems.push(
         {
-          id: 'empresas',
-          title: 'Mi Empresa',
-          url: '/empresas',
+          id: 'empresas-sitios',
+          title: 'Sitios',
+          url: '/empresas/sitios',
           icon: 'Building',
+          isVisible: true,
+          isDisabled: false
+        },
+        {
+          id: 'empresas-contratistas',
+          title: 'Contratistas',
+          url: '/empresas/contratistas',
+          icon: 'Building',
+          isVisible: true,
+          isDisabled: false
+        },
+        {
+          id: 'empresas-usuarios',
+          title: 'Usuarios',
+          url: '/empresas/usuarios',
+          icon: 'Users',
+          isVisible: true,
+          isDisabled: false
+        },
+        {
+          id: 'configuracion',
+          title: 'Configuración',
+          url: '/configuracion',
+          icon: 'Settings',
+          isVisible: true,
+          isDisabled: false
+        }
+      );
+    }
+
+    if (profile?.role === 'admin_servicio') {
+      managementItems.push(
+        {
+          id: 'empresas-contratistas',
+          title: 'Mi Empresa',
+          url: '/empresas/contratistas',
+          icon: 'Building',
+          isVisible: true,
+          isDisabled: false
+        },
+        {
+          id: 'empresas-usuarios',
+          title: 'Usuarios',
+          url: '/empresas/usuarios',
+          icon: 'Users',
           isVisible: true,
           isDisabled: false
         },
@@ -197,6 +250,22 @@ export const useContextualNavigation = () => {
           icon: 'Activity',
           isVisible: true,
           isDisabled: false
+        },
+        {
+          id: 'company-personnel',
+          title: 'Personal Global',
+          url: '/company-personnel',
+          icon: 'Users',
+          isVisible: true,
+          isDisabled: false
+        },
+        {
+          id: 'salmoneras',
+          title: 'Salmoneras',
+          url: '/empresas/salmoneras',
+          icon: 'Building2',
+          isVisible: true,
+          isDisabled: false
         }
       );
     }
@@ -204,7 +273,7 @@ export const useContextualNavigation = () => {
     return [
       {
         title: 'Navegación Principal',
-        items: coreItems
+        items: coreItems.filter(item => item.isVisible)
       },
       {
         title: 'Planificación',
@@ -275,6 +344,8 @@ export const useContextualNavigation = () => {
         canManageNetworks: hasModuleAccess(modules.MAINTENANCE_NETWORKS),
         canAccessAdvancedReports: hasModuleAccess(modules.ADVANCED_REPORTING),
         canUseIntegrations: hasModuleAccess(modules.EXTERNAL_INTEGRATIONS),
+        canManageCuadrillas: profile?.role !== 'buzo' || isAssigned,
+        canAccessCompanyPersonnel: profile?.role === 'superuser',
       }
     };
   };

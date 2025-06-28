@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -73,7 +74,7 @@ const BreusLogo = ({ size = 32 }: { size?: number }) => (
   </svg>
 );
 
-const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] => {
+const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAccess?: (module: string) => boolean): MenuItem[] => {
   // Buzo sin empresa asignada - navegación muy limitada
   if (role === 'buzo' && !isAssigned) {
     return [
@@ -100,21 +101,30 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
     }
   ];
 
-  // Solo superuser puede ver Personal de Buceo (que era company-personnel)
+  // Cuadrillas de Buceo - disponible para roles operativos
+  if (role === 'admin_salmonera' || role === 'admin_servicio' || role === 'supervisor' || role === 'superuser') {
+    baseItems.push({
+      title: "Cuadrillas de Buceo",
+      icon: Users,
+      url: "/cuadrillas-de-buceo"
+    });
+  }
+
+  // Company Personnel - solo superuser puede ver el pool global
   if (role === 'superuser') {
     baseItems.push({
-      title: "Personal de Buceo",
+      title: "Personal Global",
       icon: Users,
-      url: "/personal-de-buceo"
+      url: "/company-personnel"
     });
   }
 
   // Módulos opcionales que dependen de activación
   const planningModule: MenuItem = {
-    title: "Operaciones",
+    title: "Planificación",
     icon: Calendar,
     items: [
-      { title: "Ver Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
+      { title: "Operaciones", url: "/operaciones", moduleRequired: "planning_operations" },
       { title: "HPT", url: "/operaciones/hpt", moduleRequired: "planning_operations" },
       { title: "Anexo Bravo", url: "/operaciones/anexo-bravo", moduleRequired: "planning_operations" }
     ],
@@ -122,7 +132,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
   };
 
   const maintenanceModule: MenuItem = {
-    title: "Módulos Operativos",
+    title: "Módulos Especializados",
     icon: Wrench,
     items: [
       { title: "Mantención de Redes", url: "/operaciones/network-maintenance", moduleRequired: "maintenance_networks" }
@@ -188,7 +198,8 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         items: [
           { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
           { title: "Sitios", url: "/empresas/sitios" },
-          { title: "Contratistas", url: "/empresas/contratistas" }
+          { title: "Contratistas", url: "/empresas/contratistas" },
+          { title: "Usuarios", url: "/empresas/usuarios" }
         ]
       },
       {
@@ -222,7 +233,7 @@ export function AppSidebar() {
 
   // Fix the type error by explicitly converting to boolean
   const isAssigned = Boolean(profile?.salmonera_id || profile?.servicio_id);
-  const menuItems = getMenuItemsForRole(profile?.role, isAssigned);
+  const menuItems = getMenuItemsForRole(profile?.role, isAssigned, hasModuleAccess);
 
   // Función para filtrar items y subitems por módulos y roles
   const filterMenuItems = (items: MenuItem[]): MenuItem[] => {

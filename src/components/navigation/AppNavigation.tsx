@@ -11,6 +11,7 @@ import {
   Users,
   Shield,
   Building2,
+  Wrench
 } from "lucide-react";
 
 interface NavigationItem {
@@ -37,6 +38,26 @@ export const useAppNavigation = () => {
       }
     ];
 
+    // Cuadrillas de Buceo - disponible para roles operativos
+    if (profile?.role !== 'buzo' || userContext.isAssigned) {
+      items.push({
+        title: "Cuadrillas de Buceo",
+        icon: Users,
+        url: "/cuadrillas-de-buceo",
+        badge: userContext.isContratista ? "Operativo" : undefined
+      });
+    }
+
+    // Personal Global - solo superuser
+    if (profile?.role === 'superuser') {
+      items.push({
+        title: "Personal Global",
+        icon: Users,
+        url: "/company-personnel",
+        roleRequired: ['superuser'],
+      });
+    }
+
     // Módulo de Planificación (Operaciones, HPT, Anexo Bravo)
     if (hasModuleAccess(modules.PLANNING_OPERATIONS)) {
       items.push(
@@ -46,12 +67,6 @@ export const useAppNavigation = () => {
           url: "/operaciones",
           moduleRequired: modules.PLANNING_OPERATIONS,
           badge: userContext.isContratista ? "Asociar" : undefined
-        },
-        {
-          title: "Documentos",
-          icon: FileText,
-          url: "/documentos",
-          moduleRequired: modules.PLANNING_OPERATIONS,
         }
       );
     }
@@ -78,18 +93,8 @@ export const useAppNavigation = () => {
       items.push({
         title: "Company Personnel",
         icon: Users,
-        url: "/company-personnel",
+        url: "/empresas/usuarios",
         roleRequired: ['admin_salmonera', 'admin_servicio'],
-      });
-    }
-
-    // Personal de Buceo (equipos operativos) - Disponible para roles operativos
-    if (profile?.role === 'admin_salmonera' || profile?.role === 'admin_servicio' || profile?.role === 'supervisor') {
-      items.push({
-        title: "Diving Teams",
-        icon: Users,
-        url: "/personal-de-buceo",
-        roleRequired: ['admin_salmonera', 'admin_servicio', 'supervisor'],
       });
     }
 
@@ -98,10 +103,17 @@ export const useAppNavigation = () => {
       items.push({
         title: "Salmoneras",
         icon: Building2,
-        url: "/salmoneras",
+        url: "/empresas/salmoneras",
         roleRequired: ['superuser'],
       });
     }
+
+    // Reportes
+    items.push({
+      title: "Reportes",
+      icon: BarChart3,
+      url: "/reportes",
+    });
 
     // Configuración (siempre disponible)
     items.push({

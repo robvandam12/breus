@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -20,6 +21,7 @@ const RegisterFromInvitation = lazy(() => import("../pages/RegisterFromInvitatio
 const Salmoneras = lazy(() => import("../pages/empresas/Salmoneras"));
 const Sitios = lazy(() => import("../pages/empresas/Sitios"));
 const Contratistas = lazy(() => import("../pages/empresas/Contratistas"));
+const Usuarios = lazy(() => import("../pages/empresas/Usuarios"));
 const PersonalDeBuceo = lazy(() => import("../pages/PersonalDeBuceo"));
 const PersonalPoolAdmin = lazy(() => {
   console.log('🔄 Loading PersonalPoolAdmin component...');
@@ -30,7 +32,7 @@ const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
 const MantencionRedes = lazy(() => import("../pages/operaciones/MantencionRedes"));
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
-const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
+const BitacorasSupervisor = lazy(() => import("../pages/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
 const ProfileSetup = lazy(() => import("../pages/ProfileSetup"));
 const Reportes = lazy(() => import("../pages/Reportes"));
@@ -46,7 +48,6 @@ const BuzoInmersiones = lazy(() => import("../pages/buzo/BuzoInmersiones"));
 const BuzoReportesPage = lazy(() => import("../pages/buzo/BuzoReportesPage"));
 const SuperuserModules = lazy(() => import("../pages/admin/SuperuserModules"));
 const SystemMonitoring = lazy(() => import("../pages/admin/SystemMonitoring"));
-const Usuarios = lazy(() => import("../pages/empresas/Usuarios"));
 
 const FullPageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -89,6 +90,14 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
+        <Route path="/profile-setup" element={
+          <ProtectedRoute>
+            <Suspense fallback={<FullPageLoader />}>
+              <ProfileSetup />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        
         {/* Main Dashboard - Protected */}
         <Route path="/" element={
           <ProtectedRoute>
@@ -121,7 +130,7 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
-        {/* Nueva ruta para usuarios de empresa */}
+        {/* Ruta para usuarios de empresa */}
         <Route path="/empresas/usuarios" element={
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -132,7 +141,7 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
-        {/* Cuadrillas Routes - Actualizado */}
+        {/* Cuadrillas de Buceo Routes - Ruta principal consolidada */}
         <Route path="/cuadrillas-de-buceo" element={
           <ProtectedRoute>
             <Suspense fallback={<PageWithSidebarSkeleton />}>
@@ -150,22 +159,11 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         } />
         
-        {/* Company Personnel Route - Updated URL with DEBUG */}
+        {/* Company Personnel Route - Para gestión global de personal (solo superuser) */}
         <Route path="/company-personnel" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="superuser">
             <Suspense fallback={<PageWithSidebarSkeleton />}>
               <DebugRouteWrapper routeName="/company-personnel">
-                <PersonalPoolAdmin />
-              </DebugRouteWrapper>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        
-        {/* Legacy route redirect with DEBUG */}
-        <Route path="/personal-pool" element={
-          <ProtectedRoute>
-            <Suspense fallback={<PageWithSidebarSkeleton />}>
-              <DebugRouteWrapper routeName="/personal-pool">
                 <PersonalPoolAdmin />
               </DebugRouteWrapper>
             </Suspense>
@@ -180,15 +178,6 @@ export const AppRoutes = () => {
               moduleName="Módulo de Planificación de Operaciones"
               description="Este módulo permite la planificación y gestión de operaciones de buceo."
             >
-              <Suspense fallback={<PageWithSidebarSkeleton />}>
-                <Operaciones />
-              </Suspense>
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
-        <Route path="/operaciones/planificar" element={
-          <ProtectedRoute>
-            <ModuleProtectedRoute requiredModule="planning_operations">
               <Suspense fallback={<PageWithSidebarSkeleton />}>
                 <Operaciones />
               </Suspense>
