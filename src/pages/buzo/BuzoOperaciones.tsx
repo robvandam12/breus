@@ -1,210 +1,222 @@
 
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, Eye } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useOperacionesQuery } from '@/hooks/useOperacionesQuery';
-import { useInmersiones } from '@/hooks/useInmersiones';
-import { useSalmoneras } from '@/hooks/useSalmoneras';
-import { useSitios } from '@/hooks/useSitios';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building, Search, Calendar, Users, MapPin } from "lucide-react";
+import { useOperacionesQuery } from "@/hooks/useOperacionesQuery";
+import { useCentros } from "@/hooks/useCentros";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { PageLoadingSkeleton } from "@/components/layout/PageLoadingSkeleton";
+import { EmptyState } from "@/components/layout/EmptyState";
 
-export default function BuzoOperaciones() {
-  const { profile } = useAuth();
-  const { data: operaciones = [] } = useOperacionesQuery();
-  const { inmersiones } = useInmersiones();
-  const { salmoneras } = useSalmoneras();
-  const { sitios } = useSitios();
-  const [buzoOperaciones, setBuzoOperaciones] = useState<any[]>([]);
+const BuzoOperaciones = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState<string>("all");
+  const [filterCentro, setFilterCentro] = useState<string>("all");
+  
+  const { operaciones, isLoading } = useOperacionesQuery();
+  const { centros } = useCentros();
 
-  useEffect(() => {
-    if (!profile) return;
+  // Solo mostrar operaciones activas y completadas para buzos
+  const filteredOperaciones = useMemo(() => {
+    return operaciones.filter(operacion => {
+      // Solo operaciones activas o completadas
+      if (!['activa', 'completada'].includes(operacion.estado)) return false;
+      
+      // Filtro por búsqueda
+      if (searchTerm && !operacion.nombre.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !operacion.codigo.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      // Filtro por estado
+      if (filterEstado !== "all" && operacion.estado !== filterEstado) {
+        return false;
+      }
+      
+      // Filtro por centro
+      if (filterCentro !== "all" && operacion.centro_id !== filterCentro) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [operaciones, searchTerm, filterEstado, filterCentro]);
 
-    // Filtrar operaciones donde el buzo participó
-    const buzoName = `${profile.nombre} ${profile.apellido}`;
-    const buzoInmersiones = inmersiones.filter(i => 
-      i.buzo_principal === buzoName || i.buzo_asistente === buzoName
+  if (isLoading) {
+    return (
+      <PageLoadingSkeleton
+        title="Operaciones Disponibles"
+        subtitle="Consulta las operaciones asignadas"
+        icon={Building}
+      />
     );
+  }
 
-    const operacionesConParticipacion = operaciones
-      .filter(op => buzoInmersiones.some(inm => inm.operacion_id === op.id))
-      .map(op => {
-        const inmersionesOperacion = buzoInmersiones.filter(inm => inm.operacion_id === op.id);
-        const salmonera = salmoneras.find(s => s.id === op.salmonera_id);
-        const sitio = sitios.find(s => s.id === op.sitio_id);
-        
-        return {
-          ...op,
-          inmersiones: inmersionesOperacion,
-          salmonera: salmonera?.nombre || 'N/A',
-          sitio: sitio?.nombre || 'N/A'
-        };
-      })
-      .sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <Input
+          placeholder="Buscar operaciones..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-64"
+        />
+      </div>
 
-    setBuzoOperaciones(operacionesConParticipacion);
-  }, [profile, operaciones, inmersiones, salmoneras, sitios]);
+      <Select value={filterEstado} onValueChange={setFilterEstado}>
+        <SelectTrigger className="w-40">
+          <SelectValue placeholder="Estado" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos</SelectItem>
+          <SelectItem value="activa">Activa</SelectItem>
+          <SelectItem value="completada">Completada</SelectItem>
+        </SelectContent>
+      </Select>
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'activa': return 'bg-green-100 text-green-800';
-      case 'completada': return 'bg-blue-100 text-blue-800';
-      case 'cancelada': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+      <Select value={filterCentro} onValueChange={setFilterCentro}>
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Centro" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los centros</SelectItem>
+          {centros.map((centro) => (
+            <SelectItem key={centro.id} value={centro.id}>
+              {centro.nombre}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <MainLayout
-      title="Mis Operaciones"
-      subtitle="Historial de operaciones donde has participado"
-      icon={Calendar}
+      title="Operaciones Disponibles"
+      subtitle="Consulta las operaciones asignadas y su estado"
+      icon={Building}
+      headerChildren={headerActions}
     >
-      <div className="space-y-6">
-        {buzoOperaciones.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Sin operaciones registradas
-              </h3>
-              <p className="text-gray-500">
-                Cuando participes en operaciones, aparecerán aquí.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6">
-            {buzoOperaciones.map((operacion) => (
-              <Card key={operacion.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-primary">
+              {operaciones.filter(op => op.estado === 'activa').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Operaciones Activas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {operaciones.filter(op => op.estado === 'completada').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Completadas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-yellow-600">
+              {operaciones.filter(op => op.estado === 'pausada').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Pausadas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-muted-foreground">
+              {filteredOperaciones.length}
+            </div>
+            <div className="text-sm text-muted-foreground">Disponibles</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Operaciones List */}
+      {filteredOperaciones.length === 0 ? (
+        <EmptyState
+          icon={Building}
+          title="No hay operaciones disponibles"
+          description="No se encontraron operaciones que coincidan con los filtros aplicados"
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredOperaciones.map((operacion) => {
+            const centro = centros.find(c => c.id === operacion.centro_id);
+            
+            return (
+              <Card key={operacion.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-lg">{operacion.nombre}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {operacion.salmonera} - {operacion.sitio}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                        </span>
-                      </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-1">{operacion.nombre}</CardTitle>
+                      <p className="text-sm text-gray-500 font-mono">{operacion.codigo}</p>
                     </div>
-                    <Badge className={getEstadoColor(operacion.estado)}>
+                    <Badge 
+                      variant={operacion.estado === 'activa' ? 'default' : 'secondary'}
+                      className={operacion.estado === 'activa' ? 'bg-green-100 text-green-700' : ''}
+                    >
                       {operacion.estado}
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Mis Inmersiones en esta Operación</h4>
-                      <div className="grid gap-2">
-                        {operacion.inmersiones.map((inmersion: any) => (
-                          <div key={inmersion.inmersion_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{inmersion.codigo}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {inmersion.buzo_principal === `${profile?.nombre} ${profile?.apellido}` ? 'Principal' : 'Asistente'}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-600">{inmersion.objetivo}</p>
-                              <div className="flex items-center gap-3 text-xs text-gray-500">
-                                <span>{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
-                                <span>{inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
-                                <span>Profundidad: {inmersion.profundidad_max}m</span>
-                              </div>
-                            </div>
-                            <Badge variant={inmersion.estado === 'completada' ? 'default' : 'secondary'}>
-                              {inmersion.estado}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
+                
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span>
+                        Inicio: {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                      </span>
                     </div>
 
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Detalles
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>{operacion.nombre}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium">Código</label>
-                              <p className="text-sm text-gray-600">{operacion.codigo}</p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Estado</label>
-                              <Badge className={getEstadoColor(operacion.estado)}>
-                                {operacion.estado}
-                              </Badge>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Fecha Inicio</label>
-                              <p className="text-sm text-gray-600">
-                                {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Fecha Fin</label>
-                              <p className="text-sm text-gray-600">
-                                {operacion.fecha_fin ? new Date(operacion.fecha_fin).toLocaleDateString('es-CL') : 'No definida'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {operacion.tareas && (
-                            <div>
-                              <label className="text-sm font-medium">Tareas</label>
-                              <p className="text-sm text-gray-600 mt-1">{operacion.tareas}</p>
-                            </div>
-                          )}
+                    {centro && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-green-500" />
+                        <span>{centro.nombre}</span>
+                      </div>
+                    )}
 
-                          <div>
-                            <label className="text-sm font-medium">Mis Inmersiones ({operacion.inmersiones.length})</label>
-                            <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
-                              {operacion.inmersiones.map((inmersion: any) => (
-                                <div key={inmersion.inmersion_id} className="p-3 border rounded-lg">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium">{inmersion.codigo}</span>
-                                    <Badge variant="outline">
-                                      {inmersion.buzo_principal === `${profile?.nombre} ${profile?.apellido}` ? 'Principal' : 'Asistente'}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-gray-600 mb-2">{inmersion.objetivo}</p>
-                                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                                    <span>Fecha: {new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
-                                    <span>Hora: {inmersion.hora_inicio} - {inmersion.hora_fin || 'En curso'}</span>
-                                    <span>Profundidad: {inmersion.profundidad_max}m</span>
-                                    <span>Temperatura: {inmersion.temperatura_agua}°C</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    {operacion.contratistas && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="w-4 h-4 text-purple-500" />
+                        <span>{operacion.contratistas.nombre}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {operacion.tareas && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {operacion.tareas}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      disabled={operacion.estado !== 'activa'}
+                    >
+                      Ver Detalles
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </MainLayout>
   );
-}
+};
+
+export default BuzoOperaciones;

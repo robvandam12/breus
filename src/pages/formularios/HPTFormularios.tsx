@@ -1,29 +1,26 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, FileText, CheckCircle, PenTool, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle } from "lucide-react";
 import { HPTWizard } from "@/components/hpt/HPTWizard";
 import { HPTOperationSelector } from "@/components/hpt/HPTOperationSelector";
 import { useHPT } from "@/hooks/useHPT";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { toast } from "@/hooks/use-toast";
 import { FormDialog } from "@/components/forms/FormDialog";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageLoadingSkeleton } from "@/components/layout/PageLoadingSkeleton";
 import { EmptyState } from "@/components/layout/EmptyState";
 
-const HPTFormulariosPage = () => {
+const HPTFormularios = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [showOperationSelector, setShowOperationSelector] = useState(false);
   
-  const { hpts, isLoading, signHPT, deleteHPT } = useHPT();
+  const { hpts, isLoading } = useHPT();
   const { operaciones } = useOperaciones();
 
   const filteredHPTs = hpts.filter(hpt => 
@@ -44,46 +41,6 @@ const HPTFormulariosPage = () => {
   const handleHPTComplete = () => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
-  };
-
-  const handleSignHPT = async (hptId: string) => {
-    try {
-      await signHPT({ 
-        id: hptId, 
-        signatures: {
-          supervisor_servicio_url: 'signed',
-          supervisor_mandante_url: 'signed'
-        }
-      });
-      toast({
-        title: "HPT firmado",
-        description: "El documento ha sido firmado exitosamente.",
-      });
-    } catch (error) {
-      console.error('Error signing HPT:', error);
-      toast({
-        title: "Error al firmar",
-        description: "No se pudo firmar el HPT.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteHPT = async (hptId: string) => {
-    try {
-      await deleteHPT(hptId);
-      toast({
-        title: "HPT eliminado",
-        description: "El documento ha sido eliminado exitosamente.",
-      });
-    } catch (error: any) {
-      console.error('Error deleting HPT:', error);
-      toast({
-        title: "Error al eliminar",
-        description: "No se pudo eliminar el HPT.",
-        variant: "destructive",
-      });
-    }
   };
 
   if (isLoading) {
@@ -125,7 +82,6 @@ const HPTFormulariosPage = () => {
       icon={FileText}
       headerChildren={headerActions}
     >
-      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
@@ -163,7 +119,6 @@ const HPTFormulariosPage = () => {
         </Card>
       </div>
 
-      {/* HPTs List */}
       {filteredHPTs.length === 0 ? (
         <EmptyState
           icon={FileText}
@@ -185,6 +140,7 @@ const HPTFormulariosPage = () => {
                 <TableHead>Supervisor</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Progreso</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -201,7 +157,7 @@ const HPTFormulariosPage = () => {
                         {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
                       </div>
                     </TableCell>
-                    <TableCell>{hpt.supervisor || hpt.supervisor_nombre}</TableCell>
+                    <TableCell>{hpt.supervisor}</TableCell>
                     <TableCell>
                       {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
                     </TableCell>
@@ -217,50 +173,25 @@ const HPTFormulariosPage = () => {
                         )}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${hpt.progreso || 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{hpt.progreso || 0}%</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        {!hpt.firmado ? (
-                          <>
-                            <Button 
-                              onClick={() => handleSignHPT(hpt.id)}
-                              size="sm" 
-                              className="bg-primary hover:bg-primary/90"
-                            >
-                              <PenTool className="w-3 h-3 mr-1" />
-                              Firmar
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar HPT?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción no se puede deshacer. Se eliminará permanentemente el HPT "{hpt.codigo || hpt.folio}".
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleDeleteHPT(hpt.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Eliminar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        ) : (
+                        <Button variant="outline" size="sm">
+                          Ver
+                        </Button>
+                        {!hpt.firmado && (
                           <Button variant="outline" size="sm">
-                            Ver
+                            Editar
                           </Button>
                         )}
                       </div>
@@ -273,7 +204,6 @@ const HPTFormulariosPage = () => {
         </Card>
       )}
 
-      {/* Operation Selector Dialog */}
       <FormDialog
         variant="form"
         size="xl"
@@ -286,7 +216,6 @@ const HPTFormulariosPage = () => {
         />
       </FormDialog>
 
-      {/* Create Form Modal */}
       <FormDialog
         variant="wizard"
         size="full"
@@ -303,4 +232,4 @@ const HPTFormulariosPage = () => {
   );
 };
 
-export default HPTFormulariosPage;
+export default HPTFormularios;

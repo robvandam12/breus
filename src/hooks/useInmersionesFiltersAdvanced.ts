@@ -14,6 +14,11 @@ export interface FilterState {
   profundidadMax: string;
 }
 
+interface OperationData {
+  salmoneras?: { nombre: string } | null;
+  centros?: { nombre: string } | null;
+}
+
 export const useInmersionesFiltersAdvanced = (inmersiones: Inmersion[], filters: FilterState) => {
   return useMemo(() => {
     return inmersiones.filter(inmersion => {
@@ -29,7 +34,7 @@ export const useInmersionesFiltersAdvanced = (inmersiones: Inmersion[], filters:
 
       // Filtro por salmonera
       if (filters.salmonera) {
-        const salmoneraNombre = inmersion.operacion?.salmoneras?.nombre || '';
+        const salmoneraNombre = (inmersion.operacion as OperationData)?.salmoneras?.nombre || '';
         if (!salmoneraNombre.toLowerCase().includes(filters.salmonera.toLowerCase())) {
           return false;
         }
@@ -37,7 +42,7 @@ export const useInmersionesFiltersAdvanced = (inmersiones: Inmersion[], filters:
 
       // Filtro por centro
       if (filters.centro) {
-        const centroNombre = inmersion.operacion?.centros?.nombre || '';
+        const centroNombre = (inmersion.operacion as OperationData)?.centros?.nombre || '';
         if (!centroNombre.toLowerCase().includes(filters.centro.toLowerCase())) {
           return false;
         }
@@ -101,8 +106,12 @@ export const useFilterOptions = (inmersiones: Inmersion[]) => {
     inmersiones.forEach(inmersion => {
       if (inmersion.buzo_principal) buzos.add(inmersion.buzo_principal);
       if (inmersion.supervisor) supervisores.add(inmersion.supervisor);
-      if (inmersion.operacion?.salmoneras?.nombre) salmoneras.add(inmersion.operacion.salmoneras.nombre);
-      if (inmersion.operacion?.centros?.nombre) centros.add(inmersion.operacion.centros.nombre);
+      if ((inmersion.operacion as OperationData)?.salmoneras?.nombre) {
+        salmoneras.add((inmersion.operacion as OperationData).salmoneras!.nombre);
+      }
+      if ((inmersion.operacion as OperationData)?.centros?.nombre) {
+        centros.add((inmersion.operacion as OperationData).centros!.nombre);
+      }
       if (inmersion.estado) estados.add(inmersion.estado);
     });
 

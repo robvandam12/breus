@@ -8,18 +8,18 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SitioDetails } from "./SitioDetails";
 import { EditSitioForm } from "./EditSitioForm";
 import { MapPin, Anchor, Grid3X3, Eye, Edit, Trash2 } from "lucide-react";
-import { Sitio } from "@/hooks/useSitios";
+import type { Centro } from "@/hooks/useCentros";
 
 interface SitioCardViewProps {
-  sitios: Sitio[];
+  sitios: Centro[];
   onEdit: (id: string, data: any) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
 export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) => {
-  const [selectedSitio, setSelectedSitio] = useState<Sitio | null>(null);
-  const [editingSitio, setEditingSitio] = useState<Sitio | null>(null);
-  const [deletingSitio, setDeletingSitio] = useState<Sitio | null>(null);
+  const [selectedSitio, setSelectedSitio] = useState<Centro | null>(null);
+  const [editingSitio, setEditingSitio] = useState<Centro | null>(null);
+  const [deletingSitio, setDeletingSitio] = useState<Centro | null>(null);
 
   const getEstadoBadge = (estado: string) => {
     const colors = {
@@ -164,8 +164,8 @@ export const SitioCardView = ({ sitios, onEdit, onDelete }: SitioCardViewProps) 
       <ConfirmDialog
         open={!!deletingSitio}
         onOpenChange={() => setDeletingSitio(null)}
-        title="Eliminar Sitio"
-        description={`¿Está seguro de que desea eliminar el sitio "${deletingSitio?.nombre}"? Esta acción no se puede deshacer.`}
+        title="Eliminar Centro"
+        description={`¿Está seguro de que desea eliminar el centro "${deletingSitio?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         cancelText="Cancelar"
         variant="destructive"

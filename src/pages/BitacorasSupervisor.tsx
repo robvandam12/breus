@@ -1,242 +1,397 @@
-
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, FileText, Calendar, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreateBitacoraSupervisorFormComplete } from "@/components/bitacoras/CreateBitacoraSupervisorFormComplete";
-import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
+import { Plus, Search, FileText, CheckCircle, Shield } from "lucide-react";
+import { HPTWizard } from "@/components/hpt/HPTWizard";
+import { HPTOperationSelector } from "@/components/hpt/HPTOperationSelector";
+import { useHPT } from "@/hooks/useHPT";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { FormDialog } from "@/components/forms/FormDialog";
+import { PageLoadingSkeleton } from "@/components/layout/PageLoadingSkeleton";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { useAnexoBravo } from "@/hooks/useAnexoBravo";
+import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
-const BitacorasSupervisor = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedBitacora, setSelectedBitacora] = useState<any>(null);
+const BitacorasSupervisorPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedOperacion, setSelectedOperacion] = useState<string>('');
+  const [showOperationSelector, setShowOperationSelector] = useState(false);
+  const [showHPTWizard, setShowHPTWizard] = useState(false);
+  const [showAnexoBravoForm, setShowAnexoBravoForm] = useState(false);
+  
+  const { hpts, isLoading: isLoadingHPT } = useHPT();
+  const { anexosBravo, isLoading: isLoadingAnexos, createAnexoBravo } = useAnexoBravo();
+  const { operaciones, isLoading: isLoadingOperaciones } = useOperaciones();
+  const { profile } = useAuth();
 
-  const { bitacorasSupervisor, loadingSupervisor } = useBitacorasSupervisor();
+  const filteredHPTs = useMemo(() => {
+    return hpts.filter(hpt => 
+      hpt.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hpt.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [hpts, searchTerm]);
 
-  const filteredBitacoras = bitacorasSupervisor.filter(bitacora =>
-    bitacora.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bitacora.supervisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bitacora.desarrollo_inmersion?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAnexos = useMemo(() => {
+    return anexosBravo.filter(anexo => 
+      anexo.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      anexo.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [anexosBravo, searchTerm]);
 
-  const getStatusBadge = (bitacora: any) => {
-    if (bitacora.firmado) {
-      return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Firmada</Badge>;
-    }
-    if (bitacora.estado_aprobacion === 'aprobada') {
-      return <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="w-3 h-3 mr-1" />Aprobada</Badge>;
-    }
-    if (bitacora.estado_aprobacion === 'pendiente') {
-      return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pendiente</Badge>;
-    }
-    return <Badge className="bg-gray-100 text-gray-800"><AlertCircle className="w-3 h-3 mr-1" />Borrador</Badge>;
+  const handleCreateHPT = () => {
+    setShowOperationSelector(true);
   };
 
-  const handleCreateBitacora = () => {
-    setShowCreateDialog(true);
+  const handleOperationSelected = (operacionId: string) => {
+    setSelectedOperacion(operacionId);
+    setShowOperationSelector(false);
+    setShowHPTWizard(true);
   };
 
-  const handleEditBitacora = (bitacora: any) => {
-    setSelectedBitacora(bitacora);
-    // Aquí podrías abrir un modal de edición
-    toast({
-      title: "Función en desarrollo",
-      description: "La edición de bitácoras estará disponible pronto.",
-    });
+  const handleHPTComplete = () => {
+    setShowCreateForm(false);
+    setSelectedOperacion('');
   };
 
-  const handleViewBitacora = (bitacora: any) => {
-    setSelectedBitacora(bitacora);
-    // Aquí podrías abrir un modal de vista detallada
-    toast({
-      title: "Función en desarrollo",
-      description: "La vista detallada de bitácoras estará disponible pronto.",
-    });
+  const handleAnexoBravoComplete = () => {
+    setShowAnexoBravoForm(false);
+    setSelectedOperacion('');
   };
 
-  const handleFormSubmit = () => {
-    setShowCreateDialog(false);
-    toast({
-      title: "Bitácora creada",
-      description: "La bitácora de supervisor ha sido creada exitosamente.",
-    });
-  };
+  const isLoading = isLoadingHPT || isLoadingAnexos || isLoadingOperaciones;
 
-  const handleFormCancel = () => {
-    setShowCreateDialog(false);
-  };
-
-  if (loadingSupervisor) {
+  if (isLoading) {
     return (
-      <MainLayout
-        title="Bitácoras de Supervisor"
-        subtitle="Gestión de bitácoras de supervisión de inmersiones"
+      <PageLoadingSkeleton
+        title="Bitácoras del Supervisor"
+        subtitle="Gestión de documentos HPT y Anexos Bravo"
         icon={FileText}
-      >
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-pulse space-y-4 w-full">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </MainLayout>
+      />
     );
   }
 
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <Input
+          placeholder="Buscar documentos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-64"
+        />
+      </div>
+
+      <Button 
+        onClick={handleCreateHPT}
+        className="bg-primary hover:bg-primary/90"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Nuevo Documento
+      </Button>
+    </div>
+  );
+
   return (
     <MainLayout
-      title="Bitácoras de Supervisor"
-      subtitle="Gestión de bitácoras de supervisión de inmersiones"
+      title="Bitácoras del Supervisor"
+      subtitle="Gestión de documentos HPT y Anexos Bravo"
       icon={FileText}
+      headerChildren={headerActions}
     >
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-blue-600">
-            {bitacorasSupervisor.length}
-          </div>
-          <div className="text-sm text-zinc-500">Total Bitácoras</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-primary">
+              {hpts.length}
+            </div>
+            <div className="text-sm text-muted-foreground">HPTs Totales</div>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-green-600">
-            {bitacorasSupervisor.filter(b => b.firmado).length}
-          </div>
-          <div className="text-sm text-zinc-500">Firmadas</div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {anexosBravo.length}
+            </div>
+            <div className="text-sm text-muted-foreground">Anexos Bravo</div>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-yellow-600">
-            {bitacorasSupervisor.filter(b => !b.firmado && b.estado_aprobacion === 'pendiente').length}
-          </div>
-          <div className="text-sm text-zinc-500">Pendientes</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-purple-600">
-            {bitacorasSupervisor.filter(b => b.estado_aprobacion === 'aprobada').length}
-          </div>
-          <div className="text-sm text-zinc-500">Aprobadas</div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-muted-foreground">
+              {operaciones.filter(op => 
+                !hpts.some(hpt => hpt.operacion_id === op.id)
+              ).length}
+            </div>
+            <div className="text-sm text-muted-foreground">Operaciones Disponibles</div>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Filtros y acciones */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Bitácoras de Supervisor
-            </CardTitle>
-            {/* CORREGIDO: Botón funcional para crear nueva bitácora */}
-            <Button onClick={handleCreateBitacora} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Nueva Bitácora Supervisor
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar bitácoras..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Tabla de bitácoras */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Supervisor</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Inmersión</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBitacoras.map((bitacora) => (
-                <TableRow key={bitacora.bitacora_id}>
-                  <TableCell>
-                    <div className="font-medium text-blue-600">{bitacora.codigo}</div>
-                  </TableCell>
-                  <TableCell>{bitacora.supervisor}</TableCell>
-                  <TableCell>
-                    {bitacora.fecha ? new Date(bitacora.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {bitacora.inmersion ? (
-                        <span>{bitacora.inmersion.codigo || 'Inmersión'}</span>
-                      ) : (
-                        <span className="text-gray-500">Sin inmersión</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(bitacora)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewBitacora(bitacora)}
-                      >
-                        <FileText className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditBitacora(bitacora)}
-                      >
-                        <Calendar className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredBitacoras.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No se encontraron bitácoras de supervisor.</p>
-              <Button onClick={handleCreateBitacora} className="mt-4">
+      {/* Documents List */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* HPTs List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                Hojas de Planificación (HPT)
+              </CardTitle>
+              <Button 
+                onClick={() => {
+                  setShowOperationSelector(true);
+                  setShowHPTWizard(true);
+                  setShowAnexoBravoForm(false);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Crear Primera Bitácora
+                Nuevo HPT
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {filteredHPTs.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title={hpts.length === 0 ? "No hay HPTs registrados" : "No se encontraron HPTs"}
+                description={hpts.length === 0 
+                  ? "Comience creando el primer HPT seleccionando una operación"
+                  : "Intenta ajustar la búsqueda"}
+                actionText="Nuevo HPT"
+                onAction={handleCreateHPT}
+                actionIcon={Plus}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Operación</TableHead>
+                    <TableHead>Supervisor</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Progreso</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredHPTs.map((hpt) => {
+                    const operacion = operaciones.find(op => op.id === hpt.operacion_id);
+                    return (
+                      <TableRow key={hpt.id}>
+                        <TableCell>
+                          <div className="font-medium">{hpt.codigo || hpt.folio}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
+                          </div>
+                        </TableCell>
+                        <TableCell>{hpt.supervisor}</TableCell>
+                        <TableCell>
+                          {hpt.fecha ? new Date(hpt.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={hpt.firmado ? 'default' : 'secondary'}>
+                            {hpt.firmado ? (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Firmado
+                              </div>
+                            ) : (
+                              hpt.estado || 'Borrador'
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all"
+                                style={{ width: `${hpt.progreso || 0}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground">{hpt.progreso || 0}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="outline" size="sm">
+                              Ver
+                            </Button>
+                            {!hpt.firmado && (
+                              <Button variant="outline" size="sm">
+                                Editar
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Dialog para crear bitácora */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nueva Bitácora de Supervisor</DialogTitle>
-          </DialogHeader>
-          <CreateBitacoraSupervisorFormComplete
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-          />
-        </DialogContent>
-      </Dialog>
+        {/* Anexos Bravo List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                Anexos Bravo
+              </CardTitle>
+              <Button 
+                onClick={() => {
+                  setShowOperationSelector(true);
+                  setShowHPTWizard(false);
+                  setShowAnexoBravoForm(true);
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Anexo
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredAnexos.length === 0 ? (
+              <EmptyState
+                icon={Shield}
+                title={anexosBravo.length === 0 ? "No hay Anexos Bravo registrados" : "No se encontraron Anexos Bravo"}
+                description={anexosBravo.length === 0 
+                  ? "Comience creando el primer Anexo Bravo seleccionando una operación"
+                  : "Intenta ajustar la búsqueda"}
+                actionText="Nuevo Anexo Bravo"
+                onAction={() => {
+                  setShowOperationSelector(true);
+                  setShowHPTWizard(false);
+                  setShowAnexoBravoForm(true);
+                }}
+                actionIcon={Plus}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Operación</TableHead>
+                    <TableHead>Supervisor</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAnexos.map((anexo) => {
+                    const operacion = operaciones.find(op => op.id === anexo.operacion_id);
+                    return (
+                      <TableRow key={anexo.id}>
+                        <TableCell>
+                          <div className="font-medium">{anexo.codigo || anexo.folio}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
+                          </div>
+                        </TableCell>
+                        <TableCell>{anexo.supervisor}</TableCell>
+                        <TableCell>
+                          {anexo.fecha ? new Date(anexo.fecha).toLocaleDateString('es-CL') : 'Sin fecha'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={anexo.firmado ? 'default' : 'secondary'}>
+                            {anexo.firmado ? (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Firmado
+                              </div>
+                            ) : (
+                              anexo.estado || 'Borrador'
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="outline" size="sm">
+                              Ver
+                            </Button>
+                            {!anexo.firmado && (
+                              <Button variant="outline" size="sm">
+                                Editar
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Operation Selector Dialog */}
+      <FormDialog
+        variant="form"
+        size="xl"
+        open={showOperationSelector}
+        onOpenChange={setShowOperationSelector}
+      >
+        <HPTOperationSelector 
+          onOperacionSelected={handleOperationSelected}
+          selectedOperacionId={selectedOperacion}
+        />
+      </FormDialog>
+
+      {/* Create HPT Form Modal */}
+      <FormDialog
+        variant="wizard"
+        size="full"
+        open={showHPTWizard}
+        onOpenChange={setShowHPTWizard}
+      >
+        <HPTWizard 
+          operacionId={selectedOperacion}
+          onComplete={handleHPTComplete}
+          onCancel={() => setShowHPTWizard(false)}
+        />
+      </FormDialog>
+
+      {/* Create Anexo Bravo Form Modal */}
+      <FormDialog
+        variant="form"
+        size="full"
+        open={showAnexoBravoForm}
+        onOpenChange={setShowAnexoBravoForm}
+      >
+        
+            <FullAnexoBravoForm
+              operacionId={selectedOperacion}
+              onSubmit={async (data) => {
+                await createAnexoBravo(data);
+                setShowAnexoBravoForm(false);
+              }}
+              onCancel={() => setShowAnexoBravoForm(false)}
+            />
+        
+      </FormDialog>
     </MainLayout>
   );
 };
 
-export default BitacorasSupervisor;
+export default BitacorasSupervisorPage;

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useHPTWizard } from '@/hooks/useHPTWizard';
-import { ModularFormValidator } from '@/components/validation/ModularFormValidator';
 import { HPTOperationSelector } from './HPTOperationSelector';
 import { HPTWizardStep1 } from './HPTWizardStep1';
 import { HPTWizardStep2 } from './HPTWizardStep2';
@@ -15,7 +14,6 @@ import { HPTWizardStep5 } from './HPTWizardStep5';
 import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { useAuthRoles } from '@/hooks/useAuthRoles';
 import { supabase } from '@/integrations/supabase/client';
-import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
 
 interface HPTWizardCompleteProps {
   operacionId?: string;
@@ -31,10 +29,8 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   onCancel
 }) => {
   const { permissions } = useAuthRoles();
-  const { equipos } = useEquiposBuceoEnhanced();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
   const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
-  const [validationPassed, setValidationPassed] = useState(false);
 
   const {
     currentStep,
@@ -67,7 +63,6 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
         if (error) throw error;
 
         updateData({
-          codigo: `HPT-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
           centro_trabajo_nombre: operacion.centros?.nombre || '',
           descripcion_tarea: operacion.tareas || ''
@@ -96,8 +91,8 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
         estado: 'firmado'
       };
       const result = await submitHPT(finalData);
-      if (onComplete && result?.id) {
-        onComplete(result.id);
+      if (onComplete && result) {
+        onComplete(result);
       }
     } catch (error) {
       console.error('Error submitting HPT:', error);
@@ -107,15 +102,15 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <HPTWizardStep1 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep1 data={data} updateData={updateData} />;
       case 2:
-        return <HPTWizardStep2 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep2 data={data} updateData={updateData} />;
       case 3:
-        return <HPTWizardStep3 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep3 data={data} updateData={updateData} />;
       case 4:
-        return <HPTWizardStep4 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep4 data={data} updateData={updateData} />;
       case 5:
-        return <HPTWizardStep5 data={data} onUpdate={updateData} />;
+        return <HPTWizardStep5 data={data} updateData={updateData} />;
       default:
         return null;
     }
@@ -171,7 +166,6 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
                 key={step.id}
                 variant={step.id === currentStep ? "default" : "outline"}
                 size="sm"
-                onClick={() => {/* Navigate to step logic */}}
                 className="h-auto p-2 flex flex-col items-center gap-1"
               >
                 <div className="flex items-center gap-1">

@@ -1,81 +1,39 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, X, AlertTriangle, CheckCircle } from "lucide-react";
-import { useOperaciones } from "@/hooks/useOperaciones";
-import { useSitios } from "@/hooks/useSitios";
+import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { useCentros } from "@/hooks/useCentros";
+import { useContratistas } from "@/hooks/useContratistas";
 import { useToast } from "@/hooks/use-toast";
-import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
-import { EnterpriseSelectionResult } from "@/hooks/useEnterpriseContext";
-import { useEnterpriseModuleAccess } from "@/hooks/useEnterpriseModuleAccess";
 
 interface CreateOperacionFormProps {
-  onClose: () => void;
+  onSubmit: (data: any) => Promise<void>;
+  onCancel: () => void;
 }
 
-export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
+export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormProps) => {
   const { toast } = useToast();
-  const { createOperacion } = useOperaciones();
-  const { sitios } = useSitios();
-  const { getModulesForCompany } = useEnterpriseModuleAccess();
+  const { salmoneras } = useSalmoneras();
+  const { centros } = useCentros();
+  const { contratistas } = useContratistas();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
-    sitio_id: '',
+    centro_id: '',
+    salmonera_id: '',
+    contratista_id: '',
     fecha_inicio: '',
     fecha_fin: '',
-    tareas: ''
+    tareas: '',
+    estado: 'activa'
   });
-  
-  const [enterpriseSelection, setEnterpriseSelection] = useState<EnterpriseSelectionResult | null>(null);
-  const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [validatingModules, setValidatingModules] = useState(false);
-  const [canCreateOperation, setCanCreateOperation] = useState(false);
-
-  // Cargar módulos cuando se selecciona empresa
-  useEffect(() => {
-    const loadEnterpriseModules = async () => {
-      if (!enterpriseSelection) {
-        setEnterpriseModules(null);
-        setCanCreateOperation(false);
-        return;
-      }
-
-      setValidatingModules(true);
-      try {
-        const companyId = enterpriseSelection.salmonera_id || enterpriseSelection.contratista_id;
-        const companyType = enterpriseSelection.salmonera_id ? 'salmonera' : 'contratista';
-        
-        if (companyId && companyType) {
-          const modules = await getModulesForCompany(companyId, companyType);
-          setEnterpriseModules(modules);
-          
-          // Solo las salmoneras pueden crear operaciones planificadas
-          // Los contratistas no deberían crear operaciones, solo inmersiones
-          if (companyType === 'salmonera') {
-            setCanCreateOperation(modules.hasPlanning);
-          } else {
-            setCanCreateOperation(false);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading enterprise modules:', error);
-        setEnterpriseModules(null);
-        setCanCreateOperation(false);
-      } finally {
-        setValidatingModules(false);
-      }
-    };
-
-    loadEnterpriseModules();
-  }, [enterpriseSelection, getModulesForCompany]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,52 +47,28 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
       return;
     }
 
-    if (!enterpriseSelection) {
-      toast({
-        title: "Selección empresarial requerida",
-        description: "Debe seleccionar el contexto empresarial para la operación.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!canCreateOperation) {
-      toast({
-        title: "Módulo de planificación requerido",
-        description: "La empresa seleccionada no tiene el módulo de planificación activo. No se pueden crear operaciones.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      const operacionData = {
-        codigo: formData.codigo,
-        nombre: formData.nombre,
-        sitio_id: formData.sitio_id || null,
-        salmonera_id: enterpriseSelection.salmonera_id,
-        contratista_id: enterpriseSelection.contratista_id,
-        fecha_inicio: formData.fecha_inicio,
+      const dataToSubmit = {
+        ...formData,
+        centro_id: formData.centro_id || null,
+        salmonera_id: formData.salmonera_id || null,
+        contratista_id: formData.contratista_id || null,
         fecha_fin: formData.fecha_fin || null,
         tareas: formData.tareas || null,
-        estado: 'activa' as const
       };
 
-      await createOperacion(operacionData);
-      
+      await onSubmit(dataToSubmit);
       toast({
         title: "Operación creada",
-        description: `La operación "${formData.nombre}" ha sido creada exitosamente.`,
+        description: "La operación ha sido creada exitosamente.",
       });
-      
-      onClose();
     } catch (error) {
       console.error('Error creating operation:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la operación. Inténtalo de nuevo.",
+        description: "No se pudo crear la operación.",
         variant: "destructive",
       });
     } finally {
@@ -149,28 +83,10 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
     }));
   };
 
-  // Filtrar sitios según la salmonera seleccionada
-  const filteredSitios = sitios.filter(sitio => 
-    !enterpriseSelection?.salmonera_id || sitio.salmonera_id === enterpriseSelection.salmonera_id
-  );
-
   return (
-    <Card className="ios-card max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            Nueva Operación
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <CardTitle>Nueva Operación</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -181,87 +97,100 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
                 id="codigo"
                 value={formData.codigo}
                 onChange={(e) => handleChange('codigo', e.target.value)}
-                className="ios-input"
-                placeholder="Ej: OP-2024-001"
                 required
               />
             </div>
             
             <div>
-              <Label htmlFor="sitio_id">Sitio</Label>
-              <select
-                id="sitio_id"
-                value={formData.sitio_id}
-                onChange={(e) => handleChange('sitio_id', e.target.value)}
-                className="ios-input w-full"
-                disabled={!enterpriseSelection?.salmonera_id}
+              <Label htmlFor="estado">Estado *</Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => handleChange('estado', value)}
               >
-                <option value="">Seleccionar sitio</option>
-                {filteredSitios.map(sitio => (
-                  <option key={sitio.id} value={sitio.id}>
-                    {sitio.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activa">Activa</SelectItem>
+                  <SelectItem value="pausada">Pausada</SelectItem>
+                  <SelectItem value="completada">Completada</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="nombre">Nombre de la Operación *</Label>
+            <Label htmlFor="nombre">Nombre *</Label>
             <Input
               id="nombre"
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
-              className="ios-input"
-              placeholder="Describe la operación..."
               required
             />
           </div>
 
-          <EnterpriseSelector
-            onSelectionChange={setEnterpriseSelection}
-            showCard={false}
-            title="Contexto Empresarial"
-            description="Seleccione las empresas involucradas en esta operación"
-          />
-
-          {/* Validación de módulos */}
-          {enterpriseSelection && (
-            <div className="space-y-2">
-              {validatingModules && (
-                <Alert>
-                  <Calendar className="h-4 w-4" />
-                  <AlertDescription>
-                    Validando módulos de la empresa seleccionada...
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {enterpriseModules && !validatingModules && (
-                <>
-                  {canCreateOperation ? (
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">
-                        <strong>Módulo de planificación activo.</strong> Esta empresa puede crear operaciones planificadas.
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Módulo de planificación no disponible.</strong> 
-                        {enterpriseSelection.contratista_id 
-                          ? " Los contratistas no pueden crear operaciones, solo inmersiones asociadas."
-                          : " Esta salmonera no tiene el módulo de planificación activo."
-                        }
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </>
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="salmonera_id">Salmonera</Label>
+              <Select
+                value={formData.salmonera_id || "empty"}
+                onValueChange={(value) => handleChange('salmonera_id', value === 'empty' ? '' : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar salmonera" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="empty">Sin asignar</SelectItem>
+                  {salmoneras.map((salmonera) => (
+                    <SelectItem key={salmonera.id} value={salmonera.id}>
+                      {salmonera.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+
+            <div>
+              <Label htmlFor="centro_id">Centro</Label>
+              <Select
+                value={formData.centro_id || "empty"}
+                onValueChange={(value) => handleChange('centro_id', value === 'empty' ? '' : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar centro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="empty">Sin asignar</SelectItem>
+                  {centros.map((centro) => (
+                    <SelectItem key={centro.id} value={centro.id}>
+                      {centro.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="contratista_id">Contratista</Label>
+            <Select
+              value={formData.contratista_id || "empty"}
+              onValueChange={(value) => handleChange('contratista_id', value === 'empty' ? '' : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar contratista" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="empty">Sin asignar</SelectItem>
+                {contratistas.map((contratista) => (
+                  <SelectItem key={contratista.id} value={contratista.id}>
+                    {contratista.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -271,11 +200,10 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
                 type="date"
                 value={formData.fecha_inicio}
                 onChange={(e) => handleChange('fecha_inicio', e.target.value)}
-                className="ios-input"
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="fecha_fin">Fecha de Fin</Label>
               <Input
@@ -283,8 +211,6 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
                 type="date"
                 value={formData.fecha_fin}
                 onChange={(e) => handleChange('fecha_fin', e.target.value)}
-                className="ios-input"
-                min={formData.fecha_inicio}
               />
             </div>
           </div>
@@ -295,27 +221,16 @@ export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
               id="tareas"
               value={formData.tareas}
               onChange={(e) => handleChange('tareas', e.target.value)}
-              className="ios-input min-h-[100px]"
-              placeholder="Describa las tareas a realizar en esta operación..."
+              placeholder="Descripción detallada de las tareas a realizar..."
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-              className="ios-button"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !canCreateOperation || validatingModules}
-              className="ios-button bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-            >
+          <div className="flex gap-3 pt-4">
+            <Button type="submit" disabled={isLoading} className="flex-1">
               {isLoading ? 'Creando...' : 'Crear Operación'}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
             </Button>
           </div>
         </form>

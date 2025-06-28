@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Building, Anchor, Eye, Edit, Trash2 } from "lucide-react";
-import { Sitio } from "@/hooks/useSitios";
+import type { Centro } from "@/hooks/useCentros";
 
 interface SitioDetailsProps {
-  sitio: Sitio;
+  sitio: Centro;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;

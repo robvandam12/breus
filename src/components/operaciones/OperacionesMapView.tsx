@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, Building, Eye, Settings, Trash2, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSitios } from "@/hooks/useSitios";
+import { useCentros } from "@/hooks/useCentros";
 import { LeafletMap } from "@/components/ui/leaflet-map";
 
 interface OperacionesMapViewProps {
@@ -23,7 +23,7 @@ export const OperacionesMapView = ({
   onEdit, 
   onDelete 
 }: OperacionesMapViewProps) => {
-  const { sitios } = useSitios();
+  const { centros } = useCentros();
   const [regionFilter, setRegionFilter] = useState<string>('all');
 
   // Función para obtener color según estado de operación
@@ -44,16 +44,16 @@ export const OperacionesMapView = ({
 
   // Crear marcadores para las operaciones con colores según estado
   const operacionMarkers = Array.isArray(operaciones) ? operaciones.map((operacion) => {
-    if (!operacion || !operacion.sitio_id) return null;
+    if (!operacion || !operacion.centro_id) return null;
     
-    const sitio = Array.isArray(sitios) ? sitios.find(s => s?.id === operacion.sitio_id) : null;
-    if (!sitio || typeof sitio.coordenadas_lat !== 'number' || typeof sitio.coordenadas_lng !== 'number') return null;
+    const centro = Array.isArray(centros) ? centros.find(s => s?.id === operacion.centro_id) : null;
+    if (!centro || typeof centro.coordenadas_lat !== 'number' || typeof centro.coordenadas_lng !== 'number') return null;
     
     return {
-      lat: sitio.coordenadas_lat,
-      lng: sitio.coordenadas_lng,
+      lat: centro.coordenadas_lat,
+      lng: centro.coordenadas_lng,
       title: operacion.nombre || 'Operación sin nombre',
-      description: `${operacion.codigo || 'Sin código'} - ${operacion.estado || 'Sin estado'}\nSitio: ${sitio.nombre || 'Sin nombre'}`,
+      description: `${operacion.codigo || 'Sin código'} - ${operacion.estado || 'Sin estado'}\nCentro: ${centro.nombre || 'Sin nombre'}`,
       color: getEstadoColor(operacion.estado),
       operacion: operacion
     };
@@ -63,12 +63,12 @@ export const OperacionesMapView = ({
   const filteredMarkers = regionFilter === 'all' 
     ? operacionMarkers 
     : operacionMarkers.filter(marker => {
-        const sitio = sitios.find(s => s?.id === marker.operacion?.sitio_id);
-        return sitio?.region === regionFilter;
+        const centro = centros.find(s => s?.id === marker.operacion?.centro_id);
+        return centro?.region === regionFilter;
       });
 
   // Obtener regiones únicas
-  const regiones = Array.from(new Set(sitios.map(s => s?.region).filter(Boolean)));
+  const regiones = Array.from(new Set(centros.map(s => s?.region).filter(Boolean)));
 
   // Calcular centro del mapa basado en las operaciones filtradas
   const getMapCenter = () => {
@@ -157,13 +157,13 @@ export const OperacionesMapView = ({
         {Array.isArray(operaciones) ? operaciones
           .filter(operacion => {
             if (regionFilter === 'all') return true;
-            const sitio = sitios.find(s => s?.id === operacion.sitio_id);
-            return sitio?.region === regionFilter;
+            const centro = centros.find(s => s?.id === operacion.centro_id);
+            return centro?.region === regionFilter;
           })
           .map((operacion) => {
           if (!operacion) return null;
           
-          const sitio = Array.isArray(sitios) ? sitios.find(s => s?.id === operacion.sitio_id) : null;
+          const centro = Array.isArray(centros) ? centros.find(s => s?.id === operacion.centro_id) : null;
           return (
             <Card key={operacion.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
@@ -178,17 +178,17 @@ export const OperacionesMapView = ({
                     <Calendar className="w-3 h-3" />
                     <span>{operacion.fecha_inicio ? new Date(operacion.fecha_inicio).toLocaleDateString('es-CL') : 'Sin fecha'}</span>
                   </div>
-                  {sitio && (
+                  {centro && (
                     <div className="flex items-center gap-1">
                       <Building className="w-3 h-3" />
-                      <span>{sitio.nombre || 'Sin nombre'}</span>
+                      <span>{centro.nombre || 'Sin nombre'}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     <span>
-                      {sitio && typeof sitio.coordenadas_lat === 'number' && typeof sitio.coordenadas_lng === 'number'
-                        ? `${sitio.coordenadas_lat.toFixed(4)}, ${sitio.coordenadas_lng.toFixed(4)}`
+                      {centro && typeof centro.coordenadas_lat === 'number' && typeof centro.coordenadas_lng === 'number'
+                        ? `${centro.coordenadas_lat.toFixed(4)}, ${centro.coordenadas_lng.toFixed(4)}`
                         : 'Sin coordenadas'
                       }
                     </span>

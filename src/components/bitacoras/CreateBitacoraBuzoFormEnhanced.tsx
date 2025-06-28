@@ -1,301 +1,325 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, Building, MapPin, Anchor, Save, X } from 'lucide-react';
-import { BitacoraBuzoFormData } from '@/hooks/useBitacorasBuzo';
-import { useInmersiones, type Inmersion } from '@/hooks/useInmersiones';
-import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useOperaciones } from "@/hooks/useOperaciones";
+import { useCentros } from "@/hooks/useCentros";
 
-interface CreateBitacoraBuzoFormEnhancedProps {
-  onSubmit: (data: BitacoraBuzoFormData) => void;
+interface CreateBitacoraBuzoFormProps {
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
 }
 
-export const CreateBitacoraBuzoFormEnhanced: React.FC<CreateBitacoraBuzoFormEnhancedProps> = ({
-  onSubmit,
-  onCancel
-}) => {
+export const CreateBitacoraBuzoFormEnhanced = ({ onSubmit, onCancel }: CreateBitacoraBuzoFormProps) => {
+  const { toast } = useToast();
   const { profile } = useAuth();
-  const { inmersiones, isLoading: loadingInmersiones } = useInmersiones();
-  
-  const [selectedInmersionId, setSelectedInmersionId] = useState('');
-  const [selectedInmersion, setSelectedInmersion] = useState<Inmersion | null>(null);
-  const [formData, setFormData] = useState<Partial<BitacoraBuzoFormData>>({
-    codigo: `BIT-BUZ-${Date.now()}`,
-    inmersion_id: '',
+  const { operaciones } = useOperaciones();
+  const { centros } = useCentros();
+
+  const [formData, setFormData] = useState({
+    operacion_id: '',
+    centro_id: '',
     fecha: new Date().toISOString().split('T')[0],
-    buzo_id: profile?.id,
-    buzo: profile ? `${profile.nombre || ''} ${profile.apellido || ''}`.trim() : '',
-    profundidad_maxima: 0,
-    trabajos_realizados: '',
-    estado_fisico_post: '',
-    observaciones_tecnicas: ''
+    hora_inicio: '',
+    hora_fin: '',
+    nombre_faena: '',
+    codigo_faena: '',
+    profundidad_maxima: '',
+    tiempo_fondo: '',
+    equipo_utilizado: '',
+    descripcion_trabajo: '',
+    condiciones_climaticas: '',
+    incidentes_destacables: '',
+    nombre_supervisor: '',
+    firma_supervisor: '',
+    nombre_encargado_sst: '',
+    firma_encargado_sst: '',
   });
 
-  useEffect(() => {
-    if (selectedInmersionId) {
-      const inmersion = inmersiones.find(i => i.inmersion_id === selectedInmersionId);
-      setSelectedInmersion(inmersion || null);
-      if (inmersion) {
-        setFormData(prev => ({
-          ...prev,
-          inmersion_id: selectedInmersionId,
-          fecha: inmersion.fecha_inmersion,
-          profundidad_maxima: inmersion.profundidad_max || 0
-        }));
-      }
-    }
-  }, [selectedInmersionId, inmersiones]);
+  const [operacion, setOperacion] = useState<any>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (formData.operacion_id) {
+      const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
+      setOperacion(selectedOperacion);
+    } else {
+      setOperacion(null);
+    }
+  }, [formData.operacion_id, operaciones]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedInmersion || !formData.trabajos_realizados || !formData.estado_fisico_post) {
+
+    if (!formData.operacion_id || !formData.fecha || !formData.hora_inicio || !formData.hora_fin) {
+      toast({
+        title: "Campos requeridos",
+        description: "Operación, fecha, hora de inicio y fin son obligatorios.",
+        variant: "destructive",
+      });
       return;
     }
 
-    onSubmit(formData as BitacoraBuzoFormData);
+    try {
+      const dataToSubmit = {
+        ...formData,
+        buzo_id: profile?.id,
+        nombre_buzo: `${profile?.nombre} ${profile?.apellido}`,
+      };
+
+      await onSubmit(dataToSubmit);
+      toast({
+        title: "Bitácora creada",
+        description: "La bitácora ha sido creada exitosamente.",
+      });
+      onCancel();
+    } catch (error) {
+      console.error('Error creating bitacora:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (loadingInmersiones) {
-    return (
-      <div className="p-6 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p>Cargando inmersiones...</p>
-      </div>
-    );
-  }
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Anchor className="w-5 h-5 text-teal-600" />
-            Nueva Bitácora de Buzo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Selección de Inmersión */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                1. Seleccionar Inmersión
-              </h3>
-              <div>
-                <Label htmlFor="inmersion_id">Inmersión</Label>
-                <Select value={selectedInmersionId} onValueChange={setSelectedInmersionId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar inmersión..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inmersiones.map((inmersion) => (
-                      <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{inmersion.codigo}</Badge>
-                          <span>{inmersion.objetivo}</span>
-                          <span className="text-sm text-gray-500">
-                            ({new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')})
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+    <Card className="max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle>Nueva Bitácora de Buceo</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="operacion_id">Operación *</Label>
+            <Select
+              value={formData.operacion_id}
+              onValueChange={(value) => handleChange('operacion_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar operación" />
+              </SelectTrigger>
+              <SelectContent>
+                {operaciones.map((op) => (
+                  <SelectItem key={op.id} value={op.id}>
+                    {op.codigo} - {op.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Información de la operación */}
+          {operacion && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Operación:</strong> {operacion.codigo} - {operacion.nombre}
+                {operacion.centros && ` | Centro: ${operacion.centros.nombre}`}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fecha">Fecha *</Label>
+              <Input
+                id="fecha"
+                type="date"
+                value={formData.fecha}
+                onChange={(e) => handleChange('fecha', e.target.value)}
+                required
+              />
             </div>
 
-            {selectedInmersion && (
-              <>
-                {/* Información de la Inmersión */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                    2. Información de la Inmersión
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Empresa:</span>
-                        <span>{selectedInmersion.operacion?.salmoneras?.nombre || selectedInmersion.operacion?.contratistas?.nombre || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Sitio:</span>
-                        <span>{selectedInmersion.operacion?.sitios?.nombre || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Fecha:</span>
-                        <span>{new Date(selectedInmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Horario:</span>
-                        <span>{selectedInmersion.hora_inicio} - {selectedInmersion.hora_fin || 'En curso'}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Supervisor:</span>
-                        <span>{selectedInmersion.supervisor}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Anchor className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium">Buzo Principal:</span>
-                        <span>{selectedInmersion.buzo_principal}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Objetivo:</span>
-                        <p className="text-sm text-gray-600 mt-1">{selectedInmersion.objetivo}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <div>
+              <Label htmlFor="centro_id">Centro</Label>
+              <Select
+                value={formData.centro_id}
+                onValueChange={(value) => handleChange('centro_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar centro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {centros.map((centro) => (
+                    <SelectItem key={centro.id} value={centro.id}>
+                      {centro.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                {/* Condiciones de Buceo */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                    3. Condiciones de Buceo (Prellenadas por Supervisor)
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <Label className="text-sm font-medium">Profundidad Máxima</Label>
-                      <div className="text-lg font-bold text-blue-600">{selectedInmersion.profundidad_max}m</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Temperatura Agua</Label>
-                      <div className="text-lg font-bold text-blue-600">{selectedInmersion.temperatura_agua}°C</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Visibilidad</Label>
-                      <div className="text-lg font-bold text-blue-600">{selectedInmersion.visibilidad}m</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Corriente</Label>
-                      <div className="text-lg font-bold text-blue-600">{selectedInmersion.corriente}</div>
-                    </div>
-                  </div>
-                </div>
+            <div>
+              <Label htmlFor="hora_inicio">Hora Inicio *</Label>
+              <Input
+                id="hora_inicio"
+                type="time"
+                value={formData.hora_inicio}
+                onChange={(e) => handleChange('hora_inicio', e.target.value)}
+                required
+              />
+            </div>
 
-                <Separator />
+            <div>
+              <Label htmlFor="hora_fin">Hora Fin *</Label>
+              <Input
+                id="hora_fin"
+                type="time"
+                value={formData.hora_fin}
+                onChange={(e) => handleChange('hora_fin', e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
-                {/* Datos del Buzo */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                    4. Registro del Buzo
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="fecha">Fecha del Registro</Label>
-                      <Input
-                        id="fecha"
-                        type="date"
-                        value={formData.fecha}
-                        onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="profundidad_maxima">Profundidad Máxima Alcanzada (m)</Label>
-                      <Input
-                        id="profundidad_maxima"
-                        type="number"
-                        step="0.1"
-                        value={formData.profundidad_maxima}
-                        onChange={(e) => setFormData({...formData, profundidad_maxima: parseFloat(e.target.value) || 0})}
-                        max={selectedInmersion.profundidad_max || undefined}
-                        required
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Máximo permitido: {selectedInmersion.profundidad_max}m
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre_faena">Nombre de la Faena</Label>
+              <Input
+                id="nombre_faena"
+                type="text"
+                value={formData.nombre_faena}
+                onChange={(e) => handleChange('nombre_faena', e.target.value)}
+              />
+            </div>
 
-                {/* Trabajos Realizados */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                    5. Trabajos Realizados
-                  </h3>
-                  <div>
-                    <Label htmlFor="trabajos_realizados">Descripción Detallada de Trabajos</Label>
-                    <Textarea
-                      id="trabajos_realizados"
-                      value={formData.trabajos_realizados}
-                      onChange={(e) => setFormData({...formData, trabajos_realizados: e.target.value})}
-                      placeholder="Describe detalladamente los trabajos realizados durante la inmersión..."
-                      className="min-h-[120px]"
-                      required
-                    />
-                  </div>
-                </div>
+            <div>
+              <Label htmlFor="codigo_faena">Código de la Faena</Label>
+              <Input
+                id="codigo_faena"
+                type="text"
+                value={formData.codigo_faena}
+                onChange={(e) => handleChange('codigo_faena', e.target.value)}
+              />
+            </div>
+          </div>
 
-                {/* Estado Físico Post-Inmersión */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-teal-700 border-b pb-2">
-                    6. Estado Físico Post-Inmersión
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="estado_fisico_post">Estado Físico</Label>
-                      <Select 
-                        value={formData.estado_fisico_post} 
-                        onValueChange={(value) => setFormData({...formData, estado_fisico_post: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar estado..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="excelente">Excelente</SelectItem>
-                          <SelectItem value="bueno">Bueno</SelectItem>
-                          <SelectItem value="regular">Regular</SelectItem>
-                          <SelectItem value="malo">Malo</SelectItem>
-                          <SelectItem value="requiere_atencion">Requiere Atención Médica</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="observaciones_tecnicas">Observaciones Técnicas</Label>
-                      <Textarea
-                        id="observaciones_tecnicas"
-                        value={formData.observaciones_tecnicas}
-                        onChange={(e) => setFormData({...formData, observaciones_tecnicas: e.target.value})}
-                        placeholder="Observaciones técnicas, incidentes, recomendaciones..."
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
+              <Input
+                id="profundidad_maxima"
+                type="number"
+                value={formData.profundidad_maxima}
+                onChange={(e) => handleChange('profundidad_maxima', e.target.value)}
+              />
+            </div>
 
-                {/* Acciones */}
-                <div className="flex gap-3 pt-6">
-                  <Button 
-                    type="submit" 
-                    className="flex-1 bg-teal-600 hover:bg-teal-700"
-                    disabled={!formData.trabajos_realizados || !formData.estado_fisico_post}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Crear Bitácora
-                  </Button>
-                  <Button type="button" variant="outline" onClick={onCancel}>
-                    <X className="w-4 h-4 mr-2" />
-                    Cancelar
-                  </Button>
-                </div>
-              </>
-            )}
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            <div>
+              <Label htmlFor="tiempo_fondo">Tiempo en el Fondo (min)</Label>
+              <Input
+                id="tiempo_fondo"
+                type="number"
+                value={formData.tiempo_fondo}
+                onChange={(e) => handleChange('tiempo_fondo', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="equipo_utilizado">Equipo Utilizado</Label>
+            <Input
+              id="equipo_utilizado"
+              type="text"
+              value={formData.equipo_utilizado}
+              onChange={(e) => handleChange('equipo_utilizado', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="descripcion_trabajo">Descripción del Trabajo</Label>
+            <Textarea
+              id="descripcion_trabajo"
+              value={formData.descripcion_trabajo}
+              onChange={(e) => handleChange('descripcion_trabajo', e.target.value)}
+              placeholder="Describa detalladamente el trabajo realizado..."
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="condiciones_climaticas">Condiciones Climáticas</Label>
+            <Textarea
+              id="condiciones_climaticas"
+              value={formData.condiciones_climaticas}
+              onChange={(e) => handleChange('condiciones_climaticas', e.target.value)}
+              placeholder="Describa las condiciones climáticas durante la inmersión..."
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="incidentes_destacables">Incidentes Destacables</Label>
+            <Textarea
+              id="incidentes_destacables"
+              value={formData.incidentes_destacables}
+              onChange={(e) => handleChange('incidentes_destacables', e.target.value)}
+              placeholder="Describa cualquier incidente o anomalía ocurrida durante la inmersión..."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre_supervisor">Nombre del Supervisor</Label>
+              <Input
+                id="nombre_supervisor"
+                type="text"
+                value={formData.nombre_supervisor}
+                onChange={(e) => handleChange('nombre_supervisor', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="firma_supervisor">Firma del Supervisor</Label>
+              <Input
+                id="firma_supervisor"
+                type="text"
+                value={formData.firma_supervisor}
+                onChange={(e) => handleChange('firma_supervisor', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre_encargado_sst">Nombre del Encargado SST</Label>
+              <Input
+                id="nombre_encargado_sst"
+                type="text"
+                value={formData.nombre_encargado_sst}
+                onChange={(e) => handleChange('nombre_encargado_sst', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="firma_encargado_sst">Firma del Encargado SST</Label>
+              <Input
+                id="firma_encargado_sst"
+                type="text"
+                value={formData.firma_encargado_sst}
+                onChange={(e) => handleChange('firma_encargado_sst', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button type="submit">Crear Bitácora</Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

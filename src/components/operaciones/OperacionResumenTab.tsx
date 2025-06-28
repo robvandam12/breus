@@ -23,7 +23,7 @@ export const OperacionResumenTab: React.FC<OperacionResumenTabProps> = ({ operac
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="text-sm">Sitio: {operacion.sitio_nombre || 'No asignado'}</span>
+            <span className="text-sm">Centro: {operacion.centro_nombre || 'No asignado'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-400" />
