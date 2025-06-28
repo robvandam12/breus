@@ -15,12 +15,34 @@ export interface ValidationResult {
   errors: string[];
   warnings: string[];
   contextData?: any;
+  canProceed?: boolean;
 }
 
-export const useContextualValidator = (initialContext?: ValidationContext) => {
+interface ContextualValidatorState {
+  isValid: boolean;
+  canProceed: boolean;
+  moduleActive: boolean;
+  warnings: string[];
+  errors: string[];
+  isValidating: boolean;
+  isOperativaDirecta: boolean;
+  validationState: 'pending' | 'valid' | 'invalid';
+}
+
+export const useContextualValidator = (operationId?: string) => {
   const { profile } = useAuth();
   const { actions } = useEnterpriseContext();
   const [validationHistory, setValidationHistory] = useState<ValidationResult[]>([]);
+  const [state, setState] = useState<ContextualValidatorState>({
+    isValid: false,
+    canProceed: false,
+    moduleActive: true, // Asumimos que está activo por defecto
+    warnings: [],
+    errors: [],
+    isValidating: false,
+    isOperativaDirecta: false,
+    validationState: 'pending'
+  });
 
   const validateEnterpriseConsistency = useCallback((
     enterpriseContext: EnterpriseSelectionResult,
@@ -57,7 +79,6 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
         break;
       
       case 'buzo':
-        // Los buzos solo pueden crear bitácoras personales
         if (targetData.type !== 'bitacora_buzo') {
           errors.push('Solo puede crear bitácoras personales');
         }
@@ -66,6 +87,7 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
 
     return {
       isValid: errors.length === 0,
+      canProceed: errors.length === 0,
       errors,
       warnings,
       contextData: {
@@ -83,9 +105,6 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Esta validación se podría expandir con consultas a la base de datos
-    // para verificar que la operación existe y el usuario tiene acceso
-
     if (!operationId) {
       errors.push('ID de operación requerido');
     }
@@ -96,6 +115,7 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
 
     return {
       isValid: errors.length === 0,
+      canProceed: errors.length === 0,
       errors,
       warnings,
       contextData: {
@@ -128,12 +148,14 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
         break;
 
       case 'hpt':
+      case 'create_hpt':
         if (!formData.codigo) errors.push('Código HPT requerido');
         if (!formData.operacion_id) errors.push('Operación asociada requerida');
         if (!formData.supervisor) errors.push('Supervisor requerido');
         break;
 
       case 'anexo_bravo':
+      case 'create_anexo_bravo':
         if (!formData.codigo) errors.push('Código Anexo Bravo requerido');
         if (!formData.operacion_id) errors.push('Operación asociada requerida');
         if (!formData.supervisor) errors.push('Supervisor requerido');
@@ -164,6 +186,7 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
 
     const result: ValidationResult = {
       isValid: errors.length === 0,
+      canProceed: errors.length === 0,
       errors,
       warnings,
       contextData: {
@@ -175,24 +198,17 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
     };
 
     // Guardar en historial
-    setValidationHistory(prev => [...prev.slice(-9), result]); // Mantener últimas 10 validaciones
+    setValidationHistory(prev => [...prev.slice(-9), result]);
 
-    // Mostrar errores como toast si existen
-    if (errors.length > 0) {
-      toast({
-        title: "Errores de Validación",
-        description: errors.join(', '),
-        variant: "destructive",
-      });
-    }
-
-    // Mostrar advertencias como toast si existen
-    if (warnings.length > 0) {
-      toast({
-        title: "Advertencias de Validación",
-        description: warnings.join(', '),
-      });
-    }
+    // Actualizar estado
+    setState(prev => ({
+      ...prev,
+      isValid: result.isValid,
+      canProceed: result.canProceed || false,
+      errors,
+      warnings,
+      validationState: result.isValid ? 'valid' : 'invalid'
+    }));
 
     return result;
   }, [profile, validateEnterpriseConsistency]);
@@ -202,20 +218,54 @@ export const useContextualValidator = (initialContext?: ValidationContext) => {
     formData: any,
     enterpriseContext?: EnterpriseSelectionResult
   ): Promise<ValidationResult> => {
+    setState(prev => ({ ...prev, isValidating: true }));
+    
     return new Promise((resolve) => {
-      // Simular validación asíncrona (se podría expandir con llamadas a la API)
       setTimeout(() => {
         const result = validateFormData(formType, formData, enterpriseContext);
+        setState(prev => ({ ...prev, isValidating: false }));
         resolve(result);
       }, 100);
     });
   }, [validateFormData]);
 
+  const validateForInmersion = useCallback(async (operationId: string): Promise<ValidationResult> => {
+    setState(prev => ({ ...prev, isValidating: true }));
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const result: ValidationResult = {
+          isValid: !!operationId,
+          canProceed: !!operationId,
+          errors: operationId ? [] : ['ID de operación requerido'],
+          warnings: [],
+          contextData: { operationId }
+        };
+        
+        setState(prev => ({ 
+          ...prev, 
+          isValidating: false,
+          isValid: result.isValid,
+          canProceed: result.canProceed || false,
+          errors: result.errors,
+          warnings: result.warnings
+        }));
+        
+        resolve(result);
+      }, 100);
+    });
+  }, []);
+
   return {
+    // Propiedades del estado
+    ...state,
+    
+    // Métodos de validación
     validateEnterpriseConsistency,
     validateOperationAccess,
     validateFormData,
     validateBeforeSubmit,
+    validateForInmersion,
     validationHistory,
     clearValidationHistory: () => setValidationHistory([])
   };

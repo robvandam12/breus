@@ -67,8 +67,8 @@ export const CreateBitacoraBuzoFormCompleteWithInmersion = ({
     try {
       const bitacoraData: BitacoraBuzoFormData = {
         ...formData,
-        company_id: enterpriseSelection.salmonera_id,
-        company_type: 'salmonera'
+        empresa_nombre: enterpriseSelection.salmonera_id, // Mapear correctamente
+        // Remover company_id ya que no existe en BitacoraBuzoFormData
       };
 
       await onSubmit(bitacoraData);

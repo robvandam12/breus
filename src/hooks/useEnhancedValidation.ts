@@ -10,6 +10,16 @@ export interface ValidationConfig {
   validateOnChange?: boolean;
 }
 
+interface EnhancedValidationResult {
+  success: boolean;
+  result?: {
+    isValid: boolean;
+    canProceed: boolean;
+    errors: string[];
+    warnings: string[];
+  };
+}
+
 export const useEnhancedValidation = (config: ValidationConfig = {}) => {
   const {
     showToasts = true,
@@ -24,11 +34,21 @@ export const useEnhancedValidation = (config: ValidationConfig = {}) => {
   const validateWithErrorHandling = useCallback(async (
     formType: string,
     formData: any,
-    enterpriseContext?: EnterpriseSelectionResult
-  ) => {
+    enterpriseContextOrOptions?: EnterpriseSelectionResult | { showToast?: boolean }
+  ): Promise<EnhancedValidationResult> => {
     setIsValidating(true);
     
     try {
+      // Determinar si el tercer parámetro es enterpriseContext o opciones
+      let enterpriseContext: EnterpriseSelectionResult | undefined;
+      let options: { showToast?: boolean } = { showToast: showToasts };
+      
+      if (enterpriseContextOrOptions && 'salmonera_id' in enterpriseContextOrOptions) {
+        enterpriseContext = enterpriseContextOrOptions;
+      } else if (enterpriseContextOrOptions && 'showToast' in enterpriseContextOrOptions) {
+        options = { ...options, ...enterpriseContextOrOptions };
+      }
+
       const result = await contextualValidator.validateBeforeSubmit(
         formType,
         formData,
@@ -41,7 +61,15 @@ export const useEnhancedValidation = (config: ValidationConfig = {}) => {
         throw new Error(`Validación falló: ${result.errors.join(', ')}`);
       }
       
-      return result;
+      return {
+        success: true,
+        result: {
+          isValid: result.isValid,
+          canProceed: result.canProceed || result.isValid,
+          errors: result.errors,
+          warnings: result.warnings
+        }
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error de validación';
       
@@ -53,20 +81,26 @@ export const useEnhancedValidation = (config: ValidationConfig = {}) => {
         });
       }
       
-      throw error;
+      return {
+        success: false,
+        result: {
+          isValid: false,
+          canProceed: false,
+          errors: [errorMessage],
+          warnings: []
+        }
+      };
     } finally {
       setIsValidating(false);
     }
   }, [contextualValidator, strictMode, showToasts]);
 
   const validateOperationCode = useCallback((code: string): boolean => {
-    // Validación básica del código de operación
     const codePattern = /^[A-Z]{2,3}-\d{4}-\d{3,4}$/;
     return codePattern.test(code);
   }, []);
 
   const validateRUT = useCallback((rut: string): boolean => {
-    // Validación básica de RUT chileno
     const rutPattern = /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/;
     return rutPattern.test(rut);
   }, []);

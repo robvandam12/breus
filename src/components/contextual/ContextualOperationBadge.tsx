@@ -5,16 +5,33 @@ import { Building2, Users, Shield, AlertTriangle } from 'lucide-react';
 import { EnterpriseSelectionResult } from '@/hooks/useEnterpriseContext';
 
 interface ContextualOperationBadgeProps {
-  enterpriseContext: EnterpriseSelectionResult;
+  enterpriseContext?: EnterpriseSelectionResult;
+  operacionId?: string;
   showDetails?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export const ContextualOperationBadge: React.FC<ContextualOperationBadgeProps> = ({
   enterpriseContext,
+  operacionId,
   showDetails = false,
   size = 'md'
 }) => {
+  // Si solo tenemos operacionId, mostrar un badge básico
+  if (!enterpriseContext && operacionId) {
+    return (
+      <Badge variant="outline" className="flex items-center gap-1">
+        <Shield className="w-3 h-3" />
+        Operación: {operacionId.slice(0, 8)}...
+      </Badge>
+    );
+  }
+
+  // Si no tenemos contexto empresarial, no mostrar nada
+  if (!enterpriseContext) {
+    return null;
+  }
+
   const getModeColor = () => {
     switch (enterpriseContext.context_metadata.selection_mode) {
       case 'superuser': return 'bg-purple-100 text-purple-700';
