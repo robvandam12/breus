@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +35,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const { getModulesForCompany } = useEnterpriseModuleAccess();
   
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [showEnterpriseSelector, setShowEnterpriseSelector] = useState(true);
   const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
   const [canShowPlanningToggle, setCanShowPlanningToggle] = useState(false);
   
@@ -88,25 +88,26 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         }
       };
       setSelectedEnterprise(autoEnterprise);
+      setShowEnterpriseSelector(false);
     }
   }, [profile]);
 
   // Cargar módulos cuando se selecciona empresa
   useEffect(() => {
-    if (selectedEnterprise) {
+    if (selectedEnterprise && !showEnterpriseSelector) {
       loadEnterpriseModules();
     }
-  }, [selectedEnterprise]);
+  }, [selectedEnterprise, showEnterpriseSelector]);
 
   // Cargar operaciones cuando cambia contratista y se puede planificar
   useEffect(() => {
-    if (selectedEnterprise && canShowPlanningToggle && isPlanned) {
+    if (selectedEnterprise && !showEnterpriseSelector && canShowPlanningToggle && isPlanned) {
       const contratistaId = selectedEnterprise.contratista_id;
       if (contratistaId) {
         loadOperaciones(contratistaId);
       }
     }
-  }, [selectedEnterprise, canShowPlanningToggle, isPlanned]);
+  }, [selectedEnterprise, showEnterpriseSelector, canShowPlanningToggle, isPlanned]);
 
   const loadEnterpriseModules = async () => {
     if (!selectedEnterprise) return;
@@ -226,8 +227,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const canShowOperacionSelector = isPlanned && selectedEnterprise?.contratista_id && operaciones.length > 0;
   const shouldShowOperacionWarning = isPlanned && selectedEnterprise?.contratista_id && operaciones.length === 0;
 
-  // Solo mostrar selector de empresa para superusers
-  if (profile?.role === 'superuser' && !selectedEnterprise) {
+  // Mostrar selector de empresa para superusers
+  if (profile?.role === 'superuser' && showEnterpriseSelector) {
     return (
       <Card className="w-full max-w-4xl">
         <CardHeader>
@@ -235,13 +236,26 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         </CardHeader>
         <CardContent>
           <EnterpriseSelector
-            onSelectionChange={setSelectedEnterprise}
+            onSelectionChange={(result) => {
+              setSelectedEnterprise(result);
+              // No ocultar automáticamente el selector
+            }}
             showCard={false}
             title="Contexto Empresarial"
             description="Seleccione la empresa para la cual crear la inmersión"
             requiredModule="planning_operations"
             showModuleInfo={true}
           />
+          {selectedEnterprise && (
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={() => setShowEnterpriseSelector(false)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Continuar con {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -283,6 +297,28 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
       </CardHeader>
 
       <CardContent>
+        {/* Mostrar botón para cambiar empresa solo para superuser */}
+        {profile?.role === 'superuser' && selectedEnterprise && !showEnterpriseSelector && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>
+                Empresa: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowEnterpriseSelector(true);
+                  setSelectedEnterprise(null);
+                }}
+                className="text-blue-600 hover:text-blue-800 h-auto p-1"
+              >
+                Cambiar
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Alerta si no tiene módulo de planning */}
         {enterpriseModules && !enterpriseModules.hasPlanning && (
           <Alert className="mb-6">

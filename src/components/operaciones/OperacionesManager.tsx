@@ -1,221 +1,253 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
-import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
-import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
-import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
+import { 
+  Search, 
+  Plus, 
+  Calendar,
+  Building2,
+  Users,
+  MapPin,
+  MoreHorizontal,
+  Filter
+} from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { List, MapPin, Grid3X3 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
-import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { OperationFlowWizard } from "./OperationFlowWizard";
+import { CreateOperacionForm } from "./CreateOperacionForm";
+import { WizardDialog } from "@/components/forms/WizardDialog";
 
 export const OperacionesManager = () => {
-  const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const { 
-    operaciones, 
-    isLoading,
-    updateOperacion, 
-    deleteOperacion, 
-    checkCanDelete,
-    refetch
-  } = useOperaciones();
-  
-  const {
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    filteredOperaciones
-  } = useOperacionesFilters(operaciones);
+  const { operaciones, isLoading } = useOperaciones();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("table");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Transform operaciones to match expected interface
-  const transformedOperaciones = filteredOperaciones.map(op => ({
-    ...op,
-    tipo_trabajo: op.tareas || 'Sin especificar'
-  }));
+  const filteredOperaciones = operaciones.filter(operacion =>
+    operacion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    operacion.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleViewDetail = (operacion: any) => {
-    setSelectedOperacion(operacion);
-    setShowDetailModal(true);
+  const getStatusBadge = (estado: string) => {
+    const statusMap = {
+      'activa': { variant: 'default' as const, text: 'Activa' },
+      'pausada': { variant: 'secondary' as const, text: 'Pausada' },
+      'completada': { variant: 'outline' as const, text: 'Completada' },
+      'cancelada': { variant: 'destructive' as const, text: 'Cancelada' },
+    };
+    return statusMap[estado as keyof typeof statusMap] || { variant: 'secondary' as const, text: estado };
   };
 
-  const handleEdit = async (operacion: any) => {
-    try {
-      const cleanData = {
-        codigo: operacion.codigo,
-        nombre: operacion.nombre,
-        tareas: operacion.tareas,
-        fecha_inicio: operacion.fecha_inicio,
-        fecha_fin: operacion.fecha_fin,
-        estado: operacion.estado,
-        estado_aprobacion: operacion.estado_aprobacion,
-        salmonera_id: operacion.salmonera_id,
-        contratista_id: operacion.contratista_id,
-        sitio_id: operacion.sitio_id,
-        servicio_id: operacion.servicio_id,
-        equipo_buceo_id: operacion.equipo_buceo_id,
-        supervisor_asignado_id: operacion.supervisor_asignado_id
-      };
-
-      Object.keys(cleanData).forEach(key => {
-        if (cleanData[key as keyof typeof cleanData] === undefined) {
-          delete cleanData[key as keyof typeof cleanData];
-        }
-      });
-
-      await updateOperacion({ id: operacion.id, data: cleanData });
-      await refetch();
-      
-      toast({
-        title: "Operación actualizada",
-        description: "La operación ha sido actualizada exitosamente.",
-      });
-    } catch (error: any) {
-      console.error('Error updating operacion:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo actualizar la operación: ${error.message || 'Error desconocido'}`,
-        variant: "destructive",
-      });
-    }
+  const handleCreateOperacion = async (data: any) => {
+    // Lógica para crear operación
+    console.log('Creating operacion:', data);
+    setIsCreateDialogOpen(false);
   };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const { canDelete, reason } = await checkCanDelete(id);
-      
-      if (!canDelete) {
-        toast({
-          title: "No se puede eliminar",
-          description: `La operación no se puede eliminar porque ${reason}.`,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await deleteOperacion(id);
-      await refetch();
-      
-      if (selectedOperacion?.id === id) {
-        setShowDetailModal(false);
-        setSelectedOperacion(null);
-      }
-      
-    } catch (error: any) {
-      console.error('Error deleting operation:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo eliminar la operación: ${error.message || 'Error desconocido'}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSelect = (operacion: any) => {
-    handleViewDetail(operacion);
-  };
-
-  const handleCloseDetail = () => {
-    setShowDetailModal(false);
-    setSelectedOperacion(null);
-  };
-
-  const handleViewDocuments = (operacion: any) => {
-    console.log('View documents for operation:', operacion.id);
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap gap-4 items-center">
-          <Skeleton className="h-10 flex-1 min-w-64" />
-          <Skeleton className="h-10 w-48" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <OperacionesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-14 rounded-3xl border-0">
-          <TabsTrigger 
-            value="table" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
+      {/* Header con búsqueda y acciones */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Buscar operaciones..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-2" />
+            Filtros
+          </Button>
+          
+          <WizardDialog
+            triggerText="Nueva Operación"
+            triggerIcon={Plus}
+            triggerClassName="bg-blue-600 hover:bg-blue-700"
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            size="xl"
           >
-            <List className="w-4 h-4" />
-            <span className="hidden sm:inline">Tabla</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="cards" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
-          >
-            <Grid3X3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Tarjetas</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="map" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
-          >
-            <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">Mapa</span>
-          </TabsTrigger>
+            <CreateOperacionForm
+              onSubmit={handleCreateOperacion}
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
+          </WizardDialog>
+        </div>
+      </div>
+
+      {/* Tabs de visualización */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="table">Tabla</TabsTrigger>
+          <TabsTrigger value="cards">Tarjetas</TabsTrigger>
+          <TabsTrigger value="map">Mapa</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="table" className="mt-6">
-          <OperacionesTable 
-            operaciones={transformedOperaciones}
-            onView={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewDocuments={handleViewDocuments}
-          />
+
+        <TabsContent value="table" className="space-y-4">
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>Cargando operaciones...</p>
+              </CardContent>
+            </Card>
+          ) : filteredOperaciones.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay operaciones registradas
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Comienza creando la primera operación
+                </p>
+                <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Operación
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-medium">Código</th>
+                        <th className="text-left p-4 font-medium">Nombre</th>
+                        <th className="text-left p-4 font-medium">Estado</th>
+                        <th className="text-left p-4 font-medium">Fecha Inicio</th>
+                        <th className="text-left p-4 font-medium">Salmonera</th>
+                        <th className="text-left p-4 font-medium">Contratista</th>
+                        <th className="text-right p-4 font-medium">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredOperaciones.map((operacion) => {
+                        const status = getStatusBadge(operacion.estado);
+                        return (
+                          <tr key={operacion.id} className="border-b hover:bg-gray-50">
+                            <td className="p-4 font-medium">{operacion.codigo}</td>
+                            <td className="p-4">{operacion.nombre}</td>
+                            <td className="p-4">
+                              <Badge variant={status.variant}>{status.text}</Badge>
+                            </td>
+                            <td className="p-4">
+                              {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
+                            </td>
+                            <td className="p-4 text-sm text-gray-600">
+                              {operacion.salmonera?.nombre || '-'}
+                            </td>
+                            <td className="p-4 text-sm text-gray-600">
+                              {operacion.contratista?.nombre || '-'}
+                            </td>
+                            <td className="p-4 text-right">
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
-        
-        <TabsContent value="cards" className="mt-6">
-          <OperacionCardView 
-            operaciones={transformedOperaciones}
-            onSelect={handleSelect}
-            onEdit={handleEdit}
-            onViewDetail={handleViewDetail}
-            onDelete={handleDelete}
-          />
+
+        <TabsContent value="cards" className="space-y-4">
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>Cargando operaciones...</p>
+              </CardContent>
+            </Card>
+          ) : filteredOperaciones.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay operaciones registradas
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Comienza creando la primera operación
+                </p>
+                <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Operación
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredOperaciones.map((operacion) => {
+                const status = getStatusBadge(operacion.estado);
+                return (
+                  <Card key={operacion.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">{operacion.codigo}</CardTitle>
+                        <Badge variant={status.variant}>{status.text}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{operacion.nombre}</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
+                      </div>
+                      
+                      {operacion.salmonera && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Building2 className="w-4 h-4 text-blue-500" />
+                          <span>{operacion.salmonera.nombre}</span>
+                        </div>
+                      )}
+                      
+                      {operacion.contratista && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Users className="w-4 h-4 text-orange-500" />
+                          <span>{operacion.contratista.nombre}</span>
+                        </div>
+                      )}
+                      
+                      <div className="pt-2 border-t">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Ver Detalles
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
-        
-        <TabsContent value="map" className="mt-6">
-          <OperacionesMapView 
-            operaciones={transformedOperaciones}
-            onSelect={handleSelect}
-            onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+
+        <TabsContent value="map" className="space-y-4">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Vista de Mapa
+              </h3>
+              <p className="text-gray-500">
+                La visualización en mapa estará disponible próximamente
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-
-      {selectedOperacion && (
-        <OperacionDetailModal 
-          operacion={selectedOperacion}
-          isOpen={showDetailModal}
-          onClose={handleCloseDetail}
-        />
-      )}
     </div>
   );
 };

@@ -1,148 +1,129 @@
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from 'lucide-react';
-import { useCentros } from '@/hooks/useCentros';
-import { useContratistas } from '@/hooks/useContratistas';
-import { useSalmoneras } from '@/hooks/useSalmoneras';
-
-const operacionSchema = z.object({
-  codigo: z.string().min(1, 'Código es requerido'),
-  nombre: z.string().min(1, 'Nombre es requerido'),
-  tareas: z.string().optional(),
-  fecha_inicio: z.string().min(1, 'Fecha inicio es requerida'),
-  fecha_fin: z.string().optional(),
-  centro_id: z.string().optional(),
-  contratista_id: z.string().optional(),
-  salmonera_id: z.string().optional(),
-  estado: z.enum(['activa', 'pausada', 'completada', 'cancelada']).default('activa'),
-});
-
-export type OperacionFormData = z.infer<typeof operacionSchema>;
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { useAuth } from "@/hooks/useAuth";
+import { Building2 } from "lucide-react";
 
 interface CreateOperacionFormProps {
-  onSubmit: (data: OperacionFormData) => void;
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
-  isLoading?: boolean;
 }
 
-export const CreateOperacionForm = ({ onSubmit, onCancel, isLoading }: CreateOperacionFormProps) => {
-  const { centros } = useCentros();
-  const { contratistas } = useContratistas();
-  const { salmoneras } = useSalmoneras();
+export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormProps) => {
+  const { profile } = useAuth();
+  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<OperacionFormData>({
-    resolver: zodResolver(operacionSchema),
-    defaultValues: {
-      estado: 'activa'
-    }
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nombre: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    estado: 'activa' as const,
+    tareas: ''
   });
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedEnterprise) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const operacionData = {
+        ...formData,
+        salmonera_id: selectedEnterprise.salmonera_id,
+        contratista_id: selectedEnterprise.contratista_id,
+        company_id: selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id,
+        company_type: selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista'
+      };
+
+      await onSubmit(operacionData);
+    } catch (error) {
+      console.error('Error creating operacion:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Para usuarios no superuser, configurar empresa automáticamente
+  React.useEffect(() => {
+    if (profile && profile.role !== 'superuser') {
+      const autoEnterprise = {
+        salmonera_id: profile.salmonera_id,
+        contratista_id: profile.servicio_id,
+        context_metadata: {
+          selection_mode: profile.salmonera_id ? 'salmonera_admin' : 'contratista_admin',
+          empresa_origen_tipo: profile.salmonera_id ? 'salmonera' : 'contratista'
+        }
+      };
+      setSelectedEnterprise(autoEnterprise);
+    }
+  }, [profile]);
+
+  // Solo mostrar selector de empresa para superusers
+  if (profile?.role === 'superuser' && !selectedEnterprise) {
+    return (
+      <Card className="w-full max-w-4xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-blue-600" />
+            Seleccionar Empresa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EnterpriseSelector
+            onSelectionChange={setSelectedEnterprise}
+            showCard={false}
+            title="Contexto Empresarial"
+            description="Seleccione las empresas para esta operación"
+            showModuleInfo={false}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" />
-          Nueva Operación
-        </CardTitle>
+        <CardTitle>Nueva Operación</CardTitle>
+        <p className="text-sm text-gray-600">
+          Crear una nueva operación de buceo
+        </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="codigo">Código *</Label>
               <Input
                 id="codigo"
-                {...register('codigo')}
+                value={formData.codigo}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
                 placeholder="Ej: OP-2024-001"
-              />
-              {errors.codigo && (
-                <p className="text-red-500 text-sm mt-1">{errors.codigo.message}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="nombre">Nombre *</Label>
-              <Input
-                id="nombre"
-                {...register('nombre')}
-                placeholder="Ej: Mantenimiento Jaulas Sector A"
-              />
-              {errors.nombre && (
-                <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="fecha_inicio">Fecha Inicio *</Label>
-              <Input
-                id="fecha_inicio"
-                type="date"
-                {...register('fecha_inicio')}
-              />
-              {errors.fecha_inicio && (
-                <p className="text-red-500 text-sm mt-1">{errors.fecha_inicio.message}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="fecha_fin">Fecha Fin</Label>
-              <Input
-                id="fecha_fin"
-                type="date"
-                {...register('fecha_fin')}
+                required
               />
             </div>
-
-            <div>
-              <Label htmlFor="salmonera_id">Salmonera</Label>
-              <Select onValueChange={(value) => setValue('salmonera_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar salmonera..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {salmoneras.map((salmonera) => (
-                    <SelectItem key={salmonera.id} value={salmonera.id}>
-                      {salmonera.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="centro_id">Centro</Label>
-              <Select onValueChange={(value) => setValue('centro_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar centro..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {centros.map((centro) => (
-                    <SelectItem key={centro.id} value={centro.id}>
-                      {centro.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div>
               <Label htmlFor="estado">Estado</Label>
-              <Select onValueChange={(value: 'activa' | 'pausada' | 'completada' | 'cancelada') => setValue('estado', value)}>
+              <Select
+                value={formData.estado}
+                onValueChange={(value: 'activa' | 'pausada' | 'completada' | 'cancelada') => 
+                  setFormData(prev => ({ ...prev, estado: value }))
+                }
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado..." />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activa">Activa</SelectItem>
@@ -152,37 +133,59 @@ export const CreateOperacionForm = ({ onSubmit, onCancel, isLoading }: CreateOpe
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
+          <div>
+            <Label htmlFor="nombre">Nombre de la Operación *</Label>
+            <Input
+              id="nombre"
+              value={formData.nombre}
+              onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+              placeholder="Nombre descriptivo de la operación"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="contratista_id">Contratista</Label>
-              <Select onValueChange={(value) => setValue('contratista_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar contratista..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {contratistas.map((contratista) => (
-                    <SelectItem key={contratista.id} value={contratista.id}>
-                      {contratista.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="fecha_inicio">Fecha de Inicio *</Label>
+              <Input
+                id="fecha_inicio"
+                type="date"
+                value={formData.fecha_inicio}
+                onChange={(e) => setFormData(prev => ({ ...prev, fecha_inicio: e.target.value }))}
+                required
+              />
             </div>
-
-            <div className="md:col-span-2">
-              <Label htmlFor="tareas">Tareas y Descripción</Label>
-              <Textarea
-                id="tareas"
-                {...register('tareas')}
-                placeholder="Describe las tareas a realizar en esta operación..."
-                className="min-h-[100px]"
+            <div>
+              <Label htmlFor="fecha_fin">Fecha de Fin</Label>
+              <Input
+                id="fecha_fin"
+                type="date"
+                value={formData.fecha_fin}
+                onChange={(e) => setFormData(prev => ({ ...prev, fecha_fin: e.target.value }))}
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-6">
-            <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading ? 'Creando...' : 'Crear Operación'}
+          <div>
+            <Label htmlFor="tareas">Descripción de Tareas</Label>
+            <Textarea
+              id="tareas"
+              value={formData.tareas}
+              onChange={(e) => setFormData(prev => ({ ...prev, tareas: e.target.value }))}
+              placeholder="Descripción detallada de las tareas a realizar..."
+              rows={4}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !selectedEnterprise} 
+              className="flex-1"
+            >
+              {isSubmitting ? 'Creando...' : 'Crear Operación'}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
