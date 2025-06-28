@@ -83,7 +83,10 @@ export const useEquiposBuceoEnhanced = () => {
   });
 
   const createEquipo = useMutation({
-    mutationFn: async (equipoData: EquipoBuceoFormData) => {
+    mutationFn: async (equipoData: EquipoBuceoFormData & { 
+      salmonera_id: string; 
+      contratista_id?: string; 
+    }) => {
       const { data, error } = await supabase
         .from('cuadrillas_buceo')
         .insert({
@@ -91,6 +94,8 @@ export const useEquiposBuceoEnhanced = () => {
           descripcion: equipoData.descripcion,
           empresa_id: equipoData.empresa_id,
           tipo_empresa: equipoData.tipo_empresa,
+          company_id: equipoData.salmonera_id, // Para compatibilidad
+          company_type: 'salmonera', // Para compatibilidad
           activo: true
         })
         .select()

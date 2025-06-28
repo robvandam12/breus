@@ -6,35 +6,58 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { EnterpriseSelectionResult } from "@/hooks/useEnterpriseContext";
 
 interface CreateEquipoFormProps {
-  onSubmit: (data: { nombre: string; descripcion: string; empresa_id: string; tipo_empresa: 'salmonera' | 'contratista' }) => Promise<void>;
+  onSubmit: (data: { 
+    nombre: string; 
+    descripcion: string; 
+    empresa_id: string; 
+    tipo_empresa: 'salmonera' | 'contratista';
+    salmonera_id: string;
+    contratista_id?: string;
+  }) => Promise<void>;
   onCancel: () => void;
   salmoneraId?: string;
 }
 
 export const CreateEquipoForm = ({ onSubmit, onCancel, salmoneraId }: CreateEquipoFormProps) => {
-  const { salmoneras } = useSalmoneras();
   const [formData, setFormData] = useState({
     nombre: '',
-    descripcion: '',
-    empresa_id: salmoneraId || ''
+    descripcion: ''
   });
+  const [enterpriseSelection, setEnterpriseSelection] = useState<EnterpriseSelectionResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!enterpriseSelection) {
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
-      await onSubmit({ ...formData, tipo_empresa: 'salmonera' });
+      // Determinar empresa principal basada en el contexto
+      const empresa_id = enterpriseSelection.contratista_id || enterpriseSelection.salmonera_id;
+      const tipo_empresa = enterpriseSelection.contratista_id ? 'contratista' : 'salmonera';
+      
+      await onSubmit({
+        ...formData,
+        empresa_id,
+        tipo_empresa,
+        salmonera_id: enterpriseSelection.salmonera_id,
+        contratista_id: enterpriseSelection.contratista_id || undefined
+      });
     } catch (error) {
       console.error('Error creating equipo:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const canSubmit = formData.nombre.trim() && enterpriseSelection && !isSubmitting;
 
   return (
     <>
@@ -68,31 +91,17 @@ export const CreateEquipoForm = ({ onSubmit, onCancel, salmoneraId }: CreateEqui
           />
         </div>
 
-        {!salmoneraId && (
-          <div>
-              <Label htmlFor="salmonera">Salmonera *</Label>
-              <Select
-                value={formData.empresa_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, empresa_id: value }))}
-              >
-                <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar salmonera..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {salmoneras.map((salmonera) => (
-                    <SelectItem key={salmonera.id} value={salmonera.id}>
-                        {salmonera.nombre}
-                    </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-          </div>
-        )}
+        <EnterpriseSelector
+          onSelectionChange={setEnterpriseSelection}
+          showCard={false}
+          title="Asignación Empresarial"
+          description="El equipo será asignado a las empresas seleccionadas"
+        />
 
         <div className="flex gap-3 pt-4">
           <Button 
             type="submit" 
-            disabled={!formData.nombre.trim() || !formData.empresa_id || isSubmitting}
+            disabled={!canSubmit}
             className="flex-1"
           >
             {isSubmitting ? 'Creando...' : 'Crear Equipo'}

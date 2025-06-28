@@ -2,10 +2,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,78 +9,55 @@ import { Users, Plus, UserPlus, Mail } from "lucide-react";
 import { useEquiposBuceoEnhanced, EquipoBuceoFormData, CuadrillaBuceo } from "@/hooks/useEquiposBuceoEnhanced";
 import { useUsuarios } from "@/hooks/useUsuarios";
 import { CreateEquipoForm } from "./CreateEquipoForm";
+import { useAuth } from "@/hooks/useAuth";
 
 interface EquipoBuceoManagerProps {
   salmoneraId?: string;
 }
 
 export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => {
-  const { equipos, isLoading, createEquipo, addMiembro, inviteMember } = useEquiposBuceoEnhanced();
+  const { profile } = useAuth();
+  const { equipos, isLoading, createEquipo } = useEquiposBuceoEnhanced();
   const { usuarios } = useUsuarios();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
-  const [selectedEquipo, setSelectedEquipo] = useState<string>('');
-  const [newMember, setNewMember] = useState({
-    tipo: 'existing', // 'existing' or 'invite'
-    usuario_id: '',
-    nombre_completo: '',
-    email: '',
-    matricula: '',
-    telefono: '',
-    rol_equipo: ''
-  });
 
-  const filteredEquipos = salmoneraId 
-    ? equipos.filter(e => e.empresa_id === salmoneraId)
-    : equipos;
+  // Filtrar equipos según el contexto del usuario
+  const filteredEquipos = equipos.filter(equipo => {
+    // Superuser ve todos
+    if (profile?.role === 'superuser') return true;
+    
+    // Admin salmonera ve equipos de su salmonera
+    if (profile?.role === 'admin_salmonera' && profile.salmonera_id) {
+      return equipo.company_id === profile.salmonera_id || equipo.empresa_id === profile.salmonera_id;
+    }
+    
+    // Admin servicio ve equipos de su contratista
+    if (profile?.role === 'admin_servicio' && profile.servicio_id) {
+      return equipo.empresa_id === profile.servicio_id && equipo.tipo_empresa === 'contratista';
+    }
+    
+    // Si se especifica salmoneraId, filtrar por ella
+    if (salmoneraId) {
+      return equipo.company_id === salmoneraId || equipo.empresa_id === salmoneraId;
+    }
+    
+    return true;
+  });
 
   const availableUsers = usuarios.filter(u => 
     u.rol === 'supervisor' || u.rol === 'buzo'
   );
 
-  const handleCreateEquipo = async (data: EquipoBuceoFormData) => {
+  const handleCreateEquipo = async (data: EquipoBuceoFormData & { 
+    salmonera_id: string; 
+    contratista_id?: string; 
+  }) => {
     await createEquipo(data);
     setIsCreateDialogOpen(false);
   };
 
-  const handleAddMember = () => {
-    if (!selectedEquipo) return;
-
-    if (newMember.tipo === 'existing' && newMember.usuario_id) {
-      const usuario = usuarios.find(u => u.usuario_id === newMember.usuario_id);
-      if (usuario) {
-        addMiembro({
-          equipo_id: selectedEquipo,
-          usuario_id: usuario.usuario_id,
-          rol_equipo: newMember.rol_equipo,
-          nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
-          email: usuario.email,
-          invitado: false
-        });
-      }
-    } else if (newMember.tipo === 'invite' && newMember.email && newMember.nombre_completo) {
-      inviteMember({
-        equipo_id: selectedEquipo,
-        email: newMember.email,
-        nombre_completo: newMember.nombre_completo,
-        rol_equipo: newMember.rol_equipo
-      });
-    }
-
-    setNewMember({
-      tipo: 'existing',
-      usuario_id: '',
-      nombre_completo: '',
-      email: '',
-      matricula: '',
-      telefono: '',
-      rol_equipo: ''
-    });
-    setIsAddMemberDialogOpen(false);
-  };
-
-  const getRolBadgeColor = (rol: string) => {
+  const getRoleBadgeColor = (rol: string) => {
     const colorMap: Record<string, string> = {
       supervisor: 'bg-blue-100 text-blue-700',
       buzo_principal: 'bg-green-100 text-green-700',
@@ -104,7 +77,12 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
           <Users className="w-6 h-6 text-blue-600" />
           <div>
             <h2 className="text-xl font-semibold">Equipos de Buceo</h2>
-            <p className="text-zinc-500">Gestión de equipos de trabajo</p>
+            <p className="text-zinc-500">
+              Gestión contextual de equipos de trabajo
+              {profile?.role === 'superuser' && ' (Vista completa)'}
+              {profile?.role === 'admin_salmonera' && ' (Vista salmonera)'}
+              {profile?.role === 'admin_servicio' && ' (Vista contratista)'}
+            </p>
           </div>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -135,110 +113,10 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
                   <Badge variant="outline">
                     {equipo.miembros?.length || 0} miembros
                   </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {equipo.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Contratista'}
+                  </Badge>
                 </CardTitle>
-                <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setSelectedEquipo(equipo.id)}
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Agregar Miembro
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Agregar Miembro al Equipo</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Tipo de Miembro</Label>
-                        <Select
-                          value={newMember.tipo}
-                          onValueChange={(value) => setNewMember(prev => ({ ...prev, tipo: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="existing">Usuario Existente</SelectItem>
-                            <SelectItem value="invite">Invitar por Email</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Rol en el Equipo *</Label>
-                        <Select
-                          value={newMember.rol_equipo}
-                          onValueChange={(value) => setNewMember(prev => ({ ...prev, rol_equipo: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar rol..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="supervisor">Supervisor</SelectItem>
-                            <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
-                            <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {newMember.tipo === 'existing' ? (
-                        <div>
-                          <Label>Usuario *</Label>
-                          <Select
-                            value={newMember.usuario_id}
-                            onValueChange={(value) => setNewMember(prev => ({ ...prev, usuario_id: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar usuario..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableUsers.map((usuario) => (
-                                <SelectItem key={usuario.usuario_id} value={usuario.usuario_id}>
-                                  {usuario.nombre} {usuario.apellido} - {usuario.rol}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <>
-                          <div>
-                            <Label htmlFor="nombre_completo">Nombre Completo *</Label>
-                            <Input
-                              id="nombre_completo"
-                              value={newMember.nombre_completo}
-                              onChange={(e) => setNewMember(prev => ({ ...prev, nombre_completo: e.target.value }))}
-                              placeholder="Nombre completo del invitado"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="email">Email *</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              value={newMember.email}
-                              onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
-                              placeholder="email@ejemplo.com"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      <div className="flex gap-3 pt-4">
-                        <Button onClick={handleAddMember} className="flex-1">
-                          {newMember.tipo === 'existing' ? 'Agregar Miembro' : 'Enviar Invitación'}
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsAddMemberDialogOpen(false)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
               {equipo.descripcion && (
                 <p className="text-sm text-zinc-600">{equipo.descripcion}</p>
@@ -265,12 +143,9 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
                               'Usuario no encontrado'
                             }
                           </div>
-                          {miembro.matricula && (
-                            <div className="text-sm text-zinc-500">Matrícula: {miembro.matricula}</div>
-                          )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getRolBadgeColor(miembro.rol_equipo)}>
+                          <Badge variant="outline" className={getRoleBadgeColor(miembro.rol_equipo)}>
                             {miembro.rol_equipo.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Badge>
                         </TableCell>
@@ -299,6 +174,22 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
             </CardContent>
           </Card>
         ))}
+        
+        {filteredEquipos.length === 0 && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+              <h3 className="font-medium text-zinc-900 mb-2">No hay equipos de buceo</h3>
+              <p className="text-zinc-500 mb-4">
+                Crea el primer equipo de buceo para comenzar a gestionar personal especializado
+              </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Primer Equipo
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
