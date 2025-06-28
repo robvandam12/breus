@@ -15,25 +15,25 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Search
 } from "lucide-react";
-import { useAdvancedModuleManagement } from "@/hooks/useAdvancedModuleManagement";
+import { useModuleManagementDashboard } from "@/hooks/useModuleManagementDashboard";
 
 export const SuperuserModuleManager = () => {
   const {
-    moduleConfigurations,
-    usageStats,
-    activationLogs,
-    advancedStats,
+    companiesWithModules,
+    moduleStats,
     isLoading,
-    canManageModules,
+    isSuperuser,
     toggleModule,
     isToggling,
-  } = useAdvancedModuleManagement();
+  } = useModuleManagementDashboard();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompanyType, setSelectedCompanyType] = useState<'all' | 'salmonera' | 'contratista'>('all');
 
-  if (!canManageModules) {
+  if (!isSuperuser) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -66,10 +66,21 @@ export const SuperuserModuleManager = () => {
     );
   }
 
-  const filteredConfigurations = moduleConfigurations.filter(config =>
-    config.module_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    config.company_id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCompanies = companiesWithModules.filter(company => {
+    const matchesSearch = company.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.rut.includes(searchTerm);
+    const matchesType = selectedCompanyType === 'all' || company.type === selectedCompanyType;
+    return matchesSearch && matchesType;
+  });
+
+  const handleToggleModule = async (companyId: string, companyType: 'salmonera' | 'contratista', moduleName: string, currentStatus: boolean) => {
+    await toggleModule({
+      companyId,
+      companyType,
+      moduleName,
+      isActive: !currentStatus
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -78,11 +89,11 @@ export const SuperuserModuleManager = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Activity className="h-8 w-8 text-blue-600" />
+              <Settings className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Uso Total</p>
+                <p className="text-sm font-medium text-gray-600">Módulos Totales</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {advancedStats?.total_usage || 0}
+                  {moduleStats?.total_modules || 0}
                 </p>
               </div>
             </div>
@@ -92,11 +103,11 @@ export const SuperuserModuleManager = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-green-600" />
+              <Activity className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Empresas Activas</p>
+                <p className="text-sm font-medium text-gray-600">Activaciones Totales</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {advancedStats?.active_companies || 0}
+                  {moduleStats?.active_activations || 0}
                 </p>
               </div>
             </div>
@@ -106,11 +117,11 @@ export const SuperuserModuleManager = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-purple-600" />
+              <Users className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Promedio Diario</p>
+                <p className="text-sm font-medium text-gray-600">Empresas con Módulos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {advancedStats?.avg_daily_usage || 0}
+                  {moduleStats?.companies_with_modules || 0}
                 </p>
               </div>
             </div>
@@ -122,9 +133,9 @@ export const SuperuserModuleManager = () => {
             <div className="flex items-center">
               <BarChart3 className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tasa Adopción</p>
+                <p className="text-sm font-medium text-gray-600">Empresas Registradas</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {advancedStats?.module_adoption_rate || 0}%
+                  {companiesWithModules.length}
                 </p>
               </div>
             </div>
@@ -132,143 +143,148 @@ export const SuperuserModuleManager = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="companies" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="configurations">Configuraciones</TabsTrigger>
-          <TabsTrigger value="usage">Estadísticas</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="companies">Gestión por Empresa</TabsTrigger>
+          <TabsTrigger value="modules">Vista por Módulos</TabsTrigger>
+          <TabsTrigger value="logs">Actividad Reciente</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Uso por módulo */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Uso por Módulo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {advancedStats?.usage_by_module && Object.entries(advancedStats.usage_by_module).map(([module, usage]) => (
-                    <div key={module} className="flex justify-between items-center">
-                      <span className="text-sm font-medium">{module}</span>
-                      <Badge variant="outline">{usage} usos</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Logs recientes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Actividad Reciente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {activationLogs.slice(0, 5).map((log) => (
-                    <div key={log.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        {log.action === 'activated' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                        {log.action === 'deactivated' && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                        {log.action === 'configured' && <Settings className="w-4 h-4 text-blue-500" />}
-                        <span>{log.module_name}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <Clock className="w-3 h-3" />
-                        {new Date(log.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="configurations" className="space-y-6">
-          <div className="flex gap-4 mb-6">
-            <Input
-              placeholder="Buscar módulos o empresas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-
-          <div className="space-y-4">
-            {filteredConfigurations.map((config) => (
-              <Card key={config.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">{config.module_name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {config.company_type}: {config.company_id}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge className={config.enabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                          {config.enabled ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          Actualizado: {new Date(config.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={config.enabled}
-                      onCheckedChange={(checked) => 
-                        toggleModule({
-                          moduleName: config.module_name,
-                          companyId: config.company_id,
-                          companyType: config.company_type,
-                          enabled: checked,
-                        })
-                      }
-                      disabled={isToggling}
+        <TabsContent value="companies" className="space-y-6">
+          {/* Filtros */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtros de Búsqueda</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar empresa..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
                     />
+                  </div>
+                </div>
+                <div>
+                  <select 
+                    className="w-full p-2 border rounded-md"
+                    value={selectedCompanyType}
+                    onChange={(e) => setSelectedCompanyType(e.target.value as any)}
+                  >
+                    <option value="all">Todas las empresas</option>
+                    <option value="salmonera">Solo Salmoneras</option>
+                    <option value="contratista">Solo Contratistas</option>
+                  </select>
+                </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  {filteredCompanies.length} empresa{filteredCompanies.length !== 1 ? 's' : ''} encontrada{filteredCompanies.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Lista de empresas */}
+          <div className="space-y-4">
+            {filteredCompanies.map((company) => (
+              <Card key={`${company.type}-${company.id}`}>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Header de la empresa */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg">{company.nombre}</h3>
+                          <Badge variant={company.type === 'salmonera' ? 'default' : 'secondary'}>
+                            {company.type === 'salmonera' ? 'Salmonera' : 'Contratista'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {company.rut}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Estado: <span className="font-medium">{company.estado}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Módulos de la empresa */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900">Módulos Disponibles:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {company.modules.map((module) => (
+                          <div key={module.module_name} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm">{module.display_name}</span>
+                                <Badge className={module.is_core ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                                  {module.is_core ? 'Core' : 'Opcional'}
+                                </Badge>
+                              </div>
+                              {module.description && (
+                                <p className="text-xs text-gray-600">{module.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {module.is_core ? (
+                                <div className="flex items-center gap-1 text-sm text-blue-600">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Siempre Activo</span>
+                                </div>
+                              ) : (
+                                <Switch
+                                  checked={module.is_active}
+                                  onCheckedChange={() => 
+                                    handleToggleModule(company.id, company.type, module.module_name, module.is_active)
+                                  }
+                                  disabled={isToggling}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+
+          {filteredCompanies.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No se encontraron empresas
+                </h3>
+                <p className="text-gray-600">
+                  Ajusta los filtros de búsqueda para encontrar las empresas deseadas.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="usage" className="space-y-6">
+        <TabsContent value="modules" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Estadísticas de Uso Detalladas</CardTitle>
+              <CardTitle>Uso por Módulo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Módulo</th>
-                      <th className="text-left p-2">Empresa</th>
-                      <th className="text-left p-2">Tipo</th>
-                      <th className="text-left p-2">Uso</th>
-                      <th className="text-left p-2">Usuarios</th>
-                      <th className="text-left p-2">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usageStats.slice(0, 20).map((stat) => (
-                      <tr key={stat.id} className="border-b">
-                        <td className="p-2 font-medium">{stat.module_name}</td>
-                        <td className="p-2">{stat.company_id.slice(0, 8)}...</td>
-                        <td className="p-2">
-                          <Badge variant="outline" className="text-xs">
-                            {stat.company_type}
-                          </Badge>
-                        </td>
-                        <td className="p-2">{stat.usage_count}</td>
-                        <td className="p-2">{stat.active_users}</td>
-                        <td className="p-2">{new Date(stat.date_recorded).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {moduleStats?.usage_by_module && Object.entries(moduleStats.usage_by_module).map(([module, usage]) => (
+                  <div key={module} className="flex justify-between items-center p-3 border rounded-lg">
+                    <span className="font-medium">{module}</span>
+                    <Badge variant="outline">{usage} empresa{usage !== 1 ? 's' : ''}</Badge>
+                  </div>
+                ))}
+                {(!moduleStats?.usage_by_module || Object.keys(moduleStats.usage_by_module).length === 0) && (
+                  <p className="text-gray-500 text-center py-8">No hay datos de uso disponibles</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -277,11 +293,11 @@ export const SuperuserModuleManager = () => {
         <TabsContent value="logs" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Registro de Activaciones</CardTitle>
+              <CardTitle>Actividad Reciente</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {activationLogs.map((log) => (
+                {moduleStats?.recent_activations?.map((log) => (
                   <div key={log.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
@@ -299,11 +315,14 @@ export const SuperuserModuleManager = () => {
                       </span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      <p>Empresa: {log.company_id.slice(0, 8)}... ({log.company_type})</p>
+                      <p>Empresa: {log.company_id} ({log.company_type})</p>
                       {log.reason && <p>Razón: {log.reason}</p>}
                     </div>
                   </div>
                 ))}
+                {(!moduleStats?.recent_activations || moduleStats.recent_activations.length === 0) && (
+                  <p className="text-gray-500 text-center py-8">No hay actividad reciente</p>
+                )}
               </div>
             </CardContent>
           </Card>

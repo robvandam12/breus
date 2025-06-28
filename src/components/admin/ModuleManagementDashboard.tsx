@@ -27,6 +27,7 @@ import { CompanyModuleManager } from "./CompanyModuleManager";
 import { ModuleStatsPanel } from "./ModuleStatsPanel";
 import { SuperuserModuleManager } from "./SuperuserModuleManager";
 import { useModuleSystemInitializer } from "@/hooks/useModuleSystemInitializer";
+import { useModuleManagementDashboard } from "@/hooks/useModuleManagementDashboard";
 
 export const ModuleManagementDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +38,7 @@ export const ModuleManagementDashboard = () => {
   useModuleSystemInitializer();
 
   const { systemModules, isSuperuser, isLoading: loadingModules } = useModularSystem();
+  const { moduleStats } = useModuleManagementDashboard();
 
   // Obtener empresas (salmoneras y contratistas)
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
@@ -55,39 +57,6 @@ export const ModuleManagementDashboard = () => {
       return allCompanies.sort((a, b) => a.nombre.localeCompare(b.nombre));
     },
     enabled: isSuperuser,
-  });
-
-  // Obtener estadísticas de módulos
-  const { data: moduleStats } = useQuery({
-    queryKey: ['module-stats'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('company_modules')
-        .select('module_name, company_type, is_active, company_id');
-
-      if (error) throw error;
-
-      const stats = {
-        totalModules: systemModules.length,
-        activeActivations: 0,
-        companiesWithModules: new Set(),
-        moduleUsage: {} as Record<string, number>
-      };
-
-      data?.forEach(module => {
-        if (module.is_active) {
-          stats.activeActivations++;
-          stats.companiesWithModules.add(module.company_id);
-          stats.moduleUsage[module.module_name] = (stats.moduleUsage[module.module_name] || 0) + 1;
-        }
-      });
-
-      return {
-        ...stats,
-        companiesWithModules: stats.companiesWithModules.size
-      };
-    },
-    enabled: isSuperuser && systemModules.length > 0,
   });
 
   const filteredCompanies = companies.filter(company => {
@@ -133,7 +102,7 @@ export const ModuleManagementDashboard = () => {
               <Settings className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Módulos Disponibles</p>
-                <p className="text-2xl font-bold text-gray-900">{moduleStats?.totalModules || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{systemModules?.length || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -145,7 +114,7 @@ export const ModuleManagementDashboard = () => {
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Activaciones Totales</p>
-                <p className="text-2xl font-bold text-gray-900">{moduleStats?.activeActivations || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.active_activations || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -169,7 +138,7 @@ export const ModuleManagementDashboard = () => {
               <Users className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Empresas con Módulos</p>
-                <p className="text-2xl font-bold text-gray-900">{moduleStats?.companiesWithModules || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{moduleStats?.companies_with_modules || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -297,7 +266,7 @@ export const ModuleManagementDashboard = () => {
                       </div>
                       <p className="text-gray-600 mb-3">{module.description}</p>
                       <div className="text-sm text-gray-500">
-                        <span>Uso: {moduleStats?.moduleUsage[module.name] || 0} empresas</span>
+                        <span>Uso: {moduleStats?.usage_by_module?.[module.name] || 0} empresas</span>
                         {module.dependencies && module.dependencies.length > 0 && (
                           <span className="ml-4">
                             Dependencias: {module.dependencies.join(', ')}
