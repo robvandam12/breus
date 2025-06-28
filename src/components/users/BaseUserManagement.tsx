@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Plus, Edit, Trash2, Shield, Search, Eye } from "lucide-react";
 import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserDetailModal } from "./UserDetailModal";
+import { InviteUserForm } from "./InviteUserForm";
 
 export interface BaseUser {
   id: string;
@@ -46,7 +48,6 @@ interface BaseUserManagementProps {
   onInviteUser?: (userData: any) => Promise<void>;
   CreateUserForm?: React.ComponentType<any>;
   EditUserForm?: React.ComponentType<any>;
-  InviteUserForm?: React.ComponentType<any>;
 }
 
 export const BaseUserManagement = ({
@@ -58,8 +59,7 @@ export const BaseUserManagement = ({
   onDeleteUser,
   onInviteUser,
   CreateUserForm,
-  EditUserForm,
-  InviteUserForm
+  EditUserForm
 }: BaseUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("all");
@@ -286,7 +286,7 @@ export const BaseUserManagement = ({
       {/* Dialogs */}
       {CreateUserForm && (
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Usuario</DialogTitle>
             </DialogHeader>
@@ -301,27 +301,26 @@ export const BaseUserManagement = ({
         </Dialog>
       )}
 
-      {InviteUserForm && (
-        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Invitar Usuario</DialogTitle>
-            </DialogHeader>
-            <InviteUserForm
-              onSubmit={async (data: any) => {
-                await onInviteUser?.(data);
-                setShowInviteDialog(false);
-              }}
-              onCancel={() => setShowInviteDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Dialog de Invitación */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invitar Usuario</DialogTitle>
+          </DialogHeader>
+          <InviteUserForm
+            onSubmit={async (data: any) => {
+              await onInviteUser?.(data);
+              setShowInviteDialog(false);
+            }}
+            onCancel={() => setShowInviteDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de Edición */}
       {EditUserForm && editingUser && (
         <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Editar Usuario</DialogTitle>
             </DialogHeader>

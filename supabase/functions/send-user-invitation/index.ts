@@ -36,9 +36,24 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    const { email, nombre, apellido, rol, empresa_id, tipo_empresa, invitado_por }: InvitationRequest = await req.json();
+    const { email, nombre = '', apellido = '', rol, empresa_id, tipo_empresa, invitado_por }: InvitationRequest = await req.json();
 
     console.log('Sending invitation to:', email, 'Role:', rol, 'Invited by:', invitado_por);
+
+    // Obtener información del usuario que invita
+    const { data: inviterUser, error: inviterError } = await supabaseAdmin
+      .from('usuario')
+      .select('nombre, apellido')
+      .eq('usuario_id', invitado_por)
+      .single();
+
+    if (inviterError) {
+      console.error('Error fetching inviter user:', inviterError);
+    }
+
+    const inviterName = inviterUser 
+      ? `${inviterUser.nombre} ${inviterUser.apellido}`.trim()
+      : 'Sistema';
 
     // Generar token único
     const token = crypto.randomUUID();
@@ -50,8 +65,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from('usuario_invitaciones')
       .insert([{
         email: email.toLowerCase(),
-        nombre,
-        apellido,
+        nombre: nombre || '',
+        apellido: apellido || '',
         rol,
         empresa_id,
         tipo_empresa,
@@ -68,10 +83,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw dbError;
     }
 
-    // Crear el enlace de invitación (corregido)
-    const invitationUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://preview--breus-91.lovable.app'}/register-invitation?token=${token}`;
+    // Crear el enlace de invitación
+    const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://preview--breus-91.lovable.app';
+    const invitationUrl = `${baseUrl}/register-invitation?token=${token}`;
 
-    // Enviar email usando Supabase
+    // Enviar email usando Resend
     const emailData = {
       to: [email],
       subject: 'Invitación a Breus - Sistema de Gestión de Buceo',
@@ -79,7 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb;">Invitación a Breus</h2>
           <p>Hola ${nombre || 'Usuario'},</p>
-          <p>Has sido invitado/a por <strong>${invitado_por}</strong> a unirte a Breus como <strong>${rol.replace('_', ' ').toUpperCase()}</strong>.</p>
+          <p>Has sido invitado/a por <strong>${inviterName}</strong> a unirte a Breus como <strong>${rol.replace('_', ' ').toUpperCase()}</strong>.</p>
           <p>Para completar tu registro, haz clic en el siguiente enlace:</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${invitationUrl}" 

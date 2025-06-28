@@ -5,12 +5,14 @@ import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
 import { Usuario } from "@/types/usuario";
 import { toast } from "@/hooks/use-toast";
+import { parseCompanySelection } from "@/components/common/CompanySelector";
 
 export interface InviteUserOptions {
   email: string;
   rol: string;
   nombre?: string;
   apellido?: string;
+  empresa_selection: string; // Formato: "salmonera_id" o "contratista_id"
   overwriteExisting?: boolean;
   cancelPrevious?: boolean;
 }
@@ -63,29 +65,19 @@ export const useUsuarios = () => {
   };
 
   const inviteUsuario = async (options: InviteUserOptions) => {
-    const { email, rol, nombre = '', apellido = '', overwriteExisting = false, cancelPrevious = false } = options;
+    const { email, rol, nombre = '', apellido = '', empresa_selection, overwriteExisting = false, cancelPrevious = false } = options;
     
     return executeInvite(async () => {
       console.log('Inviting user with options:', options);
       console.log('Current profile:', profile);
       
-      // Determinar empresa_id y tipo_empresa basado en el perfil del usuario que invita
-      let empresa_id = null;
-      let tipo_empresa = null;
-      
-      if (profile?.salmonera_id) {
-        empresa_id = profile.salmonera_id;
-        tipo_empresa = 'salmonera';
-      } else if (profile?.servicio_id) {
-        empresa_id = profile.servicio_id;
-        tipo_empresa = 'contratista';
+      // Parsear selección de empresa
+      const companyInfo = parseCompanySelection(empresa_selection);
+      if (!companyInfo) {
+        throw new Error('Debe seleccionar una empresa válida');
       }
       
-      if (!empresa_id) {
-        throw new Error('No se pudo determinar la empresa del invitador');
-      }
-      
-      console.log('Empresa info for invitation:', { empresa_id, tipo_empresa });
+      console.log('Company info for invitation:', companyInfo);
       
       // Si se debe cancelar invitaciones previas, hacerlo primero
       if (cancelPrevious) {
@@ -106,56 +98,25 @@ export const useUsuarios = () => {
         }
       }
 
-      // Generar token único para la invitación
-      const token = crypto.randomUUID();
-      
-      // Preparar datos de invitación con información completa de la empresa
-      const invitationData = {
-        email: email.toLowerCase(),
-        nombre: nombre,
-        apellido: apellido,
-        rol: rol,
-        token: token,
-        invitado_por: profile?.id,
-        empresa_id: empresa_id,
-        tipo_empresa: tipo_empresa,
-        fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        estado: 'pendiente'
-      };
-      
-      console.log('Creating invitation with data:', invitationData);
-      
-      // Guardar invitación en la base de datos
-      const { error: dbError } = await supabase
-        .from('usuario_invitaciones')
-        .insert([invitationData]);
-
-      if (dbError) {
-        console.error('Error saving invitation to DB:', dbError);
-        throw dbError;
-      }
-
-      // Enviar email de invitación
+      // Enviar invitación usando la edge function
       const { error: emailError } = await supabase.functions.invoke('send-user-invitation', {
         body: {
           email: email,
+          nombre: nombre,
+          apellido: apellido,
           rol: rol,
-          invitedBy: `${profile?.nombre} ${profile?.apellido}`,
-          empresaTipo: tipo_empresa,
-          token: token
+          empresa_id: companyInfo.id,
+          tipo_empresa: companyInfo.tipo,
+          invitado_por: profile?.id
         }
       });
 
       if (emailError) {
-        console.error('Error sending email:', emailError);
-        toast({
-          title: "Advertencia",
-          description: "Invitación creada pero el email no se pudo enviar. Verifique la configuración de Resend.",
-          variant: "destructive"
-        });
-      } else {
-        console.log('Invitation email sent successfully');
+        console.error('Error sending invitation:', emailError);
+        throw emailError;
       }
+
+      console.log('Invitation sent successfully');
       
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       queryClient.invalidateQueries({ queryKey: ['invitations'] });

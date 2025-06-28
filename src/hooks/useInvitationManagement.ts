@@ -130,41 +130,34 @@ export const useInvitationManagement = () => {
         throw new Error('Invitación no encontrada');
       }
 
-      // Generar nuevo token y extender expiración
-      const newToken = crypto.randomUUID();
-      const newExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      // Actualizar invitación
-      const { error: updateError } = await supabase
-        .from('usuario_invitaciones')
-        .update({
-          token: newToken,
-          fecha_expiracion: newExpiration,
-          estado: 'pendiente',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
-
-      if (updateError) throw updateError;
-
-      // Reenviar email
+      // Enviar usando la edge function actualizada
       const { error: emailError } = await supabase.functions.invoke('send-user-invitation', {
         body: {
           email: invitation.email,
+          nombre: invitation.nombre || '',
+          apellido: invitation.apellido || '',
           rol: invitation.rol,
-          invitedBy: `${profile?.nombre} ${profile?.apellido}`,
-          token: newToken
+          empresa_id: invitation.empresa_id,
+          tipo_empresa: invitation.tipo_empresa,
+          invitado_por: profile?.id
         }
       });
 
       if (emailError) {
         console.error('Error sending email:', emailError);
-        // No fallar completamente si el email falla
-        toast({
-          title: "Advertencia",
-          description: "Invitación actualizada pero el email podría no haberse enviado.",
-          variant: "destructive"
-        });
+        throw emailError;
+      }
+
+      // Actualizar fecha de reenvío
+      const { error: updateError } = await supabase
+        .from('usuario_invitaciones')
+        .update({
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
+
+      if (updateError) {
+        console.warn('Error updating invitation timestamp:', updateError);
       }
       
       queryClient.invalidateQueries({ queryKey: ['invitations'] });

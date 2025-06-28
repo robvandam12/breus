@@ -2550,7 +2550,7 @@ export type Database = {
       }
       usuario_invitaciones: {
         Row: {
-          apellido: string
+          apellido: string | null
           created_at: string
           email: string
           empresa_id: string | null
@@ -2559,14 +2559,14 @@ export type Database = {
           fecha_invitacion: string
           id: string
           invitado_por: string | null
-          nombre: string
+          nombre: string | null
           rol: string
           tipo_empresa: string | null
           token: string
           updated_at: string
         }
         Insert: {
-          apellido: string
+          apellido?: string | null
           created_at?: string
           email: string
           empresa_id?: string | null
@@ -2575,14 +2575,14 @@ export type Database = {
           fecha_invitacion?: string
           id?: string
           invitado_por?: string | null
-          nombre: string
+          nombre?: string | null
           rol: string
           tipo_empresa?: string | null
           token: string
           updated_at?: string
         }
         Update: {
-          apellido?: string
+          apellido?: string | null
           created_at?: string
           email?: string
           empresa_id?: string | null
@@ -2591,7 +2591,7 @@ export type Database = {
           fecha_invitacion?: string
           id?: string
           invitado_por?: string | null
-          nombre?: string
+          nombre?: string | null
           rol?: string
           tipo_empresa?: string | null
           token?: string
