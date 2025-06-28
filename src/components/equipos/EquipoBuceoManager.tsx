@@ -29,7 +29,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
     
     // Admin salmonera ve equipos de su salmonera
     if (profile?.role === 'admin_salmonera' && profile.salmonera_id) {
-      return equipo.company_id === profile.salmonera_id || equipo.empresa_id === profile.salmonera_id;
+      return equipo.empresa_id === profile.salmonera_id;
     }
     
     // Admin servicio ve equipos de su contratista
@@ -39,7 +39,7 @@ export const EquipoBuceoManager = ({ salmoneraId }: EquipoBuceoManagerProps) => 
     
     // Si se especifica salmoneraId, filtrar por ella
     if (salmoneraId) {
-      return equipo.company_id === salmoneraId || equipo.empresa_id === salmoneraId;
+      return equipo.empresa_id === salmoneraId;
     }
     
     return true;

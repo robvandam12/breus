@@ -1,122 +1,123 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OperacionFormData, useOperaciones } from "@/hooks/useOperaciones";
-import { useSalmoneras } from "@/hooks/useSalmoneras";
+import { Calendar, X } from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
 import { useSitios } from "@/hooks/useSitios";
-import { useContratistas } from "@/hooks/useContratistas";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { EnterpriseSelectionResult } from "@/hooks/useEnterpriseContext";
 
 interface CreateOperacionFormProps {
-  onClose?: () => void;
-  initialData?: any;
-  isEditing?: boolean;
+  onClose: () => void;
 }
 
-export const CreateOperacionForm = ({ 
-  onClose,
-  initialData,
-  isEditing = false
-}: CreateOperacionFormProps) => {
-  const { createOperacion, isCreating, updateOperacion } = useOperaciones();
-  const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
-  const { sitios, isLoading: loadingSitios } = useSitios();
-  const { contratistas, isLoading: loadingContratistas } = useContratistas();
-  const { profile } = useAuth();
-
-  const [formData, setFormData] = useState<OperacionFormData>({
-    codigo: initialData?.codigo || "",
-    nombre: initialData?.nombre || "",
-    fecha_inicio: initialData?.fecha_inicio || "",
-    fecha_fin: initialData?.fecha_fin || "",
-    estado: initialData?.estado || "activa",
-    salmonera_id: initialData?.salmonera_id || (profile?.role === 'admin_salmonera' ? profile.salmonera_id : ""),
-    sitio_id: initialData?.sitio_id || "",
-    contratista_id: initialData?.contratista_id || "",
-    servicio_id: initialData?.servicio_id || (profile?.role === 'admin_servicio' ? profile.servicio_id : ""),
-    tareas: initialData?.tareas || "",
+export const CreateOperacionForm = ({ onClose }: CreateOperacionFormProps) => {
+  const { toast } = useToast();
+  const { createOperacion } = useOperaciones();
+  const { sitios } = useSitios();
+  
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nombre: '',
+    sitio_id: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    tareas: ''
   });
-
-  // Filter out any items with empty or invalid IDs and ensure they are strings
-  const validSalmoneras = (salmoneras || []).filter(item => 
-    item && typeof item === 'object' && item.id && typeof item.id === 'string' && item.id.trim() !== ""
-  );
   
-  const validSitios = (sitios || []).filter(item => 
-    item && typeof item === 'object' && item.id && typeof item.id === 'string' && item.id.trim() !== ""
-  );
-  
-  const validContratistas = (contratistas || []).filter(item => 
-    item && typeof item === 'object' && item.id && typeof item.id === 'string' && item.id.trim() !== ""
-  );
+  const [enterpriseSelection, setEnterpriseSelection] = useState<EnterpriseSelectionResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submission started with data:', formData);
-    
     if (!formData.codigo || !formData.nombre || !formData.fecha_inicio) {
       toast({
-        title: "Error",
-        description: "Por favor complete todos los campos requeridos",
+        title: "Campos requeridos",
+        description: "Código, nombre y fecha de inicio son obligatorios.",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      // Limpiar campos vacíos para evitar errores de UUID
-      const cleanedData: OperacionFormData = {
-        codigo: formData.codigo,
-        nombre: formData.nombre,
-        fecha_inicio: formData.fecha_inicio,
-        estado: formData.estado,
-        salmonera_id: formData.salmonera_id && formData.salmonera_id.trim() !== "" && formData.salmonera_id !== "none" ? formData.salmonera_id : undefined,
-        sitio_id: formData.sitio_id && formData.sitio_id.trim() !== "" && formData.sitio_id !== "none" ? formData.sitio_id : undefined,
-        contratista_id: formData.contratista_id && formData.contratista_id.trim() !== "" && formData.contratista_id !== "none" ? formData.contratista_id : undefined,
-        servicio_id: formData.servicio_id && formData.servicio_id.trim() !== "" && formData.servicio_id !== "none" ? formData.servicio_id : undefined,
-        fecha_fin: formData.fecha_fin && formData.fecha_fin.trim() !== "" ? formData.fecha_fin : undefined,
-        tareas: formData.tareas && formData.tareas.trim() !== "" ? formData.tareas : undefined,
-      };
-
-      console.log('Cleaned data for submission:', cleanedData);
-
-      if (isEditing && initialData?.id) {
-        console.log('Updating operation with ID:', initialData.id);
-        await updateOperacion({ id: initialData.id, data: cleanedData });
-      } else {
-        console.log('Creating new operation');
-        await createOperacion(cleanedData);
-      }
-      
-      console.log('Operation completed successfully');
-      onClose?.();
-    } catch (error) {
-      console.error("Error with operation:", error);
+    if (!enterpriseSelection) {
       toast({
-        title: "Error",
-        description: `No se pudo ${isEditing ? 'actualizar' : 'crear'} la operación: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        title: "Selección empresarial requerida",
+        description: "Debe seleccionar el contexto empresarial para la operación.",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const operacionData = {
+        codigo: formData.codigo,
+        nombre: formData.nombre,
+        sitio_id: formData.sitio_id || null,
+        salmonera_id: enterpriseSelection.salmonera_id,
+        contratista_id: enterpriseSelection.contratista_id,
+        fecha_inicio: formData.fecha_inicio,
+        fecha_fin: formData.fecha_fin || null,
+        tareas: formData.tareas || null,
+        estado: 'activa' as const
+      };
+
+      await createOperacion(operacionData);
+      
+      toast({
+        title: "Operación creada",
+        description: `La operación "${formData.nombre}" ha sido creada exitosamente.`,
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error creating operation:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la operación. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateFormData = (field: keyof OperacionFormData, value: string) => {
-    console.log(`Updating field ${field} with value:`, value);
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  // Obtener el nombre de la salmonera del usuario para mostrar
-  const userSalmonera = validSalmoneras.find(s => s.id === profile?.salmonera_id);
+  // Filtrar sitios según la salmonera seleccionada
+  const filteredSitios = sitios.filter(sitio => 
+    !enterpriseSelection?.salmonera_id || sitio.salmonera_id === enterpriseSelection.salmonera_id
+  );
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="ios-card max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Operación' : 'Nueva Operación'}</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            Nueva Operación
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,167 +127,103 @@ export const CreateOperacionForm = ({
               <Input
                 id="codigo"
                 value={formData.codigo}
-                onChange={(e) => updateFormData("codigo", e.target.value)}
-                placeholder="Ej: OP-001"
+                onChange={(e) => handleChange('codigo', e.target.value)}
+                className="ios-input"
+                placeholder="Ej: OP-2024-001"
                 required
               />
             </div>
-
+            
             <div>
-              <Label htmlFor="nombre">Nombre *</Label>
-              <Input
-                id="nombre"
-                value={formData.nombre}
-                onChange={(e) => updateFormData("nombre", e.target.value)}
-                placeholder="Nombre de la operación"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="fecha_inicio">Fecha Inicio *</Label>
-              <Input
-                id="fecha_inicio"
-                type="date"
-                value={formData.fecha_inicio}
-                onChange={(e) => updateFormData("fecha_inicio", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="fecha_fin">Fecha Fin</Label>
-              <Input
-                id="fecha_fin"
-                type="date"
-                value={formData.fecha_fin || ""}
-                onChange={(e) => updateFormData("fecha_fin", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="estado">Estado</Label>
-              <Select 
-                value={formData.estado} 
-                onValueChange={(value) => updateFormData("estado", value as "activa" | "pausada" | "completada" | "cancelada")}
+              <Label htmlFor="sitio_id">Sitio</Label>
+              <select
+                id="sitio_id"
+                value={formData.sitio_id}
+                onChange={(e) => handleChange('sitio_id', e.target.value)}
+                className="ios-input w-full"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="activa">Activa</SelectItem>
-                  <SelectItem value="pausada">Pausada</SelectItem>
-                  <SelectItem value="completada">Completada</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="salmonera">Salmonera</Label>
-              {profile?.role === 'admin_salmonera' ? (
-                <Input
-                  value={userSalmonera?.nombre || 'Salmonera asignada'}
-                  readOnly
-                  className="bg-gray-50"
-                />
-              ) : (
-                <Select 
-                  value={formData.salmonera_id || "none"} 
-                  onValueChange={(value) => updateFormData("salmonera_id", value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar salmonera" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin seleccionar</SelectItem>
-                    {loadingSalmoneras ? (
-                      <SelectItem value="loading" disabled>Cargando...</SelectItem>
-                    ) : validSalmoneras.length === 0 ? (
-                      <SelectItem value="no_data" disabled>No hay salmoneras disponibles</SelectItem>
-                    ) : (
-                      validSalmoneras.map((salmonera) => (
-                        <SelectItem key={salmonera.id} value={salmonera.id}>
-                          {salmonera.nombre}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="sitio">Sitio</Label>
-              <Select 
-                value={formData.sitio_id || "none"} 
-                onValueChange={(value) => updateFormData("sitio_id", value === "none" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar sitio" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin seleccionar</SelectItem>
-                  {loadingSitios ? (
-                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
-                  ) : validSitios.length === 0 ? (
-                    <SelectItem value="no_data" disabled>No hay sitios disponibles</SelectItem>
-                  ) : (
-                    validSitios.map((sitio) => (
-                      <SelectItem key={sitio.id} value={sitio.id}>
-                        {sitio.nombre}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="contratista">Contratista</Label>
-              <Select 
-                value={formData.contratista_id || "none"} 
-                onValueChange={(value) => updateFormData("contratista_id", value === "none" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar contratista" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin seleccionar</SelectItem>
-                  {loadingContratistas ? (
-                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
-                  ) : validContratistas.length === 0 ? (
-                    <SelectItem value="no_data" disabled>No hay contratistas disponibles</SelectItem>
-                  ) : (
-                    validContratistas.map((contratista) => (
-                      <SelectItem key={contratista.id} value={contratista.id}>
-                        {contratista.nombre}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                <option value="">Seleccionar sitio</option>
+                {filteredSitios.map(sitio => (
+                  <option key={sitio.id} value={sitio.id}>
+                    {sitio.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="tareas">Tareas (Opcional)</Label>
+            <Label htmlFor="nombre">Nombre de la Operación *</Label>
             <Input
-              id="tareas"
-              value={formData.tareas || ""}
-              onChange={(e) => updateFormData("tareas", e.target.value)}
-              placeholder="Descripción de las tareas"
+              id="nombre"
+              value={formData.nombre}
+              onChange={(e) => handleChange('nombre', e.target.value)}
+              className="ios-input"
+              placeholder="Describe la operación..."
+              required
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            {onClose && (
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-            )}
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Procesando..." : (isEditing ? "Actualizar Operación" : "Crear Operación")}
+          <EnterpriseSelector
+            onSelectionChange={setEnterpriseSelection}
+            showCard={false}
+            title="Contexto Empresarial"
+            description="Seleccione las empresas involucradas en esta operación"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fecha_inicio">Fecha de Inicio *</Label>
+              <Input
+                id="fecha_inicio"
+                type="date"
+                value={formData.fecha_inicio}
+                onChange={(e) => handleChange('fecha_inicio', e.target.value)}
+                className="ios-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="fecha_fin">Fecha de Fin</Label>
+              <Input
+                id="fecha_fin"
+                type="date"
+                value={formData.fecha_fin}
+                onChange={(e) => handleChange('fecha_fin', e.target.value)}
+                className="ios-input"
+                min={formData.fecha_inicio}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="tareas">Descripción de Tareas</Label>
+            <Textarea
+              id="tareas"
+              value={formData.tareas}
+              onChange={(e) => handleChange('tareas', e.target.value)}
+              className="ios-input min-h-[100px]"
+              placeholder="Describa las tareas a realizar en esta operación..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="ios-button"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="ios-button bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isLoading ? 'Creando...' : 'Crear Operación'}
             </Button>
           </div>
         </form>
