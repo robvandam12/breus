@@ -238,13 +238,13 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
           <EnterpriseSelector
             onSelectionChange={(result) => {
               setSelectedEnterprise(result);
-              // No ocultar automáticamente el selector
             }}
             showCard={false}
             title="Contexto Empresarial"
             description="Seleccione la empresa para la cual crear la inmersión"
             requiredModule="planning_operations"
             showModuleInfo={true}
+            autoSubmit={false}
           />
           {selectedEnterprise && (
             <div className="mt-4 flex justify-end">

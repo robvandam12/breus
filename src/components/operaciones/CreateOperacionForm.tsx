@@ -87,6 +87,7 @@ export const CreateOperacionForm = ({ onSubmit, onCancel }: CreateOperacionFormP
             title="Contexto Empresarial"
             description="Seleccione las empresas para esta operación"
             showModuleInfo={false}
+            autoSubmit={false}
           />
         </CardContent>
       </Card>
