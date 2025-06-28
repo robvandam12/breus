@@ -144,10 +144,10 @@ export const OperacionesManager = () => {
                               {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}
                             </td>
                             <td className="p-4 text-sm text-gray-600">
-                              {operacion.salmoneras?.nombre || '-'}
+                              {operacion.salmonera?.nombre || '-'}
                             </td>
                             <td className="p-4 text-sm text-gray-600">
-                              {operacion.contratistas?.nombre || '-'}
+                              {operacion.contratista?.nombre || '-'}
                             </td>
                             <td className="p-4 text-right">
                               <Button variant="ghost" size="sm">
@@ -207,17 +207,17 @@ export const OperacionesManager = () => {
                         <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
                       </div>
                       
-                      {operacion.salmoneras && (
+                      {operacion.salmonera && (
                         <div className="flex items-center gap-2 text-sm">
                           <Building2 className="w-4 h-4 text-blue-500" />
-                          <span>{operacion.salmoneras.nombre}</span>
+                          <span>{operacion.salmonera.nombre}</span>
                         </div>
                       )}
                       
-                      {operacion.contratistas && (
+                      {operacion.contratista && (
                         <div className="flex items-center gap-2 text-sm">
                           <Users className="w-4 h-4 text-orange-500" />
-                          <span>{operacion.contratistas.nombre}</span>
+                          <span>{operacion.contratista.nombre}</span>
                         </div>
                       )}
                       

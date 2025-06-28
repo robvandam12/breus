@@ -18,7 +18,6 @@ interface EnterpriseSelectorProps {
   description?: string;
   requiredModule?: string;
   showModuleInfo?: boolean;
-  autoSubmit?: boolean; // New prop to control auto-submission
 }
 
 export const EnterpriseSelector = ({
@@ -28,29 +27,18 @@ export const EnterpriseSelector = ({
   title = "Contexto Empresarial",
   description = "Seleccione las empresas involucradas en esta operación",
   requiredModule,
-  showModuleInfo = true,
-  autoSubmit = true // Default to true for backward compatibility
+  showModuleInfo = true
 }: EnterpriseSelectorProps) => {
   const { state, actions } = useEnterpriseContext();
   const { getModulesForCompany, loading: modulesLoading } = useEnterpriseModuleAccess();
   const [selectedCompanyModules, setSelectedCompanyModules] = React.useState<any>(null);
 
-  // Only auto-submit for non-superusers or when explicitly enabled
   React.useEffect(() => {
-    if (!autoSubmit) return;
-    
     const result = actions.getSelectionResult();
     if (result && onSelectionChange) {
-      // For superusers, only auto-submit if both are selected or if mustSelectBoth is false
-      if (state.mustSelectBoth) {
-        if (state.selectedSalmonera && state.selectedContratista) {
-          onSelectionChange(result);
-        }
-      } else {
-        onSelectionChange(result);
-      }
+      onSelectionChange(result);
     }
-  }, [state.selectedSalmonera, state.selectedContratista, onSelectionChange, autoSubmit, state.mustSelectBoth]);
+  }, [state.selectedSalmonera, state.selectedContratista, onSelectionChange]);
 
   // Cargar módulos cuando se selecciona una empresa
   React.useEffect(() => {
@@ -81,13 +69,6 @@ export const EnterpriseSelector = ({
     actions.setSelectedContratista(contratista || null);
   };
 
-  const handleManualSubmit = () => {
-    const result = actions.getSelectionResult();
-    if (result && onSelectionChange) {
-      onSelectionChange(result);
-    }
-  };
-
   const getRoleBadgeText = () => {
     const result = actions.getSelectionResult();
     if (!result) return '';
@@ -104,13 +85,6 @@ export const EnterpriseSelector = ({
   const shouldShowModeAlert = () => {
     const result = actions.getSelectionResult();
     return result?.context_metadata.selection_mode === 'superuser' && (state.mustSelectBoth || !state.canSelectSalmonera || !state.canSelectContratista);
-  };
-
-  const canSubmit = () => {
-    if (state.mustSelectBoth) {
-      return state.selectedSalmonera && state.selectedContratista;
-    }
-    return state.selectedSalmonera || state.selectedContratista;
   };
 
   const content = (
@@ -225,18 +199,6 @@ export const EnterpriseSelector = ({
             showAll={false}
             compact={true}
           />
-        </div>
-      )}
-
-      {/* Manual submit button for non-auto-submit scenarios */}
-      {!autoSubmit && canSubmit() && (
-        <div className="flex justify-end">
-          <button
-            onClick={handleManualSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Continuar
-          </button>
         </div>
       )}
 
