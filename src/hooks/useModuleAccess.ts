@@ -1,6 +1,14 @@
 
 import { useAuth } from './useAuth';
 
+// Constantes de módulos
+export const MODULES = {
+  PLANNING_OPERATIONS: 'planning_operations',
+  MAINTENANCE_NETWORKS: 'maintenance_networks', 
+  ADVANCED_REPORTING: 'advanced_reporting',
+  EXTERNAL_INTEGRATIONS: 'external_integrations'
+} as const;
+
 export const useModuleAccess = () => {
   const { profile } = useAuth();
 
@@ -32,8 +40,20 @@ export const useModuleAccess = () => {
     }
   };
 
+  // Funciones auxiliares para compatibilidad
+  const isModuleActive = (moduleId: string): boolean => {
+    return hasModuleAccess(moduleId);
+  };
+
+  const canPlanOperations = (): boolean => {
+    return hasModuleAccess(MODULES.PLANNING_OPERATIONS);
+  };
+
   return {
     getModuleAccess,
-    hasModuleAccess
+    hasModuleAccess,
+    isModuleActive,
+    canPlanOperations,
+    modules: MODULES
   };
 };
