@@ -24,18 +24,18 @@ export default function Operaciones() {
         return;
       }
 
-      // Crear el objeto con campos garantizados como no-undefined
-      const operacionData: OperacionFormData = {
-        codigo: data.codigo as string, // TypeScript assertion después de validación
-        nombre: data.nombre as string,
-        fecha_inicio: data.fecha_inicio as string,
-        estado: data.estado || 'activa',
+      // Crear el objeto con el tipo correcto
+      const operacionData = {
+        codigo: data.codigo,
+        nombre: data.nombre,
+        fecha_inicio: data.fecha_inicio,
+        estado: data.estado || 'activa' as const,
         fecha_fin: data.fecha_fin,
         centro_id: data.centro_id,
         contratista_id: data.contratista_id,
         salmonera_id: data.salmonera_id,
         tareas: data.tareas
-      };
+      } satisfies OperacionFormData;
       
       await createOperacion(operacionData);
       setShowCreateForm(false);
@@ -97,7 +97,7 @@ export default function Operaciones() {
   // Transformar operaciones para que coincidan con el tipo esperado por la tabla
   const operacionesParaTabla = operaciones.map(operacion => ({
     ...operacion,
-    tipo_trabajo: 'Buceo' // Valor por defecto
+    tipo_trabajo: 'Buceo' as const // Valor por defecto
   }));
 
   return (
@@ -109,10 +109,10 @@ export default function Operaciones() {
     >
       <OperacionesTable 
         operaciones={operacionesParaTabla}
-        onEdit={handleEdit}
-        onView={handleView}
-        onDelete={handleDelete}
-        onViewDocuments={handleViewDocuments}
+        onEdit={(operacion) => handleEdit(operacion)}
+        onView={(operacion) => handleView(operacion)}
+        onDelete={(operacion) => handleDelete(operacion)}
+        onViewDocuments={(operacion) => handleViewDocuments(operacion)}
       />
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
