@@ -82,18 +82,23 @@ export const EnterpriseSelector = ({
     }
   };
 
+  const shouldShowModeAlert = () => {
+    const result = actions.getSelectionResult();
+    return result?.context_metadata.selection_mode === 'superuser' && (state.mustSelectBoth || !state.canSelectSalmonera || !state.canSelectContratista);
+  };
+
   const content = (
     <div className="space-y-4">
-      {/* Información del modo de selección */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>{getRoleBadgeText()}</strong>
-          {state.mustSelectBoth && " - Debe seleccionar ambas empresas"}
-          {!state.canSelectSalmonera && " - Salmonera asignada automáticamente"}
-          {!state.canSelectContratista && " - Contratista asignado automáticamente"}
-        </AlertDescription>
-      </Alert>
+      {/* Solo mostrar información del modo para superuser cuando sea relevante */}
+      {shouldShowModeAlert() && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>{getRoleBadgeText()}</strong>
+            {state.mustSelectBoth && " - Seleccione ambas empresas"}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Selector de Salmonera */}
@@ -132,7 +137,7 @@ export const EnterpriseSelector = ({
           
           {!state.canSelectSalmonera && state.selectedSalmonera && (
             <p className="text-xs text-blue-600">
-              Asignada: {state.selectedSalmonera.nombre}
+              {state.selectedSalmonera.nombre}
             </p>
           )}
         </div>
@@ -173,34 +178,33 @@ export const EnterpriseSelector = ({
           
           {!state.canSelectContratista && state.selectedContratista && (
             <p className="text-xs text-orange-600">
-              Asignado: {state.selectedContratista.nombre}
+              {state.selectedContratista.nombre}
             </p>
           )}
           
           {state.selectedSalmonera && state.availableContratistas.length === 0 && !state.isLoading && (
             <p className="text-xs text-amber-600">
-              No hay contratistas asociados a esta salmonera
+              No hay contratistas asociados
             </p>
           )}
         </div>
       </div>
 
-      {/* Información de módulos */}
+      {/* Información de módulos - solo si se solicita explícitamente */}
       {showModuleInfo && selectedCompanyModules && !modulesLoading && (
         <div className="mt-4">
           <EnterpriseModuleIndicator
             modules={selectedCompanyModules.modules}
             requiredModule={requiredModule}
             showAll={false}
-            compact={false}
+            compact={true}
           />
         </div>
       )}
 
-      {/* Resumen de la selección */}
+      {/* Resumen de la selección - más discreto */}
       {(state.selectedSalmonera || state.selectedContratista) && (
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium mb-2">Contexto Seleccionado:</h4>
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
           <div className="space-y-1 text-xs">
             {state.selectedSalmonera && (
               <div className="flex items-center gap-2">

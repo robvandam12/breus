@@ -174,14 +174,14 @@ const PersonalDeBuceo = () => {
               <h3 className="text-lg font-semibold">Seleccionar Empresa</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              Para gestionar cuadrillas de buceo, primero debe seleccionar la empresa.
+              Seleccione la empresa para gestionar sus cuadrillas.
             </p>
             <EnterpriseSelector
               onSelectionChange={setSelectedEnterprise}
               showCard={false}
               title="Empresa para Gestión de Cuadrillas"
               description="Seleccione la empresa para ver y gestionar sus cuadrillas"
-              showModuleInfo={true}
+              showModuleInfo={false}
             />
           </CardContent>
         </Card>
@@ -220,60 +220,31 @@ const PersonalDeBuceo = () => {
       title="Cuadrillas de Buceo"
       subtitle={
         isSuperuser && selectedEnterprise 
-          ? `Gestión de cuadrillas - ${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}`
+          ? `${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'} seleccionada`
           : isAssigned
-          ? `Gestión de cuadrillas - ${getCompanyType()}: ${getCompanyName()}`
+          ? `${getCompanyType()}: ${getCompanyName()}`
           : "Gestión de cuadrillas y personal de buceo"
       }
       icon={Users}
       headerChildren={headerActions}
     >
-      {/* Mostrar información de empresa para usuarios asignados */}
-      {isAssigned && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              <div>
-                <h4 className="font-semibold text-blue-900">
-                  {getCompanyType()}: {getCompanyName()}
-                </h4>
-                <p className="text-sm text-blue-700">
-                  Gestionando cuadrillas de su empresa
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mostrar información de empresa seleccionada para superuser */}
+      {/* Solo mostrar información de empresa seleccionada para superuser, de forma más sutil */}
       {isSuperuser && selectedEnterprise && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <div>
-                  <h4 className="font-semibold text-blue-900">
-                    Empresa Seleccionada: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
-                  </h4>
-                  <p className="text-sm text-blue-700">
-                    Gestionando cuadrillas para esta empresa
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedEnterprise(null)}
-                className="border-blue-300 text-blue-700 hover:bg-blue-100"
-              >
-                Cambiar Empresa
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>
+              Gestionando: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedEnterprise(null)}
+              className="text-blue-600 hover:text-blue-800 h-auto p-1"
+            >
+              Cambiar
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* KPIs */}
