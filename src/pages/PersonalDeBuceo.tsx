@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search } from "lucide-react";
+import { Users, Plus, Search, Building2 } from "lucide-react";
 import { CreateEquipoFormWizard } from "@/components/equipos/CreateEquipoFormWizard";
 import { EquipoBuceoActions } from "@/components/equipos/EquipoBuceoActions";
 import { useEquipoBuceo } from "@/hooks/useEquipoBuceo";
@@ -13,10 +12,14 @@ import { toast } from "@/hooks/use-toast";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 const PersonalDeBuceo = () => {
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
   
   const { equipos, isLoading, createEquipo, updateEquipo, deleteEquipo } = useEquipoBuceo();
 
@@ -92,19 +95,21 @@ const PersonalDeBuceo = () => {
         />
       </div>
 
-      <WizardDialog
-        triggerText="Nueva Cuadrilla"
-        triggerIcon={Plus}
-        triggerClassName="bg-blue-600 hover:bg-blue-700"
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        size="xl"
-      >
-        <CreateEquipoFormWizard
-          onSubmit={handleCreateEquipo}
-          onCancel={() => setIsCreateDialogOpen(false)}
-        />
-      </WizardDialog>
+      {selectedEnterprise && (
+        <WizardDialog
+          triggerText="Nueva Cuadrilla"
+          triggerIcon={Plus}
+          triggerClassName="bg-blue-600 hover:bg-blue-700"
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          size="xl"
+        >
+          <CreateEquipoFormWizard
+            onSubmit={handleCreateEquipo}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </WizardDialog>
+      )}
     </div>
   );
 
@@ -125,13 +130,76 @@ const PersonalDeBuceo = () => {
     );
   }
 
+  // Si es superuser y no ha seleccionado empresa, mostrar selector
+  if (profile?.role === 'superuser' && !selectedEnterprise) {
+    return (
+      <MainLayout
+        title="Cuadrillas de Buceo"
+        subtitle="Gestión de cuadrillas y personal de buceo"
+        icon={Users}
+      >
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Building2 className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold">Seleccionar Empresa</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Para gestionar cuadrillas de buceo, primero debe seleccionar la empresa.
+            </p>
+            <EnterpriseSelector
+              onSelectionChange={setSelectedEnterprise}
+              showCard={false}
+              title="Empresa para Gestión de Cuadrillas"
+              description="Seleccione la empresa para ver y gestionar sus cuadrillas"
+              showModuleInfo={true}
+            />
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout
       title="Cuadrillas de Buceo"
-      subtitle="Gestión de cuadrillas y personal de buceo"
+      subtitle={
+        selectedEnterprise 
+          ? `Gestión de cuadrillas - ${selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}`
+          : "Gestión de cuadrillas y personal de buceo"
+      }
       icon={Users}
       headerChildren={headerActions}
     >
+      {/* Mostrar información de empresa seleccionada para superuser */}
+      {profile?.role === 'superuser' && selectedEnterprise && (
+        <Card className="mb-6 border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h4 className="font-semibold text-blue-900">
+                    Empresa Seleccionada: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    Gestionando cuadrillas para esta empresa
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedEnterprise(null)}
+                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                Cambiar Empresa
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card className="p-4">
@@ -172,7 +240,7 @@ const PersonalDeBuceo = () => {
                 ? "Comience creando la primera cuadrilla de buceo"
                 : "Intenta ajustar la búsqueda"}
             </p>
-            {equipos.length === 0 && (
+            {equipos.length === 0 && selectedEnterprise && (
               <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Cuadrilla
