@@ -1,101 +1,94 @@
 
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, Clock, Zap } from "lucide-react";
-import { useContextualValidator } from '@/hooks/useContextualValidator';
+import { Badge } from '@/components/ui/badge';
+import { Building2, Users, Shield, AlertTriangle } from 'lucide-react';
+import { EnterpriseSelectionResult } from '@/hooks/useEnterpriseContext';
 
 interface ContextualOperationBadgeProps {
-  operacionId: string;
+  enterpriseContext: EnterpriseSelectionResult;
   showDetails?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export const ContextualOperationBadge = ({ 
-  operacionId, 
-  showDetails = false 
-}: ContextualOperationBadgeProps) => {
-  const { validationState, isOperativaDirecta, requiereDocumentos, warnings, errors, isValidating } = useContextualValidator(operacionId);
+export const ContextualOperationBadge: React.FC<ContextualOperationBadgeProps> = ({
+  enterpriseContext,
+  showDetails = false,
+  size = 'md'
+}) => {
+  const getModeColor = () => {
+    switch (enterpriseContext.context_metadata.selection_mode) {
+      case 'superuser': return 'bg-purple-100 text-purple-700';
+      case 'salmonera_admin': return 'bg-blue-100 text-blue-700';
+      case 'contratista_admin': return 'bg-orange-100 text-orange-700';
+      case 'inherited': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
 
-  if (isValidating) {
+  const getModeIcon = () => {
+    switch (enterpriseContext.context_metadata.selection_mode) {
+      case 'superuser': return <Shield className="w-3 h-3" />;
+      case 'salmonera_admin': return <Building2 className="w-3 h-3" />;
+      case 'contratista_admin': return <Users className="w-3 h-3" />;
+      case 'inherited': return <AlertTriangle className="w-3 h-3" />;
+      default: return <Shield className="w-3 h-3" />;
+    }
+  };
+
+  const getModeText = () => {
+    switch (enterpriseContext.context_metadata.selection_mode) {
+      case 'superuser': return 'Superusuario';
+      case 'salmonera_admin': return 'Admin Salmonera';
+      case 'contratista_admin': return 'Admin Contratista';
+      case 'inherited': return 'Heredado';
+      default: return 'Desconocido';
+    }
+  };
+
+  const sizeClasses = {
+    sm: 'text-xs px-2 py-1',
+    md: 'text-sm px-3 py-1',
+    lg: 'text-base px-4 py-2'
+  };
+
+  if (!showDetails) {
     return (
-      <Badge variant="outline" className="flex items-center gap-1">
-        <Clock className="w-3 h-3" />
-        Validando...
+      <Badge 
+        variant="outline" 
+        className={`${getModeColor()} ${sizeClasses[size]} flex items-center gap-1`}
+      >
+        {getModeIcon()}
+        {getModeText()}
       </Badge>
     );
   }
 
-  const getContextBadge = () => {
-    if (isOperativaDirecta) {
-      return (
-        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-          <Zap className="w-3 h-3" />
-          Operativa Directa
-        </Badge>
-      );
-    }
-
-    if (validationState.contextType === 'planned') {
-      return (
-        <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
-          <CheckCircle className="w-3 h-3" />
-          Planificada
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="outline" className="flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" />
-        Independiente
-      </Badge>
-    );
-  };
-
-  const getValidationBadge = () => {
-    if (errors.length > 0) {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          {errors.length} Error{errors.length > 1 ? 'es' : ''}
-        </Badge>
-      );
-    }
-
-    if (warnings.length > 0) {
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          {warnings.length} Advertencia{warnings.length > 1 ? 's' : ''}
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-        <CheckCircle className="w-3 h-3" />
-        Válida
-      </Badge>
-    );
-  };
-
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {getContextBadge()}
-      {getValidationBadge()}
+    <div className="space-y-2">
+      <Badge 
+        variant="outline" 
+        className={`${getModeColor()} ${sizeClasses[size]} flex items-center gap-1`}
+      >
+        {getModeIcon()}
+        {getModeText()}
+      </Badge>
       
-      {showDetails && (
-        <div className="text-xs text-gray-600 mt-1">
-          {!requiereDocumentos && (
-            <span className="block">• No requiere documentos previos</span>
-          )}
-          {warnings.map((warning, index) => (
-            <span key={index} className="block text-yellow-600">• {warning}</span>
-          ))}
-          {errors.map((error, index) => (
-            <span key={index} className="block text-red-600">• {error}</span>
-          ))}
+      <div className="text-xs text-muted-foreground space-y-1">
+        <div className="flex items-center gap-1">
+          <Building2 className="w-3 h-3" />
+          <span>Salmonera: {enterpriseContext.salmonera_id.slice(0, 8)}...</span>
         </div>
-      )}
+        {enterpriseContext.contratista_id && (
+          <div className="flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            <span>Contratista: {enterpriseContext.contratista_id.slice(0, 8)}...</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1">
+          <Shield className="w-3 h-3" />
+          <span>Empresa Origen: {enterpriseContext.context_metadata.empresa_origen_tipo}</span>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,87 +1,222 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { useValidationState } from './validation/useValidationState';
-import { useOperationSuggestions } from './validation/useOperationSuggestions';
-import { useOperationValidator } from './validation/useOperationValidator';
+import { useState, useCallback } from 'react';
+import { useEnterpriseContext, EnterpriseSelectionResult } from './useEnterpriseContext';
+import { useAuth } from './useAuth';
+import { toast } from './use-toast';
 
-export const useContextualValidator = (operationId?: string) => {
-  const {
-    validationState,
-    warnings,
-    errors,
-    userContext,
-    profile
-  } = useValidationState();
+export interface ValidationContext {
+  operationId?: string;
+  inmersionId?: string;
+  enterpriseContext?: EnterpriseSelectionResult;
+}
 
-  const { getOperationSuggestions } = useOperationSuggestions();
-  const { validateForInmersion, isValidating } = useOperationValidator();
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  contextData?: any;
+}
 
-  // Obtener contexto operacional
-  const { refetch: refreshContext } = useQuery({
-    queryKey: ['operational-context', profile?.salmonera_id || profile?.servicio_id],
-    queryFn: async () => {
-      if (!profile) return null;
-      return {
-        hasPlanning: validationState.hasPlanning,
-        isContratista: userContext.isContratista,
-        isSalmonera: userContext.isSalmonera,
-        canCreateOperations: userContext.canCreateOperations,
-        requiresDocuments: validationState.requiresDocuments
-      };
-    },
-    enabled: !!profile
-  });
+export const useContextualValidator = (initialContext?: ValidationContext) => {
+  const { profile } = useAuth();
+  const { actions } = useEnterpriseContext();
+  const [validationHistory, setValidationHistory] = useState<ValidationResult[]>([]);
 
-  // Propiedades directas que los componentes esperan
-  const isValid = validationState.isValid && errors.length === 0;
-  const canProceed = isValid && validationState.canCreateIndependent;
-  const moduleActive = validationState.hasPlanning;
-  const requiereDocumentos = validationState.requiresDocuments;
+  const validateEnterpriseConsistency = useCallback((
+    enterpriseContext: EnterpriseSelectionResult,
+    targetData: any
+  ): ValidationResult => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-  // Wrapper para validateForInmersion con contexto
-  const validateForInmersionWithContext = (operationId: string) => {
-    return validateForInmersion(operationId, validationState.requiresDocuments);
-  };
+    // Validar consistencia de salmonera
+    if (targetData.salmonera_id && targetData.salmonera_id !== enterpriseContext.salmonera_id) {
+      errors.push('La salmonera seleccionada no coincide con el contexto empresarial');
+    }
+
+    // Validar consistencia de contratista
+    if (enterpriseContext.contratista_id && targetData.contratista_id) {
+      if (targetData.contratista_id !== enterpriseContext.contratista_id) {
+        errors.push('El contratista seleccionado no coincide con el contexto empresarial');
+      }
+    }
+
+    // Validar permisos de rol
+    switch (profile?.role) {
+      case 'admin_salmonera':
+        if (enterpriseContext.salmonera_id !== profile.salmonera_id) {
+          errors.push('No tiene permisos para crear registros en esta salmonera');
+        }
+        break;
+      
+      case 'admin_servicio':
+      case 'supervisor':
+        if (enterpriseContext.contratista_id !== profile.servicio_id) {
+          errors.push('No tiene permisos para crear registros en este contratista');
+        }
+        break;
+      
+      case 'buzo':
+        // Los buzos solo pueden crear bitácoras personales
+        if (targetData.type !== 'bitacora_buzo') {
+          errors.push('Solo puede crear bitácoras personales');
+        }
+        break;
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      contextData: {
+        enterpriseContext,
+        userRole: profile?.role,
+        validatedAt: new Date().toISOString()
+      }
+    };
+  }, [profile]);
+
+  const validateOperationAccess = useCallback((
+    operationId: string,
+    enterpriseContext: EnterpriseSelectionResult
+  ): ValidationResult => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Esta validación se podría expandir con consultas a la base de datos
+    // para verificar que la operación existe y el usuario tiene acceso
+
+    if (!operationId) {
+      errors.push('ID de operación requerido');
+    }
+
+    if (!enterpriseContext.salmonera_id) {
+      errors.push('Contexto de salmonera requerido');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      contextData: {
+        operationId,
+        enterpriseContext,
+        validatedAt: new Date().toISOString()
+      }
+    };
+  }, []);
+
+  const validateFormData = useCallback((
+    formType: string,
+    formData: any,
+    enterpriseContext?: EnterpriseSelectionResult
+  ): ValidationResult => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validaciones específicas por tipo de formulario
+    switch (formType) {
+      case 'operacion':
+        if (!formData.codigo) errors.push('Código de operación requerido');
+        if (!formData.nombre) errors.push('Nombre de operación requerido');
+        if (!formData.fecha_inicio) errors.push('Fecha de inicio requerida');
+        break;
+
+      case 'cuadrilla':
+        if (!formData.nombre) errors.push('Nombre de cuadrilla requerido');
+        if (!enterpriseContext?.salmonera_id) errors.push('Salmonera requerida');
+        break;
+
+      case 'hpt':
+        if (!formData.codigo) errors.push('Código HPT requerido');
+        if (!formData.operacion_id) errors.push('Operación asociada requerida');
+        if (!formData.supervisor) errors.push('Supervisor requerido');
+        break;
+
+      case 'anexo_bravo':
+        if (!formData.codigo) errors.push('Código Anexo Bravo requerido');
+        if (!formData.operacion_id) errors.push('Operación asociada requerida');
+        if (!formData.supervisor) errors.push('Supervisor requerido');
+        break;
+
+      case 'bitacora_supervisor':
+        if (!formData.codigo) errors.push('Código de bitácora requerido');
+        if (!formData.inmersion_id) errors.push('Inmersión asociada requerida');
+        if (!formData.supervisor) errors.push('Supervisor requerido');
+        break;
+
+      case 'bitacora_buzo':
+        if (!formData.codigo) errors.push('Código de bitácora requerido');
+        if (!formData.buzo) errors.push('Buzo requerido');
+        if (!formData.trabajos_realizados) errors.push('Trabajos realizados requeridos');
+        break;
+
+      default:
+        warnings.push(`Tipo de formulario '${formType}' no reconocido para validación específica`);
+    }
+
+    // Validar contexto empresarial si está presente
+    if (enterpriseContext) {
+      const contextValidation = validateEnterpriseConsistency(enterpriseContext, formData);
+      errors.push(...contextValidation.errors);
+      warnings.push(...contextValidation.warnings);
+    }
+
+    const result: ValidationResult = {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      contextData: {
+        formType,
+        enterpriseContext,
+        userRole: profile?.role,
+        validatedAt: new Date().toISOString()
+      }
+    };
+
+    // Guardar en historial
+    setValidationHistory(prev => [...prev.slice(-9), result]); // Mantener últimas 10 validaciones
+
+    // Mostrar errores como toast si existen
+    if (errors.length > 0) {
+      toast({
+        title: "Errores de Validación",
+        description: errors.join(', '),
+        variant: "destructive",
+      });
+    }
+
+    // Mostrar advertencias como toast si existen
+    if (warnings.length > 0) {
+      toast({
+        title: "Advertencias de Validación",
+        description: warnings.join(', '),
+      });
+    }
+
+    return result;
+  }, [profile, validateEnterpriseConsistency]);
+
+  const validateBeforeSubmit = useCallback((
+    formType: string,
+    formData: any,
+    enterpriseContext?: EnterpriseSelectionResult
+  ): Promise<ValidationResult> => {
+    return new Promise((resolve) => {
+      // Simular validación asíncrona (se podría expandir con llamadas a la API)
+      setTimeout(() => {
+        const result = validateFormData(formType, formData, enterpriseContext);
+        resolve(result);
+      }, 100);
+    });
+  }, [validateFormData]);
 
   return {
-    validationState,
-    validateForInmersion: validateForInmersionWithContext,
-    getOperationSuggestions,
-    refresh: refreshContext,
-    
-    // Propiedades directas esperadas por los componentes
-    isValid,
-    canProceed,
-    moduleActive,
-    warnings,
-    errors,
-    isValidating,
-    requiereDocumentos,
-    
-    // Helpers contextuales
-    shouldShowPlanningOption: validationState.hasPlanning,
-    shouldShowIndependentOption: validationState.canCreateIndependent,
-    isPlannedOnly: validationState.contextType === 'planned',
-    isIndependentOnly: validationState.contextType === 'independent',
-    isMixedMode: validationState.contextType === 'mixed',
-    isOperativaDirecta: !validationState.hasPlanning || userContext.isContratista,
-    
-    // Mensajes contextuales
-    getContextMessage: () => {
-      if (userContext.isContratista && validationState.hasPlanning) {
-        return 'Puedes asociar inmersiones a operaciones planificadas o crear inmersiones independientes';
-      }
-      if (userContext.isContratista && !validationState.hasPlanning) {
-        return 'Crea inmersiones independientes con código de operación externa';
-      }
-      if (userContext.isSalmonera && validationState.hasPlanning) {
-        return 'Gestiona operaciones planificadas o crea inmersiones directas';
-      }
-      return 'Crea inmersiones según las necesidades operativas';
-    },
-    
-    // Estados específicos
-    canAssociateToOperations: validationState.hasPlanning,
-    requiresOperationCode: userContext.isContratista
+    validateEnterpriseConsistency,
+    validateOperationAccess,
+    validateFormData,
+    validateBeforeSubmit,
+    validationHistory,
+    clearValidationHistory: () => setValidationHistory([])
   };
 };

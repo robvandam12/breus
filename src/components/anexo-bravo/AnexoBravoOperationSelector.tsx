@@ -1,143 +1,171 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Calendar, MapPin, Building, Users, AlertTriangle } from "lucide-react";
-import { useOperacionesQuery } from "@/hooks/useOperacionesQuery";
+import { Search, Shield, Building } from "lucide-react";
+import { useOperaciones } from "@/hooks/useOperaciones";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { EnterpriseSelectionResult } from "@/hooks/useEnterpriseContext";
 
 interface AnexoBravoOperationSelectorProps {
   onOperacionSelected: (operacionId: string) => void;
-  selectedOperacionId?: string;
+  selectedOperacionId: string;
 }
 
-export const AnexoBravoOperationSelector = ({ onOperacionSelected, selectedOperacionId }: AnexoBravoOperationSelectorProps) => {
-  const { data: operaciones = [], isLoading: operacionesLoading } = useOperacionesQuery();
-  const { anexosBravo, isLoading: anexosLoading } = useAnexoBravo();
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
+export const AnexoBravoOperationSelector = ({ 
+  onOperacionSelected, 
+  selectedOperacionId 
+}: AnexoBravoOperationSelectorProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [enterpriseSelection, setEnterpriseSelection] = useState<EnterpriseSelectionResult | null>(null);
+  
+  const { operaciones } = useOperaciones();
+  const { anexosBravo } = useAnexoBravo();
 
-  // Filter operations that don't have Anexo Bravo
-  const operacionesDisponibles = operaciones.filter(op => 
+  // Filtrar operaciones por contexto empresarial
+  const contextFilteredOperaciones = operaciones.filter(op => {
+    if (!enterpriseSelection) return true;
+    
+    const matchesSalmonera = op.salmonera_id === enterpriseSelection.salmonera_id;
+    const matchesContratista = enterpriseSelection.contratista_id ? 
+      op.contratista_id === enterpriseSelection.contratista_id : true;
+    
+    return matchesSalmonera && matchesContratista;
+  });
+
+  // Filtrar operaciones disponibles (sin Anexo Bravo ya creado)
+  const availableOperaciones = contextFilteredOperaciones.filter(op => 
     !anexosBravo.some(anexo => anexo.operacion_id === op.id)
   );
 
-  useEffect(() => {
-    if (selectedOperacionId) {
-      const operacion = operaciones.find(op => op.id === selectedOperacionId);
-      setSelectedOperacion(operacion);
-    }
-  }, [selectedOperacionId, operaciones]);
+  // Aplicar búsqueda
+  const filteredOperaciones = availableOperaciones.filter(op =>
+    op.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    op.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleOperacionChange = (operacionId: string) => {
-    const operacion = operaciones.find(op => op.id === operacionId);
-    setSelectedOperacion(operacion);
+  const handleSelectOperation = (operacionId: string) => {
     onOperacionSelected(operacionId);
   };
 
-  if (operacionesLoading || anexosLoading) {
-    return (
-      <Card className="ios-card">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="ml-4 text-gray-500">Cargando operaciones...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="ios-card">
+    <div className="space-y-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-blue-600" />
+          <Shield className="w-5 h-5 text-orange-600" />
           Seleccionar Operación para Anexo Bravo
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">
-            Operación <span className="text-red-500">*</span>
-          </label>
-          <Select value={selectedOperacion?.id || ''} onValueChange={handleOperacionChange}>
-            <SelectTrigger className="ios-input">
-              <SelectValue placeholder="Seleccione una operación" />
-            </SelectTrigger>
-            <SelectContent>
-              {operacionesDisponibles.map((operacion) => (
-                <SelectItem key={operacion.id} value={operacion.id || 'no-id'}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{operacion.codigo || 'Sin código'}</span>
-                    <span>-</span>
-                    <span>{operacion.nombre || 'Sin nombre'}</span>
-                    <Badge variant="outline" className="ml-2">
-                      {operacion.estado || 'Sin estado'}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {operacionesDisponibles.length === 0 && (
-            <div className="flex items-center gap-2 mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-yellow-600" />
-              <p className="text-sm text-yellow-700">
-                No hay operaciones disponibles para crear Anexo Bravo. Todas las operaciones ya tienen Anexo Bravo asignado.
-              </p>
+
+      <div className="space-y-4">
+        <EnterpriseSelector
+          onSelectionChange={setEnterpriseSelection}
+          showCard={false}
+          title="Contexto Empresarial"
+          description="Filtre operaciones por contexto empresarial"
+        />
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Buscar operaciones..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {enterpriseSelection && (
+          <div className="p-3 bg-orange-50 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Contexto Seleccionado:</h4>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">
+                <Building className="w-3 h-3 mr-1" />
+                Salmonera: {enterpriseSelection.salmonera_id}
+              </Badge>
+              {enterpriseSelection.contratista_id && (
+                <Badge variant="outline">
+                  <Building className="w-3 h-3 mr-1" />
+                  Contratista: {enterpriseSelection.contratista_id}
+                </Badge>
+              )}
             </div>
+          </div>
+        )}
+
+        <div className="grid gap-3 max-h-96 overflow-y-auto">
+          {filteredOperaciones.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-medium text-muted-foreground mb-2">
+                  {availableOperaciones.length === 0 ? 
+                    "No hay operaciones disponibles" : 
+                    "No se encontraron operaciones"
+                  }
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {availableOperaciones.length === 0 ? 
+                    "Todas las operaciones ya tienen Anexo Bravo asociado o no hay operaciones creadas." :
+                    "Intenta ajustar los filtros de búsqueda."
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredOperaciones.map((operacion) => (
+              <Card 
+                key={operacion.id} 
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  selectedOperacionId === operacion.id ? 'ring-2 ring-orange-500' : ''
+                }`}
+                onClick={() => handleSelectOperation(operacion.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{operacion.codigo}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {operacion.nombre}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <span>Inicio: {new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
+                        {operacion.fecha_fin && (
+                          <span>• Fin: {new Date(operacion.fecha_fin).toLocaleDateString('es-CL')}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="mb-2">
+                        {operacion.estado}
+                      </Badge>
+                      {selectedOperacionId === operacion.id && (
+                        <div className="text-xs text-orange-600 font-medium">
+                          Seleccionado
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
 
-        {selectedOperacion && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-3">Información de la Operación</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                <span className="font-medium">Fecha:</span>
-                <span>{selectedOperacion.fecha_inicio ? new Date(selectedOperacion.fecha_inicio).toLocaleDateString('es-CL') : 'No especificada'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-blue-600" />
-                <span className="font-medium">Salmonera:</span>
-                <span>{selectedOperacion.salmoneras?.nombre || 'No especificada'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <span className="font-medium">Sitio:</span>
-                <span>{selectedOperacion.sitios?.nombre || 'No especificado'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-blue-600" />
-                <span className="font-medium">Contratista:</span>
-                <span>{selectedOperacion.contratistas?.nombre || 'No especificado'}</span>
-              </div>
-
-              {selectedOperacion.equipo_buceo_id && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Equipo:</span>
-                  <Badge className="bg-green-100 text-green-700">Asignado</Badge>
-                </div>
-              )}
-            </div>
-            
-            {selectedOperacion.tareas && (
-              <div className="mt-3">
-                <span className="font-medium text-blue-800">Tareas:</span>
-                <p className="text-blue-700 mt-1">{selectedOperacion.tareas}</p>
-              </div>
-            )}
+        {filteredOperaciones.length > 0 && selectedOperacionId && (
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={() => onOperacionSelected(selectedOperacionId)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Continuar con Anexo Bravo
+            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

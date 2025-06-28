@@ -1,124 +1,310 @@
 
 import { useState } from "react";
-import { CreateBitacoraBuzoFormComplete } from "./CreateBitacoraBuzoFormComplete";
-import { BitacoraBuzoFormData, useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
-import { useInmersiones, type Inmersion } from "@/hooks/useInmersiones";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FileText } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { X, FileText } from "lucide-react";
+import { BitacoraBuzoFormData } from "@/hooks/useBitacorasBuzo";
+import { useToast } from "@/hooks/use-toast";
+import { EnterpriseSelector } from "@/components/common/EnterpriseSelector";
+import { EnterpriseSelectionResult } from "@/hooks/useEnterpriseContext";
 
 interface CreateBitacoraBuzoFormCompleteWithInmersionProps {
   onSubmit: (data: BitacoraBuzoFormData) => Promise<void>;
   onCancel: () => void;
-  inmersionId?: string;
 }
 
 export const CreateBitacoraBuzoFormCompleteWithInmersion = ({ 
   onSubmit, 
-  onCancel,
-  inmersionId,
+  onCancel 
 }: CreateBitacoraBuzoFormCompleteWithInmersionProps) => {
-  const [selectedInmersionId, setSelectedInmersionId] = useState<string | null>(inmersionId || null);
-  const { inmersiones, isLoading: loadingInmersiones } = useInmersiones();
-  const { bitacorasBuzo } = useBitacorasBuzo();
+  const { toast } = useToast();
+  const [enterpriseSelection, setEnterpriseSelection] = useState<EnterpriseSelectionResult | null>(null);
+  
+  const [formData, setFormData] = useState({
+    codigo: '',
+    fecha: new Date().toISOString().split('T')[0],
+    buzo: '',
+    supervisor_nombre: '',
+    inmersion_id: '',
+    profundidad_maxima: 0,
+    trabajos_realizados: '',
+    estado_fisico_post: 'normal',
+    objetivo_proposito: '',
+    condamb_temp_agua_c: 0,
+    condamb_visibilidad_fondo_mts: 0,
+    datostec_hora_dejo_superficie: '',
+    datostec_hora_llegada_superficie: ''
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Filtra inmersiones que ya tienen una bitácora de buzo.
-  const bitacoraInmersionIds = new Set(bitacorasBuzo.map(b => b.inmersion_id).filter(Boolean));
-  const availableInmersiones = inmersiones.filter(i => !bitacoraInmersionIds.has(i.inmersion_id));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.codigo || !formData.buzo || !formData.trabajos_realizados) {
+      toast({
+        title: "Campos requeridos",
+        description: "Código, buzo y trabajos realizados son obligatorios.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleSelectInmersion = (inmersionId: string) => {
-    setSelectedInmersionId(inmersionId);
+    if (!enterpriseSelection) {
+      toast({
+        title: "Selección empresarial requerida",
+        description: "Debe seleccionar el contexto empresarial para la bitácora.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const bitacoraData: BitacoraBuzoFormData = {
+        ...formData,
+        company_id: enterpriseSelection.salmonera_id,
+        company_type: 'salmonera'
+      };
+
+      await onSubmit(bitacoraData);
+    } catch (error) {
+      console.error('Error creating bitacora buzo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la bitácora. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const selectedInmersion = selectedInmersionId
-    ? inmersiones.find(i => i.inmersion_id === selectedInmersionId)
-    : null;
-  
-  if (loadingInmersiones) {
-    return (
-      <div className="p-6 text-center flex flex-col items-center justify-center h-full min-h-[400px]">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-zinc-500">Cargando inmersiones disponibles...</p>
-      </div>
-    );
-  }
+  const handleChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-  // Una vez seleccionada la inmersión, muestra el formulario completo.
-  if (selectedInmersionId && selectedInmersion) {
-    return (
-      <CreateBitacoraBuzoFormComplete
-        inmersion={selectedInmersion}
-        onSubmit={onSubmit}
-        onCancel={() => setSelectedInmersionId(null)} // Permite volver a la pantalla de selección
-      />
-    );
-  }
-
-  // Paso inicial: seleccionar una inmersión.
   return (
-    <Card className="max-w-3xl mx-auto border-0 shadow-none">
+    <Card className="ios-card max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-teal-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Nueva Bitácora de Buzo</h2>
-            <p className="text-sm text-zinc-500">Selecciona una inmersión para registrar tu bitácora.</p>
-          </div>
-        </CardTitle>
+            Nueva Bitácora Buzo
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6 pt-2">
-        {availableInmersiones.length === 0 ? (
-          <Alert variant="default" className="bg-yellow-50 border-yellow-200">
-            <AlertTitle className="font-semibold text-yellow-800">No hay Inmersiones para Registrar</AlertTitle>
-            <AlertDescription className="text-yellow-700">
-              Todas las inmersiones registradas por supervisores ya tienen una bitácora de buzo asociada.
-              Por favor, espera a que se registren nuevas inmersiones.
-            </AlertDescription>
-          </Alert>
-        ) : (
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Información Básica */}
           <div className="space-y-4">
-            <Label htmlFor="inmersion-select" className="font-medium text-zinc-800">
-                Inmersiones Disponibles
-            </Label>
-            <Select onValueChange={handleSelectInmersion}>
-              <SelectTrigger id="inmersion-select" className="w-full">
-                <SelectValue placeholder="Elige una inmersión de la lista..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableInmersiones.map((inmersion) => (
-                  <SelectItem key={inmersion.inmersion_id} value={inmersion.inmersion_id}>
-                    <div className="flex items-center justify-between w-full space-x-4">
-                        <div className="flex flex-col items-start text-left">
-                            <span className="font-semibold">{inmersion.codigo}</span>
-                            <span className="text-xs text-zinc-500 truncate max-w-[200px]">{inmersion.objetivo}</span>
-                        </div>
-                         <div className="flex flex-col items-end text-right">
-                             <span className="text-xs">{new Date(inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</span>
-                            <Badge variant="outline">{inmersion.supervisor}</Badge>
-                         </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-zinc-500">
-                Solo se muestran las inmersiones que aún no tienen una bitácora de buzo registrada.
-            </p>
-          </div>
-        )}
+            <h3 className="text-lg font-semibold">Información Básica</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="codigo">Código *</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => handleChange('codigo', e.target.value)}
+                  className="ios-input"
+                  placeholder="Ej: BB-2024-001"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="fecha">Fecha *</Label>
+                <Input
+                  id="fecha"
+                  type="date"
+                  value={formData.fecha}
+                  onChange={(e) => handleChange('fecha', e.target.value)}
+                  className="ios-input"
+                  required
+                />
+              </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onCancel}>
+              <div>
+                <Label htmlFor="buzo">Buzo *</Label>
+                <Input
+                  id="buzo"
+                  value={formData.buzo}
+                  onChange={(e) => handleChange('buzo', e.target.value)}
+                  className="ios-input"
+                  placeholder="Nombre del buzo"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="supervisor_nombre">Supervisor</Label>
+                <Input
+                  id="supervisor_nombre"
+                  value={formData.supervisor_nombre}
+                  onChange={(e) => handleChange('supervisor_nombre', e.target.value)}
+                  className="ios-input"
+                  placeholder="Nombre del supervisor"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="profundidad_maxima">Profundidad Máxima (m)</Label>
+                <Input
+                  id="profundidad_maxima"
+                  type="number"
+                  step="0.1"
+                  value={formData.profundidad_maxima}
+                  onChange={(e) => handleChange('profundidad_maxima', parseFloat(e.target.value) || 0)}
+                  className="ios-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <EnterpriseSelector
+            onSelectionChange={setEnterpriseSelection}
+            showCard={false}
+            title="Contexto Empresarial"
+            description="Seleccione las empresas involucradas en esta bitácora"
+          />
+
+          {/* Condiciones Ambientales */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Condiciones Ambientales</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="condamb_temp_agua_c">Temperatura del Agua (°C)</Label>
+                <Input
+                  id="condamb_temp_agua_c"
+                  type="number"
+                  step="0.1"
+                  value={formData.condamb_temp_agua_c}
+                  onChange={(e) => handleChange('condamb_temp_agua_c', parseFloat(e.target.value) || 0)}
+                  className="ios-input"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="condamb_visibilidad_fondo_mts">Visibilidad en el Fondo (m)</Label>
+                <Input
+                  id="condamb_visibilidad_fondo_mts"
+                  type="number"
+                  step="0.1"
+                  value={formData.condamb_visibilidad_fondo_mts}
+                  onChange={(e) => handleChange('condamb_visibilidad_fondo_mts', parseFloat(e.target.value) || 0)}
+                  className="ios-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tiempos */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Tiempos de Inmersión</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="datostec_hora_dejo_superficie">Hora de Salida de Superficie</Label>
+                <Input
+                  id="datostec_hora_dejo_superficie"
+                  type="time"
+                  value={formData.datostec_hora_dejo_superficie}
+                  onChange={(e) => handleChange('datostec_hora_dejo_superficie', e.target.value)}
+                  className="ios-input"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="datostec_hora_llegada_superficie">Hora de Llegada a Superficie</Label>
+                <Input
+                  id="datostec_hora_llegada_superficie"
+                  type="time"
+                  value={formData.datostec_hora_llegada_superficie}
+                  onChange={(e) => handleChange('datostec_hora_llegada_superficie', e.target.value)}
+                  className="ios-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Trabajo Realizado */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Trabajo y Resultados</h3>
+            <div>
+              <Label htmlFor="objetivo_proposito">Objetivo/Propósito</Label>
+              <Textarea
+                id="objetivo_proposito"
+                value={formData.objetivo_proposito}
+                onChange={(e) => handleChange('objetivo_proposito', e.target.value)}
+                className="ios-input min-h-[80px]"
+                placeholder="Describe el objetivo de la inmersión..."
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="trabajos_realizados">Trabajos Realizados *</Label>
+              <Textarea
+                id="trabajos_realizados"
+                value={formData.trabajos_realizados}
+                onChange={(e) => handleChange('trabajos_realizados', e.target.value)}
+                className="ios-input min-h-[120px]"
+                placeholder="Describe detalladamente los trabajos realizados..."
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estado_fisico_post">Estado Físico Post-Inmersión</Label>
+              <select
+                id="estado_fisico_post"
+                value={formData.estado_fisico_post}
+                onChange={(e) => handleChange('estado_fisico_post', e.target.value)}
+                className="ios-input w-full"
+              >
+                <option value="normal">Normal</option>
+                <option value="fatiga_leve">Fatiga Leve</option>
+                <option value="fatiga_moderada">Fatiga Moderada</option>
+                <option value="malestar">Malestar</option>
+                <option value="sintomas_descompresion">Síntomas de Descompresión</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="ios-button"
+            >
               Cancelar
             </Button>
-        </div>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="ios-button bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              {isLoading ? 'Creando...' : 'Crear Bitácora'}
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );
