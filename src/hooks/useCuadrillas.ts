@@ -186,7 +186,9 @@ export const useCuadrillas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      // Forzar actualización inmediata de la cache
       queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      queryClient.refetchQueries({ queryKey: ['cuadrillas'] });
       toast({
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",

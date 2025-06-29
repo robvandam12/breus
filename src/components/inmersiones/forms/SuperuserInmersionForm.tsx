@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Crown, Calendar, Zap, AlertTriangle, CheckCircle } from "lucide-react";
+import { Building, Calendar, Zap, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
-import { useEnterpriseValidation } from '@/hooks/useEnterpriseValidation';
+import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
@@ -40,13 +40,12 @@ interface Centro {
 
 export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: SuperuserInmersionFormProps) => {
   const { profile } = useAuth();
-  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
-  const { validation, validateOperation } = useEnterpriseValidation(
-    selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
-    selectedEnterprise?.salmonera_id ? 'salmonera' : 'contratista'
-  );
+  const { getModulesForCompany } = useEnterpriseModuleAccess();
   
-  const [isPlanned, setIsPlanned] = useState(true);
+  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
+  const [canShowPlanningToggle, setCanShowPlanningToggle] = useState(false);
+  const [isPlanned, setIsPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const getInitialCuadrillaId = () => {
@@ -78,19 +77,42 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
 
   useEffect(() => {
     if (selectedEnterprise) {
+      loadEnterpriseModules();
       loadCentros();
-      if (validation.canAccessPlanning && isPlanned) {
-        loadOperaciones();
-      }
     }
-  }, [selectedEnterprise, validation.canAccessPlanning, isPlanned]);
+  }, [selectedEnterprise]);
+
+  useEffect(() => {
+    if (canShowPlanningToggle && isPlanned && selectedEnterprise) {
+      loadOperaciones();
+    }
+  }, [canShowPlanningToggle, isPlanned, selectedEnterprise]);
+
+  const loadEnterpriseModules = async () => {
+    if (!selectedEnterprise) return;
+
+    try {
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      
+      const modules = await getModulesForCompany(companyId, companyType);
+      setEnterpriseModules(modules);
+      const hasPlanning = !!modules?.hasPlanning;
+      setCanShowPlanningToggle(hasPlanning);
+      setIsPlanned(hasPlanning && (!!initialData?.operacion_id));
+    } catch (error) {
+      console.error('Error loading enterprise modules:', error);
+      setCanShowPlanningToggle(false);
+      setIsPlanned(false);
+    }
+  };
 
   const loadOperaciones = async () => {
     if (!selectedEnterprise) return;
 
     try {
-      const empresaId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const empresaField = selectedEnterprise.salmonera_id ? 'salmonera_id' : 'contratista_id';
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyTypeField = selectedEnterprise.salmonera_id ? 'salmonera_id' : 'contratista_id';
 
       const { data } = await supabase
         .from('operacion')
@@ -102,7 +124,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
           centro_id,
           centros:centro_id(nombre)
         `)
-        .eq(empresaField, empresaId)
+        .eq(companyTypeField, companyId)
         .eq('estado', 'activa')
         .order('fecha_inicio', { ascending: true });
 
@@ -117,7 +139,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
     if (!selectedEnterprise) return;
 
     try {
-      // Solo cargar centros si es salmonera
+      // Solo salmoneras tienen centros propios
       if (selectedEnterprise.salmonera_id) {
         const { data } = await supabase
           .from('centros')
@@ -128,7 +150,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
 
         setCentros(data || []);
       } else {
-        // Para contratistas, cargar todos los centros disponibles
+        // Contratistas pueden ver todos los centros
         const { data } = await supabase
           .from('centros')
           .select('id, nombre, salmonera_id')
@@ -142,6 +164,15 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
       setCentros([]);
     }
   };
+
+  useEffect(() => {
+    if (isPlanned && formData.operacion_id) {
+      const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
+      if (selectedOperacion?.centro_id) {
+        setFormData(prev => ({ ...prev, centro_id: selectedOperacion.centro_id || '' }));
+      }
+    }
+  }, [isPlanned, formData.operacion_id, operaciones]);
 
   const handleEnterpriseChange = (result: any) => {
     setSelectedEnterprise(result);
@@ -163,42 +194,29 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
     
     if (!selectedEnterprise) {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Debe seleccionar una empresa",
         variant: "destructive",
       });
       return;
     }
 
-    // Validar según el tipo de operación
-    if (isPlanned) {
-      const planningValidation = validateOperation('planning');
-      if (!planningValidation.isValid) {
-        toast({
-          title: "Error",
-          description: planningValidation.message,
-          variant: "destructive",
-        });
-        return;
-      }
+    if (isPlanned && !formData.operacion_id) {
+      toast({
+        title: "Error", 
+        description: "Debe seleccionar una operación para inmersiones planificadas",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (!formData.operacion_id) {
-        toast({
-          title: "Error",
-          description: "Debe seleccionar una operación para inmersiones planificadas",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else {
-      if (!formData.codigo_operacion_externa) {
-        toast({
-          title: "Error",
-          description: "Debe ingresar un código de operación externa para inmersiones independientes",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!isPlanned && !formData.codigo_operacion_externa) {
+      toast({
+        title: "Error",
+        description: "Debe ingresar un código de operación externa para inmersiones independientes", 
+        variant: "destructive",
+      });
+      return;
     }
 
     if (!formData.centro_id) {
@@ -217,9 +235,8 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
         (typeof initialData.metadata === 'string' ? JSON.parse(initialData.metadata) : initialData.metadata) : 
         {};
 
-      const selectedCentro = centros.find(c => c.id === formData.centro_id);
-      const empresaId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const empresaTipo = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
 
       const inmersionData = {
         ...formData,
@@ -228,8 +245,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
         operacion_id: isPlanned ? formData.operacion_id : null,
         external_operation_code: !isPlanned ? formData.codigo_operacion_externa : null,
         estado: initialData?.estado || 'planificada',
-        company_id: empresaId,
-        salmonera_id: selectedCentro?.salmonera_id || (empresaTipo === 'salmonera' ? empresaId : null),
+        company_id: companyId,
         requiere_validacion_previa: isPlanned,
         anexo_bravo_validado: !isPlanned,
         hpt_validado: !isPlanned,
@@ -238,11 +254,10 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
           ...currentMetadata,
           cuadrilla_id: selectedCuadrillaId,
           enterprise_context: {
-            [empresaTipo === 'salmonera' ? 'salmonera_id' : 'contratista_id']: empresaId,
+            ...selectedEnterprise,
             context_metadata: {
-              selection_mode: 'superuser',
-              empresa_origen_tipo: empresaTipo,
-              validated_modules: validation
+              selection_mode: 'superuser_admin',
+              empresa_origen_tipo: companyType
             }
           }
         }
@@ -261,19 +276,15 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
     }
   };
 
-  // Mostrar selector de empresa si no hay una seleccionada
+  // Mostrar selector de empresa para superusers
   if (!selectedEnterprise) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 text-sm text-purple-600 p-3 bg-purple-50 rounded-lg border border-purple-200">
-          <Crown className="w-4 h-4" />
-          <span>Modo Superusuario - Control Total del Sistema</span>
-        </div>
-
+      <div className="space-y-4">
         <EnterpriseSelector
           onSelectionChange={handleEnterpriseChange}
+          showCard={false}
           title="Seleccionar Empresa para Inmersión"
-          description="Como superusuario, seleccione la empresa para la cual creará la inmersión"
+          description="Seleccione la empresa que gestionará esta inmersión"
           autoSubmit={true}
         />
       </div>
@@ -282,67 +293,59 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-purple-600 p-3 bg-purple-50 rounded-lg border border-purple-200">
-        <Crown className="w-4 h-4" />
-        <span>Modo Superusuario</span>
-        <Badge variant="outline" className="ml-auto text-purple-600 border-purple-200">
-          Empresa: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
-        </Badge>
-      </div>
-
-      {/* Mostrar validaciones de módulos */}
-      {validation.validationMessage && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-amber-800">Advertencia de Módulos</h4>
-              <p className="text-sm text-amber-700 mt-1">{validation.validationMessage}</p>
-            </div>
-          </div>
+      {/* Info contextual con opción de cambiar empresa */}
+      <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Building className="w-4 h-4" />
+          <span>
+            Empresa: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+          </span>
+          {canShowPlanningToggle && (
+            <Badge variant="outline" className="text-green-600 border-green-200">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Planning Activo
+            </Badge>
+          )}
+          {!canShowPlanningToggle && (
+            <Badge variant="outline" className="text-amber-600 border-amber-200">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              Solo Independientes
+            </Badge>
+          )}
         </div>
-      )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSelectedEnterprise(null)}
+          className="text-blue-600 hover:text-blue-800 h-auto p-1"
+        >
+          Cambiar
+        </Button>
+      </div>
 
       <Card className="w-full max-w-4xl">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedEnterprise(null)}
-              className="text-purple-600 hover:text-purple-800"
-            >
-              Cambiar Empresa
-            </Button>
-          </div>
-          
-          {validation.canAccessPlanning && !initialData && (
-            <div className="flex items-center space-x-2 pt-2">
-              <Zap className="w-4 h-4" />
-              <Switch
-                checked={isPlanned}
-                onCheckedChange={setIsPlanned}
-                id="inmersion-type"
-              />
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm text-gray-600">
-                {isPlanned ? 'Planificada' : 'Independiente'}
-              </span>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-2">
+          <CardTitle className="flex items-center justify-between">
+            <span>{initialData ? 'Editar Inmersión' : 'Nueva Inmersión'}</span>
+            {canShowPlanningToggle && !initialData && (
+              <div className="flex items-center space-x-2">
+                <Zap className="w-4 h-4" />
+                <Switch
+                  checked={isPlanned}
+                  onCheckedChange={setIsPlanned}
+                  id="inmersion-type"
+                />
+                <Calendar className="w-4 h-4" />
+              </div>
+            )}
+          </CardTitle>
+          <div className="flex gap-2">
             <Badge variant={!isPlanned ? "default" : "secondary"}>
               {!isPlanned ? "Independiente" : "Planificada"}
             </Badge>
-            <Badge variant="outline" className="text-purple-600 border-purple-200">
-              Superusuario
-            </Badge>
-            {validation.canAccessPlanning && (
-              <Badge variant="outline" className="text-green-600 border-green-200">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Planning
+            {isPlanned && (
+              <Badge variant="outline">
+                Asociada a Operación
               </Badge>
             )}
           </div>
@@ -351,7 +354,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Selector de operación para modo planificado */}
-            {validation.canAccessPlanning && isPlanned && operaciones.length > 0 && (
+            {canShowPlanningToggle && isPlanned && operaciones.length > 0 && (
               <div>
                 <Label htmlFor="operacion">Operación *</Label>
                 <Select
@@ -378,14 +381,14 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
             )}
 
             {/* Código externo para inmersiones independientes */}
-            {(!validation.canAccessPlanning || !isPlanned) && (
+            {(!canShowPlanningToggle || !isPlanned) && (
               <div>
                 <Label htmlFor="codigo_externo">Código de Operación Externa *</Label>
                 <Input
                   id="codigo_externo"
                   value={formData.codigo_operacion_externa}
                   onChange={(e) => setFormData(prev => ({ ...prev, codigo_operacion_externa: e.target.value }))}
-                  placeholder="Ej: SUP-2024-001"
+                  placeholder="Ej: EXT-2024-001"
                   required
                 />
               </div>
@@ -433,6 +436,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
                 <Select
                   value={formData.centro_id}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, centro_id: value }))}
+                  disabled={isPlanned && formData.operacion_id && operaciones.find(op => op.id === formData.operacion_id)?.centro_id}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar centro" />
@@ -445,6 +449,11 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
                     ))}
                   </SelectContent>
                 </Select>
+                {isPlanned && formData.operacion_id && operaciones.find(op => op.id === formData.operacion_id)?.centro_id && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Centro heredado de la operación seleccionada
+                  </p>
+                )}
               </div>
             </div>
 

@@ -135,7 +135,7 @@ export const EnhancedCuadrillaSelector = ({
 
   return (
     <div className="space-y-4">
-      {/* Mostrar empresa seleccionada para superusers */}
+      {/* Info contextual simple para superusers */}
       {profile?.role === 'superuser' && selectedEnterprise && (
         <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
           <span>

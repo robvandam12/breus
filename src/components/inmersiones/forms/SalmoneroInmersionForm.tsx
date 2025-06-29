@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Building, Calendar, Zap, CheckCircle } from "lucide-react";
+import { Building, Calendar, Zap, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +43,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
   
   const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
   const [canShowPlanningToggle, setCanShowPlanningToggle] = useState(false);
-  const [isPlanned, setIsPlanned] = useState(true);
+  const [isPlanned, setIsPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const getInitialCuadrillaId = () => {
@@ -92,10 +92,14 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     try {
       const modules = await getModulesForCompany(profile.salmonera_id, 'salmonera');
       setEnterpriseModules(modules);
-      setCanShowPlanningToggle(modules.hasPlanning);
+      const hasPlanning = !!modules?.hasPlanning;
+      setCanShowPlanningToggle(hasPlanning);
+      // Si no tiene Planning, defaultear a inmersión independiente
+      setIsPlanned(hasPlanning && (!!initialData?.operacion_id));
     } catch (error) {
       console.error('Error loading enterprise modules:', error);
       setCanShowPlanningToggle(false);
+      setIsPlanned(false);
     }
   };
 
@@ -231,13 +235,20 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
 
   return (
     <div className="space-y-6">
+      {/* Info contextual sin mensajes redundantes */}
       <div className="flex items-center gap-2 text-sm text-gray-600 p-3 bg-blue-50 rounded-lg border border-blue-200">
         <Building className="w-4 h-4 text-blue-600" />
-        <span>Modo Salmonera - Gestión Planificada de Inmersiones</span>
+        <span>Gestión de Inmersiones</span>
         {canShowPlanningToggle && (
           <Badge variant="outline" className="ml-auto">
             <CheckCircle className="w-3 h-3 mr-1" />
             Planning Activo
+          </Badge>
+        )}
+        {!canShowPlanningToggle && (
+          <Badge variant="outline" className="ml-auto text-amber-600 border-amber-200">
+            <AlertTriangle className="w-3 h-3 mr-1" />
+            Solo Independientes
           </Badge>
         )}
       </div>
@@ -267,9 +278,6 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
                 Asociada a Operación
               </Badge>
             )}
-            <Badge variant="outline" className="text-blue-600 border-blue-200">
-              Salmonera
-            </Badge>
           </div>
         </CardHeader>
 
