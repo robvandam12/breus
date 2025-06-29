@@ -1,8 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
-import { createBaseEmailTemplate } from "../_shared/email-templates/base-template.ts";
-import { createButton, createInfoCard, createSection } from "../_shared/email-templates/components.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,66 +107,68 @@ const handler = async (req: Request): Promise<Response> => {
     const roleName = roleNames[rol] || rol;
     const tipoEmpresaName = tipo_empresa === 'salmonera' ? 'Salmonera' : 'Empresa de Servicio';
 
-    // Crear contenido del email
-    const emailContent = `
-      ${createSection('¡Hola ' + (nombre || 'Usuario') + '!', `
-        Has sido invitado/a por <strong>${inviterName}</strong> a unirte a Breus como <strong>${roleName}</strong> en <strong>${empresaNombre}</strong>.
-      `)}
+    // Crear contenido del email usando estructura simple
+    const emailHtml = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <h1 style="color: #2563eb;">¡Hola ${nombre || 'Usuario'}!</h1>
+        <p>Has sido invitado/a por <strong>${inviterName}</strong> a unirte a Breus como <strong>${roleName}</strong> en <strong>${empresaNombre}</strong>.</p>
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1e40af;">Información de la invitación</h3>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Rol:</strong> ${roleName}</p>
+          <p><strong>Empresa:</strong> ${empresaNombre} (${tipoEmpresaName})</p>
+          <p><strong>Invitado por:</strong> ${inviterName}</p>
+        </div>
 
-      ${createInfoCard('Información de la invitación', `
-        <strong>Email:</strong> ${email}<br>
-        <strong>Rol:</strong> ${roleName}<br>
-        <strong>Empresa:</strong> ${empresaNombre} (${tipoEmpresaName})<br>
-        <strong>Invitado por:</strong> ${inviterName}
-      `, 'info')}
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invitationUrl}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Completar mi Registro
+          </a>
+        </div>
 
-      ${createSection('¿Qué es Breus?', `
-        <p>Breus es la plataforma líder en gestión profesional de buceo para la industria salmonicultora. Con Breus podrás:</p>
-        <ul style="margin: 16px 0; padding-left: 20px; color: #4b5563;">
-          <li>Gestionar formularios HPT y Anexo Bravo digitalmente</li>
-          <li>Controlar inmersiones y bitácoras en tiempo real</li>
-          <li>Mantener trazabilidad completa de operaciones</li>
-          <li>Generar reportes automáticos y analíticas</li>
-          <li>Garantizar cumplimiento normativo</li>
-        </ul>
-      `)}
+        <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <p style="margin: 0; color: #92400e;">
+            Esta invitación expirará el <strong>${fechaExpiracion.toLocaleDateString('es-ES')}</strong>.
+          </p>
+        </div>
 
-      ${createButton('Completar mi Registro', invitationUrl)}
-
-      ${createInfoCard('Información importante', `
-        Esta invitación expirará el <strong>${fechaExpiracion.toLocaleDateString('es-ES')}</strong>. 
-        Si no puedes hacer clic en el botón, copia y pega el siguiente enlace en tu navegador:<br><br>
-        <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px; word-break: break-all;">${invitationUrl}</code>
-      `, 'warning')}
-
-      ${createSection('¿Necesitas ayuda?', `
-        Si tienes alguna pregunta sobre esta invitación o necesitas asistencia, no dudes en contactarnos en <a href="mailto:soporte@breus.cl" style="color: #3b82f6;">soporte@breus.cl</a>
-      `)}
+        <p style="color: #6b7280; font-size: 14px;">
+          Si tienes alguna pregunta, contacta a <a href="mailto:soporte@breus.cl">soporte@breus.cl</a>
+        </p>
+      </div>
     `;
 
-    const html = createBaseEmailTemplate({
-      title: 'Invitación a Breus - Sistema de Gestión de Buceo',
-      previewText: `${inviterName} te ha invitado a unirte a Breus como ${roleName}`,
-      children: emailContent
-    });
+    // Intentar enviar email usando Resend
+    try {
+      const resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Breus <onboarding@resend.dev>',
+          to: [email],
+          subject: `Invitación a Breus - ${roleName} en ${empresaNombre}`,
+          html: emailHtml,
+        }),
+      });
 
-    // Enviar email usando Resend
-    const emailData = {
-      to: [email],
-      subject: `Invitación a Breus - ${roleName} en ${empresaNombre}`,
-      html: html
-    };
+      if (!resendResponse.ok) {
+        const errorData = await resendResponse.text();
+        console.error('Resend API error:', errorData);
+        throw new Error(`Error enviando email: ${resendResponse.status}`);
+      }
 
-    const { data, error } = await supabaseAdmin.functions.invoke('resend', {
-      body: emailData
-    });
+      const emailResult = await resendResponse.json();
+      console.log('Email sent successfully via Resend:', emailResult);
 
-    if (error) {
-      console.error('Error sending email:', error);
-      throw error;
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      // No lanzar error aquí, la invitación se creó exitosamente
+      console.log('Invitation created but email failed to send');
     }
-
-    console.log('User invitation email sent successfully:', { data, error });
 
     return new Response(JSON.stringify({
       success: true,

@@ -9,3 +9,5 @@ export const CuadrillasBuceoPageMejorada = () => {
     </div>
   );
 };
+
+export default CuadrillasBuceoPageMejorada;

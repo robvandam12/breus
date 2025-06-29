@@ -90,37 +90,45 @@ export const useInmersiones = () => {
       }
 
       // Separar metadatos de cuadrilla del objeto principal
-      const cuadrillaId = inmersionData.metadata?.cuadrilla_id;
-      const inmersionPayload = { ...inmersionData };
-
-      // Preparar datos finales - manejar campos opcionales
-      const finalData = {
-        estado: 'planificada',
+      const cuadrillaId = inmersionData.cuadrilla_id || inmersionData.metadata?.cuadrilla_id;
+      
+      // Preparar datos para inmersión
+      const inmersionPayload = {
+        codigo: inmersionData.codigo,
+        fecha_inmersion: inmersionData.fecha_inmersion,
+        hora_inicio: inmersionData.hora_inicio || null,
+        hora_fin: inmersionData.hora_fin || null,
+        objetivo: inmersionData.objetivo,
         profundidad_max: inmersionData.profundidad_max || 0,
+        supervisor: inmersionData.supervisor || null,
+        buzo_principal: inmersionData.buzo_principal || null,
+        buzo_asistente: inmersionData.buzo_asistente || null,
+        operacion_id: inmersionData.operacion_id || null,
+        observaciones: inmersionData.observaciones || '',
+        centro_id: inmersionData.centro_id || null,
+        estado: 'planificada',
         // Establecer contexto operativo correcto
         contexto_operativo: inmersionData.is_independent ? 'independiente' : 'planificada',
-        ...inmersionPayload,
-        codigo: inmersionData.codigo,
+        is_independent: inmersionData.is_independent || false,
         // Campos opcionales para inmersiones planificadas
         temperatura_agua: inmersionData.temperatura_agua || null,
         visibilidad: inmersionData.visibilidad || null,
         corriente: inmersionData.corriente || null,
-        buzo_principal: inmersionData.buzo_principal || null,
-        supervisor: inmersionData.supervisor || null,
-        hora_inicio: inmersionData.hora_inicio || null,
+        // Incluir metadata con cuadrilla si existe
+        metadata: cuadrillaId ? { cuadrilla_id: cuadrillaId } : {}
       };
 
-      // Si es inmersión independiente (no tiene operacion_id o es null), 
+      // Si es inmersión independiente (no tiene operacion_id), 
       // remover operacion_id del objeto para evitar enviar null
-      if (!inmersionData.operacion_id || inmersionData.operacion_id === null || inmersionData.operacion_id === '') {
-        delete finalData.operacion_id;
-        finalData.is_independent = true;
+      if (!inmersionData.operacion_id) {
+        delete inmersionPayload.operacion_id;
+        inmersionPayload.is_independent = true;
       }
 
       // Crear la inmersión
       const { data, error } = await supabase
         .from('inmersion')
-        .insert(finalData)
+        .insert(inmersionPayload)
         .select()
         .single();
 
@@ -143,7 +151,13 @@ export const useInmersiones = () => {
 
         if (assignmentError) {
           console.error('Error creating cuadrilla assignment:', assignmentError);
-          // No lanzar error aquí ya que la inmersión se creó exitosamente
+          // Si falla la asignación, eliminar la inmersión creada
+          await supabase
+            .from('inmersion')
+            .delete()
+            .eq('inmersion_id', data.inmersion_id);
+          
+          throw new Error('Error al asignar cuadrilla a la inmersión');
         }
       }
       
@@ -197,59 +211,34 @@ export const useInmersiones = () => {
     mutationFn: async (inmersionId: string) => {
       console.log('Starting deletion process for inmersion:', inmersionId);
       
-      // Primero verificar que la inmersión existe
-      const { data: inmersionExists, error: checkError } = await supabase
-        .from('inmersion')
-        .select('inmersion_id')
-        .eq('inmersion_id', inmersionId)
-        .single();
-
-      if (checkError || !inmersionExists) {
-        console.error('Inmersion not found:', checkError);
-        throw new Error('Inmersión no encontrada');
-      }
-
-      // Eliminar asignaciones de cuadrilla relacionadas
-      const { error: assignmentError } = await supabase
+      // Primero eliminar asignaciones de cuadrilla si existen
+      const { error: asignacionError } = await supabase
         .from('cuadrilla_asignaciones')
         .delete()
         .eq('inmersion_id', inmersionId);
 
-      if (assignmentError) {
-        console.error('Error deleting cuadrilla assignments:', assignmentError);
-        // Continuar con la eliminación de la inmersión aunque fallen las asignaciones
+      if (asignacionError) {
+        console.warn('Warning deleting cuadrilla assignments:', asignacionError);
       }
 
-      // Eliminar la inmersión
-      const { error: deleteError, count } = await supabase
+      // Luego eliminar la inmersión
+      const { error: inmersionError } = await supabase
         .from('inmersion')
-        .delete({ count: 'exact' })
+        .delete()
         .eq('inmersion_id', inmersionId);
 
-      if (deleteError) {
-        console.error('Error deleting inmersion:', deleteError);
-        throw deleteError;
+      if (inmersionError) {
+        console.error('Error deleting inmersion:', inmersionError);
+        throw new Error('No se pudo eliminar la inmersión - ' + inmersionError.message);
       }
 
-      if (count === 0) {
-        throw new Error('No se pudo eliminar la inmersión - no se encontró el registro');
-      }
-      
-      console.log('Inmersion deleted successfully, affected rows:', count);
       return inmersionId;
     },
-    onSuccess: (deletedId) => {
-      console.log('Delete mutation succeeded for ID:', deletedId);
-      
-      // Forzar refetch inmediato y completo
-      queryClient.removeQueries({ queryKey: ['inmersiones'] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrillas-con-asignaciones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
-      
-      // Refetch explícito para asegurar actualización inmediata
-      queryClient.refetchQueries({ queryKey: ['inmersiones'] });
       
       toast({
         title: 'Inmersión eliminada',
