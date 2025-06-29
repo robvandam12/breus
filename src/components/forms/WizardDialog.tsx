@@ -1,36 +1,51 @@
 
 import React from 'react';
-import { FormDialog } from './FormDialog';
-import { Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { LucideIcon } from "lucide-react";
 
 interface WizardDialogProps {
   children: React.ReactNode;
-  triggerText?: string;
-  triggerIcon?: React.ElementType;
+  triggerText: string;
+  triggerIcon?: LucideIcon;
   triggerClassName?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  size?: 'lg' | 'xl' | 'full';
+  size?: "sm" | "md" | "lg" | "xl" | "full";
+  hideButton?: boolean;
 }
 
-export const WizardDialog: React.FC<WizardDialogProps> = ({
+export const WizardDialog = ({
   children,
-  triggerText = "Nuevo",
-  triggerIcon = Plus,
+  triggerText,
+  triggerIcon: Icon,
   triggerClassName = "",
-  size = 'xl',
-  ...props
-}) => {
+  open,
+  onOpenChange,
+  size = "md",
+  hideButton = false
+}: WizardDialogProps) => {
+  const sizeClasses = {
+    sm: "max-w-md",
+    md: "max-w-lg", 
+    lg: "max-w-2xl",
+    xl: "max-w-4xl",
+    full: "max-w-7xl w-[90vw]"
+  };
+
   return (
-    <FormDialog
-      variant="wizard"
-      size={size}
-      triggerText={triggerText}
-      triggerIcon={triggerIcon}
-      triggerClassName={triggerClassName}
-      {...props}
-    >
-      {children}
-    </FormDialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {!hideButton && (
+        <DialogTrigger asChild>
+          <Button className={triggerClassName}>
+            {Icon && <Icon className="w-4 h-4 mr-2" />}
+            {triggerText}
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 };
