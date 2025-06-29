@@ -1307,7 +1307,7 @@ export type Database = {
           external_operation_code: string | null
           fecha_inmersion: string
           hora_fin: string | null
-          hora_inicio: string
+          hora_inicio: string | null
           hpt_validado: boolean
           inmersion_id: string
           is_independent: boolean | null
@@ -1354,7 +1354,7 @@ export type Database = {
           external_operation_code?: string | null
           fecha_inmersion: string
           hora_fin?: string | null
-          hora_inicio: string
+          hora_inicio?: string | null
           hpt_validado?: boolean
           inmersion_id?: string
           is_independent?: boolean | null
@@ -1401,7 +1401,7 @@ export type Database = {
           external_operation_code?: string | null
           fecha_inmersion?: string
           hora_fin?: string | null
-          hora_inicio?: string
+          hora_inicio?: string | null
           hpt_validado?: boolean
           inmersion_id?: string
           is_independent?: boolean | null
