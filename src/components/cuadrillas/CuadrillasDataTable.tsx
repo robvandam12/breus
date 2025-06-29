@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Settings, MapPin, Building2 } from "lucide-react";
 import { Cuadrilla } from '@/hooks/useCuadrillas';
+import { useSalmoneras } from '@/hooks/useSalmoneras';
 
 interface CuadrillasDataTableProps {
   cuadrillas: Cuadrilla[];
@@ -19,6 +20,18 @@ export const CuadrillasDataTable = ({
   showCompanyInfo = false 
 }: CuadrillasDataTableProps) => {
   
+  const { salmoneras } = useSalmoneras();
+
+  // Crear un mapa de empresas para facilitar la búsqueda
+  const empresasMap = useMemo(() => {
+    const map = new Map();
+    salmoneras.forEach(salmonera => {
+      map.set(salmonera.id, { nombre: salmonera.nombre, tipo: 'salmonera' });
+    });
+    // Aquí también podrías agregar contratistas si tienes el hook
+    return map;
+  }, [salmoneras]);
+
   const getEstadoBadge = (estado: string) => {
     const colors = {
       'disponible': 'bg-green-100 text-green-700 border-green-200',
@@ -32,6 +45,11 @@ export const CuadrillasDataTable = ({
     return tipo === 'salmonera' 
       ? 'bg-blue-100 text-blue-700 border-blue-200'
       : 'bg-purple-100 text-purple-700 border-purple-200';
+  };
+
+  const getEmpresaNombre = (cuadrilla: Cuadrilla) => {
+    const empresa = empresasMap.get(cuadrilla.empresa_id);
+    return empresa?.nombre || 'Empresa no encontrada';
   };
 
   if (cuadrillas.length === 0) {
@@ -79,7 +97,7 @@ export const CuadrillasDataTable = ({
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-gray-400" />
                       <div>
-                        <div className="text-sm font-medium">{cuadrilla.empresa_nombre || 'N/A'}</div>
+                        <div className="text-sm font-medium">{getEmpresaNombre(cuadrilla)}</div>
                         <Badge variant="outline" className={getTipoEmpresaBadge(cuadrilla.tipo_empresa)}>
                           {cuadrilla.tipo_empresa === 'salmonera' ? 'Salmonera' : 'Contratista'}
                         </Badge>

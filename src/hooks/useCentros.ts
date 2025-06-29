@@ -64,23 +64,31 @@ export const useCentros = () => {
   const { data: centros = [], isLoading } = useQuery({
     queryKey: ['centros'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primero obtenemos los centros
+      const { data: centrosData, error: centrosError } = await supabase
         .from('centros')
-        .select(`
-          *,
-          salmoneras!centros_salmonera_id_fkey(nombre)
-        `)
+        .select('*')
         .order('nombre');
 
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      return (data || []).map(centro => ({
-        ...centro,
-        salmoneras: Array.isArray(centro.salmoneras) && centro.salmoneras.length > 0 
-          ? centro.salmoneras[0] 
-          : null
-      })) as Centro[];
+      if (centrosError) throw centrosError;
+
+      // Luego obtenemos las salmoneras para hacer el join manual
+      const { data: salmonerasData, error: salmonerasError } = await supabase
+        .from('salmoneras')
+        .select('id, nombre');
+
+      if (salmonerasError) throw salmonerasError;
+
+      // Combinamos los datos manualmente
+      const centrosConSalmoneras = (centrosData || []).map(centro => {
+        const salmonera = salmonerasData?.find(s => s.id === centro.salmonera_id);
+        return {
+          ...centro,
+          salmoneras: salmonera ? { nombre: salmonera.nombre } : null
+        };
+      });
+
+      return centrosConSalmoneras as Centro[];
     },
   });
 

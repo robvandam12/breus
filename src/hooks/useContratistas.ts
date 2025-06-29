@@ -2,15 +2,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 
 export interface Contratista {
   id: string;
   nombre: string;
   rut: string;
   direccion: string;
-  email?: string;
   telefono?: string;
+  email?: string;
   estado: string;
   especialidades?: string[];
   certificaciones?: string[];
@@ -22,8 +21,8 @@ export interface ContratistaFormData {
   nombre: string;
   rut: string;
   direccion: string;
-  email?: string;
   telefono?: string;
+  email?: string;
   estado: 'activo' | 'inactivo' | 'suspendido';
   especialidades?: string[];
   certificaciones?: string[];
@@ -31,14 +30,14 @@ export interface ContratistaFormData {
 
 export const useContratistas = () => {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
 
-  const { data: contratistas = [], isLoading } = useQuery({
+  const { data: contratistas = [], isLoading, error } = useQuery({
     queryKey: ['contratistas'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contratistas')
         .select('*')
+        .eq('estado', 'activo')
         .order('nombre');
 
       if (error) throw error;
@@ -46,7 +45,7 @@ export const useContratistas = () => {
     },
   });
 
-  const createMutation = useMutation({
+  const createContratista = useMutation({
     mutationFn: async (formData: ContratistaFormData) => {
       const { data, error } = await supabase
         .from('contratistas')
@@ -55,32 +54,13 @@ export const useContratistas = () => {
         .single();
 
       if (error) throw error;
-
-      // Si el usuario es admin_salmonera, crear automáticamente la asociación
-      if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
-        const { error: associationError } = await supabase
-          .from('salmonera_contratista')
-          .insert({
-            salmonera_id: profile.salmonera_id,
-            contratista_id: data.id
-          });
-
-        if (associationError) {
-          console.error('Error creating salmonera-contratista association:', associationError);
-          // No lanzar error aquí, solo log para que no bloquee la creación del contratista
-        }
-      }
-
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contratistas'] });
-      queryClient.invalidateQueries({ queryKey: ['salmonera-contratista'] });
       toast({
         title: "Contratista creado",
-        description: profile?.role === 'admin_salmonera' 
-          ? "El contratista ha sido creado y asociado a su salmonera exitosamente."
-          : "El contratista ha sido creado exitosamente.",
+        description: "El contratista ha sido creado exitosamente.",
       });
     },
     onError: (error) => {
@@ -93,7 +73,7 @@ export const useContratistas = () => {
     },
   });
 
-  const updateMutation = useMutation({
+  const updateContratista = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ContratistaFormData }) => {
       const { error } = await supabase
         .from('contratistas')
@@ -119,7 +99,7 @@ export const useContratistas = () => {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteContratista = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('contratistas')
@@ -148,11 +128,9 @@ export const useContratistas = () => {
   return {
     contratistas,
     isLoading,
-    createContratista: createMutation.mutateAsync,
-    updateContratista: updateMutation.mutateAsync,
-    deleteContratista: deleteMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
+    error,
+    createContratista: createContratista.mutateAsync,
+    updateContratista: updateContratista.mutateAsync,
+    deleteContratista: deleteContratista.mutateAsync,
   };
 };

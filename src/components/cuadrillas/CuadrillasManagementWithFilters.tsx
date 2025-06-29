@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCuadrillas } from '@/hooks/useCuadrillas';
 import { supabase } from '@/integrations/supabase/client';
 import { CuadrillaCreationWizardEnhanced } from './CuadrillaCreationWizardEnhanced';
-import { CuadrillaManagementModal } from './CuadrillaManagementModal';
+import { CuadrillaManagementModalMejorado } from './CuadrillaManagementModalMejorado';
 import { CuadrillasDataTable } from './CuadrillasDataTable';
 
 interface Company {
@@ -28,8 +28,10 @@ export const CuadrillasManagementWithFilters = () => {
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(null);
 
+  const isSuperuser = profile?.role === 'superuser';
+
   useEffect(() => {
-    if (profile?.role === 'superuser') {
+    if (isSuperuser) {
       loadCompanies();
     }
   }, [profile]);
@@ -78,14 +80,19 @@ export const CuadrillasManagementWithFilters = () => {
     setFilteredCuadrillas(filtered);
   };
 
-  const handleCompanyChange = (companyId: string) => {
-    const company = companies.find(c => c.id === companyId);
+  const handleCompanyChange = (companyValue: string) => {
+    if (companyValue === 'all') {
+      setSelectedCompany(null);
+      return;
+    }
+    
+    const [companyId, companyType] = companyValue.split('|');
+    const company = companies.find(c => c.id === companyId && c.tipo === companyType);
     setSelectedCompany(company || null);
   };
 
   const handleCuadrillaCreated = (cuadrilla: any) => {
     setShowCreateWizard(false);
-    // Forzar refrescado inmediato
     setTimeout(() => {
       invalidateQueries();
       refetchQueries();
@@ -93,7 +100,6 @@ export const CuadrillasManagementWithFilters = () => {
   };
 
   const handleCuadrillaUpdated = (cuadrilla: any) => {
-    // Forzar refrescado inmediato
     setTimeout(() => {
       invalidateQueries();
       refetchQueries();
@@ -113,23 +119,23 @@ export const CuadrillasManagementWithFilters = () => {
           <div>
             <h2 className="text-xl font-semibold">Cuadrillas de Buceo</h2>
             <p className="text-gray-500">
-              {profile?.role === 'superuser' ? 'Gestión global de cuadrillas' : 'Gestión de cuadrillas'}
+              {isSuperuser ? 'Gestión global de cuadrillas' : 'Gestión de cuadrillas'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {profile?.role === 'superuser' && (
+          {isSuperuser && (
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
-              <Select value={selectedCompany?.id || ''} onValueChange={handleCompanyChange}>
+              <Select value={selectedCompany ? `${selectedCompany.id}|${selectedCompany.tipo}` : 'all'} onValueChange={handleCompanyChange}>
                 <SelectTrigger className="w-64">
                   <SelectValue placeholder="Filtrar por empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las empresas</SelectItem>
+                  <SelectItem value="all">Todas las empresas</SelectItem>
                   {companies.map(company => (
-                    <SelectItem key={company.id} value={company.id}>
+                    <SelectItem key={`${company.id}-${company.tipo}`} value={`${company.id}|${company.tipo}`}>
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
                         <span>{company.nombre}</span>
@@ -189,7 +195,7 @@ export const CuadrillasManagementWithFilters = () => {
       <CuadrillasDataTable 
         cuadrillas={filteredCuadrillas}
         onManageCuadrilla={setSelectedCuadrillaId}
-        showCompanyInfo={profile?.role === 'superuser' && !selectedCompany}
+        showCompanyInfo={isSuperuser && !selectedCompany}
       />
 
       {/* Modales */}
@@ -197,11 +203,11 @@ export const CuadrillasManagementWithFilters = () => {
         isOpen={showCreateWizard}
         onClose={() => setShowCreateWizard(false)}
         onCuadrillaCreated={handleCuadrillaCreated}
-        enterpriseContext={profile?.role === 'superuser' ? null : undefined}
+        enterpriseContext={isSuperuser ? null : undefined}
       />
 
       {selectedCuadrillaId && (
-        <CuadrillaManagementModal
+        <CuadrillaManagementModalMejorado
           isOpen={!!selectedCuadrillaId}
           onClose={() => setSelectedCuadrillaId(null)}
           cuadrillaId={selectedCuadrillaId}
