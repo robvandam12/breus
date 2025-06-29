@@ -22,7 +22,7 @@ export const CentroSelector = ({
   operaciones 
 }: CentroSelectorProps) => {
   const selectedOperacion = operaciones.find(op => op.id === operacionId);
-  const isDisabled = isPlanned && operacionId && selectedOperacion?.centro_id;
+  const isDisabled = isPlanned && operacionId && Boolean(selectedOperacion?.centro_id);
 
   return (
     <div>
