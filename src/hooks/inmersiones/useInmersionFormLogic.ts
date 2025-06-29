@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
@@ -194,6 +195,8 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       hpt_validado: Boolean(!formValidationState.isPlanned),
       centro_id: formData.centro_id,
       codigo: formData.codigo,
+      // Establecer el contexto operativo correcto
+      contexto_operativo: formValidationState.isPlanned ? 'planificada' : 'independiente',
       // Campos opcionales para inmersiones planificadas
       temperatura_agua: null,
       visibilidad: null,
