@@ -260,7 +260,11 @@ export const EnhancedCuadrillaSelector = ({
             setShowManagementModal(false);
             setSelectedCuadrilla(null);
           }}
-          cuadrilla={selectedCuadrilla}
+          cuadrillaId={selectedCuadrilla.id}
+          onCuadrillaUpdated={(updatedCuadrilla) => {
+            setSelectedCuadrilla(updatedCuadrilla);
+          }}
+          fechaInmersion={fechaInmersion}
         />
       )}
     </>
