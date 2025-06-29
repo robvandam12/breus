@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -274,9 +275,9 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
         estado: initialData?.estado || 'planificada',
         company_id: companyId,
         requiere_validacion_previa: isPlanned,
-        // Asegurar que estos campos sean boolean
-        anexo_bravo_validado: Boolean(!isPlanned),
-        hpt_validado: Boolean(!isPlanned),
+        // Corregir: usar valores boolean primitivos directamente
+        anexo_bravo_validado: !isPlanned,
+        hpt_validado: !isPlanned,
         centro_id: formData.centro_id,
         metadata: {
           ...currentMetadata,
