@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,9 +232,18 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     }
   };
 
+  // Crear contexto empresarial para pasar al selector de cuadrilla
+  const enterpriseContext = {
+    salmonera_id: profile?.salmonera_id,
+    context_metadata: {
+      selection_mode: 'salmonera_admin',
+      empresa_origen_tipo: 'salmonera'
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Info contextual sin mensajes redundantes */}
+      {/* Info contextual */}
       <div className="flex items-center gap-2 text-sm text-gray-600 p-3 bg-blue-50 rounded-lg border border-blue-200">
         <Building className="w-4 h-4 text-blue-600" />
         <span>Gestión de Inmersiones</span>
@@ -385,12 +395,13 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
               </div>
             </div>
 
-            {/* Selector de Cuadrilla */}
+            {/* Selector de Cuadrilla con contexto empresarial */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
               onCuadrillaCreated={(cuadrilla) => setSelectedCuadrillaId(cuadrilla.id)}
+              enterpriseContext={enterpriseContext}
             />
 
             <div>

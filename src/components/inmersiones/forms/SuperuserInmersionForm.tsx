@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -456,12 +457,13 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
               </div>
             </div>
 
-            {/* Selector de Cuadrilla */}
+            {/* Selector de Cuadrilla con contexto empresarial pre-establecido */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
               onCuadrillaCreated={(cuadrilla) => setSelectedCuadrillaId(cuadrilla.id)}
+              enterpriseContext={selectedEnterprise}
             />
 
             <div>
