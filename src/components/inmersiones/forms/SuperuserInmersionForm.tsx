@@ -16,6 +16,7 @@ import type { InmersionFormProps } from '@/types/inmersionForms';
 
 export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: InmersionFormProps) => {
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [isCreatingCuadrilla, setIsCreatingCuadrilla] = useState(false);
   const { generateInmersionCode } = useInmersiones();
   
   const {
@@ -81,7 +82,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       profundidad_max: '',
       observaciones: '',
       centro_id: '',
-      codigo: generateInmersionCode('IMM') // Include codigo in reset
+      codigo: generateInmersionCode('IMM')
     });
     setSelectedCuadrillaId(null);
   };
@@ -90,10 +91,34 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setFormData(prev => ({ ...prev, ...newData }));
   };
 
+  const handleCuadrillaCreationStart = () => {
+    console.log('Cuadrilla creation started');
+    setIsCreatingCuadrilla(true);
+  };
+
+  const handleCuadrillaCreated = (cuadrilla: any) => {
+    console.log('Cuadrilla created:', cuadrilla);
+    setSelectedCuadrillaId(cuadrilla.id);
+    setIsCreatingCuadrilla(false);
+  };
+
+  const handleCuadrillaCreationCancel = () => {
+    console.log('Cuadrilla creation cancelled');
+    setIsCreatingCuadrilla(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submit triggered');
+    
+    // Prevenir envío si se está creando una cuadrilla
+    if (isCreatingCuadrilla) {
+      console.log('Preventing form submission - cuadrilla creation in progress');
+      return;
+    }
     
     if (!selectedEnterprise) {
+      console.log('No enterprise selected');
       return;
     }
 
@@ -104,7 +129,10 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       handleFormDataChange({ codigo: newCode });
     }
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     setLoading(true);
 
@@ -121,11 +149,12 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       };
 
       const inmersionData = buildInmersionData(companyId, enterpriseContext);
-      // Asegurar código final
+      
       if (!inmersionData.codigo) {
         inmersionData.codigo = generateInmersionCode('IMM');
       }
       
+      console.log('Submitting inmersion data:', inmersionData);
       await onSubmit(inmersionData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -244,12 +273,18 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
-              onCuadrillaCreated={(cuadrilla) => setSelectedCuadrillaId(cuadrilla.id)}
+              onCuadrillaCreated={handleCuadrillaCreated}
+              onCreationStart={handleCuadrillaCreationStart}
+              onCreationCancel={handleCuadrillaCreationCancel}
               enterpriseContext={selectedEnterprise}
             />
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={loading} className="flex-1">
+              <Button 
+                type="submit" 
+                disabled={loading || isCreatingCuadrilla} 
+                className="flex-1"
+              >
                 {loading ? (initialData ? 'Actualizando...' : 'Creando...') : (initialData ? 'Actualizar Inmersión' : 'Crear Inmersión')}
               </Button>
               <Button type="button" variant="outline" onClick={onCancel}>

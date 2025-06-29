@@ -166,19 +166,35 @@ export const useInmersiones = () => {
 
   const deleteInmersion = useMutation({
     mutationFn: async (inmersionId: string) => {
+      console.log('Attempting to delete inmersion with ID:', inmersionId);
+      
       const { error } = await supabase
         .from('inmersion')
         .delete()
         .eq('inmersion_id', inmersionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting inmersion:', error);
+        throw error;
+      }
+      
+      console.log('Inmersion deleted successfully:', inmersionId);
       return inmersionId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      console.log('Delete mutation succeeded for ID:', deletedId);
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       toast({
         title: 'Inmersión eliminada',
         description: 'La inmersión ha sido eliminada exitosamente.',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Delete mutation failed:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar la inmersión.',
+        variant: 'destructive',
       });
     },
   });
@@ -270,6 +286,7 @@ export const useInmersiones = () => {
     validateOperationDocuments: validateOperationDocuments.mutate,
     refreshInmersiones,
     isCreating: createInmersion.isPending,
+    isDeleting: deleteInmersion.isPending,
     generateInmersionCode,
   };
 };

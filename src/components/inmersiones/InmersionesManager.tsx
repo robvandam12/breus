@@ -25,7 +25,8 @@ export const InmersionesManager = () => {
     isLoading, 
     createInmersion, 
     updateInmersion, 
-    deleteInmersion 
+    deleteInmersion,
+    isDeleting 
   } = useInmersiones();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,6 +50,7 @@ export const InmersionesManager = () => {
 
   const handleCreateInmersion = async (data: any) => {
     try {
+      console.log('Creating inmersion from manager:', data);
       await createInmersion(data);
       setIsCreateDialogOpen(false);
     } catch (error) {
@@ -59,6 +61,7 @@ export const InmersionesManager = () => {
   const handleEditInmersion = async (data: any) => {
     if (editingInmersion) {
       try {
+        console.log('Updating inmersion:', editingInmersion.inmersion_id, data);
         await updateInmersion({ id: editingInmersion.inmersion_id, data });
         setEditingInmersion(null);
       } catch (error) {
@@ -68,13 +71,16 @@ export const InmersionesManager = () => {
   };
 
   const handleDeleteClick = (inmersion: Inmersion) => {
+    console.log('Delete clicked for inmersion:', inmersion.inmersion_id);
     setDeleteConfirmation({ open: true, inmersion });
   };
 
   const handleConfirmDelete = async () => {
     if (deleteConfirmation.inmersion) {
+      const inmersionId = deleteConfirmation.inmersion.inmersion_id;
       try {
-        await deleteInmersion(deleteConfirmation.inmersion.inmersion_id);
+        console.log('Confirming delete for inmersion:', inmersionId);
+        await deleteInmersion(inmersionId);
         setDeleteConfirmation({ open: false, inmersion: null });
       } catch (error) {
         console.error('Error deleting inmersion:', error);
@@ -253,7 +259,7 @@ export const InmersionesManager = () => {
         description="¿Estás seguro de que deseas eliminar esta inmersión? Se eliminará toda la información asociada."
         itemName={deleteConfirmation.inmersion?.codigo || ''}
         onConfirm={handleConfirmDelete}
-        loading={false}
+        loading={isDeleting}
       />
     </div>
   );
