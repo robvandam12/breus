@@ -1,3 +1,4 @@
+
 import { 
   Calendar, 
   ChevronRight, 
@@ -171,7 +172,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAcces
     
     if (role === 'admin_salmonera') {
       companyItems.push(
-        { title: "Centros", url: "/empresas/centros" },
+        { title: "Centros", url: "/empresas/centros" },  // CAMBIADO: Sitios -> Centros
         { title: "Contratistas", url: "/empresas/contratistas" },
         { title: "Usuarios", url: "/empresas/usuarios" }
       );
@@ -196,7 +197,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean, hasModuleAcces
         icon: Folder,
         items: [
           { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Centros", url: "/empresas/centros" },
+          { title: "Centros", url: "/empresas/centros" },  // CAMBIADO: Sitios -> Centros
           { title: "Contratistas", url: "/empresas/contratistas" },
           { title: "Usuarios", url: "/empresas/usuarios" }
         ]
