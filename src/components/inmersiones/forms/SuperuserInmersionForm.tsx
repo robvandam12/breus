@@ -16,7 +16,6 @@ import type { InmersionFormProps } from '@/types/inmersionForms';
 
 export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: InmersionFormProps) => {
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
-  const [isCreatingCuadrilla, setIsCreatingCuadrilla] = useState(false);
   const { generateInmersionCode } = useInmersiones();
   
   const {
@@ -91,31 +90,14 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setFormData(prev => ({ ...prev, ...newData }));
   };
 
-  const handleCuadrillaCreationStart = () => {
-    console.log('Cuadrilla creation started');
-    setIsCreatingCuadrilla(true);
-  };
-
   const handleCuadrillaCreated = (cuadrilla: any) => {
-    console.log('Cuadrilla created:', cuadrilla);
+    console.log('Cuadrilla created and assigned:', cuadrilla);
     setSelectedCuadrillaId(cuadrilla.id);
-    setIsCreatingCuadrilla(false);
-  };
-
-  const handleCuadrillaCreationCancel = () => {
-    console.log('Cuadrilla creation cancelled');
-    setIsCreatingCuadrilla(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submit triggered');
-    
-    // Prevenir envío si se está creando una cuadrilla
-    if (isCreatingCuadrilla) {
-      console.log('Preventing form submission - cuadrilla creation in progress');
-      return;
-    }
     
     if (!selectedEnterprise) {
       console.log('No enterprise selected');
@@ -274,15 +256,13 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
               onCuadrillaCreated={handleCuadrillaCreated}
-              onCreationStart={handleCuadrillaCreationStart}
-              onCreationCancel={handleCuadrillaCreationCancel}
               enterpriseContext={selectedEnterprise}
             />
 
             <div className="flex gap-3 pt-4">
               <Button 
                 type="submit" 
-                disabled={loading || isCreatingCuadrilla} 
+                disabled={loading} 
                 className="flex-1"
               >
                 {loading ? (initialData ? 'Actualizando...' : 'Creando...') : (initialData ? 'Actualizar Inmersión' : 'Crear Inmersión')}
