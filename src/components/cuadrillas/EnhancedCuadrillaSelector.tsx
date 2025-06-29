@@ -94,14 +94,14 @@ export const EnhancedCuadrillaSelector = ({
 
     if (status.is_available) {
       return (
-        <Badge variant="outline" className="text-green-600 border-green-200 text-xs">
+        <Badge variant="outline" className="text-green-600 border-green-200 text-xs ml-2">
           <CheckCircle className="w-3 h-3 mr-1" />
           Disponible
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" className="text-red-600 border-red-200 text-xs">
+        <Badge variant="outline" className="text-red-600 border-red-200 text-xs ml-2">
           <AlertTriangle className="w-3 h-3 mr-1" />
           Ocupada
         </Badge>
@@ -114,7 +114,7 @@ export const EnhancedCuadrillaSelector = ({
     if (!status || status.is_available) return null;
 
     return (
-      <div className="text-xs text-red-600 mt-1 p-2 bg-red-50 rounded border">
+      <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 border border-red-200 rounded">
         <AlertTriangle className="w-3 h-3 inline mr-1" />
         Conflicto con inmersión: {status.conflicting_inmersion_codigo}
       </div>
@@ -182,11 +182,11 @@ export const EnhancedCuadrillaSelector = ({
                   <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
                     <div className="flex items-center justify-between w-full">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center">
                           <span className="font-medium">{cuadrilla.nombre}</span>
                           {getAvailabilityBadge(cuadrilla.id)}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 mt-1">
                           {cuadrilla.miembros?.length || 0} miembros • {cuadrilla.estado}
                         </div>
                       </div>

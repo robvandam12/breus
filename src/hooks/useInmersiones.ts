@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -149,8 +150,12 @@ export const useInmersiones = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidar múltiples queries relacionadas para asegurar actualización
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas-con-asignaciones'] });
+      
       toast({
         title: 'Inmersión creada',
         description: 'La inmersión ha sido creada exitosamente.',
@@ -219,9 +224,18 @@ export const useInmersiones = () => {
     },
     onSuccess: (deletedId) => {
       console.log('Delete mutation succeeded for ID:', deletedId);
+      
+      // Forzar refetch inmediato de todas las queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrillas-con-asignaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      
+      // Refetch explícito para asegurar actualización inmediata
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['inmersiones'] });
+      }, 100);
+      
       toast({
         title: 'Inmersión eliminada',
         description: 'La inmersión ha sido eliminada exitosamente.',

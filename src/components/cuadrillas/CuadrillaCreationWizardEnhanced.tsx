@@ -1,19 +1,24 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Users, User, Plus, Trash2, ChevronLeft, ChevronRight, AlertTriangle, Building2 } from "lucide-react";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserPlus, X, CheckCircle, AlertTriangle, Users } from "lucide-react";
+import { useCuadrillas } from '@/hooks/useCuadrillas';
+import { UserSearchSelect } from '@/components/shared/UserSearchSelect';
 import { toast } from '@/hooks/use-toast';
-import { UserSearchSelect } from '@/components/usuarios/UserSearchSelect';
+
+interface Member {
+  usuario_id: string;
+  rol_equipo: string;
+  nombre?: string;
+  apellido?: string;
+}
 
 interface CuadrillaCreationWizardEnhancedProps {
   isOpen: boolean;
@@ -23,21 +28,6 @@ interface CuadrillaCreationWizardEnhancedProps {
   fechaInmersion?: string;
 }
 
-interface CuadrillaMember {
-  id: string;
-  usuario_id: string;
-  rol_equipo: string;
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-}
-
-interface Company {
-  id: string;
-  nombre: string;
-  tipo: 'salmonera' | 'contratista';
-}
-
 export const CuadrillaCreationWizardEnhanced = ({
   isOpen,
   onClose,
@@ -45,635 +35,425 @@ export const CuadrillaCreationWizardEnhanced = ({
   enterpriseContext,
   fechaInmersion
 }: CuadrillaCreationWizardEnhancedProps) => {
-  const { profile } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  // Estados para selección de empresa (solo para superuser sin context)
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-
-  const [cuadrillaData, setCuadrillaData] = useState({
+  const { createCuadrilla, addMember, isCreating } = useCuadrillas();
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    centro_id: ''
+    centro_id: '',
+    estado: 'disponible' as const
   });
+  
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedRole, setSelectedRole] = useState('buzo_principal');
 
-  const [members, setMembers] = useState<CuadrillaMember[]>([]);
-  const [centros, setCentros] = useState<any[]>([]);
-
-  // Determinar si necesitamos mostrar selector de empresa
-  const needsCompanySelection = profile?.role === 'superuser' && enterpriseContext === null;
-  const totalSteps = needsCompanySelection ? 3 : 2;
-
-  React.useEffect(() => {
+  // Reset form when dialog opens/closes
+  useEffect(() => {
     if (isOpen) {
-      if (needsCompanySelection) {
-        loadCompanies();
-        setCurrentStep(1); // Comenzar con selección de empresa
-      } else {
-        loadCentros();
-        setCurrentStep(1); // Comenzar con info básica
-      }
-      
-      // Reset form when opening
-      setCuadrillaData({
+      setStep(1);
+      setFormData({
         nombre: '',
         descripcion: '',
-        centro_id: ''
+        centro_id: '',
+        estado: 'disponible'
       });
       setMembers([]);
-      setSelectedCompany(null);
+      setSelectedUserId('');
+      setSelectedRole('buzo_principal');
+      setIsSubmitting(false);
     }
-  }, [isOpen, enterpriseContext, needsCompanySelection]);
+  }, [isOpen]);
 
-  React.useEffect(() => {
-    if (selectedCompany || enterpriseContext) {
-      loadCentros();
-    }
-  }, [selectedCompany, enterpriseContext]);
-
-  const loadCompanies = async () => {
-    try {
-      // Cargar salmoneras
-      const { data: salmoneras } = await supabase
-        .from('salmoneras')
-        .select('id, nombre')
-        .eq('estado', 'activa')
-        .order('nombre');
-
-      // Cargar contratistas  
-      const { data: contratistas } = await supabase
-        .from('contratistas')
-        .select('id, nombre')
-        .eq('estado', 'activo')
-        .order('nombre');
-
-      const allCompanies: Company[] = [
-        ...(salmoneras || []).map(s => ({ ...s, tipo: 'salmonera' as const })),
-        ...(contratistas || []).map(c => ({ ...c, tipo: 'contratista' as const }))
-      ];
-
-      setCompanies(allCompanies);
-    } catch (error) {
-      console.error('Error loading companies:', error);
-    }
-  };
-
-  const loadCentros = async () => {
-    try {
-      const currentContext = enterpriseContext || selectedCompany;
-      if (!currentContext) return;
-
-      const empresaId = currentContext.salmonera_id || currentContext.id;
-      if (!empresaId) return;
-
-      const { data } = await supabase
-        .from('centros')
-        .select('id, nombre')
-        .eq('salmonera_id', empresaId)
-        .eq('estado', 'activo')
-        .order('nombre');
-
-      setCentros(data || []);
-    } catch (error) {
-      console.error('Error loading centros:', error);
-    }
-  };
-
-  const isDuplicateMember = (user: any) => {
-    return members.some(member => 
-      (member.usuario_id && member.usuario_id === user.usuario_id) || 
-      (member.email && member.email === user.email)
-    );
-  };
-
-  const handleUserSelect = (user: any) => {
-    if (isDuplicateMember(user)) {
+  const handleAddMember = (userData: any) => {
+    console.log('Adding member with userData:', userData);
+    
+    if (!userData.usuario_id) {
       toast({
-        title: "Usuario ya agregado",
-        description: `${user.nombre} ${user.apellido} ya está en la cuadrilla.`,
+        title: "Error",
+        description: "No se pudo obtener el ID del usuario",
         variant: "destructive",
       });
       return;
     }
 
-    const newMember: CuadrillaMember = {
-      id: `temp-${Date.now()}`,
-      usuario_id: user.usuario_id,
-      rol_equipo: 'buzo',
-      nombre: user.nombre,
-      apellido: user.apellido,
-      email: user.email
+    // Verificar que no esté ya en la cuadrilla
+    if (members.some(m => m.usuario_id === userData.usuario_id)) {
+      toast({
+        title: "Error",
+        description: "Este usuario ya está en la cuadrilla",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificar que no haya más de un supervisor
+    if (selectedRole === 'supervisor' && members.some(m => m.rol_equipo === 'supervisor')) {
+      toast({
+        title: "Error",
+        description: "Solo puede haber un supervisor por cuadrilla",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newMember: Member = {
+      usuario_id: userData.usuario_id,
+      rol_equipo: selectedRole,
+      nombre: userData.nombre,
+      apellido: userData.apellido
     };
-    setMembers([...members, newMember]);
+
+    setMembers(prev => [...prev, newMember]);
+    setSelectedUserId('');
     
     toast({
       title: "Miembro agregado",
-      description: `${user.nombre} ${user.apellido} ha sido agregado a la cuadrilla.`,
+      description: `${userData.nombre} ${userData.apellido} agregado como ${selectedRole}`,
     });
   };
 
-  const handleUserInvite = (userData: any) => {
-    if (isDuplicateMember(userData)) {
+  const handleRemoveMember = (usuarioId: string) => {
+    setMembers(prev => prev.filter(m => m.usuario_id !== usuarioId));
+  };
+
+  const validateStep1 = () => {
+    if (!formData.nombre.trim()) {
       toast({
-        title: "Email ya agregado",
-        description: `El email ${userData.email} ya está en la cuadrilla.`,
+        title: "Error",
+        description: "El nombre de la cuadrilla es requerido",
         variant: "destructive",
       });
-      return;
+      return false;
     }
-
-    const newMember: CuadrillaMember = {
-      id: `temp-${Date.now()}`,
-      usuario_id: '', // Será null para invitados
-      rol_equipo: 'buzo',
-      nombre: userData.nombre,
-      apellido: userData.apellido,
-      email: userData.email
-    };
-    setMembers([...members, newMember]);
-    
-    toast({
-      title: "Invitación preparada",
-      description: `Se ha preparado la invitación para ${userData.email}.`,
-    });
+    return true;
   };
 
-  const removeMember = (id: string) => {
-    const memberToRemove = members.find(m => m.id === id);
-    setMembers(members.filter(m => m.id !== id));
-    
-    if (memberToRemove) {
+  const validateStep2 = () => {
+    if (members.length === 0) {
       toast({
-        title: "Miembro removido",
-        description: `${memberToRemove.nombre} ${memberToRemove.apellido} ha sido removido de la cuadrilla.`,
+        title: "Error",
+        description: "Debe agregar al menos un miembro a la cuadrilla",
+        variant: "destructive",
       });
+      return false;
+    }
+
+    // Verificar que haya al menos un supervisor
+    if (!members.some(m => m.rol_equipo === 'supervisor')) {
+      toast({
+        title: "Error",
+        description: "Debe haber al menos un supervisor en la cuadrilla",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) {
+      setStep(2);
     }
   };
 
-  const updateMemberRole = (id: string, rol: string) => {
-    setMembers(members.map(m => 
-      m.id === id ? { ...m, rol_equipo: rol } : m
-    ));
-  };
-
-  const validateStep = (step: number): boolean => {
-    if (needsCompanySelection) {
-      switch (step) {
-        case 1: // Selección de empresa
-          if (!selectedCompany) {
-            toast({
-              title: "Error",
-              description: "Debe seleccionar una empresa",
-              variant: "destructive",
-            });
-            return false;
-          }
-          return true;
-        case 2: // Info básica
-          if (!cuadrillaData.nombre.trim()) {
-            toast({
-              title: "Error",
-              description: "El nombre de la cuadrilla es requerido",
-              variant: "destructive",
-            });
-            return false;
-          }
-          return true;
-        case 3: // Miembros
-          if (members.length === 0) {
-            toast({
-              title: "Error",
-              description: "Debe agregar al menos un miembro a la cuadrilla",
-              variant: "destructive",
-            });
-            return false;
-          }
-          
-          const hasInvalidRole = members.some(m => !m.rol_equipo);
-          if (hasInvalidRole) {
-            toast({
-              title: "Error",
-              description: "Todos los miembros deben tener un rol asignado",
-              variant: "destructive",
-            });
-            return false;
-          }
-          return true;
-        default:
-          return true;
-      }
-    } else {
-      switch (step) {
-        case 1: // Info básica
-          if (!cuadrillaData.nombre.trim()) {
-            toast({
-              title: "Error",
-              description: "El nombre de la cuadrilla es requerido",
-              variant: "destructive",
-            });
-            return false;
-          }
-          return true;
-        case 2: // Miembros
-          if (members.length === 0) {
-            toast({
-              title: "Error",
-              description: "Debe agregar al menos un miembro a la cuadrilla",
-              variant: "destructive",
-            });
-            return false;
-          }
-          
-          const hasInvalidRole = members.some(m => !m.rol_equipo);
-          if (hasInvalidRole) {
-            toast({
-              title: "Error",
-              description: "Todos los miembros deben tener un rol asignado",
-              variant: "destructive",
-            });
-            return false;
-          }
-          return true;
-        default:
-          return true;
-      }
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
     }
-  };
-
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep(currentStep - 1);
   };
 
   const handleSubmit = async () => {
-    const finalStep = needsCompanySelection ? 3 : 2;
-    if (!validateStep(finalStep)) {
-      return;
-    }
+    if (!validateStep2()) return;
 
-    setLoading(true);
-
+    setIsSubmitting(true);
     try {
-      const currentContext = enterpriseContext || selectedCompany;
-      const empresaId = currentContext?.salmonera_id || currentContext?.contratista_id || currentContext?.id;
-      const tipoEmpresa = currentContext?.salmonera_id || (currentContext?.tipo === 'salmonera') ? 'salmonera' : 'contratista';
+      console.log('Creating cuadrilla with data:', formData);
+      console.log('Enterprise context:', enterpriseContext);
 
-      // Crear cuadrilla
-      const { data: cuadrilla, error: cuadrillaError } = await supabase
-        .from('cuadrillas_buceo')
-        .insert([{
-          nombre: cuadrillaData.nombre,
-          descripcion: cuadrillaData.descripcion,
-          empresa_id: empresaId,
-          tipo_empresa: tipoEmpresa,
-          centro_id: cuadrillaData.centro_id || null,
-          estado: 'disponible',
-          activo: true
-        }])
-        .select()
-        .single();
+      let cuadrillaData = {
+        ...formData,
+        activo: true
+      };
 
-      if (cuadrillaError) throw cuadrillaError;
-
-      // Agregar miembros solo si tienen usuario_id válido
-      const validMembers = members.filter(member => member.usuario_id);
-      let addedMembersCount = 0;
-      
-      if (validMembers.length > 0) {
-        const membersData = validMembers.map(member => ({
-          cuadrilla_id: cuadrilla.id,
-          usuario_id: member.usuario_id,
-          rol_equipo: member.rol_equipo,
-          disponible: true
-        }));
-
-        const { error: membersError } = await supabase
-          .from('cuadrilla_miembros')
-          .insert(membersData);
-
-        if (membersError) throw membersError;
-        addedMembersCount = validMembers.length;
+      // Si hay contexto empresarial, usarlo
+      if (enterpriseContext) {
+        if (enterpriseContext.salmonera_id) {
+          cuadrillaData.empresa_id = enterpriseContext.salmonera_id;
+          cuadrillaData.tipo_empresa = 'salmonera';
+        } else if (enterpriseContext.contratista_id) {
+          cuadrillaData.empresa_id = enterpriseContext.contratista_id;
+          cuadrillaData.tipo_empresa = 'contratista';
+        }
       }
 
-      // Mostrar información sobre invitaciones pendientes
-      const pendingInvitations = members.length - validMembers.length;
-      let successMessage = `La cuadrilla "${cuadrillaData.nombre}" ha sido creada exitosamente`;
-      
-      if (addedMembersCount > 0) {
-        successMessage += ` con ${addedMembersCount} miembro${addedMembersCount > 1 ? 's' : ''}`;
-      }
-      
-      if (pendingInvitations > 0) {
-        successMessage += `. ${pendingInvitations} invitación${pendingInvitations > 1 ? 'es' : ''} pendiente${pendingInvitations > 1 ? 's' : ''}`;
+      const newCuadrilla = await createCuadrilla(cuadrillaData);
+      console.log('Cuadrilla created:', newCuadrilla);
+
+      // Agregar miembros uno por uno
+      for (const member of members) {
+        console.log('Adding member:', member);
+        await addMember({
+          cuadrillaId: newCuadrilla.id,
+          usuarioId: member.usuario_id,
+          rolEquipo: member.rol_equipo
+        });
       }
 
+      // Llamar callback con la cuadrilla creada
+      onCuadrillaCreated(newCuadrilla);
+      
       toast({
-        title: "Cuadrilla creada",
-        description: successMessage,
+        title: "Éxito",
+        description: `Cuadrilla "${formData.nombre}" creada exitosamente con ${members.length} miembros`,
       });
 
-      onCuadrillaCreated(cuadrilla);
       onClose();
-
-      // Reset form
-      setCuadrillaData({ nombre: '', descripcion: '', centro_id: '' });
-      setMembers([]);
-      setSelectedCompany(null);
-      setCurrentStep(1);
     } catch (error) {
       console.error('Error creating cuadrilla:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la cuadrilla",
+        description: "No se pudo crear la cuadrilla. Inténtelo nuevamente.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const progress = (currentStep / totalSteps) * 100;
-
-  // Análisis de roles para mostrar advertencias
-  const roleAnalysis = React.useMemo(() => {
-    const roles = members.reduce((acc, member) => {
-      acc[member.rol_equipo] = (acc[member.rol_equipo] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const warnings = [];
-    if (!roles.supervisor && members.length > 0) {
-      warnings.push("Se recomienda tener al menos un supervisor");
-    }
-    if (roles.buzo_principal > 1) {
-      warnings.push("Solo debería haber un buzo principal por cuadrilla");
-    }
-
-    return { roles, warnings };
-  }, [members]);
-
-  const renderStep = () => {
-    if (needsCompanySelection && currentStep === 1) {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Seleccionar Empresa
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="empresa">Empresa *</Label>
-              <Select
-                value={selectedCompany?.id || ''}
-                onValueChange={(value) => {
-                  const company = companies.find(c => c.id === value);
-                  setSelectedCompany(company || null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map(company => (
-                    <SelectItem key={company.id} value={company.id}>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        <span>{company.nombre}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {company.tipo === 'salmonera' ? 'Salmonera' : 'Contratista'}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    const infoStepNumber = needsCompanySelection ? 2 : 1;
-    const membersStepNumber = needsCompanySelection ? 3 : 2;
-
-    if (currentStep === infoStepNumber) {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Básica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="nombre">Nombre de la Cuadrilla *</Label>
-              <Input
-                id="nombre"
-                value={cuadrillaData.nombre}
-                onChange={(e) => setCuadrillaData(prev => ({ ...prev, nombre: e.target.value }))}
-                placeholder="Ej: Cuadrilla Alpha, Equipo Norte..."
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="descripcion">Descripción</Label>
-              <Textarea
-                id="descripcion"
-                value={cuadrillaData.descripcion}
-                onChange={(e) => setCuadrillaData(prev => ({ ...prev, descripcion: e.target.value }))}
-                placeholder="Descripción de la cuadrilla, especialidades, etc..."
-                rows={3}
-              />
-            </div>
-
-            {centros.length > 0 && (
-              <div>
-                <Label htmlFor="centro">Centro Preferido (Opcional)</Label>
-                <Select
-                  value={cuadrillaData.centro_id}
-                  onValueChange={(value) => setCuadrillaData(prev => ({ ...prev, centro_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar centro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {centros.map(centro => (
-                      <SelectItem key={centro.id} value={centro.id}>
-                        {centro.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {fechaInmersion && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  📅 Esta cuadrilla será asignada para la inmersión del {fechaInmersion}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      );
-    }
-
-    if (currentStep === membersStepNumber) {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Miembros de la Cuadrilla</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            
-            {/* UserSearchSelect para agregar miembros */}
-            <div>
-              <Label className="block text-sm font-medium mb-2">
-                Buscar y Agregar Miembros
-              </Label>
-              <UserSearchSelect
-                onSelectUser={handleUserSelect}
-                onInviteUser={handleUserInvite}
-                allowedRoles={['supervisor', 'buzo']}
-                placeholder="Buscar usuario para agregar a la cuadrilla..."
-              />
-            </div>
-
-            {/* Advertencias de roles */}
-            {roleAnalysis.warnings.length > 0 && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-800">Advertencias</span>
-                </div>
-                {roleAnalysis.warnings.map((warning, index) => (
-                  <p key={index} className="text-sm text-yellow-700">• {warning}</p>
-                ))}
-              </div>
-            )}
-
-            {/* Lista de miembros agregados */}
-            {members.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <User className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>No hay miembros agregados</p>
-                <p className="text-sm">Use el buscador de arriba para agregar miembros</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm text-gray-700">
-                  Miembros Agregados ({members.length})
-                </h4>
-                {members.map((member, index) => (
-                  <div key={member.id} className="flex gap-3 items-center p-3 border rounded-lg bg-gray-50">
-                    <Badge variant="outline" className="text-xs">
-                      #{index + 1}
-                    </Badge>
-                    
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        {member.nombre} {member.apellido}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {member.email}
-                        {!member.usuario_id && (
-                          <Badge variant="outline" className="ml-2 text-xs text-orange-600 border-orange-200">
-                            Invitado
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="w-40">
-                      <Select
-                        value={member.rol_equipo}
-                        onValueChange={(value) => updateMemberRole(member.id, value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="supervisor">Supervisor</SelectItem>
-                          <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
-                          <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
-                          <SelectItem value="buzo">Buzo</SelectItem>
-                          <SelectItem value="apoyo_superficie">Apoyo Superficie</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      onClick={() => removeMember(member.id)}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                💡 <strong>Consejo:</strong> Asegúrese de incluir al menos un supervisor y los buzos necesarios para la operación.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return null;
+  const getRoleDisplayName = (role: string) => {
+    const roleMap = {
+      'supervisor': 'Supervisor',
+      'buzo_principal': 'Buzo Principal',
+      'buzo_asistente': 'Buzo Asistente'
+    };
+    return roleMap[role as keyof typeof roleMap] || role;
   };
+
+  const canProceed = step === 1 ? formData.nombre.trim() : members.length > 0 && members.some(m => m.rol_equipo === 'supervisor');
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
+            <Users className="w-5 h-5 text-blue-600" />
             Nueva Cuadrilla de Buceo
           </DialogTitle>
-          <Progress value={progress} className="w-full" />
-          <div className="text-sm text-gray-500">
-            Paso {currentStep} de {totalSteps}
-          </div>
         </DialogHeader>
 
         <div className="space-y-6">
-          {renderStep()}
+          {/* Progress indicator */}
+          <div className="flex items-center justify-center space-x-4">
+            <div className={`flex items-center space-x-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                {step > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
+              </div>
+              <span className="text-sm font-medium">Información Básica</span>
+            </div>
+            <div className={`w-8 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
+            <div className={`flex items-center space-x-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                2
+              </div>
+              <span className="text-sm font-medium">Miembros</span>
+            </div>
+          </div>
 
-          <div className="flex justify-between">
-            <Button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              variant="outline"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Anterior
-            </Button>
+          {/* Step 1: Basic Information */}
+          {step === 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Información de la Cuadrilla</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre de la Cuadrilla *</Label>
+                  <Input
+                    id="nombre"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                    placeholder="Ej: Equipo Alpha, Cuadrilla Norte..."
+                  />
+                </div>
 
-            {currentStep < totalSteps ? (
-              <Button onClick={nextStep}>
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-2" />
+                <div className="space-y-2">
+                  <Label htmlFor="descripcion">Descripción</Label>
+                  <Textarea
+                    id="descripcion"
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                    placeholder="Descripción opcional de la cuadrilla..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado Inicial</Label>
+                  <Select
+                    value={formData.estado}
+                    onValueChange={(value: 'disponible' | 'ocupada' | 'mantenimiento') => 
+                      setFormData(prev => ({ ...prev, estado: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Disponible</SelectItem>
+                      <SelectItem value="ocupada">Ocupada</SelectItem>
+                      <SelectItem value="mantenimiento">En Mantenimiento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {fechaInmersion && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Fecha de inmersión:</strong> {fechaInmersion}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      La cuadrilla será asignada automáticamente a esta fecha.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 2: Members */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Agregar Miembros</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Seleccionar Usuario</Label>
+                      <UserSearchSelect
+                        onUserSelect={handleAddMember}
+                        allowedRoles={['supervisor', 'buzo']}
+                        placeholder="Buscar usuario..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Rol en la Cuadrilla</Label>
+                      <Select value={selectedRole} onValueChange={setSelectedRole}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="buzo_principal">Buzo Principal</SelectItem>
+                          <SelectItem value="buzo_asistente">Buzo Asistente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Members list */}
+              {members.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Miembros de la Cuadrilla ({members.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {members.map((member, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div>
+                              <p className="font-medium">
+                                {member.nombre} {member.apellido}
+                              </p>
+                              <Badge variant="outline" className="text-xs">
+                                {getRoleDisplayName(member.rol_equipo)}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleRemoveMember(member.usuario_id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Validation messages */}
+              {members.length === 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <p className="text-sm text-yellow-800">
+                      Debe agregar al menos un miembro a la cuadrilla.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {members.length > 0 && !members.some(m => m.rol_equipo === 'supervisor') && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <p className="text-sm text-yellow-800">
+                      Debe haber al menos un supervisor en la cuadrilla.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex justify-between pt-4 border-t">
+            <div>
+              {step === 2 && (
+                <Button onClick={handleBack} variant="outline">
+                  Anterior
+                </Button>
+              )}
+            </div>
+            
+            <div className="space-x-2">
+              <Button onClick={onClose} variant="outline">
+                Cancelar
               </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Creando...' : 'Crear Cuadrilla'}
-              </Button>
-            )}
+              
+              {step === 1 ? (
+                <Button 
+                  onClick={handleNext} 
+                  disabled={!canProceed}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Siguiente
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={!canProceed || isSubmitting}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isSubmitting ? 'Creando...' : 'Crear Cuadrilla'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

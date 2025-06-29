@@ -142,8 +142,8 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       return;
     }
 
-    // Validar disponibilidad de cuadrilla
-    if (!validateCuadrillaAvailability()) {
+    // Validar disponibilidad de cuadrilla solo si hay una seleccionada
+    if (selectedCuadrillaId && !validateCuadrillaAvailability()) {
       console.log('Cuadrilla availability validation failed');
       return;
     }
