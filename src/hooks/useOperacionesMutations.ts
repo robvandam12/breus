@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +12,8 @@ export interface OperacionFormData {
   centro_id?: string;
   contratista_id?: string;
   servicio_id?: string;
+  company_id?: string;
+  company_type?: string;
   tareas?: string;
 }
 
@@ -21,13 +22,34 @@ export const useOperacionesMutations = () => {
 
   const createOperacion = useMutation({
     mutationFn: async (data: OperacionFormData) => {
+      console.log('Sending operacion data:', data);
+      
+      // Preparar los datos asegurando que tengan la estructura correcta
+      const operacionData = {
+        codigo: data.codigo,
+        nombre: data.nombre,
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin || null,
+        estado: data.estado,
+        tareas: data.tareas || null,
+        salmonera_id: data.salmonera_id || null,
+        contratista_id: data.contratista_id || null,
+        centro_id: data.centro_id || null,
+        servicio_id: data.servicio_id || null,
+        company_id: data.company_id || null,
+        company_type: data.company_type || null
+      };
+
       const { data: result, error } = await supabase
         .from('operacion')
-        .insert([data])
+        .insert([operacionData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       return result;
     },
     onSuccess: () => {
@@ -38,6 +60,7 @@ export const useOperacionesMutations = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
         description: `No se pudo crear la operación: ${error.message}`,
@@ -62,7 +85,7 @@ export const useOperacionesMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['operaciones'] });
       toast({
         title: "Operación actualizada",
-        description: "La operación se ha actualizado exitosamente.",
+        description: "La operación se ha actualizada exitosamente.",
       });
     },
     onError: (error: any) => {

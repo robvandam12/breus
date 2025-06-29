@@ -1,221 +1,236 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OperacionesTable } from "@/components/operaciones/OperacionesTable";
-import { OperacionesMapView } from "@/components/operaciones/OperacionesMapView";
-import { OperacionCardView } from "@/components/operaciones/OperacionCardView";
-import OperacionDetailModal from "@/components/operaciones/OperacionDetailModal";
+import { 
+  Search, 
+  Plus, 
+  Calendar,
+  Building2,
+  Users,
+  MapPin,
+  MoreHorizontal,
+  Filter,
+  Eye,
+  Edit,
+  Trash2
+} from "lucide-react";
 import { useOperaciones } from "@/hooks/useOperaciones";
-import { List, MapPin, Grid3X3 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { useOperacionesFilters } from "@/hooks/useOperacionesFilters";
-import { OperacionesFilters } from "@/components/operaciones/OperacionesFilters";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useOperacionesMutations } from "@/hooks/useOperacionesMutations";
+import { CreateOperacionForm } from "./CreateOperacionForm";
+import { WizardDialog } from "@/components/forms/WizardDialog";
+import { OperacionesTable } from "./OperacionesTable";
+import { OperacionCardView } from "./OperacionCardView";
+import { OperacionesMapView } from "./OperacionesMapView";
+import OperacionDetail from "./OperacionDetail";
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 
 export const OperacionesManager = () => {
-  const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState(isMobile ? "cards" : "table");
+  const { operaciones, isLoading } = useOperaciones();
+  const { createOperacion, deleteOperacion, checkCanDelete, isDeleting } = useOperacionesMutations();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("table");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const { 
-    operaciones, 
-    isLoading,
-    updateOperacion, 
-    deleteOperacion, 
-    checkCanDelete,
-    refetch
-  } = useOperaciones();
-  
-  const {
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    filteredOperaciones
-  } = useOperacionesFilters(operaciones);
+  const [showDetail, setShowDetail] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    operacion: any | null;
+  }>({
+    open: false,
+    operacion: null
+  });
 
-  // Transform operaciones to match expected interface
-  const transformedOperaciones = filteredOperaciones.map(op => ({
-    ...op,
-    tipo_trabajo: op.tareas || 'Sin especificar'
-  }));
+  const filteredOperaciones = operaciones.filter(operacion =>
+    operacion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    operacion.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateOperacion = async (data: any) => {
+    try {
+      await createOperacion(data);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating operacion:', error);
+    }
+  };
 
   const handleViewDetail = (operacion: any) => {
     setSelectedOperacion(operacion);
-    setShowDetailModal(true);
+    setShowDetail(true);
   };
 
-  const handleEdit = async (operacion: any) => {
-    try {
-      const cleanData = {
-        codigo: operacion.codigo,
-        nombre: operacion.nombre,
-        tareas: operacion.tareas,
-        fecha_inicio: operacion.fecha_inicio,
-        fecha_fin: operacion.fecha_fin,
-        estado: operacion.estado,
-        estado_aprobacion: operacion.estado_aprobacion,
-        salmonera_id: operacion.salmonera_id,
-        contratista_id: operacion.contratista_id,
-        sitio_id: operacion.sitio_id,
-        servicio_id: operacion.servicio_id,
-        equipo_buceo_id: operacion.equipo_buceo_id,
-        supervisor_asignado_id: operacion.supervisor_asignado_id
-      };
+  const handleEdit = (operacion: any) => {
+    // Implementar edición
+    console.log('Edit operacion:', operacion);
+  };
 
-      Object.keys(cleanData).forEach(key => {
-        if (cleanData[key as keyof typeof cleanData] === undefined) {
-          delete cleanData[key as keyof typeof cleanData];
-        }
-      });
+  const handleDeleteClick = async (operacionId: string) => {
+    const operacion = operaciones.find(op => op.id === operacionId);
+    if (!operacion) return;
 
-      await updateOperacion({ id: operacion.id, data: cleanData });
-      await refetch();
-      
-      toast({
-        title: "Operación actualizada",
-        description: "La operación ha sido actualizada exitosamente.",
-      });
-    } catch (error: any) {
-      console.error('Error updating operacion:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo actualizar la operación: ${error.message || 'Error desconocido'}`,
-        variant: "destructive",
-      });
+    const canDeleteResult = await checkCanDelete(operacionId);
+    if (!canDeleteResult.canDelete) {
+      // Mostrar mensaje de error
+      console.error(`No se puede eliminar: ${canDeleteResult.reason}`);
+      return;
     }
+
+    setDeleteDialog({
+      open: true,
+      operacion
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const { canDelete, reason } = await checkCanDelete(id);
-      
-      if (!canDelete) {
-        toast({
-          title: "No se puede eliminar",
-          description: `La operación no se puede eliminar porque ${reason}.`,
-          variant: "destructive",
-        });
-        return;
+  const handleConfirmDelete = async () => {
+    if (deleteDialog.operacion) {
+      try {
+        await deleteOperacion(deleteDialog.operacion.id);
+        setDeleteDialog({ open: false, operacion: null });
+      } catch (error) {
+        console.error('Error deleting operacion:', error);
       }
-      
-      await deleteOperacion(id);
-      await refetch();
-      
-      if (selectedOperacion?.id === id) {
-        setShowDetailModal(false);
-        setSelectedOperacion(null);
-      }
-      
-    } catch (error: any) {
-      console.error('Error deleting operation:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo eliminar la operación: ${error.message || 'Error desconocido'}`,
-        variant: "destructive",
-      });
     }
-  };
-
-  const handleSelect = (operacion: any) => {
-    handleViewDetail(operacion);
-  };
-
-  const handleCloseDetail = () => {
-    setShowDetailModal(false);
-    setSelectedOperacion(null);
   };
 
   const handleViewDocuments = (operacion: any) => {
-    console.log('View documents for operation:', operacion.id);
+    // Implementar vista de documentos
+    console.log('View documents for:', operacion);
   };
-  
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap gap-4 items-center">
-          <Skeleton className="h-10 flex-1 min-w-64" />
-          <Skeleton className="h-10 w-48" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
+
+  if (showDetail && selectedOperacion) {
+    return <OperacionDetail operacion={selectedOperacion} />;
   }
 
   return (
     <div className="space-y-6">
-      <OperacionesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-14 rounded-3xl border-0">
-          <TabsTrigger 
-            value="table" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
+      {/* Header con búsqueda y acciones */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Buscar operaciones..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-2" />
+            Filtros
+          </Button>
+          
+          <WizardDialog
+            triggerText="Nueva Operación"
+            triggerIcon={Plus}
+            triggerClassName="bg-blue-600 hover:bg-blue-700"
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            size="xl"
           >
-            <List className="w-4 h-4" />
-            <span className="hidden sm:inline">Tabla</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="cards" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
-          >
-            <Grid3X3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Tarjetas</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="map" 
-            className="flex items-center gap-2 text-sm rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-3 px-4"
-          >
-            <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">Mapa</span>
-          </TabsTrigger>
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">Nueva Operación</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Crear una nueva operación de buceo
+                </p>
+              </div>
+              <CreateOperacionForm
+                onSubmit={handleCreateOperacion}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </div>
+          </WizardDialog>
+        </div>
+      </div>
+
+      {/* Tabs de visualización */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="table">Tabla</TabsTrigger>
+          <TabsTrigger value="cards">Tarjetas</TabsTrigger>
+          <TabsTrigger value="map">Mapa</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="table" className="mt-6">
-          <OperacionesTable 
-            operaciones={transformedOperaciones}
-            onView={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewDocuments={handleViewDocuments}
-          />
+
+        <TabsContent value="table" className="space-y-4">
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>Cargando operaciones...</p>
+              </CardContent>
+            </Card>
+          ) : filteredOperaciones.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay operaciones registradas
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Comienza creando la primera operación
+                </p>
+                <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Operación
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <OperacionesTable
+              operaciones={filteredOperaciones}
+              onEdit={handleEdit}
+              onView={handleViewDetail}
+              onDelete={handleDeleteClick}
+              onViewDocuments={handleViewDocuments}
+              isDeleting={isDeleting}
+            />
+          )}
         </TabsContent>
-        
-        <TabsContent value="cards" className="mt-6">
-          <OperacionCardView 
-            operaciones={transformedOperaciones}
-            onSelect={handleSelect}
-            onEdit={handleEdit}
-            onViewDetail={handleViewDetail}
-            onDelete={handleDelete}
-          />
+
+        <TabsContent value="cards" className="space-y-4">
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>Cargando operaciones...</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <OperacionCardView
+              operaciones={filteredOperaciones}
+              onSelect={handleViewDetail}
+              onEdit={handleEdit}
+              onViewDetail={handleViewDetail}
+              onDelete={handleDeleteClick}
+            />
+          )}
         </TabsContent>
-        
-        <TabsContent value="map" className="mt-6">
-          <OperacionesMapView 
-            operaciones={transformedOperaciones}
-            onSelect={handleSelect}
+
+        <TabsContent value="map" className="space-y-4">
+          <OperacionesMapView
+            operaciones={filteredOperaciones}
+            onSelect={handleViewDetail}
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={handleDeleteClick}
           />
         </TabsContent>
       </Tabs>
 
-      {selectedOperacion && (
-        <OperacionDetailModal 
-          operacion={selectedOperacion}
-          isOpen={showDetailModal}
-          onClose={handleCloseDetail}
-        />
-      )}
+      {/* Dialog de confirmación de eliminación */}
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, operacion: null })}
+        title="Eliminar Operación"
+        description="¿Estás seguro de que deseas eliminar esta operación? Se eliminará toda la información asociada, incluyendo inmersiones y bitácoras."
+        itemName={deleteDialog.operacion?.nombre || ''}
+        onConfirm={handleConfirmDelete}
+        loading={isDeleting}
+      />
     </div>
   );
 };
