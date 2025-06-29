@@ -1,10 +1,14 @@
 
-import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Eye } from 'lucide-react';
-import type { Inmersion } from '@/hooks/useInmersiones';
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Eye, Edit, Trash2 } from "lucide-react";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { type Inmersion } from "@/hooks/useInmersiones";
+import { useAuth } from "@/hooks/useAuth";
 
 interface InmersionesTableProps {
   inmersiones: Inmersion[];
@@ -13,115 +17,155 @@ interface InmersionesTableProps {
   onDelete: (inmersion: Inmersion) => void;
 }
 
-export const InmersionesTable = ({
-  inmersiones,
-  onEdit,
-  onView,
-  onDelete
-}: InmersionesTableProps) => {
+export const InmersionesTable = ({ inmersiones, onEdit, onView, onDelete }: InmersionesTableProps) => {
+  const { profile } = useAuth();
 
-  const getEstadoBadgeVariant = (estado: string) => {
-    switch (estado.toLowerCase()) {
-      case 'planificada':
-        return 'default';
-      case 'en_progreso':
-        return 'secondary';
-      case 'completada':
-        return 'outline';
-      case 'cancelada':
-        return 'destructive';
-      default:
-        return 'outline';
+  const getStatusColor = (estado: string) => {
+    switch (estado) {
+      case 'planificada': return 'bg-blue-100 text-blue-800';
+      case 'en_progreso': return 'bg-yellow-100 text-yellow-800';
+      case 'completada': return 'bg-green-100 text-green-800';
+      case 'cancelada': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatFecha = (fecha?: string) => {
-    if (!fecha) return 'No definida';
-    return new Date(fecha).toLocaleDateString('es-CL');
+  const canEdit = (inmersion: Inmersion) => {
+    return profile?.role === 'superuser' || 
+           profile?.role === 'admin_salmonera' || 
+           profile?.role === 'admin_servicio' ||
+           inmersion.supervisor_id === profile?.usuario_id;
+  };
+
+  const canDelete = (inmersion: Inmersion) => {
+    return profile?.role === 'superuser' || 
+           profile?.role === 'admin_salmonera' || 
+           profile?.role === 'admin_servicio';
+  };
+
+  // Función segura para acceder a propiedades de operación
+  const getOperationDisplay = (inmersion: Inmersion) => {
+    if (inmersion.is_independent) {
+      return 'Inmersión Independiente';
+    }
+    
+    // Acceso seguro a las propiedades de la operación
+    const operacionNombre = inmersion.operacion_nombre || 
+                           inmersion.operacion?.nombre || 
+                           'Sin operación';
+    
+    const operacionCodigo = inmersion.operacion?.codigo;
+    
+    if (operacionCodigo) {
+      return `${operacionCodigo} - ${operacionNombre}`;
+    }
+    
+    return operacionNombre;
+  };
+
+  const getCompanyDisplay = (inmersion: Inmersion) => {
+    if (inmersion.operacion?.salmoneras?.nombre) {
+      return inmersion.operacion.salmoneras.nombre;
+    }
+    
+    if (inmersion.operacion?.contratistas?.nombre) {
+      return inmersion.operacion.contratistas.nombre;
+    }
+    
+    if (inmersion.operacion?.centros?.nombre) {
+      return inmersion.operacion.centros.nombre;
+    }
+    
+    return 'No especificado';
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200/50 overflow-hidden bg-white/80 backdrop-blur-sm ios-card">
-      <Table>
-        <TableHeader className="bg-gray-50/80">
-          <TableRow className="hover:bg-gray-50/50">
-            <TableHead className="font-semibold text-gray-700">Código</TableHead>
-            <TableHead className="font-semibold text-gray-700">Objetivo</TableHead>
-            <TableHead className="font-semibold text-gray-700">Operación</TableHead>
-            <TableHead className="font-semibold text-gray-700">Buzo Principal</TableHead>
-            <TableHead className="font-semibold text-gray-700">Estado</TableHead>
-            <TableHead className="font-semibold text-gray-700">Fecha</TableHead>
-            <TableHead className="font-semibold text-gray-700">Prof. Máx</TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inmersiones.map((inmersion) => (
-            <TableRow key={inmersion.inmersion_id} className="hover:bg-blue-50/30 transition-colors">
-              <TableCell>
-                <div className="font-mono text-sm text-gray-600">
-                  {inmersion.codigo}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div>
-                  <p className="font-medium text-gray-900">{inmersion.objetivo}</p>
-                  {inmersion.external_operation_code && (
-                    <p className="text-sm text-gray-600">
-                      Ext: {inmersion.external_operation_code}
-                    </p>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-gray-700">
-                {inmersion.operacion?.nombre || inmersion.operacion_nombre || 'Independiente'}
-              </TableCell>
-              <TableCell className="text-gray-700">
-                {inmersion.buzo_principal || 'No asignado'}
-              </TableCell>
-              <TableCell>
-                <Badge variant={getEstadoBadgeVariant(inmersion.estado)}>
-                  {inmersion.estado.replace('_', ' ').toUpperCase()}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-gray-700">
-                {formatFecha(inmersion.fecha_inmersion)}
-              </TableCell>
-              <TableCell className="text-gray-700">
-                {inmersion.profundidad_max}m
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex gap-1 justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onView(inmersion)}
-                    className="h-8 w-8 p-0 hover:bg-blue-100 ios-button"
-                  >
-                    <Eye className="h-4 w-4 text-blue-600" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(inmersion)}
-                    className="h-8 w-8 p-0 hover:bg-orange-100 ios-button"
-                  >
-                    <Edit className="h-4 w-4 text-orange-600" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(inmersion)}
-                    className="h-8 w-8 p-0 hover:bg-red-100 ios-button"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Operación</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Objetivo</TableHead>
+                <TableHead>Supervisor</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Empresa</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {inmersiones.map((inmersion) => (
+                <TableRow key={inmersion.inmersion_id}>
+                  <TableCell className="font-medium">
+                    {inmersion.codigo}
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-48 truncate">
+                      {getOperationDisplay(inmersion)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(inmersion.fecha_inmersion), 'dd/MM/yyyy', { locale: es })}
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-40 truncate">
+                      {inmersion.objetivo}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {inmersion.supervisor || 'No asignado'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(inmersion.estado)}>
+                      {inmersion.estado.charAt(0).toUpperCase() + inmersion.estado.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-32 truncate text-sm text-gray-600">
+                      {getCompanyDisplay(inmersion)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onView(inmersion)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {canEdit(inmersion) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(inmersion)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete(inmersion) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(inmersion)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

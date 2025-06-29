@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -187,15 +186,21 @@ export const useInmersiones = () => {
   });
 
   const updateInmersion = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Inmersion> }) => {
+    mutationFn: async (inmersionId: string, data: Partial<Inmersion>) => {
+      console.log('Updating inmersion:', inmersionId, 'with data:', data);
+      
       const { data: updatedData, error } = await supabase
         .from('inmersion')
         .update(data)
-        .eq('inmersion_id', id)
+        .eq('inmersion_id', inmersionId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error updating inmersion:', error);
+        throw error;
+      }
+      
       return updatedData;
     },
     onSuccess: () => {
@@ -203,6 +208,15 @@ export const useInmersiones = () => {
       toast({
         title: 'Inmersión actualizada',
         description: 'La inmersión ha sido actualizada exitosamente.',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error updating inmersion:', error);
+      const errorMessage = error?.message || 'No se pudo actualizar la inmersión.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
       });
     },
   });
@@ -361,7 +375,7 @@ export const useInmersiones = () => {
     isLoading,
     error,
     createInmersion: createInmersion.mutate,
-    updateInmersion: updateInmersion.mutate,
+    updateInmersion: updateInmersion.mutateAsync, // Cambiar a mutateAsync para mejor manejo de errores
     deleteInmersion: deleteInmersion.mutate,
     executeInmersion: executeInmersion.mutate,
     completeInmersion: completeInmersion.mutate,

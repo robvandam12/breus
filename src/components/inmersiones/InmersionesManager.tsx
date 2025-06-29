@@ -18,8 +18,10 @@ import { UnifiedInmersionForm } from "./UnifiedInmersionForm";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 
 export const InmersionesManager = () => {
+  const { profile } = useAuth();
   const { 
     inmersiones, 
     isLoading, 
@@ -62,7 +64,8 @@ export const InmersionesManager = () => {
     if (editingInmersion) {
       try {
         console.log('Updating inmersion:', editingInmersion.inmersion_id, data);
-        await updateInmersion({ id: editingInmersion.inmersion_id, data });
+        // Corregir: pasar solo el ID y los datos, no como objeto anidado
+        await updateInmersion(editingInmersion.inmersion_id, data);
         setEditingInmersion(null);
       } catch (error) {
         console.error('Error updating inmersion:', error);
@@ -95,8 +98,24 @@ export const InmersionesManager = () => {
   };
 
   const handleEdit = (inmersion: Inmersion) => {
-    setEditingInmersion(inmersion);
+    // Verificar permisos antes de permitir edición
+    const canEdit = profile?.role === 'superuser' || 
+                   profile?.role === 'admin_salmonera' || 
+                   profile?.role === 'admin_servicio' ||
+                   inmersion.supervisor_id === profile?.usuario_id;
+    
+    if (canEdit) {
+      setEditingInmersion(inmersion);
+    } else {
+      console.warn('User does not have permission to edit this inmersion');
+    }
   };
+
+  // Verificar permisos para mostrar botón de crear
+  const canCreate = profile?.role === 'superuser' || 
+                   profile?.role === 'admin_salmonera' || 
+                   profile?.role === 'admin_servicio' ||
+                   profile?.role === 'supervisor';
 
   if (isLoading) {
     return (
@@ -138,27 +157,29 @@ export const InmersionesManager = () => {
           </Select>
         </div>
         
-        <WizardDialog
-          triggerText="Nueva Inmersión"
-          triggerIcon={Plus}
-          triggerClassName="bg-blue-600 hover:bg-blue-700"
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          size="xl"
-        >
-          <div className="space-y-4">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold">Nueva Inmersión</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Crear una nueva inmersión de buceo
-              </p>
+        {canCreate && (
+          <WizardDialog
+            triggerText="Nueva Inmersión"
+            triggerIcon={Plus}
+            triggerClassName="bg-blue-600 hover:bg-blue-700"
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            size="xl"
+          >
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">Nueva Inmersión</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Crear una nueva inmersión de buceo
+                </p>
+              </div>
+              <UnifiedInmersionForm
+                onSubmit={handleCreateInmersion}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
             </div>
-            <UnifiedInmersionForm
-              onSubmit={handleCreateInmersion}
-              onCancel={() => setIsCreateDialogOpen(false)}
-            />
-          </div>
-        </WizardDialog>
+          </WizardDialog>
+        )}
       </div>
 
       {/* Tabs de visualización */}
@@ -178,15 +199,17 @@ export const InmersionesManager = () => {
                   No hay inmersiones registradas
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Comienza creando la primera inmersión
+                  {canCreate ? 'Comienza creando la primera inmersión' : 'No tienes permisos para crear inmersiones'}
                 </p>
-                <Button 
-                  onClick={() => setIsCreateDialogOpen(true)} 
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Inmersión
-                </Button>
+                {canCreate && (
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)} 
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nueva Inmersión
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (

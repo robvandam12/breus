@@ -806,7 +806,7 @@ export type Database = {
       cuadrilla_asignaciones: {
         Row: {
           created_at: string
-          cuadrilla_id: string
+          cuadrilla_id: string | null
           estado: string
           fecha_asignacion: string
           id: string
@@ -815,7 +815,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          cuadrilla_id: string
+          cuadrilla_id?: string | null
           estado?: string
           fecha_asignacion: string
           id?: string
@@ -824,7 +824,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          cuadrilla_id?: string
+          cuadrilla_id?: string | null
           estado?: string
           fecha_asignacion?: string
           id?: string
