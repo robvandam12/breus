@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserPlus, X, CheckCircle, AlertTriangle, Users } from "lucide-react";
 import { useCuadrillas } from '@/hooks/useCuadrillas';
-import { UserSearchSelect } from '@/components/shared/UserSearchSelect';
+import { UserSearchSelect } from '@/components/usuarios/UserSearchSelect';
 import { toast } from '@/hooks/use-toast';
 
 interface Member {
@@ -28,6 +28,15 @@ interface CuadrillaCreationWizardEnhancedProps {
   fechaInmersion?: string;
 }
 
+interface CuadrillaFormData {
+  nombre: string;
+  descripcion: string;
+  centro_id: string;
+  estado: 'disponible' | 'ocupada' | 'mantenimiento';
+  empresa_id?: string;
+  tipo_empresa?: 'salmonera' | 'contratista';
+}
+
 export const CuadrillaCreationWizardEnhanced = ({
   isOpen,
   onClose,
@@ -39,11 +48,11 @@ export const CuadrillaCreationWizardEnhanced = ({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CuadrillaFormData>({
     nombre: '',
     descripcion: '',
     centro_id: '',
-    estado: 'disponible' as const
+    estado: 'disponible'
   });
   
   const [members, setMembers] = useState<Member[]>([]);
@@ -193,14 +202,23 @@ export const CuadrillaCreationWizardEnhanced = ({
       const newCuadrilla = await createCuadrilla(cuadrillaData);
       console.log('Cuadrilla created:', newCuadrilla);
 
-      // Agregar miembros uno por uno
+      // Agregar miembros uno por uno con mejor manejo de errores
       for (const member of members) {
         console.log('Adding member:', member);
-        await addMember({
-          cuadrillaId: newCuadrilla.id,
-          usuarioId: member.usuario_id,
-          rolEquipo: member.rol_equipo
-        });
+        try {
+          await addMember({
+            cuadrillaId: newCuadrilla.id,
+            usuarioId: member.usuario_id,
+            rolEquipo: member.rol_equipo
+          });
+        } catch (memberError) {
+          console.error('Error adding member:', member, memberError);
+          toast({
+            title: "Advertencia",
+            description: `Error al agregar miembro ${member.nombre} ${member.apellido}`,
+            variant: "destructive",
+          });
+        }
       }
 
       // Llamar callback con la cuadrilla creada
@@ -336,7 +354,8 @@ export const CuadrillaCreationWizardEnhanced = ({
                     <div className="space-y-2">
                       <Label>Seleccionar Usuario</Label>
                       <UserSearchSelect
-                        onUserSelect={handleAddMember}
+                        onSelectUser={handleAddMember}
+                        onInviteUser={() => {}}
                         allowedRoles={['supervisor', 'buzo']}
                         placeholder="Buscar usuario..."
                       />
