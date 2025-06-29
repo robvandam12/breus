@@ -83,14 +83,6 @@ export const CuadrillasManagementWithFilters = () => {
     setSelectedCompany(company || null);
   };
 
-  const getEnterpriseContext = () => {
-    if (!selectedCompany) return null;
-    
-    return selectedCompany.tipo === 'salmonera' 
-      ? { salmonera_id: selectedCompany.id, context_metadata: { selection_mode: 'superuser_admin', empresa_origen_tipo: 'salmonera' } }
-      : { contratista_id: selectedCompany.id, context_metadata: { selection_mode: 'superuser_admin', empresa_origen_tipo: 'contratista' } };
-  };
-
   const handleCuadrillaCreated = (cuadrilla: any) => {
     setShowCreateWizard(false);
     invalidateQueries();
@@ -146,10 +138,7 @@ export const CuadrillasManagementWithFilters = () => {
             </div>
           )}
 
-          <Button 
-            onClick={() => setShowCreateWizard(true)}
-            disabled={profile?.role === 'superuser' && !selectedCompany}
-          >
+          <Button onClick={() => setShowCreateWizard(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nueva Cuadrilla
           </Button>
@@ -202,7 +191,7 @@ export const CuadrillasManagementWithFilters = () => {
         isOpen={showCreateWizard}
         onClose={() => setShowCreateWizard(false)}
         onCuadrillaCreated={handleCuadrillaCreated}
-        enterpriseContext={getEnterpriseContext()}
+        enterpriseContext={null}
       />
 
       {selectedCuadrillaId && (
