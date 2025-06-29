@@ -195,9 +195,21 @@ export const useInmersiones = () => {
 
   const deleteInmersion = useMutation({
     mutationFn: async (inmersionId: string) => {
-      console.log('Attempting to delete inmersion with ID:', inmersionId);
+      console.log('Starting deletion process for inmersion:', inmersionId);
       
-      // Primero eliminar asignaciones de cuadrilla relacionadas
+      // Primero verificar que la inmersión existe
+      const { data: inmersionExists, error: checkError } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .eq('inmersion_id', inmersionId)
+        .single();
+
+      if (checkError || !inmersionExists) {
+        console.error('Inmersion not found:', checkError);
+        throw new Error('Inmersión no encontrada');
+      }
+
+      // Eliminar asignaciones de cuadrilla relacionadas
       const { error: assignmentError } = await supabase
         .from('cuadrilla_asignaciones')
         .delete()
@@ -208,33 +220,36 @@ export const useInmersiones = () => {
         // Continuar con la eliminación de la inmersión aunque fallen las asignaciones
       }
 
-      // Luego eliminar la inmersión
-      const { error } = await supabase
+      // Eliminar la inmersión
+      const { error: deleteError, count } = await supabase
         .from('inmersion')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('inmersion_id', inmersionId);
 
-      if (error) {
-        console.error('Error deleting inmersion:', error);
-        throw error;
+      if (deleteError) {
+        console.error('Error deleting inmersion:', deleteError);
+        throw deleteError;
+      }
+
+      if (count === 0) {
+        throw new Error('No se pudo eliminar la inmersión - no se encontró el registro');
       }
       
-      console.log('Inmersion deleted successfully:', inmersionId);
+      console.log('Inmersion deleted successfully, affected rows:', count);
       return inmersionId;
     },
     onSuccess: (deletedId) => {
       console.log('Delete mutation succeeded for ID:', deletedId);
       
-      // Forzar refetch inmediato de todas las queries relacionadas
+      // Forzar refetch inmediato y completo
+      queryClient.removeQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrillas-con-asignaciones'] });
       queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
       
       // Refetch explícito para asegurar actualización inmediata
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['inmersiones'] });
-      }, 100);
+      queryClient.refetchQueries({ queryKey: ['inmersiones'] });
       
       toast({
         title: 'Inmersión eliminada',
@@ -245,7 +260,7 @@ export const useInmersiones = () => {
       console.error('Delete mutation failed:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo eliminar la inmersión.',
+        description: error?.message || 'No se pudo eliminar la inmersión.',
         variant: 'destructive',
       });
     },

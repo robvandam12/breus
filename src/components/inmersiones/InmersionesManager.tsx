@@ -71,19 +71,21 @@ export const InmersionesManager = () => {
   };
 
   const handleDeleteClick = (inmersion: Inmersion) => {
-    console.log('Delete clicked for inmersion:', inmersion.inmersion_id);
+    console.log('Delete clicked for inmersion:', inmersion.inmersion_id, inmersion.codigo);
     setDeleteConfirmation({ open: true, inmersion });
   };
 
   const handleConfirmDelete = async () => {
     if (deleteConfirmation.inmersion) {
       const inmersionId = deleteConfirmation.inmersion.inmersion_id;
+      const inmersionCodigo = deleteConfirmation.inmersion.codigo;
       try {
-        console.log('Confirming delete for inmersion:', inmersionId);
+        console.log('Confirming delete for inmersion:', inmersionId, inmersionCodigo);
         await deleteInmersion(inmersionId);
         setDeleteConfirmation({ open: false, inmersion: null });
       } catch (error) {
         console.error('Error deleting inmersion:', error);
+        // No cerrar el dialog si hay error para que el usuario pueda intentar de nuevo
       }
     }
   };
@@ -100,6 +102,7 @@ export const InmersionesManager = () => {
     return (
       <Card>
         <CardContent className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p>Cargando inmersiones...</p>
         </CardContent>
       </Card>
@@ -254,7 +257,7 @@ export const InmersionesManager = () => {
       {/* Confirmación de eliminación */}
       <DeleteConfirmationDialog
         open={deleteConfirmation.open}
-        onOpenChange={(open) => setDeleteConfirmation({ open, inmersion: null })}
+        onOpenChange={(open) => !isDeleting && setDeleteConfirmation({ open, inmersion: open ? deleteConfirmation.inmersion : null })}
         title="Eliminar Inmersión"
         description="¿Estás seguro de que deseas eliminar esta inmersión? Se eliminará toda la información asociada."
         itemName={deleteConfirmation.inmersion?.codigo || ''}

@@ -18,7 +18,7 @@ export interface Centro {
   observaciones?: string;
   created_at: string;
   updated_at: string;
-  salmonera?: {
+  salmoneras?: {
     nombre: string;
   };
 }
@@ -69,7 +69,7 @@ export const useCentros = () => {
         .from('centros')
         .select(`
           *,
-          salmonera:salmoneras(nombre)
+          salmoneras!centros_salmonera_id_fkey(nombre)
         `)
         .order('nombre');
 
