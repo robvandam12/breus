@@ -77,11 +77,14 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     if (profile?.salmonera_id) {
       loadEnterpriseModules();
       loadCentros();
-      if (canShowPlanningToggle && isPlanned) {
-        loadOperaciones();
-      }
     }
-  }, [profile?.salmonera_id, canShowPlanningToggle, isPlanned]);
+  }, [profile?.salmonera_id]);
+
+  useEffect(() => {
+    if (canShowPlanningToggle && isPlanned && profile?.salmonera_id) {
+      loadOperaciones();
+    }
+  }, [canShowPlanningToggle, isPlanned, profile?.salmonera_id]);
 
   const loadEnterpriseModules = async () => {
     if (!profile?.salmonera_id) return;
