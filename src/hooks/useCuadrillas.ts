@@ -67,7 +67,6 @@ export const useCuadrillas = () => {
         } else if (profile?.servicio_id) {
           query = query.eq('empresa_id', profile.servicio_id).eq('tipo_empresa', 'contratista');
         } else {
-          // Usuario sin empresa asignada - no puede ver cuadrillas
           return [];
         }
       }
@@ -90,12 +89,11 @@ export const useCuadrillas = () => {
 
       return processedData as Cuadrilla[];
     },
-    enabled: !!profile // Solo ejecutar si hay perfil de usuario
+    enabled: !!profile
   });
 
   const createMutation = useMutation({
     mutationFn: async (formData: CuadrillaFormData) => {
-      // Determinar empresa y tipo según el rol del usuario
       let empresaData = {
         empresa_id: formData.empresa_id,
         tipo_empresa: formData.tipo_empresa
@@ -117,12 +115,11 @@ export const useCuadrillas = () => {
         }
       }
 
-      // Crear cuadrilla con los datos correctos
       const cuadrillaData = {
         nombre: formData.nombre,
         descripcion: formData.descripcion,
         centro_id: formData.centro_id,
-        activo: Boolean(formData.activo), // Conversión explícita a boolean
+        activo: formData.activo,
         estado: formData.estado,
         ...empresaData
       };
@@ -155,15 +152,9 @@ export const useCuadrillas = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CuadrillaFormData> }) => {
-      // Asegurar conversión a boolean si se actualiza el campo activo
-      const updateData = {
-        ...data,
-        activo: data.activo !== undefined ? Boolean(data.activo) : undefined
-      };
-
       const { error } = await supabase
         .from('cuadrillas_buceo')
-        .update(updateData)
+        .update(data)
         .eq('id', id);
 
       if (error) throw error;

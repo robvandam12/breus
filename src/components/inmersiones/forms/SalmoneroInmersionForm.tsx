@@ -43,7 +43,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
   
   const [enterpriseModules, setEnterpriseModules] = useState<any>(null);
   const [canShowPlanningToggle, setCanShowPlanningToggle] = useState(false);
-  const [isPlanned, setIsPlanned] = useState(true); // Salmoneras prefieren operaciones planificadas
+  const [isPlanned, setIsPlanned] = useState(true);
   const [loading, setLoading] = useState(false);
   
   const getInitialCuadrillaId = () => {

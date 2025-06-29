@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, User } from "lucide-react";
+import { Plus, Users, User, Settings } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useCuadrillas } from '@/hooks/useCuadrillas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
+import { CuadrillaCreationWizard } from './CuadrillaCreationWizard';
+import { CuadrillaManagementModal } from './CuadrillaManagementModal';
 
 interface EnhancedCuadrillaSelectorProps {
   selectedCuadrillaId: string | null;
@@ -36,10 +38,11 @@ export const EnhancedCuadrillaSelector = ({
   onCuadrillaCreated
 }: EnhancedCuadrillaSelectorProps) => {
   const { profile } = useAuth();
+  const { cuadrillas, isLoading } = useCuadrillas();
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
-  const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
-  const [loading, setLoading] = useState(false);
   const [availability, setAvailability] = useState<Record<string, boolean>>({});
+  const [showCreationWizard, setShowCreationWizard] = useState(false);
+  const [showManagementModal, setShowManagementModal] = useState(false);
 
   // Auto-configurar empresa para usuarios no superuser
   useEffect(() => {
@@ -56,64 +59,12 @@ export const EnhancedCuadrillaSelector = ({
     }
   }, [profile]);
 
-  // Cargar cuadrillas cuando cambia la empresa
-  useEffect(() => {
-    if (selectedEnterprise) {
-      loadCuadrillas();
-    }
-  }, [selectedEnterprise]);
-
   // Verificar disponibilidad cuando cambia la fecha
   useEffect(() => {
     if (fechaInmersion && cuadrillas.length > 0) {
       checkAvailability();
     }
   }, [fechaInmersion, cuadrillas]);
-
-  const loadCuadrillas = async () => {
-    if (!selectedEnterprise) return;
-
-    setLoading(true);
-    try {
-      const empresaId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const tipoEmpresa = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
-
-      const { data, error } = await supabase
-        .from('cuadrillas_buceo')
-        .select(`
-          id,
-          nombre,
-          estado,
-          empresa_id,
-          tipo_empresa,
-          cuadrilla_miembros(count)
-        `)
-        .eq('empresa_id', empresaId)
-        .eq('tipo_empresa', tipoEmpresa)
-        .eq('activo', true)
-        .order('nombre');
-
-      if (error) throw error;
-
-      const cuadrillasFormatted = data.map(cuadrilla => ({
-        ...cuadrilla,
-        _count: {
-          miembros: cuadrilla.cuadrilla_miembros?.[0]?.count || 0
-        }
-      }));
-
-      setCuadrillas(cuadrillasFormatted);
-    } catch (error) {
-      console.error('Error loading cuadrillas:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las cuadrillas",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const checkAvailability = async () => {
     if (!fechaInmersion) return;
@@ -131,55 +82,40 @@ export const EnhancedCuadrillaSelector = ({
         availabilityMap[cuadrilla.id] = data?.[0]?.is_available || false;
       } catch (error) {
         console.error(`Error checking availability for cuadrilla ${cuadrilla.id}:`, error);
-        availabilityMap[cuadrilla.id] = true; // Asumir disponible si hay error
+        availabilityMap[cuadrilla.id] = true;
       }
     }
 
     setAvailability(availabilityMap);
   };
 
-  const handleCreateCuadrilla = async () => {
-    if (!selectedEnterprise) return;
+  const handleCreateCuadrilla = () => {
+    setShowCreationWizard(true);
+  };
 
-    try {
-      const empresaId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const tipoEmpresa = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+  const handleCuadrillaCreated = (cuadrilla: any) => {
+    onCuadrillaChange(cuadrilla.id);
+    onCuadrillaCreated?.(cuadrilla);
+    setShowCreationWizard(false);
+  };
 
-      const { data, error } = await supabase
-        .from('cuadrillas_buceo')
-        .insert([{
-          nombre: `Cuadrilla ${Date.now()}`,
-          empresa_id: empresaId,
-          tipo_empresa: tipoEmpresa,
-          estado: 'disponible',
-          activo: true
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Cuadrilla creada",
-        description: "La nueva cuadrilla ha sido creada exitosamente",
-      });
-
-      await loadCuadrillas();
-      onCuadrillaChange(data.id);
-      onCuadrillaCreated?.(data);
-    } catch (error) {
-      console.error('Error creating cuadrilla:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la cuadrilla",
-        variant: "destructive",
-      });
+  const handleManageCuadrilla = () => {
+    if (selectedCuadrillaId) {
+      setShowManagementModal(true);
     }
+  };
+
+  const handleCuadrillaUpdated = (cuadrilla: any) => {
+    // La cuadrilla se actualizará automáticamente a través del hook useCuadrillas
+    toast({
+      title: "Cuadrilla actualizada",
+      description: "Los cambios han sido guardados exitosamente",
+    });
   };
 
   const handleEnterpriseChange = (result: any) => {
     setSelectedEnterprise(result);
-    onCuadrillaChange(null); // Limpiar selección cuando cambia la empresa
+    onCuadrillaChange(null);
   };
 
   // Mostrar selector de empresa para superusers
@@ -228,7 +164,7 @@ export const EnhancedCuadrillaSelector = ({
             <Select
               value={selectedCuadrillaId || ''}
               onValueChange={(value) => onCuadrillaChange(value || null)}
-              disabled={loading}
+              disabled={isLoading}
             >
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Seleccionar cuadrilla..." />
@@ -241,7 +177,7 @@ export const EnhancedCuadrillaSelector = ({
                       <div className="flex items-center gap-2 ml-2">
                         <Badge variant="outline" className="text-xs">
                           <User className="w-3 h-3 mr-1" />
-                          {cuadrilla._count?.miembros || 0}
+                          {cuadrilla.miembros?.length || 0}
                         </Badge>
                         {fechaInmersion && (
                           <Badge
@@ -260,12 +196,25 @@ export const EnhancedCuadrillaSelector = ({
             
             <Button 
               onClick={handleCreateCuadrilla}
-              disabled={loading}
+              disabled={isLoading}
               variant="outline"
               size="icon"
+              title="Crear nueva cuadrilla"
             >
               <Plus className="w-4 h-4" />
             </Button>
+
+            {selectedCuadrillaId && (
+              <Button 
+                onClick={handleManageCuadrilla}
+                disabled={isLoading}
+                variant="outline"
+                size="icon"
+                title="Gestionar cuadrilla"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
           {fechaInmersion && selectedCuadrillaId && !availability[selectedCuadrillaId] && (
@@ -276,7 +225,7 @@ export const EnhancedCuadrillaSelector = ({
             </div>
           )}
 
-          {cuadrillas.length === 0 && !loading && (
+          {cuadrillas.length === 0 && !isLoading && (
             <div className="text-center py-6 text-gray-500">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No hay cuadrillas disponibles</p>
@@ -292,6 +241,24 @@ export const EnhancedCuadrillaSelector = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Wizard de creación */}
+      <CuadrillaCreationWizard
+        isOpen={showCreationWizard}
+        onClose={() => setShowCreationWizard(false)}
+        onCuadrillaCreated={handleCuadrillaCreated}
+        enterpriseContext={selectedEnterprise}
+        fechaInmersion={fechaInmersion}
+      />
+
+      {/* Modal de gestión */}
+      <CuadrillaManagementModal
+        isOpen={showManagementModal}
+        onClose={() => setShowManagementModal(false)}
+        cuadrillaId={selectedCuadrillaId}
+        onCuadrillaUpdated={handleCuadrillaUpdated}
+        fechaInmersion={fechaInmersion}
+      />
     </div>
   );
 };
