@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ interface EnhancedCuadrillaSelectorProps {
   inmersionId?: string;
   centroId?: string;
   disabled?: boolean;
+  enterpriseContext?: any;
 }
 
 interface AvailabilityResult {
@@ -29,7 +31,8 @@ export const EnhancedCuadrillaSelector = ({
   fechaInmersion,
   inmersionId,
   centroId,
-  disabled = false
+  disabled = false,
+  enterpriseContext
 }: EnhancedCuadrillaSelectorProps) => {
   const { cuadrillas, isLoading, createCuadrilla } = useCuadrillas();
   const [availabilityStatus, setAvailabilityStatus] = useState<Record<string, AvailabilityResult>>({});
@@ -114,6 +117,7 @@ export const EnhancedCuadrillaSelector = ({
         nombre: `Cuadrilla ${Date.now()}`,
         descripcion: 'Cuadrilla creada desde selector',
         estado: 'disponible',
+        activo: true, // Agregar propiedad faltante
         centro_id: centroId || null
       });
       

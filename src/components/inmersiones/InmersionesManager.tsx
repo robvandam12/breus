@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,6 @@ export const InmersionesManager = () => {
     if (editingInmersion) {
       try {
         console.log('Updating inmersion:', editingInmersion.inmersion_id, data);
-        // Corregir: pasar solo el ID y los datos, no como objeto anidado
         await updateInmersion(editingInmersion.inmersion_id, data);
         setEditingInmersion(null);
       } catch (error) {
@@ -98,11 +96,11 @@ export const InmersionesManager = () => {
   };
 
   const handleEdit = (inmersion: Inmersion) => {
-    // Verificar permisos antes de permitir edición
+    // Verificar permisos antes de permitir edición - Corregir usuario_id por id
     const canEdit = profile?.role === 'superuser' || 
                    profile?.role === 'admin_salmonera' || 
                    profile?.role === 'admin_servicio' ||
-                   inmersion.supervisor_id === profile?.usuario_id;
+                   inmersion.supervisor_id === profile?.id;
     
     if (canEdit) {
       setEditingInmersion(inmersion);

@@ -99,11 +99,6 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setFormData(prev => ({ ...prev, ...newData }));
   };
 
-  const handleCuadrillaCreated = (cuadrilla: any) => {
-    console.log('Cuadrilla created and assigned:', cuadrilla);
-    setSelectedCuadrillaId(cuadrilla.id);
-  };
-
   const validateCuadrillaAvailability = (): boolean => {
     if (!selectedCuadrillaId || !formData.fecha_inmersion) {
       return true; // Si no hay cuadrilla seleccionada, no validar
@@ -287,11 +282,12 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
               operaciones={operaciones}
             />
 
+            {/* Remover prop onCuadrillaCreated */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
-              onCuadrillaCreated={handleCuadrillaCreated}
+              centroId={formData.centro_id}
               enterpriseContext={selectedEnterprise}
             />
 

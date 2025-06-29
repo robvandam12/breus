@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import { EnhancedCuadrillaSelector } from '@/components/cuadrillas/EnhancedCuadr
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface BuzoSupervisorInmersionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>; // Cambiar a Promise<void>
   onCancel: () => void;
   initialData?: Inmersion;
 }
@@ -269,7 +268,7 @@ export const BuzoSupervisorInmersionForm = ({ onSubmit, onCancel, initialData }:
               </div>
             </div>
 
-            {/* Selector de Cuadrilla - Obligatorio */}
+            {/* Selector de Cuadrilla - Obligatorio - Remover prop onCuadrillaCreated */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Label>Cuadrilla de Buceo *</Label>
@@ -279,7 +278,7 @@ export const BuzoSupervisorInmersionForm = ({ onSubmit, onCancel, initialData }:
                 selectedCuadrillaId={selectedCuadrillaId}
                 onCuadrillaChange={setSelectedCuadrillaId}
                 fechaInmersion={formData.fecha_inmersion}
-                onCuadrillaCreated={(cuadrilla) => setSelectedCuadrillaId(cuadrilla.id)}
+                centroId={formData.centro_id}
               />
             </div>
 

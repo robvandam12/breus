@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import { EnhancedCuadrillaSelector } from '@/components/cuadrillas/EnhancedCuadr
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface ContratistaInmersionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>; // Cambiar a Promise<void>
   onCancel: () => void;
   initialData?: Inmersion;
 }
@@ -240,12 +239,12 @@ export const ContratistaInmersionForm = ({ onSubmit, onCancel, initialData }: Co
               </div>
             </div>
 
-            {/* Selector de Cuadrilla */}
+            {/* Selector de Cuadrilla - Remover prop onCuadrillaCreated */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
-              onCuadrillaCreated={(cuadrilla) => setSelectedCuadrillaId(cuadrilla.id)}
+              centroId={formData.centro_id}
             />
 
             <div>

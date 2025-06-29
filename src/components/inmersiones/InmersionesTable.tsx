@@ -34,7 +34,7 @@ export const InmersionesTable = ({ inmersiones, onEdit, onView, onDelete }: Inme
     return profile?.role === 'superuser' || 
            profile?.role === 'admin_salmonera' || 
            profile?.role === 'admin_servicio' ||
-           inmersion.supervisor_id === profile?.usuario_id;
+           inmersion.supervisor_id === profile?.id; // Corregir usuario_id por id
   };
 
   const canDelete = (inmersion: Inmersion) => {

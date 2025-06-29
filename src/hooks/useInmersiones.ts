@@ -185,8 +185,9 @@ export const useInmersiones = () => {
     },
   });
 
+  // Corregir updateInmersion para usar solo inmersionId como parámetro
   const updateInmersion = useMutation({
-    mutationFn: async (inmersionId: string, data: Partial<Inmersion>) => {
+    mutationFn: async ({ inmersionId, data }: { inmersionId: string; data: Partial<Inmersion> }) => {
       console.log('Updating inmersion:', inmersionId, 'with data:', data);
       
       const { data: updatedData, error } = await supabase
@@ -375,7 +376,8 @@ export const useInmersiones = () => {
     isLoading,
     error,
     createInmersion: createInmersion.mutate,
-    updateInmersion: updateInmersion.mutateAsync, // Cambiar a mutateAsync para mejor manejo de errores
+    updateInmersion: (inmersionId: string, data: Partial<Inmersion>) => 
+      updateInmersion.mutateAsync({ inmersionId, data }), // Corregir para pasar objeto con ambos parámetros
     deleteInmersion: deleteInmersion.mutate,
     executeInmersion: executeInmersion.mutate,
     completeInmersion: completeInmersion.mutate,

@@ -8,7 +8,7 @@ import { BuzoSupervisorInmersionForm } from './forms/BuzoSupervisorInmersionForm
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface UnifiedInmersionFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>; // Cambiar a Promise<void> para consistencia
   onCancel: () => void;
   initialData?: Inmersion;
 }
