@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -94,7 +95,7 @@ export const useCuadrillas = () => {
 
   const createMutation = useMutation({
     mutationFn: async (formData: CuadrillaFormData) => {
-      // Si no es superuser, auto-asignar empresa
+      // Determinar empresa y tipo según el rol del usuario
       let empresaData = {
         empresa_id: formData.empresa_id,
         tipo_empresa: formData.tipo_empresa
@@ -116,12 +117,19 @@ export const useCuadrillas = () => {
         }
       }
 
+      // Crear cuadrilla con los datos correctos
+      const cuadrillaData = {
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        centro_id: formData.centro_id,
+        activo: Boolean(formData.activo), // Conversión explícita a boolean
+        estado: formData.estado,
+        ...empresaData
+      };
+
       const { data, error } = await supabase
         .from('cuadrillas_buceo')
-        .insert([{
-          ...formData,
-          ...empresaData
-        }])
+        .insert([cuadrillaData])
         .select()
         .single();
 
@@ -147,9 +155,15 @@ export const useCuadrillas = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CuadrillaFormData> }) => {
+      // Asegurar conversión a boolean si se actualiza el campo activo
+      const updateData = {
+        ...data,
+        activo: data.activo !== undefined ? Boolean(data.activo) : undefined
+      };
+
       const { error } = await supabase
         .from('cuadrillas_buceo')
-        .update(data)
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
