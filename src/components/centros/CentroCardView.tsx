@@ -68,7 +68,7 @@ export const CentroCardView = ({ centros, onEdit, onDelete }: CentroCardViewProp
               <div className="text-sm text-gray-500">
                 Código: {centro.codigo}
               </div>
-            </CardContent>
+            </CardHeader>
             
             <CardContent className="space-y-4">
               <div>
