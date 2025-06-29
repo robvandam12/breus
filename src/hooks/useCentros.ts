@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,7 +19,7 @@ export interface Centro {
   updated_at: string;
   salmoneras?: {
     nombre: string;
-  };
+  } | null;
 }
 
 export interface CentroFormData {
@@ -74,7 +73,14 @@ export const useCentros = () => {
         .order('nombre');
 
       if (error) throw error;
-      return data as Centro[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(centro => ({
+        ...centro,
+        salmoneras: Array.isArray(centro.salmoneras) && centro.salmoneras.length > 0 
+          ? centro.salmoneras[0] 
+          : null
+      })) as Centro[];
     },
   });
 
