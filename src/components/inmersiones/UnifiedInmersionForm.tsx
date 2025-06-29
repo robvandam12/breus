@@ -247,16 +247,17 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
 
       const inmersionData = {
         ...formData,
+        profundidad_max: parseFloat(formData.profundidad_max),
         is_independent: !isPlanned,
         operacion_id: isPlanned ? formData.operacion_id : null,
         external_operation_code: !isPlanned ? formData.codigo_operacion_externa : null,
-        profundidad_max: parseFloat(formData.profundidad_max),
         estado: initialData?.estado || 'planificada',
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
         requiere_validacion_previa: true,
         anexo_bravo_validado: false,
         hpt_validado: false,
+        centro_id: formData.centro_id,
         metadata: {
           ...currentMetadata,
           cuadrilla_id: selectedCuadrillaId,
