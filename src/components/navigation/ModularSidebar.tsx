@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -328,7 +329,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         title: "Mi Empresa",
         icon: Building,
         items: [
-          { title: "Sitios", url: "/empresas/sitios" },
+          { title: "Centros", url: "/empresas/centros" },
           { title: "Contratistas", url: "/empresas/contratistas" },
           { title: "Usuarios", url: "/empresas/usuarios" }
         ]
@@ -395,7 +396,7 @@ const getMenuItemsForRole = (role?: string, isAssigned?: boolean): MenuItem[] =>
         icon: Folder,
         items: [
           { title: "Salmoneras", url: "/empresas/salmoneras", roleRequired: "superuser" },
-          { title: "Sitios", url: "/empresas/sitios" },
+          { title: "Centros", url: "/empresas/centros" },
           { title: "Contratistas", url: "/empresas/contratistas" }
         ]
       },

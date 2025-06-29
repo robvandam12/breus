@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,13 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Zap, AlertCircle, AlertTriangle } from "lucide-react";
+import { Calendar, Zap } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { CuadrillaSelector } from '@/components/cuadrillas/CuadrillaSelector';
+import { EnhancedCuadrillaSelector } from '@/components/cuadrillas/EnhancedCuadrillaSelector';
 import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
 import type { Inmersion } from '@/hooks/useInmersiones';
 
@@ -254,10 +254,10 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         estado: initialData?.estado || 'planificada',
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
-        requiere_validacion_previa: true,
-        anexo_bravo_validado: false,
-        hpt_validado: false,
-        centro_id: formData.centro_id,
+        requiere_validacion_previa: isPlanned, // boolean explícito
+        anexo_bravo_validado: !isPlanned, // boolean explícito
+        hpt_validado: !isPlanned, // boolean explícito
+        centro_id: formData.centro_id, // string explícito
         metadata: {
           ...currentMetadata,
           cuadrilla_id: selectedCuadrillaId,
@@ -279,7 +279,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   };
 
   const canShowOperacionSelector = isPlanned && selectedEnterprise?.contratista_id && operaciones.length > 0;
-  const shouldShowOperacionWarning = isPlanned && selectedEnterprise?.contratista_id && operaciones.length === 0;
 
   // Mostrar selector de empresa para superusers (sin doble botón)
   if (profile?.role === 'superuser' && !selectedEnterprise) {
@@ -343,67 +342,39 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                 Asociada a Operación
               </Badge>
             )}
-            {enterpriseModules && !enterpriseModules.hasPlanning && (
-              <Badge variant="secondary">
-                Modo Core
-              </Badge>
-            )}
           </div>
         </CardHeader>
 
         <CardContent>
-          {/* Alerta si no tiene módulo de planning */}
-          {enterpriseModules && !enterpriseModules.hasPlanning && (
-            <Alert className="mb-6">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription>
-                Esta empresa no tiene el módulo de planificación activo. 
-                Solo se pueden crear inmersiones independientes (modo core).
-              </AlertDescription>
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Solo mostrar selector de operación si puede planificar */}
-            {canShowPlanningToggle && isPlanned ? (
+            {canShowPlanningToggle && isPlanned && canShowOperacionSelector && (
               <div>
                 <Label htmlFor="operacion">Operación *</Label>
-                {canShowOperacionSelector ? (
-                  <Select
-                    value={formData.operacion_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar operación" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operaciones.map(operacion => (
-                        <SelectItem key={operacion.id} value={operacion.id}>
-                          <div>
-                            <div>{operacion.codigo} - {operacion.nombre}</div>
-                            <div className="text-sm text-gray-500">
-                              Centro: {operacion.centros?.nombre || 'No asignado'}
-                            </div>
+                <Select
+                  value={formData.operacion_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, operacion_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar operación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operaciones.map(operacion => (
+                      <SelectItem key={operacion.id} value={operacion.id}>
+                        <div>
+                          <div>{operacion.codigo} - {operacion.nombre}</div>
+                          <div className="text-sm text-gray-500">
+                            Centro: {operacion.centros?.nombre || 'No asignado'}
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : shouldShowOperacionWarning ? (
-                  <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                    <div className="flex items-center gap-2 text-yellow-800">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="font-medium">No hay operaciones disponibles</span>
-                    </div>
-                    <p className="text-sm text-yellow-700 mt-2">
-                      No se encontraron operaciones planificadas para este contratista.
-                    </p>
-                  </div>
-                ) : (
-                  <Input disabled placeholder="Selecciona un contratista primero" />
-                )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (!canShowPlanningToggle || !isPlanned) ? (
+            )}
+
+            {(!canShowPlanningToggle || !isPlanned) && (
               <div>
                 <Label htmlFor="codigo_externo">Código de Operación Externa *</Label>
                 <Input
@@ -414,7 +385,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                   required
                 />
               </div>
-            ) : null}
+            )}
 
             {/* Campos básicos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -479,8 +450,8 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
               </div>
             </div>
 
-            {/* Selector de Cuadrilla */}
-            <CuadrillaSelector
+            {/* Selector de Cuadrilla Mejorado */}
+            <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={handleCuadrillaChange}
               fechaInmersion={formData.fecha_inmersion}
