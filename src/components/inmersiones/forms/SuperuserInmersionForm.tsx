@@ -96,7 +96,8 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
       
       const modules = await getModulesForCompany(companyId, companyType);
       setEnterpriseModules(modules);
-      const hasPlanning = Boolean(modules?.hasPlanning === 'true' || modules?.hasPlanning === true);
+      // Corregir la comparación de tipos
+      const hasPlanning = modules?.hasPlanning === true || modules?.hasPlanning === 'true';
       setCanShowPlanningToggle(hasPlanning);
       setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {
@@ -273,6 +274,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
         estado: initialData?.estado || 'planificada',
         company_id: companyId,
         requiere_validacion_previa: isPlanned,
+        // Corregir asignación de boolean
         anexo_bravo_validado: !isPlanned,
         hpt_validado: !isPlanned,
         centro_id: formData.centro_id,

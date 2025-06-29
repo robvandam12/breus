@@ -91,7 +91,8 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     try {
       const modules = await getModulesForCompany(profile.salmonera_id, 'salmonera');
       setEnterpriseModules(modules);
-      const hasPlanning = Boolean(modules?.hasPlanning === 'true' || modules?.hasPlanning === true);
+      // Corregir la comparación de tipos
+      const hasPlanning = modules?.hasPlanning === true || modules?.hasPlanning === 'true';
       setCanShowPlanningToggle(hasPlanning);
       setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {
@@ -229,6 +230,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
         company_id: profile?.salmonera_id,
         salmonera_id: selectedCentro?.salmonera_id,
         requiere_validacion_previa: isPlanned,
+        // Corregir asignación de boolean
         anexo_bravo_validado: !isPlanned,
         hpt_validado: !isPlanned,
         centro_id: formData.centro_id,
