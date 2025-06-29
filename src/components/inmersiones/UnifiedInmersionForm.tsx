@@ -255,9 +255,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         estado: initialData?.estado || 'planificada',
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
-        requiere_validacion_previa: Boolean(isPlanned),
-        anexo_bravo_validado: Boolean(!isPlanned),
-        hpt_validado: Boolean(!isPlanned),
+        requiere_validacion_previa: isPlanned === true,
+        anexo_bravo_validado: isPlanned === false,
+        hpt_validado: isPlanned === false,
         centro_id: formData.centro_id,
         metadata: {
           ...currentMetadata,
