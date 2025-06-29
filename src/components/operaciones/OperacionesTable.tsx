@@ -5,24 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Eye, FileText } from 'lucide-react';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
-
-interface Operacion {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  sitio_nombre?: string;
-  fecha_inicio?: string;
-  fecha_fin?: string;
-  estado: string;
-  tipo_trabajo: string;
-}
+import type { OperacionConRelaciones } from '@/hooks/useOperacionesQuery';
 
 interface OperacionesTableProps {
-  operaciones: Operacion[];
-  onEdit: (operacion: Operacion) => void;
-  onView: (operacion: Operacion) => void;
+  operaciones: OperacionConRelaciones[];
+  onEdit: (operacion: OperacionConRelaciones) => void;
+  onView: (operacion: OperacionConRelaciones) => void;
   onDelete: (id: string) => Promise<void>;
-  onViewDocuments: (operacion: Operacion) => void;
+  onViewDocuments: (operacion: OperacionConRelaciones) => void;
   isDeleting?: boolean;
 }
 
@@ -36,13 +26,13 @@ export const OperacionesTable = ({
 }: OperacionesTableProps) => {
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
-    operacion: Operacion | null;
+    operacion: OperacionConRelaciones | null;
   }>({
     open: false,
     operacion: null
   });
 
-  const handleDeleteClick = (operacion: Operacion) => {
+  const handleDeleteClick = (operacion: OperacionConRelaciones) => {
     setDeleteDialog({
       open: true,
       operacion
@@ -58,12 +48,12 @@ export const OperacionesTable = ({
 
   const getEstadoBadgeVariant = (estado: string) => {
     switch (estado.toLowerCase()) {
-      case 'planificada':
-        return 'outline';
-      case 'en_progreso':
+      case 'activa':
         return 'default';
-      case 'completada':
+      case 'pausada':
         return 'secondary';
+      case 'completada':
+        return 'outline';
       case 'cancelada':
         return 'destructive';
       default:
@@ -82,9 +72,10 @@ export const OperacionesTable = ({
         <Table>
           <TableHeader className="bg-gray-50/80">
             <TableRow className="hover:bg-gray-50/50">
+              <TableHead className="font-semibold text-gray-700">Código</TableHead>
               <TableHead className="font-semibold text-gray-700">Operación</TableHead>
-              <TableHead className="font-semibold text-gray-700">Sitio</TableHead>
-              <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
+              <TableHead className="font-semibold text-gray-700">Salmonera</TableHead>
+              <TableHead className="font-semibold text-gray-700">Centro</TableHead>
               <TableHead className="font-semibold text-gray-700">Estado</TableHead>
               <TableHead className="font-semibold text-gray-700">Fecha Inicio</TableHead>
               <TableHead className="font-semibold text-gray-700">Fecha Fin</TableHead>
@@ -95,22 +86,25 @@ export const OperacionesTable = ({
             {operaciones.map((operacion) => (
               <TableRow key={operacion.id} className="hover:bg-blue-50/30 transition-colors">
                 <TableCell>
+                  <div className="font-mono text-sm text-gray-600">
+                    {operacion.codigo}
+                  </div>
+                </TableCell>
+                <TableCell>
                   <div>
                     <p className="font-medium text-gray-900">{operacion.nombre}</p>
-                    {operacion.descripcion && (
+                    {operacion.tareas && (
                       <p className="text-sm text-gray-600 truncate max-w-xs">
-                        {operacion.descripcion}
+                        {operacion.tareas}
                       </p>
                     )}
                   </div>
                 </TableCell>
                 <TableCell className="text-gray-700">
-                  {operacion.sitio_nombre || 'No asignado'}
+                  {operacion.salmoneras?.nombre || 'No asignada'}
                 </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {operacion.tipo_trabajo}
-                  </Badge>
+                <TableCell className="text-gray-700">
+                  {operacion.centros?.nombre || 'No asignado'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={getEstadoBadgeVariant(operacion.estado)}>

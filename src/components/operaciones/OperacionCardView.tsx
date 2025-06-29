@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, Settings, FileText, Activity, Trash2 } from "lucide-react";
+import type { OperacionConRelaciones } from '@/hooks/useOperacionesQuery';
 
 interface OperacionCardViewProps {
-  operaciones: any[];
-  onSelect: (operacion: any) => void;
-  onEdit: (operacion: any) => void;
-  onViewDetail: (operacion: any) => void;
+  operaciones: OperacionConRelaciones[];
+  onSelect: (operacion: OperacionConRelaciones) => void;
+  onEdit: (operacion: OperacionConRelaciones) => void;
+  onViewDetail: (operacion: OperacionConRelaciones) => void;
   onDelete: (operacionId: string) => void;
 }
 
@@ -24,7 +25,7 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
     return colors[estado as keyof typeof colors] || 'bg-muted text-muted-foreground';
   };
 
-  const getDocumentStatus = (operacion: any) => {
+  const getDocumentStatus = (operacion: OperacionConRelaciones) => {
     // Simulación de estado de documentos - esto debería venir de la base de datos
     const docs = {
       hpt: Math.random() > 0.5,
@@ -71,7 +72,7 @@ export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail,
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
-                      <span>{operacion.sitios?.nombre || 'Sin asignar'}</span>
+                      <span>{operacion.centros?.nombre || 'Sin asignar'}</span>
                     </div>
                     
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

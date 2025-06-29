@@ -21,6 +21,7 @@ import { EditOperacionForm } from "./EditOperacionForm";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { OperacionConRelaciones } from '@/hooks/useOperacionesQuery';
 
 export const OperacionesManager = () => {
   const { 
@@ -43,11 +44,11 @@ export const OperacionesManager = () => {
 
   const [activeTab, setActiveTab] = useState("table");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedOperacion, setSelectedOperacion] = useState<any>(null);
-  const [editingOperacion, setEditingOperacion] = useState<any>(null);
+  const [selectedOperacion, setSelectedOperacion] = useState<OperacionConRelaciones | null>(null);
+  const [editingOperacion, setEditingOperacion] = useState<OperacionConRelaciones | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     open: boolean;
-    operacion: any | null;
+    operacion: OperacionConRelaciones | null;
   }>({ open: false, operacion: null });
 
   const handleCreateOperacion = async (data: any) => {
@@ -93,15 +94,15 @@ export const OperacionesManager = () => {
     }
   };
 
-  const handleViewDetail = (operacion: any) => {
+  const handleViewDetail = (operacion: OperacionConRelaciones) => {
     setSelectedOperacion(operacion);
   };
 
-  const handleEdit = (operacion: any) => {
+  const handleEdit = (operacion: OperacionConRelaciones) => {
     setEditingOperacion(operacion);
   };
 
-  const handleViewDocuments = (operacion: any) => {
+  const handleViewDocuments = (operacion: OperacionConRelaciones) => {
     // Abrir modal de detalle en la pestaña de documentos
     setSelectedOperacion(operacion);
   };
