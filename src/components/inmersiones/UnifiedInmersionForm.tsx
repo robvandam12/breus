@@ -256,9 +256,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         cuadrilla_id: selectedCuadrillaId || null,
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
-        requiere_validacion_previa: true,
-        anexo_bravo_validado: false,
-        hpt_validado: false,
+        requiere_validacion_previa: Boolean(true),
+        anexo_bravo_validado: Boolean(false),
+        hpt_validado: Boolean(false),
         metadata: {
           ...currentMetadata,
           cuadrilla_id: selectedCuadrillaId,
