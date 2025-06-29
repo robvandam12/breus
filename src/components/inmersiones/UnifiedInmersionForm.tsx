@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Zap, AlertCircle, AlertTriangle } from "lucide-react";
+import { Calendar, Zap, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
@@ -254,9 +255,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         estado: initialData?.estado || 'planificada',
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
-        requiere_validacion_previa: true,
-        anexo_bravo_validado: false,
-        hpt_validado: false,
+        requiere_validacion_previa: Boolean(isPlanned),
+        anexo_bravo_validado: Boolean(!isPlanned),
+        hpt_validado: Boolean(!isPlanned),
         centro_id: formData.centro_id,
         metadata: {
           ...currentMetadata,
@@ -281,7 +282,7 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const canShowOperacionSelector = isPlanned && selectedEnterprise?.contratista_id && operaciones.length > 0;
   const shouldShowOperacionWarning = isPlanned && selectedEnterprise?.contratista_id && operaciones.length === 0;
 
-  // Mostrar selector de empresa para superusers (sin doble botón)
+  // Mostrar selector de empresa para superusers
   if (profile?.role === 'superuser' && !selectedEnterprise) {
     return (
       <div className="space-y-4">
@@ -343,26 +344,10 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                 Asociada a Operación
               </Badge>
             )}
-            {enterpriseModules && !enterpriseModules.hasPlanning && (
-              <Badge variant="secondary">
-                Modo Core
-              </Badge>
-            )}
           </div>
         </CardHeader>
 
         <CardContent>
-          {/* Alerta si no tiene módulo de planning */}
-          {enterpriseModules && !enterpriseModules.hasPlanning && (
-            <Alert className="mb-6">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription>
-                Esta empresa no tiene el módulo de planificación activo. 
-                Solo se pueden crear inmersiones independientes (modo core).
-              </AlertDescription>
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Solo mostrar selector de operación si puede planificar */}
             {canShowPlanningToggle && isPlanned ? (
@@ -390,15 +375,12 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
                     </SelectContent>
                   </Select>
                 ) : shouldShowOperacionWarning ? (
-                  <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                    <div className="flex items-center gap-2 text-yellow-800">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="font-medium">No hay operaciones disponibles</span>
-                    </div>
-                    <p className="text-sm text-yellow-700 mt-2">
-                      No se encontraron operaciones planificadas para este contratista.
-                    </p>
-                  </div>
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <AlertDescription>
+                      No hay operaciones disponibles para este contratista.
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <Input disabled placeholder="Selecciona un contratista primero" />
                 )}
