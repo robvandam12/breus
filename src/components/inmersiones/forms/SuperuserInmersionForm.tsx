@@ -96,7 +96,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
       
       const modules = await getModulesForCompany(companyId, companyType);
       setEnterpriseModules(modules);
-      const hasPlanning = Boolean(modules?.hasPlanning);
+      const hasPlanning = Boolean(modules?.hasPlanning === 'true' || modules?.hasPlanning === true);
       setCanShowPlanningToggle(hasPlanning);
       setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {

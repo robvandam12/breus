@@ -91,7 +91,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     try {
       const modules = await getModulesForCompany(profile.salmonera_id, 'salmonera');
       setEnterpriseModules(modules);
-      const hasPlanning = Boolean(modules?.hasPlanning);
+      const hasPlanning = Boolean(modules?.hasPlanning === 'true' || modules?.hasPlanning === true);
       setCanShowPlanningToggle(hasPlanning);
       setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {

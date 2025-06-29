@@ -97,6 +97,11 @@ export const CuadrillasManagementWithFilters = () => {
     refetchQueries();
   };
 
+  const handleCuadrillaUpdated = (cuadrilla: any) => {
+    invalidateQueries();
+    refetchQueries();
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Cargando cuadrillas...</div>;
   }
@@ -205,6 +210,7 @@ export const CuadrillasManagementWithFilters = () => {
           isOpen={!!selectedCuadrillaId}
           onClose={() => setSelectedCuadrillaId(null)}
           cuadrillaId={selectedCuadrillaId}
+          onCuadrillaUpdated={handleCuadrillaUpdated}
         />
       )}
     </div>
