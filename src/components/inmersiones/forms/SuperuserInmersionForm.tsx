@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,9 +96,9 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Supe
       
       const modules = await getModulesForCompany(companyId, companyType);
       setEnterpriseModules(modules);
-      const hasPlanning = !!modules?.hasPlanning;
+      const hasPlanning = Boolean(modules?.hasPlanning);
       setCanShowPlanningToggle(hasPlanning);
-      setIsPlanned(hasPlanning && (!!initialData?.operacion_id));
+      setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {
       console.error('Error loading enterprise modules:', error);
       setCanShowPlanningToggle(false);

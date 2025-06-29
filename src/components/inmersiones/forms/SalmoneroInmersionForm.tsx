@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,10 +91,9 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     try {
       const modules = await getModulesForCompany(profile.salmonera_id, 'salmonera');
       setEnterpriseModules(modules);
-      const hasPlanning = !!modules?.hasPlanning;
+      const hasPlanning = Boolean(modules?.hasPlanning);
       setCanShowPlanningToggle(hasPlanning);
-      // Si no tiene Planning, defaultear a inmersión independiente
-      setIsPlanned(hasPlanning && (!!initialData?.operacion_id));
+      setIsPlanned(hasPlanning && Boolean(initialData?.operacion_id));
     } catch (error) {
       console.error('Error loading enterprise modules:', error);
       setCanShowPlanningToggle(false);
