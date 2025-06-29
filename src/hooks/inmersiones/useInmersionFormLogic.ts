@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
@@ -40,7 +39,8 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
     fecha_inmersion: initialData?.fecha_inmersion || '',
     profundidad_max: initialData?.profundidad_max?.toString() || '',
     observaciones: initialData?.observaciones || '',
-    centro_id: initialData?.centro_id || ''
+    centro_id: initialData?.centro_id || '',
+    codigo: initialData?.codigo || ''
   });
 
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
@@ -194,6 +194,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       anexo_bravo_validado: Boolean(!formValidationState.isPlanned),
       hpt_validado: Boolean(!formValidationState.isPlanned),
       centro_id: formData.centro_id,
+      codigo: formData.codigo, // Incluir el código en los datos finales
       metadata: {
         ...currentMetadata,
         cuadrilla_id: selectedCuadrillaId,

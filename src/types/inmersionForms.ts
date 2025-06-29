@@ -1,4 +1,3 @@
-
 export interface InmersionFormData {
   operacion_id: string;
   external_operation_code: string;
@@ -7,6 +6,7 @@ export interface InmersionFormData {
   profundidad_max: string;
   observaciones: string;
   centro_id: string;
+  codigo: string;
 }
 
 export interface Operacion {
