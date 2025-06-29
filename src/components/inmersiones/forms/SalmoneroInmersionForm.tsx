@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,7 +230,6 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
         company_id: profile?.salmonera_id,
         salmonera_id: selectedCentro?.salmonera_id,
         requiere_validacion_previa: isPlanned,
-        // Corregir: usar valores boolean primitivos directamente
         anexo_bravo_validado: !isPlanned,
         hpt_validado: !isPlanned,
         centro_id: formData.centro_id,

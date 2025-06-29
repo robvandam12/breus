@@ -191,7 +191,7 @@ export const CuadrillasManagementWithFilters = () => {
         isOpen={showCreateWizard}
         onClose={() => setShowCreateWizard(false)}
         onCuadrillaCreated={handleCuadrillaCreated}
-        enterpriseContext={null}
+        enterpriseContext={profile?.role === 'superuser' ? null : undefined}
       />
 
       {selectedCuadrillaId && (

@@ -63,7 +63,7 @@ export const CuadrillaCreationWizardEnhanced = ({
   const [centros, setCentros] = useState<any[]>([]);
 
   // Determinar si necesitamos mostrar selector de empresa
-  const needsCompanySelection = profile?.role === 'superuser' && !enterpriseContext;
+  const needsCompanySelection = profile?.role === 'superuser' && enterpriseContext === null;
   const totalSteps = needsCompanySelection ? 3 : 2;
 
   React.useEffect(() => {
