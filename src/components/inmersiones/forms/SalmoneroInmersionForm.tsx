@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
   
   const [formData, setFormData] = useState({
     operacion_id: initialData?.operacion_id || '',
-    codigo_operacion_externa: initialData?.external_operation_code || '',
+    external_operation_code: initialData?.external_operation_code || '',
     objetivo: initialData?.objetivo || '',
     fecha_inmersion: initialData?.fecha_inmersion || '',
     profundidad_max: initialData?.profundidad_max?.toString() || '',
@@ -166,7 +167,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
       return;
     }
 
-    if (!isPlanned && !formData.codigo_operacion_externa) {
+    if (!isPlanned && !formData.external_operation_code) {
       toast({
         title: "Error",
         description: "Debe ingresar un código de operación externa para inmersiones independientes", 
@@ -218,17 +219,14 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
         (typeof initialData.metadata === 'string' ? JSON.parse(initialData.metadata) : initialData.metadata) : 
         {};
 
-      const selectedCentro = centros.find(c => c.id === formData.centro_id);
-
       const inmersionData = {
         ...formData,
         profundidad_max: parseFloat(formData.profundidad_max),
         is_independent: !isPlanned,
         operacion_id: isPlanned ? formData.operacion_id : null,
-        external_operation_code: !isPlanned ? formData.codigo_operacion_externa : null,
+        external_operation_code: !isPlanned ? formData.external_operation_code : null,
         estado: initialData?.estado || 'planificada',
         company_id: profile?.salmonera_id,
-        salmonera_id: selectedCentro?.salmonera_id,
         requiere_validacion_previa: isPlanned,
         anexo_bravo_validado: !isPlanned,
         hpt_validado: !isPlanned,
@@ -351,8 +349,8 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
                 <Label htmlFor="codigo_externo">Código de Operación Externa *</Label>
                 <Input
                   id="codigo_externo"
-                  value={formData.codigo_operacion_externa}
-                  onChange={(e) => setFormData(prev => ({ ...prev, codigo_operacion_externa: e.target.value }))}
+                  value={formData.external_operation_code}
+                  onChange={(e) => setFormData(prev => ({ ...prev, external_operation_code: e.target.value }))}
                   placeholder="Ej: EXT-2024-001"
                   required
                 />
