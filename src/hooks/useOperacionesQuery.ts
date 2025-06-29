@@ -53,14 +53,7 @@ export const useOperacionesQuery = () => {
       if (profile?.role === 'admin_salmonera' && profile?.salmonera_id) {
         query = query.eq('salmonera_id', profile.salmonera_id);
       } else if (profile?.role === 'admin_servicio' && profile?.servicio_id) {
-        query = query.eq('contratista_id', profile.servicio_id);
-      } else if (profile?.role === 'supervisor') {
-        // Los supervisores pueden ver operaciones donde están asignados o de su empresa
-        if (profile.salmonera_id) {
-          query = query.eq('salmonera_id', profile.salmonera_id);
-        } else if (profile.servicio_id) {
-          query = query.eq('contratista_id', profile.servicio_id);
-        }
+        query = query.eq('servicio_id', profile.servicio_id);
       }
 
       const { data, error } = await query;
