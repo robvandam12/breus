@@ -27,6 +27,12 @@ export interface ValidationStatus {
   anexoBravoCode?: string;
 }
 
+const generateInmersionCode = (prefix: string = 'IMM') => {
+  const timestamp = Date.now().toString().slice(-8);
+  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `${prefix}-${timestamp}-${random}`;
+};
+
 export const useInmersiones = () => {
   const queryClient = useQueryClient();
 
@@ -67,13 +73,41 @@ export const useInmersiones = () => {
 
   const createInmersion = useMutation({
     mutationFn: async (inmersionData: any) => {
+      // Asegurar que siempre haya un código
+      if (!inmersionData.codigo) {
+        inmersionData.codigo = generateInmersionCode();
+      }
+
+      // Validar datos requeridos
+      if (!inmersionData.fecha_inmersion) {
+        throw new Error('Fecha de inmersión es requerida');
+      }
+
+      if (!inmersionData.objetivo) {
+        throw new Error('Objetivo de inmersión es requerido');
+      }
+
+      // Agregar campos por defecto si no existen
+      const finalData = {
+        estado: 'planificada',
+        profundidad_max: 0,
+        ...inmersionData,
+        codigo: inmersionData.codigo,
+      };
+
+      console.log('Creating inmersion with data:', finalData);
+
       const { data, error } = await supabase
         .from('inmersion')
-        .insert(inmersionData)
+        .insert(finalData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -83,11 +117,12 @@ export const useInmersiones = () => {
         description: 'La inmersión ha sido creada exitosamente.',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating inmersion:', error);
+      const errorMessage = error?.message || 'No se pudo crear la inmersión.';
       toast({
         title: 'Error',
-        description: 'No se pudo crear la inmersión.',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
@@ -220,5 +255,6 @@ export const useInmersiones = () => {
     validateOperationDocuments: validateOperationDocuments.mutate,
     refreshInmersiones,
     isCreating: createInmersion.isPending,
+    generateInmersionCode,
   };
 };

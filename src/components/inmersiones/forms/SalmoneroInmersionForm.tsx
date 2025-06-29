@@ -10,9 +10,11 @@ import { useInmersionFormLogic } from '@/hooks/inmersiones/useInmersionFormLogic
 import { OperacionSelector } from './components/OperacionSelector';
 import { CentroSelector } from './components/CentroSelector';
 import { InmersionBasicFields } from './components/InmersionBasicFields';
+import { useInmersiones } from '@/hooks/useInmersiones';
 import type { InmersionFormProps } from '@/types/inmersionForms';
 
 export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: InmersionFormProps) => {
+  const { generateInmersionCode } = useInmersiones();
   const {
     formValidationState,
     setFormValidationState,
@@ -54,12 +56,27 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     }
   }, [formValidationState.isPlanned, formData.operacion_id, operaciones]);
 
+  // Generar código automáticamente si no hay uno
+  useEffect(() => {
+    if (!formData.codigo && !initialData) {
+      const newCode = generateInmersionCode('IMM');
+      setFormData(prev => ({ ...prev, codigo: newCode }));
+    }
+  }, [formData.codigo, initialData, generateInmersionCode]);
+
   const handleFormDataChange = (newData: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Asegurar que hay un código
+    if (!formData.codigo) {
+      const newCode = generateInmersionCode('IMM');
+      setFormData(prev => ({ ...prev, codigo: newCode }));
+      handleFormDataChange({ codigo: newCode });
+    }
     
     if (!validateForm()) return;
 
@@ -75,6 +92,12 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       };
 
       const inmersionData = buildInmersionData(profile?.salmonera_id || '', enterpriseContext);
+      
+      // Asegurar código final
+      if (!inmersionData.codigo) {
+        inmersionData.codigo = generateInmersionCode('IMM');
+      }
+
       await onSubmit(inmersionData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -136,6 +159,11 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
             {formValidationState.isPlanned && (
               <Badge variant="outline">
                 Asociada a Operación
+              </Badge>
+            )}
+            {formData.codigo && (
+              <Badge variant="outline" className="text-blue-600">
+                {formData.codigo}
               </Badge>
             )}
           </div>

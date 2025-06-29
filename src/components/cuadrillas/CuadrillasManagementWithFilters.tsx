@@ -85,13 +85,19 @@ export const CuadrillasManagementWithFilters = () => {
 
   const handleCuadrillaCreated = (cuadrilla: any) => {
     setShowCreateWizard(false);
-    invalidateQueries();
-    refetchQueries();
+    // Forzar refrescado inmediato
+    setTimeout(() => {
+      invalidateQueries();
+      refetchQueries();
+    }, 100);
   };
 
   const handleCuadrillaUpdated = (cuadrilla: any) => {
-    invalidateQueries();
-    refetchQueries();
+    // Forzar refrescado inmediato
+    setTimeout(() => {
+      invalidateQueries();
+      refetchQueries();
+    }, 100);
   };
 
   if (isLoading) {

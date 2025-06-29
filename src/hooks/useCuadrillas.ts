@@ -43,7 +43,7 @@ export const useCuadrillas = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
 
-  const { data: cuadrillas = [], isLoading } = useQuery({
+  const { data: cuadrillas = [], isLoading, refetch } = useQuery({
     queryKey: ['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role],
     queryFn: async () => {
       let query = supabase
@@ -90,21 +90,38 @@ export const useCuadrillas = () => {
       return processedData as Cuadrilla[];
     },
     enabled: !!profile,
-    staleTime: 30000, // 30 seconds
+    staleTime: 5000, // Reducido de 30 segundos a 5 segundos
     refetchOnWindowFocus: true,
+    refetchInterval: 10000, // Refrescar cada 10 segundos
   });
+
+  const optimisticUpdate = (action: 'create' | 'update' | 'delete', cuadrilla: any, cuadrillaId?: string) => {
+    queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], (old: Cuadrilla[] = []) => {
+      switch (action) {
+        case 'create':
+          return [...old, cuadrilla];
+        case 'update':
+          return old.map(c => c.id === cuadrillaId ? { ...c, ...cuadrilla } : c);
+        case 'delete':
+          return old.filter(c => c.id !== cuadrillaId);
+        default:
+          return old;
+      }
+    });
+  };
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
-    // También invalidar queries relacionadas
     queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
     queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
   };
 
-  const refetchQueries = () => {
-    queryClient.refetchQueries({ queryKey: ['cuadrillas'] });
-    queryClient.refetchQueries({ queryKey: ['equipos-buceo'] });
-    queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
+  const refetchQueries = async () => {
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['cuadrillas'] }),
+      queryClient.refetchQueries({ queryKey: ['equipos-buceo'] }),
+      queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] })
+    ]);
   };
 
   const createMutation = useMutation({
@@ -148,9 +165,25 @@ export const useCuadrillas = () => {
       if (error) throw error;
       return data;
     },
+    onMutate: async (variables) => {
+      // Optimistic update
+      const tempCuadrilla = {
+        id: `temp-${Date.now()}`,
+        nombre: variables.nombre,
+        descripcion: variables.descripcion,
+        empresa_id: variables.empresa_id || profile?.salmonera_id || profile?.servicio_id || '',
+        tipo_empresa: variables.tipo_empresa || (profile?.salmonera_id ? 'salmonera' : 'contratista'),
+        centro_id: variables.centro_id,
+        activo: variables.activo,
+        estado: variables.estado,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        miembros: []
+      };
+      optimisticUpdate('create', tempCuadrilla);
+    },
     onSuccess: () => {
       invalidateQueries();
-      refetchQueries();
       toast({
         title: "Cuadrilla creada",
         description: "La cuadrilla ha sido creada exitosamente.",
@@ -158,6 +191,8 @@ export const useCuadrillas = () => {
     },
     onError: (error) => {
       console.error('Error creating cuadrilla:', error);
+      // Revertir optimistic update
+      refetch();
       toast({
         title: "Error",
         description: "No se pudo crear la cuadrilla.",
@@ -175,9 +210,11 @@ export const useCuadrillas = () => {
 
       if (error) throw error;
     },
+    onMutate: async ({ id, data }) => {
+      optimisticUpdate('update', data, id);
+    },
     onSuccess: () => {
       invalidateQueries();
-      refetchQueries();
       toast({
         title: "Cuadrilla actualizada",
         description: "La cuadrilla ha sido actualizada exitosamente.",
@@ -185,6 +222,7 @@ export const useCuadrillas = () => {
     },
     onError: (error) => {
       console.error('Error updating cuadrilla:', error);
+      refetch();
       toast({
         title: "Error",
         description: "No se pudo actualizar la cuadrilla.",
@@ -202,17 +240,20 @@ export const useCuadrillas = () => {
 
       if (error) throw error;
     },
+    onMutate: async (id) => {
+      optimisticUpdate('delete', null, id);
+    },
     onSuccess: () => {
-      // Forzar actualización inmediata de la cache
-      invalidateQueries();
-      refetchQueries();
       toast({
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",
       });
+      // Forzar refetch después de delete exitoso
+      setTimeout(() => refetchQueries(), 100);
     },
     onError: (error) => {
       console.error('Error deleting cuadrilla:', error);
+      refetch();
       toast({
         title: "Error",
         description: "No se pudo eliminar la cuadrilla.",
@@ -227,6 +268,18 @@ export const useCuadrillas = () => {
       usuarioId: string; 
       rolEquipo: string; 
     }) => {
+      // Verificar si el miembro ya existe
+      const { data: existingMember } = await supabase
+        .from('cuadrilla_miembros')
+        .select('id')
+        .eq('cuadrilla_id', cuadrillaId)
+        .eq('usuario_id', usuarioId)
+        .single();
+
+      if (existingMember) {
+        throw new Error('El usuario ya es miembro de esta cuadrilla');
+      }
+
       const { data, error } = await supabase
         .from('cuadrilla_miembros')
         .insert([{
@@ -253,7 +306,7 @@ export const useCuadrillas = () => {
       console.error('Error adding member:', error);
       toast({
         title: "Error",
-        description: "No se pudo agregar el miembro a la cuadrilla.",
+        description: error.message || "No se pudo agregar el miembro a la cuadrilla.",
         variant: "destructive",
       });
     },
@@ -299,5 +352,6 @@ export const useCuadrillas = () => {
     isDeleting: deleteMutation.isPending,
     invalidateQueries,
     refetchQueries,
+    refetch,
   };
 };

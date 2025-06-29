@@ -141,14 +141,15 @@ export const CuadrillaCreationWizardEnhanced = ({
     }
   };
 
-  const handleUserSelect = (user: any) => {
-    // Verificar si el usuario ya existe en la cuadrilla
-    const userExists = members.some(member => 
-      member.usuario_id === user.usuario_id || 
+  const isDuplicateMember = (user: any) => {
+    return members.some(member => 
+      (member.usuario_id && member.usuario_id === user.usuario_id) || 
       (member.email && member.email === user.email)
     );
+  };
 
-    if (userExists) {
+  const handleUserSelect = (user: any) => {
+    if (isDuplicateMember(user)) {
       toast({
         title: "Usuario ya agregado",
         description: `${user.nombre} ${user.apellido} ya está en la cuadrilla.`,
@@ -174,10 +175,7 @@ export const CuadrillaCreationWizardEnhanced = ({
   };
 
   const handleUserInvite = (userData: any) => {
-    // Verificar si el email ya existe en la cuadrilla
-    const emailExists = members.some(member => member.email === userData.email);
-
-    if (emailExists) {
+    if (isDuplicateMember(userData)) {
       toast({
         title: "Email ya agregado",
         description: `El email ${userData.email} ya está en la cuadrilla.`,
