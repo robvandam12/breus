@@ -10,7 +10,7 @@ export interface Centro {
   ubicacion: string;
   region: string;
   salmonera_id: string;
-  estado: string;
+  estado: 'activo' | 'inactivo' | 'mantenimiento';
   coordenadas_lat?: number;
   coordenadas_lng?: number;
   profundidad_maxima?: number;

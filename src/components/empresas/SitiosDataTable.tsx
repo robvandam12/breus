@@ -73,7 +73,7 @@ export const SitiosDataTable = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {centro.salmonera?.nombre || 'Sin asignar'}
+                    {centro.salmoneras?.nombre || 'Sin asignar'}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">

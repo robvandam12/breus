@@ -151,7 +151,19 @@ export const CentroCardView = ({ centros, onEdit, onDelete }: CentroCardViewProp
             <CreateCentroFormAnimated
               onSubmit={handleEditSubmit}
               onCancel={() => setShowEditDialog(false)}
-              initialData={editingCentro}
+              initialData={{
+                nombre: editingCentro.nombre,
+                codigo: editingCentro.codigo,
+                salmonera_id: editingCentro.salmonera_id,
+                ubicacion: editingCentro.ubicacion,
+                region: editingCentro.region,
+                estado: editingCentro.estado,
+                coordenadas_lat: editingCentro.coordenadas_lat,
+                coordenadas_lng: editingCentro.coordenadas_lng,
+                profundidad_maxima: editingCentro.profundidad_maxima,
+                capacidad_jaulas: editingCentro.capacidad_jaulas,
+                observaciones: editingCentro.observaciones,
+              }}
             />
           )}
         </DialogContent>
