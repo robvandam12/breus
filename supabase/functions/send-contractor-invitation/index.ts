@@ -1,6 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createBaseEmailTemplate } from "../_shared/email-templates/base-template.ts";
+import { createButton, createInfoCard, createSection } from "../_shared/email-templates/components.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -18,7 +20,6 @@ interface InvitationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,65 +29,63 @@ const handler = async (req: Request): Promise<Response> => {
 
     const invitationUrl = `${req.headers.get('origin')}/auth/accept-invitation?token=${token}`;
 
+    // Crear contenido del email
+    const emailContent = `
+      ${createSection(`¡Hola ${admin_nombre}!`, `
+        Has sido invitado a ser el administrador de <strong>${empresa_nombre}</strong> en la plataforma Breus.
+      `)}
+
+      ${createInfoCard('Información de la invitación', `
+        <strong>Empresa:</strong> ${empresa_nombre}<br>
+        <strong>Rol:</strong> Administrador Principal<br>
+        <strong>Email:</strong> ${email}
+      `, 'info')}
+
+      ${createSection('Beneficios de Breus', `
+        <p>Breus te permitirá gestionar de forma digital todos los aspectos de las operaciones de buceo profesional de tu empresa:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 20px 0;">
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <h4 style="color: #1e40af; margin: 0 0 8px 0; font-size: 16px;">📋 Documentación Digital</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Formularios HPT y Anexo Bravo completamente digitalizados</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+            <h4 style="color: #059669; margin: 0 0 8px 0; font-size: 16px;">🤿 Gestión de Inmersiones</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Control completo de inmersiones y bitácoras</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <h4 style="color: #d97706; margin: 0 0 8px 0; font-size: 16px;">📊 Reportes y Analytics</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Trazabilidad completa y reportes automáticos</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+            <h4 style="color: #7c3aed; margin: 0 0 8px 0; font-size: 16px;">✅ Cumplimiento Normativo</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Garantiza el cumplimiento de todas las regulaciones</p>
+          </div>
+        </div>
+      `)}
+
+      ${createButton('Crear mi cuenta en Breus', invitationUrl)}
+
+      ${createInfoCard('Información importante', `
+        Esta invitación es válida por <strong>7 días</strong>. Si no puedes acceder al enlace del botón, copia y pega la siguiente URL en tu navegador:<br><br>
+        <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px; word-break: break-all;">${invitationUrl}</code>
+      `, 'warning')}
+
+      ${createSection('¿Necesitas ayuda?', `
+        Si tienes alguna pregunta sobre esta invitación o necesitas asistencia técnica, nuestro equipo está aquí para ayudarte en <a href="mailto:soporte@breus.cl" style="color: #3b82f6;">soporte@breus.cl</a>
+      `)}
+    `;
+
+    const html = createBaseEmailTemplate({
+      title: `Invitación para administrar ${empresa_nombre} en Breus`,
+      previewText: `Únete a Breus como administrador de ${empresa_nombre} y digitaliza tus operaciones de buceo`,
+      children: emailContent
+    });
+
     const emailResponse = await resend.emails.send({
       from: "Breus Platform <invitaciones@breus.cl>",
       to: [email],
       subject: `Invitación para administrar ${empresa_nombre} en Breus`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 16px; text-align: center; margin-bottom: 30px;">
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Breus</h1>
-            <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Plataforma de Gestión de Buceo Profesional</p>
-          </div>
-          
-          <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
-            <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">¡Hola ${admin_nombre}!</h2>
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-              Has sido invitado a ser el administrador de <strong>${empresa_nombre}</strong> en la plataforma Breus.
-            </p>
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-              Breus te permitirá gestionar de forma digital todos los aspectos de las operaciones de buceo profesional de tu empresa, incluyendo:
-            </p>
-            <ul style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0; padding-left: 20px;">
-              <li>Formularios HPT y Anexo Bravo</li>
-              <li>Gestión de inmersiones y bitácoras</li>
-              <li>Control de cumplimiento normativo</li>
-              <li>Reportes y trazabilidad completa</li>
-            </ul>
-          </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${invitationUrl}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                      color: white; 
-                      text-decoration: none; 
-                      padding: 16px 32px; 
-                      border-radius: 12px; 
-                      font-weight: 600; 
-                      font-size: 16px; 
-                      display: inline-block;
-                      box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39);">
-              Crear mi cuenta en Breus
-            </a>
-          </div>
-          
-          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 20px; border-radius: 8px; margin: 30px 0;">
-            <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
-              ⚠️ Esta invitación es válida por 7 días. Si no puedes acceder al enlace, copia y pega la siguiente URL en tu navegador:
-            </p>
-            <p style="color: #92400e; font-size: 12px; margin: 10px 0 0 0; word-break: break-all;">
-              ${invitationUrl}
-            </p>
-          </div>
-          
-          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 14px; margin: 0;">
-              Este correo fue enviado por Breus Platform<br>
-              Si tienes problemas, contacta a soporte@breus.cl
-            </p>
-          </div>
-        </div>
-      `,
+      html: html,
     });
 
     console.log("Invitation email sent successfully:", emailResponse);

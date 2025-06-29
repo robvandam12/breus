@@ -1,6 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+import { createBaseEmailTemplate } from "../_shared/email-templates/base-template.ts";
+import { createButton, createInfoCard, createSection } from "../_shared/email-templates/components.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +26,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Crear cliente de Supabase con permisos de administrador
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -55,10 +56,20 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${inviterUser.nombre} ${inviterUser.apellido}`.trim()
       : 'Sistema';
 
+    // Obtener nombre de la empresa
+    const empresaTable = tipo_empresa === 'salmonera' ? 'salmoneras' : 'contratistas';
+    const { data: empresaData } = await supabaseAdmin
+      .from(empresaTable)
+      .select('nombre')
+      .eq('id', empresa_id)
+      .single();
+
+    const empresaNombre = empresaData?.nombre || 'Empresa';
+
     // Generar token único
     const token = crypto.randomUUID();
     const fechaExpiracion = new Date();
-    fechaExpiracion.setDate(fechaExpiracion.getDate() + 7); // Expira en 7 días
+    fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
 
     // Crear invitación en la base de datos
     const { data: invitation, error: dbError } = await supabaseAdmin
@@ -87,37 +98,67 @@ const handler = async (req: Request): Promise<Response> => {
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://preview--breus-91.lovable.app';
     const invitationUrl = `${baseUrl}/register-invitation?token=${token}`;
 
+    // Mapear roles a nombres amigables
+    const roleNames: Record<string, string> = {
+      'admin_salmonera': 'Administrador de Salmonera',
+      'admin_servicio': 'Administrador de Servicio',
+      'supervisor': 'Supervisor',
+      'buzo': 'Buzo'
+    };
+
+    const roleName = roleNames[rol] || rol;
+    const tipoEmpresaName = tipo_empresa === 'salmonera' ? 'Salmonera' : 'Empresa de Servicio';
+
+    // Crear contenido del email
+    const emailContent = `
+      ${createSection('¡Hola ' + (nombre || 'Usuario') + '!', `
+        Has sido invitado/a por <strong>${inviterName}</strong> a unirte a Breus como <strong>${roleName}</strong> en <strong>${empresaNombre}</strong>.
+      `)}
+
+      ${createInfoCard('Información de la invitación', `
+        <strong>Email:</strong> ${email}<br>
+        <strong>Rol:</strong> ${roleName}<br>
+        <strong>Empresa:</strong> ${empresaNombre} (${tipoEmpresaName})<br>
+        <strong>Invitado por:</strong> ${inviterName}
+      `, 'info')}
+
+      ${createSection('¿Qué es Breus?', `
+        <p>Breus es la plataforma líder en gestión profesional de buceo para la industria salmonicultora. Con Breus podrás:</p>
+        <ul style="margin: 16px 0; padding-left: 20px; color: #4b5563;">
+          <li>Gestionar formularios HPT y Anexo Bravo digitalmente</li>
+          <li>Controlar inmersiones y bitácoras en tiempo real</li>
+          <li>Mantener trazabilidad completa de operaciones</li>
+          <li>Generar reportes automáticos y analíticas</li>
+          <li>Garantizar cumplimiento normativo</li>
+        </ul>
+      `)}
+
+      ${createButton('Completar mi Registro', invitationUrl)}
+
+      ${createInfoCard('Información importante', `
+        Esta invitación expirará el <strong>${fechaExpiracion.toLocaleDateString('es-ES')}</strong>. 
+        Si no puedes hacer clic en el botón, copia y pega el siguiente enlace en tu navegador:<br><br>
+        <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px; word-break: break-all;">${invitationUrl}</code>
+      `, 'warning')}
+
+      ${createSection('¿Necesitas ayuda?', `
+        Si tienes alguna pregunta sobre esta invitación o necesitas asistencia, no dudes en contactarnos en <a href="mailto:soporte@breus.cl" style="color: #3b82f6;">soporte@breus.cl</a>
+      `)}
+    `;
+
+    const html = createBaseEmailTemplate({
+      title: 'Invitación a Breus - Sistema de Gestión de Buceo',
+      previewText: `${inviterName} te ha invitado a unirte a Breus como ${roleName}`,
+      children: emailContent
+    });
+
     // Enviar email usando Resend
     const emailData = {
       to: [email],
-      subject: 'Invitación a Breus - Sistema de Gestión de Buceo',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Invitación a Breus</h2>
-          <p>Hola ${nombre || 'Usuario'},</p>
-          <p>Has sido invitado/a por <strong>${inviterName}</strong> a unirte a Breus como <strong>${rol.replace('_', ' ').toUpperCase()}</strong>.</p>
-          <p>Para completar tu registro, haz clic en el siguiente enlace:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${invitationUrl}" 
-               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Completar Registro
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            Este enlace expirará en 7 días. Si no puedes hacer clic en el enlace, copia y pega la siguiente URL en tu navegador:
-          </p>
-          <p style="color: #666; font-size: 14px; word-break: break-all;">
-            ${invitationUrl}
-          </p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            Si no esperabas esta invitación, puedes ignorar este email.
-          </p>
-        </div>
-      `
+      subject: `Invitación a Breus - ${roleName} en ${empresaNombre}`,
+      html: html
     };
 
-    // Enviar email
     const { data, error } = await supabaseAdmin.functions.invoke('resend', {
       body: emailData
     });

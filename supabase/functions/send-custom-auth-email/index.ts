@@ -1,6 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createBaseEmailTemplate } from "../_shared/email-templates/base-template.ts";
+import { createButton, createInfoCard, createSection } from "../_shared/email-templates/components.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -36,88 +38,66 @@ const handler = async (req: Request): Promise<Response> => {
 
     const confirmationUrl = `${site_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
 
+    const isSignup = email_action_type === 'signup';
+    const title = isSignup ? '¡Bienvenido a Breus!' : 'Restablecer tu contraseña';
+    const actionText = isSignup ? 'Confirmar mi cuenta' : 'Restablecer contraseña';
+
+    // Crear contenido del email
+    const emailContent = `
+      ${createSection(title, isSignup ? `
+        Gracias por registrarte en nuestra plataforma. Para completar tu registro y acceder a todas las funcionalidades, necesitas confirmar tu dirección de email.
+      ` : `
+        Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para crear una nueva contraseña.
+      `)}
+
+      ${createButton(actionText, confirmationUrl)}
+
+      ${createInfoCard('Enlace alternativo', `
+        Si el botón no funciona, copia y pega este enlace en tu navegador:<br><br>
+        <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px; word-break: break-all;">${confirmationUrl}</code>
+      `, 'info')}
+
+      ${createInfoCard('Seguridad', `
+        <strong>Este enlace expirará en 24 horas</strong> por motivos de seguridad.
+        ${!isSignup ? ' Si no solicitaste este cambio, puedes ignorar este email de forma segura.' : ''}
+      `, 'warning')}
+
+      ${isSignup ? createSection('¿Qué puedes hacer con Breus?', `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0;">
+          <div style="text-align: center; padding: 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📋</div>
+            <h4 style="color: #1f2937; margin: 0 0 8px 0;">Formularios Digitales</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">HPT y Anexo Bravo completamente digitalizados</p>
+          </div>
+          <div style="text-align: center; padding: 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🤿</div>
+            <h4 style="color: #1f2937; margin: 0 0 8px 0;">Gestión de Inmersiones</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Control completo de todas las operaciones</p>
+          </div>
+          <div style="text-align: center; padding: 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📊</div>
+            <h4 style="color: #1f2937; margin: 0 0 8px 0;">Reportes Automáticos</h4>
+            <p style="color: #6b7280; margin: 0; font-size: 14px;">Analytics y trazabilidad completa</p>
+          </div>
+        </div>
+      `) : ''}
+
+      ${createSection('¿Necesitas ayuda?', `
+        Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos en <a href="mailto:soporte@breus.cl" style="color: #3b82f6;">soporte@breus.cl</a>
+      `)}
+    `;
+
+    const html = createBaseEmailTemplate({
+      title: isSignup ? "Confirma tu cuenta en Breus" : "Restablecer contraseña - Breus",
+      previewText: isSignup ? "Confirma tu email para completar tu registro en Breus" : "Restablece tu contraseña de Breus",
+      children: emailContent
+    });
+
     const emailResponse = await resend.emails.send({
       from: "Breus <noreply@breus.cl>",
       to: [email],
-      subject: email_action_type === 'signup' ? "Confirma tu cuenta en Breus" : "Restablecer contraseña - Breus",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Breus - ${email_action_type === 'signup' ? 'Confirmación de Cuenta' : 'Restablecer Contraseña'}</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
-              <div style="background-color: white; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <div style="background-color: #1e40af; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">
-                  B
-                </div>
-              </div>
-              <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Breus</h1>
-              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">Plataforma de Gestión de Buceo Profesional</p>
-            </div>
-            
-            <!-- Content -->
-            <div style="padding: 40px 30px;">
-              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">
-                ${email_action_type === 'signup' ? '¡Bienvenido a Breus!' : 'Restablecer tu contraseña'}
-              </h2>
-              
-              <p style="color: #6b7280; margin: 0 0 24px 0; line-height: 1.6;">
-                ${email_action_type === 'signup' 
-                  ? 'Gracias por registrarte en nuestra plataforma. Para completar tu registro y acceder a todas las funcionalidades, necesitas confirmar tu dirección de email.'
-                  : 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para crear una nueva contraseña.'
-                }
-              </p>
-              
-              <!-- Action Button -->
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${confirmationUrl}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                  ${email_action_type === 'signup' ? 'Confirmar mi cuenta' : 'Restablecer contraseña'}
-                </a>
-              </div>
-              
-              <!-- Alternative Link -->
-              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 24px 0;">
-                <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 14px;">
-                  Si el botón no funciona, copia y pega este enlace en tu navegador:
-                </p>
-                <p style="color: #3b82f6; margin: 0; font-size: 12px; word-break: break-all;">
-                  ${confirmationUrl}
-                </p>
-              </div>
-              
-              <!-- Security Notice -->
-              <div style="border-left: 4px solid #fbbf24; padding: 16px; background-color: #fffbeb; margin: 24px 0;">
-                <p style="color: #92400e; margin: 0; font-size: 14px;">
-                  <strong>Seguridad:</strong> Este enlace expirará en 24 horas por motivos de seguridad.
-                  ${email_action_type !== 'signup' ? ' Si no solicitaste este cambio, puedes ignorar este email.' : ''}
-                </p>
-              </div>
-              
-              <p style="color: #6b7280; margin: 24px 0 0 0; font-size: 14px;">
-                Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
-              </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="background-color: #f9fafb; padding: 24px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; margin: 0; font-size: 12px;">
-                © 2024 Breus. Plataforma de gestión de buceo profesional para la industria salmonicultora.
-              </p>
-              <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 11px;">
-                Este email fue enviado a ${email}
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject: isSignup ? "Confirma tu cuenta en Breus" : "Restablecer contraseña - Breus",
+      html: html,
     });
 
     console.log("Custom auth email sent successfully:", emailResponse);

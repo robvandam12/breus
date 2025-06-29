@@ -1,6 +1,8 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { Resend } from 'npm:resend';
+import { createBaseEmailTemplate } from "../_shared/email-templates/base-template.ts";
+import { createButton, createInfoCard, createSection, createTable } from "../_shared/email-templates/components.ts";
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
 
@@ -21,6 +23,42 @@ interface AlertPayload {
     };
 }
 
+const getPriorityConfig = (priority: string) => {
+  switch (priority.toLowerCase()) {
+    case 'critical':
+    case 'critica':
+      return {
+        color: '#dc2626',
+        icon: '🚨',
+        label: 'CRÍTICA',
+        variant: 'danger' as const
+      };
+    case 'high':
+    case 'alta':
+      return {
+        color: '#ea580c',
+        icon: '⚠️',
+        label: 'ALTA',
+        variant: 'warning' as const
+      };
+    case 'medium':
+    case 'media':
+      return {
+        color: '#ca8a04',
+        icon: '⚡',
+        label: 'MEDIA',
+        variant: 'warning' as const
+      };
+    default:
+      return {
+        color: '#2563eb',
+        icon: '💡',
+        label: 'BAJA',
+        variant: 'info' as const
+      };
+  }
+};
+
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
@@ -36,30 +74,79 @@ serve(async (req) => {
             });
         }
         
-        const subject = `🚨 Alerta Escalada (Nivel ${alert.escalation_level}): ${alert.type.replace(/_/g, ' ')} - Inmersión ${alert.inmersion_code}`;
-        const html = `
-            <div style="font-family: sans-serif; padding: 20px; background-color: #f4f4f4;">
-                <div style="max-width: 600px; margin: auto; background-color: white; padding: 20px; border-radius: 8px;">
-                    <h1 style="color: #c0392b;">Alerta de Seguridad Escalada</h1>
-                    <p>Se ha escalado una alerta de seguridad que requiere su atención inmediata.</p>
-                    <ul style="list-style: none; padding: 0;">
-                        <li style="padding-bottom: 10px;"><strong>ID Alerta:</strong> ${alert.id}</li>
-                        <li style="padding-bottom: 10px;"><strong>Tipo:</strong> ${alert.type.replace(/_/g, ' ')}</li>
-                        <li style="padding-bottom: 10px;"><strong>Prioridad:</strong> ${alert.priority}</li>
-                        <li style="padding-bottom: 10px;"><strong>Código Inmersión:</strong> ${alert.inmersion_code}</li>
-                        <li style="padding-bottom: 10px;"><strong>Nuevo Nivel de Escalamiento:</strong> ${alert.escalation_level}</li>
-                        <li style="padding-bottom: 10px;"><strong>Detalles:</strong> <pre style="background-color: #eee; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(alert.details, null, 2)}</pre></li>
-                    </ul>
-                    <p>Por favor, ingrese a la plataforma para revisar y reconocer la alerta.</p>
-                    <p>Atentamente,<br/>El equipo de Breus</p>
-                </div>
+        const priorityConfig = getPriorityConfig(alert.priority);
+        const alertTypeName = alert.type.replace(/_/g, ' ').toUpperCase();
+        
+        // Crear tabla con detalles de la alerta
+        const alertDetails = [];
+        if (alert.details) {
+          for (const [key, value] of Object.entries(alert.details)) {
+            alertDetails.push([
+              key.replace(/_/g, ' ').toUpperCase(),
+              String(value)
+            ]);
+          }
+        }
+
+        // Crear contenido del email
+        const emailContent = `
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="display: inline-flex; align-items: center; gap: 12px; background: ${priorityConfig.color}15; padding: 16px 24px; border-radius: 8px; border: 2px solid ${priorityConfig.color};">
+              <span style="font-size: 24px;">${priorityConfig.icon}</span>
+              <div>
+                <h2 style="color: ${priorityConfig.color}; margin: 0; font-size: 18px; font-weight: 700;">
+                  ALERTA ${priorityConfig.label} ESCALADA
+                </h2>
+                <p style="color: ${priorityConfig.color}; margin: 4px 0 0 0; font-size: 14px;">
+                  Nivel de Escalamiento: ${alert.escalation_level}
+                </p>
+              </div>
             </div>
+          </div>
+
+          ${createInfoCard('Información de la Alerta', `
+            <strong>ID de Alerta:</strong> ${alert.id}<br>
+            <strong>Tipo:</strong> ${alertTypeName}<br>
+            <strong>Prioridad:</strong> ${priorityConfig.label}<br>
+            <strong>Código de Inmersión:</strong> ${alert.inmersion_code}<br>
+            <strong>Nivel de Escalamiento:</strong> ${alert.escalation_level}
+          `, priorityConfig.variant)}
+
+          ${createSection('⚠️ Acción Requerida', `
+            <p style="font-size: 16px; font-weight: 600; color: #dc2626;">
+              Se ha escalado una alerta de seguridad que requiere su atención <strong>inmediata</strong>.
+            </p>
+            <p>Esta alerta ha sido escalada al nivel ${alert.escalation_level} debido a que no ha sido reconocida en el tiempo establecido. Es crucial que revise y tome las medidas necesarias de inmediato.</p>
+          `)}
+
+          ${alertDetails.length > 0 ? createTable(['Detalle', 'Valor'], alertDetails) : ''}
+
+          ${createButton('Revisar Alerta en el Sistema', `${req.headers.get('origin') || 'https://breus.cl'}/alertas?alert_id=${alert.id}`, 'danger')}
+
+          ${createSection('🔄 Próximos Pasos', `
+            <ol style="margin: 16px 0; padding-left: 20px; color: #4b5563;">
+              <li><strong>Acceda al sistema</strong> haciendo clic en el botón superior</li>
+              <li><strong>Revise los detalles</strong> de la alerta y la inmersión asociada</li>
+              <li><strong>Tome las medidas correctivas</strong> necesarias</li>
+              <li><strong>Reconozca la alerta</strong> una vez resuelto el problema</li>
+            </ol>
+          `)}
+
+          ${createInfoCard('Importante', `
+            Si esta alerta no es reconocida y resuelta en el tiempo establecido, será escalada automáticamente al siguiente nivel de autoridad.
+          `, 'warning')}
         `;
 
+        const html = createBaseEmailTemplate({
+          title: `🚨 Alerta Escalada (Nivel ${alert.escalation_level}): ${alertTypeName} - Inmersión ${alert.inmersion_code}`,
+          previewText: `Alerta de seguridad escalada nivel ${alert.escalation_level} requiere atención inmediata`,
+          children: emailContent
+        });
+
         const { data, error } = await resend.emails.send({
-            from: 'Alertas Breus <onboarding@resend.dev>', // Asegúrate que tu dominio esté verificado en Resend
+            from: 'Alertas Breus <alertas@breus.cl>',
             to: recipients,
-            subject: subject,
+            subject: `🚨 Alerta Escalada (Nivel ${alert.escalation_level}): ${alertTypeName} - Inmersión ${alert.inmersion_code}`,
             html: html,
         });
 
