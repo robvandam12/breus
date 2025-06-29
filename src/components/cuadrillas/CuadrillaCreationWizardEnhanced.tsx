@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Users, User, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, User, Plus, Trash2, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -55,6 +55,14 @@ export const CuadrillaCreationWizardEnhanced = ({
   React.useEffect(() => {
     if (isOpen) {
       loadCentros();
+      // Reset form when opening
+      setCuadrillaData({
+        nombre: '',
+        descripcion: '',
+        centro_id: ''
+      });
+      setMembers([]);
+      setCurrentStep(1);
     }
   }, [isOpen, enterpriseContext]);
 
@@ -79,6 +87,21 @@ export const CuadrillaCreationWizardEnhanced = ({
   };
 
   const handleUserSelect = (user: any) => {
+    // Verificar si el usuario ya existe en la cuadrilla
+    const userExists = members.some(member => 
+      member.usuario_id === user.usuario_id || 
+      (member.email && member.email === user.email)
+    );
+
+    if (userExists) {
+      toast({
+        title: "Usuario ya agregado",
+        description: `${user.nombre} ${user.apellido} ya está en la cuadrilla.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newMember: CuadrillaMember = {
       id: `temp-${Date.now()}`,
       usuario_id: user.usuario_id,
@@ -88,9 +111,26 @@ export const CuadrillaCreationWizardEnhanced = ({
       email: user.email
     };
     setMembers([...members, newMember]);
+    
+    toast({
+      title: "Miembro agregado",
+      description: `${user.nombre} ${user.apellido} ha sido agregado a la cuadrilla.`,
+    });
   };
 
   const handleUserInvite = (userData: any) => {
+    // Verificar si el email ya existe en la cuadrilla
+    const emailExists = members.some(member => member.email === userData.email);
+
+    if (emailExists) {
+      toast({
+        title: "Email ya agregado",
+        description: `El email ${userData.email} ya está en la cuadrilla.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newMember: CuadrillaMember = {
       id: `temp-${Date.now()}`,
       usuario_id: '', // Será null para invitados
@@ -100,10 +140,23 @@ export const CuadrillaCreationWizardEnhanced = ({
       email: userData.email
     };
     setMembers([...members, newMember]);
+    
+    toast({
+      title: "Invitación preparada",
+      description: `Se ha preparado la invitación para ${userData.email}.`,
+    });
   };
 
   const removeMember = (id: string) => {
+    const memberToRemove = members.find(m => m.id === id);
     setMembers(members.filter(m => m.id !== id));
+    
+    if (memberToRemove) {
+      toast({
+        title: "Miembro removido",
+        description: `${memberToRemove.nombre} ${memberToRemove.apellido} ha sido removido de la cuadrilla.`,
+      });
+    }
   };
 
   const updateMemberRole = (id: string, rol: string) => {
@@ -115,9 +168,35 @@ export const CuadrillaCreationWizardEnhanced = ({
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(cuadrillaData.nombre.trim());
+        if (!cuadrillaData.nombre.trim()) {
+          toast({
+            title: "Error",
+            description: "El nombre de la cuadrilla es requerido",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
       case 2:
-        return members.length > 0 && members.every(m => m.rol_equipo);
+        if (members.length === 0) {
+          toast({
+            title: "Error",
+            description: "Debe agregar al menos un miembro a la cuadrilla",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        const hasInvalidRole = members.some(m => !m.rol_equipo);
+        if (hasInvalidRole) {
+          toast({
+            title: "Error",
+            description: "Todos los miembros deben tener un rol asignado",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
       default:
         return true;
     }
@@ -126,12 +205,6 @@ export const CuadrillaCreationWizardEnhanced = ({
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(currentStep + 1);
-    } else {
-      toast({
-        title: "Error",
-        description: "Por favor complete todos los campos requeridos",
-        variant: "destructive",
-      });
     }
   };
 
@@ -141,11 +214,6 @@ export const CuadrillaCreationWizardEnhanced = ({
 
   const handleSubmit = async () => {
     if (!validateStep(2)) {
-      toast({
-        title: "Error",
-        description: "Por favor complete todos los campos requeridos",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -174,6 +242,8 @@ export const CuadrillaCreationWizardEnhanced = ({
 
       // Agregar miembros solo si tienen usuario_id válido
       const validMembers = members.filter(member => member.usuario_id);
+      let addedMembersCount = 0;
+      
       if (validMembers.length > 0) {
         const membersData = validMembers.map(member => ({
           cuadrilla_id: cuadrilla.id,
@@ -187,11 +257,24 @@ export const CuadrillaCreationWizardEnhanced = ({
           .insert(membersData);
 
         if (membersError) throw membersError;
+        addedMembersCount = validMembers.length;
+      }
+
+      // Mostrar información sobre invitaciones pendientes
+      const pendingInvitations = members.length - validMembers.length;
+      let successMessage = `La cuadrilla "${cuadrillaData.nombre}" ha sido creada exitosamente`;
+      
+      if (addedMembersCount > 0) {
+        successMessage += ` con ${addedMembersCount} miembro${addedMembersCount > 1 ? 's' : ''}`;
+      }
+      
+      if (pendingInvitations > 0) {
+        successMessage += `. ${pendingInvitations} invitación${pendingInvitations > 1 ? 'es' : ''} pendiente${pendingInvitations > 1 ? 's' : ''}`;
       }
 
       toast({
         title: "Cuadrilla creada",
-        description: `La cuadrilla "${cuadrillaData.nombre}" ha sido creada exitosamente con ${validMembers.length} miembros.`,
+        description: successMessage,
       });
 
       onCuadrillaCreated(cuadrilla);
@@ -214,6 +297,24 @@ export const CuadrillaCreationWizardEnhanced = ({
   };
 
   const progress = (currentStep / 2) * 100;
+
+  // Análisis de roles para mostrar advertencias
+  const roleAnalysis = React.useMemo(() => {
+    const roles = members.reduce((acc, member) => {
+      acc[member.rol_equipo] = (acc[member.rol_equipo] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const warnings = [];
+    if (!roles.supervisor && members.length > 0) {
+      warnings.push("Se recomienda tener al menos un supervisor");
+    }
+    if (roles.buzo_principal > 1) {
+      warnings.push("Solo debería haber un buzo principal por cuadrilla");
+    }
+
+    return { roles, warnings };
+  }, [members]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -310,6 +411,19 @@ export const CuadrillaCreationWizardEnhanced = ({
                   />
                 </div>
 
+                {/* Advertencias de roles */}
+                {roleAnalysis.warnings.length > 0 && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">Advertencias</span>
+                    </div>
+                    {roleAnalysis.warnings.map((warning, index) => (
+                      <p key={index} className="text-sm text-yellow-700">• {warning}</p>
+                    ))}
+                  </div>
+                )}
+
                 {/* Lista de miembros agregados */}
                 {members.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -334,6 +448,11 @@ export const CuadrillaCreationWizardEnhanced = ({
                           </div>
                           <div className="text-xs text-gray-500">
                             {member.email}
+                            {!member.usuario_id && (
+                              <Badge variant="outline" className="ml-2 text-xs text-orange-600 border-orange-200">
+                                Invitado
+                              </Badge>
+                            )}
                           </div>
                         </div>
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -179,6 +178,33 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
       toast({
         title: "Error",
         description: "Debe seleccionar un centro para la inmersión",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.objetivo.trim()) {
+      toast({
+        title: "Error",
+        description: "Debe especificar el objetivo de la inmersión",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.fecha_inmersion) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar la fecha de inmersión",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.profundidad_max || parseFloat(formData.profundidad_max) <= 0) {
+      toast({
+        title: "Error",
+        description: "Debe especificar una profundidad máxima válida",
         variant: "destructive",
       });
       return;

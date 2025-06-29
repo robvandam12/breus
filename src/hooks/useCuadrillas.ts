@@ -89,8 +89,23 @@ export const useCuadrillas = () => {
 
       return processedData as Cuadrilla[];
     },
-    enabled: !!profile
+    enabled: !!profile,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
+
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+    // También invalidar queries relacionadas
+    queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+    queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
+  };
+
+  const refetchQueries = () => {
+    queryClient.refetchQueries({ queryKey: ['cuadrillas'] });
+    queryClient.refetchQueries({ queryKey: ['equipos-buceo'] });
+    queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
+  };
 
   const createMutation = useMutation({
     mutationFn: async (formData: CuadrillaFormData) => {
@@ -134,7 +149,8 @@ export const useCuadrillas = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      invalidateQueries();
+      refetchQueries();
       toast({
         title: "Cuadrilla creada",
         description: "La cuadrilla ha sido creada exitosamente.",
@@ -160,7 +176,8 @@ export const useCuadrillas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      invalidateQueries();
+      refetchQueries();
       toast({
         title: "Cuadrilla actualizada",
         description: "La cuadrilla ha sido actualizada exitosamente.",
@@ -187,8 +204,8 @@ export const useCuadrillas = () => {
     },
     onSuccess: () => {
       // Forzar actualización inmediata de la cache
-      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
-      queryClient.refetchQueries({ queryKey: ['cuadrillas'] });
+      invalidateQueries();
+      refetchQueries();
       toast({
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",
@@ -225,7 +242,8 @@ export const useCuadrillas = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      invalidateQueries();
+      refetchQueries();
       toast({
         title: "Miembro agregado",
         description: "El miembro ha sido agregado a la cuadrilla exitosamente.",
@@ -251,7 +269,8 @@ export const useCuadrillas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
+      invalidateQueries();
+      refetchQueries();
       toast({
         title: "Miembro removido",
         description: "El miembro ha sido removido de la cuadrilla exitosamente.",
@@ -278,5 +297,7 @@ export const useCuadrillas = () => {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    invalidateQueries,
+    refetchQueries,
   };
 };
