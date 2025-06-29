@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -64,7 +63,7 @@ export const useInmersiones = () => {
       // Mapear datos para incluir operacion_nombre
       const mappedData = (data || []).map(inmersion => ({
         ...inmersion,
-        operacion_nombre: inmersion.operacion?.nombre || 'Sin operación'
+        operacion_nombre: inmersion.operacion?.nombre || (inmersion.is_independent ? 'Inmersión Independiente' : 'Sin operación')
       }));
 
       return mappedData as Inmersion[];
@@ -87,13 +86,20 @@ export const useInmersiones = () => {
         throw new Error('Objetivo de inmersión es requerido');
       }
 
-      // Agregar campos por defecto si no existen
+      // Preparar datos finales
       const finalData = {
         estado: 'planificada',
         profundidad_max: 0,
         ...inmersionData,
         codigo: inmersionData.codigo,
       };
+
+      // Si es inmersión independiente (no tiene operacion_id o es null), 
+      // remover operacion_id del objeto para evitar enviar null
+      if (!inmersionData.operacion_id || inmersionData.operacion_id === null || inmersionData.operacion_id === '') {
+        delete finalData.operacion_id;
+        finalData.is_independent = true;
+      }
 
       console.log('Creating inmersion with data:', finalData);
 

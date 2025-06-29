@@ -1315,7 +1315,7 @@ export type Database = {
           notification_status: Json | null
           objetivo: string
           observaciones: string | null
-          operacion_id: string
+          operacion_id: string | null
           planned_bottom_time: number | null
           priority: string | null
           profundidad_max: number
@@ -1362,7 +1362,7 @@ export type Database = {
           notification_status?: Json | null
           objetivo: string
           observaciones?: string | null
-          operacion_id: string
+          operacion_id?: string | null
           planned_bottom_time?: number | null
           priority?: string | null
           profundidad_max: number
@@ -1409,7 +1409,7 @@ export type Database = {
           notification_status?: Json | null
           objetivo?: string
           observaciones?: string | null
-          operacion_id?: string
+          operacion_id?: string | null
           planned_bottom_time?: number | null
           priority?: string | null
           profundidad_max?: number

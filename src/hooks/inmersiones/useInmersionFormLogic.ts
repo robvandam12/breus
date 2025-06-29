@@ -182,24 +182,38 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       (typeof initialData.metadata === 'string' ? JSON.parse(initialData.metadata) : initialData.metadata) : 
       {};
 
-    return {
+    const baseData = {
       ...formData,
       profundidad_max: parseFloat(formData.profundidad_max),
       is_independent: !formValidationState.isPlanned,
-      operacion_id: formValidationState.isPlanned ? formData.operacion_id : null,
-      external_operation_code: !formValidationState.isPlanned ? formData.external_operation_code : null,
       estado: initialData?.estado || 'planificada',
       company_id: companyId,
       requiere_validacion_previa: formValidationState.isPlanned,
       anexo_bravo_validado: Boolean(!formValidationState.isPlanned),
       hpt_validado: Boolean(!formValidationState.isPlanned),
       centro_id: formData.centro_id,
-      codigo: formData.codigo, // Incluir el código en los datos finales
+      codigo: formData.codigo,
       metadata: {
         ...currentMetadata,
         cuadrilla_id: selectedCuadrillaId,
         enterprise_context: enterpriseContext
       }
+    };
+
+    // Para inmersiones planificadas, incluir operacion_id
+    if (formValidationState.isPlanned && formData.operacion_id) {
+      return {
+        ...baseData,
+        operacion_id: formData.operacion_id,
+        external_operation_code: null
+      };
+    }
+
+    // Para inmersiones independientes, usar external_operation_code y no incluir operacion_id
+    return {
+      ...baseData,
+      external_operation_code: formData.external_operation_code
+      // operacion_id se omite intencionalmente para que sea null en la DB
     };
   };
 
