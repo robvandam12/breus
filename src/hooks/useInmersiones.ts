@@ -211,28 +211,54 @@ export const useInmersiones = () => {
     mutationFn: async (inmersionId: string) => {
       console.log('Starting deletion process for inmersion:', inmersionId);
       
-      // Primero eliminar asignaciones de cuadrilla si existen
-      const { error: asignacionError } = await supabase
-        .from('cuadrilla_asignaciones')
-        .delete()
-        .eq('inmersion_id', inmersionId);
+      try {
+        // Verificar que la inmersión existe
+        const { data: inmersionExists, error: checkError } = await supabase
+          .from('inmersion')
+          .select('inmersion_id')
+          .eq('inmersion_id', inmersionId)
+          .single();
 
-      if (asignacionError) {
-        console.warn('Warning deleting cuadrilla assignments:', asignacionError);
+        if (checkError || !inmersionExists) {
+          throw new Error('La inmersión no se encontró o no tienes permisos para eliminarla');
+        }
+
+        // Primero eliminar asignaciones de cuadrilla si existen
+        const { error: asignacionError } = await supabase
+          .from('cuadrilla_asignaciones')
+          .delete()
+          .eq('inmersion_id', inmersionId);
+
+        if (asignacionError) {
+          console.warn('Warning deleting cuadrilla assignments:', asignacionError);
+        }
+
+        // Eliminar miembros del equipo si existen
+        const { error: teamError } = await supabase
+          .from('inmersion_team_members')
+          .delete()
+          .eq('inmersion_id', inmersionId);
+
+        if (teamError) {
+          console.warn('Warning deleting team members:', teamError);
+        }
+
+        // Luego eliminar la inmersión
+        const { error: inmersionError } = await supabase
+          .from('inmersion')
+          .delete()
+          .eq('inmersion_id', inmersionId);
+
+        if (inmersionError) {
+          console.error('Error deleting inmersion:', inmersionError);
+          throw new Error('No se pudo eliminar la inmersión - ' + inmersionError.message);
+        }
+
+        return inmersionId;
+      } catch (error: any) {
+        console.error('Error in deletion process:', error);
+        throw error;
       }
-
-      // Luego eliminar la inmersión
-      const { error: inmersionError } = await supabase
-        .from('inmersion')
-        .delete()
-        .eq('inmersion_id', inmersionId);
-
-      if (inmersionError) {
-        console.error('Error deleting inmersion:', inmersionError);
-        throw new Error('No se pudo eliminar la inmersión - ' + inmersionError.message);
-      }
-
-      return inmersionId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });

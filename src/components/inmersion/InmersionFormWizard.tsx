@@ -50,11 +50,6 @@ export const InmersionFormWizard: React.FC<InmersionFormWizardProps> = ({
 
   const selectedOperation = operaciones.find(op => op.id === selectedOperacionId);
   
-  // Nota: Ya no tenemos equipos asignados a operaciones, se gestionan a nivel de inmersión
-  // const assignedTeam = selectedOperation?.equipo_buceo_id 
-  //   ? equipos.find(eq => eq.id === selectedOperation.equipo_buceo_id)
-  //   : null;
-  
   // Determinar campos deshabilitados según contexto
   const isFieldDisabled = (fieldName: string) => {
     // CORE: En modo directo, todos los campos son editables

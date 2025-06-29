@@ -92,8 +92,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw dbError;
     }
 
-    // Crear el enlace de invitación
-    const baseUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://preview--breus-91.lovable.app';
+    // Crear el enlace de invitación usando la URL correcta
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || '';
+    const baseUrl = supabaseUrl.replace('.supabase.co', '.lovable.app') || 'https://preview--breus-91.lovable.app';
     const invitationUrl = `${baseUrl}/register-invitation?token=${token}`;
 
     // Mapear roles a nombres amigables
@@ -139,12 +140,33 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
+    // Verificar si hay API key de Resend configurada
+    const resendKey = Deno.env.get('RESEND_API_KEY');
+    
+    if (!resendKey) {
+      console.log('RESEND_API_KEY not configured, skipping email send');
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Invitación creada exitosamente (email no enviado - configurar RESEND_API_KEY)',
+        invitation_id: invitation.id,
+        expires_at: fechaExpiracion.toISOString(),
+        invitation_url: invitationUrl
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
     // Intentar enviar email usando Resend
     try {
       const resendResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+          'Authorization': `Bearer ${resendKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -158,7 +180,22 @@ const handler = async (req: Request): Promise<Response> => {
       if (!resendResponse.ok) {
         const errorData = await resendResponse.text();
         console.error('Resend API error:', errorData);
-        throw new Error(`Error enviando email: ${resendResponse.status}`);
+        
+        // Return success but with email error info
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Invitación creada exitosamente (error enviando email)',
+          invitation_id: invitation.id,
+          expires_at: fechaExpiracion.toISOString(),
+          email_error: errorData,
+          invitation_url: invitationUrl
+        }), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        });
       }
 
       const emailResult = await resendResponse.json();
@@ -166,8 +203,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     } catch (emailError) {
       console.error('Error sending email:', emailError);
-      // No lanzar error aquí, la invitación se creó exitosamente
-      console.log('Invitation created but email failed to send');
+      
+      // Return success but with email error info
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Invitación creada exitosamente (error enviando email)',
+        invitation_id: invitation.id,
+        expires_at: fechaExpiracion.toISOString(),
+        email_error: emailError.message,
+        invitation_url: invitationUrl
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
     }
 
     return new Response(JSON.stringify({
