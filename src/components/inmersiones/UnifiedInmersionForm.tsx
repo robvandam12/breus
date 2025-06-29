@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -252,7 +253,6 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
         external_operation_code: !isPlanned ? formData.codigo_operacion_externa : null,
         profundidad_max: parseFloat(formData.profundidad_max),
         estado: initialData?.estado || 'planificada',
-        cuadrilla_id: selectedCuadrillaId,
         company_id: selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
         salmonera_id: selectedCentro?.salmonera_id,
         requiere_validacion_previa: true,
