@@ -165,10 +165,11 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       return false;
     }
 
-    if (!formData.profundidad_max || parseFloat(formData.profundidad_max) <= 0) {
+    // Para inmersiones planificadas, profundidad máxima es opcional inicialmente
+    if (!formValidationState.isPlanned && (!formData.profundidad_max || parseFloat(formData.profundidad_max) <= 0)) {
       toast({
         title: "Error",
-        description: "Debe especificar una profundidad máxima válida",
+        description: "Debe especificar una profundidad máxima válida para inmersiones independientes",
         variant: "destructive",
       });
       return false;
@@ -184,7 +185,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
 
     const baseData = {
       ...formData,
-      profundidad_max: parseFloat(formData.profundidad_max),
+      profundidad_max: formData.profundidad_max ? parseFloat(formData.profundidad_max) : (formValidationState.isPlanned ? null : 0),
       is_independent: !formValidationState.isPlanned,
       estado: initialData?.estado || 'planificada',
       company_id: companyId,
@@ -193,6 +194,13 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       hpt_validado: Boolean(!formValidationState.isPlanned),
       centro_id: formData.centro_id,
       codigo: formData.codigo,
+      // Campos opcionales para inmersiones planificadas
+      temperatura_agua: null,
+      visibilidad: null,
+      corriente: null,
+      buzo_principal: null,
+      supervisor: null,
+      hora_inicio: null,
       metadata: {
         ...currentMetadata,
         cuadrilla_id: selectedCuadrillaId,

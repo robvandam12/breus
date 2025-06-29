@@ -1288,7 +1288,7 @@ export type Database = {
           anexo_bravo_validado: boolean
           buzo_asistente: string | null
           buzo_asistente_id: string | null
-          buzo_principal: string
+          buzo_principal: string | null
           buzo_principal_id: string | null
           centro_id: string | null
           codigo: string
@@ -1296,7 +1296,7 @@ export type Database = {
           company_type: string | null
           context_type: string | null
           contexto_operativo: string | null
-          corriente: string
+          corriente: string | null
           created_at: string
           current_depth: number | null
           depth_history: Json | null
@@ -1321,13 +1321,13 @@ export type Database = {
           profundidad_max: number
           requiere_validacion_previa: boolean | null
           requires_validation: boolean | null
-          supervisor: string
+          supervisor: string | null
           supervisor_id: string | null
-          temperatura_agua: number
+          temperatura_agua: number | null
           updated_at: string
           validacion_contextual: Json | null
           validation_status: string | null
-          visibilidad: number
+          visibilidad: number | null
           work_type: string | null
         }
         Insert: {
@@ -1335,7 +1335,7 @@ export type Database = {
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
           buzo_asistente_id?: string | null
-          buzo_principal: string
+          buzo_principal?: string | null
           buzo_principal_id?: string | null
           centro_id?: string | null
           codigo: string
@@ -1343,7 +1343,7 @@ export type Database = {
           company_type?: string | null
           context_type?: string | null
           contexto_operativo?: string | null
-          corriente: string
+          corriente?: string | null
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
@@ -1368,13 +1368,13 @@ export type Database = {
           profundidad_max: number
           requiere_validacion_previa?: boolean | null
           requires_validation?: boolean | null
-          supervisor: string
+          supervisor?: string | null
           supervisor_id?: string | null
-          temperatura_agua: number
+          temperatura_agua?: number | null
           updated_at?: string
           validacion_contextual?: Json | null
           validation_status?: string | null
-          visibilidad: number
+          visibilidad?: number | null
           work_type?: string | null
         }
         Update: {
@@ -1382,7 +1382,7 @@ export type Database = {
           anexo_bravo_validado?: boolean
           buzo_asistente?: string | null
           buzo_asistente_id?: string | null
-          buzo_principal?: string
+          buzo_principal?: string | null
           buzo_principal_id?: string | null
           centro_id?: string | null
           codigo?: string
@@ -1390,7 +1390,7 @@ export type Database = {
           company_type?: string | null
           context_type?: string | null
           contexto_operativo?: string | null
-          corriente?: string
+          corriente?: string | null
           created_at?: string
           current_depth?: number | null
           depth_history?: Json | null
@@ -1415,13 +1415,13 @@ export type Database = {
           profundidad_max?: number
           requiere_validacion_previa?: boolean | null
           requires_validation?: boolean | null
-          supervisor?: string
+          supervisor?: string | null
           supervisor_id?: string | null
-          temperatura_agua?: number
+          temperatura_agua?: number | null
           updated_at?: string
           validacion_contextual?: Json | null
           validation_status?: string | null
-          visibilidad?: number
+          visibilidad?: number | null
           work_type?: string | null
         }
         Relationships: [

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -86,12 +87,19 @@ export const useInmersiones = () => {
         throw new Error('Objetivo de inmersión es requerido');
       }
 
-      // Preparar datos finales
+      // Preparar datos finales - manejar campos opcionales
       const finalData = {
         estado: 'planificada',
-        profundidad_max: 0,
+        profundidad_max: inmersionData.profundidad_max || 0,
         ...inmersionData,
         codigo: inmersionData.codigo,
+        // Campos opcionales para inmersiones planificadas
+        temperatura_agua: inmersionData.temperatura_agua || null,
+        visibilidad: inmersionData.visibilidad || null,
+        corriente: inmersionData.corriente || null,
+        buzo_principal: inmersionData.buzo_principal || null,
+        supervisor: inmersionData.supervisor || null,
+        hora_inicio: inmersionData.hora_inicio || null,
       };
 
       // Si es inmersión independiente (no tiene operacion_id o es null), 
