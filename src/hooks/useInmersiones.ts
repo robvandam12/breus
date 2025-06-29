@@ -72,6 +72,8 @@ export const useInmersiones = () => {
 
   const createInmersion = useMutation({
     mutationFn: async (inmersionData: any) => {
+      console.log('Creating inmersion with data:', inmersionData);
+
       // Asegurar que siempre haya un código
       if (!inmersionData.codigo) {
         inmersionData.codigo = generateInmersionCode();
@@ -86,13 +88,17 @@ export const useInmersiones = () => {
         throw new Error('Objetivo de inmersión es requerido');
       }
 
+      // Separar metadatos de cuadrilla del objeto principal
+      const cuadrillaId = inmersionData.metadata?.cuadrilla_id;
+      const inmersionPayload = { ...inmersionData };
+
       // Preparar datos finales - manejar campos opcionales
       const finalData = {
         estado: 'planificada',
         profundidad_max: inmersionData.profundidad_max || 0,
         // Establecer contexto operativo correcto
         contexto_operativo: inmersionData.is_independent ? 'independiente' : 'planificada',
-        ...inmersionData,
+        ...inmersionPayload,
         codigo: inmersionData.codigo,
         // Campos opcionales para inmersiones planificadas
         temperatura_agua: inmersionData.temperatura_agua || null,
@@ -110,8 +116,7 @@ export const useInmersiones = () => {
         finalData.is_independent = true;
       }
 
-      console.log('Creating inmersion with data:', finalData);
-
+      // Crear la inmersión
       const { data, error } = await supabase
         .from('inmersion')
         .insert(finalData)
@@ -122,11 +127,30 @@ export const useInmersiones = () => {
         console.error('Supabase error:', error);
         throw error;
       }
+
+      // Si hay cuadrilla asignada y se creó la inmersión exitosamente, crear asignación
+      if (cuadrillaId && data) {
+        console.log('Creating cuadrilla assignment for:', cuadrillaId);
+        const { error: assignmentError } = await supabase
+          .from('cuadrilla_asignaciones')
+          .insert({
+            cuadrilla_id: cuadrillaId,
+            inmersion_id: data.inmersion_id,
+            fecha_asignacion: data.fecha_inmersion,
+            estado: 'activa'
+          });
+
+        if (assignmentError) {
+          console.error('Error creating cuadrilla assignment:', assignmentError);
+          // No lanzar error aquí ya que la inmersión se creó exitosamente
+        }
+      }
       
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
       toast({
         title: 'Inmersión creada',
         description: 'La inmersión ha sido creada exitosamente.',
@@ -168,6 +192,18 @@ export const useInmersiones = () => {
     mutationFn: async (inmersionId: string) => {
       console.log('Attempting to delete inmersion with ID:', inmersionId);
       
+      // Primero eliminar asignaciones de cuadrilla relacionadas
+      const { error: assignmentError } = await supabase
+        .from('cuadrilla_asignaciones')
+        .delete()
+        .eq('inmersion_id', inmersionId);
+
+      if (assignmentError) {
+        console.error('Error deleting cuadrilla assignments:', assignmentError);
+        // Continuar con la eliminación de la inmersión aunque fallen las asignaciones
+      }
+
+      // Luego eliminar la inmersión
       const { error } = await supabase
         .from('inmersion')
         .delete()
@@ -184,6 +220,8 @@ export const useInmersiones = () => {
     onSuccess: (deletedId) => {
       console.log('Delete mutation succeeded for ID:', deletedId);
       queryClient.invalidateQueries({ queryKey: ['inmersiones'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrilla-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas-con-asignaciones'] });
       toast({
         title: 'Inmersión eliminada',
         description: 'La inmersión ha sido eliminada exitosamente.',

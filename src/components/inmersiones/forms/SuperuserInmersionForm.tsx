@@ -12,6 +12,8 @@ import { OperacionSelector } from './components/OperacionSelector';
 import { CentroSelector } from './components/CentroSelector';
 import { InmersionBasicFields } from './components/InmersionBasicFields';
 import { useInmersiones } from '@/hooks/useInmersiones';
+import { useCuadrillaAvailability } from '@/hooks/useCuadrillaAvailability';
+import { toast } from '@/hooks/use-toast';
 import type { InmersionFormProps } from '@/types/inmersionForms';
 
 export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: InmersionFormProps) => {
@@ -35,6 +37,13 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     validateForm,
     buildInmersionData
   } = useInmersionFormLogic(initialData, selectedEnterprise);
+
+  // Verificar disponibilidad de cuadrilla
+  const { data: cuadrillaAvailability } = useCuadrillaAvailability(
+    selectedCuadrillaId || undefined,
+    formData.fecha_inmersion || undefined,
+    initialData?.inmersion_id
+  );
 
   useEffect(() => {
     if (selectedEnterprise) {
@@ -95,6 +104,23 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setSelectedCuadrillaId(cuadrilla.id);
   };
 
+  const validateCuadrillaAvailability = (): boolean => {
+    if (!selectedCuadrillaId || !formData.fecha_inmersion) {
+      return true; // Si no hay cuadrilla seleccionada, no validar
+    }
+
+    if (cuadrillaAvailability && !cuadrillaAvailability.is_available) {
+      toast({
+        title: "Cuadrilla no disponible",
+        description: `La cuadrilla seleccionada ya tiene asignada la inmersión ${cuadrillaAvailability.conflicting_inmersion_codigo} para esta fecha.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submit triggered');
@@ -113,6 +139,12 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
 
     if (!validateForm()) {
       console.log('Form validation failed');
+      return;
+    }
+
+    // Validar disponibilidad de cuadrilla
+    if (!validateCuadrillaAvailability()) {
+      console.log('Cuadrilla availability validation failed');
       return;
     }
 
@@ -144,6 +176,10 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       setLoading(false);
     }
   };
+
+  // Verificar si el formulario está listo para envío
+  const canSubmit = !loading && 
+    (cuadrillaAvailability?.is_available !== false || !selectedCuadrillaId);
 
   if (!selectedEnterprise) {
     return (
@@ -262,7 +298,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
             <div className="flex gap-3 pt-4">
               <Button 
                 type="submit" 
-                disabled={loading} 
+                disabled={!canSubmit} 
                 className="flex-1"
               >
                 {loading ? (initialData ? 'Actualizando...' : 'Creando...') : (initialData ? 'Actualizar Inmersión' : 'Crear Inmersión')}

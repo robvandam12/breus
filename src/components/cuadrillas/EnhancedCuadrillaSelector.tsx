@@ -94,14 +94,14 @@ export const EnhancedCuadrillaSelector = ({
 
     if (status.is_available) {
       return (
-        <Badge variant="outline" className="text-green-600 border-green-200 ml-2">
+        <Badge variant="outline" className="text-green-600 border-green-200 text-xs">
           <CheckCircle className="w-3 h-3 mr-1" />
           Disponible
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" className="text-red-600 border-red-200 ml-2">
+        <Badge variant="outline" className="text-red-600 border-red-200 text-xs">
           <AlertTriangle className="w-3 h-3 mr-1" />
           Ocupada
         </Badge>
@@ -114,11 +114,17 @@ export const EnhancedCuadrillaSelector = ({
     if (!status || status.is_available) return null;
 
     return (
-      <p className="text-xs text-red-600 mt-1">
+      <div className="text-xs text-red-600 mt-1 p-2 bg-red-50 rounded border">
+        <AlertTriangle className="w-3 h-3 inline mr-1" />
         Conflicto con inmersión: {status.conflicting_inmersion_codigo}
-      </p>
+      </div>
     );
   };
+
+  // Verificar si la cuadrilla seleccionada está ocupada
+  const isSelectedCuadrillaOccupied = selectedCuadrillaId && 
+    availabilityStatus[selectedCuadrillaId] && 
+    !availabilityStatus[selectedCuadrillaId].is_available;
 
   return (
     <>
@@ -127,24 +133,22 @@ export const EnhancedCuadrillaSelector = ({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              Cuadrilla de Buceo
+              <span>Cuadrilla de Buceo</span>
               {selectedCuadrillaId && (
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-green-600 border-green-200">
                   Asignada
                 </Badge>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowCreateWizard(true)}
-                size="sm"
-                variant="outline"
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva
-              </Button>
-            </div>
+            <Button
+              onClick={() => setShowCreateWizard(true)}
+              size="sm"
+              variant="outline"
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva
+            </Button>
           </CardTitle>
         </CardHeader>
 
@@ -156,7 +160,7 @@ export const EnhancedCuadrillaSelector = ({
             </div>
           )}
 
-          <div>
+          <div className="space-y-2">
             <Label>Seleccionar Cuadrilla</Label>
             <Select
               value={selectedCuadrillaId || ''}
@@ -177,14 +181,15 @@ export const EnhancedCuadrillaSelector = ({
                 {cuadrillas.map((cuadrilla) => (
                   <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
                     <div className="flex items-center justify-between w-full">
-                      <div>
-                        <div className="font-medium">{cuadrilla.nombre}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{cuadrilla.nombre}</span>
+                          {getAvailabilityBadge(cuadrilla.id)}
+                        </div>
                         <div className="text-sm text-gray-500">
                           {cuadrilla.miembros?.length || 0} miembros • {cuadrilla.estado}
                         </div>
-                        {getConflictInfo(cuadrilla.id)}
                       </div>
-                      {getAvailabilityBadge(cuadrilla.id)}
                     </div>
                   </SelectItem>
                 ))}
@@ -192,15 +197,16 @@ export const EnhancedCuadrillaSelector = ({
             </Select>
           </div>
 
+          {/* Información detallada de la cuadrilla seleccionada */}
           {selectedCuadrillaId && (
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="space-y-3">
               {(() => {
                 const cuadrilla = cuadrillas.find(c => c.id === selectedCuadrillaId);
                 if (!cuadrilla) return <p className="text-sm text-gray-500">Cuadrilla no encontrada</p>;
 
                 return (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
                       <h4 className="font-medium text-sm">{cuadrilla.nombre}</h4>
                       <Button
                         onClick={() => {
@@ -209,35 +215,42 @@ export const EnhancedCuadrillaSelector = ({
                         }}
                         size="sm"
                         variant="ghost"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 h-auto p-1"
                       >
                         Ver Detalles
                       </Button>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {cuadrilla.miembros?.map((miembro: any, index: number) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {miembro.nombre} {miembro.apellido} ({miembro.rol_equipo})
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {fechaInmersion && availabilityStatus[cuadrilla.id] && !availabilityStatus[cuadrilla.id].is_available && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                        <AlertTriangle className="w-4 h-4 inline mr-1" />
-                        Esta cuadrilla tiene un conflicto en la fecha seleccionada.
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {cuadrilla.miembros?.map((miembro: any, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {miembro.nombre} {miembro.apellido} ({miembro.rol_equipo})
+                          </Badge>
+                        ))}
                       </div>
-                    )}
+
+                      {/* Información de conflicto si existe */}
+                      {getConflictInfo(cuadrilla.id)}
+                    </div>
                   </div>
                 );
               })()}
             </div>
           )}
 
+          {/* Advertencia si no hay fecha seleccionada */}
           {!fechaInmersion && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
               💡 Seleccione una fecha de inmersión para verificar la disponibilidad de las cuadrillas.
+            </div>
+          )}
+
+          {/* Advertencia si hay conflicto */}
+          {isSelectedCuadrillaOccupied && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+              <AlertTriangle className="w-4 h-4 inline mr-2" />
+              <strong>¡Atención!</strong> La cuadrilla seleccionada tiene un conflicto en la fecha elegida. Se recomienda seleccionar otra cuadrilla o cambiar la fecha.
             </div>
           )}
         </CardContent>
