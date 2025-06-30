@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface EnhancedCuadrillaSelectorProps {
-  selectedCuadrillaId?: string;
+  selectedCuadrillaId?: string | null;
   onCuadrillaChange: (cuadrillaId: string | null) => void;
   fechaInmersion?: string;
   inmersionId?: string;
@@ -41,7 +41,7 @@ export const EnhancedCuadrillaSelector = ({
   // Filtrar cuadrillas según el centro si está especificado
   const availableCuadrillas = cuadrillas.filter(cuadrilla => {
     if (centroId) {
-      return cuadrilla.centro_id === centroId || !cuadrilla.centro_id; // Global o específico del centro
+      return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
     }
     return true;
   });
@@ -59,7 +59,7 @@ export const EnhancedCuadrillaSelector = ({
 
       if (error) {
         console.error('Error checking cuadrilla availability:', error);
-        return { is_available: true }; // Fallback: asumir disponible si hay error
+        return { is_available: true };
       }
 
       return data?.[0] || { is_available: true };
@@ -80,17 +80,24 @@ export const EnhancedCuadrillaSelector = ({
       setCheckingAvailability(true);
       const statusMap: Record<string, AvailabilityResult> = {};
 
-      for (const cuadrilla of availableCuadrillas) {
-        const result = await checkCuadrillaAvailability(cuadrilla.id);
-        statusMap[cuadrilla.id] = result;
+      try {
+        for (const cuadrilla of availableCuadrillas) {
+          const result = await checkCuadrillaAvailability(cuadrilla.id);
+          statusMap[cuadrilla.id] = result;
+        }
+        setAvailabilityStatus(statusMap);
+      } catch (error) {
+        console.error('Error checking availability for all cuadrillas:', error);
+        setAvailabilityStatus({});
+      } finally {
+        setCheckingAvailability(false);
       }
-
-      setAvailabilityStatus(statusMap);
-      setCheckingAvailability(false);
     };
 
-    checkAllAvailability();
-  }, [fechaInmersion, availableCuadrillas, inmersionId]);
+    // Debounce para evitar múltiples llamadas
+    const timeoutId = setTimeout(checkAllAvailability, 500);
+    return () => clearTimeout(timeoutId);
+  }, [fechaInmersion, availableCuadrillas.length, inmersionId]);
 
   const handleCuadrillaSelect = (cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
@@ -99,11 +106,12 @@ export const EnhancedCuadrillaSelector = ({
     }
 
     const availability = availabilityStatus[cuadrillaId];
+    
     if (availability && !availability.is_available) {
       toast({
         title: "Cuadrilla no disponible",
-        description: `Esta cuadrilla ya está asignada a la inmersión ${availability.conflicting_inmersion_codigo}`,
-        variant: "destructive"
+        description: `Esta cuadrilla ya está asignada a la inmersión ${availability.conflicting_inmersion_codigo} para esta fecha.`,
+        variant: "destructive",
       });
       return;
     }
@@ -115,45 +123,64 @@ export const EnhancedCuadrillaSelector = ({
     try {
       const newCuadrilla = await createCuadrilla({
         nombre: `Cuadrilla ${Date.now()}`,
-        descripcion: 'Cuadrilla creada desde selector',
-        estado: 'disponible',
-        activo: true, // Agregar propiedad faltante
-        centro_id: centroId || null
+        centro_id: centroId || null,
+        estado: 'activa'
       });
       
-      onCuadrillaChange(newCuadrilla.id);
-      toast({
-        title: "Cuadrilla creada",
-        description: "Nueva cuadrilla creada exitosamente"
-      });
+      if (newCuadrilla) {
+        onCuadrillaChange(newCuadrilla.id);
+        toast({
+          title: "Cuadrilla creada",
+          description: "Se ha creado una nueva cuadrilla exitosamente.",
+        });
+      }
     } catch (error) {
       console.error('Error creating cuadrilla:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la cuadrilla",
-        variant: "destructive"
+        description: "No se pudo crear la cuadrilla.",
+        variant: "destructive",
       });
     }
   };
 
-  const getCuadrillaDisplayInfo = (cuadrilla: any) => {
-    const availability = availabilityStatus[cuadrilla.id];
-    const miembrosCount = cuadrilla.miembros?.length || 0;
+  const getAvailabilityBadge = (cuadrillaId: string) => {
+    if (!fechaInmersion) return null;
     
-    return {
-      isAvailable: !availability || availability.is_available,
-      memberCount: miembrosCount,
-      conflictInfo: availability?.conflicting_inmersion_codigo
-    };
+    const availability = availabilityStatus[cuadrillaId];
+    if (!availability) {
+      return checkingAvailability ? (
+        <Badge variant="outline" className="text-yellow-600">
+          Verificando...
+        </Badge>
+      ) : null;
+    }
+
+    return availability.is_available ? (
+      <Badge variant="outline" className="text-green-600">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Disponible
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="text-red-600">
+        <AlertTriangle className="w-3 h-3 mr-1" />
+        Ocupada
+      </Badge>
+    );
   };
 
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-4">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Cuadrilla de Buceo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-4">
+            <div className="text-gray-500">Cargando cuadrillas...</div>
           </div>
         </CardContent>
       </Card>
@@ -163,115 +190,58 @@ export const EnhancedCuadrillaSelector = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2">
           <Users className="w-5 h-5" />
-          Asignar Cuadrilla
-          {checkingAvailability && (
-            <div className="ml-2 w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          )}
+          Cuadrilla de Buceo
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <Select
-              value={selectedCuadrillaId || ''}
-              onValueChange={handleCuadrillaSelect}
-              disabled={disabled}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar cuadrilla..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCuadrillas.map((cuadrilla) => {
-                  const displayInfo = getCuadrillaDisplayInfo(cuadrilla);
-                  
-                  return (
-                    <SelectItem 
-                      key={cuadrilla.id} 
-                      value={cuadrilla.id}
-                      disabled={!displayInfo.isAvailable}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span>{cuadrilla.nombre}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {displayInfo.memberCount} miembros
-                          </Badge>
-                          {displayInfo.isAvailable ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
-                          )}
-                        </div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-                <SelectItem value="create-new">
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    <span>Crear nueva cuadrilla</span>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Select
+            value={selectedCuadrillaId || ''}
+            onValueChange={handleCuadrillaSelect}
+            disabled={disabled}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar cuadrilla" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="create-new">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-green-600" />
+                  Crear nueva cuadrilla
+                </div>
+              </SelectItem>
+              {availableCuadrillas.map((cuadrilla) => (
+                <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{cuadrilla.nombre}</span>
+                    {getAvailabilityBadge(cuadrilla.id)}
                   </div>
                 </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              ))}
+            </SelectContent>
+          </Select>
 
-          {/* Mostrar información de la cuadrilla seleccionada */}
           {selectedCuadrillaId && (
-            <div className="mt-4">
-              {(() => {
-                const selectedCuadrilla = availableCuadrillas.find(c => c.id === selectedCuadrillaId);
-                if (!selectedCuadrilla) return null;
-                
-                const displayInfo = getCuadrillaDisplayInfo(selectedCuadrilla);
-                
-                return (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{selectedCuadrilla.nombre}</h4>
-                        <p className="text-sm text-gray-600">
-                          {displayInfo.memberCount} miembros • {selectedCuadrilla.estado}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {displayInfo.isAvailable ? (
-                          <Badge className="bg-green-100 text-green-800">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Disponible
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-800">
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            Ocupada
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {!displayInfo.isAvailable && displayInfo.conflictInfo && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                        Conflicto con inmersión: {displayInfo.conflictInfo}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {availableCuadrillas.length === 0 && (
-            <div className="text-center py-4">
-              <p className="text-gray-500 mb-3">No hay cuadrillas disponibles</p>
-              <Button onClick={handleCreateCuadrilla} variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Crear primera cuadrilla
-              </Button>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Users className="w-4 h-4" />
+              <span>
+                Cuadrilla seleccionada: {availableCuadrillas.find(c => c.id === selectedCuadrillaId)?.nombre}
+              </span>
+              {getAvailabilityBadge(selectedCuadrillaId)}
             </div>
           )}
         </div>
+
+        {fechaInmersion && (
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <Users className="w-4 h-4 inline mr-2" />
+              La disponibilidad se verifica para la fecha: {fechaInmersion}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
