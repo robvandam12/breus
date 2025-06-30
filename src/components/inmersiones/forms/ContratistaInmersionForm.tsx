@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,7 @@ import { EnhancedCuadrillaSelector } from '@/components/cuadrillas/EnhancedCuadr
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface ContratistaInmersionFormProps {
-  onSubmit: (data: any) => Promise<void>; // Cambiar a Promise<void>
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
   initialData?: Inmersion;
 }
@@ -106,13 +107,13 @@ export const ContratistaInmersionForm = ({ onSubmit, onCancel, initialData }: Co
       const inmersionData = {
         ...formData,
         profundidad_max: parseFloat(formData.profundidad_max),
-        is_independent: true, // Contratistas crean inmersiones independientes
+        is_independent: true,
         operacion_id: null,
         external_operation_code: formData.codigo_operacion_externa,
         estado: initialData?.estado || 'planificada',
         company_id: profile?.servicio_id,
         salmonera_id: selectedCentro?.salmonera_id,
-        requiere_validacion_previa: false, // Operaciones directas no requieren validación previa
+        requiere_validacion_previa: false,
         anexo_bravo_validado: true,
         hpt_validado: true,
         centro_id: formData.centro_id,
@@ -239,12 +240,19 @@ export const ContratistaInmersionForm = ({ onSubmit, onCancel, initialData }: Co
               </div>
             </div>
 
-            {/* Selector de Cuadrilla - Remover prop onCuadrillaCreated */}
+            {/* Selector de Cuadrilla - Corregido sin prop onCuadrillaCreated */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
               centroId={formData.centro_id}
+              enterpriseContext={{
+                contratista_id: profile?.servicio_id,
+                context_metadata: {
+                  selection_mode: 'contratista_admin',
+                  empresa_origen_tipo: 'contratista'
+                }
+              }}
             />
 
             <div>

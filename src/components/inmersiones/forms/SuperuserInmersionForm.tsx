@@ -101,7 +101,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
 
   const validateCuadrillaAvailability = (): boolean => {
     if (!selectedCuadrillaId || !formData.fecha_inmersion) {
-      return true; // Si no hay cuadrilla seleccionada, no validar
+      return true;
     }
 
     if (cuadrillaAvailability && !cuadrillaAvailability.is_available) {
@@ -118,14 +118,11 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submit triggered');
     
     if (!selectedEnterprise) {
-      console.log('No enterprise selected');
       return;
     }
 
-    // Asegurar que hay un código
     if (!formData.codigo) {
       const newCode = generateInmersionCode('IMM');
       setFormData(prev => ({ ...prev, codigo: newCode }));
@@ -133,13 +130,10 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     }
 
     if (!validateForm()) {
-      console.log('Form validation failed');
       return;
     }
 
-    // Validar disponibilidad de cuadrilla solo si hay una seleccionada
     if (selectedCuadrillaId && !validateCuadrillaAvailability()) {
-      console.log('Cuadrilla availability validation failed');
       return;
     }
 
@@ -163,7 +157,6 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
         inmersionData.codigo = generateInmersionCode('IMM');
       }
       
-      console.log('Submitting inmersion data:', inmersionData);
       await onSubmit(inmersionData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
@@ -172,7 +165,6 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     }
   };
 
-  // Verificar si el formulario está listo para envío
   const canSubmit = !loading && 
     (cuadrillaAvailability?.is_available !== false || !selectedCuadrillaId);
 
@@ -282,7 +274,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
               operaciones={operaciones}
             />
 
-            {/* Remover prop onCuadrillaCreated */}
+            {/* Selector de Cuadrilla - Corregido sin prop onCuadrillaCreated */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
