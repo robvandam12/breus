@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,13 +38,15 @@ export const EnhancedCuadrillaSelector = ({
   const [availabilityStatus, setAvailabilityStatus] = useState<Record<string, AvailabilityResult>>({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   
-  // Filtrar cuadrillas según el centro si está especificado
-  const availableCuadrillas = cuadrillas.filter(cuadrilla => {
-    if (centroId) {
-      return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
-    }
-    return true;
-  });
+  // Memoizar las cuadrillas filtradas para evitar recálculos innecesarios
+  const availableCuadrillas = useMemo(() => {
+    return cuadrillas.filter(cuadrilla => {
+      if (centroId) {
+        return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
+      }
+      return true;
+    });
+  }, [cuadrillas, centroId]);
 
   // Verificar disponibilidad de cuadrillas usando la función RPC corregida
   const checkCuadrillaAvailability = async (cuadrillaId: string) => {
@@ -96,7 +99,7 @@ export const EnhancedCuadrillaSelector = ({
     // Debounce para evitar múltiples llamadas
     const timeoutId = setTimeout(checkAllAvailability, 500);
     return () => clearTimeout(timeoutId);
-  }, [fechaInmersion, availableCuadrillas.length, inmersionId]);
+  }, [fechaInmersion, inmersionId, availableCuadrillas]); // Usar availableCuadrillas directamente
 
   const handleCuadrillaSelect = (cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
