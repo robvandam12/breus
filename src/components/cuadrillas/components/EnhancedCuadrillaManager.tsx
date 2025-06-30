@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Users, UserPlus, Trash2, Edit, Plus, Check, AlertTriangle } from "lucide-react";
+import { Users, UserPlus, Trash2, Check, AlertTriangle } from "lucide-react";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { useCuadrillas } from "@/hooks/useCuadrillas";
 import { toast } from "@/hooks/use-toast";
@@ -21,6 +21,13 @@ interface EnhancedCuadrillaManagerProps {
   createMode?: boolean;
   centroId?: string;
 }
+
+// Mapeo de roles para mostrar al usuario
+const ROLE_OPTIONS = [
+  { value: 'supervisor', label: 'Supervisor', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  { value: 'buzo', label: 'Buzo Principal', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { value: 'asistente', label: 'Buzo Asistente', color: 'bg-teal-100 text-teal-700 border-teal-200' },
+];
 
 export const EnhancedCuadrillaManager = ({ 
   cuadrillaId, 
@@ -86,11 +93,13 @@ export const EnhancedCuadrillaManager = ({
   };
 
   const handleAddMember = async (userData: any) => {
+    console.log('Adding member with userData:', userData, 'selectedRole:', selectedRole);
+    
     try {
       await addMember({
         cuadrillaId: currentCuadrillaId!,
         usuarioId: userData.usuario_id,
-        rolEquipo: selectedRole
+        rolEquipo: selectedRole // Usar el rol seleccionado directamente
       });
       setShowAddMemberDialog(false);
       setSelectedRole('buzo'); // Reset role
@@ -100,11 +109,7 @@ export const EnhancedCuadrillaManager = ({
       });
     } catch (error) {
       console.error('Error adding member:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo agregar el miembro a la cuadrilla.",
-        variant: "destructive",
-      });
+      // El error ya se maneja en useCuadrillas
     }
   };
 
@@ -126,21 +131,33 @@ export const EnhancedCuadrillaManager = ({
   };
 
   const getRoleBadgeColor = (rol: string) => {
-    const colors: Record<string, string> = {
-      supervisor: 'bg-purple-100 text-purple-700 border-purple-200',
-      buzo: 'bg-blue-100 text-blue-700 border-blue-200',
-      asistente: 'bg-teal-100 text-teal-700 border-teal-200',
-    };
-    return colors[rol] || 'bg-gray-100 text-gray-700 border-gray-200';
+    const roleOption = ROLE_OPTIONS.find(option => 
+      option.value === rol || 
+      (rol === 'buzo_principal' && option.value === 'buzo') ||
+      (rol === 'buzo_asistente' && option.value === 'asistente')
+    );
+    return roleOption?.color || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const getRoleLabel = (rol: string) => {
-    const labels: Record<string, string> = {
-      supervisor: 'Supervisor',
-      buzo: 'Buzo',
-      asistente: 'Asistente',
-    };
-    return labels[rol] || rol;
+    switch (rol) {
+      case 'supervisor': return 'Supervisor';
+      case 'buzo_principal': return 'Buzo Principal';
+      case 'buzo_asistente': return 'Buzo Asistente';
+      case 'buzo': return 'Buzo Principal'; // Fallback
+      case 'asistente': return 'Buzo Asistente'; // Fallback
+      default: return rol;
+    }
+  };
+
+  // Mapear roles permitidos para UserSearchSelect
+  const getAllowedRolesForSearch = (selectedRole: string) => {
+    switch (selectedRole) {
+      case 'supervisor': return ['supervisor'];
+      case 'buzo': return ['buzo'];
+      case 'asistente': return ['buzo'];
+      default: return ['buzo'];
+    }
   };
 
   const efectiveCuadrillaNombre = cuadrillaNombre || cuadrilla?.nombre || 'Nueva Cuadrilla';
@@ -339,24 +356,17 @@ export const EnhancedCuadrillaManager = ({
                     <SelectValue placeholder="Seleccionar rol" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="supervisor">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full" />
-                        Supervisor
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="buzo">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                        Buzo
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="asistente">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-teal-500 rounded-full" />
-                        Asistente
-                      </div>
-                    </SelectItem>
+                    {ROLE_OPTIONS.map((roleOption) => (
+                      <SelectItem key={roleOption.value} value={roleOption.value}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            roleOption.value === 'supervisor' ? 'bg-purple-500' :
+                            roleOption.value === 'buzo' ? 'bg-blue-500' : 'bg-teal-500'
+                          }`} />
+                          {roleOption.label}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -370,7 +380,7 @@ export const EnhancedCuadrillaManager = ({
                 <UserSearchSelect
                   onSelectUser={handleAddMember}
                   onInviteUser={handleAddMember}
-                  allowedRoles={selectedRole === 'supervisor' ? ['supervisor'] : ['buzo']}
+                  allowedRoles={getAllowedRolesForSearch(selectedRole)}
                   placeholder="Buscar usuario por nombre, apellido o email..."
                 />
               </div>

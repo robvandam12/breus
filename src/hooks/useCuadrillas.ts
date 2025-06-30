@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useCallback } from 'react';
 
 export interface CuadrillaMiembro {
   id: string;
@@ -38,6 +38,19 @@ export interface CuadrillaFormData {
   activo: boolean;
   estado: 'disponible' | 'ocupada' | 'mantenimiento';
 }
+
+// Mapeo de roles para la base de datos
+const VALID_ROLES = {
+  'supervisor': 'supervisor',
+  'buzo': 'buzo_principal', // Mapear 'buzo' a 'buzo_principal'
+  'asistente': 'buzo_asistente',
+  'buzo_principal': 'buzo_principal',
+  'buzo_asistente': 'buzo_asistente'
+};
+
+const mapRoleForDatabase = (role: string): string => {
+  return VALID_ROLES[role as keyof typeof VALID_ROLES] || 'buzo_principal';
+};
 
 export const useCuadrillas = () => {
   const queryClient = useQueryClient();
@@ -90,9 +103,9 @@ export const useCuadrillas = () => {
       return processedData as Cuadrilla[];
     },
     enabled: !!profile,
-    staleTime: 30000, // 30 segundos - datos "frescos" por más tiempo
-    refetchOnWindowFocus: false, // Evitar refetch al volver a la ventana
-    refetchInterval: false, // Eliminar refetch automático para evitar loops
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const invalidateQueries = useCallback(() => {
@@ -220,6 +233,12 @@ export const useCuadrillas = () => {
       usuarioId: string; 
       rolEquipo: string; 
     }) => {
+      console.log('Adding member with role:', rolEquipo);
+      
+      // Mapear el rol para la base de datos
+      const dbRole = mapRoleForDatabase(rolEquipo);
+      console.log('Mapped role for database:', dbRole);
+
       // Verificar si el miembro ya existe
       const { data: existingMember } = await supabase
         .from('cuadrilla_miembros')
@@ -237,13 +256,16 @@ export const useCuadrillas = () => {
         .insert([{
           cuadrilla_id: cuadrillaId,
           usuario_id: usuarioId,
-          rol_equipo: rolEquipo,
+          rol_equipo: dbRole, // Usar el rol mapeado
           disponible: true
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error adding member:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -253,13 +275,23 @@ export const useCuadrillas = () => {
         description: "El miembro ha sido agregado a la cuadrilla exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error adding member:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo agregar el miembro a la cuadrilla.",
-        variant: "destructive",
-      });
+      const errorMessage = error.message || "No se pudo agregar el miembro a la cuadrilla.";
+      
+      if (error.code === '23514') {
+        toast({
+          title: "Error de rol",
+          description: "El rol seleccionado no es válido para esta cuadrilla. Los roles válidos son: Supervisor, Buzo Principal, Buzo Asistente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -305,6 +337,3 @@ export const useCuadrillas = () => {
     refetch,
   };
 };
-
-// Agregamos useCallback al final del archivo para evitar imports
-import { useCallback } from 'react';
