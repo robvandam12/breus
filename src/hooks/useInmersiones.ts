@@ -136,27 +136,31 @@ export const useInmersiones = () => {
         throw error;
       }
 
-      // Si hay cuadrilla asignada y se creó la inmersión exitosamente, crear asignación
+      // Si hay cuadrilla asignada y se creó la inmersión exitosamente, crear asignación usando UPSERT
       if (cuadrillaId && data) {
         console.log('Creating cuadrilla assignment for:', cuadrillaId);
+        
+        // Usar UPSERT para evitar errores de constraint
         const { error: assignmentError } = await supabase
           .from('cuadrilla_asignaciones')
-          .insert({
+          .upsert({
             cuadrilla_id: cuadrillaId,
             inmersion_id: data.inmersion_id,
             fecha_asignacion: data.fecha_inmersion,
             estado: 'activa'
+          }, {
+            onConflict: 'cuadrilla_id,fecha_asignacion,estado',
+            ignoreDuplicates: false
           });
 
         if (assignmentError) {
           console.error('Error creating cuadrilla assignment:', assignmentError);
-          // Si falla la asignación, eliminar la inmersión creada
-          await supabase
-            .from('inmersion')
-            .delete()
-            .eq('inmersion_id', data.inmersion_id);
-          
-          throw new Error('Error al asignar cuadrilla a la inmersión');
+          // No eliminar la inmersión si falla la asignación, solo mostrar warning
+          toast({
+            title: "Advertencia",
+            description: "La inmersión se creó correctamente, pero hubo un problema asignando la cuadrilla. Puede asignarla manualmente.",
+            variant: "destructive",
+          });
         }
       }
       

@@ -2,12 +2,13 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Users } from "lucide-react";
 import { useCuadrillas } from "@/hooks/useCuadrillas";
 import { useCuadrillaAvailability } from "@/hooks/useCuadrillaAvailability";
 import { CuadrillaAvailabilityBadge } from './components/CuadrillaAvailabilityBadge';
 import { CuadrillaCreateButton } from './components/CuadrillaCreateButton';
-import { CuadrillaTeamManager } from './components/CuadrillaTeamManager';
+import { EnhancedCuadrillaManager } from './components/EnhancedCuadrillaManager';
 import { toast } from "@/hooks/use-toast";
 
 interface EnhancedCuadrillaSelectorProps {
@@ -29,9 +30,10 @@ export const EnhancedCuadrillaSelector = ({
   disabled = false,
   enterpriseContext
 }: EnhancedCuadrillaSelectorProps) => {
-  const { cuadrillas, isLoading, createCuadrilla } = useCuadrillas();
-  const [showTeamManager, setShowTeamManager] = useState(false);
+  const { cuadrillas, isLoading } = useCuadrillas();
+  const [showCuadrillaManager, setShowCuadrillaManager] = useState(false);
   const [managingCuadrilla, setManagingCuadrilla] = useState<{id: string, nombre: string} | null>(null);
+  const [createMode, setCreateMode] = useState(false);
   
   // Memoizar las cuadrillas filtradas
   const availableCuadrillas = useMemo(() => {
@@ -54,7 +56,8 @@ export const EnhancedCuadrillaSelector = ({
 
   const handleCuadrillaSelect = useCallback((cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
-      handleCreateCuadrilla();
+      setCreateMode(true);
+      setShowCuadrillaManager(true);
       return;
     }
 
@@ -62,7 +65,8 @@ export const EnhancedCuadrillaSelector = ({
       const cuadrilla = availableCuadrillas.find(c => c.id === selectedCuadrillaId);
       if (cuadrilla) {
         setManagingCuadrilla({ id: cuadrilla.id, nombre: cuadrilla.nombre });
-        setShowTeamManager(true);
+        setCreateMode(false);
+        setShowCuadrillaManager(true);
       }
       return;
     }
@@ -80,34 +84,16 @@ export const EnhancedCuadrillaSelector = ({
     onCuadrillaChange(cuadrillaId);
   }, [fechaInmersion, selectedCuadrillaAvailability, onCuadrillaChange, selectedCuadrillaId, availableCuadrillas]);
 
-  const handleCreateCuadrilla = useCallback(async () => {
-    try {
-      const newCuadrilla = await createCuadrilla({
-        nombre: `Cuadrilla ${Date.now()}`,
-        centro_id: centroId || null,
-        estado: 'disponible',
-        activo: true
-      });
-      
-      if (newCuadrilla) {
-        onCuadrillaChange(newCuadrilla.id);
-        // Abrir inmediatamente el gestor de equipo
-        setManagingCuadrilla({ id: newCuadrilla.id, nombre: newCuadrilla.nombre });
-        setShowTeamManager(true);
-        toast({
-          title: "Cuadrilla creada",
-          description: "Se ha creado una nueva cuadrilla. Ahora puede agregar miembros.",
-        });
-      }
-    } catch (error) {
-      console.error('Error creating cuadrilla:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la cuadrilla.",
-        variant: "destructive",
-      });
-    }
-  }, [createCuadrilla, centroId, onCuadrillaChange]);
+  const handleCloseManager = () => {
+    setShowCuadrillaManager(false);
+    setManagingCuadrilla(null);
+    setCreateMode(false);
+  };
+
+  const handleCuadrillaCreated = (newCuadrillaId: string) => {
+    onCuadrillaChange(newCuadrillaId);
+    // No cerrar el manager automáticamente para permitir agregar miembros
+  };
 
   if (isLoading) {
     return (
@@ -120,94 +106,100 @@ export const EnhancedCuadrillaSelector = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-4">
-            <div className="text-gray-500">Cargando cuadrillas...</div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-500">Cargando cuadrillas...</span>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (showTeamManager && managingCuadrilla) {
-    return (
-      <CuadrillaTeamManager
-        cuadrillaId={managingCuadrilla.id}
-        cuadrillaNombre={managingCuadrilla.nombre}
-        onClose={() => {
-          setShowTeamManager(false);
-          setManagingCuadrilla(null);
-        }}
-      />
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Cuadrilla de Buceo
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Select
-            value={selectedCuadrillaId || ''}
-            onValueChange={handleCuadrillaSelect}
-            disabled={disabled}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar cuadrilla" />
-            </SelectTrigger>
-            <SelectContent>
-              <CuadrillaCreateButton />
-              {selectedCuadrillaId && (
-                <SelectItem value="manage-team">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-blue-600" />
-                    Gestionar miembros de cuadrilla
-                  </div>
-                </SelectItem>
-              )}
-              {availableCuadrillas.map((cuadrilla) => (
-                <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{cuadrilla.nombre}</span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {cuadrilla.miembros?.length || 0} miembros
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Cuadrilla de Buceo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Select
+              value={selectedCuadrillaId || ''}
+              onValueChange={handleCuadrillaSelect}
+              disabled={disabled}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cuadrilla" />
+              </SelectTrigger>
+              <SelectContent>
+                <CuadrillaCreateButton />
+                {selectedCuadrillaId && (
+                  <SelectItem value="manage-team">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      Gestionar miembros de cuadrilla
+                    </div>
+                  </SelectItem>
+                )}
+                {availableCuadrillas.map((cuadrilla) => (
+                  <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{cuadrilla.nombre}</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        {cuadrilla.miembros?.length || 0} miembros
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {selectedCuadrillaId && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Users className="w-4 h-4" />
-              <span>
-                Cuadrilla seleccionada: {availableCuadrillas.find(c => c.id === selectedCuadrillaId)?.nombre}
-              </span>
-              {fechaInmersion && (
-                <CuadrillaAvailabilityBadge
-                  cuadrillaId={selectedCuadrillaId}
-                  fechaInmersion={fechaInmersion}
-                  availabilityStatus={selectedCuadrillaAvailability ? { [selectedCuadrillaId]: selectedCuadrillaAvailability } : {}}
-                  checkingAvailability={false}
-                />
-              )}
+            {selectedCuadrillaId && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Users className="w-4 h-4" />
+                <span>
+                  Cuadrilla seleccionada: {availableCuadrillas.find(c => c.id === selectedCuadrillaId)?.nombre}
+                </span>
+                {fechaInmersion && (
+                  <CuadrillaAvailabilityBadge
+                    cuadrillaId={selectedCuadrillaId}
+                    fechaInmersion={fechaInmersion}
+                    availabilityStatus={selectedCuadrillaAvailability ? { [selectedCuadrillaId]: selectedCuadrillaAvailability } : {}}
+                    checkingAvailability={false}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          {fechaInmersion && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <Users className="w-4 h-4 inline mr-2" />
+                La disponibilidad se verifica para la fecha: {fechaInmersion}
+              </p>
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {fechaInmersion && (
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800">
-              <Users className="w-4 h-4 inline mr-2" />
-              La disponibilidad se verifica para la fecha: {fechaInmersion}
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Enhanced Cuadrilla Manager Dialog */}
+      <Dialog open={showCuadrillaManager} onOpenChange={setShowCuadrillaManager}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <EnhancedCuadrillaManager
+            cuadrillaId={managingCuadrilla?.id}
+            cuadrillaNombre={managingCuadrilla?.nombre}
+            onClose={handleCloseManager}
+            onCuadrillaCreated={handleCuadrillaCreated}
+            createMode={createMode}
+            centroId={centroId}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

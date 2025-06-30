@@ -95,36 +95,13 @@ export const useCuadrillas = () => {
     refetchInterval: false, // Eliminar refetch automático para evitar loops
   });
 
-  const optimisticUpdate = (action: 'create' | 'update' | 'delete', cuadrilla: any, cuadrillaId?: string) => {
-    queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], (old: Cuadrilla[] = []) => {
-      switch (action) {
-        case 'create':
-          return [...old, cuadrilla];
-        case 'update':
-          return old.map(c => c.id === cuadrillaId ? { ...c, ...cuadrilla } : c);
-        case 'delete':
-          return old.filter(c => c.id !== cuadrillaId);
-        default:
-          return old;
-      }
-    });
-  };
-
-  const invalidateQueries = () => {
+  const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
-    // Reducir invalidaciones para evitar loops
-    // queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-    // queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
-  };
+  }, [queryClient]);
 
-  const refetchQueries = async () => {
-    await Promise.all([
-      queryClient.refetchQueries({ queryKey: ['cuadrillas'] })
-      // Reducir refetches para evitar loops
-      // queryClient.refetchQueries({ queryKey: ['equipos-buceo'] }),
-      // queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] })
-    ]);
-  };
+  const refetchQueries = useCallback(async () => {
+    await queryClient.refetchQueries({ queryKey: ['cuadrillas'] });
+  }, [queryClient]);
 
   const createMutation = useMutation({
     mutationFn: async (formData: CuadrillaFormData) => {
@@ -167,34 +144,16 @@ export const useCuadrillas = () => {
       if (error) throw error;
       return data;
     },
-    onMutate: async (variables) => {
-      // Optimistic update
-      const tempCuadrilla = {
-        id: `temp-${Date.now()}`,
-        nombre: variables.nombre,
-        descripcion: variables.descripcion,
-        empresa_id: variables.empresa_id || profile?.salmonera_id || profile?.servicio_id || '',
-        tipo_empresa: variables.tipo_empresa || (profile?.salmonera_id ? 'salmonera' : 'contratista'),
-        centro_id: variables.centro_id,
-        activo: variables.activo,
-        estado: variables.estado,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        miembros: []
-      };
-      optimisticUpdate('create', tempCuadrilla);
-    },
-    onSuccess: () => {
+    onSuccess: (data) => {
       invalidateQueries();
       toast({
         title: "Cuadrilla creada",
         description: "La cuadrilla ha sido creada exitosamente.",
       });
+      return data;
     },
     onError: (error) => {
       console.error('Error creating cuadrilla:', error);
-      // Revertir optimistic update
-      refetch();
       toast({
         title: "Error",
         description: "No se pudo crear la cuadrilla.",
@@ -212,9 +171,6 @@ export const useCuadrillas = () => {
 
       if (error) throw error;
     },
-    onMutate: async ({ id, data }) => {
-      optimisticUpdate('update', data, id);
-    },
     onSuccess: () => {
       invalidateQueries();
       toast({
@@ -224,7 +180,6 @@ export const useCuadrillas = () => {
     },
     onError: (error) => {
       console.error('Error updating cuadrilla:', error);
-      refetch();
       toast({
         title: "Error",
         description: "No se pudo actualizar la cuadrilla.",
@@ -242,20 +197,15 @@ export const useCuadrillas = () => {
 
       if (error) throw error;
     },
-    onMutate: async (id) => {
-      optimisticUpdate('delete', null, id);
-    },
     onSuccess: () => {
+      invalidateQueries();
       toast({
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",
       });
-      // Refetch solo después de delete exitoso
-      setTimeout(() => refetchQueries(), 100);
     },
     onError: (error) => {
       console.error('Error deleting cuadrilla:', error);
-      refetch();
       toast({
         title: "Error",
         description: "No se pudo eliminar la cuadrilla.",
@@ -298,7 +248,6 @@ export const useCuadrillas = () => {
     },
     onSuccess: () => {
       invalidateQueries();
-      refetchQueries();
       toast({
         title: "Miembro agregado",
         description: "El miembro ha sido agregado a la cuadrilla exitosamente.",
@@ -325,7 +274,6 @@ export const useCuadrillas = () => {
     },
     onSuccess: () => {
       invalidateQueries();
-      refetchQueries();
       toast({
         title: "Miembro removido",
         description: "El miembro ha sido removido de la cuadrilla exitosamente.",
@@ -357,3 +305,6 @@ export const useCuadrillas = () => {
     refetch,
   };
 };
+
+// Agregamos useCallback al final del archivo para evitar imports
+import { useCallback } from 'react';
