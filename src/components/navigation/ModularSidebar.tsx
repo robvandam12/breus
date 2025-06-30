@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Calendar, 
@@ -526,7 +527,7 @@ export function ModularSidebar() {
     if (profile?.salmonera_id) {
       return salmoneras.find(salmonera => salmonera.id === profile?.salmonera_id)?.nombre;
     } else if (profile?.servicio_id) {
-      return contratistas.find(contratista => contratistas.id === profile?.servicio_id)?.nombre;
+      return contratistas.find(contratista => contratista.id === profile?.servicio_id)?.nombre;
     }
     return null;
   };
