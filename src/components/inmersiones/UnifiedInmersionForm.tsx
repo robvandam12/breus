@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { UnifiedInmersionForm as NewUnifiedInmersionForm } from './forms/UnifiedInmersionForm';
+import { SuperuserInmersionForm } from './forms/SuperuserInmersionForm';
+import { SalmoneraInmersionForm } from './forms/SalmoneraInmersionForm';
 import { ContratistaInmersionForm } from './forms/ContratistaInmersionForm';
 import { BuzoSupervisorInmersionForm } from './forms/BuzoSupervisorInmersionForm';
 import type { Inmersion } from '@/hooks/useInmersiones';
@@ -19,9 +20,17 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const renderFormByRole = () => {
     switch (profile?.role) {
       case 'superuser':
+        return (
+          <SuperuserInmersionForm
+            onSubmit={onSubmit}
+            onCancel={onCancel}
+            initialData={initialData}
+          />
+        );
+      
       case 'admin_salmonera':
         return (
-          <NewUnifiedInmersionForm
+          <SalmoneraInmersionForm
             onSubmit={onSubmit}
             onCancel={onCancel}
             initialData={initialData}
