@@ -90,9 +90,9 @@ export const useCuadrillas = () => {
       return processedData as Cuadrilla[];
     },
     enabled: !!profile,
-    staleTime: 5000, // Reducido de 30 segundos a 5 segundos
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000, // Refrescar cada 10 segundos
+    staleTime: 30000, // 30 segundos - datos "frescos" por más tiempo
+    refetchOnWindowFocus: false, // Evitar refetch al volver a la ventana
+    refetchInterval: false, // Eliminar refetch automático para evitar loops
   });
 
   const optimisticUpdate = (action: 'create' | 'update' | 'delete', cuadrilla: any, cuadrillaId?: string) => {
@@ -112,15 +112,17 @@ export const useCuadrillas = () => {
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
-    queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
-    queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
+    // Reducir invalidaciones para evitar loops
+    // queryClient.invalidateQueries({ queryKey: ['equipos-buceo'] });
+    // queryClient.invalidateQueries({ queryKey: ['cuadrillas-buceo-enhanced'] });
   };
 
   const refetchQueries = async () => {
     await Promise.all([
-      queryClient.refetchQueries({ queryKey: ['cuadrillas'] }),
-      queryClient.refetchQueries({ queryKey: ['equipos-buceo'] }),
-      queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] })
+      queryClient.refetchQueries({ queryKey: ['cuadrillas'] })
+      // Reducir refetches para evitar loops
+      // queryClient.refetchQueries({ queryKey: ['equipos-buceo'] }),
+      // queryClient.refetchQueries({ queryKey: ['cuadrillas-buceo-enhanced'] })
     ]);
   };
 
@@ -248,7 +250,7 @@ export const useCuadrillas = () => {
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",
       });
-      // Forzar refetch después de delete exitoso
+      // Refetch solo después de delete exitoso
       setTimeout(() => refetchQueries(), 100);
     },
     onError: (error) => {

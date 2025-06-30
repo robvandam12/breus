@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,8 +38,10 @@ export const EnhancedCuadrillaSelector = ({
   const [availabilityStatus, setAvailabilityStatus] = useState<Record<string, AvailabilityResult>>({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   
-  // Memoizar las cuadrillas filtradas para evitar recálculos innecesarios
+  // Memoizar las cuadrillas filtradas de forma estable
   const availableCuadrillas = useMemo(() => {
+    if (!cuadrillas || cuadrillas.length === 0) return [];
+    
     return cuadrillas.filter(cuadrilla => {
       if (centroId) {
         return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
@@ -48,8 +50,8 @@ export const EnhancedCuadrillaSelector = ({
     });
   }, [cuadrillas, centroId]);
 
-  // Verificar disponibilidad de cuadrillas usando la función RPC corregida
-  const checkCuadrillaAvailability = async (cuadrillaId: string) => {
+  // Memoizar la función de verificación de disponibilidad
+  const checkCuadrillaAvailability = useCallback(async (cuadrillaId: string) => {
     if (!fechaInmersion) return { is_available: true };
 
     try {
@@ -69,51 +71,69 @@ export const EnhancedCuadrillaSelector = ({
       console.error('Error in availability check:', error);
       return { is_available: true };
     }
-  };
+  }, [fechaInmersion, inmersionId]);
 
-  // Verificar disponibilidad de todas las cuadrillas cuando cambie la fecha
+  // Verificar disponibilidad con debounce y condiciones mejoradas
   useEffect(() => {
-    if (!fechaInmersion || cuadrillas.length === 0) {
+    // Condiciones de salida temprana
+    if (!fechaInmersion || !availableCuadrillas.length) {
       setAvailabilityStatus({});
       return;
     }
 
-    const currentAvailableCuadrillas = cuadrillas.filter(cuadrilla => {
-      if (centroId) {
-        return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
-      }
-      return true;
-    });
-
-    if (currentAvailableCuadrillas.length === 0) {
-      setAvailabilityStatus({});
-      return;
-    }
+    let isCancelled = false;
 
     const checkAllAvailability = async () => {
+      if (isCancelled) return;
+      
       setCheckingAvailability(true);
       const statusMap: Record<string, AvailabilityResult> = {};
 
       try {
-        for (const cuadrilla of currentAvailableCuadrillas) {
-          const result = await checkCuadrillaAvailability(cuadrilla.id);
-          statusMap[cuadrilla.id] = result;
+        // Procesar en lotes para evitar sobrecargar la BD
+        const batchSize = 5;
+        for (let i = 0; i < availableCuadrillas.length; i += batchSize) {
+          if (isCancelled) break;
+          
+          const batch = availableCuadrillas.slice(i, i + batchSize);
+          const promises = batch.map(cuadrilla => 
+            checkCuadrillaAvailability(cuadrilla.id).then(result => ({
+              id: cuadrilla.id,
+              result
+            }))
+          );
+          
+          const results = await Promise.all(promises);
+          results.forEach(({ id, result }) => {
+            statusMap[id] = result;
+          });
         }
-        setAvailabilityStatus(statusMap);
+        
+        if (!isCancelled) {
+          setAvailabilityStatus(statusMap);
+        }
       } catch (error) {
         console.error('Error checking availability for all cuadrillas:', error);
-        setAvailabilityStatus({});
+        if (!isCancelled) {
+          setAvailabilityStatus({});
+        }
       } finally {
-        setCheckingAvailability(false);
+        if (!isCancelled) {
+          setCheckingAvailability(false);
+        }
       }
     };
 
     // Debounce para evitar múltiples llamadas
-    const timeoutId = setTimeout(checkAllAvailability, 500);
-    return () => clearTimeout(timeoutId);
-  }, [fechaInmersion, inmersionId, cuadrillas.length, centroId]); // Usar dependencias primitivas
+    const timeoutId = setTimeout(checkAllAvailability, 800);
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [fechaInmersion, inmersionId, availableCuadrillas, checkCuadrillaAvailability]);
 
-  const handleCuadrillaSelect = (cuadrillaId: string) => {
+  const handleCuadrillaSelect = useCallback((cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
       handleCreateCuadrilla();
       return;
@@ -131,9 +151,9 @@ export const EnhancedCuadrillaSelector = ({
     }
 
     onCuadrillaChange(cuadrillaId);
-  };
+  }, [availabilityStatus, onCuadrillaChange]);
 
-  const handleCreateCuadrilla = async () => {
+  const handleCreateCuadrilla = useCallback(async () => {
     try {
       const newCuadrilla = await createCuadrilla({
         nombre: `Cuadrilla ${Date.now()}`,
@@ -157,9 +177,9 @@ export const EnhancedCuadrillaSelector = ({
         variant: "destructive",
       });
     }
-  };
+  }, [createCuadrilla, centroId, onCuadrillaChange]);
 
-  const getAvailabilityBadge = (cuadrillaId: string) => {
+  const getAvailabilityBadge = useCallback((cuadrillaId: string) => {
     if (!fechaInmersion) return null;
     
     const availability = availabilityStatus[cuadrillaId];
@@ -182,7 +202,7 @@ export const EnhancedCuadrillaSelector = ({
         Ocupada
       </Badge>
     );
-  };
+  }, [fechaInmersion, availabilityStatus, checkingAvailability]);
 
   if (isLoading) {
     return (

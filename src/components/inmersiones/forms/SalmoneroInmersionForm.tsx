@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,7 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasPlanning, setHasPlanning] = useState(false);
   const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(null);
+  const [debouncedCentroId, setDebouncedCentroId] = useState<string>('');
   
   const [formData, setFormData] = useState({
     codigo: '',
@@ -53,9 +54,18 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     ...initialData
   });
 
-  // Verificar módulos de la empresa
+  // Debouncer para centro_id para evitar actualizaciones constantes
   useEffect(() => {
-    const checkModules = async () => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedCentroId(formData.centro_id);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.centro_id]);
+
+  // Verificar módulos de la empresa con memoización
+  const moduleCheck = useMemo(() => {
+    return async () => {
       if (profile?.salmonera_id) {
         try {
           const moduleAccess = await getModulesForCompany(profile.salmonera_id, 'salmonera');
@@ -72,46 +82,55 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
         }
       }
     };
-
-    checkModules();
   }, [profile?.salmonera_id, getModulesForCompany]);
 
-  // Filtrar operaciones según la salmonera del usuario
-  const availableOperaciones = operaciones.filter(op => {
-    if (profile?.salmonera_id) {
-      return op.salmonera_id === profile.salmonera_id;
-    }
-    return true;
-  });
+  useEffect(() => {
+    moduleCheck();
+  }, [moduleCheck]);
 
-  // Filtrar centros según la salmonera del usuario
-  const availableCentros = centros.filter(centro => {
-    if (profile?.salmonera_id) {
-      return centro.salmonera_id === profile.salmonera_id;
-    }
-    return true;
-  });
+  // Filtrar operaciones y centros con memoización
+  const availableOperaciones = useMemo(() => {
+    return operaciones.filter(op => {
+      if (profile?.salmonera_id) {
+        return op.salmonera_id === profile.salmonera_id;
+      }
+      return true;
+    });
+  }, [operaciones, profile?.salmonera_id]);
 
-  // Auto-generar código cuando cambian ciertos campos
+  const availableCentros = useMemo(() => {
+    return centros.filter(centro => {
+      if (profile?.salmonera_id) {
+        return centro.salmonera_id === profile.salmonera_id;
+      }
+      return true;
+    });
+  }, [centros, profile?.salmonera_id]);
+
+  // Auto-generar código con debounce
   useEffect(() => {
     if (!initialData && (!formData.codigo || formData.codigo.startsWith('AUTO-'))) {
-      const generateCode = () => {
-        const dateStr = format(formData.fecha_inmersion, 'yyyyMMdd');
-        const timeStr = formData.hora_inicio.replace(':', '');
-        const prefix = formData.is_independent ? 'IND' : 'SAL';
-        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
-        return `${prefix}-${dateStr}-${timeStr}-${random}`;
-      };
-      
-      setFormData(prev => ({ ...prev, codigo: generateCode() }));
+      const timeoutId = setTimeout(() => {
+        const generateCode = () => {
+          const dateStr = format(formData.fecha_inmersion, 'yyyyMMdd');
+          const timeStr = formData.hora_inicio.replace(':', '');
+          const prefix = formData.is_independent ? 'IND' : 'SAL';
+          const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+          return `${prefix}-${dateStr}-${timeStr}-${random}`;
+        };
+        
+        setFormData(prev => ({ ...prev, codigo: generateCode() }));
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [formData.fecha_inmersion, formData.hora_inicio, formData.is_independent, initialData]);
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = useCallback((field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     if (!formData.codigo?.trim()) {
       toast({
         title: "Error de validación",
@@ -140,9 +159,9 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     }
 
     return true;
-  };
+  }, [formData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isSubmitting) return;
@@ -186,7 +205,16 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, selectedCuadrillaId, profile, isSubmitting, validateForm, onSubmit]);
+
+  // Memoizar el contexto empresarial para evitar re-renders
+  const enterpriseContext = useMemo(() => ({
+    salmonera_id: profile?.salmonera_id,
+    context_metadata: {
+      selection_mode: 'salmonera_admin',
+      empresa_origen_tipo: 'salmonera'
+    }
+  }), [profile?.salmonera_id]);
 
   return (
     <div className="space-y-6">
@@ -388,19 +416,13 @@ export const SalmoneroInmersionForm = ({ onSubmit, onCancel, initialData }: Salm
           </div>
         </div>
 
-        {/* Selector de Cuadrilla */}
+        {/* Selector de Cuadrilla con valores memoizados */}
         <EnhancedCuadrillaSelector
           selectedCuadrillaId={selectedCuadrillaId}
           onCuadrillaChange={setSelectedCuadrillaId}
           fechaInmersion={format(formData.fecha_inmersion, 'yyyy-MM-dd')}
-          centroId={formData.centro_id}
-          enterpriseContext={{
-            salmonera_id: profile?.salmonera_id,
-            context_metadata: {
-              selection_mode: 'salmonera_admin',
-              empresa_origen_tipo: 'salmonera'
-            }
-          }}
+          centroId={debouncedCentroId}
+          enterpriseContext={enterpriseContext}
         />
 
         {/* Observaciones */}
