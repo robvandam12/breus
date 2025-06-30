@@ -13,12 +13,14 @@ import { useOperaciones } from '@/hooks/useOperaciones';
 
 interface FullAnexoBravoFormProps {
   operacionId?: string;
+  anexoId?: string;
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
 export const FullAnexoBravoForm = ({ 
   operacionId, 
+  anexoId,
   onSubmit, 
   onCancel 
 }: FullAnexoBravoFormProps) => {
@@ -63,7 +65,7 @@ export const FullAnexoBravoForm = ({
 
       console.log('Submitting Anexo Bravo:', anexoData);
       
-      await createAnexoBravo.mutateAsync(anexoData);
+      await createAnexoBravo(anexoData);
       onSubmit(anexoData);
     } catch (error) {
       console.error('Error creating Anexo Bravo:', error);
@@ -216,14 +218,14 @@ export const FullAnexoBravoForm = ({
       {/* Header */}
       <div className="border-b pb-4">
         <h2 className="text-2xl font-bold text-gray-900">
-          {operacionId ? 'Crear Anexo Bravo - Operación' : 'Crear Anexo Bravo Independiente'}
+          {anexoId ? 'Editar Anexo Bravo' : operacionId ? 'Crear Anexo Bravo - Operación' : 'Crear Anexo Bravo Independiente'}
         </h2>
         {operacion && (
           <p className="text-gray-600 mt-1">
             Operación: {operacion.codigo} - {operacion.nombre}
           </p>
         )}
-        {!operacionId && (
+        {!operacionId && !anexoId && (
           <p className="text-gray-600 mt-1">
             Anexo Bravo independiente (sin operación asociada)
           </p>
@@ -286,12 +288,12 @@ export const FullAnexoBravoForm = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Creando...
+                  {anexoId ? 'Actualizando...' : 'Creando...'}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Crear Anexo Bravo
+                  {anexoId ? 'Actualizar Anexo Bravo' : 'Crear Anexo Bravo'}
                 </>
               )}
             </Button>
