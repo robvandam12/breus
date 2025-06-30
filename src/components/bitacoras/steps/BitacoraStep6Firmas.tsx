@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileCheck, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { BitacoraSupervisorData } from '../BitacoraWizardFromInmersion';
 
 interface BitacoraStep6FirmasProps {
@@ -21,6 +22,26 @@ export const BitacoraStep6Firmas = ({ data, onUpdate }: BitacoraStep6FirmasProps
   const resumenEquipos = data.equipos_utilizados?.length || 0;
   const resumenDivingRecords = data.diving_records?.length || 0;
 
+  // Validaciones de completitud
+  const validaciones = {
+    informacionGeneral: !!(data.codigo && data.desarrollo_inmersion),
+    buzosAsistentes: resumenBuzos > 0,
+    trabajosRealizados: !!(data.trabajo_a_realizar || data.descripcion_trabajo),
+    equiposUtilizados: resumenEquipos > 0,
+    registrosBuceo: resumenDivingRecords > 0,
+    validacionContratista: !!data.validacion_contratista,
+    comentariosValidacion: !!(data.comentarios_validacion && data.comentarios_validacion.trim())
+  };
+
+  const totalValidaciones = Object.keys(validaciones).length;
+  const validacionesCompletas = Object.values(validaciones).filter(Boolean).length;
+  const porcentajeCompletitud = Math.round((validacionesCompletas / totalValidaciones) * 100);
+
+  const isReadyToFinalize = validaciones.informacionGeneral && 
+                           validaciones.buzosAsistentes && 
+                           validaciones.trabajosRealizados && 
+                           validaciones.validacionContratista;
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -29,6 +50,46 @@ export const BitacoraStep6Firmas = ({ data, onUpdate }: BitacoraStep6FirmasProps
           Validación final y comentarios de la bitácora
         </p>
       </div>
+
+      {/* Indicador de Progreso */}
+      <Card className={`border-2 ${isReadyToFinalize ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'}`}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {isReadyToFinalize ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <XCircle className="w-5 h-5 text-orange-600" />
+            )}
+            Progreso de Completitud
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Completitud General</span>
+              <span>{porcentajeCompletitud}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  porcentajeCompletitud >= 80 ? 'bg-green-500' : 
+                  porcentajeCompletitud >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${porcentajeCompletitud}%` }}
+              />
+            </div>
+          </div>
+          
+          {!isReadyToFinalize && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertTriangle className="w-4 h-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Campos requeridos faltantes:</strong> Revise las secciones marcadas como incompletas antes de finalizar.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Resumen de la Bitácora */}
       <Card>
@@ -74,46 +135,68 @@ export const BitacoraStep6Firmas = ({ data, onUpdate }: BitacoraStep6FirmasProps
           </div>
           
           <div>
-            <Label>Comentarios de Validación</Label>
+            <Label>Comentarios de Validación *</Label>
             <Textarea
               value={data.comentarios_validacion || ''}
               onChange={(e) => handleInputChange('comentarios_validacion', e.target.value)}
               placeholder="Comentarios del contratista sobre la bitácora..."
               className="min-h-[80px]"
+              required
             />
+            {!validaciones.comentariosValidacion && (
+              <p className="text-sm text-red-600 mt-1">Los comentarios de validación son obligatorios</p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Estado de Completitud */}
+      {/* Estado de Completitud Detallado */}
       <Card>
         <CardHeader>
-          <CardTitle>Estado de Completitud</CardTitle>
+          <CardTitle>Estado de Completitud Detallado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span>Información General</span>
-              <Badge variant={data.codigo && data.desarrollo_inmersion ? "default" : "secondary"}>
-                {data.codigo && data.desarrollo_inmersion ? "Completo" : "Incompleto"}
+              <Badge variant={validaciones.informacionGeneral ? "default" : "secondary"}>
+                {validaciones.informacionGeneral ? "Completo" : "Incompleto"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span>Buzos y Asistentes</span>
-              <Badge variant={resumenBuzos > 0 ? "default" : "secondary"}>
-                {resumenBuzos > 0 ? "Completo" : "Incompleto"}
+              <Badge variant={validaciones.buzosAsistentes ? "default" : "secondary"}>
+                {validaciones.buzosAsistentes ? "Completo" : "Incompleto"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span>Trabajos Realizados</span>
-              <Badge variant={data.trabajo_a_realizar || data.descripcion_trabajo ? "default" : "secondary"}>
-                {data.trabajo_a_realizar || data.descripcion_trabajo ? "Completo" : "Incompleto"}
+              <Badge variant={validaciones.trabajosRealizados ? "default" : "secondary"}>
+                {validaciones.trabajosRealizados ? "Completo" : "Incompleto"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Equipos Utilizados</span>
+              <Badge variant={validaciones.equiposUtilizados ? "default" : "secondary"}>
+                {validaciones.equiposUtilizados ? "Completo" : "Incompleto"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Registros de Buceo</span>
+              <Badge variant={validaciones.registrosBuceo ? "default" : "secondary"}>
+                {validaciones.registrosBuceo ? "Completo" : "Incompleto"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span>Validación del Contratista</span>
-              <Badge variant={data.validacion_contratista ? "default" : "secondary"}>
-                {data.validacion_contratista ? "Validado" : "Pendiente"}
+              <Badge variant={validaciones.validacionContratista ? "default" : "secondary"}>
+                {validaciones.validacionContratista ? "Validado" : "Pendiente"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Comentarios de Validación</span>
+              <Badge variant={validaciones.comentariosValidacion ? "default" : "secondary"}>
+                {validaciones.comentariosValidacion ? "Completo" : "Pendiente"}
               </Badge>
             </div>
           </div>
@@ -128,7 +211,7 @@ export const BitacoraStep6Firmas = ({ data, onUpdate }: BitacoraStep6FirmasProps
           <div className="text-sm text-yellow-800">
             <strong>Importante:</strong> Revise toda la información antes de finalizar la bitácora. 
             Una vez guardada, la información será registrada en el sistema y podrá ser firmada 
-            digitalmente por el supervisor responsable.
+            digitalmente por el supervisor responsable. Los campos marcados con (*) son obligatorios.
           </div>
         </div>
       </div>

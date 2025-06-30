@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, MapPin, Users } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Calendar, MapPin, Users, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useInmersiones, type Inmersion } from '@/hooks/useInmersiones';
 import { UnifiedInmersionForm } from './UnifiedInmersionForm';
 
@@ -20,6 +22,9 @@ export const IndependentImmersionManager = () => {
 
   // Filter independent immersions
   const independentImmersions = inmersiones.filter(i => i.is_independent || !i.operacion_id);
+  const completedImmersions = independentImmersions.filter(i => i.estado === 'completada').length;
+  const inProgressImmersions = independentImmersions.filter(i => i.estado === 'en_progreso').length;
+  const plannedImmersions = independentImmersions.filter(i => i.estado === 'planificada').length;
 
   const handleCreate = async (data: any) => {
     try {
@@ -74,6 +79,17 @@ export const IndependentImmersionManager = () => {
     }
   };
 
+  const getEstadoIcon = (estado: string) => {
+    switch (estado) {
+      case "completada":
+        return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+      case "en_progreso":
+        return <AlertTriangle className="w-4 h-4 text-amber-600" />;
+      default:
+        return <Calendar className="w-4 h-4 text-blue-600" />;
+    }
+  };
+
   if (showCreateForm) {
     return (
       <UnifiedInmersionForm
@@ -93,7 +109,6 @@ export const IndependentImmersionManager = () => {
     );
   }
 
-  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -107,6 +122,45 @@ export const IndependentImmersionManager = () => {
         </Button>
       </div>
 
+      {/* Información sobre Inmersiones Independientes */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Info className="w-4 h-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <strong>Inmersiones Independientes:</strong> Son inmersiones que no forman parte de una operación planificada 
+          específica. Ideal para trabajos menores, inspecciones rápidas o inmersiones de emergencia.
+        </AlertDescription>
+      </Alert>
+
+      {/* Estadísticas */}
+      {independentImmersions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{independentImmersions.length}</div>
+              <div className="text-sm text-gray-600">Total</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-amber-600">{plannedImmersions}</div>
+              <div className="text-sm text-gray-600">Planificadas</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600">{inProgressImmersions}</div>
+              <div className="text-sm text-gray-600">En Progreso</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{completedImmersions}</div>
+              <div className="text-sm text-gray-600">Completadas</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -115,13 +169,14 @@ export const IndependentImmersionManager = () => {
       ) : independentImmersions.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
+            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No hay inmersiones independientes</h3>
             <p className="text-gray-500 mb-4">
               Crea tu primera inmersión independiente para comenzar
             </p>
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={() => setShowCreateForm(true)} size="lg">
               <Plus className="w-4 h-4 mr-2" />
-              Crear Inmersión
+              Crear Primera Inmersión
             </Button>
           </CardContent>
         </Card>
@@ -131,7 +186,10 @@ export const IndependentImmersionManager = () => {
             <Card key={inmersion.inmersion_id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{inmersion.codigo}</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {getEstadoIcon(inmersion.estado)}
+                    {inmersion.codigo}
+                  </CardTitle>
                   <Badge className={getEstadoBadge(inmersion.estado)}>
                     {inmersion.estado}
                   </Badge>
@@ -153,27 +211,30 @@ export const IndependentImmersionManager = () => {
                   {inmersion.buzo_principal}
                 </div>
                 
-                <p className="text-sm text-gray-600">
-                  <strong>Objetivo:</strong> {inmersion.objetivo}
-                </p>
+                <div className="border-t pt-3">
+                  <p className="text-sm text-gray-600">
+                    <strong>Objetivo:</strong> {inmersion.objetivo}
+                  </p>
+                </div>
                 
                 <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(inmersion)}
-                    disabled={inmersion.estado !== 'planificada'}
+                    disabled={inmersion.estado === 'completada'}
+                    className="flex-1"
                   >
-                    Editar
+                    {inmersion.estado === 'completada' ? 'Ver' : 'Editar'}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(inmersion.inmersion_id)}
-                    disabled={inmersion.estado !== 'planificada'}
+                    disabled={inmersion.estado === 'completada'}
                     className="text-red-600 hover:text-red-700"
                   >
-                    Eliminar
+                    {inmersion.estado === 'completada' ? 'Archivar' : 'Eliminar'}
                   </Button>
                 </div>
               </CardContent>

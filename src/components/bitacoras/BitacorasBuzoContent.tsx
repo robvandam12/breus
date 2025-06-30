@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileText, Plus, AlertTriangle, Users } from "lucide-react";
+import { FileText, Plus, AlertTriangle, Users, Info, ArrowRight, FileCheck } from "lucide-react";
 import { BitacoraTableRow } from "@/components/bitacoras/BitacoraTableRow";
 import { BitacoraFilters } from "@/components/bitacoras/BitacoraFilters";
 import { BitacoraStats } from "@/components/bitacoras/BitacoraStats";
@@ -51,8 +51,41 @@ export const BitacorasBuzoContent = ({
   onViewDetails,
   onOpenSignModal,
 }: BitacorasBuzoContentProps) => {
+  
+  // Calcular bitácoras de supervisor firmadas disponibles
+  const supervisorFirmadas = bitacorasSupervisor.filter(bs => bs.firmado).length;
+  const supervisorPendientes = bitacorasSupervisor.filter(bs => !bs.firmado).length;
+
   return (
     <div className="space-y-6">
+      {/* Flujo de Creación Recomendado */}
+      {hasSupervisorLogs && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="w-4 h-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <strong>Flujo Recomendado:</strong> Crear bitácoras de buzo basadas en bitácoras de supervisor firmadas.
+                <br />
+                <span className="text-sm">
+                  Disponibles: {supervisorFirmadas} bitácoras de supervisor firmadas
+                  {supervisorPendientes > 0 && ` • ${supervisorPendientes} pendientes de firma`}
+                </span>
+              </div>
+              <Button 
+                onClick={onNewBitacora}
+                size="sm"
+                className="bg-teal-600 hover:bg-teal-700 ml-4"
+              >
+                <FileCheck className="w-4 h-4 mr-2" />
+                Desde Supervisor
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Supervisor Requirement Alert */}
       {!hasSupervisorLogs && (
         <Alert className="border-orange-200 bg-orange-50">
@@ -121,11 +154,23 @@ export const BitacorasBuzoContent = ({
                   : "Primero necesitas bitácoras de supervisor con datos de inmersión"
                 : "Intenta ajustar los filtros de búsqueda"}
             </p>
+            
+            {/* Opciones de Creación */}
             {bitacorasBuzo.length === 0 && hasSupervisorLogs && (
-              <Button onClick={onNewBitacora} className="bg-teal-600 hover:bg-teal-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Bitácora Buzo
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                <Button 
+                  onClick={onNewBitacora} 
+                  className="bg-teal-600 hover:bg-teal-700"
+                  size="lg"
+                >
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  Desde Bitácora de Supervisor
+                </Button>
+                
+                <div className="text-sm text-muted-foreground">
+                  Recomendado: Hereda datos automáticamente
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
