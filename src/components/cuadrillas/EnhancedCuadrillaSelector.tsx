@@ -1,5 +1,5 @@
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users } from "lucide-react";
@@ -7,6 +7,7 @@ import { useCuadrillas } from "@/hooks/useCuadrillas";
 import { useCuadrillaAvailability } from "@/hooks/useCuadrillaAvailability";
 import { CuadrillaAvailabilityBadge } from './components/CuadrillaAvailabilityBadge';
 import { CuadrillaCreateButton } from './components/CuadrillaCreateButton';
+import { CuadrillaTeamManager } from './components/CuadrillaTeamManager';
 import { toast } from "@/hooks/use-toast";
 
 interface EnhancedCuadrillaSelectorProps {
@@ -29,6 +30,8 @@ export const EnhancedCuadrillaSelector = ({
   enterpriseContext
 }: EnhancedCuadrillaSelectorProps) => {
   const { cuadrillas, isLoading, createCuadrilla } = useCuadrillas();
+  const [showTeamManager, setShowTeamManager] = useState(false);
+  const [managingCuadrilla, setManagingCuadrilla] = useState<{id: string, nombre: string} | null>(null);
   
   // Memoizar las cuadrillas filtradas
   const availableCuadrillas = useMemo(() => {
@@ -55,6 +58,15 @@ export const EnhancedCuadrillaSelector = ({
       return;
     }
 
+    if (cuadrillaId === 'manage-team' && selectedCuadrillaId) {
+      const cuadrilla = availableCuadrillas.find(c => c.id === selectedCuadrillaId);
+      if (cuadrilla) {
+        setManagingCuadrilla({ id: cuadrilla.id, nombre: cuadrilla.nombre });
+        setShowTeamManager(true);
+      }
+      return;
+    }
+
     // Solo verificar disponibilidad si hay fecha de inmersión
     if (fechaInmersion && selectedCuadrillaAvailability && !selectedCuadrillaAvailability.is_available) {
       toast({
@@ -66,7 +78,7 @@ export const EnhancedCuadrillaSelector = ({
     }
 
     onCuadrillaChange(cuadrillaId);
-  }, [fechaInmersion, selectedCuadrillaAvailability, onCuadrillaChange]);
+  }, [fechaInmersion, selectedCuadrillaAvailability, onCuadrillaChange, selectedCuadrillaId, availableCuadrillas]);
 
   const handleCreateCuadrilla = useCallback(async () => {
     try {
@@ -79,9 +91,12 @@ export const EnhancedCuadrillaSelector = ({
       
       if (newCuadrilla) {
         onCuadrillaChange(newCuadrilla.id);
+        // Abrir inmediatamente el gestor de equipo
+        setManagingCuadrilla({ id: newCuadrilla.id, nombre: newCuadrilla.nombre });
+        setShowTeamManager(true);
         toast({
           title: "Cuadrilla creada",
-          description: "Se ha creado una nueva cuadrilla exitosamente.",
+          description: "Se ha creado una nueva cuadrilla. Ahora puede agregar miembros.",
         });
       }
     } catch (error) {
@@ -112,6 +127,19 @@ export const EnhancedCuadrillaSelector = ({
     );
   }
 
+  if (showTeamManager && managingCuadrilla) {
+    return (
+      <CuadrillaTeamManager
+        cuadrillaId={managingCuadrilla.id}
+        cuadrillaNombre={managingCuadrilla.nombre}
+        onClose={() => {
+          setShowTeamManager(false);
+          setManagingCuadrilla(null);
+        }}
+      />
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -132,10 +160,21 @@ export const EnhancedCuadrillaSelector = ({
             </SelectTrigger>
             <SelectContent>
               <CuadrillaCreateButton />
+              {selectedCuadrillaId && (
+                <SelectItem value="manage-team">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    Gestionar miembros de cuadrilla
+                  </div>
+                </SelectItem>
+              )}
               {availableCuadrillas.map((cuadrilla) => (
                 <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{cuadrilla.nombre}</span>
+                    <span className="text-xs text-gray-500 ml-2">
+                      {cuadrilla.miembros?.length || 0} miembros
+                    </span>
                   </div>
                 </SelectItem>
               ))}
