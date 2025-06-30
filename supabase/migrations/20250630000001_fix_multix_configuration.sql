@@ -6,6 +6,7 @@ DO $$
 DECLARE
     multix_salmonera_id UUID;
     multix_contratista_id UUID;
+    module_record RECORD;
 BEGIN
     -- Buscar MultiX en salmoneras
     SELECT id INTO multix_salmonera_id 
@@ -25,11 +26,11 @@ BEGIN
         
         -- Verificar módulos actuales
         RAISE NOTICE 'Módulos actuales de MultiX (salmonera):';
-        FOR multix_contratista_id IN 
+        FOR module_record IN 
             SELECT module_name FROM company_modules 
             WHERE company_id = multix_salmonera_id AND company_type = 'salmonera'
         LOOP
-            RAISE NOTICE '  - %', multix_contratista_id;
+            RAISE NOTICE '  - %', module_record.module_name;
         END LOOP;
         
         -- Limpiar módulos existentes para MultiX salmonera
