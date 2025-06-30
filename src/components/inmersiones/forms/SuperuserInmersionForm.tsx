@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import type { InmersionFormProps } from '@/types/inmersionForms';
 
 export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: InmersionFormProps) => {
-  const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
+  const [externalSelectedEnterprise, setExternalSelectedEnterprise] = useState<any>(null);
   const { generateInmersionCode } = useInmersiones();
   
   const {
@@ -31,12 +31,14 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setFormData,
     operaciones,
     centros,
-    loadEnterpriseModules,
-    loadOperaciones,
-    loadCentros,
+    selectedEnterprise,
     validateForm,
-    buildInmersionData
-  } = useInmersionFormLogic(initialData, selectedEnterprise);
+    buildInmersionData,
+    profile
+  } = useInmersionFormLogic(initialData);
+
+  // Para superuser, usar la empresa seleccionada externamente
+  const effectiveEnterprise = profile?.role === 'superuser' ? externalSelectedEnterprise : selectedEnterprise;
 
   // Verificar disponibilidad de cuadrilla
   const { data: cuadrillaAvailability } = useCuadrillaAvailability(
@@ -44,33 +46,6 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     formData.fecha_inmersion || undefined,
     initialData?.inmersion_id
   );
-
-  useEffect(() => {
-    if (selectedEnterprise) {
-      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
-      
-      loadEnterpriseModules(companyId, companyType);
-      loadCentros(companyId, companyType);
-    }
-  }, [selectedEnterprise]);
-
-  useEffect(() => {
-    if (formValidationState.canShowPlanningToggle && formValidationState.isPlanned && selectedEnterprise) {
-      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
-      loadOperaciones(companyId, companyType);
-    }
-  }, [formValidationState.canShowPlanningToggle, formValidationState.isPlanned, selectedEnterprise]);
-
-  useEffect(() => {
-    if (formValidationState.isPlanned && formData.operacion_id) {
-      const selectedOperacion = operaciones.find(op => op.id === formData.operacion_id);
-      if (selectedOperacion?.centro_id) {
-        setFormData(prev => ({ ...prev, centro_id: selectedOperacion.centro_id || '' }));
-      }
-    }
-  }, [formValidationState.isPlanned, formData.operacion_id, operaciones]);
 
   // Generar código automáticamente si no hay uno
   useEffect(() => {
@@ -80,8 +55,8 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     }
   }, [formData.codigo, initialData, generateInmersionCode]);
 
-  const handleEnterpriseChange = (result: any) => {
-    setSelectedEnterprise(result);
+  const handleEnterpriseChange = useCallback((result: any) => {
+    setExternalSelectedEnterprise(result);
     setFormData({
       operacion_id: '',
       external_operation_code: '',
@@ -93,13 +68,13 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       codigo: generateInmersionCode('IMM')
     });
     setSelectedCuadrillaId(null);
-  };
+  }, [generateInmersionCode, setFormData, setSelectedCuadrillaId]);
 
-  const handleFormDataChange = (newData: Partial<typeof formData>) => {
+  const handleFormDataChange = useCallback((newData: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
-  };
+  }, [setFormData]);
 
-  const validateCuadrillaAvailability = (): boolean => {
+  const validateCuadrillaAvailability = useCallback((): boolean => {
     if (!selectedCuadrillaId || !formData.fecha_inmersion) {
       return true;
     }
@@ -114,12 +89,17 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     }
 
     return true;
-  };
+  }, [selectedCuadrillaId, formData.fecha_inmersion, cuadrillaAvailability]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedEnterprise) {
+    if (!effectiveEnterprise) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar una empresa para crear la inmersión",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -140,11 +120,11 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     setLoading(true);
 
     try {
-      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
-      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      const companyId = effectiveEnterprise.salmonera_id || effectiveEnterprise.contratista_id;
+      const companyType = effectiveEnterprise.salmonera_id ? 'salmonera' : 'contratista';
 
       const enterpriseContext = {
-        ...selectedEnterprise,
+        ...effectiveEnterprise,
         context_metadata: {
           selection_mode: 'superuser_admin',
           empresa_origen_tipo: companyType
@@ -160,15 +140,31 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       await onSubmit(inmersionData);
     } catch (error) {
       console.error('Error creating inmersion:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la inmersión. Intente nuevamente.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [effectiveEnterprise, formData, selectedCuadrillaId, validateForm, validateCuadrillaAvailability, setLoading, buildInmersionData, onSubmit, generateInmersionCode, handleFormDataChange]);
+
+  // Memoizar el contexto empresarial para evitar re-renders
+  const enterpriseContext = useMemo(() => ({
+    ...effectiveEnterprise,
+    context_metadata: {
+      selection_mode: 'superuser_admin',
+      empresa_origen_tipo: effectiveEnterprise?.salmonera_id ? 'salmonera' : 'contratista'
+    }
+  }), [effectiveEnterprise]);
 
   const canSubmit = !loading && 
-    (cuadrillaAvailability?.is_available !== false || !selectedCuadrillaId);
+    (cuadrillaAvailability?.is_available !== false || !selectedCuadrillaId) &&
+    effectiveEnterprise;
 
-  if (!selectedEnterprise) {
+  // Para superuser, mostrar selector de empresa si no hay una seleccionada
+  if (!effectiveEnterprise) {
     return (
       <div className="space-y-4">
         <EnterpriseSelector
@@ -185,12 +181,12 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
   return (
     <div className="space-y-6">
       {/* Info contextual con opción de cambiar empresa */}
-      <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-center gap-2">
-          <Building className="w-4 h-4" />
-          <span>
-            Empresa: {selectedEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
-          </span>
+          <Badge variant="outline" className="text-blue-600 border-blue-200">
+            {effectiveEnterprise.salmonera_id ? 'Salmonera' : 'Contratista'}
+          </Badge>
+          <span>Formulario de Inmersión</span>
           {formValidationState.canShowPlanningToggle && (
             <Badge variant="outline" className="text-green-600 border-green-200">
               <CheckCircle className="w-3 h-3 mr-1" />
@@ -207,7 +203,7 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setSelectedEnterprise(null)}
+          onClick={() => setExternalSelectedEnterprise(null)}
           className="text-blue-600 hover:text-blue-800 h-auto p-1"
         >
           Cambiar
@@ -274,13 +270,12 @@ export const SuperuserInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
               operaciones={operaciones}
             />
 
-            {/* Selector de Cuadrilla - Corregido sin prop onCuadrillaCreated */}
             <EnhancedCuadrillaSelector
               selectedCuadrillaId={selectedCuadrillaId}
               onCuadrillaChange={setSelectedCuadrillaId}
               fechaInmersion={formData.fecha_inmersion}
               centroId={formData.centro_id}
-              enterpriseContext={selectedEnterprise}
+              enterpriseContext={enterpriseContext}
             />
 
             <div className="flex gap-3 pt-4">
