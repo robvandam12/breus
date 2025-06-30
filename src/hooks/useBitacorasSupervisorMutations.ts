@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { CuadrillaMemberData, TiemposDetallados } from "@/types/bitacoras";
 
 export interface BitacoraSupervisorFormData {
   inmersion_id?: string;
@@ -25,16 +26,17 @@ export interface BitacoraSupervisorFormData {
   hora_inicio_faena?: string;
   hora_termino_faena?: string;
   visibilidad_fondo?: number;
-  // Campos agregados para resolver errores TypeScript
   supervisor_nombre_matricula?: string;
   inmersiones_buzos?: any[];
   equipos_utilizados?: any[];
   diving_records?: any[];
   observaciones_generales_texto?: string;
   validacion_contratista?: boolean;
-  // Agregar campos de contexto empresarial
   company_id?: string;
   company_type?: 'salmonera' | 'contratista';
+  // Nuevos campos para cuadrilla
+  datos_cuadrilla?: CuadrillaMemberData[];
+  tiempos_detallados?: TiemposDetallados;
 }
 
 export const useBitacorasSupervisorMutations = () => {
@@ -42,9 +44,24 @@ export const useBitacorasSupervisorMutations = () => {
 
   const createBitacoraSupervisor = useMutation({
     mutationFn: async (data: Partial<BitacoraSupervisorFormData>) => {
-      // Validar que tenga contexto empresarial
       if (!data.company_id || !data.company_type) {
         throw new Error('Contexto empresarial requerido para crear bitácora de supervisor');
+      }
+
+      // Procesar datos de cuadrilla y tiempos
+      const tiemposDetallados: TiemposDetallados = {};
+      if (data.datos_cuadrilla) {
+        data.datos_cuadrilla.forEach(member => {
+          if (member.usuario_id && member.hora_entrada && member.hora_salida) {
+            tiemposDetallados[member.usuario_id] = {
+              hora_entrada: member.hora_entrada,
+              hora_salida: member.hora_salida,
+              profundidad_maxima: member.profundidad_maxima || 0,
+              tiempo_fondo_minutos: member.tiempo_total_minutos || 0,
+              observaciones_tiempos: member.observaciones
+            };
+          }
+        });
       }
 
       const { data: result, error } = await supabase
@@ -62,7 +79,6 @@ export const useBitacorasSupervisorMutations = () => {
           firmado: data.firmado || false,
           company_id: data.company_id,
           company_type: data.company_type,
-          // Campos adicionales
           supervisor_nombre_matricula: data.supervisor_nombre_matricula,
           fecha_inicio_faena: data.fecha_inicio_faena,
           hora_inicio_faena: data.hora_inicio_faena,
@@ -77,6 +93,9 @@ export const useBitacorasSupervisorMutations = () => {
           inmersiones_buzos: data.inmersiones_buzos || [],
           equipos_utilizados: data.equipos_utilizados || [],
           diving_records: data.diving_records || [],
+          // Nuevos campos
+          datos_cuadrilla: data.datos_cuadrilla || [],
+          tiempos_detallados: tiemposDetallados,
         }])
         .select()
         .single();
@@ -84,8 +103,14 @@ export const useBitacorasSupervisorMutations = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+    onSuccess: async (result) => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      
+      // Si la bitácora fue firmada, crear notificaciones para los buzos
+      if (result.firmado && result.datos_cuadrilla) {
+        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+      }
+      
       toast({
         title: "Bitácora creada",
         description: "La bitácora de supervisor ha sido creada exitosamente.",
@@ -103,9 +128,30 @@ export const useBitacorasSupervisorMutations = () => {
 
   const updateBitacoraSupervisor = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<BitacoraSupervisorFormData> }) => {
+      // Procesar tiempos detallados si hay datos de cuadrilla
+      const tiemposDetallados: TiemposDetallados = {};
+      if (data.datos_cuadrilla) {
+        data.datos_cuadrilla.forEach(member => {
+          if (member.usuario_id && member.hora_entrada && member.hora_salida) {
+            tiemposDetallados[member.usuario_id] = {
+              hora_entrada: member.hora_entrada,
+              hora_salida: member.hora_salida,
+              profundidad_maxima: member.profundidad_maxima || 0,
+              tiempo_fondo_minutos: member.tiempo_total_minutos || 0,
+              observaciones_tiempos: member.observaciones
+            };
+          }
+        });
+      }
+
+      const updateData = {
+        ...data,
+        tiempos_detallados: tiemposDetallados
+      };
+
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .update(data)
+        .update(updateData)
         .eq('bitacora_id', id)
         .select()
         .single();
@@ -113,8 +159,14 @@ export const useBitacorasSupervisorMutations = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+    onSuccess: async (result) => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      
+      // Si se firmó la bitácora, notificar al equipo
+      if (result.firmado && result.datos_cuadrilla) {
+        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+      }
+      
       toast({
         title: "Bitácora actualizada",
         description: "La bitácora de supervisor ha sido actualizada exitosamente.",
@@ -145,8 +197,14 @@ export const useBitacorasSupervisorMutations = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+    onSuccess: async (result) => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
+      
+      // Notificar a los miembros del equipo que pueden completar sus bitácoras
+      if (result.datos_cuadrilla) {
+        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+      }
+      
       toast({
         title: "Bitácora firmada",
         description: "La bitácora de supervisor ha sido firmada exitosamente.",
@@ -172,7 +230,7 @@ export const useBitacorasSupervisorMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bitacoras-supervisor'] });
+      queryClient.invalidateQueries({ queryKey: ['bitacorasSupervisor'] });
       toast({
         title: "Bitácora eliminada",
         description: "La bitácora de supervisor ha sido eliminada exitosamente.",
@@ -197,4 +255,19 @@ export const useBitacorasSupervisorMutations = () => {
     isUpdating: updateBitacoraSupervisor.isPending,
     isDeleting: deleteBitacoraSupervisor.isPending,
   };
+};
+
+// Función auxiliar para notificar a los miembros del equipo
+const notifyTeamMembers = async (bitacoraId: string, cuadrillaData: CuadrillaMemberData[]) => {
+  try {
+    // Aquí implementaremos la lógica de notificaciones
+    // Por ahora solo log para debug
+    console.log('Notifying team members for bitacora:', bitacoraId, cuadrillaData);
+    
+    // TODO: Implementar notificaciones push/email a los buzos
+    // const buzos = cuadrillaData.filter(member => member.rol !== 'supervisor');
+    // await Promise.all(buzos.map(buzo => sendNotification(buzo.usuario_id, bitacoraId)));
+  } catch (error) {
+    console.error('Error notifying team members:', error);
+  }
 };

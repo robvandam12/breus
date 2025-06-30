@@ -267,6 +267,7 @@ export type Database = {
         Row: {
           aprobada_por: string | null
           bitacora_id: string
+          bitacora_supervisor_id: string | null
           buzo: string
           buzo_firma: string | null
           buzo_rut: string | null
@@ -327,6 +328,7 @@ export type Database = {
         Insert: {
           aprobada_por?: string | null
           bitacora_id?: string
+          bitacora_supervisor_id?: string | null
           buzo: string
           buzo_firma?: string | null
           buzo_rut?: string | null
@@ -387,6 +389,7 @@ export type Database = {
         Update: {
           aprobada_por?: string | null
           bitacora_id?: string
+          bitacora_supervisor_id?: string | null
           buzo?: string
           buzo_firma?: string | null
           buzo_rut?: string | null
@@ -453,6 +456,13 @@ export type Database = {
             referencedColumns: ["usuario_id"]
           },
           {
+            foreignKeyName: "bitacora_buzo_bitacora_supervisor_id_fkey"
+            columns: ["bitacora_supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "bitacora_supervisor"
+            referencedColumns: ["bitacora_id"]
+          },
+          {
             foreignKeyName: "bitacora_buzo_inmersion_id_fkey"
             columns: ["inmersion_id"]
             isOneToOne: false
@@ -473,6 +483,7 @@ export type Database = {
           company_id: string | null
           company_type: string | null
           created_at: string
+          datos_cuadrilla: Json | null
           desarrollo_inmersion: string
           descripcion_trabajo: string | null
           diving_records: Json | null
@@ -497,6 +508,7 @@ export type Database = {
           supervisor: string
           supervisor_firma: string | null
           supervisor_nombre_matricula: string | null
+          tiempos_detallados: Json | null
           trabajo_a_realizar: string | null
           updated_at: string
           validacion_contratista: boolean | null
@@ -513,6 +525,7 @@ export type Database = {
           company_id?: string | null
           company_type?: string | null
           created_at?: string
+          datos_cuadrilla?: Json | null
           desarrollo_inmersion: string
           descripcion_trabajo?: string | null
           diving_records?: Json | null
@@ -537,6 +550,7 @@ export type Database = {
           supervisor: string
           supervisor_firma?: string | null
           supervisor_nombre_matricula?: string | null
+          tiempos_detallados?: Json | null
           trabajo_a_realizar?: string | null
           updated_at?: string
           validacion_contratista?: boolean | null
@@ -553,6 +567,7 @@ export type Database = {
           company_id?: string | null
           company_type?: string | null
           created_at?: string
+          datos_cuadrilla?: Json | null
           desarrollo_inmersion?: string
           descripcion_trabajo?: string | null
           diving_records?: Json | null
@@ -577,6 +592,7 @@ export type Database = {
           supervisor?: string
           supervisor_firma?: string | null
           supervisor_nombre_matricula?: string | null
+          tiempos_detallados?: Json | null
           trabajo_a_realizar?: string | null
           updated_at?: string
           validacion_contratista?: boolean | null

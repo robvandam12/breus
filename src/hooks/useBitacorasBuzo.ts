@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
@@ -12,6 +13,7 @@ const bitacoraBuzoDataSchema = bitacoraBuzoFormSchema.extend({
   firmado: z.boolean().default(false),
   estado_aprobacion: z.string().default('pendiente'),
   buzo_id: z.string().uuid().optional(),
+  bitacora_supervisor_id: z.string().uuid().optional(),
 });
 
 export type BitacoraBuzoFormData = z.infer<typeof bitacoraBuzoDataSchema>;
@@ -27,6 +29,14 @@ const getBitacorasBuzo = async (): Promise<BitacoraBuzoCompleta[]> => {
           sitios:sitio_id(nombre),
           contratistas:contratista_id(nombre)
         )
+      ),
+      bitacora_supervisor:bitacora_supervisor_id(
+        bitacora_id,
+        codigo,
+        supervisor,
+        desarrollo_inmersion,
+        datos_cuadrilla,
+        tiempos_detallados
       )
     `)
     .order('fecha', { ascending: false });
@@ -47,14 +57,15 @@ export const useBitacorasBuzo = () => {
   const createBitacoraBuzo = useMutation({
     mutationFn: async (formData: BitacoraBuzoFormData) => {
       const { buzo_id, ...dataToInsert } = formData as any;
+      
       if (!isOnline) {
         addPendingAction({ type: 'create', table: 'bitacora_buzo', payload: dataToInsert });
-        // Optimistic update
         const tempId = `offline_${Date.now()}`;
         const newBitacora = { ...dataToInsert, bitacora_id: tempId };
         queryClient.setQueryData(['bitacorasBuzo'], (oldData: BitacoraBuzoCompleta[] = []) => [...oldData, newBitacora]);
         return newBitacora;
       }
+      
       const { error } = await supabase.from('bitacora_buzo').insert(dataToInsert as any);
       if (error) throw new Error(error.message);
     },
@@ -74,17 +85,100 @@ export const useBitacorasBuzo = () => {
     },
   });
 
+  const createBitacoraBuzoFromSupervisor = useMutation({
+    mutationFn: async ({ 
+      bitacoraSupervisorId, 
+      usuarioId, 
+      additionalData 
+    }: { 
+      bitacoraSupervisorId: string;
+      usuarioId: string;
+      additionalData?: Partial<BitacoraBuzoFormData>;
+    }) => {
+      // Obtener datos de la bitácora de supervisor
+      const { data: bitacoraSupervisor, error: supervisorError } = await supabase
+        .from('bitacora_supervisor')
+        .select(`
+          *,
+          inmersion:inmersion_id(*)
+        `)
+        .eq('bitacora_id', bitacoraSupervisorId)
+        .single();
+
+      if (supervisorError) throw new Error('No se pudo obtener la bitácora de supervisor');
+
+      // Buscar datos específicos del buzo en la cuadrilla
+      const cuadrillaData = bitacoraSupervisor.datos_cuadrilla || [];
+      const datosDelBuzo = cuadrillaData.find((member: any) => member.usuario_id === usuarioId);
+      const tiemposDetallados = bitacoraSupervisor.tiempos_detallados || {};
+      const tiemposDelBuzo = tiemposDetallados[usuarioId];
+
+      // Crear código automático para la bitácora de buzo
+      const codigoBuzo = `${bitacoraSupervisor.codigo}-BUZO-${Date.now().toString().slice(-6)}`;
+
+      const bitacoraBuzoData = {
+        bitacora_supervisor_id: bitacoraSupervisorId,
+        inmersion_id: bitacoraSupervisor.inmersion_id,
+        codigo: codigoBuzo,
+        fecha: bitacoraSupervisor.fecha,
+        buzo: datosDelBuzo?.nombre || '',
+        buzo_rut: datosDelBuzo?.matricula || '',
+        supervisor_nombre: bitacoraSupervisor.supervisor,
+        centro_nombre: bitacoraSupervisor.centro_nombre,
+        empresa_nombre: bitacoraSupervisor.empresa_nombre,
+        profundidad_maxima: datosDelBuzo?.profundidad_maxima || 0,
+        trabajos_realizados: bitacoraSupervisor.trabajo_a_realizar || '',
+        estado_fisico_post: datosDelBuzo?.estado_fisico_post || 'normal',
+        condamb_estado_mar: bitacoraSupervisor.estado_mar,
+        condamb_visibilidad_fondo_mts: bitacoraSupervisor.visibilidad_fondo,
+        datostec_hora_dejo_superficie: tiemposDelBuzo?.hora_entrada,
+        datostec_hora_llegada_superficie: tiemposDelBuzo?.hora_salida,
+        tiempos_total_fondo: tiemposDelBuzo?.tiempo_fondo_minutos?.toString(),
+        observaciones_tecnicas: datosDelBuzo?.observaciones,
+        company_id: bitacoraSupervisor.company_id,
+        company_type: bitacoraSupervisor.company_type,
+        estado_aprobacion: 'pendiente',
+        firmado: false,
+        ...additionalData
+      };
+
+      const { data: result, error } = await supabase
+        .from('bitacora_buzo')
+        .insert(bitacoraBuzoData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bitacorasBuzo'] });
+      toast({
+        title: "Bitácora de Buzo Creada",
+        description: "La bitácora ha sido creada basada en la bitácora de supervisor.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al crear bitácora",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateBitacoraBuzoSignature = useMutation({
     mutationFn: async ({ bitacoraId, signatureData }: { bitacoraId: string; signatureData: string }) => {
       const payload = { buzo_firma: signatureData, firmado: true, updated_at: new Date().toISOString() };
+      
       if (!isOnline) {
         addPendingAction({ type: 'update', table: 'bitacora_buzo', payload: { pk: { bitacora_id: bitacoraId }, data: payload } });
-        // Optimistic update
         queryClient.setQueryData(['bitacorasBuzo'], (oldData: BitacoraBuzoCompleta[] = []) =>
           oldData.map(b => b.bitacora_id === bitacoraId ? { ...b, ...payload } : b)
         );
         return;
       }
+      
       const { error } = await supabase
         .from('bitacora_buzo')
         .update(payload)
@@ -108,11 +202,39 @@ export const useBitacorasBuzo = () => {
     },
   });
 
+  // Función para obtener bitácoras de supervisor disponibles para un usuario
+  const getAvailableSupervisorBitacoras = async (usuarioId: string) => {
+    const { data, error } = await supabase
+      .from('bitacora_supervisor')
+      .select(`
+        *,
+        inmersion:inmersion_id(codigo, fecha_inmersion, objetivo)
+      `)
+      .eq('firmado', true)
+      .contains('datos_cuadrilla', [{ usuario_id: usuarioId }]);
+
+    if (error) throw error;
+    
+    // Filtrar las que ya tienen bitácora de buzo creada
+    const bitacorasConBuzo = await supabase
+      .from('bitacora_buzo')
+      .select('bitacora_supervisor_id')
+      .not('bitacora_supervisor_id', 'is', null);
+
+    const bitacorasConBuzoIds = new Set(
+      bitacorasConBuzo.data?.map(b => b.bitacora_supervisor_id) || []
+    );
+
+    return data?.filter(bs => !bitacorasConBuzoIds.has(bs.bitacora_id)) || [];
+  };
+
   return {
     bitacorasBuzo,
     loadingBuzo,
     refetchBuzo,
     createBitacoraBuzo,
+    createBitacoraBuzoFromSupervisor,
     updateBitacoraBuzoSignature,
+    getAvailableSupervisorBitacoras,
   };
 };
