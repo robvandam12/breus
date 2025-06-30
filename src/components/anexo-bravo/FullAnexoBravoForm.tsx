@@ -1,280 +1,311 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { AnexoBravoStep1 } from './steps/AnexoBravoStep1';
-import { AnexoBravoStep2 } from './steps/AnexoBravoStep2';
-import { AnexoBravoStep3 } from './steps/AnexoBravoStep3';
-import { AnexoBravoStep4 } from './steps/AnexoBravoStep4';
-import { AnexoBravoStep5 } from './steps/AnexoBravoStep5';
-import { AnexoBravoOperationSelector } from './AnexoBravoOperationSelector';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useEquiposBuceoEnhanced } from '@/hooks/useEquiposBuceoEnhanced';
-import { toast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { useAnexoBravoWizard } from '@/hooks/useAnexoBravoWizard';
+import { useAnexoBravo } from '@/hooks/useAnexoBravo';
+import { useOperaciones } from '@/hooks/useOperaciones';
 
 interface FullAnexoBravoFormProps {
+  operacionId?: string;
   onSubmit: (data: any) => void;
   onCancel: () => void;
-  operacionId?: string;
-  anexoId?: string;
 }
 
-export const FullAnexoBravoForm: React.FC<FullAnexoBravoFormProps> = ({
-  onSubmit,
-  onCancel,
-  operacionId: initialOperacionId,
-  anexoId
-}) => {
-  const { equipos } = useEquiposBuceoEnhanced();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
-  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !anexoId);
-  const [formData, setFormData] = useState({
-    codigo: `AB-${Date.now()}`,
-    fecha: new Date().toISOString().split('T')[0],
-    supervisor: '',
-    jefe_centro: '',
-    lugar_faena: '',
-    buzo_o_empresa_nombre: '',
-    empresa_nombre: '',
-    anexo_bravo_checklist: {},
-    anexo_bravo_trabajadores: [],
-    anexo_bravo_firmas: {},
-    bitacora_fecha: new Date().toISOString().split('T')[0],
-    bitacora_hora_inicio: '',
-    bitacora_hora_termino: '',
-    bitacora_relator: '',
-    autorizacion_armada: false
-  });
+export const FullAnexoBravoForm = ({ 
+  operacionId, 
+  onSubmit, 
+  onCancel 
+}: FullAnexoBravoFormProps) => {
+  const { createAnexoBravo } = useAnexoBravo();
+  const { operaciones } = useOperaciones();
+  
+  // Find the operation if operacionId is provided
+  const operacion = operacionId ? operaciones.find(op => op.id === operacionId) : null;
 
-  const steps = [
-    { id: 1, title: "Datos Generales", isValid: !!(formData.codigo && formData.supervisor && formData.jefe_centro) },
-    { id: 2, title: "Personal y Equipos", isValid: true },
-    { id: 3, title: "Checklist de Seguridad", isValid: true },
-    { id: 4, title: "Bitácora", isValid: !!(formData.bitacora_fecha && formData.bitacora_relator) },
-    { id: 5, title: "Firmas y Revisión", isValid: true }
-  ];
+  const {
+    currentStep,
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    isLastStep,
+    canProceed
+  } = useAnexoBravoWizard(operacionId);
 
-  const progress = (currentStep / steps.length) * 100;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auto-poblar datos cuando se selecciona una operación
+  // Auto-populate data if operation is available
   useEffect(() => {
-    const populateOperacionData = async () => {
-      if (!currentOperacionId || anexoId) return;
-
-      try {
-        const { data: operacion, error } = await supabase
-          .from('operacion')
-          .select(`
-            *,
-            salmoneras:salmonera_id (nombre, rut),
-            centros:centro_id (nombre, ubicacion),
-            contratistas:contratista_id (nombre, rut)
-          `)
-          .eq('id', currentOperacionId)
-          .single();
-
-        if (error) throw error;
-
-        // Ya no hay equipos asignados automáticamente a operaciones
-        // El personal se gestiona a nivel de inmersión individual
-
-        setFormData(prev => ({
-          ...prev,
-          codigo: `AB-${operacion.codigo}-${Date.now().toString().slice(-4)}`,
-          empresa_nombre: operacion.contratistas?.nombre || '',
-          lugar_faena: operacion.centros?.nombre || '',
-          buzo_o_empresa_nombre: operacion.contratistas?.nombre || ''
-        }));
-
-        console.log('Anexo Bravo data auto-populated from operation');
-      } catch (error) {
-        console.error('Error populating operation data:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos de la operación",
-          variant: "destructive",
-        });
-      }
-    };
-
-    populateOperacionData();
-  }, [currentOperacionId, anexoId]);
-
-  const handleOperacionSelected = (operacionId: string) => {
-    setCurrentOperacionId(operacionId);
-    setShowOperacionSelector(false);
-  };
-
-  const updateFormData = (newData: any) => {
-    setFormData(prev => ({ ...prev, ...newData }));
-  };
-
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
+    if (operacion && operacionId) {
+      updateData({
+        operacion_id: operacionId,
+        empresa_nombre: operacion.salmoneras?.nombre || operacion.contratistas?.nombre || '',
+        lugar_faena: operacion.centros?.nombre || '',
+      });
     }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  }, [operacion, operacionId, updateData]);
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const finalData = {
-        ...formData,
-        operacion_id: currentOperacionId,
-        firmado: true,
-        estado: 'firmado'
+      const anexoData = {
+        ...data,
+        operacion_id: operacionId || null, // Allow null for independent anexos
+        estado: 'completado',
+        progreso: 100
       };
-      await onSubmit(finalData);
+
+      console.log('Submitting Anexo Bravo:', anexoData);
+      
+      await createAnexoBravo.mutateAsync(anexoData);
+      onSubmit(anexoData);
     } catch (error) {
-      console.error('Error submitting Anexo Bravo:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo enviar el Anexo Bravo",
-        variant: "destructive",
-      });
+      console.error('Error creating Anexo Bravo:', error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <AnexoBravoStep1 data={formData} onUpdate={updateFormData} />;
+        return (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="codigo">Código del Anexo</Label>
+                <Input
+                  id="codigo"
+                  value={data.codigo || ''}
+                  onChange={(e) => updateData({ codigo: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="fecha">Fecha</Label>
+                <Input
+                  type="date"
+                  id="fecha"
+                  value={data.fecha || ''}
+                  onChange={(e) => updateData({ fecha: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="empresa_nombre">Empresa</Label>
+              <Input
+                id="empresa_nombre"
+                value={data.empresa_nombre || ''}
+                onChange={(e) => updateData({ empresa_nombre: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="lugar_faena">Lugar de la Faena</Label>
+              <Input
+                id="lugar_faena"
+                value={data.lugar_faena || ''}
+                onChange={(e) => updateData({ lugar_faena: e.target.value })}
+              />
+            </div>
+          </div>
+        );
       case 2:
-        return <AnexoBravoStep2 data={formData} onUpdate={updateFormData} />;
+        return (
+          <div>
+            <div className="mt-4">
+              <Label htmlFor="supervisor">Supervisor</Label>
+              <Input
+                id="supervisor"
+                value={data.supervisor || ''}
+                onChange={(e) => updateData({ supervisor: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="jefe_centro">Jefe de Centro</Label>
+              <Input
+                id="jefe_centro"
+                value={data.jefe_centro || ''}
+                onChange={(e) => updateData({ jefe_centro: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="actividad">Actividad</Label>
+              <Textarea
+                id="actividad"
+                value={data.actividad || ''}
+                onChange={(e) => updateData({ actividad: e.target.value })}
+              />
+            </div>
+          </div>
+        );
       case 3:
-        return <AnexoBravoStep3 data={formData} onUpdate={updateFormData} />;
+        return (
+          <div>
+            <div className="mt-4">
+              <Label htmlFor="equipo_emergencia">Equipo de Emergencia</Label>
+              <Textarea
+                id="equipo_emergencia"
+                value={data.equipo_emergencia || ''}
+                onChange={(e) => updateData({ equipo_emergencia: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="procedimiento_emergencia">Procedimiento de Emergencia</Label>
+              <Textarea
+                id="procedimiento_emergencia"
+                value={data.procedimiento_emergencia || ''}
+                onChange={(e) => updateData({ procedimiento_emergencia: e.target.value })}
+              />
+            </div>
+          </div>
+        );
       case 4:
-        return <AnexoBravoStep4 data={formData} onUpdate={updateFormData} />;
+        return (
+          <div>
+            <div className="mt-4">
+              <Label htmlFor="riesgos_tarea">Riesgos de la Tarea</Label>
+              <Textarea
+                id="riesgos_tarea"
+                value={data.riesgos_tarea || ''}
+                onChange={(e) => updateData({ riesgos_tarea: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="medidas_preventivas">Medidas Preventivas</Label>
+              <Textarea
+                id="medidas_preventivas"
+                value={data.medidas_preventivas || ''}
+                onChange={(e) => updateData({ medidas_preventivas: e.target.value })}
+              />
+            </div>
+          </div>
+        );
       case 5:
-        return <AnexoBravoStep5 data={formData} onUpdate={updateFormData} />;
+        return (
+          <div>
+            <div className="mt-4">
+              <Label htmlFor="lista_verificacion">Lista de Verificación</Label>
+              <Textarea
+                id="lista_verificacion"
+                value={data.lista_verificacion || ''}
+                onChange={(e) => updateData({ lista_verificacion: e.target.value })}
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="observaciones">Observaciones</Label>
+              <Textarea
+                id="observaciones"
+                value={data.observaciones || ''}
+                onChange={(e) => updateData({ observaciones: e.target.value })}
+              />
+            </div>
+          </div>
+        );
       default:
         return null;
     }
   };
 
-  if (showOperacionSelector) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <AnexoBravoOperationSelector 
-          onOperacionSelected={handleOperacionSelected}
-          selectedOperacionId={currentOperacionId}
-        />
-        
-        <div className="flex justify-end">
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="border-b pb-4">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {operacionId ? 'Crear Anexo Bravo - Operación' : 'Crear Anexo Bravo Independiente'}
+        </h2>
+        {operacion && (
+          <p className="text-gray-600 mt-1">
+            Operación: {operacion.codigo} - {operacion.nombre}
+          </p>
+        )}
+        {!operacionId && (
+          <p className="text-gray-600 mt-1">
+            Anexo Bravo independiente (sin operación asociada)
+          </p>
+        )}
+      </div>
+
+      {/* Progress Indicator */}
+      <div className="flex items-center space-x-4">
+        {[1, 2, 3, 4, 5].map((step) => (
+          <div key={step} className="flex items-center">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                currentStep >= step
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {step}
+            </div>
+            {step < 5 && (
+              <div
+                className={`w-16 h-1 ${
+                  currentStep > step ? 'bg-green-600' : 'bg-gray-200'
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Step Content */}
+      <Card>
+        <CardContent className="p-6">
+          {renderStepContent()}
+        </CardContent>
+      </Card>
+
+      {/* Navigation */}
+      <div className="flex justify-between">
+        <div>
+          {currentStep > 1 && (
+            <Button variant="outline" onClick={prevStep}>
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Anterior
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
+          
+          {isLastStep ? (
+            <Button 
+              onClick={handleSubmit}
+              disabled={!canProceed || isSubmitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Crear Anexo Bravo
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button 
+              onClick={nextStep}
+              disabled={!canProceed}
+            >
+              Siguiente
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header con progreso */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>
-                {anexoId ? 'Editar' : 'Crear'} Anexo Bravo
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Paso {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
-              </p>
-            </div>
-            <Badge variant="outline">
-              {progress.toFixed(0)}% Completado
-            </Badge>
-          </div>
-          <Progress value={progress} className="mt-4" />
-        </CardHeader>
-      </Card>
-
-      {/* Navegación de pasos */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-5 gap-2">
-            {steps.map((step) => (
-              <Button
-                key={step.id}
-                variant={step.id === currentStep ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentStep(step.id)}
-                className="h-auto p-2 flex flex-col items-center gap-1"
-              >
-                <div className="flex items-center gap-1">
-                  {step.isValid ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                  <span className="font-semibold">{step.id}</span>
-                </div>
-                <span className="text-xs text-center leading-tight">
-                  {step.title}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contenido del paso actual */}
-      {renderStepContent()}
-
-      {/* Navegación inferior */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentStep === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Anterior
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onCancel}>
-                Cancelar
-              </Button>
-              
-              {currentStep < steps.length ? (
-                <Button onClick={handleNext}>
-                  Siguiente
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Enviando...' : 'Completar Anexo Bravo'}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

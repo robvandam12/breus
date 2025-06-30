@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Shield, CheckCircle, PenTool, Trash2 } from "lucide-react";
+import { Plus, Search, Shield, CheckCircle, PenTool, Trash2, FileText, Users } from "lucide-react";
 import { FullAnexoBravoForm } from "@/components/anexo-bravo/FullAnexoBravoForm";
 import { AnexoBravoOperationSelector } from "@/components/anexo-bravo/AnexoBravoOperationSelector";
 import { useAnexoBravo } from "@/hooks/useAnexoBravo";
@@ -22,6 +22,7 @@ const AnexoBravoFormulariosPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedOperacionId, setSelectedOperacionId] = useState<string>('');
   const [showOperationSelector, setShowOperationSelector] = useState(false);
+  const [createWithOperation, setCreateWithOperation] = useState(false);
   
   const { anexosBravo, isLoading, signAnexoBravo, deleteAnexoBravo } = useAnexoBravo();
   const { operaciones } = useOperaciones();
@@ -31,7 +32,14 @@ const AnexoBravoFormulariosPage = () => {
     anexo.supervisor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateAnexo = () => {
+  const handleCreateAnexoDirectly = () => {
+    setSelectedOperacionId('');
+    setCreateWithOperation(false);
+    setShowCreateForm(true);
+  };
+
+  const handleCreateAnexoWithOperation = () => {
+    setCreateWithOperation(true);
     setShowOperationSelector(true);
   };
 
@@ -44,6 +52,7 @@ const AnexoBravoFormulariosPage = () => {
   const handleAnexoComplete = (data: any) => {
     setShowCreateForm(false);
     setSelectedOperacionId('');
+    setCreateWithOperation(false);
   };
 
   const handleSignAnexo = async (anexoId: string) => {
@@ -135,13 +144,24 @@ const AnexoBravoFormulariosPage = () => {
                 />
               </div>
 
-              <Button 
-                onClick={handleCreateAnexo}
-                className="ios-button bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Anexo Bravo
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleCreateAnexoDirectly}
+                  className="ios-button bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Anexo Bravo
+                </Button>
+                
+                <Button 
+                  onClick={handleCreateAnexoWithOperation}
+                  variant="outline"
+                  className="ios-button"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Con Operación
+                </Button>
+              </div>
             </div>
           </Header>
           
@@ -175,12 +195,10 @@ const AnexoBravoFormulariosPage = () => {
                 </Card>
                 <Card className="ios-card">
                   <CardContent className="p-4">
-                    <div className="text-2xl font-bold text-gray-600">
-                      {operaciones.filter(op => 
-                        !anexosBravo.some(anexo => anexo.operacion_id === op.id)
-                      ).length}
+                    <div className="text-2xl font-bold text-blue-600">
+                      {anexosBravo.filter(a => a.operacion_id).length}
                     </div>
-                    <div className="text-sm text-zinc-500">Operaciones Disponibles</div>
+                    <div className="text-sm text-zinc-500">Con Operación</div>
                   </CardContent>
                 </Card>
               </div>
@@ -195,16 +213,26 @@ const AnexoBravoFormulariosPage = () => {
                     </h3>
                     <p className="text-zinc-500 mb-4">
                       {anexosBravo.length === 0 
-                        ? "Comience creando el primer Anexo Bravo seleccionando una operación"
+                        ? "Comience creando el primer Anexo Bravo"
                         : "Intenta ajustar la búsqueda"}
                     </p>
-                    <Button 
-                      onClick={handleCreateAnexo}
-                      className="ios-button bg-green-600 hover:bg-green-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Anexo Bravo
-                    </Button>
+                    <div className="flex gap-2 justify-center">
+                      <Button 
+                        onClick={handleCreateAnexoDirectly}
+                        className="ios-button bg-green-600 hover:bg-green-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Anexo Bravo
+                      </Button>
+                      <Button 
+                        onClick={handleCreateAnexoWithOperation}
+                        variant="outline"
+                        className="ios-button"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Con Operación
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
@@ -231,7 +259,10 @@ const AnexoBravoFormulariosPage = () => {
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm text-zinc-600">
-                                  {operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada'}
+                                  {anexo.operacion_id ? 
+                                    (operacion ? `${operacion.codigo} - ${operacion.nombre}` : 'Operación no encontrada') : 
+                                    'Independiente'
+                                  }
                                 </div>
                               </TableCell>
                               <TableCell>{anexo.supervisor}</TableCell>
@@ -323,9 +354,11 @@ const AnexoBravoFormulariosPage = () => {
           {/* Create Form Modal */}
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Crear Nuevo Anexo Bravo</DialogTitle>
+              <DialogTitle>
+                {createWithOperation ? 'Crear Anexo Bravo con Operación' : 'Crear Anexo Bravo Independiente'}
+              </DialogTitle>
               <FullAnexoBravoForm 
-                operacionId={selectedOperacionId}
+                operacionId={selectedOperacionId || undefined}
                 onSubmit={handleAnexoComplete}
                 onCancel={() => setShowCreateForm(false)}
               />
