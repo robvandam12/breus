@@ -1,155 +1,222 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Settings, FileText, Activity, Trash2 } from "lucide-react";
-import type { OperacionConRelaciones } from '@/hooks/useOperacionesQuery';
+import { Eye, Edit, Trash2, Calendar, Clock, MapPin, FileText, Users } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
-interface OperacionCardViewProps {
-  operaciones: OperacionConRelaciones[];
-  onSelect: (operacion: OperacionConRelaciones) => void;
-  onEdit: (operacion: OperacionConRelaciones) => void;
-  onViewDetail: (operacion: OperacionConRelaciones) => void;
-  onDelete: (operacionId: string) => void;
+interface Operacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  fecha_inicio: string;
+  fecha_fin?: string;
+  tareas?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export const OperacionCardView = ({ operaciones, onSelect, onEdit, onViewDetail, onDelete }: OperacionCardViewProps) => {
+interface OperacionCardViewProps {
+  operaciones: Operacion[];
+  onSelect?: (operacion: Operacion) => void;
+  onEdit?: (operacion: Operacion) => void;
+  onViewDetail?: (operacion: Operacion) => void;
+  onDelete?: (operacionId: string) => void;
+}
 
-  const getStatusBadge = (estado: string) => {
-    const colors = {
-      'activa': 'bg-green-100 text-green-800 border-green-200',
-      'pausada': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'completada': 'bg-blue-100 text-blue-800 border-blue-200',
-      'cancelada': 'bg-red-100 text-red-800 border-red-200'
-    };
-    return colors[estado as keyof typeof colors] || 'bg-muted text-muted-foreground';
-  };
-
-  const getDocumentStatus = (operacion: OperacionConRelaciones) => {
-    // Simulación de estado de documentos - esto debería venir de la base de datos
-    const docs = {
-      hpt: Math.random() > 0.5,
-      anexoBravo: Math.random() > 0.5,
-      inmersiones: Math.random() > 0.7
+export const OperacionCardView = ({ 
+  operaciones, 
+  onSelect,
+  onEdit,
+  onViewDetail,
+  onDelete
+}: OperacionCardViewProps) => {
+  const getStatusConfig = (estado: string) => {
+    const configs = {
+      activa: { 
+        color: 'bg-green-100 text-green-800 border-green-200',
+        icon: '🟢',
+        label: 'Activa'
+      },
+      pausada: { 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        icon: '⏸️',
+        label: 'Pausada'
+      },
+      completada: { 
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        icon: '✅',
+        label: 'Completada'
+      },
+      cancelada: { 
+        color: 'bg-red-100 text-red-800 border-red-200',
+        icon: '❌',
+        label: 'Cancelada'
+      },
     };
     
-    const total = Object.keys(docs).length;
-    const completed = Object.values(docs).filter(Boolean).length;
-    
-    return { completed, total, docs };
+    return configs[estado as keyof typeof configs] || configs.activa;
   };
+
+  const calculateDuration = (fechaInicio: string, fechaFin?: string) => {
+    const inicio = new Date(fechaInicio);
+    const fin = fechaFin ? new Date(fechaFin) : new Date();
+    const diffTime = Math.abs(fin.getTime() - inicio.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  if (operaciones.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Users className="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          No hay operaciones registradas
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Cuando crees operaciones de buceo, aparecerán aquí organizadas en tarjetas.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {operaciones.length === 0 ? (
-        <div className="text-center py-12">
-          <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No hay operaciones</h3>
-          <p className="text-muted-foreground mb-4">
-            No se encontraron operaciones con los filtros aplicados o aún no se han creado operaciones.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {operaciones.map((operacion) => {
-            const docStatus = getDocumentStatus(operacion);
-            
-            return (
-              <Card key={operacion.id} className="hover:shadow-md transition-shadow border-border">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg font-semibold text-foreground">{operacion.nombre}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{operacion.codigo}</p>
-                    </div>
-                    <Badge className={getStatusBadge(operacion.estado)}>
-                      {operacion.estado}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {operaciones.map((operacion) => {
+        const statusConfig = getStatusConfig(operacion.estado);
+        const duration = calculateDuration(operacion.fecha_inicio, operacion.fecha_fin);
+        
+        return (
+          <Card 
+            key={operacion.id} 
+            className="hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+            onClick={() => onSelect?.(operacion)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                      {operacion.codigo}
+                    </code>
+                    <Badge className={`text-xs ${statusConfig.color}`}>
+                      {statusConfig.icon} {statusConfig.label}
                     </Badge>
                   </div>
-                </CardHeader>
+                  <CardTitle className="text-lg leading-tight">
+                    {operacion.nombre}
+                  </CardTitle>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {/* Descripción de tareas */}
+              {operacion.tareas && (
+                <div className="flex items-start gap-2">
+                  <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {operacion.tareas}
+                  </p>
+                </div>
+              )}
+
+              {/* Fechas */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Inicio:</span>
+                  <span className="font-medium">
+                    {format(new Date(operacion.fecha_inicio), 'dd MMM yyyy', { locale: es })}
+                  </span>
+                </div>
                 
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      <span>{operacion.centros?.nombre || 'Sin asignar'}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span>{operacion.contratistas?.nombre || 'Sin asignar'}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(operacion.fecha_inicio).toLocaleDateString('es-CL')}</span>
-                      {operacion.fecha_fin && (
-                        <span className="text-muted-foreground/70">
-                          - {new Date(operacion.fecha_fin).toLocaleDateString('es-CL')}
-                        </span>
-                      )}
-                    </div>
+                {operacion.fecha_fin ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Fin:</span>
+                    <span className="font-medium">
+                      {format(new Date(operacion.fecha_fin), 'dd MMM yyyy', { locale: es })}
+                    </span>
                   </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Fin:</span>
+                    <span className="text-gray-400 italic">Sin definir</span>
+                  </div>
+                )}
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">Documentos</span>
-                      <span className="text-sm text-muted-foreground">
-                        {docStatus.completed}/{docStatus.total}
-                      </span>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Badge variant={docStatus.docs.hpt ? "default" : "outline"} className="text-xs">
-                        HPT
-                      </Badge>
-                      <Badge variant={docStatus.docs.anexoBravo ? "default" : "outline"} className="text-xs">
-                        Anexo Bravo
-                      </Badge>
-                      <Badge variant={docStatus.docs.inmersiones ? "default" : "outline"} className="text-xs">
-                        Inmersiones
-                      </Badge>
-                    </div>
-                    
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(docStatus.completed / docStatus.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Duración:</span>
+                  <span className="font-medium">
+                    {duration} {duration === 1 ? 'día' : 'días'}
+                  </span>
+                </div>
+              </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => onViewDetail(operacion)}
-                    >
-                      <FileText className="w-4 h-4 mr-1" />
-                      Ver Detalles
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onEdit(operacion)}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => onDelete(operacion.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+              {/* Metadatos adicionales */}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>
+                    Creada: {format(new Date(operacion.created_at), 'dd/MM/yy', { locale: es })}
+                  </span>
+                  <span>
+                    Actualizada: {format(new Date(operacion.updated_at), 'dd/MM/yy', { locale: es })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetail?.(operacion);
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Ver
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(operacion);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(operacion.id);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

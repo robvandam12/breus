@@ -1,120 +1,151 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Building, Users } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Company {
   id: string;
   nombre: string;
+  rut: string;
   tipo: 'salmonera' | 'contratista';
 }
 
 interface CompanySelectorProps {
   value?: string;
-  onValueChange: (value: string) => void;
-  placeholder?: string;
-  label?: string;
-  required?: boolean;
-  disabled?: boolean;
+  onChange?: (value: string) => void;
   includeTypes?: ('salmonera' | 'contratista')[];
+  placeholder?: string;
+  disabled?: boolean;
+  label?: string;
 }
 
 export const CompanySelector = ({
-  value,
-  onValueChange,
-  placeholder = "Seleccionar empresa",
-  label = "Empresa",
-  required = false,
+  value = '',
+  onChange,
+  includeTypes = ['salmonera', 'contratista'],
+  placeholder = 'Seleccionar empresa...',
   disabled = false,
-  includeTypes = ['salmonera', 'contratista']
+  label
 }: CompanySelectorProps) => {
-  const { data: companies = [], isLoading } = useQuery({
-    queryKey: ['companies-for-selector', includeTypes],
-    queryFn: async () => {
-      const companies: Company[] = [];
-      
-      // Obtener salmoneras si están incluidas
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCompanies();
+  }, [includeTypes]);
+
+  const loadCompanies = async () => {
+    setLoading(true);
+    try {
+      const companiesData: Company[] = [];
+
+      // Cargar salmoneras si está incluido
       if (includeTypes.includes('salmonera')) {
-        const { data: salmoneras, error: salmonerasError } = await supabase
+        const { data: salmoneras } = await supabase
           .from('salmoneras')
-          .select('id, nombre')
+          .select('id, nombre, rut')
           .eq('estado', 'activa')
           .order('nombre');
 
-        if (!salmonerasError && salmoneras) {
-          companies.push(...salmoneras.map(s => ({
-            id: `salmonera_${s.id}`,
-            nombre: s.nombre,
+        if (salmoneras) {
+          companiesData.push(...salmoneras.map(s => ({
+            ...s,
             tipo: 'salmonera' as const
           })));
         }
       }
 
-      // Obtener contratistas si están incluidos
+      // Cargar contratistas si está incluido
       if (includeTypes.includes('contratista')) {
-        const { data: contratistas, error: contratistasError } = await supabase
+        const { data: contratistas } = await supabase
           .from('contratistas')
-          .select('id, nombre')
+          .select('id, nombre, rut')
           .eq('estado', 'activo')
           .order('nombre');
 
-        if (!contratistasError && contratistas) {
-          companies.push(...contratistas.map(c => ({
-            id: `contratista_${c.id}`,
-            nombre: c.nombre,
+        if (contratistas) {
+          companiesData.push(...contratistas.map(c => ({
+            ...c,
             tipo: 'contratista' as const
           })));
         }
       }
 
-      // Ordenar por nombre
-      return companies.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    },
-  });
+      setCompanies(companiesData);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+      setCompanies([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {label && <Label>{label}</Label>}
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
+  const formatCompanyValue = (company: Company) => {
+    return `${company.tipo}_${company.id}`;
+  };
+
+  const getCompanyIcon = (tipo: string) => {
+    return tipo === 'salmonera' ? <Building className="w-4 h-4" /> : <Users className="w-4 h-4" />;
+  };
+
+  const getCompanyBadge = (tipo: string) => {
+    return tipo === 'salmonera' 
+      ? <Badge variant="outline" className="text-xs">Salmonera</Badge>
+      : <Badge variant="secondary" className="text-xs">Contratista</Badge>;
+  };
 
   return (
     <div className="space-y-2">
-      {label && (
-        <Label>
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </Label>
-      )}
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      {label && <Label>{label}</Label>}
+      <Select 
+        value={value} 
+        onValueChange={onChange}
+        disabled={disabled || loading}
+      >
         <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={loading ? 'Cargando empresas...' : placeholder} />
         </SelectTrigger>
         <SelectContent>
           {companies.map((company) => (
-            <SelectItem key={company.id} value={company.id}>
-              {company.nombre} ({company.tipo === 'salmonera' ? 'Salmonera' : 'Contratista'})
+            <SelectItem 
+              key={formatCompanyValue(company)} 
+              value={formatCompanyValue(company)}
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  {getCompanyIcon(company.tipo)}
+                  <div>
+                    <div className="font-medium">{company.nombre}</div>
+                    <div className="text-xs text-gray-500">{company.rut}</div>
+                  </div>
+                </div>
+                {getCompanyBadge(company.tipo)}
+              </div>
             </SelectItem>
           ))}
+          {companies.length === 0 && !loading && (
+            <SelectItem value="" disabled>
+              No hay empresas disponibles
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>
   );
 };
 
-// Utilidad para extraer información de la empresa seleccionada
-export const parseCompanySelection = (value: string) => {
-  if (!value) return null;
+// Función helper para parsear la selección
+export const parseCompanySelection = (selection: string) => {
+  if (!selection) return null;
   
-  const [tipo, id] = value.split('_');
+  const [tipo, id] = selection.split('_');
+  if (!tipo || !id) return null;
+  
   return {
     tipo: tipo as 'salmonera' | 'contratista',
-    id: id
+    id
   };
 };
