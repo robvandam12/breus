@@ -33,7 +33,7 @@ export interface TiemposDetallados {
   };
 }
 
-export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records'> {
+export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_supervisor'>, 'aprobada_por' | 'inmersiones_buzos' | 'equipos_utilizados' | 'diving_records' | 'datos_cuadrilla' | 'tiempos_detallados'> {
   inmersion: Inmersion | null;
   supervisor_data?: { id: string; nombre: string; } | null;
   aprobador_data?: { id: string; nombre: string; } | null;
@@ -44,7 +44,7 @@ export interface BitacoraSupervisorCompleta extends Omit<Tables<'bitacora_superv
   tiempos_detallados?: TiemposDetallados;
 }
 
-export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'aprobada_por'> {
+export interface BitacoraBuzoCompleta extends Omit<Tables<'bitacora_buzo'>, 'aprobada_por' | 'bitacora_supervisor_id'> {
   inmersion: Inmersion | null;
   bitacora_supervisor_id?: string | null;
   bitacora_supervisor?: BitacoraSupervisorCompleta | null;
