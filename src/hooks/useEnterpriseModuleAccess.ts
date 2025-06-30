@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -73,7 +72,7 @@ export const useEnterpriseModuleAccess = () => {
       }
 
       // Para usuarios normales, consultar módulos activos específicamente
-      console.log('Loading modules for regular user');
+      console.log('Loading modules for regular user - checking active modules only');
       
       // Obtener módulos core (siempre activos)
       const { data: coreModules } = await supabase
@@ -81,7 +80,7 @@ export const useEnterpriseModuleAccess = () => {
         .select('name, display_name, description')
         .eq('is_core', true);
 
-      // Obtener módulos específicos de la empresa que estén ACTIVOS
+      // CRÍTICO: Obtener SOLO módulos específicos de la empresa que estén ACTIVOS
       const { data: companyModules, error } = await supabase
         .from('company_modules')
         .select(`
@@ -104,6 +103,7 @@ export const useEnterpriseModuleAccess = () => {
 
       console.log('Core modules found:', coreModules?.length || 0);
       console.log('Active company modules found:', companyModules?.length || 0);
+      console.log('Company modules detail:', companyModules);
 
       // Combinar módulos core con módulos activos de la empresa
       const allModules: ModuleAccessInfo[] = [
@@ -129,14 +129,20 @@ export const useEnterpriseModuleAccess = () => {
         index === self.findIndex(m => m.module_name === module.module_name)
       );
 
+      // VALIDACIÓN ESPECÍFICA: Solo considerar módulos activos para los flags
+      const hasPlanning = uniqueModules.some(m => m.module_name === 'planning_operations' && m.is_active);
+      const hasMaintenance = uniqueModules.some(m => m.module_name === 'maintenance_networks' && m.is_active);
+      const hasReporting = uniqueModules.some(m => m.module_name === 'advanced_reporting' && m.is_active);
+      const hasIntegrations = uniqueModules.some(m => m.module_name === 'external_integrations' && m.is_active);
+
       const result: EnterpriseModuleAccess = {
         companyId,
         companyType,
         modules: uniqueModules,
-        hasPlanning: uniqueModules.some(m => m.module_name === 'planning_operations' && m.is_active),
-        hasMaintenance: uniqueModules.some(m => m.module_name === 'maintenance_networks' && m.is_active),
-        hasReporting: uniqueModules.some(m => m.module_name === 'advanced_reporting' && m.is_active),
-        hasIntegrations: uniqueModules.some(m => m.module_name === 'external_integrations' && m.is_active)
+        hasPlanning,
+        hasMaintenance,
+        hasReporting,
+        hasIntegrations
       };
 
       console.log('Final module result:', {
@@ -145,7 +151,10 @@ export const useEnterpriseModuleAccess = () => {
         totalModules: result.modules.length,
         hasPlanning: result.hasPlanning,
         hasMaintenance: result.hasMaintenance,
-        moduleNames: result.modules.map(m => m.module_name)
+        hasReporting: result.hasReporting,
+        hasIntegrations: result.hasIntegrations,
+        moduleNames: result.modules.map(m => m.module_name),
+        activeModules: result.modules.filter(m => m.is_active).map(m => m.module_name)
       });
 
       moduleCache.set(cacheKey, result);
@@ -171,6 +180,7 @@ export const useEnterpriseModuleAccess = () => {
         hasIntegrations: false
       };
 
+      console.log('Using fallback result for company:', companyId, companyType);
       moduleCache.set(cacheKey, fallbackResult);
       setModuleCache(new Map(moduleCache));
       return fallbackResult;
