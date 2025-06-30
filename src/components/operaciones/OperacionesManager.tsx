@@ -23,6 +23,19 @@ const OperacionCardView = lazy(() => import('./OperacionCardView').then(module =
   default: module.OperacionCardView 
 })));
 
+// Tipo para operaciones normalizado
+interface NormalizedOperacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: 'activa' | 'pausada' | 'completada' | 'cancelada';
+  fecha_inicio: string;
+  fecha_fin?: string;
+  tareas?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Componente de loading para tabs
 const TabLoadingSkeleton = () => (
   <div className="space-y-4">
@@ -63,7 +76,24 @@ export const OperacionesManager = React.memo(() => {
     selectedEnterprise?.salmonera_id ? 'salmonera' : 'contratista'
   );
 
-  const { data: operaciones = [], isLoading } = useOperacionesQuery();
+  const { data: rawOperaciones = [], isLoading } = useOperacionesQuery();
+
+  // Normalizar operaciones para que coincidan con el tipo esperado
+  const operaciones: NormalizedOperacion[] = useMemo(() => {
+    return rawOperaciones.map(op => ({
+      id: op.id,
+      codigo: op.codigo,
+      nombre: op.nombre,
+      estado: (['activa', 'pausada', 'completada', 'cancelada'].includes(op.estado) 
+        ? op.estado 
+        : 'activa') as 'activa' | 'pausada' | 'completada' | 'cancelada',
+      fecha_inicio: op.fecha_inicio,
+      fecha_fin: op.fecha_fin,
+      tareas: op.tareas,
+      created_at: op.created_at,
+      updated_at: op.updated_at
+    }));
+  }, [rawOperaciones]);
 
   // Auto-configurar empresa para usuarios no superuser
   React.useEffect(() => {

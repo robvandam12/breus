@@ -20,6 +20,7 @@ interface CompanySelectorProps {
   placeholder?: string;
   disabled?: boolean;
   label?: string;
+  required?: boolean;
 }
 
 export const CompanySelector = ({
@@ -28,7 +29,8 @@ export const CompanySelector = ({
   includeTypes = ['salmonera', 'contratista'],
   placeholder = 'Seleccionar empresa...',
   disabled = false,
-  label
+  label,
+  required = false
 }: CompanySelectorProps) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,12 @@ export const CompanySelector = ({
 
   return (
     <div className="space-y-2">
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+      )}
       <Select 
         value={value} 
         onValueChange={onChange}

@@ -124,7 +124,7 @@ export const InviteUserForm = ({ onSubmit, onCancel }: InviteUserFormProps) => {
 
       <CompanySelector
         value={formData.empresa_selection}
-        onValueChange={(value) => setFormData({ ...formData, empresa_selection: value })}
+        onChange={(value) => setFormData({ ...formData, empresa_selection: value })}
         label="Empresa"
         required
         includeTypes={getIncludeTypes()}
