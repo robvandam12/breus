@@ -58,8 +58,7 @@ export const InmersionesMapView = React.memo(({
       // Filtrar por región si está seleccionada
       if (debouncedRegionFilter !== 'all') {
         const inmersionCentro = centros.find(centro => 
-          inmersion.centro?.toString() === centro.id || 
-          inmersion.centro === centro.nombre
+          centro.id === inmersion.centro_id
         );
         if (!inmersionCentro || inmersionCentro.region !== debouncedRegionFilter) {
           return false;
@@ -80,7 +79,7 @@ export const InmersionesMapView = React.memo(({
     const grupos = new Map<string, Inmersion[]>();
     
     filteredInmersiones.forEach(inmersion => {
-      const centroId = inmersion.centro?.toString() || 'sin_centro';
+      const centroId = inmersion.centro_id || 'sin_centro';
       if (!grupos.has(centroId)) {
         grupos.set(centroId, []);
       }
@@ -101,10 +100,7 @@ export const InmersionesMapView = React.memo(({
   }, []);
 
   const getCentroInfo = useCallback((inmersion: Inmersion) => {
-    const centro = centros.find(c => 
-      inmersion.centro?.toString() === c.id || 
-      inmersion.centro === c.nombre
-    );
+    const centro = centros.find(c => c.id === inmersion.centro_id);
     return centro;
   }, [centros]);
 
