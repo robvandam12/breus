@@ -35,14 +35,17 @@ export const useEnterpriseModuleAccess = () => {
     
     // Check cache first
     if (moduleCache.has(cacheKey)) {
+      console.log('Using cached modules for:', cacheKey);
       return moduleCache.get(cacheKey)!;
     }
 
     setLoading(true);
+    console.log('Loading modules for company:', companyId, companyType);
     
     try {
       // Si es superuser, obtener todos los módulos como activos
       if (profile?.role === 'superuser') {
+        console.log('Loading modules for superuser');
         const { data: systemModules } = await supabase
           .from('system_modules')
           .select('name, display_name, description');
@@ -69,41 +72,81 @@ export const useEnterpriseModuleAccess = () => {
         return result;
       }
 
-      // Para usuarios normales, consultar módulos reales
-      const { data, error } = await supabase
-        .rpc('get_company_active_modules', {
-          p_company_id: companyId,
-          p_company_type: companyType
-        });
+      // Para usuarios normales, consultar módulos activos específicamente
+      console.log('Loading modules for regular user');
+      
+      // Obtener módulos core (siempre activos)
+      const { data: coreModules } = await supabase
+        .from('system_modules')
+        .select('name, display_name, description')
+        .eq('is_core', true);
 
-      if (error) throw error;
+      // Obtener módulos específicos de la empresa que estén ACTIVOS
+      const { data: companyModules, error } = await supabase
+        .from('company_modules')
+        .select(`
+          module_name,
+          is_active,
+          configuration,
+          system_modules (
+            display_name,
+            description
+          )
+        `)
+        .eq('company_id', companyId)
+        .eq('company_type', companyType)
+        .eq('is_active', true); // CLAVE: Solo obtener módulos activos
 
-      const modules: ModuleAccessInfo[] = data?.map((module: any) => ({
-        module_name: module.module_name,
-        is_active: true, // Si está en el resultado de la función, está activo
-        display_name: module.display_name || module.module_name,
-        description: module.description
-      })) || [];
-
-      // Siempre incluir core_immersions como activo
-      if (!modules.find(m => m.module_name === 'core_immersions')) {
-        modules.unshift({
-          module_name: 'core_immersions',
-          is_active: true,
-          display_name: 'Inmersiones Core',
-          description: 'Funcionalidad básica de inmersiones'
-        });
+      if (error) {
+        console.error('Error loading company modules:', error);
+        throw error;
       }
+
+      console.log('Core modules found:', coreModules?.length || 0);
+      console.log('Active company modules found:', companyModules?.length || 0);
+
+      // Combinar módulos core con módulos activos de la empresa
+      const allModules: ModuleAccessInfo[] = [
+        // Módulos core (siempre activos)
+        ...(coreModules?.map(module => ({
+          module_name: module.name,
+          is_active: true,
+          display_name: module.display_name,
+          description: module.description
+        })) || []),
+        
+        // Módulos específicos activos de la empresa
+        ...(companyModules?.map(module => ({
+          module_name: module.module_name,
+          is_active: true, // Ya filtrados por is_active = true
+          display_name: module.system_modules?.display_name || module.module_name,
+          description: module.system_modules?.description
+        })) || [])
+      ];
+
+      // Eliminar duplicados (en caso de que un módulo core también esté en company_modules)
+      const uniqueModules = allModules.filter((module, index, self) => 
+        index === self.findIndex(m => m.module_name === module.module_name)
+      );
 
       const result: EnterpriseModuleAccess = {
         companyId,
         companyType,
-        modules,
-        hasPlanning: modules.some(m => m.module_name === 'planning_operations'),
-        hasMaintenance: modules.some(m => m.module_name === 'maintenance_networks'),
-        hasReporting: modules.some(m => m.module_name === 'advanced_reporting'),
-        hasIntegrations: modules.some(m => m.module_name === 'external_integrations')
+        modules: uniqueModules,
+        hasPlanning: uniqueModules.some(m => m.module_name === 'planning_operations' && m.is_active),
+        hasMaintenance: uniqueModules.some(m => m.module_name === 'maintenance_networks' && m.is_active),
+        hasReporting: uniqueModules.some(m => m.module_name === 'advanced_reporting' && m.is_active),
+        hasIntegrations: uniqueModules.some(m => m.module_name === 'external_integrations' && m.is_active)
       };
+
+      console.log('Final module result:', {
+        companyId,
+        companyType,
+        totalModules: result.modules.length,
+        hasPlanning: result.hasPlanning,
+        hasMaintenance: result.hasMaintenance,
+        moduleNames: result.modules.map(m => m.module_name)
+      });
 
       moduleCache.set(cacheKey, result);
       setModuleCache(new Map(moduleCache));
@@ -150,6 +193,7 @@ export const useEnterpriseModuleAccess = () => {
   };
 
   const clearCache = () => {
+    console.log('Clearing module access cache');
     setModuleCache(new Map());
   };
 

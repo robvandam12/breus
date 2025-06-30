@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,17 +10,51 @@ import {
   Calendar
 } from "lucide-react";
 import { useInmersiones, type Inmersion } from "@/hooks/useInmersiones";
-import { InmersionesTable } from "./InmersionesTable";
-import { InmersionCardView } from "./InmersionCardView";
-import { InmersionesMapView } from "./InmersionesMapView";
 import { InmersionDetailModal } from "./InmersionDetailModal";
 import { UnifiedInmersionForm } from "./UnifiedInmersionForm";
 import { WizardDialog } from "@/components/forms/WizardDialog";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
 
-export const InmersionesManager = () => {
+// Lazy loading de componentes pesados
+const InmersionesTable = lazy(() => import("./InmersionesTable").then(module => ({ 
+  default: module.InmersionesTable 
+})));
+
+const InmersionCardView = lazy(() => import("./InmersionCardView").then(module => ({ 
+  default: module.InmersionCardView 
+})));
+
+const InmersionesMapView = lazy(() => import("./InmersionesMapView").then(module => ({ 
+  default: module.InmersionesMapView 
+})));
+
+// Componente de loading para tabs
+const TabLoadingSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map((i) => (
+      <Card key={i} className="p-4">
+        <div className="animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 w-8 bg-gray-200 rounded"></div>
+              <div className="h-8 w-8 bg-gray-200 rounded"></div>
+              <div className="h-8 w-8 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+);
+
+export const InmersionesManager = React.memo(() => {
   const { profile } = useAuth();
   const { 
     inmersiones, 
@@ -41,15 +76,29 @@ export const InmersionesManager = () => {
     inmersion: Inmersion | null;
   }>({ open: false, inmersion: null });
 
-  // Filter inmersions
-  const filteredInmersiones = inmersiones.filter(inmersion => {
-    const matchesSearch = inmersion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inmersion.objetivo?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || inmersion.estado === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Usar debounce para búsqueda y filtros
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedStatusFilter = useDebounce(statusFilter, 100);
 
-  const handleCreateInmersion = async (data: any) => {
+  // Memoizar inmersiones filtradas
+  const filteredInmersiones = useMemo(() => {
+    console.log('Filtering inmersiones:', {
+      total: inmersiones.length,
+      searchTerm: debouncedSearchTerm,
+      statusFilter: debouncedStatusFilter
+    });
+
+    return inmersiones.filter(inmersion => {
+      const matchesSearch = !debouncedSearchTerm ||
+                           inmersion.codigo?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                           inmersion.objetivo?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      const matchesStatus = debouncedStatusFilter === "all" || inmersion.estado === debouncedStatusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [inmersiones, debouncedSearchTerm, debouncedStatusFilter]);
+
+  // Memoizar handlers
+  const handleCreateInmersion = useCallback(async (data: any) => {
     try {
       console.log('Creating inmersion from manager:', data);
       await createInmersion(data);
@@ -57,9 +106,9 @@ export const InmersionesManager = () => {
     } catch (error) {
       console.error('Error creating inmersion:', error);
     }
-  };
+  }, [createInmersion]);
 
-  const handleEditInmersion = async (data: any) => {
+  const handleEditInmersion = useCallback(async (data: any) => {
     if (editingInmersion) {
       try {
         console.log('Updating inmersion:', editingInmersion.inmersion_id, data);
@@ -69,14 +118,14 @@ export const InmersionesManager = () => {
         console.error('Error updating inmersion:', error);
       }
     }
-  };
+  }, [editingInmersion, updateInmersion]);
 
-  const handleDeleteClick = (inmersion: Inmersion) => {
+  const handleDeleteClick = useCallback((inmersion: Inmersion) => {
     console.log('Delete clicked for inmersion:', inmersion.inmersion_id, inmersion.codigo);
     setDeleteConfirmation({ open: true, inmersion });
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (deleteConfirmation.inmersion) {
       const inmersionId = deleteConfirmation.inmersion.inmersion_id;
       const inmersionCodigo = deleteConfirmation.inmersion.codigo;
@@ -89,14 +138,14 @@ export const InmersionesManager = () => {
         // No cerrar el dialog si hay error para que el usuario pueda intentar de nuevo
       }
     }
-  };
+  }, [deleteConfirmation.inmersion, deleteInmersion]);
 
-  const handleViewDetail = (inmersion: Inmersion) => {
+  const handleViewDetail = useCallback((inmersion: Inmersion) => {
     setSelectedInmersion(inmersion);
-  };
+  }, []);
 
-  const handleEdit = (inmersion: Inmersion) => {
-    // Verificar permisos antes de permitir edición - Corregir usuario_id por id
+  const handleEdit = useCallback((inmersion: Inmersion) => {
+    // Verificar permisos antes de permitir edición
     const canEdit = profile?.role === 'superuser' || 
                    profile?.role === 'admin_salmonera' || 
                    profile?.role === 'admin_servicio' ||
@@ -107,13 +156,15 @@ export const InmersionesManager = () => {
     } else {
       console.warn('User does not have permission to edit this inmersion');
     }
-  };
+  }, [profile]);
 
   // Verificar permisos para mostrar botón de crear
-  const canCreate = profile?.role === 'superuser' || 
-                   profile?.role === 'admin_salmonera' || 
-                   profile?.role === 'admin_servicio' ||
-                   profile?.role === 'supervisor';
+  const canCreate = useMemo(() => {
+    return profile?.role === 'superuser' || 
+           profile?.role === 'admin_salmonera' || 
+           profile?.role === 'admin_servicio' ||
+           profile?.role === 'supervisor';
+  }, [profile?.role]);
 
   if (isLoading) {
     return (
@@ -180,7 +231,7 @@ export const InmersionesManager = () => {
         )}
       </div>
 
-      {/* Tabs de visualización */}
+      {/* Tabs de visualización con lazy loading */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="table">Tabla</TabsTrigger>
@@ -211,33 +262,39 @@ export const InmersionesManager = () => {
               </CardContent>
             </Card>
           ) : (
-            <InmersionesTable
-              inmersiones={filteredInmersiones}
-              onEdit={handleEdit}
-              onView={handleViewDetail}
-              onDelete={handleDeleteClick}
-            />
+            <Suspense fallback={<TabLoadingSkeleton />}>
+              <InmersionesTable
+                inmersiones={filteredInmersiones}
+                onEdit={handleEdit}
+                onView={handleViewDetail}
+                onDelete={handleDeleteClick}
+              />
+            </Suspense>
           )}
         </TabsContent>
 
         <TabsContent value="cards" className="space-y-4">
-          <InmersionCardView
-            inmersiones={filteredInmersiones}
-            onSelect={handleViewDetail}
-            onEdit={handleEdit}
-            onViewDetail={handleViewDetail}
-            onDelete={handleDeleteClick}
-          />
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <InmersionCardView
+              inmersiones={filteredInmersiones}
+              onSelect={handleViewDetail}
+              onEdit={handleEdit}
+              onViewDetail={handleViewDetail}
+              onDelete={handleDeleteClick}
+            />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="map" className="space-y-4">
-          <InmersionesMapView
-            inmersiones={filteredInmersiones}
-            onSelect={handleViewDetail}
-            onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-          />
+          <Suspense fallback={<TabLoadingSkeleton />}>
+            <InmersionesMapView
+              inmersiones={filteredInmersiones}
+              onSelect={handleViewDetail}
+              onViewDetail={handleViewDetail}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          </Suspense>
         </TabsContent>
       </Tabs>
 
@@ -287,4 +344,6 @@ export const InmersionesManager = () => {
       />
     </div>
   );
-};
+});
+
+InmersionesManager.displayName = 'InmersionesManager';
