@@ -53,9 +53,9 @@ const Reportes = () => {
             <BarChart3 className="w-4 h-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="multix" className="flex items-center gap-2">
+          <TabsTrigger value="operativo" className="flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            MultiX Operativo
+            Operativo
           </TabsTrigger>
           <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
           <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
@@ -74,7 +74,7 @@ const Reportes = () => {
           <ExpiringPermits />
         </TabsContent>
 
-        <TabsContent value="multix" className="space-y-6">
+        <TabsContent value="operativo" className="space-y-6">
           <MultiXOperationalReport />
         </TabsContent>
 
