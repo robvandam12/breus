@@ -73,7 +73,19 @@ export const EnhancedCuadrillaSelector = ({
 
   // Verificar disponibilidad de todas las cuadrillas cuando cambie la fecha
   useEffect(() => {
-    if (!fechaInmersion || availableCuadrillas.length === 0) {
+    if (!fechaInmersion || cuadrillas.length === 0) {
+      setAvailabilityStatus({});
+      return;
+    }
+
+    const currentAvailableCuadrillas = cuadrillas.filter(cuadrilla => {
+      if (centroId) {
+        return cuadrilla.centro_id === centroId || !cuadrilla.centro_id;
+      }
+      return true;
+    });
+
+    if (currentAvailableCuadrillas.length === 0) {
       setAvailabilityStatus({});
       return;
     }
@@ -83,7 +95,7 @@ export const EnhancedCuadrillaSelector = ({
       const statusMap: Record<string, AvailabilityResult> = {};
 
       try {
-        for (const cuadrilla of availableCuadrillas) {
+        for (const cuadrilla of currentAvailableCuadrillas) {
           const result = await checkCuadrillaAvailability(cuadrilla.id);
           statusMap[cuadrilla.id] = result;
         }
@@ -99,7 +111,7 @@ export const EnhancedCuadrillaSelector = ({
     // Debounce para evitar múltiples llamadas
     const timeoutId = setTimeout(checkAllAvailability, 500);
     return () => clearTimeout(timeoutId);
-  }, [fechaInmersion, inmersionId, availableCuadrillas]); // Usar availableCuadrillas directamente
+  }, [fechaInmersion, inmersionId, cuadrillas.length, centroId]); // Usar dependencias primitivas
 
   const handleCuadrillaSelect = (cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
