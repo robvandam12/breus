@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useEnterpriseModuleAccess } from './useEnterpriseModuleAccess';
@@ -89,12 +90,9 @@ export const useEnterpriseValidation = (companyId?: string, companyType?: 'salmo
 
       let validationMessage: string | undefined;
       
-      if (!hasAnyModule) {
-        validationMessage = 'Esta empresa no tiene módulos configurados. Contacte al administrador.';
-      } else if (activeNonCoreModules === 0) {
-        validationMessage = `Esta empresa solo tiene acceso a funcionalidades básicas (inmersiones core). Para gestionar operaciones se requiere el módulo de Planning.`;
-      } else if (!hasPlanning) {
-        validationMessage = `Esta empresa no tiene el módulo de Planning activo. Solo puede realizar inmersiones independientes.`;
+      // CRÍTICO: Solo empresas con planning_operations pueden crear operaciones
+      if (!hasPlanning) {
+        validationMessage = `Esta empresa no tiene el módulo Planning activo. Solo puede realizar inmersiones independientes.`;
       }
 
       const result: EnterpriseValidationResult = {
@@ -110,7 +108,9 @@ export const useEnterpriseValidation = (companyId?: string, companyType?: 'salmo
       console.log('Enterprise validation result:', {
         ...result,
         activeModules: modules.modules.filter(m => m.is_active).map(m => m.module_name),
-        totalActiveNonCore: activeNonCoreModules
+        totalActiveNonCore: activeNonCoreModules,
+        companyId: targetCompanyId,
+        companyType: targetCompanyType
       });
       
       setValidation(result);
@@ -144,9 +144,7 @@ export const useEnterpriseValidation = (companyId?: string, companyType?: 'salmo
         return {
           isValid: validation.canAccessPlanning,
           message: !validation.canAccessPlanning 
-            ? validation.moduleStatus?.planning === 'inactive'
-              ? 'El módulo de Planning no está activo para esta empresa. Solo puede crear inmersiones independientes.'
-              : 'Esta empresa no tiene el módulo de Planning disponible. Contacte al administrador para activarlo.'
+            ? 'El módulo de Planning no está activo para esta empresa. Solo puede crear inmersiones independientes.'
             : undefined
         };
         
@@ -155,9 +153,7 @@ export const useEnterpriseValidation = (companyId?: string, companyType?: 'salmo
         return {
           isValid: validation.canAccessMaintenance,
           message: !validation.canAccessMaintenance 
-            ? validation.moduleStatus?.maintenance === 'inactive'
-              ? 'El módulo de Mantenimiento de Redes está desactivado para esta empresa. Contacte al administrador para activarlo.'
-              : 'Esta empresa no tiene el módulo de Mantenimiento de Redes disponible.'
+            ? 'El módulo de Mantenimiento de Redes no está activo para esta empresa.'
             : undefined
         };
         
@@ -165,9 +161,7 @@ export const useEnterpriseValidation = (companyId?: string, companyType?: 'salmo
         return {
           isValid: validation.canAccessReporting,
           message: !validation.canAccessReporting 
-            ? validation.moduleStatus?.reporting === 'inactive'
-              ? 'El módulo de Reportes Avanzados está desactivado para esta empresa. Contacte al administrador para activarlo.'
-              : 'Esta empresa no tiene el módulo de Reportes Avanzados disponible.'
+            ? 'El módulo de Reportes Avanzados no está activo para esta empresa.'
             : undefined
         };
         

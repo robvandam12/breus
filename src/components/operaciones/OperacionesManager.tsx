@@ -7,14 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Building, AlertTriangle, Search, TableIcon, Grid3X3, MapIcon } from "lucide-react";
+import { Plus, Building, AlertTriangle, Search, TableIcon, Grid3X3, MapIcon, Info } from "lucide-react";
 import { useOperacionesQuery } from '@/hooks/useOperacionesQuery';
 import { useEnterpriseValidation } from '@/hooks/useEnterpriseValidation';
 import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
 import { CreateOperacionDialog } from './CreateOperacionDialog';
 import { useDebounce } from '@/hooks/useDebounce';
 
-// Lazy loading de componentes pesados
+// Lazy loading de componentes pesados  
 const OperacionesDataTable = lazy(() => import('./OperacionesDataTable').then(module => ({ 
   default: module.OperacionesDataTable 
 })));
@@ -150,9 +150,9 @@ export const OperacionesManager = React.memo(() => {
       {validation.validationMessage && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <Info className="w-5 h-5 text-amber-600 mt-0.5" />
             <div className="flex-1">
-              <h4 className="font-medium text-amber-800">Estado de Módulos</h4>
+              <h4 className="font-medium text-amber-800">Información de Acceso</h4>
               <p className="text-sm text-amber-700 mt-1">{validation.validationMessage}</p>
               
               {validation.moduleStatus && (
@@ -208,11 +208,13 @@ export const OperacionesManager = React.memo(() => {
               <Building className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">Módulo Planning No Disponible</h3>
               <p className="text-sm max-w-md mx-auto">
-                {validation.moduleStatus?.planning === 'inactive' 
-                  ? 'El módulo de Planning está desactivado para esta empresa. Contacte al administrador del sistema para activarlo.'
-                  : 'Esta empresa no tiene el módulo de Planning configurado. Contacte al administrador para obtener acceso.'
-                }
+                Esta empresa no tiene el módulo de Planning activo. Solo puede crear inmersiones independientes desde la sección de Inmersiones.
               </p>
+              <div className="mt-4">
+                <Badge variant="secondary" className="text-xs">
+                  Solo módulo Core disponible
+                </Badge>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
