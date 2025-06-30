@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-interface MultiXReportFilters {
+interface OperativoReportFilters {
   dateRange: {
     from: string;
     to: string;
@@ -38,7 +39,7 @@ interface BuzoPerformance {
   calificacion_promedio: number;
 }
 
-interface MultiXReportData {
+interface OperativoReportData {
   contratistas_performance: ContratistaPerformance[];
   buzos_performance: BuzoPerformance[];
   estadisticas_generales: {
@@ -80,7 +81,7 @@ interface MultiXReportData {
 }
 
 // Datos mock mejorados y más realistas
-const getMockReportData = (): MultiXReportData => ({
+const getMockReportData = (): OperativoReportData => ({
   contratistas_performance: [
     {
       contratista_id: '1',
@@ -241,8 +242,8 @@ const getMockReportData = (): MultiXReportData => ({
   ]
 });
 
-export const useReportesMultiX = (filters: MultiXReportFilters) => {
-  const [reportData, setReportData] = useState<MultiXReportData | null>(null);
+export const useReportesMultiX = (filters: OperativoReportFilters) => {
+  const [reportData, setReportData] = useState<OperativoReportData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -258,14 +259,14 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
       const mockData = getMockReportData();
       setReportData(mockData);
       setError(null);
-      console.log('MultiX Report generated successfully with mock data');
+      console.log('Reporte Operativo generated successfully with mock data');
     } catch (err) {
-      console.error('Error generating MultiX report:', err);
-      setError('Error al generar el reporte MultiX');
+      console.error('Error generating Operativo report:', err);
+      setError('Error al generar el reporte operativo');
       setReportData(null);
       toast({
         title: "Error",
-        description: "No se pudo generar el reporte MultiX",
+        description: "No se pudo generar el reporte operativo",
         variant: "destructive",
       });
     } finally {
@@ -276,7 +277,7 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const exportReport = useCallback(async (format: 'pdf' | 'excel') => {
     try {
       toast({
-        title: "Exportando Reporte MultiX",
+        title: "Exportando Reporte Operativo",
         description: `Generando archivo ${format.toUpperCase()}...`,
       });
       
