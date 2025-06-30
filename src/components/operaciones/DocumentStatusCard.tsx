@@ -6,9 +6,9 @@ import { FileText, Plus, CheckCircle, AlertCircle, Clock } from "lucide-react";
 import { useRouter } from "@/hooks/useRouter";
 
 interface DocumentStatusCardProps {
-  operacionId: string;
-  operacionCodigo: string;
-  documents: {
+  operacionId?: string;
+  operacionCodigo?: string;
+  documents?: {
     hpt?: { exists: boolean; firmado?: boolean; id?: string };
     anexoBravo?: { exists: boolean; firmado?: boolean; id?: string };
     inmersiones?: { count: number };
@@ -24,15 +24,17 @@ export const DocumentStatusCard = ({ operacionId, operacionCodigo, documents }: 
     return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', text: 'Completado' };
   };
 
-  const hptStatus = getDocumentStatus(documents.hpt);
-  const anexoStatus = getDocumentStatus(documents.anexoBravo);
+  const hptStatus = getDocumentStatus(documents?.hpt);
+  const anexoStatus = getDocumentStatus(documents?.anexoBravo);
 
   const handleCreateHPT = () => {
-    navigateTo(`/formularios/hpt?operacion=${operacionId}`);
+    const params = operacionId ? `?operacion=${operacionId}` : '';
+    navigateTo(`/formularios/hpt${params}`);
   };
 
   const handleCreateAnexoBravo = () => {
-    navigateTo(`/formularios/anexo-bravo?operacion=${operacionId}`);
+    const params = operacionId ? `?operacion=${operacionId}` : '';
+    navigateTo(`/formularios/anexo-bravo${params}`);
   };
 
   const handleViewDocument = (type: 'hpt' | 'anexo-bravo', id: string) => {
@@ -44,7 +46,7 @@ export const DocumentStatusCard = ({ operacionId, operacionCodigo, documents }: 
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="w-5 h-5 text-blue-600" />
-          Estado de Documentos - {operacionCodigo}
+          Estado de Documentos {operacionCodigo ? `- ${operacionCodigo}` : ''}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -62,7 +64,7 @@ export const DocumentStatusCard = ({ operacionId, operacionCodigo, documents }: 
             </div>
           </div>
           <div className="flex gap-2">
-            {documents.hpt?.exists && documents.hpt.id ? (
+            {documents?.hpt?.exists && documents.hpt.id ? (
               <Button 
                 variant="outline" 
                 size="sm"
@@ -96,7 +98,7 @@ export const DocumentStatusCard = ({ operacionId, operacionCodigo, documents }: 
             </div>
           </div>
           <div className="flex gap-2">
-            {documents.anexoBravo?.exists && documents.anexoBravo.id ? (
+            {documents?.anexoBravo?.exists && documents.anexoBravo.id ? (
               <Button 
                 variant="outline" 
                 size="sm"
@@ -125,7 +127,7 @@ export const DocumentStatusCard = ({ operacionId, operacionCodigo, documents }: 
             <div>
               <p className="font-medium">Inmersiones Registradas</p>
               <Badge variant="outline">
-                {documents.inmersiones?.count || 0} inmersiones
+                {documents?.inmersiones?.count || 0} inmersiones
               </Badge>
             </div>
           </div>

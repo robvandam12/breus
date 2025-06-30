@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,6 @@ export default function HPTFormularios() {
         />
       ) : (
         <div>
-          {/* Content of the HPTFormularios page */}
           <p>Aquí irá la tabla o listado de HPTs existentes.</p>
         </div>
       )}
