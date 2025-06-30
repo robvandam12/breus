@@ -42,10 +42,7 @@ export const IndependentImmersionManager = () => {
     if (!editingInmersion) return;
     
     try {
-      await updateInmersion({
-        id: editingInmersion.inmersion_id,
-        data
-      });
+      await updateInmersion(editingInmersion.inmersion_id, data);
       setEditingInmersion(null);
     } catch (error) {
       console.error('Error updating immersion:', error);
