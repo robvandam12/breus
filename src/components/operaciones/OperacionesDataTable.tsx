@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Operacion } from '@/hooks/useOperacionesQuery';
 
@@ -11,9 +11,44 @@ interface OperacionesDataTableProps {
   operaciones: Operacion[];
   isLoading: boolean;
   enterpriseContext?: any;
+  onEdit?: (operacion: Operacion) => void;
+  onView?: (operacion: Operacion) => void;
+  onDelete?: (operacionId: string) => void;
 }
 
-export const OperacionesDataTable = ({ operaciones, isLoading, enterpriseContext }: OperacionesDataTableProps) => {
+export const OperacionesDataTable = ({ 
+  operaciones, 
+  isLoading, 
+  enterpriseContext,
+  onEdit,
+  onView, 
+  onDelete 
+}: OperacionesDataTableProps) => {
+  
+  const handleEdit = (operacion: Operacion) => {
+    if (onEdit) {
+      onEdit(operacion);
+    } else {
+      console.log('Editar operación:', operacion.id);
+    }
+  };
+
+  const handleView = (operacion: Operacion) => {
+    if (onView) {
+      onView(operacion);
+    } else {
+      console.log('Ver operación:', operacion.id);
+    }
+  };
+
+  const handleDelete = (operacionId: string) => {
+    if (onDelete) {
+      onDelete(operacionId);
+    } else {
+      console.log('Eliminar operación:', operacionId);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -40,7 +75,7 @@ export const OperacionesDataTable = ({ operaciones, isLoading, enterpriseContext
     return (
       <div className="text-center py-12 text-gray-500">
         <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-          📋
+          <Building2 className="w-8 h-8 text-gray-400" />
         </div>
         <h3 className="text-lg font-medium mb-2">No hay operaciones</h3>
         <p className="text-sm">
@@ -112,13 +147,29 @@ export const OperacionesDataTable = ({ operaciones, isLoading, enterpriseContext
             </div>
             
             <div className="flex items-center gap-2 ml-4">
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => handleView(operacion)}
+                title="Ver detalles"
+              >
                 <Eye className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => handleEdit(operacion)}
+                title="Editar operación"
+              >
                 <Edit className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => handleDelete(operacion.id)}
+                title="Eliminar operación"
+              >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>

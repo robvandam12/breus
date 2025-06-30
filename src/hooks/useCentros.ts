@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -61,39 +62,38 @@ const determinarRegion = (ubicacion: string): string => {
 export const useCentros = () => {
   const queryClient = useQueryClient();
 
-  const { data: centros = [], isLoading } = useQuery({
+  const { data: centros = [], isLoading, refetch } = useQuery({
     queryKey: ['centros'],
     queryFn: async () => {
-      // Primero obtenemos los centros
-      const { data: centrosData, error: centrosError } = await supabase
+      console.log('Fetching centros with native Supabase join...');
+      
+      // Usar join nativo de Supabase en lugar de join manual
+      const { data, error } = await supabase
         .from('centros')
-        .select('*')
+        .select(`
+          *,
+          salmoneras (
+            nombre
+          )
+        `)
         .order('nombre');
 
-      if (centrosError) throw centrosError;
+      if (error) {
+        console.error('Error fetching centros:', error);
+        throw new Error(`Error al obtener centros: ${error.message}`);
+      }
 
-      // Luego obtenemos las salmoneras para hacer el join manual
-      const { data: salmonerasData, error: salmonerasError } = await supabase
-        .from('salmoneras')
-        .select('id, nombre');
-
-      if (salmonerasError) throw salmonerasError;
-
-      // Combinamos los datos manualmente
-      const centrosConSalmoneras = (centrosData || []).map(centro => {
-        const salmonera = salmonerasData?.find(s => s.id === centro.salmonera_id);
-        return {
-          ...centro,
-          salmoneras: salmonera ? { nombre: salmonera.nombre } : null
-        };
-      });
-
-      return centrosConSalmoneras as Centro[];
+      console.log('Centros fetched successfully:', data?.length || 0);
+      return (data || []) as Centro[];
     },
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const createMutation = useMutation({
     mutationFn: async (formData: CentroFormData) => {
+      console.log('Creating centro with data:', formData);
+      
       // Auto-determinar región si no se proporciona
       const dataWithRegion = {
         ...formData,
@@ -103,24 +103,42 @@ export const useCentros = () => {
       const { data, error } = await supabase
         .from('centros')
         .insert([dataWithRegion])
-        .select()
+        .select(`
+          *,
+          salmoneras (
+            nombre
+          )
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating centro:', error);
+        throw new Error(`Error al crear centro: ${error.message}`);
+      }
+
+      console.log('Centro created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Optimistic update - actualizar cache inmediatamente
+      queryClient.setQueryData(['centros'], (oldData: Centro[] | undefined) => {
+        if (!oldData) return [data];
+        return [...oldData, data];
+      });
+      
+      // También invalidar para refetch desde servidor
       queryClient.invalidateQueries({ queryKey: ['centros'] });
+      
       toast({
         title: "Centro creado",
         description: "El centro ha sido creado exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating centro:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el centro.",
+        description: error.message || "No se pudo crear el centro.",
         variant: "destructive",
       });
     },
@@ -128,31 +146,55 @@ export const useCentros = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: CentroFormData }) => {
+      console.log('Updating centro:', id, 'with data:', data);
+      
       // Auto-determinar región si no se proporciona
       const dataWithRegion = {
         ...data,
         region: data.region || determinarRegion(data.ubicacion)
       };
 
-      const { error } = await supabase
+      const { data: updatedData, error } = await supabase
         .from('centros')
         .update(dataWithRegion)
-        .eq('id', id);
+        .eq('id', id)
+        .select(`
+          *,
+          salmoneras (
+            nombre
+          )
+        `)
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating centro:', error);
+        throw new Error(`Error al actualizar centro: ${error.message}`);
+      }
+
+      return updatedData;
     },
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
+      // Optimistic update - actualizar cache inmediatamente
+      queryClient.setQueryData(['centros'], (oldData: Centro[] | undefined) => {
+        if (!oldData) return [updatedData];
+        return oldData.map(centro => 
+          centro.id === updatedData.id ? updatedData : centro
+        );
+      });
+      
+      // También invalidar para refetch desde servidor
       queryClient.invalidateQueries({ queryKey: ['centros'] });
+      
       toast({
         title: "Centro actualizado",
         description: "El centro ha sido actualizado exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating centro:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el centro.",
+        description: error.message || "No se pudo actualizar el centro.",
         variant: "destructive",
       });
     },
@@ -160,25 +202,40 @@ export const useCentros = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting centro:', id);
+      
       const { error } = await supabase
         .from('centros')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting centro:', error);
+        throw new Error(`Error al eliminar centro: ${error.message}`);
+      }
+
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      // Optimistic update - eliminar del cache inmediatamente
+      queryClient.setQueryData(['centros'], (oldData: Centro[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.filter(centro => centro.id !== deletedId);
+      });
+      
+      // También invalidar para refetch desde servidor
       queryClient.invalidateQueries({ queryKey: ['centros'] });
+      
       toast({
         title: "Centro eliminado",
         description: "El centro ha sido eliminado exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting centro:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el centro.",
+        description: error.message || "No se pudo eliminar el centro.",
         variant: "destructive",
       });
     },
@@ -190,5 +247,9 @@ export const useCentros = () => {
     createCentro: createMutation.mutateAsync,
     updateCentro: updateMutation.mutateAsync,
     deleteCentro: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    refetch,
   };
 };

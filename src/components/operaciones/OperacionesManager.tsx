@@ -4,17 +4,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Building, AlertTriangle, Search, TableIcon, Grid3X3, MapIcon } from "lucide-react";
 import { useOperacionesQuery } from '@/hooks/useOperacionesQuery';
 import { useEnterpriseValidation } from '@/hooks/useEnterpriseValidation';
 import { EnterpriseSelector } from '@/components/common/EnterpriseSelector';
 import { OperacionesDataTable } from './OperacionesDataTable';
+import { OperacionCardView } from './OperacionCardView';
 import { CreateOperacionDialog } from './CreateOperacionDialog';
 
 export const OperacionesManager = () => {
   const { profile } = useAuth();
   const [selectedEnterprise, setSelectedEnterprise] = useState<any>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('table');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   
   const { validation } = useEnterpriseValidation(
     selectedEnterprise?.salmonera_id || selectedEnterprise?.contratista_id,
@@ -48,6 +55,14 @@ export const OperacionesManager = () => {
     }
     setShowCreateDialog(true);
   };
+
+  // Filtrar operaciones
+  const filteredOperaciones = operaciones.filter(operacion => {
+    const matchesSearch = operacion.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         operacion.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || operacion.estado === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   // Mostrar selector de empresa para superusers
   if (profile?.role === 'superuser' && !selectedEnterprise) {
@@ -140,11 +155,83 @@ export const OperacionesManager = () => {
               </p>
             </div>
           ) : (
-            <OperacionesDataTable
-              operaciones={operaciones}
-              isLoading={isLoading}
-              enterpriseContext={selectedEnterprise}
-            />
+            <div className="space-y-6">
+              {/* Filtros y búsqueda */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                <div className="flex gap-4 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Buscar operaciones..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filtrar por estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los estados</SelectItem>
+                      <SelectItem value="activa">Activa</SelectItem>
+                      <SelectItem value="pausada">Pausada</SelectItem>
+                      <SelectItem value="completada">Completada</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Tabs de visualización */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="table" className="flex items-center gap-2">
+                    <TableIcon className="w-4 h-4" />
+                    Tabla
+                  </TabsTrigger>
+                  <TabsTrigger value="cards" className="flex items-center gap-2">
+                    <Grid3X3 className="w-4 h-4" />
+                    Tarjetas
+                  </TabsTrigger>
+                  <TabsTrigger value="map" className="flex items-center gap-2">
+                    <MapIcon className="w-4 h-4" />
+                    Mapa
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="table" className="space-y-4">
+                  <OperacionesDataTable
+                    operaciones={filteredOperaciones}
+                    isLoading={isLoading}
+                    enterpriseContext={selectedEnterprise}
+                  />
+                </TabsContent>
+
+                <TabsContent value="cards" className="space-y-4">
+                  <OperacionCardView
+                    operaciones={filteredOperaciones}
+                    onSelect={(operacion) => console.log('Ver detalle:', operacion)}
+                    onEdit={(operacion) => console.log('Editar:', operacion)}
+                    onViewDetail={(operacion) => console.log('Ver detalle:', operacion)}
+                    onDelete={(operacionId) => console.log('Eliminar:', operacionId)}
+                  />
+                </TabsContent>
+
+                <TabsContent value="map" className="space-y-4">
+                  <div className="min-h-96 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="text-center">
+                      <MapIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Vista de Mapa</h3>
+                      <p className="text-gray-500">
+                        La vista de mapa estará disponible próximamente
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
           )}
         </CardContent>
       </Card>
