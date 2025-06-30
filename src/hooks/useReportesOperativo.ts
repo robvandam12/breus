@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-interface MultiXReportFilters {
+interface OperationalReportFilters {
   dateRange: {
     from: string;
     to: string;
@@ -14,7 +15,7 @@ interface MultiXReportFilters {
 interface ContratistaPerformance {
   contratista_id: string;
   contratista_nombre: string;
-  total_multix: number;
+  total_formularios: number;
   formularios_completados: number;
   formularios_pendientes: number;
   tiempo_promedio_completion: number;
@@ -38,11 +39,11 @@ interface BuzoPerformance {
   calificacion_promedio: number;
 }
 
-interface MultiXReportData {
+interface OperationalReportData {
   contratistas_performance: ContratistaPerformance[];
   buzos_performance: BuzoPerformance[];
   estadisticas_generales: {
-    total_multix_periodo: number;
+    total_formularios_periodo: number;
     formularios_mantencion: number;
     formularios_faena: number;
     contratistas_activos: number;
@@ -53,7 +54,7 @@ interface MultiXReportData {
   };
   comparativas_mensuales: {
     mes: string;
-    multix_completados: number;
+    formularios_completados: number;
     contratistas_activos: number;
     buzos_participantes: number;
     eficiencia: number;
@@ -80,12 +81,12 @@ interface MultiXReportData {
 }
 
 // Datos mock mejorados y más realistas
-const getMockReportData = (): MultiXReportData => ({
+const getMockReportData = (): OperationalReportData => ({
   contratistas_performance: [
     {
       contratista_id: '1',
       contratista_nombre: 'AquaTech Diving',
-      total_multix: 45,
+      total_formularios: 45,
       formularios_completados: 42,
       formularios_pendientes: 3,
       tiempo_promedio_completion: 2.5,
@@ -98,7 +99,7 @@ const getMockReportData = (): MultiXReportData => ({
     {
       contratista_id: '2',
       contratista_nombre: 'Marine Services Ltd',
-      total_multix: 38,
+      total_formularios: 38,
       formularios_completados: 35,
       formularios_pendientes: 3,
       tiempo_promedio_completion: 3.1,
@@ -111,7 +112,7 @@ const getMockReportData = (): MultiXReportData => ({
     {
       contratista_id: '3',
       contratista_nombre: 'Deep Sea Solutions',
-      total_multix: 32,
+      total_formularios: 32,
       formularios_completados: 28,
       formularios_pendientes: 4,
       tiempo_promedio_completion: 3.8,
@@ -124,7 +125,7 @@ const getMockReportData = (): MultiXReportData => ({
     {
       contratista_id: '4',
       contratista_nombre: 'Oceanic Contractors',
-      total_multix: 29,
+      total_formularios: 29,
       formularios_completados: 26,
       formularios_pendientes: 3,
       tiempo_promedio_completion: 2.8,
@@ -186,7 +187,7 @@ const getMockReportData = (): MultiXReportData => ({
     }
   ],
   estadisticas_generales: {
-    total_multix_periodo: 144,
+    total_formularios_periodo: 144,
     formularios_mantencion: 85,
     formularios_faena: 59,
     contratistas_activos: 12,
@@ -196,12 +197,12 @@ const getMockReportData = (): MultiXReportData => ({
     eficiencia_general: 91.8
   },
   comparativas_mensuales: [
-    { mes: 'Enero', multix_completados: 18, contratistas_activos: 6, buzos_participantes: 18, eficiencia: 89.5 },
-    { mes: 'Febrero', multix_completados: 22, contratistas_activos: 7, buzos_participantes: 21, eficiencia: 91.2 },
-    { mes: 'Marzo', multix_completados: 25, contratistas_activos: 8, buzos_participantes: 24, eficiencia: 93.1 },
-    { mes: 'Abril', multix_completados: 28, contratistas_activos: 9, buzos_participantes: 26, eficiencia: 92.8 },
-    { mes: 'Mayo', multix_completados: 31, contratistas_activos: 10, buzos_participantes: 28, eficiencia: 91.5 },
-    { mes: 'Junio', multix_completados: 20, contratistas_activos: 8, buzos_participantes: 22, eficiencia: 90.2 }
+    { mes: 'Enero', formularios_completados: 18, contratistas_activos: 6, buzos_participantes: 18, eficiencia: 89.5 },
+    { mes: 'Febrero', formularios_completados: 22, contratistas_activos: 7, buzos_participantes: 21, eficiencia: 91.2 },
+    { mes: 'Marzo', formularios_completados: 25, contratistas_activos: 8, buzos_participantes: 24, eficiencia: 93.1 },
+    { mes: 'Abril', formularios_completados: 28, contratistas_activos: 9, buzos_participantes: 26, eficiencia: 92.8 },
+    { mes: 'Mayo', formularios_completados: 31, contratistas_activos: 10, buzos_participantes: 28, eficiencia: 91.5 },
+    { mes: 'Junio', formularios_completados: 20, contratistas_activos: 8, buzos_participantes: 22, eficiencia: 90.2 }
   ],
   top_contratistas: [
     { nombre: 'AquaTech Diving', formularios_completados: 42, eficiencia: 93.3, tiempo_promedio: 2.5 },
@@ -241,13 +242,13 @@ const getMockReportData = (): MultiXReportData => ({
   ]
 });
 
-export const useReportesMultiX = (filters: MultiXReportFilters) => {
-  const [reportData, setReportData] = useState<MultiXReportData | null>(null);
+export const useReportesOperativo = (filters: OperationalReportFilters) => {
+  const [reportData, setReportData] = useState<OperationalReportData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generateMultiXReport = useCallback(async () => {
+  const generateOperationalReport = useCallback(async () => {
     if (isLoading) return;
     
     setIsLoading(true);
@@ -258,14 +259,14 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
       const mockData = getMockReportData();
       setReportData(mockData);
       setError(null);
-      console.log('MultiX Report generated successfully with mock data');
+      console.log('Operational Report generated successfully with mock data');
     } catch (err) {
-      console.error('Error generating MultiX report:', err);
-      setError('Error al generar el reporte MultiX');
+      console.error('Error generating Operational report:', err);
+      setError('Error al generar el reporte operativo');
       setReportData(null);
       toast({
         title: "Error",
-        description: "No se pudo generar el reporte MultiX",
+        description: "No se pudo generar el reporte operativo",
         variant: "destructive",
       });
     } finally {
@@ -276,7 +277,7 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
   const exportReport = useCallback(async (format: 'pdf' | 'excel') => {
     try {
       toast({
-        title: "Exportando Reporte MultiX",
+        title: "Exportando Reporte Operativo",
         description: `Generando archivo ${format.toUpperCase()}...`,
       });
       
@@ -300,7 +301,7 @@ export const useReportesMultiX = (filters: MultiXReportFilters) => {
     reportData,
     isLoading,
     error,
-    generateMultiXReport,
+    generateOperationalReport,
     exportReport
   };
 };

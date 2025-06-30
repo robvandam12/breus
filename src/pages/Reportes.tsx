@@ -12,7 +12,7 @@ import { ComplianceChart } from "@/components/reportes/ComplianceChart";
 import { FormStatusChart } from "@/components/reportes/FormStatusChart";
 import { DailyImmersionsChart } from "@/components/reportes/DailyImmersionsChart";
 import { ExpiringPermits } from "@/components/reportes/ExpiringPermits";
-import { MultiXOperationalReport } from "@/components/reportes/MultiXOperationalReport";
+import { OperationalReport } from "@/components/reportes/OperationalReport";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 const Reportes = () => {
@@ -53,9 +53,9 @@ const Reportes = () => {
             <BarChart3 className="w-4 h-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="multix" className="flex items-center gap-2">
+          <TabsTrigger value="operativo" className="flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            MultiX Operativo
+            Operativo
           </TabsTrigger>
           <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
           <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
@@ -74,8 +74,8 @@ const Reportes = () => {
           <ExpiringPermits />
         </TabsContent>
 
-        <TabsContent value="multix" className="space-y-6">
-          <MultiXOperationalReport />
+        <TabsContent value="operativo" className="space-y-6">
+          <OperationalReport />
         </TabsContent>
 
         <TabsContent value="seguridad" className="space-y-6">
