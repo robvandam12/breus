@@ -1,14 +1,13 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { SuperuserInmersionForm } from './forms/SuperuserInmersionForm';
-import { SalmoneroInmersionForm } from './forms/SalmoneroInmersionForm';
+import { UnifiedInmersionForm as NewUnifiedInmersionForm } from './forms/UnifiedInmersionForm';
 import { ContratistaInmersionForm } from './forms/ContratistaInmersionForm';
 import { BuzoSupervisorInmersionForm } from './forms/BuzoSupervisorInmersionForm';
 import type { Inmersion } from '@/hooks/useInmersiones';
 
 interface UnifiedInmersionFormProps {
-  onSubmit: (data: any) => Promise<void>; // Cambiar a Promise<void> para consistencia
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
   initialData?: Inmersion;
 }
@@ -20,17 +19,9 @@ export const UnifiedInmersionForm = ({ onSubmit, onCancel, initialData }: Unifie
   const renderFormByRole = () => {
     switch (profile?.role) {
       case 'superuser':
-        return (
-          <SuperuserInmersionForm
-            onSubmit={onSubmit}
-            onCancel={onCancel}
-            initialData={initialData}
-          />
-        );
-      
       case 'admin_salmonera':
         return (
-          <SalmoneroInmersionForm
+          <NewUnifiedInmersionForm
             onSubmit={onSubmit}
             onCancel={onCancel}
             initialData={initialData}

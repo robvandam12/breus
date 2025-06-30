@@ -1,14 +1,45 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { InmersionFormData, Operacion, Centro, FormValidationState } from '@/types/inmersionForms';
 
-export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: any) => {
+export const useInmersionFormLogic = (initialData?: any) => {
   const { profile } = useAuth();
   const { getModulesForCompany } = useEnterpriseModuleAccess();
+  
+  // Auto-detectar el contexto empresarial según el rol del usuario
+  const selectedEnterprise = useMemo(() => {
+    if (!profile) return null;
+    
+    if (profile.role === 'superuser') {
+      return null; // Superuser necesita seleccionar empresa manualmente
+    }
+    
+    if (profile.salmonera_id) {
+      return {
+        salmonera_id: profile.salmonera_id,
+        context_metadata: {
+          selection_mode: 'salmonera_admin',
+          empresa_origen_tipo: 'salmonera'
+        }
+      };
+    }
+    
+    if (profile.servicio_id) {
+      return {
+        contratista_id: profile.servicio_id,
+        context_metadata: {
+          selection_mode: 'contratista_admin',
+          empresa_origen_tipo: 'contratista'
+        }
+      };
+    }
+    
+    return null;
+  }, [profile]);
   
   const [formValidationState, setFormValidationState] = useState<FormValidationState>({
     hasPlanning: false,
@@ -19,7 +50,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
   
   const [loading, setLoading] = useState(false);
   
-  const getInitialCuadrillaId = () => {
+  const getInitialCuadrillaId = useCallback(() => {
     if (!initialData?.metadata) return null;
     try {
       const metadata = typeof initialData.metadata === 'string' 
@@ -29,7 +60,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
     } catch {
       return null;
     }
-  };
+  }, [initialData]);
   
   const [selectedCuadrillaId, setSelectedCuadrillaId] = useState<string | null>(getInitialCuadrillaId());
   
@@ -47,7 +78,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
   const [operaciones, setOperaciones] = useState<Operacion[]>([]);
   const [centros, setCentros] = useState<Centro[]>([]);
 
-  const loadEnterpriseModules = async (companyId: string, companyType: 'salmonera' | 'contratista') => {
+  const loadEnterpriseModules = useCallback(async (companyId: string, companyType: 'salmonera' | 'contratista') => {
     try {
       const modules = await getModulesForCompany(companyId, companyType);
       const hasPlanning = Boolean(modules?.hasPlanning === true || String(modules?.hasPlanning) === 'true');
@@ -67,9 +98,9 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
         enterpriseModules: null
       });
     }
-  };
+  }, [getModulesForCompany, initialData]);
 
-  const loadOperaciones = async (companyId: string, companyType: 'salmonera' | 'contratista') => {
+  const loadOperaciones = useCallback(async (companyId: string, companyType: 'salmonera' | 'contratista') => {
     try {
       const companyTypeField = companyType === 'salmonera' ? 'salmonera_id' : 'contratista_id';
 
@@ -92,9 +123,9 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       console.error('Error loading operaciones:', error);
       setOperaciones([]);
     }
-  };
+  }, []);
 
-  const loadCentros = async (companyId: string, companyType: 'salmonera' | 'contratista') => {
+  const loadCentros = useCallback(async (companyId: string, companyType: 'salmonera' | 'contratista') => {
     try {
       if (companyType === 'salmonera') {
         const { data } = await supabase
@@ -118,9 +149,9 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       console.error('Error loading centros:', error);
       setCentros([]);
     }
-  };
+  }, []);
 
-  const validateForm = (): boolean => {
+  const validateForm = useCallback((): boolean => {
     if (formValidationState.isPlanned && !formData.operacion_id) {
       toast({
         title: "Error", 
@@ -166,7 +197,6 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       return false;
     }
 
-    // Para inmersiones planificadas, profundidad máxima es opcional inicialmente
     if (!formValidationState.isPlanned && (!formData.profundidad_max || parseFloat(formData.profundidad_max) <= 0)) {
       toast({
         title: "Error",
@@ -177,9 +207,9 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
     }
 
     return true;
-  };
+  }, [formValidationState, formData]);
 
-  const buildInmersionData = (companyId: string, enterpriseContext: any) => {
+  const buildInmersionData = useCallback((companyId: string, enterpriseContext: any) => {
     const currentMetadata = initialData?.metadata ? 
       (typeof initialData.metadata === 'string' ? JSON.parse(initialData.metadata) : initialData.metadata) : 
       {};
@@ -195,9 +225,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       hpt_validado: Boolean(!formValidationState.isPlanned),
       centro_id: formData.centro_id,
       codigo: formData.codigo,
-      // Establecer el contexto operativo correcto
       contexto_operativo: formValidationState.isPlanned ? 'planificada' : 'independiente',
-      // Campos opcionales para inmersiones planificadas
       temperatura_agua: null,
       visibilidad: null,
       corriente: null,
@@ -211,7 +239,6 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       }
     };
 
-    // Para inmersiones planificadas, incluir operacion_id
     if (formValidationState.isPlanned && formData.operacion_id) {
       return {
         ...baseData,
@@ -220,13 +247,31 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
       };
     }
 
-    // Para inmersiones independientes, usar external_operation_code y no incluir operacion_id
     return {
       ...baseData,
       external_operation_code: formData.external_operation_code
-      // operacion_id se omite intencionalmente para que sea null en la DB
     };
-  };
+  }, [formData, formValidationState, selectedCuadrillaId, initialData]);
+
+  // Auto-cargar datos cuando el contexto empresarial esté disponible
+  useEffect(() => {
+    if (selectedEnterprise) {
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      
+      loadEnterpriseModules(companyId, companyType);
+      loadCentros(companyId, companyType);
+    }
+  }, [selectedEnterprise, loadEnterpriseModules, loadCentros]);
+
+  // Cargar operaciones cuando sea necesario
+  useEffect(() => {
+    if (formValidationState.canShowPlanningToggle && formValidationState.isPlanned && selectedEnterprise) {
+      const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
+      const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
+      loadOperaciones(companyId, companyType);
+    }
+  }, [formValidationState.canShowPlanningToggle, formValidationState.isPlanned, selectedEnterprise, loadOperaciones]);
 
   return {
     formValidationState,
@@ -239,9 +284,7 @@ export const useInmersionFormLogic = (initialData?: any, selectedEnterprise?: an
     setFormData,
     operaciones,
     centros,
-    loadEnterpriseModules,
-    loadOperaciones,
-    loadCentros,
+    selectedEnterprise,
     validateForm,
     buildInmersionData,
     profile
