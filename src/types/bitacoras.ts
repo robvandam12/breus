@@ -17,6 +17,7 @@ export interface CuadrillaMemberData {
   equipo_utilizado?: string;
   estado_fisico_pre?: string;
   estado_fisico_post?: string;
+  [key: string]: any; // Index signature for Json compatibility
 }
 
 // Tiempos detallados por buzo
@@ -28,6 +29,7 @@ export interface TiemposDetallados {
     tiempo_fondo_minutos: number;
     tiempo_descompresion_minutos?: number;
     observaciones_tiempos?: string;
+    [key: string]: any; // Index signature for Json compatibility
   };
 }
 

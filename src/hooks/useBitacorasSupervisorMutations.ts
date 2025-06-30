@@ -64,39 +64,41 @@ export const useBitacorasSupervisorMutations = () => {
         });
       }
 
+      const insertData = {
+        inmersion_id: data.inmersion_id,
+        codigo: data.codigo,
+        fecha: data.fecha,
+        supervisor: data.supervisor,
+        desarrollo_inmersion: data.desarrollo_inmersion,
+        incidentes: data.incidentes || '',
+        evaluacion_general: data.evaluacion_general,
+        lugar_trabajo: data.lugar_trabajo,
+        estado_aprobacion: data.estado_aprobacion || 'pendiente',
+        firmado: data.firmado || false,
+        company_id: data.company_id,
+        company_type: data.company_type,
+        supervisor_nombre_matricula: data.supervisor_nombre_matricula,
+        fecha_inicio_faena: data.fecha_inicio_faena,
+        hora_inicio_faena: data.hora_inicio_faena,
+        hora_termino_faena: data.hora_termino_faena,
+        estado_mar: data.estado_mar,
+        visibilidad_fondo: data.visibilidad_fondo,
+        trabajo_a_realizar: data.trabajo_a_realizar,
+        descripcion_trabajo: data.descripcion_trabajo,
+        embarcacion_apoyo: data.embarcacion_apoyo,
+        observaciones_generales_texto: data.observaciones_generales_texto,
+        validacion_contratista: data.validacion_contratista,
+        inmersiones_buzos: data.inmersiones_buzos || [],
+        equipos_utilizados: data.equipos_utilizados || [],
+        diving_records: data.diving_records || [],
+        // Convertir a JSON para compatibilidad con Supabase
+        datos_cuadrilla: JSON.stringify(data.datos_cuadrilla || []),
+        tiempos_detallados: JSON.stringify(tiemposDetallados),
+      };
+
       const { data: result, error } = await supabase
         .from('bitacora_supervisor')
-        .insert([{
-          inmersion_id: data.inmersion_id,
-          codigo: data.codigo,
-          fecha: data.fecha,
-          supervisor: data.supervisor,
-          desarrollo_inmersion: data.desarrollo_inmersion,
-          incidentes: data.incidentes || '',
-          evaluacion_general: data.evaluacion_general,
-          lugar_trabajo: data.lugar_trabajo,
-          estado_aprobacion: data.estado_aprobacion || 'pendiente',
-          firmado: data.firmado || false,
-          company_id: data.company_id,
-          company_type: data.company_type,
-          supervisor_nombre_matricula: data.supervisor_nombre_matricula,
-          fecha_inicio_faena: data.fecha_inicio_faena,
-          hora_inicio_faena: data.hora_inicio_faena,
-          hora_termino_faena: data.hora_termino_faena,
-          estado_mar: data.estado_mar,
-          visibilidad_fondo: data.visibilidad_fondo,
-          trabajo_a_realizar: data.trabajo_a_realizar,
-          descripcion_trabajo: data.descripcion_trabajo,
-          embarcacion_apoyo: data.embarcacion_apoyo,
-          observaciones_generales_texto: data.observaciones_generales_texto,
-          validacion_contratista: data.validacion_contratista,
-          inmersiones_buzos: data.inmersiones_buzos || [],
-          equipos_utilizados: data.equipos_utilizados || [],
-          diving_records: data.diving_records || [],
-          // Nuevos campos
-          datos_cuadrilla: data.datos_cuadrilla || [],
-          tiempos_detallados: tiemposDetallados,
-        }])
+        .insert(insertData)
         .select()
         .single();
 
@@ -108,7 +110,10 @@ export const useBitacorasSupervisorMutations = () => {
       
       // Si la bitácora fue firmada, crear notificaciones para los buzos
       if (result.firmado && result.datos_cuadrilla) {
-        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+        const cuadrillaData = typeof result.datos_cuadrilla === 'string' 
+          ? JSON.parse(result.datos_cuadrilla) 
+          : result.datos_cuadrilla;
+        await notifyTeamMembers(result.bitacora_id, cuadrillaData as CuadrillaMemberData[]);
       }
       
       toast({
@@ -146,7 +151,9 @@ export const useBitacorasSupervisorMutations = () => {
 
       const updateData = {
         ...data,
-        tiempos_detallados: tiemposDetallados
+        // Convertir a JSON para compatibilidad
+        datos_cuadrilla: data.datos_cuadrilla ? JSON.stringify(data.datos_cuadrilla) : undefined,
+        tiempos_detallados: JSON.stringify(tiemposDetallados)
       };
 
       const { data: result, error } = await supabase
@@ -164,7 +171,10 @@ export const useBitacorasSupervisorMutations = () => {
       
       // Si se firmó la bitácora, notificar al equipo
       if (result.firmado && result.datos_cuadrilla) {
-        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+        const cuadrillaData = typeof result.datos_cuadrilla === 'string' 
+          ? JSON.parse(result.datos_cuadrilla) 
+          : result.datos_cuadrilla;
+        await notifyTeamMembers(result.bitacora_id, cuadrillaData as CuadrillaMemberData[]);
       }
       
       toast({
@@ -202,7 +212,10 @@ export const useBitacorasSupervisorMutations = () => {
       
       // Notificar a los miembros del equipo que pueden completar sus bitácoras
       if (result.datos_cuadrilla) {
-        await notifyTeamMembers(result.bitacora_id, result.datos_cuadrilla);
+        const cuadrillaData = typeof result.datos_cuadrilla === 'string' 
+          ? JSON.parse(result.datos_cuadrilla) 
+          : result.datos_cuadrilla;
+        await notifyTeamMembers(result.bitacora_id, cuadrillaData as CuadrillaMemberData[]);
       }
       
       toast({

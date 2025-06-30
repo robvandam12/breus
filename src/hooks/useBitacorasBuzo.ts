@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { bitacoraBuzoFormSchema } from '@/components/bitacoras/buzoFormSchema';
-import { BitacoraBuzoCompleta } from '@/types/bitacoras';
+import { BitacoraBuzoCompleta, CuadrillaMemberData } from '@/types/bitacoras';
 import { useOfflineSync } from './useOfflineSync';
 
 const bitacoraBuzoDataSchema = bitacoraBuzoFormSchema.extend({
@@ -108,9 +108,26 @@ export const useBitacorasBuzo = () => {
       if (supervisorError) throw new Error('No se pudo obtener la bitácora de supervisor');
 
       // Buscar datos específicos del buzo en la cuadrilla
-      const cuadrillaData = bitacoraSupervisor.datos_cuadrilla || [];
-      const datosDelBuzo = cuadrillaData.find((member: any) => member.usuario_id === usuarioId);
-      const tiemposDetallados = bitacoraSupervisor.tiempos_detallados || {};
+      let cuadrillaData: CuadrillaMemberData[] = [];
+      if (bitacoraSupervisor.datos_cuadrilla) {
+        if (typeof bitacoraSupervisor.datos_cuadrilla === 'string') {
+          cuadrillaData = JSON.parse(bitacoraSupervisor.datos_cuadrilla);
+        } else if (Array.isArray(bitacoraSupervisor.datos_cuadrilla)) {
+          cuadrillaData = bitacoraSupervisor.datos_cuadrilla as CuadrillaMemberData[];
+        }
+      }
+
+      const datosDelBuzo = cuadrillaData.find((member: CuadrillaMemberData) => member.usuario_id === usuarioId);
+      
+      let tiemposDetallados: any = {};
+      if (bitacoraSupervisor.tiempos_detallados) {
+        if (typeof bitacoraSupervisor.tiempos_detallados === 'string') {
+          tiemposDetallados = JSON.parse(bitacoraSupervisor.tiempos_detallados);
+        } else {
+          tiemposDetallados = bitacoraSupervisor.tiempos_detallados;
+        }
+      }
+      
       const tiemposDelBuzo = tiemposDetallados[usuarioId];
 
       // Crear código automático para la bitácora de buzo
@@ -210,11 +227,28 @@ export const useBitacorasBuzo = () => {
         *,
         inmersion:inmersion_id(codigo, fecha_inmersion, objetivo)
       `)
-      .eq('firmado', true)
-      .contains('datos_cuadrilla', [{ usuario_id: usuarioId }]);
+      .eq('firmado', true);
 
     if (error) throw error;
     
+    // Filtrar las que contienen al usuario en los datos de cuadrilla
+    const bitacorasConUsuario = data?.filter(bs => {
+      if (!bs.datos_cuadrilla) return false;
+      
+      let cuadrillaData: CuadrillaMemberData[] = [];
+      if (typeof bs.datos_cuadrilla === 'string') {
+        try {
+          cuadrillaData = JSON.parse(bs.datos_cuadrilla);
+        } catch {
+          return false;
+        }
+      } else if (Array.isArray(bs.datos_cuadrilla)) {
+        cuadrillaData = bs.datos_cuadrilla as CuadrillaMemberData[];
+      }
+      
+      return cuadrillaData.some(member => member.usuario_id === usuarioId);
+    }) || [];
+
     // Filtrar las que ya tienen bitácora de buzo creada
     const bitacorasConBuzo = await supabase
       .from('bitacora_buzo')
@@ -225,7 +259,7 @@ export const useBitacorasBuzo = () => {
       bitacorasConBuzo.data?.map(b => b.bitacora_supervisor_id) || []
     );
 
-    return data?.filter(bs => !bitacorasConBuzoIds.has(bs.bitacora_id)) || [];
+    return bitacorasConUsuario.filter(bs => !bitacorasConBuzoIds.has(bs.bitacora_id));
   };
 
   return {

@@ -23,17 +23,17 @@ export const SupervisorBitacoraSelector = ({ onSelect, onCancel }: SupervisorBit
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profile?.usuario_id) {
+    if (profile?.id) {
       loadAvailableBitacoras();
     }
   }, [profile]);
 
   const loadAvailableBitacoras = async () => {
-    if (!profile?.usuario_id) return;
+    if (!profile?.id) return;
     
     try {
       setLoading(true);
-      const bitacoras = await getAvailableSupervisorBitacoras(profile.usuario_id);
+      const bitacoras = await getAvailableSupervisorBitacoras(profile.id);
       setAvailableBitacoras(bitacoras);
     } catch (error) {
       console.error('Error loading available bitacoras:', error);
@@ -167,9 +167,21 @@ export const SupervisorBitacoraSelector = ({ onSelect, onCancel }: SupervisorBit
                     <div className="pt-2 border-t">
                       <h5 className="text-sm font-medium text-gray-700 mb-2">Sus datos en esta inmersión:</h5>
                       {(() => {
-                        const misDatos = selectedBitacoraData.datos_cuadrilla.find(
-                          (member: any) => member.usuario_id === profile?.usuario_id
+                        let cuadrillaData = [];
+                        if (typeof selectedBitacoraData.datos_cuadrilla === 'string') {
+                          try {
+                            cuadrillaData = JSON.parse(selectedBitacoraData.datos_cuadrilla);
+                          } catch {
+                            cuadrillaData = [];
+                          }
+                        } else if (Array.isArray(selectedBitacoraData.datos_cuadrilla)) {
+                          cuadrillaData = selectedBitacoraData.datos_cuadrilla;
+                        }
+
+                        const misDatos = cuadrillaData.find(
+                          (member: any) => member.usuario_id === profile?.id
                         );
+                        
                         if (misDatos) {
                           return (
                             <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded">
