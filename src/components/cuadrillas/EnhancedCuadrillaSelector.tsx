@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
+import React, { useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { Users } from "lucide-react";
 import { useCuadrillas } from "@/hooks/useCuadrillas";
-import { supabase } from "@/integrations/supabase/client";
+import { useCuadrillaAvailabilityCheck } from './hooks/useCuadrillaAvailabilityCheck';
+import { CuadrillaAvailabilityBadge } from './components/CuadrillaAvailabilityBadge';
+import { CuadrillaCreateButton } from './components/CuadrillaCreateButton';
 import { toast } from "@/hooks/use-toast";
 
 interface EnhancedCuadrillaSelectorProps {
@@ -19,12 +19,6 @@ interface EnhancedCuadrillaSelectorProps {
   enterpriseContext?: any;
 }
 
-interface AvailabilityResult {
-  is_available: boolean;
-  conflicting_inmersion_id?: string;
-  conflicting_inmersion_codigo?: string;
-}
-
 export const EnhancedCuadrillaSelector = ({
   selectedCuadrillaId,
   onCuadrillaChange,
@@ -35,8 +29,6 @@ export const EnhancedCuadrillaSelector = ({
   enterpriseContext
 }: EnhancedCuadrillaSelectorProps) => {
   const { cuadrillas, isLoading, createCuadrilla } = useCuadrillas();
-  const [availabilityStatus, setAvailabilityStatus] = useState<Record<string, AvailabilityResult>>({});
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
   
   // Memoizar las cuadrillas filtradas de forma estable
   const availableCuadrillas = useMemo(() => {
@@ -50,88 +42,11 @@ export const EnhancedCuadrillaSelector = ({
     });
   }, [cuadrillas, centroId]);
 
-  // Memoizar la función de verificación de disponibilidad
-  const checkCuadrillaAvailability = useCallback(async (cuadrillaId: string) => {
-    if (!fechaInmersion) return { is_available: true };
-
-    try {
-      const { data, error } = await supabase.rpc('validate_cuadrilla_availability', {
-        p_cuadrilla_id: cuadrillaId,
-        p_fecha_inmersion: fechaInmersion,
-        p_inmersion_id: inmersionId || null
-      });
-
-      if (error) {
-        console.error('Error checking cuadrilla availability:', error);
-        return { is_available: true };
-      }
-
-      return data?.[0] || { is_available: true };
-    } catch (error) {
-      console.error('Error in availability check:', error);
-      return { is_available: true };
-    }
-  }, [fechaInmersion, inmersionId]);
-
-  // Verificar disponibilidad con debounce y condiciones mejoradas
-  useEffect(() => {
-    // Condiciones de salida temprana
-    if (!fechaInmersion || !availableCuadrillas.length) {
-      setAvailabilityStatus({});
-      return;
-    }
-
-    let isCancelled = false;
-
-    const checkAllAvailability = async () => {
-      if (isCancelled) return;
-      
-      setCheckingAvailability(true);
-      const statusMap: Record<string, AvailabilityResult> = {};
-
-      try {
-        // Procesar en lotes para evitar sobrecargar la BD
-        const batchSize = 5;
-        for (let i = 0; i < availableCuadrillas.length; i += batchSize) {
-          if (isCancelled) break;
-          
-          const batch = availableCuadrillas.slice(i, i + batchSize);
-          const promises = batch.map(cuadrilla => 
-            checkCuadrillaAvailability(cuadrilla.id).then(result => ({
-              id: cuadrilla.id,
-              result
-            }))
-          );
-          
-          const results = await Promise.all(promises);
-          results.forEach(({ id, result }) => {
-            statusMap[id] = result;
-          });
-        }
-        
-        if (!isCancelled) {
-          setAvailabilityStatus(statusMap);
-        }
-      } catch (error) {
-        console.error('Error checking availability for all cuadrillas:', error);
-        if (!isCancelled) {
-          setAvailabilityStatus({});
-        }
-      } finally {
-        if (!isCancelled) {
-          setCheckingAvailability(false);
-        }
-      }
-    };
-
-    // Debounce para evitar múltiples llamadas
-    const timeoutId = setTimeout(checkAllAvailability, 800);
-    
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [fechaInmersion, inmersionId, availableCuadrillas, checkCuadrillaAvailability]);
+  const { availabilityStatus, checkingAvailability } = useCuadrillaAvailabilityCheck(
+    availableCuadrillas,
+    fechaInmersion,
+    inmersionId
+  );
 
   const handleCuadrillaSelect = useCallback((cuadrillaId: string) => {
     if (cuadrillaId === 'create-new') {
@@ -179,31 +94,6 @@ export const EnhancedCuadrillaSelector = ({
     }
   }, [createCuadrilla, centroId, onCuadrillaChange]);
 
-  const getAvailabilityBadge = useCallback((cuadrillaId: string) => {
-    if (!fechaInmersion) return null;
-    
-    const availability = availabilityStatus[cuadrillaId];
-    if (!availability) {
-      return checkingAvailability ? (
-        <Badge variant="outline" className="text-yellow-600">
-          Verificando...
-        </Badge>
-      ) : null;
-    }
-
-    return availability.is_available ? (
-      <Badge variant="outline" className="text-green-600">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Disponible
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="text-red-600">
-        <AlertTriangle className="w-3 h-3 mr-1" />
-        Ocupada
-      </Badge>
-    );
-  }, [fechaInmersion, availabilityStatus, checkingAvailability]);
-
   if (isLoading) {
     return (
       <Card>
@@ -241,17 +131,17 @@ export const EnhancedCuadrillaSelector = ({
               <SelectValue placeholder="Seleccionar cuadrilla" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="create-new">
-                <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-green-600" />
-                  Crear nueva cuadrilla
-                </div>
-              </SelectItem>
+              <CuadrillaCreateButton />
               {availableCuadrillas.map((cuadrilla) => (
                 <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{cuadrilla.nombre}</span>
-                    {getAvailabilityBadge(cuadrilla.id)}
+                    <CuadrillaAvailabilityBadge
+                      cuadrillaId={cuadrilla.id}
+                      fechaInmersion={fechaInmersion}
+                      availabilityStatus={availabilityStatus}
+                      checkingAvailability={checkingAvailability}
+                    />
                   </div>
                 </SelectItem>
               ))}
@@ -264,7 +154,12 @@ export const EnhancedCuadrillaSelector = ({
               <span>
                 Cuadrilla seleccionada: {availableCuadrillas.find(c => c.id === selectedCuadrillaId)?.nombre}
               </span>
-              {getAvailabilityBadge(selectedCuadrillaId)}
+              <CuadrillaAvailabilityBadge
+                cuadrillaId={selectedCuadrillaId}
+                fechaInmersion={fechaInmersion}
+                availabilityStatus={availabilityStatus}
+                checkingAvailability={checkingAvailability}
+              />
             </div>
           )}
         </div>
