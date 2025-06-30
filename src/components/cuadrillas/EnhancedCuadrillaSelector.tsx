@@ -124,7 +124,7 @@ export const EnhancedCuadrillaSelector = ({
       const newCuadrilla = await createCuadrilla({
         nombre: `Cuadrilla ${Date.now()}`,
         centro_id: centroId || null,
-        estado: 'activa'
+        estado: 'disponible'
       });
       
       if (newCuadrilla) {
