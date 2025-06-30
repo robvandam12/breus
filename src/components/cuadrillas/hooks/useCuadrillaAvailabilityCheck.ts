@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
 interface AvailabilityResult {
@@ -8,15 +8,15 @@ interface AvailabilityResult {
   conflicting_inmersion_codigo?: string;
 }
 
-export const useCuadrillaAvailabilityCheck = (
-  availableCuadrillas: any[],
-  fechaInmersion?: string,
-  inmersionId?: string
-) => {
+export const useCuadrillaAvailabilityCheck = () => {
   const [availabilityStatus, setAvailabilityStatus] = useState<Record<string, AvailabilityResult>>({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  const checkCuadrillaAvailability = useCallback(async (cuadrillaId: string) => {
+  const checkCuadrillaAvailability = useCallback(async (
+    cuadrillaId: string,
+    fechaInmersion?: string,
+    inmersionId?: string
+  ): Promise<AvailabilityResult> => {
     if (!fechaInmersion) return { is_available: true };
 
     try {
@@ -36,67 +36,50 @@ export const useCuadrillaAvailabilityCheck = (
       console.error('Error in availability check:', error);
       return { is_available: true };
     }
-  }, [fechaInmersion, inmersionId]);
+  }, []);
 
-  // Verificar disponibilidad con debounce y condiciones mejoradas
-  useEffect(() => {
-    if (!fechaInmersion || !availableCuadrillas.length) {
+  const checkBulkAvailability = useCallback(async (
+    cuadrillas: any[],
+    fechaInmersion?: string,
+    inmersionId?: string
+  ) => {
+    if (!fechaInmersion || !cuadrillas.length) {
       setAvailabilityStatus({});
       return;
     }
 
-    let isCancelled = false;
+    setCheckingAvailability(true);
+    const statusMap: Record<string, AvailabilityResult> = {};
 
-    const checkAllAvailability = async () => {
-      if (isCancelled) return;
-      
-      setCheckingAvailability(true);
-      const statusMap: Record<string, AvailabilityResult> = {};
-
-      try {
-        const batchSize = 5;
-        for (let i = 0; i < availableCuadrillas.length; i += batchSize) {
-          if (isCancelled) break;
-          
-          const batch = availableCuadrillas.slice(i, i + batchSize);
-          const promises = batch.map(cuadrilla => 
-            checkCuadrillaAvailability(cuadrilla.id).then(result => ({
-              id: cuadrilla.id,
-              result
-            }))
-          );
-          
-          const results = await Promise.all(promises);
-          results.forEach(({ id, result }) => {
-            statusMap[id] = result;
-          });
-        }
+    try {
+      // Procesar en lotes pequeños para evitar sobrecarga
+      const batchSize = 3;
+      for (let i = 0; i < cuadrillas.length; i += batchSize) {
+        const batch = cuadrillas.slice(i, i + batchSize);
+        const promises = batch.map(async cuadrilla => {
+          const result = await checkCuadrillaAvailability(cuadrilla.id, fechaInmersion, inmersionId);
+          return { id: cuadrilla.id, result };
+        });
         
-        if (!isCancelled) {
-          setAvailabilityStatus(statusMap);
-        }
-      } catch (error) {
-        console.error('Error checking availability for all cuadrillas:', error);
-        if (!isCancelled) {
-          setAvailabilityStatus({});
-        }
-      } finally {
-        if (!isCancelled) {
-          setCheckingAvailability(false);
-        }
+        const results = await Promise.all(promises);
+        results.forEach(({ id, result }) => {
+          statusMap[id] = result;
+        });
       }
-    };
-
-    const timeoutId = setTimeout(checkAllAvailability, 800);
-    
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [fechaInmersion, inmersionId, availableCuadrillas, checkCuadrillaAvailability]);
+      
+      setAvailabilityStatus(statusMap);
+    } catch (error) {
+      console.error('Error checking bulk availability:', error);
+      setAvailabilityStatus({});
+    } finally {
+      setCheckingAvailability(false);
+    }
+  }, [checkCuadrillaAvailability]);
 
   return {
     availabilityStatus,
-    checkingAvailability
+    checkingAvailability,
+    checkCuadrillaAvailability,
+    checkBulkAvailability
   };
 };

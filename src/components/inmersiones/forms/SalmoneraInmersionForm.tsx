@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { EnhancedCuadrillaSelector } from '@/components/cuadrillas/EnhancedCuadrillaSelector';
 import { useInmersionFormLogic } from '@/hooks/inmersiones/useInmersionFormLogic';
@@ -36,12 +36,13 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     initialData?.inmersion_id
   );
 
-  useEffect(() => {
-    if (!formData.codigo && !initialData) {
-      const newCode = generateInmersionCode('SAL');
-      setFormData(prev => ({ ...prev, codigo: newCode }));
+  // Generar código solo cuando sea necesario
+  const generatedCode = useMemo(() => {
+    if (formData.codigo || initialData?.codigo) {
+      return formData.codigo || initialData?.codigo;
     }
-  }, [formData.codigo, initialData, generateInmersionCode]);
+    return generateInmersionCode('SAL');
+  }, [formData.codigo, initialData?.codigo, generateInmersionCode]);
 
   const handleFormDataChange = useCallback((newData: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
@@ -76,9 +77,10 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       return;
     }
 
-    if (!formData.codigo) {
+    // Asegurar que hay código
+    const finalCode = formData.codigo || generatedCode;
+    if (!finalCode) {
       const newCode = generateInmersionCode('SAL');
-      setFormData(prev => ({ ...prev, codigo: newCode }));
       handleFormDataChange({ codigo: newCode });
     }
 
@@ -102,7 +104,7 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
       const inmersionData = buildInmersionData(companyId, enterpriseContext);
       
       if (!inmersionData.codigo) {
-        inmersionData.codigo = generateInmersionCode('SAL');
+        inmersionData.codigo = finalCode || generateInmersionCode('SAL');
       }
       
       await onSubmit(inmersionData);
@@ -116,15 +118,19 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
     } finally {
       setLoading(false);
     }
-  }, [selectedEnterprise, formData, selectedCuadrillaId, validateForm, validateCuadrillaAvailability, setLoading, buildInmersionData, onSubmit, generateInmersionCode, handleFormDataChange]);
-
-  const enterpriseContext = useMemo(() => ({
-    ...selectedEnterprise,
-    context_metadata: {
-      selection_mode: 'salmonera_admin',
-      empresa_origen_tipo: selectedEnterprise?.salmonera_id ? 'salmonera' : 'contratista'
-    }
-  }), [selectedEnterprise]);
+  }, [
+    selectedEnterprise, 
+    formData, 
+    generatedCode,
+    selectedCuadrillaId, 
+    validateForm, 
+    validateCuadrillaAvailability, 
+    setLoading, 
+    buildInmersionData, 
+    onSubmit, 
+    generateInmersionCode, 
+    handleFormDataChange
+  ]);
 
   const canSubmit = !loading && 
     (cuadrillaAvailability?.is_available !== false || !selectedCuadrillaId) &&
@@ -158,7 +164,7 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
         <InmersionFormSection
           formValidationState={formValidationState}
           setFormValidationState={setFormValidationState}
-          formData={formData}
+          formData={{ ...formData, codigo: formData.codigo || generatedCode }}
           handleFormDataChange={handleFormDataChange}
           operaciones={operaciones}
           centros={centros}
@@ -170,7 +176,7 @@ export const SalmoneraInmersionForm = ({ onSubmit, onCancel, initialData }: Inme
           onCuadrillaChange={setSelectedCuadrillaId}
           fechaInmersion={formData.fecha_inmersion}
           centroId={formData.centro_id}
-          enterpriseContext={enterpriseContext}
+          enterpriseContext={selectedEnterprise}
         />
 
         <div className="flex gap-3 pt-4">

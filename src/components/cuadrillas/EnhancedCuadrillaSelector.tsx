@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users } from "lucide-react";
 import { useCuadrillas } from "@/hooks/useCuadrillas";
-import { useCuadrillaAvailabilityCheck } from './hooks/useCuadrillaAvailabilityCheck';
+import { useCuadrillaAvailability } from "@/hooks/useCuadrillaAvailability";
 import { CuadrillaAvailabilityBadge } from './components/CuadrillaAvailabilityBadge';
 import { CuadrillaCreateButton } from './components/CuadrillaCreateButton';
 import { toast } from "@/hooks/use-toast";
@@ -30,7 +30,7 @@ export const EnhancedCuadrillaSelector = ({
 }: EnhancedCuadrillaSelectorProps) => {
   const { cuadrillas, isLoading, createCuadrilla } = useCuadrillas();
   
-  // Memoizar las cuadrillas filtradas de forma estable
+  // Memoizar las cuadrillas filtradas
   const availableCuadrillas = useMemo(() => {
     if (!cuadrillas || cuadrillas.length === 0) return [];
     
@@ -42,9 +42,10 @@ export const EnhancedCuadrillaSelector = ({
     });
   }, [cuadrillas, centroId]);
 
-  const { availabilityStatus, checkingAvailability } = useCuadrillaAvailabilityCheck(
-    availableCuadrillas,
-    fechaInmersion,
+  // Solo verificar disponibilidad de la cuadrilla seleccionada
+  const { data: selectedCuadrillaAvailability } = useCuadrillaAvailability(
+    selectedCuadrillaId || undefined,
+    fechaInmersion || undefined,
     inmersionId
   );
 
@@ -54,19 +55,18 @@ export const EnhancedCuadrillaSelector = ({
       return;
     }
 
-    const availability = availabilityStatus[cuadrillaId];
-    
-    if (availability && !availability.is_available) {
+    // Solo verificar disponibilidad si hay fecha de inmersión
+    if (fechaInmersion && selectedCuadrillaAvailability && !selectedCuadrillaAvailability.is_available) {
       toast({
         title: "Cuadrilla no disponible",
-        description: `Esta cuadrilla ya está asignada a la inmersión ${availability.conflicting_inmersion_codigo} para esta fecha.`,
+        description: `Esta cuadrilla ya está asignada a la inmersión ${selectedCuadrillaAvailability.conflicting_inmersion_codigo} para esta fecha.`,
         variant: "destructive",
       });
       return;
     }
 
     onCuadrillaChange(cuadrillaId);
-  }, [availabilityStatus, onCuadrillaChange]);
+  }, [fechaInmersion, selectedCuadrillaAvailability, onCuadrillaChange]);
 
   const handleCreateCuadrilla = useCallback(async () => {
     try {
@@ -136,12 +136,6 @@ export const EnhancedCuadrillaSelector = ({
                 <SelectItem key={cuadrilla.id} value={cuadrilla.id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{cuadrilla.nombre}</span>
-                    <CuadrillaAvailabilityBadge
-                      cuadrillaId={cuadrilla.id}
-                      fechaInmersion={fechaInmersion}
-                      availabilityStatus={availabilityStatus}
-                      checkingAvailability={checkingAvailability}
-                    />
                   </div>
                 </SelectItem>
               ))}
@@ -154,12 +148,14 @@ export const EnhancedCuadrillaSelector = ({
               <span>
                 Cuadrilla seleccionada: {availableCuadrillas.find(c => c.id === selectedCuadrillaId)?.nombre}
               </span>
-              <CuadrillaAvailabilityBadge
-                cuadrillaId={selectedCuadrillaId}
-                fechaInmersion={fechaInmersion}
-                availabilityStatus={availabilityStatus}
-                checkingAvailability={checkingAvailability}
-              />
+              {fechaInmersion && (
+                <CuadrillaAvailabilityBadge
+                  cuadrillaId={selectedCuadrillaId}
+                  fechaInmersion={fechaInmersion}
+                  availabilityStatus={selectedCuadrillaAvailability ? { [selectedCuadrillaId]: selectedCuadrillaAvailability } : {}}
+                  checkingAvailability={false}
+                />
+              )}
             </div>
           )}
         </div>

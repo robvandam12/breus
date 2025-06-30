@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEnterpriseModuleAccess } from '@/hooks/useEnterpriseModuleAccess';
 import type { FormValidationState } from '@/types/inmersionForms';
@@ -7,6 +7,7 @@ import type { FormValidationState } from '@/types/inmersionForms';
 export const useEnterpriseFormContext = (initialData?: any) => {
   const { profile } = useAuth();
   const { getModulesForCompany } = useEnterpriseModuleAccess();
+  const hasLoadedModules = useRef(false);
   
   // Auto-detectar el contexto empresarial según el rol del usuario
   const selectedEnterprise = useMemo(() => {
@@ -47,6 +48,10 @@ export const useEnterpriseFormContext = (initialData?: any) => {
   });
 
   const loadEnterpriseModules = useCallback(async (companyId: string, companyType: 'salmonera' | 'contratista') => {
+    // Evitar llamadas duplicadas
+    if (hasLoadedModules.current) return;
+    hasLoadedModules.current = true;
+
     try {
       const modules = await getModulesForCompany(companyId, companyType);
       const hasPlanning = Boolean(modules?.hasPlanning === true || String(modules?.hasPlanning) === 'true');
@@ -66,11 +71,11 @@ export const useEnterpriseFormContext = (initialData?: any) => {
         enterpriseModules: null
       });
     }
-  }, [getModulesForCompany, initialData]);
+  }, [getModulesForCompany, initialData?.operacion_id]);
 
-  // Auto-cargar datos cuando el contexto empresarial esté disponible
+  // Auto-cargar datos cuando el contexto empresarial esté disponible (solo una vez)
   useEffect(() => {
-    if (selectedEnterprise) {
+    if (selectedEnterprise && !hasLoadedModules.current) {
       const companyId = selectedEnterprise.salmonera_id || selectedEnterprise.contratista_id;
       const companyType = selectedEnterprise.salmonera_id ? 'salmonera' : 'contratista';
       
