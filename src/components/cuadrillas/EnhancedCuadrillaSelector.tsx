@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,7 +123,8 @@ export const EnhancedCuadrillaSelector = ({
       const newCuadrilla = await createCuadrilla({
         nombre: `Cuadrilla ${Date.now()}`,
         centro_id: centroId || null,
-        estado: 'disponible'
+        estado: 'disponible',
+        activo: true
       });
       
       if (newCuadrilla) {
