@@ -3,7 +3,6 @@ import { useOperacionesQuery } from "./useOperacionesQuery";
 import { useOperacionesMutations } from "./useOperacionesMutations";
 
 export type { 
-  BasicOperacion, 
   OperacionConRelaciones, 
   Operacion
 } from "./useOperacionesQuery";
