@@ -56,9 +56,18 @@ export const FullAnexoBravoForm = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Validate required fields
+      if (!data.codigo || !data.fecha || !data.supervisor) {
+        console.error('Missing required fields:', { codigo: data.codigo, fecha: data.fecha, supervisor: data.supervisor });
+        return;
+      }
+
       const anexoData = {
         ...data,
-        operacion_id: operacionId || null, // Allow null for independent anexos
+        codigo: data.codigo,
+        operacion_id: operacionId || '',
+        fecha: data.fecha,
+        supervisor: data.supervisor,
         estado: 'completado',
         progreso: 100
       };
