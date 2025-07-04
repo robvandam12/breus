@@ -316,7 +316,7 @@ export const AnexoBravoDataTable = () => {
           </DialogHeader>
           <FullAnexoBravoForm 
             operacionId=""
-            anexoId={editingAnexo || undefined}
+            anexoId={editingAnexo}
             onSubmit={() => handleCloseDialog()}
             onCancel={handleCloseDialog}
           />

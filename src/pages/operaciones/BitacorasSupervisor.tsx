@@ -19,7 +19,7 @@ const BitacorasSupervisor = () => {
     return (
       <BitacoraPageSkeleton
         title="Bitácoras Supervisor"
-        subtitle="Registro de supervisión de inmersiones"
+        subtitle="Registro de supervisión de inmersiones (Formulario de 6 pasos con tiempos de cuadrilla)"
         icon={FileText}
       />
     );
@@ -28,7 +28,7 @@ const BitacorasSupervisor = () => {
   return (
     <BitacoraPageLayout
       title="Bitácoras Supervisor"
-      subtitle="Registro completo de supervisión de inmersiones"
+      subtitle="Registro completo de supervisión de inmersiones con gestión de tiempos de cuadrilla"
       icon={FileText}
     >
       <BitacorasSupervisorContent 

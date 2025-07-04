@@ -60,7 +60,7 @@ const BitacorasBuzo = () => {
     try {
       await createBitacoraBuzoFromSupervisor.mutateAsync({ 
         bitacoraSupervisorId,
-        usuarioId: 'current-user-id'
+        usuarioId: 'current-user-id' // TODO: Obtener del contexto de auth
       });
       setShowSupervisorSelector(false);
     } catch (error) {
@@ -82,9 +82,9 @@ const BitacorasBuzo = () => {
     if (bitacora) setBitacoraToSign(bitacora);
   };
 
-  // Allow direct creation without supervisor requirement temporarily
   const handleNewBitacora = () => {
-    setIsCreateDialogOpen(true);
+    // Mostrar opciones para crear bitácora
+    setShowSupervisorSelector(true);
   };
 
   const hasSupervisorLogs = bitacorasSupervisor.length > 0;
@@ -104,7 +104,7 @@ const BitacorasBuzo = () => {
     return (
       <BitacoraPageSkeleton
         title="Bitácoras Buzo"
-        subtitle="Registro personal de inmersiones"
+        subtitle="Registro personal de inmersiones basado en bitácoras de supervisor"
         icon={FileText}
       />
     );
@@ -113,7 +113,7 @@ const BitacorasBuzo = () => {
   return (
     <BitacoraPageLayout
       title="Bitácoras Buzo"
-      subtitle="Registro personal de inmersiones"
+      subtitle="Registro personal de inmersiones vinculado a bitácoras de supervisor firmadas"
       icon={FileText}
       headerActions={headerActions}
     >
@@ -157,7 +157,7 @@ const BitacorasBuzo = () => {
         />
       </FormDialog>
 
-      {/* Direct creation form */}
+      {/* Formulario tradicional para inmersiones independientes */}
       <FormDialog
         variant="form"
         size="xl"

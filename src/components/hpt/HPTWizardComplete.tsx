@@ -30,8 +30,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 }) => {
   const { permissions } = useAuthRoles();
   const [currentOperacionId, setCurrentOperacionId] = useState(initialOperacionId || '');
-  // Temporarily remove operation requirement - allow direct access to form
-  const [showOperacionSelector, setShowOperacionSelector] = useState(false);
+  const [showOperacionSelector, setShowOperacionSelector] = useState(!initialOperacionId && !hptId);
 
   const {
     currentStep,
@@ -63,6 +62,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
 
         if (error) throw error;
 
+        // Actualizar los datos usando el método updateData del hook
         updateData({
           empresa_servicio_nombre: operacion.contratistas?.nombre || '',
           centro_trabajo_nombre: operacion.centros?.nombre || '',
@@ -87,7 +87,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
     try {
       const finalData = {
         ...data,
-        operacion_id: currentOperacionId || null, // Allow null operation
+        operacion_id: currentOperacionId,
         firmado: true,
         estado: 'firmado'
       };
@@ -125,10 +125,7 @@ export const HPTWizardComplete: React.FC<HPTWizardCompleteProps> = ({
           selectedOperacionId={currentOperacionId}
         />
         
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => setShowOperacionSelector(false)}>
-            Continuar sin Operación
-          </Button>
+        <div className="flex justify-end">
           <Button variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
