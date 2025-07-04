@@ -119,6 +119,10 @@ export interface Inmersion {
   };
 }
 
+// Import types from their dedicated files
+export type { HPTData } from '@/types/hpt';
+export type { AnexoBravoData } from '@/types/anexo-bravo';
+
 // Additional types for compatibility
 export interface OperationData {
   id: string;
@@ -129,20 +133,6 @@ export interface OperationData {
   salmoneras?: { nombre: string } | null;
   centros?: { nombre: string } | null;
   contratistas?: { nombre: string } | null;
-}
-
-export interface HPTData {
-  id: string;
-  codigo: string;
-  supervisor: string;
-  firmado: boolean;
-}
-
-export interface AnexoBravoData {
-  id: string;
-  codigo: string;
-  supervisor: string;
-  firmado: boolean;
 }
 
 export interface EquipoBuceoData {

@@ -2,81 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import type { HPT, HPTFormData, HPTWithOperacion } from "@/types/hpt";
 
-export interface HPT {
-  id: string;
-  codigo: string;
-  supervisor: string;
-  plan_trabajo: string;
-  operacion_id: string;
-  fecha_programada?: string;
-  hora_inicio?: string;
-  hora_fin?: string;
-  descripcion_trabajo?: string;
-  profundidad_maxima?: number;
-  temperatura?: number;
-  observaciones?: string;
-  firmado: boolean;
-  estado: string;
-  progreso: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  // Nuevos campos según especificación
-  folio?: string;
-  fecha?: string;
-  hora_termino?: string;
-  empresa_servicio_nombre?: string;
-  supervisor_nombre?: string;
-  centro_trabajo_nombre?: string;
-  jefe_mandante_nombre?: string;
-  descripcion_tarea?: string;
-  es_rutinaria?: boolean;
-  lugar_especifico?: string;
-  estado_puerto?: string;
-  hpt_epp?: any;
-  hpt_erc?: any;
-  hpt_medidas?: any;
-  hpt_riesgos_comp?: any;
-  hpt_conocimiento?: any;
-  hpt_conocimiento_asistentes?: any[];
-  hpt_firmas?: any;
-  supervisor_servicio_id?: string;
-  supervisor_mandante_id?: string;
-  form_version?: number;
-}
-
-export interface HPTFormData {
-  codigo: string;
-  supervisor: string;
-  operacion_id: string;
-  plan_trabajo: string;
-  fecha_programada?: string;
-  hora_inicio?: string;
-  hora_fin?: string;
-  descripcion_trabajo?: string;
-  profundidad_maxima?: number;
-  temperatura?: number;
-  observaciones?: string;
-  // Nuevos campos para el formulario completo
-  folio?: string;
-  fecha?: string;
-  hora_termino?: string;
-  empresa_servicio_nombre?: string;
-  supervisor_nombre?: string;
-  centro_trabajo_nombre?: string;
-  jefe_mandante_nombre?: string;
-  descripcion_tarea?: string;
-  es_rutinaria?: boolean;
-  lugar_especifico?: string;
-  estado_puerto?: string;
-  hpt_epp?: any;
-  hpt_erc?: any;
-  hpt_medidas?: any;
-  hpt_riesgos_comp?: any;
-  hpt_conocimiento?: any;
-  hpt_conocimiento_asistentes?: any[];
-}
+// Re-export for compatibility
+export type { HPTFormData } from "@/types/hpt";
 
 export const useHPT = () => {
   const queryClient = useQueryClient();
@@ -96,7 +25,7 @@ export const useHPT = () => {
       }
 
       console.log('useHPT - HPTs data:', data);
-      return data as HPT[];
+      return data as unknown as HPTWithOperacion[];
     },
   });
 
@@ -108,16 +37,61 @@ export const useHPT = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
 
+      const insertData = {
+        codigo: hptData.codigo,
+        supervisor: hptData.supervisor,
+        operacion_id: hptData.operacion_id,
+        plan_trabajo: hptData.plan_trabajo,
+        fecha_programada: hptData.fecha_programada,
+        hora_inicio: hptData.hora_inicio,
+        hora_fin: hptData.hora_fin,
+        hora_termino: hptData.hora_termino,
+        descripcion_trabajo: hptData.descripcion_trabajo,
+        descripcion_tarea: hptData.descripcion_tarea,
+        profundidad_maxima: hptData.profundidad_maxima,
+        temperatura: hptData.temperatura,
+        observaciones: hptData.observaciones,
+        es_rutinaria: hptData.es_rutinaria,
+        lugar_especifico: hptData.lugar_especifico,
+        estado_puerto: hptData.estado_puerto,
+        empresa_servicio_nombre: hptData.empresa_servicio_nombre,
+        centro_trabajo_nombre: hptData.centro_trabajo_nombre,
+        supervisor_nombre: hptData.supervisor_nombre,
+        jefe_mandante_nombre: hptData.jefe_mandante_nombre,
+        tipo_trabajo: hptData.tipo_trabajo,
+        folio: hptData.folio,
+        fecha: hptData.fecha,
+        plan_emergencia: hptData.plan_emergencia,
+        camara_hiperbarica: hptData.camara_hiperbarica,
+        hospital_cercano: hptData.hospital_cercano,
+        visibilidad: hptData.visibilidad,
+        corrientes: hptData.corrientes,
+        jefe_obra: hptData.jefe_obra,
+        buzos: JSON.stringify(hptData.buzos || []),
+        asistentes: JSON.stringify(hptData.asistentes || []),
+        herramientas: JSON.stringify(hptData.herramientas || []),
+        equipo_buceo: JSON.stringify(hptData.equipo_buceo || []),
+        equipo_seguridad: JSON.stringify(hptData.equipo_seguridad || []),
+        equipo_comunicacion: JSON.stringify(hptData.equipo_comunicacion || []),
+        contactos_emergencia: JSON.stringify(hptData.contactos_emergencia || []),
+        riesgos_identificados: JSON.stringify(hptData.riesgos_identificados || []),
+        medidas_control: JSON.stringify(hptData.medidas_control || []),
+        hpt_epp: hptData.hpt_epp ? JSON.stringify(hptData.hpt_epp) : undefined,
+        hpt_erc: hptData.hpt_erc ? JSON.stringify(hptData.hpt_erc) : undefined,
+        hpt_medidas: hptData.hpt_medidas ? JSON.stringify(hptData.hpt_medidas) : undefined,
+        hpt_riesgos_comp: hptData.hpt_riesgos_comp ? JSON.stringify(hptData.hpt_riesgos_comp) : undefined,
+        hpt_conocimiento: hptData.hpt_conocimiento ? JSON.stringify(hptData.hpt_conocimiento) : undefined,
+        hpt_conocimiento_asistentes: JSON.stringify(hptData.hpt_conocimiento_asistentes || []),
+        user_id: user.id,
+        fecha_creacion: new Date().toISOString().split('T')[0],
+        estado: 'borrador',
+        progreso: 0,
+        firmado: false
+      };
+
       const { data, error } = await supabase
         .from('hpt')
-        .insert([{
-          ...hptData,
-          user_id: user.id,
-          fecha_creacion: new Date().toISOString().split('T')[0],
-          estado: 'borrador',
-          progreso: 0,
-          firmado: false
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -150,9 +124,55 @@ export const useHPT = () => {
   const updateHPTMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<HPTFormData> }) => {
       console.log('Updating HPT:', id, data);
+      const updateData = {
+        codigo: data.codigo,
+        supervisor: data.supervisor,
+        plan_trabajo: data.plan_trabajo,
+        fecha_programada: data.fecha_programada,
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_fin,
+        hora_termino: data.hora_termino,
+        descripcion_trabajo: data.descripcion_trabajo,
+        descripcion_tarea: data.descripcion_tarea,
+        profundidad_maxima: data.profundidad_maxima,
+        temperatura: data.temperatura,
+        observaciones: data.observaciones,
+        es_rutinaria: data.es_rutinaria,
+        lugar_especifico: data.lugar_especifico,
+        estado_puerto: data.estado_puerto,
+        empresa_servicio_nombre: data.empresa_servicio_nombre,
+        centro_trabajo_nombre: data.centro_trabajo_nombre,
+        supervisor_nombre: data.supervisor_nombre,
+        jefe_mandante_nombre: data.jefe_mandante_nombre,
+        tipo_trabajo: data.tipo_trabajo,
+        folio: data.folio,
+        fecha: data.fecha,
+        plan_emergencia: data.plan_emergencia,
+        camara_hiperbarica: data.camara_hiperbarica,
+        hospital_cercano: data.hospital_cercano,
+        visibilidad: data.visibilidad,
+        corrientes: data.corrientes,
+        jefe_obra: data.jefe_obra,
+        buzos: data.buzos ? JSON.stringify(data.buzos) : undefined,
+        asistentes: data.asistentes ? JSON.stringify(data.asistentes) : undefined,
+        herramientas: data.herramientas ? JSON.stringify(data.herramientas) : undefined,
+        equipo_buceo: data.equipo_buceo ? JSON.stringify(data.equipo_buceo) : undefined,
+        equipo_seguridad: data.equipo_seguridad ? JSON.stringify(data.equipo_seguridad) : undefined,
+        equipo_comunicacion: data.equipo_comunicacion ? JSON.stringify(data.equipo_comunicacion) : undefined,
+        contactos_emergencia: data.contactos_emergencia ? JSON.stringify(data.contactos_emergencia) : undefined,
+        riesgos_identificados: data.riesgos_identificados ? JSON.stringify(data.riesgos_identificados) : undefined,
+        medidas_control: data.medidas_control ? JSON.stringify(data.medidas_control) : undefined,
+        hpt_epp: data.hpt_epp ? JSON.stringify(data.hpt_epp) : undefined,
+        hpt_erc: data.hpt_erc ? JSON.stringify(data.hpt_erc) : undefined,
+        hpt_medidas: data.hpt_medidas ? JSON.stringify(data.hpt_medidas) : undefined,
+        hpt_riesgos_comp: data.hpt_riesgos_comp ? JSON.stringify(data.hpt_riesgos_comp) : undefined,
+        hpt_conocimiento: data.hpt_conocimiento ? JSON.stringify(data.hpt_conocimiento) : undefined,
+        hpt_conocimiento_asistentes: data.hpt_conocimiento_asistentes ? JSON.stringify(data.hpt_conocimiento_asistentes) : undefined
+      };
+      
       const { data: updatedData, error } = await supabase
         .from('hpt')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

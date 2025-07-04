@@ -2,54 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-
-export interface AnexoBravo {
-  id: string;
-  codigo: string;
-  operacion_id: string;
-  fecha: string;
-  lugar_faena?: string;
-  empresa_nombre?: string;
-  supervisor_servicio_nombre?: string;
-  supervisor_mandante_nombre?: string;
-  buzo_o_empresa_nombre?: string;
-  supervisor: string;
-  estado: string;
-  firmado: boolean;
-  progreso: number;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  fecha_verificacion: string;
-  jefe_centro: string;
-}
-
-export interface AnexoBravoFormData {
-  codigo: string;
-  operacion_id: string;
-  fecha: string;
-  lugar_faena?: string;
-  empresa_nombre?: string;
-  supervisor_servicio_nombre?: string;
-  supervisor_mandante_nombre?: string;
-  buzo_o_empresa_nombre?: string;
-  buzo_matricula?: string;
-  asistente_buzo_nombre?: string;
-  asistente_buzo_matricula?: string;
-  autorizacion_armada?: boolean;
-  bitacora_fecha?: string;
-  bitacora_hora_inicio?: string;
-  bitacora_hora_termino?: string;
-  bitacora_relator?: string;
-  anexo_bravo_checklist?: any;
-  anexo_bravo_trabajadores?: any[];
-  anexo_bravo_firmas?: any;
-  observaciones_generales?: string;
-  jefe_centro_nombre?: string;
-  supervisor: string;
-  estado?: string;
-  firmado?: boolean;
-}
+import type { AnexoBravo, AnexoBravoFormData, AnexoBravoWithOperacion } from "@/types/anexo-bravo";
 
 export const useAnexoBravo = () => {
   const queryClient = useQueryClient();
@@ -69,7 +22,7 @@ export const useAnexoBravo = () => {
         throw error;
       }
 
-      return (data || []) as AnexoBravo[];
+      return (data || []) as unknown as AnexoBravoWithOperacion[];
     },
   });
 
@@ -112,7 +65,35 @@ export const useAnexoBravo = () => {
 
       const { data: result, error } = await supabase
         .from('anexo_bravo')
-        .insert([insertData])
+        .insert([{
+          codigo: insertData.codigo,
+          operacion_id: insertData.operacion_id,
+          fecha: insertData.fecha,
+          lugar_faena: insertData.lugar_faena,
+          empresa_nombre: insertData.empresa_nombre,
+          supervisor_servicio_nombre: insertData.supervisor_servicio_nombre,
+          supervisor_mandante_nombre: insertData.supervisor_mandante_nombre,
+          buzo_o_empresa_nombre: insertData.buzo_o_empresa_nombre,
+          buzo_matricula: insertData.buzo_matricula,
+          asistente_buzo_nombre: insertData.asistente_buzo_nombre,
+          asistente_buzo_matricula: insertData.asistente_buzo_matricula,
+          autorizacion_armada: insertData.autorizacion_armada,
+          bitacora_fecha: insertData.bitacora_fecha,
+          bitacora_hora_inicio: insertData.bitacora_hora_inicio,
+          bitacora_hora_termino: insertData.bitacora_hora_termino,
+          bitacora_relator: insertData.bitacora_relator,
+          anexo_bravo_checklist: JSON.stringify(insertData.anexo_bravo_checklist || {}),
+          anexo_bravo_trabajadores: JSON.stringify(insertData.anexo_bravo_trabajadores || []),
+          anexo_bravo_firmas: JSON.stringify(insertData.anexo_bravo_firmas || {}),
+          observaciones_generales: insertData.observaciones_generales,
+          jefe_centro_nombre: insertData.jefe_centro_nombre,
+          supervisor: insertData.supervisor,
+          estado: insertData.estado,
+          firmado: insertData.firmado,
+          user_id: insertData.user_id,
+          fecha_verificacion: insertData.fecha_verificacion,
+          jefe_centro: insertData.jefe_centro
+        }])
         .select()
         .single();
 
@@ -145,9 +126,34 @@ export const useAnexoBravo = () => {
     mutationFn: async ({ id, data }: { id: string; data: Partial<AnexoBravoFormData> }) => {
       console.log('Updating anexo bravo:', id, data);
       
+      const updateData = {
+        codigo: data.codigo,
+        fecha: data.fecha,
+        lugar_faena: data.lugar_faena,
+        empresa_nombre: data.empresa_nombre,
+        supervisor_servicio_nombre: data.supervisor_servicio_nombre,
+        supervisor_mandante_nombre: data.supervisor_mandante_nombre,
+        buzo_o_empresa_nombre: data.buzo_o_empresa_nombre,
+        buzo_matricula: data.buzo_matricula,
+        asistente_buzo_nombre: data.asistente_buzo_nombre,
+        asistente_buzo_matricula: data.asistente_buzo_matricula,
+        autorizacion_armada: data.autorizacion_armada,
+        bitacora_fecha: data.bitacora_fecha,
+        bitacora_hora_inicio: data.bitacora_hora_inicio,
+        bitacora_hora_termino: data.bitacora_hora_termino,
+        bitacora_relator: data.bitacora_relator,
+        anexo_bravo_checklist: data.anexo_bravo_checklist ? JSON.stringify(data.anexo_bravo_checklist) : undefined,
+        anexo_bravo_trabajadores: data.anexo_bravo_trabajadores ? JSON.stringify(data.anexo_bravo_trabajadores) : undefined,
+        observaciones_generales: data.observaciones_generales,
+        jefe_centro_nombre: data.jefe_centro_nombre,
+        supervisor: data.supervisor,
+        estado: data.estado,
+        firmado: data.firmado
+      };
+      
       const { data: result, error } = await supabase
         .from('anexo_bravo')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
