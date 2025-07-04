@@ -32,7 +32,7 @@ const HPT = lazy(() => import("../pages/operaciones/HPT"));
 const AnexoBravo = lazy(() => import("../pages/operaciones/AnexoBravo"));
 const MantencionRedes = lazy(() => import("../pages/operaciones/MantencionRedes"));
 const Inmersiones = lazy(() => import("../pages/Inmersiones"));
-const BitacorasSupervisor = lazy(() => import("../pages/BitacorasSupervisor"));
+const BitacorasSupervisor = lazy(() => import("../pages/operaciones/BitacorasSupervisor"));
 const BitacorasBuzo = lazy(() => import("../pages/operaciones/BitacorasBuzo"));
 const ProfileSetup = lazy(() => import("../pages/ProfileSetup"));
 const Reportes = lazy(() => import("../pages/Reportes"));

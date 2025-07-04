@@ -13,7 +13,7 @@ import { OperacionTimeline } from "@/components/operaciones/OperacionTimeline";
 import { OperacionTeamManagerEnhanced } from "@/components/operaciones/OperacionTeamManagerEnhanced";
 import { EditOperacionForm } from "@/components/operaciones/EditOperacionForm";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RoleBasedSidebar } from "@/components/navigation/RoleBasedSidebar";
+import { ModularSidebar } from "@/components/navigation/ModularSidebar";
 import { Header } from "@/components/layout/Header";
 import { useOperaciones } from "@/hooks/useOperaciones";
 
@@ -38,7 +38,7 @@ const OperacionDetail = ({ operacion }: OperacionDetailProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
-        <RoleBasedSidebar />
+        <ModularSidebar />
         <motion.main
           className="flex-1 flex flex-col bg-white"
           initial={{ opacity: 0 }}
