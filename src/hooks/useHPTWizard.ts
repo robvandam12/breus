@@ -88,23 +88,6 @@ export interface HPTWizardData extends Omit<HPTFormData, 'codigo'> {
     supervisor_servicio_url?: string;
     supervisor_mandante_url?: string;
   };
-
-  // Personal de buceo (para compatibilidad con HPTStep3Personal)
-  buzos: Array<{
-    id: string;
-    nombre: string;
-    apellido: string;
-    rol: string;
-    matricula: string;
-    rut: string;
-  }>;
-  asistentes: Array<{
-    id: string;
-    nombre: string;
-    apellido: string;
-    empresa: string;
-    cargo: string;
-  }>;
 }
 
 const initialData: HPTWizardData = {
