@@ -79,7 +79,7 @@ export const EnhancedCuadrillaManager = ({
         
         toast({
           title: "Cuadrilla creada",
-          description: `Se ha creado la cuadrilla "${newCuadrillaNombre}". Ahora puede agregar miembros.`,
+          description: `Se ha creado la cuadrilla "${newCuadrillaNombre}" y ha sido seleccionada automáticamente.`,
         });
       }
     } catch (error) {

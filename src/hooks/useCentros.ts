@@ -72,7 +72,7 @@ export const useCentros = () => {
         .from('centros')
         .select(`
           *,
-          salmoneras (
+          salmoneras:salmonera_id (
             nombre
           )
         `)
@@ -105,7 +105,7 @@ export const useCentros = () => {
         .insert([dataWithRegion])
         .select(`
           *,
-          salmoneras (
+          salmoneras:salmonera_id (
             nombre
           )
         `)
@@ -160,7 +160,7 @@ export const useCentros = () => {
         .eq('id', id)
         .select(`
           *,
-          salmoneras (
+          salmoneras:salmonera_id (
             nombre
           )
         `)

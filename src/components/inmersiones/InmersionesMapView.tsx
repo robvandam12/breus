@@ -74,16 +74,18 @@ export const InmersionesMapView = React.memo(({
     });
   }, [inmersiones, centros, debouncedRegionFilter, debouncedStatusFilter]);
 
-  // Memoizar inmersiones agrupadas por centro
+  // Memoizar inmersiones agrupadas por centro (solo mostrar las que tienen centro)
   const inmersionesPorCentro = useMemo(() => {
     const grupos = new Map<string, Inmersion[]>();
     
     filteredInmersiones.forEach(inmersion => {
-      const centroId = inmersion.centro_id || 'sin_centro';
-      if (!grupos.has(centroId)) {
-        grupos.set(centroId, []);
+      if (inmersion.centro_id) {
+        const centroId = inmersion.centro_id;
+        if (!grupos.has(centroId)) {
+          grupos.set(centroId, []);
+        }
+        grupos.get(centroId)!.push(inmersion);
       }
-      grupos.get(centroId)!.push(inmersion);
     });
     
     return grupos;
@@ -214,9 +216,16 @@ export const InmersionesMapView = React.memo(({
                   {centro ? centro.nombre : 'Centro sin especificar'}
                 </h4>
                 {centro && (
-                  <Badge variant="outline" className="text-xs">
-                    {centro.region}
-                  </Badge>
+                  <>
+                    <Badge variant="outline" className="text-xs">
+                      {centro.region}
+                    </Badge>
+                    {centro.coordenadas_lat && centro.coordenadas_lng && (
+                      <Badge variant="secondary" className="text-xs">
+                        📍 {centro.coordenadas_lat.toFixed(4)}, {centro.coordenadas_lng.toFixed(4)}
+                      </Badge>
+                    )}
+                  </>
                 )}
                 <Badge variant="secondary" className="text-xs">
                   {inmersionesCentro.length} inmersión{inmersionesCentro.length !== 1 ? 'es' : ''}
@@ -295,6 +304,17 @@ export const InmersionesMapView = React.memo(({
                 ? 'No hay inmersiones registradas'
                 : 'Prueba ajustando los filtros para ver más resultados'
               }
+            </p>
+          </div>
+        )}
+
+        {inmersionesPorCentro.size === 0 && filteredInmersiones.length > 0 && (
+          <div className="text-center py-12 text-yellow-600">
+            <MapPin className="w-16 h-16 text-yellow-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Sin ubicación en mapa</h3>
+            <p className="text-sm">
+              Hay {filteredInmersiones.length} inmersión{filteredInmersiones.length !== 1 ? 'es' : ''} sin centro asignado.
+              Para mostrarlas en el mapa, asigne un centro a cada inmersión.
             </p>
           </div>
         )}

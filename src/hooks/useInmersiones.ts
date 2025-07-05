@@ -194,9 +194,27 @@ export const useInmersiones = () => {
     mutationFn: async ({ inmersionId, data }: { inmersionId: string; data: Partial<Inmersion> }) => {
       console.log('Updating inmersion:', inmersionId, 'with data:', data);
       
+      // Limpiar campos UUID vacíos para evitar errores de sintaxis
+      const cleanData = { ...data };
+      if (cleanData.operacion_id === '') {
+        cleanData.operacion_id = null;
+      }
+      if (cleanData.centro_id === '') {
+        cleanData.centro_id = null;
+      }
+      if (cleanData.supervisor_id === '') {
+        cleanData.supervisor_id = null;
+      }
+      if (cleanData.buzo_principal_id === '') {
+        cleanData.buzo_principal_id = null;
+      }
+      if (cleanData.buzo_asistente_id === '') {
+        cleanData.buzo_asistente_id = null;
+      }
+      
       const { data: updatedData, error } = await supabase
         .from('inmersion')
-        .update(data)
+        .update(cleanData)
         .eq('inmersion_id', inmersionId)
         .select()
         .single();

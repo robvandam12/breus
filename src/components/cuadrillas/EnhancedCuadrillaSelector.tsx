@@ -92,7 +92,10 @@ export const EnhancedCuadrillaSelector = ({
 
   const handleCuadrillaCreated = (newCuadrillaId: string) => {
     onCuadrillaChange(newCuadrillaId);
-    // No cerrar el manager automáticamente para permitir agregar miembros
+    // Cerrar el manager después de crear y seleccionar la cuadrilla
+    setShowCuadrillaManager(false);
+    setManagingCuadrilla(null);
+    setCreateMode(false);
   };
 
   if (isLoading) {
