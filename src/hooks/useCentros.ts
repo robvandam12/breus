@@ -67,12 +67,12 @@ export const useCentros = () => {
     queryFn: async () => {
       console.log('Fetching centros with native Supabase join...');
       
-      // Usar join nativo de Supabase en lugar de join manual
+      // Usar join nativo de Supabase
       const { data, error } = await supabase
         .from('centros')
         .select(`
           *,
-          salmoneras:salmonera_id (
+          salmoneras (
             nombre
           )
         `)
@@ -105,7 +105,7 @@ export const useCentros = () => {
         .insert([dataWithRegion])
         .select(`
           *,
-          salmoneras:salmonera_id (
+          salmoneras (
             nombre
           )
         `)

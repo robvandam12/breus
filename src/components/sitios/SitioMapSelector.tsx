@@ -58,8 +58,16 @@ export const SitioMapSelector = ({
     setSearchAddress(address);
   }, [address]);
 
+  // Crear marcador si tenemos coordenadas
+  const markers = (currentLat && currentLng && currentLat !== -41.4693 && currentLng !== -72.9424) ? [{
+    lat: currentLat,
+    lng: currentLng,
+    title: 'Ubicación seleccionada',
+    description: searchAddress || 'Ubicación marcada en el mapa'
+  }] : [];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       {showAddressSearch && (
         <div className="space-y-2">
           <Label>Buscar Ubicación</Label>
@@ -94,6 +102,8 @@ export const SitioMapSelector = ({
             initialLat={currentLat}
             initialLng={currentLng}
             showAddressSearch={false}
+            markers={markers}
+            showLocationSelector={true}
           />
         </div>
         <p className="text-sm text-gray-500">

@@ -203,6 +203,16 @@ export const useCuadrillas = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Verificar si la cuadrilla está asociada a alguna inmersión
+      const { data: inmersiones } = await supabase
+        .from('inmersion')
+        .select('inmersion_id')
+        .eq('metadata->>cuadrilla_id', id);
+
+      if (inmersiones && inmersiones.length > 0) {
+        throw new Error('No se puede eliminar una cuadrilla que está asociada a inmersiones. Primero debe desasociarla de las inmersiones.');
+      }
+
       const { error } = await supabase
         .from('cuadrillas_buceo')
         .delete()
@@ -212,7 +222,7 @@ export const useCuadrillas = () => {
       return id;
     },
     onSuccess: (deletedId) => {
-      // Actualizar cache inmediatamente
+      // Actualizar cache inmediatamente y forzar refetch
       queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], 
         (oldData: Cuadrilla[] | undefined) => {
           if (!oldData) return [];
@@ -220,17 +230,19 @@ export const useCuadrillas = () => {
         }
       );
       
-      invalidateQueries();
+      // Forzar refetch inmediato
+      refetchQueries();
+      
       toast({
         title: "Cuadrilla eliminada",
         description: "La cuadrilla ha sido eliminada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting cuadrilla:', error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar la cuadrilla.",
+        title: "Error al eliminar cuadrilla",
+        description: error.message || "No se pudo eliminar la cuadrilla.",
         variant: "destructive",
       });
     },

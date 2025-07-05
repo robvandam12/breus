@@ -1,12 +1,11 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EnhancedUserInviteForm } from "@/components/users/forms/EnhancedUserInviteForm";
-import { InviteUserOptions } from "@/hooks/useUsuarios";
+import { SimpleUserInviteForm } from "@/components/users/forms/SimpleUserInviteForm";
 
 interface UserInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (options: InviteUserOptions) => Promise<void>;
+  onSubmit: (data: { email: string; rol: string }) => Promise<void>;
   allowedRoles?: string[];
 }
 
@@ -16,8 +15,8 @@ export const UserInviteDialog = ({
   onSubmit,
   allowedRoles 
 }: UserInviteDialogProps) => {
-  const handleSubmit = async (options: InviteUserOptions) => {
-    await onSubmit(options);
+  const handleSubmit = async (data: { email: string; rol: string }) => {
+    await onSubmit(data);
     onOpenChange(false);
   };
 
@@ -27,10 +26,9 @@ export const UserInviteDialog = ({
         <DialogHeader>
           <DialogTitle>Invitar Usuario</DialogTitle>
         </DialogHeader>
-        <EnhancedUserInviteForm
+        <SimpleUserInviteForm
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
-          allowedRoles={allowedRoles}
         />
       </DialogContent>
     </Dialog>
