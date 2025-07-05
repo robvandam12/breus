@@ -209,8 +209,17 @@ export const useCuadrillas = () => {
         .eq('id', id);
 
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      // Actualizar cache inmediatamente
+      queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], 
+        (oldData: Cuadrilla[] | undefined) => {
+          if (!oldData) return [];
+          return oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
+        }
+      );
+      
       invalidateQueries();
       toast({
         title: "Cuadrilla eliminada",

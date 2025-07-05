@@ -74,13 +74,13 @@ export const CreateCentroFormAnimated = ({
     return 'Los Lagos';
   };
 
-  // Auto-actualizar región cuando cambia la ubicación
+  // Auto-actualizar región cuando cambia la ubicación (solo si está vacía)
   useEffect(() => {
-    if (formData.ubicacion) {
+    if (formData.ubicacion && !formData.region) {
       const region = determinarRegion(formData.ubicacion);
       setFormData(prev => ({ ...prev, region }));
     }
-  }, [formData.ubicacion]);
+  }, [formData.ubicacion, formData.region]);
 
   const handleLocationChange = (lat: number, lng: number) => {
     setFormData(prev => ({
@@ -229,38 +229,23 @@ export const CreateCentroFormAnimated = ({
                   id="region"
                   value={formData.region}
                   onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
-                  placeholder="Se determina automáticamente"
-                  readOnly
-                  className="bg-gray-50"
+                  placeholder="Ej: Los Lagos, Valparaíso"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Ubicación en Mapa</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowMap(!showMap)}
-                >
-                  {showMap ? 'Ocultar Mapa' : 'Mostrar Mapa'}
-                </Button>
+              <Label>Ubicación en Mapa</Label>
+              <div className="border rounded-lg overflow-hidden">
+                <SitioMapSelector
+                  initialLat={formData.coordenadas_lat || -41.4693}
+                  initialLng={formData.coordenadas_lng || -72.9424}
+                  onLocationChange={handleLocationChange}
+                  onAddressChange={handleAddressChange}
+                  address={formData.ubicacion}
+                  showAddressSearch={true}
+                />
               </div>
-              
-              {showMap && (
-                <div className="border rounded-lg overflow-hidden">
-                  <SitioMapSelector
-                    initialLat={formData.coordenadas_lat || -41.4693}
-                    initialLng={formData.coordenadas_lng || -72.9424}
-                    onLocationChange={handleLocationChange}
-                    onAddressChange={handleAddressChange}
-                    address={formData.ubicacion}
-                    showAddressSearch={true}
-                  />
-                </div>
-              )}
             </div>
 
             {formData.coordenadas_lat && formData.coordenadas_lng && (

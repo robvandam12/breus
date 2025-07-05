@@ -27,8 +27,8 @@ const InmersionCardView = lazy(() => import("./InmersionCardView").then(module =
   default: module.InmersionCardView 
 })));
 
-const InmersionesMapView = lazy(() => import("./InmersionesMapView").then(module => ({ 
-  default: module.InmersionesMapView 
+const InmersionesMapView = lazy(() => import("./InmersionesMapViewEnhanced").then(module => ({ 
+  default: module.InmersionesMapViewEnhanced 
 })));
 
 // Componente de loading para tabs

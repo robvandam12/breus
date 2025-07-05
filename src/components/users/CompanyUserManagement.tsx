@@ -1,6 +1,7 @@
 
 import React from "react";
 import { BaseUserManagement, BaseUser, UserManagementConfig } from "./BaseUserManagement";
+import { SimpleUserInviteForm } from "./forms/SimpleUserInviteForm";
 import { UserSearchSelect } from "@/components/usuarios/UserSearchSelect";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";

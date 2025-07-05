@@ -10,7 +10,7 @@ const getBitacorasSupervisor = async (): Promise<BitacoraSupervisorCompleta[]> =
       inmersion:inmersion_id(*,
         operacion:operacion_id(*,
           salmoneras:salmonera_id(nombre),
-          sitios:sitio_id(nombre),
+          centros:centro_id(nombre),
           contratistas:contratista_id(nombre)
         )
       )

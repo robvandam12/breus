@@ -75,11 +75,11 @@ export const EnhancedCuadrillaManager = ({
       if (newCuadrilla) {
         setCurrentCuadrillaId(newCuadrilla.id);
         setIsCreatingCuadrilla(false);
-        onCuadrillaCreated?.(newCuadrilla.id);
+        // No llamar onCuadrillaCreated aquí - esperar a que gestione miembros
         
         toast({
           title: "Cuadrilla creada",
-          description: `Se ha creado la cuadrilla "${newCuadrillaNombre}" y ha sido seleccionada automáticamente.`,
+          description: `Se ha creado la cuadrilla "${newCuadrillaNombre}". Ahora puede agregar miembros.`,
         });
       }
     } catch (error) {
@@ -89,6 +89,12 @@ export const EnhancedCuadrillaManager = ({
         description: "No se pudo crear la cuadrilla.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleFinalizarCuadrilla = () => {
+    if (currentCuadrillaId) {
+      onCuadrillaCreated?.(currentCuadrillaId);
     }
   };
 
@@ -213,14 +219,26 @@ export const EnhancedCuadrillaManager = ({
           </CardTitle>
           <div className="flex gap-2">
             {!isCreatingCuadrilla && currentCuadrillaId && (
-              <Button
-                onClick={() => setShowAddMemberDialog(true)}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Agregar Miembro
-              </Button>
+              <>
+                <Button
+                  onClick={() => setShowAddMemberDialog(true)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Agregar Miembro
+                </Button>
+                {createMode && (
+                  <Button
+                    onClick={handleFinalizarCuadrilla}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Finalizar y Seleccionar
+                  </Button>
+                )}
+              </>
             )}
             <Button
               onClick={onClose}
