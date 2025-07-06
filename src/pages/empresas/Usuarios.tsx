@@ -48,14 +48,20 @@ export default function Usuarios() {
   }
 
   const handleInviteUser = async (data: { email: string; rol: string }) => {
+    console.log('🚀 Starting user invitation process');
+    console.log('📝 Profile data:', profile);
+    
     // Construir empresa_selection basado en el perfil del usuario
     let empresa_selection = '';
     
     if (profile?.salmonera_id) {
-      empresa_selection = profile.salmonera_id;
+      empresa_selection = `salmonera_${profile.salmonera_id}`;
+      console.log('✅ Using salmonera_id:', profile.salmonera_id);
     } else if (profile?.servicio_id) {
-      empresa_selection = profile.servicio_id;
+      empresa_selection = `contratista_${profile.servicio_id}`;
+      console.log('✅ Using servicio_id:', profile.servicio_id);
     } else {
+      console.error('❌ No company found in profile');
       toast({
         title: "Error",
         description: "No se pudo determinar la empresa. Contacte al administrador.",
@@ -64,12 +70,15 @@ export default function Usuarios() {
       return;
     }
 
+    console.log('🏢 Final empresa_selection:', empresa_selection);
+
     const options: InviteUserOptions = {
       email: data.email,
       rol: data.rol,
       empresa_selection
     };
 
+    console.log('📧 Sending invitation with options:', options);
     await inviteUsuario(options);
   };
 

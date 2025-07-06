@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, MapPin, Users, FileText, Save, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useCentros } from '@/hooks/useCentros';
+import { useContratistas } from '@/hooks/useContratistas';
 
 const operacionSchema = z.object({
   codigo: z.string().min(1, "Código es requerido"),
@@ -39,6 +41,10 @@ export const CreateOperacionFormEnhanced = ({
 }: CreateOperacionFormEnhancedProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Cargar datos reales
+  const { centros, isLoading: loadingCentros } = useCentros();
+  const { contratistas, isLoading: loadingContratistas } = useContratistas();
 
   const form = useForm<OperacionFormData>({
     resolver: zodResolver(operacionSchema),
@@ -57,14 +63,22 @@ export const CreateOperacionFormEnhanced = ({
   const handleSubmit = async (data: OperacionFormData) => {
     setIsSubmitting(true);
     try {
-      // Preparar datos para envío
+      // Preparar datos para envío - eliminar campos vacíos que causen error UUID
       const operacionData = {
         ...data,
         salmonera_id: enterpriseContext?.salmonera_id,
-        contratista_id: data.contratista_id || enterpriseContext?.contratista_id,
+        contratista_id: data.contratista_id || null, // null en lugar de string vacío
+        centro_id: data.centro_id || null, // null en lugar de string vacío
         company_id: enterpriseContext?.salmonera_id || enterpriseContext?.contratista_id,
         company_type: enterpriseContext?.salmonera_id ? 'salmonera' : 'contratista',
       };
+
+      // Remover campos vacíos para evitar errores UUID
+      Object.keys(operacionData).forEach(key => {
+        if (operacionData[key] === '') {
+          operacionData[key] = null;
+        }
+      });
 
       console.log('Submitting operacion data:', operacionData);
       await onSubmit(operacionData);
@@ -245,9 +259,17 @@ export const CreateOperacionFormEnhanced = ({
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="centro-1">Centro Norte</SelectItem>
-                      <SelectItem value="centro-2">Centro Sur</SelectItem>
-                      <SelectItem value="centro-3">Centro Este</SelectItem>
+                      {loadingCentros ? (
+                        <div className="p-4 text-center text-gray-500">Cargando centros...</div>
+                      ) : centros.length > 0 ? (
+                        centros.map((centro) => (
+                          <SelectItem key={centro.id} value={centro.id}>
+                            {centro.nombre} - {centro.salmoneras?.nombre || 'Sin salmonera'}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">No hay centros disponibles</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -262,9 +284,17 @@ export const CreateOperacionFormEnhanced = ({
                       <SelectValue placeholder="Seleccionar contratista" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cont-1">Servicios Submarinos Ltda.</SelectItem>
-                      <SelectItem value="cont-2">Buceo Profesional S.A.</SelectItem>
-                      <SelectItem value="cont-3">Aqua Services</SelectItem>
+                      {loadingContratistas ? (
+                        <div className="p-4 text-center text-gray-500">Cargando contratistas...</div>
+                      ) : contratistas.length > 0 ? (
+                        contratistas.map((contratista) => (
+                          <SelectItem key={contratista.id} value={contratista.id}>
+                            {contratista.nombre}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">No hay contratistas disponibles</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

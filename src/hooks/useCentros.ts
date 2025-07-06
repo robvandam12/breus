@@ -160,7 +160,7 @@ export const useCentros = () => {
         .eq('id', id)
         .select(`
           *,
-          salmoneras:salmonera_id (
+          salmoneras (
             nombre
           )
         `)

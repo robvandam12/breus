@@ -78,7 +78,7 @@ export default function Configuracion() {
       subtitle="Gestiona tu cuenta, preferencias y configuración del sistema"
       icon={Settings}
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="account" className="flex items-center gap-2">
@@ -164,16 +164,136 @@ export default function Configuracion() {
           </TabsContent>
 
           <TabsContent value="integrations">
-            <Card>
-              <CardHeader>
-                <CardTitle>Integraciones Disponibles</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
-                  Las integraciones con sistemas externos estarán disponibles próximamente.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {/* Webhooks */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Webhook className="w-5 h-5" />
+                    Webhooks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <WebhookSettings />
+                </CardContent>
+              </Card>
+
+              {/* APIs Externas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5" />
+                    APIs Externas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">API de Clima</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Integración con servicios meteorológicos para datos ambientales
+                      </p>
+                      <Button variant="outline" size="sm">
+                        Configurar
+                      </Button>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Sistema de Mapas</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Integración con servicios de mapas y geolocalización
+                      </p>
+                      <Button variant="outline" size="sm">
+                        Configurar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Sincronización de Datos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sincronización de Datos</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Sincronización Automática</h4>
+                      <p className="text-sm text-gray-600">
+                        Sincronizar datos con sistemas externos automáticamente
+                      </p>
+                    </div>
+                    <Button variant="outline">
+                      Activar
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Backup en la Nube</h4>
+                      <p className="text-sm text-gray-600">
+                        Respaldo automático de datos críticos
+                      </p>
+                    </div>
+                    <Button variant="outline">
+                      Configurar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Importar/Exportar */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Importar/Exportar Datos</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button variant="outline" className="h-24 flex flex-col items-center justify-center">
+                      <div className="text-lg mb-1">📁</div>
+                      <span>Importar Datos</span>
+                      <span className="text-xs text-gray-500">CSV, Excel, JSON</span>
+                    </Button>
+                    <Button variant="outline" className="h-24 flex flex-col items-center justify-center">
+                      <div className="text-lg mb-1">📤</div>
+                      <span>Exportar Datos</span>
+                      <span className="text-xs text-gray-500">Múltiples formatos</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Estado de Integraciones */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Estado de las Integraciones</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="font-medium">Base de Datos</span>
+                      </div>
+                      <span className="text-sm text-green-700">Conectado</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="font-medium">Servicio de Email</span>
+                      </div>
+                      <span className="text-sm text-yellow-700">Configuración Pendiente</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="font-medium">APIs Externas</span>
+                      </div>
+                      <span className="text-sm text-gray-600">No configurado</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

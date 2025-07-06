@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building, Save, X } from "lucide-react";
-import { SitioMapSelector } from '@/components/sitios/SitioMapSelector';
+import { EnhancedLocationSelector } from '@/components/sitios/EnhancedLocationSelector';
 import { useSalmoneras } from '@/hooks/useSalmoneras';
 import { CentroFormData } from '@/hooks/useCentros';
 
@@ -168,7 +168,7 @@ export const CreateCentroFormAnimated = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <SitioMapSelector
+            <EnhancedLocationSelector
               initialLat={formData.coordenadas_lat}
               initialLng={formData.coordenadas_lng}
               onLocationChange={(lat, lng) => {
@@ -185,7 +185,6 @@ export const CreateCentroFormAnimated = ({
                 }));
               }}
               address={formData.ubicacion}
-              showAddressSearch={true}
             />
 
             {formData.coordenadas_lat && formData.coordenadas_lng && (
