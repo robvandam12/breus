@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,6 @@ export const CreateCentroFormAnimated = ({
 }: CreateCentroFormAnimatedProps) => {
   const { salmoneras, isLoading: loadingSalmoneras } = useSalmoneras();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showMap, setShowMap] = useState(false);
 
   const [formData, setFormData] = useState<CentroFormData>({
     nombre: '',
@@ -51,48 +49,6 @@ export const CreateCentroFormAnimated = ({
       setFormData(prev => ({ ...prev, codigo }));
     }
   }, [formData.nombre, initialData?.codigo]);
-
-  // Auto-determinar región basada en ubicación
-  const determinarRegion = (ubicacion: string): string => {
-    const ubicacionLower = ubicacion.toLowerCase();
-    
-    if (ubicacionLower.includes('valparaíso') || ubicacionLower.includes('valparaiso')) return 'Valparaíso';
-    if (ubicacionLower.includes('los lagos') || ubicacionLower.includes('puerto montt') || ubicacionLower.includes('osorno')) return 'Los Lagos';
-    if (ubicacionLower.includes('aysén') || ubicacionLower.includes('aysen') || ubicacionLower.includes('coyhaique')) return 'Aysén';
-    if (ubicacionLower.includes('magallanes') || ubicacionLower.includes('punta arenas')) return 'Magallanes';
-    if (ubicacionLower.includes('antofagasta')) return 'Antofagasta';
-    if (ubicacionLower.includes('atacama')) return 'Atacama';
-    if (ubicacionLower.includes('coquimbo')) return 'Coquimbo';
-    if (ubicacionLower.includes('metropolitana') || ubicacionLower.includes('santiago')) return 'Metropolitana';
-    if (ubicacionLower.includes('ohiggins') || ubicacionLower.includes('rancagua')) return 'O´Higgins';
-    if (ubicacionLower.includes('maule') || ubicacionLower.includes('talca')) return 'Maule';
-    if (ubicacionLower.includes('ñuble') || ubicacionLower.includes('chillán')) return 'Ñuble';
-    if (ubicacionLower.includes('biobío') || ubicacionLower.includes('biobio') || ubicacionLower.includes('concepción')) return 'Biobío';
-    if (ubicacionLower.includes('araucanía') || ubicacionLower.includes('araucania') || ubicacionLower.includes('temuco')) return 'Araucanía';
-    if (ubicacionLower.includes('los ríos') || ubicacionLower.includes('los rios') || ubicacionLower.includes('valdivia')) return 'Los Ríos';
-    
-    return 'Los Lagos';
-  };
-
-  // Auto-actualizar región cuando cambia la ubicación (solo si está vacía)
-  useEffect(() => {
-    if (formData.ubicacion && !formData.region) {
-      const region = determinarRegion(formData.ubicacion);
-      setFormData(prev => ({ ...prev, region }));
-    }
-  }, [formData.ubicacion, formData.region]);
-
-  const handleLocationChange = (lat: number, lng: number) => {
-    setFormData(prev => ({
-      ...prev,
-      coordenadas_lat: lat,
-      coordenadas_lng: lng
-    }));
-  };
-
-  const handleAddressChange = (address: string) => {
-    setFormData(prev => ({ ...prev, ubicacion: address }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,45 +167,29 @@ export const CreateCentroFormAnimated = ({
               Ubicación
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ubicacion">Dirección / Ubicación</Label>
-                <Input
-                  id="ubicacion"
-                  value={formData.ubicacion}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
-                  placeholder="Ej: Bahía Chuyaca, Puerto Montt"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="region">Región</Label>
-                <Input
-                  id="region"
-                  value={formData.region}
-                  onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
-                  placeholder="Ej: Los Lagos, Valparaíso"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ubicación en Mapa</Label>
-              <div className="border rounded-lg overflow-hidden">
-                <SitioMapSelector
-                  initialLat={formData.coordenadas_lat || -41.4693}
-                  initialLng={formData.coordenadas_lng || -72.9424}
-                  onLocationChange={handleLocationChange}
-                  onAddressChange={handleAddressChange}
-                  address={formData.ubicacion}
-                  showAddressSearch={true}
-                />
-              </div>
-            </div>
+          <CardContent>
+            <SitioMapSelector
+              initialLat={formData.coordenadas_lat}
+              initialLng={formData.coordenadas_lng}
+              onLocationChange={(lat, lng) => {
+                setFormData(prev => ({
+                  ...prev,
+                  coordenadas_lat: lat,
+                  coordenadas_lng: lng
+                }));
+              }}
+              onAddressChange={(address) => {
+                setFormData(prev => ({
+                  ...prev,
+                  ubicacion: address
+                }));
+              }}
+              address={formData.ubicacion}
+              showAddressSearch={true}
+            />
 
             {formData.coordenadas_lat && formData.coordenadas_lng && (
-              <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded">
+              <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded mt-4">
                 <strong>Coordenadas:</strong> {formData.coordenadas_lat.toFixed(6)}, {formData.coordenadas_lng.toFixed(6)}
               </div>
             )}

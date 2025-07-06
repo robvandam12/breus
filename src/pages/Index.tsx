@@ -34,6 +34,12 @@ export default function Index() {
     return <Navigate to="/auth/login" replace />;
   }
 
+  // Si no hay perfil después de un tiempo razonable, redirigir a setup
+  if (!loading && !profile && user) {
+    console.log('Index - Usuario autenticado pero sin perfil, redirigiendo a setup');
+    return <Navigate to="/profile-setup" replace />;
+  }
+
   // Check for onboarding only after profile is available
   useEffect(() => {
     if (profile?.role === 'buzo' && !showOnboarding) {

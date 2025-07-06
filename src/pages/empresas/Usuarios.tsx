@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 import { useUsuarios, InviteUserOptions } from "@/hooks/useUsuarios";
+import { toast } from "@/hooks/use-toast";
 
 export default function Usuarios() {
   const { profile } = useAuth();
@@ -46,7 +47,29 @@ export default function Usuarios() {
     );
   }
 
-  const handleInviteUser = async (options: InviteUserOptions) => {
+  const handleInviteUser = async (data: { email: string; rol: string }) => {
+    // Construir empresa_selection basado en el perfil del usuario
+    let empresa_selection = '';
+    
+    if (profile?.salmonera_id) {
+      empresa_selection = profile.salmonera_id;
+    } else if (profile?.servicio_id) {
+      empresa_selection = profile.servicio_id;
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo determinar la empresa. Contacte al administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const options: InviteUserOptions = {
+      email: data.email,
+      rol: data.rol,
+      empresa_selection
+    };
+
     await inviteUsuario(options);
   };
 

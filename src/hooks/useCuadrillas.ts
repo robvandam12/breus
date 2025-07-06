@@ -203,11 +203,15 @@ export const useCuadrillas = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('🗑️ Attempting to delete cuadrilla:', id);
+      
       // Verificar si la cuadrilla está asociada a alguna inmersión
       const { data: inmersiones } = await supabase
         .from('inmersion')
         .select('inmersion_id')
         .eq('metadata->>cuadrilla_id', id);
+
+      console.log('🔍 Inmersiones asociadas:', inmersiones?.length || 0);
 
       if (inmersiones && inmersiones.length > 0) {
         throw new Error('No se puede eliminar una cuadrilla que está asociada a inmersiones. Primero debe desasociarla de las inmersiones.');
@@ -218,20 +222,42 @@ export const useCuadrillas = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error deleting cuadrilla from database:', error);
+        throw error;
+      }
+      
+      console.log('✅ Cuadrilla deleted from database successfully');
       return id;
     },
     onSuccess: (deletedId) => {
-      // Actualizar cache inmediatamente y forzar refetch
-      queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], 
-        (oldData: Cuadrilla[] | undefined) => {
+      console.log('🎉 Delete mutation success, updating cache for ID:', deletedId);
+      
+      // Actualizar TODOS los posibles queryKeys
+      const possibleKeys = [
+        ['cuadrillas'],
+        ['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role],
+        ['cuadrillas', profile?.salmonera_id, profile?.servicio_id],
+        ['cuadrillas', profile?.role]
+      ];
+      
+      possibleKeys.forEach(key => {
+        queryClient.setQueryData(key, (oldData: Cuadrilla[] | undefined) => {
           if (!oldData) return [];
-          return oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
-        }
-      );
+          const newData = oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
+          console.log(`📊 Updated cache for key ${JSON.stringify(key)}: ${oldData.length} -> ${newData.length}`);
+          return newData;
+        });
+      });
+      
+      // Invalidar todas las queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
       
       // Forzar refetch inmediato
-      refetchQueries();
+      setTimeout(() => {
+        console.log('🔄 Forcing refetch...');
+        refetchQueries();
+      }, 100);
       
       toast({
         title: "Cuadrilla eliminada",
@@ -239,7 +265,7 @@ export const useCuadrillas = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Error deleting cuadrilla:', error);
+      console.error('❌ Error deleting cuadrilla:', error);
       toast({
         title: "Error al eliminar cuadrilla",
         description: error.message || "No se pudo eliminar la cuadrilla.",

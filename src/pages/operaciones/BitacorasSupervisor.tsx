@@ -1,8 +1,8 @@
 
 import { useState } from "react";
 import { FileText } from "lucide-react";
-import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
-import { BitacoraPageSkeleton } from "@/components/layout/BitacoraPageSkeleton";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BitacorasSupervisorContent } from "@/components/bitacoras/BitacorasSupervisorContent";
 import { useBitacorasSupervisor } from "@/hooks/useBitacorasSupervisor";
 import { useBitacorasBuzo } from "@/hooks/useBitacorasBuzo";
@@ -17,16 +17,20 @@ const BitacorasSupervisor = () => {
 
   if (loading) {
     return (
-      <BitacoraPageSkeleton
+      <MainLayout
         title="Bitácoras Supervisor"
         subtitle="Registro de supervisión de inmersiones (Formulario de 6 pasos con tiempos de cuadrilla)"
         icon={FileText}
-      />
+      >
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner text="Cargando bitácoras..." />
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <BitacoraPageLayout
+    <MainLayout
       title="Bitácoras Supervisor"
       subtitle="Registro completo de supervisión de inmersiones con gestión de tiempos de cuadrilla"
       icon={FileText}
@@ -35,7 +39,7 @@ const BitacorasSupervisor = () => {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
       />
-    </BitacoraPageLayout>
+    </MainLayout>
   );
 };
 

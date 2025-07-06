@@ -9,7 +9,7 @@ export const getOperationCompleteData = async (operacionId: string) => {
       .select(`
         *,
         salmoneras:salmonera_id(nombre),
-        sitios:sitio_id(nombre),
+        centros:centro_id(nombre),
         contratistas:contratista_id(nombre)
       `)
       .eq('id', operacionId)

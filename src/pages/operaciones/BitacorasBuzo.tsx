@@ -10,8 +10,8 @@ import { useBitacoraFilters } from "@/hooks/useBitacoraFilters";
 import { BitacoraBuzoCompleta } from "@/types/bitacoras";
 import { BitacoraDetailView } from "@/components/bitacoras/BitacoraDetailView";
 import { BitacoraSignatureModal } from "@/components/bitacoras/BitacoraSignatureModal";
-import { BitacoraPageLayout } from "@/components/layout/BitacoraPageLayout";
-import { BitacoraPageSkeleton } from "@/components/layout/BitacoraPageSkeleton";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BitacoraStatsCards } from "@/components/bitacoras/BitacoraStatsCards";
 import { BitacoraViewControls } from "@/components/bitacoras/BitacoraViewControls";
 import { FormDialog } from "@/components/forms/FormDialog";
@@ -102,20 +102,24 @@ const BitacorasBuzo = () => {
 
   if (loading) {
     return (
-      <BitacoraPageSkeleton
+      <MainLayout
         title="Bitácoras Buzo"
         subtitle="Registro personal de inmersiones basado en bitácoras de supervisor"
         icon={FileText}
-      />
+      >
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner text="Cargando bitácoras..." />
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <BitacoraPageLayout
+    <MainLayout
       title="Bitácoras Buzo"
       subtitle="Registro personal de inmersiones vinculado a bitácoras de supervisor firmadas"
       icon={FileText}
-      headerActions={headerActions}
+      headerChildren={headerActions}
     >
       <BitacoraStatsCards
         total={bitacorasBuzo.length}
@@ -204,7 +208,7 @@ const BitacorasBuzo = () => {
           role="Buzo"
         />
       )}
-    </BitacoraPageLayout>
+    </MainLayout>
   );
 };
 
