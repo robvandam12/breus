@@ -72,9 +72,9 @@ export const SitiosDataTable = () => {
                       <div className="text-sm text-gray-500">Código: {centro.codigo}</div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {centro.salmoneras?.nombre || 'Sin asignar'}
-                  </TableCell>
+                   <TableCell>
+                     {centro.salmoneras?.[0]?.nombre || 'Sin asignar'}
+                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4 text-gray-400" />

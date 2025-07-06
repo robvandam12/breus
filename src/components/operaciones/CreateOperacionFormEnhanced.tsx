@@ -264,7 +264,7 @@ export const CreateOperacionFormEnhanced = ({
                       ) : centros.length > 0 ? (
                         centros.map((centro) => (
                           <SelectItem key={centro.id} value={centro.id}>
-                            {centro.nombre} - {centro.salmoneras?.nombre || 'Sin salmonera'}
+                            {centro.nombre} - {centro.salmoneras?.[0]?.nombre || 'Sin salmonera'}
                           </SelectItem>
                         ))
                       ) : (

@@ -73,9 +73,9 @@ export const CentroCardView = ({ centros, onEdit, onDelete }: CentroCardViewProp
             <CardContent className="space-y-4">
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Salmonera</div>
-                <div className="text-sm text-gray-600">
-                  {centro.salmoneras?.nombre || 'Sin asignar'}
-                </div>
+                 <div className="text-sm text-gray-600">
+                   {centro.salmoneras?.[0]?.nombre || 'Sin asignar'}
+                 </div>
               </div>
 
               <div>

@@ -61,9 +61,25 @@ export const useOperacionesMutations = () => {
     },
     onError: (error: any) => {
       console.error('Mutation error:', error);
+      
+      let errorMessage = 'No se pudo crear la operación';
+      
+      // Mensajes de error específicos
+      if (error.code === '23505') {
+        errorMessage = 'Ya existe una operación con este código. Por favor, use un código diferente.';
+      } else if (error.code === '23503') {
+        errorMessage = 'Uno de los recursos seleccionados (centro o contratista) no es válido.';
+      } else if (error.code === '22P02') {
+        errorMessage = 'Formato de datos inválido. Verifique que todos los campos estén correctamente completados.';
+      } else if (error.message?.includes('invalid input syntax for type uuid')) {
+        errorMessage = 'Error en la selección de empresa. Por favor, seleccione un centro y contratista válidos.';
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
       toast({
-        title: "Error",
-        description: `No se pudo crear la operación: ${error.message}`,
+        title: "Error al crear operación",
+        description: errorMessage,
         variant: "destructive",
       });
     },

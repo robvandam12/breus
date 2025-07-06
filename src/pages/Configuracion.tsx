@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User, Bell, Shield, Key, Webhook, Zap } from "lucide-react";
+import { Settings, User, Bell, Shield, Key, Webhook, Zap, MapPin } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,25 +164,51 @@ export default function Configuracion() {
             <WebhookSettings />
           </TabsContent>
 
-          <TabsContent value="integrations">
-            <div className="space-y-6">
-              {/* Webhooks */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Webhook className="w-5 h-5" />
-                    Webhooks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <WebhookSettings />
-                </CardContent>
-              </Card>
+            <TabsContent value="integrations">
+              <div className="space-y-6">
+                {/* APIs Externas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5" />
+                      APIs y Servicios Externos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Zap className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">API de Clima</h4>
+                            <p className="text-sm text-gray-600">Condiciones meteorológicas</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-green-600 border-green-200">Conectado</Badge>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-orange-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Geocodificación</h4>
+                            <p className="text-sm text-gray-600">Mapas y ubicaciones</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-green-600 border-green-200">Conectado</Badge>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* APIs Externas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                {/* Sincronización */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
                     <Zap className="w-5 h-5" />
                     APIs Externas
                   </CardTitle>

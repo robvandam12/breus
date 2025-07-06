@@ -73,9 +73,9 @@ export const CentroTableView = ({ centros, onEdit, onDelete }: CentroTableViewPr
                     <div className="text-sm text-gray-500">Código: {centro.codigo}</div>
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-700">
-                  {centro.salmoneras?.nombre || 'Sin asignar'}
-                </TableCell>
+                 <TableCell className="text-gray-700">
+                   {centro.salmoneras?.[0]?.nombre || 'Sin asignar'}
+                 </TableCell>
                 <TableCell>
                   <div className="flex items-start gap-1">
                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />

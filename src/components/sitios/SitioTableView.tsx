@@ -80,9 +80,9 @@ export const SitioTableView = ({ sitios, onEdit, onDelete }: SitioTableViewProps
                   <div className="text-sm text-gray-500">Código: {sitio.codigo}</div>
                 </div>
               </TableCell>
-              <TableCell>
-                {sitio.salmoneras?.nombre || 'Sin asignar'}
-              </TableCell>
+               <TableCell>
+                 {sitio.salmoneras?.[0]?.nombre || 'Sin asignar'}
+               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4 text-gray-400" />

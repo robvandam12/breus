@@ -59,7 +59,7 @@ export const SitioDetails = ({ sitio, onEdit, onDelete, onClose }: SitioDetailsP
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm font-medium text-zinc-600">Salmonera</p>
-              <p className="text-zinc-900">{sitio.salmoneras?.nombre || 'No asignada'}</p>
+              <p className="text-zinc-900">{sitio.salmoneras?.[0]?.nombre || 'No asignada'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-zinc-600">Código</p>

@@ -231,29 +231,34 @@ export const useCuadrillas = () => {
       return id;
     },
     onSuccess: async (deletedId) => {
-        console.log('🗑️ Delete mutation success, invalidating cache and forcing immediate UI update');
+        console.log('🗑️ Delete mutation success, eliminando del cache inmediatamente');
         
-        // Forzar actualización inmediata del cache
-        queryClient.setQueryData(['cuadrillas'], (oldData: Cuadrilla[] | undefined) => {
-          if (!oldData) return [];
-          const newData = oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
-          console.log(`✅ UI Cache updated: ${oldData.length} -> ${newData.length} cuadrillas`);
-          return newData;
+        // Obtener la query key exacta que se está usando
+        const currentQueryKey = ['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role];
+        console.log('🔑 Current query key:', currentQueryKey);
+        
+        // Actualizar cache con la query key exacta
+        queryClient.setQueryData(currentQueryKey, (oldData: Cuadrilla[] | undefined) => {
+          if (!oldData) {
+            console.log('❌ No old data found in cache');
+            return [];
+          }
+          const filteredData = oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
+          console.log(`✅ Cache actualizado: ${oldData.length} -> ${filteredData.length} cuadrillas`);
+          console.log('🎯 Cuadrilla eliminada del cache:', deletedId);
+          return filteredData;
         });
         
-        // Múltiples estrategias para forzar actualización
-        queryClient.setQueryData(['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role], (oldData: Cuadrilla[] | undefined) => {
+        // También actualizar cualquier query key alternativa
+        queryClient.setQueryData(['cuadrillas'], (oldData: Cuadrilla[] | undefined) => {
           if (!oldData) return [];
           return oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
         });
         
-        // Invalidar todas las queries relacionadas
+        // Invalidar queries para forzar re-render
         await queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
         
-        // Forzar refetch inmediato
-        await refetchQueries();
-        
-        console.log('🎯 All cache update strategies completed');
+        console.log('🎯 Cache operations completed successfully');
       
       toast({
         title: "Cuadrilla eliminada",

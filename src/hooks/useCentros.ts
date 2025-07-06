@@ -20,7 +20,7 @@ export interface Centro {
   updated_at: string;
   salmoneras?: {
     nombre: string;
-  } | null;
+  }[] | null;
 }
 
 export interface CentroFormData {
@@ -67,12 +67,12 @@ export const useCentros = () => {
     queryFn: async () => {
       console.log('Fetching centros with native Supabase join...');
       
-      // Usar join nativo de Supabase
+      // Usar join nativo de Supabase correcto
       const { data, error } = await supabase
         .from('centros')
         .select(`
           *,
-          salmoneras (
+          salmoneras!centros_salmonera_id_fkey (
             nombre
           )
         `)
@@ -105,7 +105,7 @@ export const useCentros = () => {
         .insert([dataWithRegion])
         .select(`
           *,
-          salmoneras (
+          salmoneras!centros_salmonera_id_fkey (
             nombre
           )
         `)
@@ -160,7 +160,7 @@ export const useCentros = () => {
         .eq('id', id)
         .select(`
           *,
-          salmoneras (
+          salmoneras!centros_salmonera_id_fkey (
             nombre
           )
         `)
