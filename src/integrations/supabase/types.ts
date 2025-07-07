@@ -666,6 +666,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "centros_salmonera_id_fkey"
+            columns: ["salmonera_id"]
+            isOneToOne: false
+            referencedRelation: "salmoneras"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sitios_salmonera_id_fkey"
             columns: ["salmonera_id"]
             isOneToOne: false

@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Eye, Edit, Trash2, MoreHorizontal, Calendar, MapPin, Users, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import OperacionDetailEnhanced from "./OperacionDetailEnhanced";
+import { EditOperacionForm } from "./EditOperacionForm";
 
 interface Operacion {
   id: string;
@@ -25,14 +28,21 @@ interface OperacionesDataTableProps {
   operaciones: Operacion[];
   isLoading: boolean;
   enterpriseContext?: any;
+  onViewDetail?: (operacion: Operacion) => void;
+  onEdit?: (operacion: Operacion) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const OperacionesDataTable = ({ 
   operaciones, 
   isLoading, 
-  enterpriseContext 
+  enterpriseContext,
+  onViewDetail,
+  onEdit,
+  onDelete
 }: OperacionesDataTableProps) => {
   const [selectedOperacion, setSelectedOperacion] = useState<Operacion | null>(null);
+  const [editingOperacion, setEditingOperacion] = useState<Operacion | null>(null);
 
   const getStatusBadge = (estado: string) => {
     const variants = {
@@ -201,16 +211,16 @@ export const OperacionesDataTable = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewOperacion(operacion)}>
+                        <DropdownMenuItem onClick={() => setSelectedOperacion(operacion)}>
                           <Eye className="mr-2 h-4 w-4" />
                           Ver detalle
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditOperacion(operacion)}>
+                        <DropdownMenuItem onClick={() => setEditingOperacion(operacion)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => handleDeleteOperacion(operacion)}
+                          onClick={() => onDelete?.(operacion.id)}
                           className="text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -242,6 +252,31 @@ export const OperacionesDataTable = ({
           </div>
         </div>
       </CardContent>
+
+      {/* Dialog para ver detalles */}
+      <Dialog open={!!selectedOperacion} onOpenChange={() => setSelectedOperacion(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          {selectedOperacion && (
+            <OperacionDetailEnhanced operacion={selectedOperacion} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar */}
+      <Dialog open={!!editingOperacion} onOpenChange={() => setEditingOperacion(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {editingOperacion && (
+            <EditOperacionForm
+              operacion={editingOperacion}
+              onSubmit={async (data: any) => {
+                onEdit?.(data);
+                setEditingOperacion(null);
+              }}
+              onCancel={() => setEditingOperacion(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

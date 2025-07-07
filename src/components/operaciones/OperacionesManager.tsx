@@ -23,6 +23,10 @@ const OperacionCardView = lazy(() => import('./OperacionCardView').then(module =
   default: module.OperacionCardView 
 })));
 
+const OperacionesMapView = lazy(() => import('./OperacionesMapView').then(module => ({ 
+  default: module.OperacionesMapView 
+})));
+
 // Tipo para operaciones normalizado
 interface NormalizedOperacion {
   id: string;
@@ -316,15 +320,12 @@ export const OperacionesManager = React.memo(() => {
                 </TabsContent>
 
                 <TabsContent value="map" className="space-y-4">
-                  <div className="min-h-96 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
-                    <div className="text-center">
-                      <MapIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Vista de Mapa</h3>
-                      <p className="text-gray-500">
-                        La vista de mapa estará disponible próximamente
-                      </p>
-                    </div>
-                  </div>
+                  <Suspense fallback={<TabLoadingSkeleton />}>
+                    <OperacionesMapView 
+                      operaciones={filteredOperaciones}
+                      selectedEnterprise={selectedEnterprise}
+                    />
+                  </Suspense>
                 </TabsContent>
               </Tabs>
             </div>

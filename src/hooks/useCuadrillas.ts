@@ -233,20 +233,13 @@ export const useCuadrillas = () => {
     onSuccess: async (deletedId) => {
         console.log('🗑️ Delete mutation success, eliminando del cache inmediatamente');
         
-        // Obtener la query key exacta que se está usando
-        const currentQueryKey = ['cuadrillas', profile?.salmonera_id, profile?.servicio_id, profile?.role];
-        console.log('🔑 Current query key:', currentQueryKey);
+        // Invalidar todas las queries relacionadas con cuadrillas
+        await queryClient.invalidateQueries({ queryKey: ['cuadrillas'] });
         
-        // Actualizar cache con la query key exacta
-        queryClient.setQueryData(currentQueryKey, (oldData: Cuadrilla[] | undefined) => {
-          if (!oldData) {
-            console.log('❌ No old data found in cache');
-            return [];
-          }
-          const filteredData = oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
-          console.log(`✅ Cache actualizado: ${oldData.length} -> ${filteredData.length} cuadrillas`);
-          console.log('🎯 Cuadrilla eliminada del cache:', deletedId);
-          return filteredData;
+        // También actualizar cache optimistically para respuesta inmediata
+        queryClient.setQueryData(['cuadrillas'], (oldData: Cuadrilla[] | undefined) => {
+          if (!oldData) return [];
+          return oldData.filter(cuadrilla => cuadrilla.id !== deletedId);
         });
         
         // También actualizar cualquier query key alternativa

@@ -84,7 +84,10 @@ export const useCentros = () => {
       }
 
       console.log('Centros fetched successfully:', data?.length || 0);
-      return (data || []) as Centro[];
+      return data?.map(centro => ({
+        ...centro,
+        salmoneras: centro.salmoneras ? [centro.salmoneras] : []
+      })) as Centro[];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
