@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Eye, Edit, Trash2, MoreHorizontal, Calendar, MapPin, Users, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import OperacionDetailEnhanced from "./OperacionDetailEnhanced";
+import { OperacionDetailSimple } from "./OperacionDetailSimple";
 import { EditOperacionForm } from "./EditOperacionForm";
 
 interface Operacion {
@@ -255,9 +255,12 @@ export const OperacionesDataTable = ({
 
       {/* Dialog para ver detalles */}
       <Dialog open={!!selectedOperacion} onOpenChange={() => setSelectedOperacion(null)}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedOperacion && (
-            <OperacionDetailEnhanced operacion={selectedOperacion} />
+            <OperacionDetailSimple 
+              operacion={selectedOperacion} 
+              onClose={() => setSelectedOperacion(null)}
+            />
           )}
         </DialogContent>
       </Dialog>

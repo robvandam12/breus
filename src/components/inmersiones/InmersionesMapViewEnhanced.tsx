@@ -24,6 +24,19 @@ export const InmersionesMapViewEnhanced = React.memo(({
   onEdit, 
   onDelete 
 }: InmersionesMapViewEnhancedProps) => {
+  // Configurar callback global para ver detalle desde popup
+  React.useEffect(() => {
+    (window as any).viewInmersionDetail = (inmersionId: string) => {
+      const inmersion = inmersiones.find(i => i.inmersion_id === inmersionId);
+      if (inmersion) {
+        onViewDetail(inmersion);
+      }
+    };
+    
+    return () => {
+      delete (window as any).viewInmersionDetail;
+    };
+  }, [inmersiones, onViewDetail]);
   const { centros, isLoading: centrosLoading } = useCentros();
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -190,13 +203,34 @@ export const InmersionesMapViewEnhanced = React.memo(({
               initialLng={mapCenter.lng}
               height="500px"
               showAddressSearch={false}
-              markers={filteredMarkers.map(marker => ({
+                markers={filteredMarkers.map(marker => ({
                 lat: marker.lat,
                 lng: marker.lng,
                 title: marker.title,
                 description: marker.description,
                 color: marker.color,
-                onClick: () => onViewDetail(marker.inmersion)
+                popupContent: `
+                  <div class="p-3 max-w-sm">
+                    <div class="flex items-start justify-between mb-2">
+                      <h4 class="font-semibold text-base">${marker.inmersion.codigo}</h4>
+                      <span class="px-2 py-1 text-xs rounded-full bg-${marker.inmersion.estado === 'completada' ? 'green' : 'blue'}-100 text-${marker.inmersion.estado === 'completada' ? 'green' : 'blue'}-800">
+                        ${marker.inmersion.estado}
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">${marker.inmersion.objetivo}</p>
+                    <div class="space-y-1 text-xs text-gray-500 mb-3">
+                      <p><strong>Fecha:</strong> ${new Date(marker.inmersion.fecha_inmersion).toLocaleDateString('es-CL')}</p>
+                      <p><strong>Buzo:</strong> ${marker.inmersion.buzo_principal || 'No asignado'}</p>
+                      <p><strong>Profundidad:</strong> ${marker.inmersion.profundidad_max}m</p>
+                    </div>
+                    <button 
+                      onclick="window.viewInmersionDetail('${marker.inmersion.inmersion_id}')"
+                      class="w-full bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Ver Detalle
+                    </button>
+                  </div>
+                `
               }))}
               showLocationSelector={false}
               initialZoom={8}
